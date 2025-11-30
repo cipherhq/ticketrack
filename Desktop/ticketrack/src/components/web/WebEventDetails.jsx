@@ -11,65 +11,11 @@ import { NavigationHeader } from './NavigationHeader';
  * URL: /event/:id
  */
 
-// Sample event for demo (used when no real events exist)
-const SAMPLE_EVENT = {
-  id: 'sample-1',
-  title: 'Lagos Tech Summit 2025',
-  description: `Join us for the biggest tech conference in West Africa! 
-
-The Lagos Tech Summit brings together innovators, entrepreneurs, investors, and tech enthusiasts from across the continent for two days of inspiring talks, hands-on workshops, and unparalleled networking opportunities.
-
-**What to expect:**
-• Keynote speeches from industry leaders
-• Panel discussions on AI, Fintech, and Web3
-• Startup pitch competition with ₦10M in prizes
-• Networking sessions with 500+ attendees
-• Free lunch and refreshments
-
-Whether you're a seasoned developer, aspiring entrepreneur, or tech curious professional, this summit has something for you.`,
-  image_url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop',
-  start_date: '2025-02-15T09:00:00',
-  end_date: '2025-02-16T18:00:00',
-  venue_name: 'Landmark Centre',
-  venue_address: 'Plot 2 & 3, Water Corporation Road, Victoria Island',
-  city: 'Lagos',
-  state: 'Lagos',
-  country: 'Nigeria',
-  category: 'Tech & Innovation',
-  organizer: {
-    business_name: 'TechNigeria Events',
-    logo_url: null,
-  },
-  ticket_types: [
-    {
-      id: 'tt-1',
-      name: 'Early Bird',
-      description: 'Limited early bird tickets - save ₦10,000!',
-      price: 15000,
-      currency: 'NGN',
-      quantity_available: 100,
-      quantity_sold: 85,
-    },
-    {
-      id: 'tt-2',
-      name: 'Regular',
-      description: 'Standard admission to all sessions',
-      price: 25000,
-      currency: 'NGN',
-      quantity_available: 300,
-      quantity_sold: 120,
-    },
-    {
-      id: 'tt-3',
-      name: 'VIP',
-      description: 'Front row seating, VIP lounge access, exclusive swag bag',
-      price: 75000,
-      currency: 'NGN',
-      quantity_available: 50,
-      quantity_sold: 32,
-    },
-  ],
-};
+// Helper to check if string is a valid UUID
+function isValidUUID(str) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
 
 // Format price helper
 function formatPrice(amount, currency = 'NGN') {
@@ -103,7 +49,7 @@ function formatEventTime(dateString) {
 
 // Ticket Type Card Component
 function TicketTypeCard({ ticket, quantity, onQuantityChange, disabled }) {
-  const remaining = ticket.quantity_available - ticket.quantity_sold;
+  const remaining = ticket.quantity_available - (ticket.quantity_sold || 0);
   const isSoldOut = remaining <= 0;
   const isLowStock = remaining > 0 && remaining <= 10;
 
@@ -180,9 +126,15 @@ export function WebEventDetails() {
   // Fetch event details
   useEffect(() => {
     async function fetchEvent() {
+      // Validate UUID format before querying
+      if (!isValidUUID(id)) {
+        setError('Invalid event ID');
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // Try to fetch from Supabase
-        const { data, error } = await supabase
+        const { data, error: fetchError } = await supabase
           .from('events')
           .select(`
             *,
@@ -193,13 +145,9 @@ export function WebEventDetails() {
           .eq('id', id)
           .single();
 
-        if (error) {
-          // If not found in DB, use sample event for demo
-          if (error.code === 'PGRST116' || id.startsWith('sample')) {
-            setEvent(SAMPLE_EVENT);
-          } else {
-            throw error;
-          }
+        if (fetchError) {
+          console.error('Error fetching event:', fetchError);
+          setError('Event not found');
         } else {
           setEvent({
             ...data,
@@ -209,8 +157,7 @@ export function WebEventDetails() {
         }
       } catch (err) {
         console.error('Error fetching event:', err);
-        // Use sample event as fallback
-        setEvent(SAMPLE_EVENT);
+        setError('Failed to load event');
       } finally {
         setIsLoading(false);
       }
@@ -250,7 +197,6 @@ export function WebEventDetails() {
   // Handle checkout
   const handleCheckout = () => {
     if (!isAuthenticated) {
-      // Redirect to login with return URL
       navigate(`/login?returnTo=/event/${id}`);
       return;
     }
@@ -265,7 +211,6 @@ export function WebEventDetails() {
         quantity: selectedTickets[ticket.id],
       }));
 
-    // Navigate to checkout with data
     navigate('/checkout', {
       state: {
         event: {
@@ -303,9 +248,9 @@ export function WebEventDetails() {
         <div className="flex h-96 flex-col items-center justify-center px-4">
           <div className="text-6xl">😕</div>
           <h1 className="mt-4 text-2xl font-bold text-gray-900">Event Not Found</h1>
-          <p className="mt-2 text-gray-500">The event you're looking for doesn't exist or has been removed.</p>
+          <p className="mt-2 text-gray-500">{error || "The event you're looking for doesn't exist or has been removed."}</p>
           <Link
-            to="/"
+            to="/events"
             className="mt-6 rounded-lg bg-blue-500 px-6 py-3 font-semibold text-white hover:bg-blue-600"
           >
             Browse Events
@@ -330,7 +275,7 @@ export function WebEventDetails() {
         
         {/* Back Button */}
         <Link
-          to="/"
+          to="/events"
           className="absolute left-4 top-4 flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-gray-700 backdrop-blur-sm transition-colors hover:bg-white"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -423,7 +368,7 @@ export function WebEventDetails() {
             <div className="mt-8">
               <h2 className="text-xl font-bold text-gray-900">About This Event</h2>
               <div className="mt-4 whitespace-pre-line text-gray-600">
-                {event.description}
+                {event.description || 'No description available.'}
               </div>
             </div>
           </div>
@@ -434,17 +379,21 @@ export function WebEventDetails() {
               <h2 className="text-xl font-bold text-gray-900">Select Tickets</h2>
               
               {/* Ticket Types */}
-              <div className="mt-4 space-y-3">
-                {event.ticket_types?.map(ticket => (
-                  <TicketTypeCard
-                    key={ticket.id}
-                    ticket={ticket}
-                    quantity={selectedTickets[ticket.id] || 0}
-                    onQuantityChange={handleQuantityChange}
-                    disabled={isAddingToCart}
-                  />
-                ))}
-              </div>
+              {event.ticket_types && event.ticket_types.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  {event.ticket_types.map(ticket => (
+                    <TicketTypeCard
+                      key={ticket.id}
+                      ticket={ticket}
+                      quantity={selectedTickets[ticket.id] || 0}
+                      onQuantityChange={handleQuantityChange}
+                      disabled={isAddingToCart}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 text-gray-500">No tickets available yet.</p>
+              )}
 
               {/* Order Summary */}
               {totalItems > 0 && (
