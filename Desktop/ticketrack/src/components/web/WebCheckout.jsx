@@ -4,9 +4,6 @@ import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { NavigationHeader } from "./NavigationHeader";
 
-// 🔥 REMOVE ALL script injections — index.html already loads Paystack
-// DO NOT load Paystack here
-
 // Format price helper
 function formatPrice(amount, currency = "NGN") {
   if (amount === 0) return "Free";
@@ -49,7 +46,7 @@ export function WebCheckout() {
 
   const { event, tickets, subtotal, fees, total } = checkoutData;
 
-  // Extra validation (kept exactly as you had it)
+  // Validation
   const validateCheckout = () => {
     if (!event || !event.id) {
       setError("Event data missing.");
@@ -66,8 +63,6 @@ export function WebCheckout() {
     return true;
   };
 
-  // 🔥 FINAL FIX — NO MORE SCRIPT LOADING
-  // Paystack must already exist in window (loaded from index.html)
   const getPaystack = () => {
     const PaystackPop = window.PaystackPop;
     if (!PaystackPop) {
@@ -82,6 +77,9 @@ export function WebCheckout() {
   const handlePayment = async (e) => {
     e.preventDefault();
     setError("");
+
+    // 🔥 DEBUG — CHECK IF PAYSTACK KEY IS ACTUALLY LOADED
+    console.log("PAYSTACK KEY LOADED =", import.meta.env.VITE_PAYSTACK_PUBLIC_KEY);
 
     if (!validateCheckout()) return;
 
@@ -107,7 +105,6 @@ export function WebCheckout() {
 
       const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 
-      // Demo fallback
       if (!paystackKey) {
         console.log("Demo mode — no Paystack key");
         await handlePaymentSuccess({ reference: "DEMO-" + Date.now() });
@@ -121,7 +118,6 @@ export function WebCheckout() {
         return;
       }
 
-      // 🔥 Correct Paystack pop setup
       const handler = PaystackPop.setup({
         key: paystackKey,
         email: customerEmail,
@@ -148,7 +144,6 @@ export function WebCheckout() {
     }
   };
 
-  // Handle Payment Success — unchanged
   const handlePaymentSuccess = async (response) => {
     try {
       const { data: order, error: orderError } = await supabase
@@ -228,4 +223,7 @@ export function WebCheckout() {
         </Link>
 
         <h1 className="mt-4 text-2xl font-bold text-gray-900">Checkout</h1>
-        {/* ✔️ The rest of your JSX remains unchanged */}
+      </div>
+    </div>
+  );
+}
