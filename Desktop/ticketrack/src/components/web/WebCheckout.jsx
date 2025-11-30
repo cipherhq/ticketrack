@@ -4,15 +4,16 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { NavigationHeader } from './NavigationHeader';
 
-/**
- * CHECKOUT PAGE WITH PAYSTACK
- * 
- * Handles the payment flow:
- * 1. Show order summary
- * 2. Collect customer details
- * 3. Process payment via Paystack
- * 4. Create order and tickets on success
- */
+// Ensure Paystack script loads in <head> immediately
+if (typeof window !== "undefined" && !document.getElementById("paystack-script")) {
+  const script = document.createElement("script");
+  script.id = "paystack-script";
+  script.src = "https://js.paystack.co/v1/inline.js";
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+
 
 // Format price helper
 function formatPrice(amount, currency = 'NGN') {
