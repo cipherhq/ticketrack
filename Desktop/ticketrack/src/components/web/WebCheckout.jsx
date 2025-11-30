@@ -4,12 +4,50 @@ import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { NavigationHeader } from "./NavigationHeader";
 
+// ======================================================
+// 🔥 RELIABLE PAYSTACK SCRIPT LOADER FOR VERCEL
+// ======================================================
+function loadPaystackLibrary() {
+  return new Promise((resolve, reject) => {
+    // Already loaded?
+    if (window.PaystackPop) {
+      console.log("⚡ Paystack already loaded");
+      return resolve(window.PaystackPop);
+    }
+
+    // If script already exists (re-render), wait for it
+    const existing = document.getElementById("paystack-inline-script");
+    if (existing) {
+      existing.onload = () => resolve(window.PaystackPop);
+      return;
+    }
+
+    // Load script manually
+    const script = document.createElement("script");
+    script.id = "paystack-inline-script";
+    script.src = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
+
+    script.onload = () => {
+      console.log("✅ Paystack script loaded");
+      resolve(window.PaystackPop);
+    };
+
+    script.onerror = () => {
+      console.error("❌ Failed to load Paystack script");
+      reject("Paystack script failed");
+    };
+
+    document.body.appendChild(script);
+  });
+}
+
 // Format price helper
 function formatPrice(amount, currency = "NGN") {
   if (amount === 0) return "Free";
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
-    currency: currency,
+    currency,
     minimumFractionDigits: 0,
   }).format(amount);
 }
@@ -48,85 +86,52 @@ export function WebCheckout() {
 
   // Validation
   const validateCheckout = () => {
-    if (!event || !event.id) {
-      setError("Event data missing.");
-      return false;
-    }
-    if (!tickets?.length) {
-      setError("No tickets selected.");
-      return false;
-    }
-    if (!total || isNaN(total)) {
-      setError("Invalid total.");
-      return false;
-    }
+    if (!event?.id) return setError("Event missing.") || false;
+    if (!tickets?.length) return setError("No tickets selected.") || false;
+    if (!total || isNaN(total)) return setError("Invalid total.") || false;
     return true;
   };
 
-  const getPaystack = () => {
-    const PaystackPop = window.PaystackPop;
-    if (!PaystackPop) {
-      setError("Payment system not loaded. Please refresh the page.");
-      console.error("❌ PaystackPop missing from window");
-      return null;
-    }
-    return PaystackPop;
-  };
-
-  // Handle payment
+  // ======================================================
+  // 🔥 Payment Handler
+  // ======================================================
   const handlePayment = async (e) => {
     e.preventDefault();
     setError("");
 
-    // DEBUG: Verify environment variable on Vercel
-    console.log("PAYSTACK KEY = ", import.meta.env.VITE_PAYSTACK_PUBLIC_KEY);
+    console.log("PAYSTACK KEY FROM ENV =", import.meta.env.VITE_PAYSTACK_PUBLIC_KEY);
 
     if (!validateCheckout()) return;
 
-    if (!customerName || !customerEmail) {
-      setError("Please fill in all required fields");
-      return;
-    }
+    if (!customerName || !customerEmail)
+      return setError("Please fill in all required fields");
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customerEmail)) {
-      setError("Please enter a valid email address");
-      return;
-    }
+    if (!emailRegex.test(customerEmail))
+      return setError("Please enter a valid email address");
 
     setIsProcessing(true);
 
     try {
-      const PaystackPop = getPaystack();
-      if (!PaystackPop) {
-        setIsProcessing(false);
-        return;
-      }
+      // Load Paystack script safely
+      const PaystackPop = await loadPaystackLibrary();
 
       const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 
       if (!paystackKey) {
-        console.log("⚠ Using DEMO MODE (no Paystack key found)");
+        console.log("⚠ Demo mode — No Paystack key found");
         await handlePaymentSuccess({ reference: "DEMO-" + Date.now() });
         return;
       }
 
       const amountKobo = Number(total) * 100;
-      if (!amountKobo || isNaN(amountKobo)) {
-        setError("Invalid payment amount.");
-        setIsProcessing(false);
-        return;
-      }
 
-      console.log("🚀 Launching Paystack iframe…");
-
-      // *** THIS IS THE FIXED PAYSTACK BLOCK ***
       const handler = PaystackPop.setup({
         key: paystackKey,
         email: customerEmail,
         amount: amountKobo,
         currency: "NGN",
-        channels: ["card"], // Optional but safer
+        channels: ["card"],
         ref: `TKT-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
         metadata: {
           event_id: event.id,
@@ -135,24 +140,30 @@ export function WebCheckout() {
           customer_email: customerEmail,
           tickets: tickets,
         },
+
+        // SUCCESS CALL
         callback: async function (response) {
-          console.log("✅ PAYSTACK CALLBACK:", response);
+          console.log("🎉 Paystack response:", response);
           await handlePaymentSuccess(response);
         },
+
         onClose: function () {
-          console.log("❌ Paystack window closed by user");
+          console.log("❌ User closed payment window");
           setIsProcessing(false);
         },
       });
 
       handler.openIframe();
     } catch (err) {
-      console.error("❌ Payment error:", err);
+      console.error("❌ Payment initialization error:", err);
       setError("Failed to initialize payment. Please try again.");
       setIsProcessing(false);
     }
   };
 
+  // ======================================================
+  // 🔥 Payment Success
+  // ======================================================
   const handlePaymentSuccess = async (response) => {
     try {
       const { data: order, error: orderError } = await supabase
@@ -178,10 +189,10 @@ export function WebCheckout() {
 
       if (orderError) throw orderError;
 
-      const ticketInserts = [];
+      const ticketRows = [];
       tickets.forEach((ticket) => {
         for (let i = 0; i < ticket.quantity; i++) {
-          ticketInserts.push({
+          ticketRows.push({
             order_id: order.id,
             ticket_type_id: ticket.id,
             event_id: event.id,
@@ -193,10 +204,10 @@ export function WebCheckout() {
         }
       });
 
-      if (ticketInserts.length) {
+      if (ticketRows.length) {
         const { error: ticketError } = await supabase
           .from("tickets")
-          .insert(ticketInserts);
+          .insert(ticketRows);
         if (ticketError) throw ticketError;
       }
 
@@ -204,7 +215,8 @@ export function WebCheckout() {
         state: { order, event, tickets },
       });
     } catch (err) {
-      console.error("❌ Order creation error:", err);
+      console.error("❌ Ticket creation error:", err);
+
       navigate("/payment-success", {
         state: { reference: response.reference, event },
       });
