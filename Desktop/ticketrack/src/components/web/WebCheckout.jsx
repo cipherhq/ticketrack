@@ -67,7 +67,7 @@ export function WebCheckout() {
     const PaystackPop = window.PaystackPop;
     if (!PaystackPop) {
       setError("Payment system not loaded. Please refresh the page.");
-      console.error("PaystackPop missing from window");
+      console.error("❌ PaystackPop missing from window");
       return null;
     }
     return PaystackPop;
@@ -78,8 +78,8 @@ export function WebCheckout() {
     e.preventDefault();
     setError("");
 
-    // 🔥 DEBUG — CHECK IF PAYSTACK KEY IS ACTUALLY LOADED
-    console.log("PAYSTACK KEY LOADED =", import.meta.env.VITE_PAYSTACK_PUBLIC_KEY);
+    // DEBUG: Verify environment variable on Vercel
+    console.log("PAYSTACK KEY = ", import.meta.env.VITE_PAYSTACK_PUBLIC_KEY);
 
     if (!validateCheckout()) return;
 
@@ -106,7 +106,7 @@ export function WebCheckout() {
       const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 
       if (!paystackKey) {
-        console.log("Demo mode — no Paystack key");
+        console.log("⚠ Using DEMO MODE (no Paystack key found)");
         await handlePaymentSuccess({ reference: "DEMO-" + Date.now() });
         return;
       }
@@ -118,27 +118,36 @@ export function WebCheckout() {
         return;
       }
 
+      console.log("🚀 Launching Paystack iframe…");
+
+      // *** THIS IS THE FIXED PAYSTACK BLOCK ***
       const handler = PaystackPop.setup({
         key: paystackKey,
         email: customerEmail,
         amount: amountKobo,
         currency: "NGN",
-        ref: `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        channels: ["card"], // Optional but safer
+        ref: `TKT-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
         metadata: {
           event_id: event.id,
           event_title: event.title,
           customer_name: customerName,
-          tickets,
+          customer_email: customerEmail,
+          tickets: tickets,
         },
-        callback: async (response) => {
+        callback: async function (response) {
+          console.log("✅ PAYSTACK CALLBACK:", response);
           await handlePaymentSuccess(response);
         },
-        onClose: () => setIsProcessing(false),
+        onClose: function () {
+          console.log("❌ Paystack window closed by user");
+          setIsProcessing(false);
+        },
       });
 
       handler.openIframe();
     } catch (err) {
-      console.error("Payment error:", err);
+      console.error("❌ Payment error:", err);
       setError("Failed to initialize payment. Please try again.");
       setIsProcessing(false);
     }
@@ -195,7 +204,7 @@ export function WebCheckout() {
         state: { order, event, tickets },
       });
     } catch (err) {
-      console.error("Order creation error:", err);
+      console.error("❌ Order creation error:", err);
       navigate("/payment-success", {
         state: { reference: response.reference, event },
       });
