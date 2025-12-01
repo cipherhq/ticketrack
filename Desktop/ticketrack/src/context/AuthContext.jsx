@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
         fetchProfile(session.user.id)
       } else {
         setProfile(null)
+        setLoading(false)
       }
     })
 
@@ -33,14 +34,33 @@ export function AuthProvider({ children }) {
   }, [])
 
   const fetchProfile = async (userId) => {
-    const { data } = await supabase
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      
+      setProfile(data)
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateProfile = async (updates) => {
+    if (!user) return { error: 'Not authenticated' }
+    
+    const { data, error } = await supabase
       .from('profiles')
-      .select('*')
-      .eq('id', userId)
+      .update(updates)
+      .eq('id', user.id)
+      .select()
       .single()
     
-    setProfile(data)
-    setLoading(false)
+    if (data) setProfile(data)
+    return { data, error }
   }
 
   const signUp = async (email, password, fullName, phone) => {
@@ -64,6 +84,8 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
+    setUser(null)
+    setProfile(null)
     return { error }
   }
 
@@ -81,7 +103,9 @@ export function AuthProvider({ children }) {
     signUp,
     signIn,
     signOut,
-    resetPassword
+    resetPassword,
+    updateProfile,
+    fetchProfile
   }
 
   return (

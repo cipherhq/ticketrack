@@ -1,25 +1,36 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Search, MapPin, Calendar, Filter, X } from 'lucide-react'
-import { Input } from '../components/ui/Input'
+import { Search, MapPin, Calendar, Filter, X, Grid, List } from 'lucide-react'
+import { Input, Select } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
+import { formatDate, formatCurrency } from '../lib/utils'
 
 export default function Events() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [events, setEvents] = useState([])
   const [categories, setCategories] = useState([])
   const [countries, setCountries] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
-  const [selectedCountry, setSelectedCountry] = useState('')
+  const [viewMode, setViewMode] = useState('grid')
+  
+  const [filters, setFilters] = useState({
+    search: searchParams.get('q') || '',
+    category: searchParams.get('category') || '',
+    country: searchParams.get('country') || '',
+    dateRange: searchParams.get('date') || '',
+    priceRange: searchParams.get('price') || ''
+  })
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     fetchFilters()
+  }, [])
+
+  useEffect(() => {
     fetchEvents()
-  }, [selectedCategory, selectedCountry])
+  }, [filters])
 
   const fetchFilters = async () => {
     const [categoriesRes, countriesRes] = await Promise.all([
@@ -32,185 +43,279 @@ export default function Events() {
 
   const fetchEvents = async () => {
     setLoading(true)
+    
     let query = supabase
       .from('events')
-      .select('*, organizers(business_name), categories(name, slug), countries(name, currency_symbol)')
+      .select('*, organizers(business_name, is_verified), categories(name, slug), countries(name, currency_symbol)')
       .eq('status', 'published')
       .gte('start_date', new Date().toISOString())
       .order('start_date', { ascending: true })
 
-    if (selectedCategory) {
+    // Apply category filter
+    if (filters.category) {
       const { data: cat } = await supabase
         .from('categories')
         .select('id')
-        .eq('slug', selectedCategory)
+        .eq('slug', filters.category)
         .single()
-      if (cat) {
-        query = query.eq('category_id', cat.id)
-      }
+      if (cat) query = query.eq('category_id', cat.id)
     }
 
-    if (selectedCountry) {
-      query = query.eq('country_code', selectedCountry)
+    // Apply country filter
+    if (filters.country) {
+      query = query.eq('country_code', filters.country)
     }
 
-    const { data, error } = await query
+    // Apply price filter
+    if (filters.priceRange === 'free') {
+      query = query.eq('is_free', true)
+    }
+
+    const { data, error } = await query.limit(50)
 
     if (error) {
       console.error('Error fetching events:', error)
     } else {
-      setEvents(data || [])
+      // Apply client-side search filter
+      let filteredData = data || []
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase()
+        filteredData = filteredData.filter(event =>
+          event.title.toLowerCase().includes(searchLower) ||
+          event.city?.toLowerCase().includes(searchLower) ||
+          event.venue_name?.toLowerCase().includes(searchLower)
+        )
+      }
+      setEvents(filteredData)
     }
     setLoading(false)
   }
 
-  const filteredEvents = events.filter(event =>
-    event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.city.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const updateFilter = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+    if (value) {
+      searchParams.set(key === 'search' ? 'q' : key, value)
+    } else {
+      searchParams.delete(key === 'search' ? 'q' : key)
+    }
+    setSearchParams(searchParams)
+  }
 
   const clearFilters = () => {
-    setSelectedCategory('')
-    setSelectedCountry('')
-    setSearchQuery('')
+    setFilters({
+      search: '',
+      category: '',
+      country: '',
+      dateRange: '',
+      priceRange: ''
+    })
+    setSearchParams({})
   }
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-primary-500 text-white py-12">
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Browse Events</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Browse Events</h1>
           <p className="text-primary-100">Discover amazing events happening across Africa</p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Search and Filter Bar */}
+        {/* Search and Filters */}
         <div className="bg-white rounded-2xl shadow-sm border p-4 mb-8">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search events..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search events, venues, cities..."
+                value={filters.search}
+                onChange={(e) => updateFilter('search', e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="w-5 h-5" />
-              Filters
-              {(selectedCategory || selectedCountry) && (
-                <span className="bg-primary-500 text-white text-xs px-2 py-0.5 rounded-full">
-                  {[selectedCategory, selectedCountry].filter(Boolean).length}
-                </span>
-              )}
-            </Button>
+
+            {/* Quick Filters */}
+            <div className="flex gap-2">
+              <Select
+                value={filters.category}
+                onChange={(e) => updateFilter('category', e.target.value)}
+                className="w-40"
+              >
+                <option value="">All Categories</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                ))}
+              </Select>
+
+              <Select
+                value={filters.country}
+                onChange={(e) => updateFilter('country', e.target.value)}
+                className="w-40"
+              >
+                <option value="">All Countries</option>
+                {countries.map(country => (
+                  <option key={country.id} value={country.code}>{country.name}</option>
+                ))}
+              </Select>
+
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="primary">{activeFilterCount}</Badge>
+                )}
+              </Button>
+            </div>
           </div>
 
-          {/* Filters Panel */}
+          {/* Extended Filters */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.slug}>{cat.icon} {cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                  <select
-                    value={selectedCountry}
-                    onChange={(e) => setSelectedCountry(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">All Countries</option>
-                    {countries.map(country => (
-                      <option key={country.id} value={country.code}>{country.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              {(selectedCategory || selectedCountry) && (
-                <button
-                  onClick={clearFilters}
-                  className="mt-4 text-sm text-red-500 hover:underline flex items-center gap-1"
+            <div className="mt-4 pt-4 border-t grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                <Select
+                  value={filters.priceRange}
+                  onChange={(e) => updateFilter('priceRange', e.target.value)}
                 >
-                  <X className="w-4 h-4" /> Clear filters
-                </button>
-              )}
+                  <option value="">Any Price</option>
+                  <option value="free">Free</option>
+                  <option value="paid">Paid</option>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <Select
+                  value={filters.dateRange}
+                  onChange={(e) => updateFilter('dateRange', e.target.value)}
+                >
+                  <option value="">Any Date</option>
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button variant="ghost" onClick={clearFilters} className="text-red-500">
+                  <X className="w-4 h-4 mr-1" /> Clear Filters
+                </Button>
+              </div>
             </div>
           )}
         </div>
 
+        {/* Results Header */}
+        <div className="flex justify-between items-center mb-6">
+          <p className="text-gray-600">
+            {loading ? 'Loading...' : `${events.length} events found`}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded ${viewMode === 'grid' ? 'bg-primary-100 text-primary-500' : 'text-gray-400'}`}
+            >
+              <Grid className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded ${viewMode === 'list' ? 'bg-primary-100 text-primary-500' : 'text-gray-400'}`}
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
         {/* Results */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Loading events...</p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="bg-white rounded-2xl overflow-hidden border animate-pulse">
+                <div className="h-48 bg-gray-200" />
+                <div className="p-6 space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-1/4" />
+                  <div className="h-6 bg-gray-200 rounded w-3/4" />
+                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
           </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl">
-            <p className="text-gray-500 text-lg">No events found</p>
-            <p className="text-gray-400 mt-2">Try adjusting your filters or search query</p>
-            <Button onClick={clearFilters} className="mt-4">Clear Filters</Button>
+        ) : events.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border">
+            <div className="text-6xl mb-4">🎫</div>
+            <h3 className="text-xl font-semibold text-gray-700">No events found</h3>
+            <p className="text-gray-500 mt-2">Try adjusting your filters or search query</p>
+            <Button onClick={clearFilters} className="mt-6">Clear Filters</Button>
           </div>
         ) : (
-          <>
-            <p className="text-gray-600 mb-4">{filteredEvents.length} events found</p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map((event) => (
-                <Link to={`/events/${event.id}`} key={event.id}>
-                  <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition border h-full">
-                    <div className="h-48 bg-gradient-to-br from-primary-400 to-primary-600 relative">
-                      {event.image_url && (
-                        <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
-                      )}
-                      {event.is_free && (
-                        <span className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                          FREE
-                        </span>
+          <div className={viewMode === 'grid' 
+            ? 'grid md:grid-cols-2 lg:grid-cols-3 gap-6' 
+            : 'space-y-4'
+          }>
+            {events.map((event) => (
+              <Link to={`/events/${event.id}`} key={event.id}>
+                <div className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border group ${
+                  viewMode === 'list' ? 'flex' : ''
+                }`}>
+                  <div className={`bg-gradient-to-br from-primary-400 to-primary-600 relative overflow-hidden ${
+                    viewMode === 'list' ? 'w-48 h-32' : 'h-48'
+                  }`}>
+                    {event.image_url && (
+                      <img 
+                        src={event.image_url} 
+                        alt={event.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                      />
+                    )}
+                    {event.is_featured && (
+                      <span className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">
+                        ⭐ FEATURED
+                      </span>
+                    )}
+                    {event.is_free && (
+                      <span className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        FREE
+                      </span>
+                    )}
+                  </div>
+                  <div className={`p-5 flex-1 ${viewMode === 'list' ? 'flex flex-col justify-center' : ''}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="primary">{event.categories?.name}</Badge>
+                      {event.organizers?.is_verified && (
+                        <Badge variant="info">✓ Verified</Badge>
                       )}
                     </div>
-                    <div className="p-6">
-                      <span className="text-xs font-medium text-primary-500 bg-primary-50 px-2 py-1 rounded-full">
-                        {event.categories?.name || 'Event'}
-                      </span>
-                      <h3 className="text-lg font-semibold mt-3 line-clamp-2">{event.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">{event.organizers?.business_name}</p>
-                      <div className="flex items-center gap-2 text-gray-500 text-sm mt-3">
+                    <h3 className="font-semibold text-lg line-clamp-2">{event.title}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{event.organizers?.business_name}</p>
+                    <div className="flex items-center gap-4 text-gray-500 text-sm mt-3">
+                      <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        <span>{new Date(event.start_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-500 text-sm mt-1">
+                        {formatDate(event.start_date, { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                      <span className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
-                        <span>{event.venue_name}, {event.city}</span>
-                      </div>
-                      <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                        <span className="text-gray-400 text-sm">{event.countries?.name}</span>
-                        <span className="font-semibold text-primary-500">
-                          {event.is_free ? 'Free' : `${event.countries?.currency_symbol || '₦'}${event.total_revenue || '0'}`}
-                        </span>
-                      </div>
+                        {event.city}
+                      </span>
+                    </div>
+                    <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                      <span className="text-sm text-gray-400">{event.countries?.name}</span>
+                      <span className="font-bold text-primary-500">
+                        {event.is_free ? 'Free' : `From ${event.countries?.currency_symbol || '₦'}0`}
+                      </span>
                     </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </>
+                </div>
+              </Link>
+            ))}
+          </div>
         )}
       </div>
     </div>

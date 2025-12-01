@@ -1,13 +1,17 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
 import { Mail, Lock, Eye, EyeOff, Ticket } from 'lucide-react'
 
 export default function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect') || '/'
   const { signIn } = useAuth()
+  
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -27,25 +31,26 @@ export default function Login() {
       setError(error.message)
       setLoading(false)
     } else {
-      navigate('/')
+      navigate(redirect)
     }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
+        {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center">
-            <Ticket className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-primary-500 rounded-xl flex items-center justify-center">
+            <Ticket className="w-7 h-7 text-white" />
           </div>
           <span className="text-2xl font-bold text-gray-900">Ticketrack</span>
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h1 className="text-2xl font-bold text-center text-gray-900">Welcome Back</h1>
-          <p className="text-center text-gray-500 mt-2 mb-8">
-            Sign in to access your tickets and more
-          </p>
+        <Card className="p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
+            <p className="text-gray-500 mt-2">Sign in to access your tickets and more</p>
+          </div>
 
           {error && (
             <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm">
@@ -55,7 +60,9 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
@@ -70,7 +77,9 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
@@ -97,8 +106,8 @@ export default function Login() {
               </Link>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+            <Button type="submit" className="w-full" size="lg" loading={loading}>
+              Sign In
             </Button>
           </form>
 
@@ -110,7 +119,7 @@ export default function Login() {
               </Link>
             </p>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   )
