@@ -1,4 +1,3 @@
-// Email validation using RFC 5322 standard
 export function validateEmail(email) {
   if (!email || typeof email !== 'string') {
     return { valid: false, error: 'Email is required' }
@@ -10,7 +9,6 @@ export function validateEmail(email) {
     return { valid: false, error: 'Email is too long' }
   }
   
-  // RFC 5322 compliant regex
   const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
   
   if (!emailRegex.test(trimmed)) {
@@ -20,7 +18,6 @@ export function validateEmail(email) {
   return { valid: true, value: trimmed }
 }
 
-// Password validation with security requirements
 export function validatePassword(password) {
   if (!password || typeof password !== 'string') {
     return { valid: false, error: 'Password is required' }
@@ -54,29 +51,73 @@ export function validatePassword(password) {
   return { valid: true }
 }
 
-// Phone validation (E.164 format for international)
 export function validatePhone(phone) {
   if (!phone || typeof phone !== 'string') {
     return { valid: false, error: 'Phone number is required' }
   }
   
-  // Remove spaces, dashes, parentheses
   const cleaned = phone.replace(/[\s\-\(\)]/g, '')
-  
-  // Must start with + and country code, followed by 7-14 digits
   const phoneRegex = /^\+[1-9]\d{7,14}$/
   
   if (!phoneRegex.test(cleaned)) {
     return { 
       valid: false, 
-      error: 'Enter a valid phone number with country code (e.g., +234...)'
+      error: 'Enter a valid phone number'
     }
   }
   
   return { valid: true, value: cleaned }
 }
 
-// Name validation
+export function validateFirstName(name) {
+  if (!name || typeof name !== 'string') {
+    return { valid: false, error: 'First name is required' }
+  }
+  
+  const trimmed = name.trim()
+  
+  if (trimmed.length < 2) {
+    return { valid: false, error: 'First name must be at least 2 characters' }
+  }
+  
+  if (trimmed.length > 50) {
+    return { valid: false, error: 'First name is too long' }
+  }
+  
+  const nameRegex = /^[a-zA-Z\s\-']+$/
+  
+  if (!nameRegex.test(trimmed)) {
+    return { valid: false, error: 'First name contains invalid characters' }
+  }
+  
+  return { valid: true, value: trimmed }
+}
+
+export function validateLastName(name) {
+  if (!name || typeof name !== 'string') {
+    return { valid: false, error: 'Last name is required' }
+  }
+  
+  const trimmed = name.trim()
+  
+  if (trimmed.length < 2) {
+    return { valid: false, error: 'Last name must be at least 2 characters' }
+  }
+  
+  if (trimmed.length > 50) {
+    return { valid: false, error: 'Last name is too long' }
+  }
+  
+  const nameRegex = /^[a-zA-Z\s\-']+$/
+  
+  if (!nameRegex.test(trimmed)) {
+    return { valid: false, error: 'Last name contains invalid characters' }
+  }
+  
+  return { valid: true, value: trimmed }
+}
+
+// Keep for backward compatibility
 export function validateName(name) {
   if (!name || typeof name !== 'string') {
     return { valid: false, error: 'Name is required' }
@@ -92,7 +133,6 @@ export function validateName(name) {
     return { valid: false, error: 'Name is too long' }
   }
   
-  // Only allow letters, spaces, hyphens, and apostrophes
   const nameRegex = /^[a-zA-Z\s\-']+$/
   
   if (!nameRegex.test(trimmed)) {
@@ -102,7 +142,6 @@ export function validateName(name) {
   return { valid: true, value: trimmed }
 }
 
-// OTP validation
 export function validateOTP(otp) {
   if (!otp || typeof otp !== 'string') {
     return { valid: false, error: 'OTP is required' }
@@ -117,7 +156,6 @@ export function validateOTP(otp) {
   return { valid: true, value: cleaned }
 }
 
-// Sanitize input to prevent XSS
 export function sanitizeInput(input) {
   if (typeof input !== 'string') return ''
   

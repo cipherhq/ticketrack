@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Mail, Lock, User, Phone, Eye, EyeOff, Ticket, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, Ticket, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function WebAuth() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn, signUp, verifyOTP, resendOTP, resendVerificationEmail, user, otpSent, pendingUser } = useAuth()
+  const { signIn, signUp, verifyOTP, resendOTP, resendVerificationEmail, user, pendingUser } = useAuth()
   
   const isLogin = location.pathname === '/login'
   const from = location.state?.from || '/profile'
@@ -24,7 +25,8 @@ export function WebAuth() {
   const [signupEmail, setSignupEmail] = useState('')
   
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     password: '',
@@ -34,24 +36,15 @@ export function WebAuth() {
 
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: '' })
 
-  // Show success/error message from redirect
   useEffect(() => {
-    if (location.state?.message) {
-      setSuccess(location.state.message)
-    }
-    if (location.state?.error) {
-      setError(location.state.error)
-    }
+    if (location.state?.message) setSuccess(location.state.message)
+    if (location.state?.error) setError(location.state.error)
   }, [location.state])
 
-  // Redirect if already logged in
   useEffect(() => {
-    if (user) {
-      navigate(from, { replace: true })
-    }
+    if (user) navigate(from, { replace: true })
   }, [user, navigate, from])
 
-  // Check password strength
   useEffect(() => {
     if (!formData.password) {
       setPasswordStrength({ score: 0, feedback: '' })
@@ -85,6 +78,11 @@ export function WebAuth() {
   const handleInputChange = (e) => {
     const { id, value } = e.target
     setFormData(prev => ({ ...prev, [id]: value }))
+    setError('')
+  }
+
+  const handlePhoneChange = (value) => {
+    setFormData(prev => ({ ...prev, phone: value }))
     setError('')
   }
 
@@ -136,7 +134,13 @@ export function WebAuth() {
           throw new Error('Passwords do not match')
         }
 
-        const result = await signUp(formData.email, formData.password, formData.name, formData.phone)
+        const result = await signUp(
+          formData.email, 
+          formData.password, 
+          formData.firstName, 
+          formData.lastName, 
+          formData.phone
+        )
         setSignupEmail(result.email)
         setStep('verify-email')
         setSuccess(result.message)
@@ -161,7 +165,7 @@ export function WebAuth() {
     }
   }
 
-  // Email Not Verified Screen (for login attempt with unverified email)
+  // Email Not Verified Screen
   if (step === 'email-not-verified') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
@@ -180,8 +184,7 @@ export function WebAuth() {
               </div>
               <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Email Not Verified</h2>
               <p className="text-[#0F0F0F]/60 mb-6">
-                Your email <strong>{unverifiedEmail}</strong> hasn't been verified yet. 
-                Please check your inbox for the verification link, or request a new one.
+                Your email <strong>{unverifiedEmail}</strong> hasn't been verified yet.
               </p>
 
               {error && (
@@ -203,24 +206,14 @@ export function WebAuth() {
                 disabled={loading}
                 className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6 mb-4"
               >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <RefreshCw className="w-5 h-5 mr-2" />
-                    Resend Verification Email
-                  </>
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                  <><RefreshCw className="w-5 h-5 mr-2" />Resend Verification Email</>
                 )}
               </Button>
 
               <Button
                 variant="outline"
-                onClick={() => {
-                  setStep('credentials')
-                  setUnverifiedEmail('')
-                  setError('')
-                  setSuccess('')
-                }}
+                onClick={() => { setStep('credentials'); setUnverifiedEmail(''); setError(''); setSuccess('') }}
                 className="w-full rounded-xl border-[#0F0F0F]/10"
               >
                 Back to Login
@@ -232,7 +225,7 @@ export function WebAuth() {
     )
   }
 
-  // Verify Email Screen (after signup)
+  // Verify Email Screen
   if (step === 'verify-email') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
@@ -251,8 +244,7 @@ export function WebAuth() {
               </div>
               <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Check Your Email</h2>
               <p className="text-[#0F0F0F]/60 mb-6">
-                We've sent a verification link to <strong>{signupEmail || formData.email}</strong>. 
-                Please click the link to verify your account.
+                We've sent a verification link to <strong>{signupEmail || formData.email}</strong>.
               </p>
 
               {error && (
@@ -270,7 +262,7 @@ export function WebAuth() {
               )}
 
               <p className="text-sm text-[#0F0F0F]/40 mb-6">
-                Didn't receive the email? Check your spam folder or click below to resend.
+                Didn't receive the email? Check your spam folder or click below.
               </p>
 
               <Button
@@ -279,13 +271,8 @@ export function WebAuth() {
                 variant="outline"
                 className="w-full rounded-xl border-[#0F0F0F]/10 mb-4"
               >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <RefreshCw className="w-5 h-5 mr-2" />
-                    Resend Verification Email
-                  </>
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                  <><RefreshCw className="w-5 h-5 mr-2" />Resend Verification Email</>
                 )}
               </Button>
 
@@ -303,7 +290,7 @@ export function WebAuth() {
     )
   }
 
-  // OTP Verification Screen
+  // OTP Screen
   if (step === 'otp') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
@@ -317,12 +304,8 @@ export function WebAuth() {
 
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#0F0F0F] text-center">
-                Verify Your Phone
-              </CardTitle>
-              <p className="text-center text-[#0F0F0F]/60 mt-2">
-                Enter the 6-digit code sent to your phone
-              </p>
+              <CardTitle className="text-2xl text-[#0F0F0F] text-center">Verify Your Phone</CardTitle>
+              <p className="text-center text-[#0F0F0F]/60 mt-2">Enter the 6-digit code sent to your phone</p>
             </CardHeader>
             <CardContent>
               {error && (
@@ -361,33 +344,17 @@ export function WebAuth() {
                   disabled={loading || formData.otp.length !== 6}
                   className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6"
                 >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    'Verify'
-                  )}
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify'}
                 </Button>
 
                 <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleResendOTP}
-                    disabled={loading}
-                    className="text-sm text-[#2969FF] hover:underline"
-                  >
+                  <button type="button" onClick={handleResendOTP} disabled={loading} className="text-sm text-[#2969FF] hover:underline">
                     Resend Code
                   </button>
                 </div>
 
                 <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep('credentials')
-                      setFormData(prev => ({ ...prev, otp: '' }))
-                    }}
-                    className="text-sm text-[#0F0F0F]/60 hover:underline"
-                  >
+                  <button type="button" onClick={() => { setStep('credentials'); setFormData(prev => ({ ...prev, otp: '' })) }} className="text-sm text-[#0F0F0F]/60 hover:underline">
                     Back to Login
                   </button>
                 </div>
@@ -416,9 +383,7 @@ export function WebAuth() {
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </CardTitle>
             <p className="text-center text-[#0F0F0F]/60 mt-2">
-              {isLogin 
-                ? 'Sign in to access your tickets and more' 
-                : 'Sign up to start booking amazing events'}
+              {isLogin ? 'Sign in to access your tickets and more' : 'Sign up to start booking amazing events'}
             </p>
           </CardHeader>
           <CardContent>
@@ -438,18 +403,32 @@ export function WebAuth() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                      <Input
+                        id="firstName"
+                        placeholder="John"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                        required
+                        autoComplete="given-name"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
                     <Input
-                      id="name"
-                      placeholder="Enter your full name"
-                      value={formData.name}
+                      id="lastName"
+                      placeholder="Doe"
+                      value={formData.lastName}
                       onChange={handleInputChange}
-                      className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                      className="rounded-xl border-[#0F0F0F]/10"
                       required
-                      autoComplete="name"
+                      autoComplete="family-name"
                     />
                   </div>
                 </div>
@@ -474,23 +453,12 @@ export function WebAuth() {
 
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+234 801 234 5678"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="pl-10 rounded-xl border-[#0F0F0F]/10"
-                      required
-                      autoComplete="tel"
-                    />
-                  </div>
-                  <p className="text-xs text-[#0F0F0F]/40">
-                    Include country code (e.g., +234 for Nigeria)
-                  </p>
+                  <Label>Phone Number</Label>
+                  <PhoneInput
+                    value={formData.phone}
+                    onChange={handlePhoneChange}
+                    required
+                  />
                 </div>
               )}
 
@@ -524,23 +492,13 @@ export function WebAuth() {
                           key={i}
                           className={`h-1 flex-1 rounded-full ${
                             i <= passwordStrength.score
-                              ? passwordStrength.score <= 2
-                                ? 'bg-red-500'
-                                : passwordStrength.score <= 4
-                                ? 'bg-yellow-500'
-                                : 'bg-green-500'
+                              ? passwordStrength.score <= 2 ? 'bg-red-500' : passwordStrength.score <= 4 ? 'bg-yellow-500' : 'bg-green-500'
                               : 'bg-[#0F0F0F]/10'
                           }`}
                         />
                       ))}
                     </div>
-                    <p className={`text-xs ${
-                      passwordStrength.score <= 2
-                        ? 'text-red-500'
-                        : passwordStrength.score <= 4
-                        ? 'text-yellow-600'
-                        : 'text-green-600'
-                    }`}>
+                    <p className={`text-xs ${passwordStrength.score <= 2 ? 'text-red-500' : passwordStrength.score <= 4 ? 'text-yellow-600' : 'text-green-600'}`}>
                       {passwordStrength.feedback}
                     </p>
                   </div>
@@ -571,11 +529,7 @@ export function WebAuth() {
 
               {isLogin && (
                 <div className="flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/forgot-password')}
-                    className="text-sm text-[#2969FF] hover:underline"
-                  >
+                  <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm text-[#2969FF] hover:underline">
                     Forgot Password?
                   </button>
                 </div>
@@ -586,23 +540,14 @@ export function WebAuth() {
                 disabled={loading}
                 className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6"
               >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : isLogin ? (
-                  'Sign In'
-                ) : (
-                  'Create Account'
-                )}
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : isLogin ? 'Sign In' : 'Create Account'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-[#0F0F0F]/60">
                 {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                <button
-                  onClick={() => navigate(isLogin ? '/signup' : '/login')}
-                  className="text-[#2969FF] hover:underline"
-                >
+                <button onClick={() => navigate(isLogin ? '/signup' : '/login')} className="text-[#2969FF] hover:underline">
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </button>
               </p>

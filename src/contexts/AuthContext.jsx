@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { validateEmail, validatePassword, validatePhone, validateName, validateOTP } from '@/utils/validation'
+import { validateEmail, validatePassword, validatePhone, validateFirstName, validateLastName, validateOTP } from '@/utils/validation'
 
 const AuthContext = createContext({})
 
@@ -27,11 +27,7 @@ export function AuthProvider({ children }) {
     const initAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.warn('Session check failed:', error.message)
-        }
-        
+        if (error) console.warn('Session check failed:', error.message)
         if (mounted) {
           setUser(session?.user ?? null)
           setLoading(false)
@@ -64,22 +60,22 @@ export function AuthProvider({ children }) {
 
     return () => {
       mounted = false
-      if (subscription) {
-        subscription.unsubscribe()
-      }
+      if (subscription) subscription.unsubscribe()
     }
   }, [])
 
-  // Sign up with email, password, and phone
-  const signUp = useCallback(async (email, password, fullName, phone) => {
+  const signUp = useCallback(async (email, password, firstName, lastName, phone) => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
 
     const passwordResult = validatePassword(password)
     if (!passwordResult.valid) throw new Error(passwordResult.error)
 
-    const nameResult = validateName(fullName)
-    if (!nameResult.valid) throw new Error(nameResult.error)
+    const firstNameResult = validateFirstName(firstName)
+    if (!firstNameResult.valid) throw new Error(firstNameResult.error)
+
+    const lastNameResult = validateLastName(lastName)
+    if (!lastNameResult.valid) throw new Error(lastNameResult.error)
 
     const phoneResult = validatePhone(phone)
     if (!phoneResult.valid) throw new Error(phoneResult.error)
@@ -90,7 +86,9 @@ export function AuthProvider({ children }) {
         password,
         options: {
           data: {
-            full_name: nameResult.value,
+            first_name: firstNameResult.value,
+            last_name: lastNameResult.value,
+            full_name: `${firstNameResult.value} ${lastNameResult.value}`,
             phone: phoneResult.value,
           },
           emailRedirectTo: `${window.location.origin}/`,
@@ -112,7 +110,6 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Resend verification email
   const resendVerificationEmail = useCallback(async (email) => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
@@ -138,7 +135,6 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Sign in - Email/Password
   const signIn = useCallback(async (email, password) => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
@@ -154,16 +150,13 @@ export function AuthProvider({ children }) {
       if (error) {
         if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
         if (error.message?.includes('Email not confirmed')) {
-          // Return special flag to show resend option
           return { success: false, emailNotVerified: true, email: emailResult.value }
         }
         throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
       }
 
-      // Store user data for OTP step
       setPendingUser(data.user)
       
-      // Send OTP to phone
       const phone = data.user.user_metadata?.phone
       if (phone) {
         await sendOTP(phone)
@@ -177,7 +170,6 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Send OTP to phone
   const sendOTP = useCallback(async (phone) => {
     const phoneResult = validatePhone(phone)
     if (!phoneResult.valid) throw new Error(phoneResult.error)
@@ -200,7 +192,6 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Verify OTP
   const verifyOTP = useCallback(async (phone, otp) => {
     const phoneResult = validatePhone(phone)
     if (!phoneResult.valid) throw new Error(phoneResult.error)
@@ -229,14 +220,12 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Resend OTP
   const resendOTP = useCallback(async () => {
     const phone = pendingUser?.user_metadata?.phone
     if (!phone) throw new Error('No phone number on file')
     return sendOTP(phone)
   }, [pendingUser, sendOTP])
 
-  // Sign out
   const signOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut()
@@ -249,7 +238,6 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Reset password
   const resetPassword = useCallback(async (email) => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
@@ -271,7 +259,6 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Update password
   const updatePassword = useCallback(async (newPassword) => {
     const passwordResult = validatePassword(newPassword)
     if (!passwordResult.valid) throw new Error(passwordResult.error)
