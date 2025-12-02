@@ -7,25 +7,32 @@ export default {
   theme: {
     extend: {
       colors: {
+        border: "rgb(var(--border) / <alpha-value>)",
+        input: "rgb(var(--input) / <alpha-value>)",
+        ring: "rgb(var(--ring) / <alpha-value>)",
+        background: "rgb(var(--background) / <alpha-value>)",
+        foreground: "rgb(var(--foreground) / <alpha-value>)",
         primary: {
-          DEFAULT: '#2969FF',
-          50: '#EBF1FF',
-          100: '#D6E4FF',
-          200: '#ADC8FF',
-          300: '#85ADFF',
-          400: '#5C91FF',
-          500: '#2969FF',
-          600: '#0047E1',
-          700: '#0035A8',
-          800: '#002370',
-          900: '#001238',
+          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
+          foreground: "rgb(var(--primary-foreground) / <alpha-value>)",
         },
-        background: '#F4F6FA',
-        foreground: '#0F0F0F',
+        muted: {
+          DEFAULT: "rgb(var(--muted) / <alpha-value>)",
+          foreground: "rgb(var(--muted-foreground) / <alpha-value>)",
+        },
+        accent: {
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          foreground: "rgb(var(--accent-foreground) / <alpha-value>)",
+        },
+        destructive: {
+          DEFAULT: "rgb(var(--destructive) / <alpha-value>)",
+          foreground: "rgb(var(--destructive-foreground) / <alpha-value>)",
+        },
       },
       borderRadius: {
-        '2xl': '1rem',
-        '3xl': '1.5rem',
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
     },
   },
