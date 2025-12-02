@@ -325,7 +325,7 @@ export function WebHome() {
               <Button
                 variant="outline"
                 onClick={() => navigate('/events')}
-                className="border-white text-white hover:bg-white/10 rounded-xl px-8 py-6 text-lg"
+                className="border-2 border-white text-[#2969FF] bg-white hover:bg-white/90 rounded-xl px-8 py-6 text-lg font-semibold"
               >
                 Browse Events
               </Button>
