@@ -5,28 +5,24 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { getFeaturedEvents, getCategories, getEvents } from '@/services/events'
+import { getFeaturedEvents, getCategories } from '@/services/events'
 
 export function WebHome() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [featuredEvents, setFeaturedEvents] = useState([])
-  const [nearbyEvents, setNearbyEvents] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  const [userCity] = useState('Lagos')
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [eventsData, categoriesData, nearbyData] = await Promise.all([
+        const [eventsData, categoriesData] = await Promise.all([
           getFeaturedEvents(6),
-          getCategories(),
-          getEvents({ city: userCity, limit: 4 })
+          getCategories()
         ])
         setFeaturedEvents(eventsData)
         setCategories(categoriesData)
-        setNearbyEvents(nearbyData)
       } catch (error) {
         console.error('Error loading home data:', error)
       } finally {
@@ -34,7 +30,7 @@ export function WebHome() {
       }
     }
     loadData()
-  }, [userCity])
+  }, [])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -144,11 +140,215 @@ export function WebHome() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
-              Array(3).fill(0).map((_, i) => (
+              Array(6).fill(0).map((_, i) => (
                 <div key={i} className="animate-pulse bg-white rounded-2xl h-96" />
               ))
             ) : (
-              featuredEvents.slice(0, 3).map((event) => (
+              featuredEvents.map((event) => (
+                <Card 
+                  key={event.id}
+                  className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group"
+                  onClick={() => navigate(`/event/${event.slug}`)}
+                >
+                  <div className="relative h-52 bg-gray-100">
+                    <img 
+                      src={event.image_url} 
+                      alt={event.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                    <Badge className="absolute top-4 left-4 bg-white text-[#0F0F0F] border-0 font-medium shadow-sm">
+                      {event.category?.name || 'Event'}
+                    </Badge>
+                  </div>
+                  
+                  <CardContent className="p-5">
+                    <h3 className="font-semibold text-lg text-[#0F0F0F] mb-3 line-clamp-1">
+                      {event.title}
+                    </h3>
+                    
+                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-2">
+                      <Calendar className="w-4 h-4" />
+                      {formatDate(event.start_date)}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-4">
+                      <MapPin className="w-4 h-4" />
+                      {event.venue_name}
+                    </div>
+                    
+                    <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-[#2969FF] text-lg">
+                          {formatPrice(event)}
+                        </span>
+                        <Button 
+                          size="sm"
+                          className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-5"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/event/${event.slug}`)
+                          }}
+                        >
+                          Get Tickets
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      </sect
+cat > ~/Desktop/ticketrack/src/pages/WebHome.jsx << 'ENDOFFILE'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Search, ArrowRight, Calendar, MapPin, Star, TrendingUp, Shield, Ticket } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { getFeaturedEvents, getCategories } from '@/services/events'
+
+export function WebHome() {
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [featuredEvents, setFeaturedEvents] = useState([])
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [eventsData, categoriesData] = await Promise.all([
+          getFeaturedEvents(6),
+          getCategories()
+        ])
+        setFeaturedEvents(eventsData)
+        setCategories(categoriesData)
+      } catch (error) {
+        console.error('Error loading home data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
+    }
+  }
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  const formatPrice = (event) => {
+    if (event.is_free) return 'Free'
+    return 'From ₦15,000'
+  }
+
+  return (
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-[#2969FF] to-[#1a4fd8] text-white py-20 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          <Badge className="bg-white/20 text-white border-0 mb-6">
+            <Star className="w-4 h-4 mr-1" />
+            Trusted by 10,000+ event organizers
+          </Badge>
+          
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            Discover Amazing Events<br />Near You
+          </h1>
+          
+          <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+            Book tickets for concerts, conferences, festivals, and more. Your next experience starts here.
+          </p>
+
+          <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+            <div className="flex bg-white rounded-2xl p-2 shadow-lg">
+              <div className="flex-1 flex items-center px-4">
+                <Search className="w-5 h-5 text-gray-400 mr-3" />
+                <Input
+                  type="text"
+                  placeholder="Search for events..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="border-0 focus-visible:ring-0 text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+              <Button 
+                type="submit"
+                className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl px-8"
+              >
+                Search Events
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-8">Browse by Category</h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {loading ? (
+              Array(5).fill(0).map((_, i) => (
+                <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-28" />
+              ))
+            ) : (
+              categories.slice(0, 5).map((category) => (
+                <Card 
+                  key={category.id}
+                  className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 border-[#0F0F0F]/10 rounded-2xl"
+                  onClick={() => navigate(`/events?category=${category.slug}`)}
+                >
+                  <CardContent className="p-5 text-center">
+                    <div className="text-3xl mb-2">{category.icon || '🎫'}</div>
+                    <h3 className="font-medium text-[#0F0F0F] text-sm">{category.name}</h3>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Events Section */}
+      <section className="py-16 px-4 bg-[#F4F6FA]">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-[#0F0F0F]">Featured Events</h2>
+            <Button 
+              variant="ghost" 
+              className="text-[#2969FF] hover:text-[#2969FF]/80"
+              onClick={() => navigate('/events')}
+            >
+              View All
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading ? (
+              Array(6).fill(0).map((_, i) => (
+                <div key={i} className="animate-pulse bg-white rounded-2xl h-96" />
+              ))
+            ) : (
+              featuredEvents.map((event) => (
                 <Card 
                   key={event.id}
                   className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group"
@@ -206,86 +406,8 @@ export function WebHome() {
         </div>
       </section>
 
-      {/* Events Near You Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-2xl font-bold text-[#0F0F0F]">Events Near You</h2>
-            <Button 
-              variant="ghost" 
-              className="text-[#2969FF] hover:text-[#2969FF]/80"
-              onClick={() => navigate('/events')}
-            >
-              View All
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-          <p className="text-[#0F0F0F]/60 mb-8">Happening in {userCity}</p>
-          
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {loading ? (
-              Array(4).fill(0).map((_, i) => (
-                <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-80" />
-              ))
-            ) : (
-              nearbyEvents.slice(0, 4).map((event, index) => (
-                <Card 
-                  key={event.id}
-                  className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border border-[#0F0F0F]/10 rounded-2xl bg-white group"
-                  onClick={() => navigate(`/event/${event.slug}`)}
-                >
-                  <div className="relative h-36 bg-gray-100">
-                    <img 
-                      src={event.image_url} 
-                      alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => { e.target.style.display = 'none' }}
-                    />
-                    <Badge className="absolute top-3 right-3 bg-white text-[#0F0F0F] border-0 text-xs font-medium shadow-sm">
-                      {['2.5km away', '3.7km away', '4.8km away', '6.3km away'][index % 4]}
-                    </Badge>
-                  </div>
-                  
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-[#0F0F0F] mb-2 line-clamp-1">
-                      {event.title}
-                    </h3>
-                    
-                    <div className="flex items-center gap-2 text-xs text-[#0F0F0F]/60 mb-1">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(event.start_date)}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs text-[#0F0F0F]/60 mb-3">
-                      <MapPin className="w-3 h-3" />
-                      {event.venue_name}
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-[#2969FF] text-sm">
-                        {formatPrice(event)}
-                      </span>
-                      <Button 
-                        size="sm"
-                        className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-3 py-1 text-xs h-7"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          navigate(`/event/${event.slug}`)
-                        }}
-                      >
-                        Get Tickets
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* Stats Section */}
-      <section className="py-16 px-4 bg-[#F4F6FA]">
+      <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 text-center">
             <div>
@@ -309,7 +431,7 @@ export function WebHome() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4 bg-[#F4F6FA]">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl font-bold text-[#0F0F0F] text-center mb-12">Why Choose Ticketrack?</h2>
           

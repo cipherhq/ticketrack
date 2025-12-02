@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, Filter, Calendar, MapPin, SlidersHorizontal } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Search, Calendar, MapPin, SlidersHorizontal, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -9,85 +9,217 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
-import { ImageWithFallback } from '@/components/ui/image-with-fallback'
-
-const mockEvents = [
-  { id: '1', name: 'Lagos Tech Summit 2024', date: 'Dec 15, 2024', location: 'Eko Convention Center', city: 'Lagos', category: 'Technology', price: 'From ₦15,000', priceValue: 15000, image: 'tech conference' },
-  { id: '2', name: 'Afrobeats Festival', date: 'Dec 25, 2024', location: 'Landmark Event Center', city: 'Lagos', category: 'Music', price: 'From ₦35,000', priceValue: 35000, image: 'music festival' },
-  { id: '3', name: 'Business Conference 2024', date: 'Dec 20, 2024', location: 'Lagos Business School', city: 'Lagos', category: 'Business', price: 'From ₦25,000', priceValue: 25000, image: 'business conference' },
-  { id: '4', name: 'Art Exhibition', date: 'Dec 18, 2024', location: 'Nike Art Gallery', city: 'Lagos', category: 'Art', price: 'Free', priceValue: 0, image: 'art exhibition' },
-  { id: '5', name: 'Food Festival Abuja', date: 'Dec 22, 2024', location: 'Millennium Park', city: 'Abuja', category: 'Food', price: 'From ₦10,000', priceValue: 10000, image: 'food festival' },
-  { id: '6', name: 'Sports Tournament', date: 'Dec 28, 2024', location: 'National Stadium', city: 'Lagos', category: 'Sports', price: 'From ₦5,000', priceValue: 5000, image: 'sports event' },
-]
-
-const categories = ['Technology', 'Music', 'Business', 'Sports', 'Art', 'Food']
-const priceRanges = ['Free', 'Under ₦10,000', '₦10,000 - ₦30,000', 'Above ₦30,000']
+import { getEvents, getCategories, getCities } from '@/services/events'
 
 export function WebEventBrowse() {
   const navigate = useNavigate()
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  
+  const [events, setEvents] = useState([])
+  const [categories, setCategories] = useState([])
+  const [cities, setCities] = useState([])
+  const [loading, setLoading] = useState(true)
+  
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '')
   const [sortBy, setSortBy] = useState('date')
-  const [selectedCategories, setSelectedCategories] = useState([])
+  const [selectedCategories, setSelectedCategories] = useState(
+    searchParams.get('category') ? [searchParams.get('category')] : []
+  )
+  const [selectedCity, setSelectedCity] = useState(searchParams.get('city') || '')
   const [priceRange, setPriceRange] = useState([])
 
-  const handleCategoryToggle = (category) => {
-    setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category])
+  // Load initial data
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [categoriesData, citiesData] = await Promise.all([
+          getCategories(),
+          getCities()
+        ])
+        setCategories(categoriesData)
+        setCities(citiesData)
+      } catch (error) {
+        console.error('Error loading filter data:', error)
+      }
+    }
+    loadData()
+  }, [])
+
+  // Load events based on filters
+  useEffect(() => {
+    async function loadEvents() {
+      setLoading(true)
+      try {
+        const categoryId = selectedCategories.length === 1 
+          ? categories.find(c => c.slug === selectedCategories[0])?.id 
+          : null
+        
+        const eventsData = await getEvents({
+          search: searchTerm || null,
+          category: categoryId,
+          city: selectedCity || null,
+          limit: 20
+        })
+        
+        // Sort events
+        let sortedEvents = [...eventsData]
+        if (sortBy === 'date') {
+          sortedEvents.sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+        } else if (sortBy === 'price-low') {
+          sortedEvents.sort((a, b) => (a.is_free ? 0 : 1) - (b.is_free ? 0 : 1))
+        } else if (sortBy === 'price-high') {
+          sortedEvents.sort((a, b) => (b.is_free ? 0 : 1) - (a.is_free ? 0 : 1))
+        } else if (sortBy === 'popular') {
+          sortedEvents.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
+        }
+        
+        setEvents(sortedEvents)
+      } catch (error) {
+        console.error('Error loading events:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    if (categories.length > 0) {
+      loadEvents()
+    }
+  }, [searchTerm, selectedCategories, selectedCity, sortBy, categories])
+
+  const handleCategoryToggle = (categorySlug) => {
+    setSelectedCategories(prev => 
+      prev.includes(categorySlug) 
+        ? prev.filter(c => c !== categorySlug) 
+        : [...prev, categorySlug]
+    )
   }
 
-  const handlePriceToggle = (range) => {
-    setPriceRange(prev => prev.includes(range) ? prev.filter(r => r !== range) : [...prev, range])
+  const handleSearch = (e) => {
+    e.preventDefault()
+    // Update URL params
+    const params = new URLSearchParams()
+    if (searchTerm) params.set('q', searchTerm)
+    if (selectedCategories.length === 1) params.set('category', selectedCategories[0])
+    if (selectedCity) params.set('city', selectedCity)
+    setSearchParams(params)
   }
 
-  const filteredEvents = mockEvents.filter(event => {
-    const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(event.category)
-    return matchesSearch && matchesCategory
-  })
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  const formatPrice = (event) => {
+    if (event.is_free) return 'Free'
+    return 'From ₦15,000'
+  }
+
+  const clearFilters = () => {
+    setSelectedCategories([])
+    setSelectedCity('')
+    setPriceRange([])
+    setSearchTerm('')
+    setSearchParams({})
+  }
 
   const FilterPanel = () => (
     <div className="space-y-6">
+      {/* Categories */}
       <div>
         <h3 className="font-medium text-[#0F0F0F] mb-4">Categories</h3>
         <div className="space-y-3">
           {categories.map(category => (
-            <div key={category} className="flex items-center space-x-2">
-              <Checkbox id={`cat-${category}`} checked={selectedCategories.includes(category)} onCheckedChange={() => handleCategoryToggle(category)} />
-              <Label htmlFor={`cat-${category}`} className="cursor-pointer">{category}</Label>
+            <div key={category.id} className="flex items-center space-x-2">
+              <Checkbox 
+                id={`cat-${category.slug}`} 
+                checked={selectedCategories.includes(category.slug)} 
+                onCheckedChange={() => handleCategoryToggle(category.slug)} 
+              />
+              <Label htmlFor={`cat-${category.slug}`} className="cursor-pointer flex items-center gap-2">
+                <span>{category.icon}</span>
+                <span>{category.name}</span>
+              </Label>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Cities */}
+      <div className="pt-6 border-t border-[#0F0F0F]/10">
+        <h3 className="font-medium text-[#0F0F0F] mb-4">City</h3>
+        <div className="space-y-3">
+          {cities.map(city => (
+            <div key={city} className="flex items-center space-x-2">
+              <Checkbox 
+                id={`city-${city}`} 
+                checked={selectedCity === city} 
+                onCheckedChange={() => setSelectedCity(selectedCity === city ? '' : city)} 
+              />
+              <Label htmlFor={`city-${city}`} className="cursor-pointer">{city}</Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Range */}
       <div className="pt-6 border-t border-[#0F0F0F]/10">
         <h3 className="font-medium text-[#0F0F0F] mb-4">Price Range</h3>
         <div className="space-y-3">
-          {priceRanges.map(range => (
+          {['Free', 'Under ₦10,000', '₦10,000 - ₦30,000', 'Above ₦30,000'].map(range => (
             <div key={range} className="flex items-center space-x-2">
-              <Checkbox id={`price-${range}`} checked={priceRange.includes(range)} onCheckedChange={() => handlePriceToggle(range)} />
+              <Checkbox 
+                id={`price-${range}`} 
+                checked={priceRange.includes(range)} 
+                onCheckedChange={() => setPriceRange(prev => 
+                  prev.includes(range) ? prev.filter(r => r !== range) : [...prev, range]
+                )} 
+              />
               <Label htmlFor={`price-${range}`} className="cursor-pointer">{range}</Label>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Clear Filters */}
       <div className="pt-6 border-t border-[#0F0F0F]/10">
-        <Button variant="outline" className="w-full rounded-xl" onClick={() => { setSelectedCategories([]); setPriceRange([]) }}>Clear All Filters</Button>
+        <Button 
+          variant="outline" 
+          className="w-full rounded-xl" 
+          onClick={clearFilters}
+        >
+          Clear All Filters
+        </Button>
       </div>
     </div>
   )
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-[#0F0F0F] mb-2">Browse Events</h1>
         <p className="text-[#0F0F0F]/60">Discover amazing events happening near you</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
+      {/* Search and Sort */}
+      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-          <Input placeholder="Search events..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 rounded-xl border-[#0F0F0F]/10" />
+          <Input 
+            placeholder="Search events..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="pl-10 rounded-xl border-[#0F0F0F]/10" 
+          />
         </div>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="md:w-48 rounded-xl border-[#0F0F0F]/10"><SelectValue placeholder="Sort by" /></SelectTrigger>
+          <SelectTrigger className="md:w-48 rounded-xl border-[#0F0F0F]/10">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="date">Date</SelectItem>
             <SelectItem value="price-low">Price: Low to High</SelectItem>
@@ -95,47 +227,149 @@ export function WebEventBrowse() {
             <SelectItem value="popular">Most Popular</SelectItem>
           </SelectContent>
         </Select>
+        
+        {/* Mobile Filter Button */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" className="md:hidden rounded-xl border-[#0F0F0F]/10"><SlidersHorizontal className="w-5 h-5 mr-2" />Filters</Button>
+            <Button variant="outline" className="md:hidden rounded-xl border-[#0F0F0F]/10">
+              <SlidersHorizontal className="w-5 h-5 mr-2" />
+              Filters
+            </Button>
           </SheetTrigger>
-          <SheetContent className="rounded-l-2xl"><SheetHeader><SheetTitle className="text-[#0F0F0F]">Filters</SheetTitle></SheetHeader><div className="mt-6"><FilterPanel /></div></SheetContent>
-        </Sheet>
-      </div>
-
-      <div className="flex gap-8">
-        <aside className="hidden md:block w-64 flex-shrink-0">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-24">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-6"><Filter className="w-5 h-5 text-[#2969FF]" /><h2 className="font-medium text-[#0F0F0F]">Filters</h2></div>
+          <SheetContent side="left" className="w-80">
+            <SheetHeader>
+              <SheetTitle>Filters</SheetTitle>
+            </SheetHeader>
+            <div className="mt-6">
               <FilterPanel />
-            </CardContent>
-          </Card>
-        </aside>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </form>
 
-        <div className="flex-1">
-          <div className="mb-4 text-[#0F0F0F]/60">Showing {filteredEvents.length} events</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map(event => (
-              <Card key={event.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/event/${event.id}`)}>
-                <div className="aspect-video bg-[#F4F6FA] relative overflow-hidden">
-                  <ImageWithFallback src={`https://source.unsplash.com/800x600/?${event.image}`} alt={event.name} className="w-full h-full object-cover" />
-                  <Badge className="absolute top-4 left-4 bg-white text-[#0F0F0F] border-0 rounded-lg">{event.category}</Badge>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="text-lg font-semibold text-[#0F0F0F] mb-3">{event.name}</h3>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-[#0F0F0F]/60"><Calendar className="w-4 h-4" /><span className="text-sm">{event.date}</span></div>
-                    <div className="flex items-center gap-2 text-[#0F0F0F]/60"><MapPin className="w-4 h-4" /><span className="text-sm">{event.location}</span></div>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-[#0F0F0F]/10">
-                    <span className="font-semibold text-[#2969FF]">{event.price}</span>
-                    <Button size="sm" className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">View Details</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      {/* Main Content */}
+      <div className="flex gap-8">
+        {/* Desktop Sidebar Filters */}
+        <div className="hidden md:block w-64 flex-shrink-0">
+          <div className="sticky top-24">
+            <h2 className="text-lg font-semibold text-[#0F0F0F] mb-4">Filters</h2>
+            <FilterPanel />
           </div>
+        </div>
+
+        {/* Events Grid */}
+        <div className="flex-1">
+          {/* Active Filters */}
+          {(selectedCategories.length > 0 || selectedCity) && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {selectedCategories.map(catSlug => {
+                const cat = categories.find(c => c.slug === catSlug)
+                return cat ? (
+                  <Badge 
+                    key={catSlug}
+                    variant="secondary" 
+                    className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg px-3 py-1 cursor-pointer"
+                    onClick={() => handleCategoryToggle(catSlug)}
+                  >
+                    {cat.icon} {cat.name} ✕
+                  </Badge>
+                ) : null
+              })}
+              {selectedCity && (
+                <Badge 
+                  variant="secondary" 
+                  className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg px-3 py-1 cursor-pointer"
+                  onClick={() => setSelectedCity('')}
+                >
+                  📍 {selectedCity} ✕
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Results Count */}
+          <p className="text-[#0F0F0F]/60 mb-6">
+            {loading ? 'Loading...' : `${events.length} events found`}
+          </p>
+
+          {/* Events Grid */}
+          {loading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array(6).fill(0).map((_, i) => (
+                <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-80" />
+              ))}
+            </div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">🎫</div>
+              <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No events found</h3>
+              <p className="text-[#0F0F0F]/60 mb-6">Try adjusting your filters or search terms</p>
+              <Button onClick={clearFilters} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
+                Clear Filters
+              </Button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {events.map((event) => (
+                <Card 
+                  key={event.id}
+                  className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group"
+                  onClick={() => navigate(`/event/${event.slug}`)}
+                >
+                  <div className="relative h-48 bg-gray-100">
+                    <img 
+                      src={event.image_url} 
+                      alt={event.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                    <Badge className="absolute top-4 left-4 bg-white text-[#0F0F0F] border-0 font-medium shadow-sm">
+                      {event.category?.name || 'Event'}
+                    </Badge>
+                    {event.is_free && (
+                      <Badge className="absolute top-4 right-4 bg-green-500 text-white border-0">
+                        Free
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <CardContent className="p-5">
+                    <h3 className="font-semibold text-lg text-[#0F0F0F] mb-3 line-clamp-1">
+                      {event.title}
+                    </h3>
+                    
+                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-2">
+                      <Calendar className="w-4 h-4" />
+                      {formatDate(event.start_date)}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-4">
+                      <MapPin className="w-4 h-4" />
+                      {event.venue_name}, {event.city}
+                    </div>
+                    
+                    <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-[#2969FF] text-lg">
+                          {formatPrice(event)}
+                        </span>
+                        <Button 
+                          size="sm"
+                          className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-5"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/event/${event.slug}`)
+                          }}
+                        >
+                          Get Tickets
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
