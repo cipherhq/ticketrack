@@ -4,7 +4,6 @@ import { validateEmail, validatePassword, validatePhone, validateName, validateO
 
 const AuthContext = createContext({})
 
-// Generic error messages to avoid leaking information
 const AUTH_ERRORS = {
   INVALID_CREDENTIALS: 'Invalid email or password',
   EMAIL_NOT_VERIFIED: 'Please verify your email before signing in',
@@ -27,7 +26,6 @@ export function AuthProvider({ children }) {
 
     const initAuth = async () => {
       try {
-        // Check current session
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -49,7 +47,6 @@ export function AuthProvider({ children }) {
 
     initAuth()
 
-    // Listen for auth changes
     try {
       const { data } = supabase.auth.onAuthStateChange((_event, session) => {
         if (mounted) {
@@ -96,7 +93,7 @@ export function AuthProvider({ children }) {
             full_name: nameResult.value,
             phone: phoneResult.value,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/`,
         }
       })
 
@@ -108,7 +105,33 @@ export function AuthProvider({ children }) {
         throw new Error(AUTH_ERRORS.UNKNOWN)
       }
 
-      return { success: true, message: 'Please check your email to verify your account' }
+      return { success: true, message: 'Please check your email to verify your account', email: emailResult.value }
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      throw error
+    }
+  }, [])
+
+  // Resend verification email
+  const resendVerificationEmail = useCallback(async (email) => {
+    const emailResult = validateEmail(email)
+    if (!emailResult.valid) throw new Error(emailResult.error)
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: emailResult.value,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        }
+      })
+
+      if (error) {
+        if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        throw new Error('Failed to resend verification email. Please try again.')
+      }
+
+      return { success: true, message: 'Verification email sent! Please check your inbox.' }
     } catch (error) {
       if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
       throw error
@@ -131,7 +154,8 @@ export function AuthProvider({ children }) {
       if (error) {
         if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
         if (error.message?.includes('Email not confirmed')) {
-          throw new Error(AUTH_ERRORS.EMAIL_NOT_VERIFIED)
+          // Return special flag to show resend option
+          return { success: false, emailNotVerified: true, email: emailResult.value }
         }
         throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
       }
@@ -232,7 +256,7 @@ export function AuthProvider({ children }) {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(emailResult.value, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (error) {
@@ -274,6 +298,7 @@ export function AuthProvider({ children }) {
     resendOTP,
     resetPassword,
     updatePassword,
+    resendVerificationEmail,
     isAuthenticated: !!user && isEmailVerified,
     isEmailVerified,
     otpSent,

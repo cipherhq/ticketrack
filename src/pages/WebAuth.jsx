@@ -1,26 +1,27 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Mail, Lock, User, Phone, Eye, EyeOff, Ticket, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { Mail, Lock, User, Phone, Eye, EyeOff, Ticket, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function WebAuth() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn, signUp, verifyOTP, resendOTP, user, otpSent, pendingUser } = useAuth()
+  const { signIn, signUp, verifyOTP, resendOTP, resendVerificationEmail, user, otpSent, pendingUser } = useAuth()
   
   const isLogin = location.pathname === '/login'
-  const from = location.state?.from || '/'
+  const from = location.state?.from || '/profile'
 
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [step, setStep] = useState('credentials') // 'credentials' | 'otp' | 'verify-email'
+  const [step, setStep] = useState('credentials')
+  const [unverifiedEmail, setUnverifiedEmail] = useState('')
+  const [signupEmail, setSignupEmail] = useState('')
   
   const [formData, setFormData] = useState({
     name: '',
@@ -31,10 +32,9 @@ export function WebAuth() {
     otp: '',
   })
 
-  // Password strength indicator
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: '' })
 
-  // Show success message from redirect (email verification)
+  // Show success/error message from redirect
   useEffect(() => {
     if (location.state?.message) {
       setSuccess(location.state.message)
@@ -85,7 +85,21 @@ export function WebAuth() {
   const handleInputChange = (e) => {
     const { id, value } = e.target
     setFormData(prev => ({ ...prev, [id]: value }))
-    setError('') // Clear error on input change
+    setError('')
+  }
+
+  const handleResendVerification = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      const emailToResend = unverifiedEmail || signupEmail
+      const result = await resendVerificationEmail(emailToResend)
+      setSuccess(result.message)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -96,7 +110,6 @@ export function WebAuth() {
 
     try {
       if (step === 'otp') {
-        // Verify OTP
         const phone = pendingUser?.user_metadata?.phone
         await verifyOTP(phone, formData.otp)
         navigate(from, { replace: true })
@@ -104,8 +117,14 @@ export function WebAuth() {
       }
 
       if (isLogin) {
-        // Login flow
         const result = await signIn(formData.email, formData.password)
+        
+        if (result.emailNotVerified) {
+          setUnverifiedEmail(result.email)
+          setStep('email-not-verified')
+          return
+        }
+        
         if (result.requiresOTP) {
           setStep('otp')
           setSuccess('OTP sent to your phone')
@@ -113,14 +132,14 @@ export function WebAuth() {
           navigate(from, { replace: true })
         }
       } else {
-        // Signup flow
         if (formData.password !== formData.confirmPassword) {
           throw new Error('Passwords do not match')
         }
 
-        await signUp(formData.email, formData.password, formData.name, formData.phone)
+        const result = await signUp(formData.email, formData.password, formData.name, formData.phone)
+        setSignupEmail(result.email)
         setStep('verify-email')
-        setSuccess('Account created! Please check your email to verify.')
+        setSuccess(result.message)
       }
     } catch (err) {
       setError(err.message)
@@ -142,11 +161,89 @@ export function WebAuth() {
     }
   }
 
-  // Verify Email Screen
+  // Email Not Verified Screen (for login attempt with unverified email)
+  if (step === 'email-not-verified') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+        <div className="w-full max-w-md">
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
+              <Ticket className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+          </div>
+
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Mail className="w-8 h-8 text-yellow-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Email Not Verified</h2>
+              <p className="text-[#0F0F0F]/60 mb-6">
+                Your email <strong>{unverifiedEmail}</strong> hasn't been verified yet. 
+                Please check your inbox for the verification link, or request a new one.
+              </p>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+
+              {success && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{success}</span>
+                </div>
+              )}
+
+              <Button
+                onClick={handleResendVerification}
+                disabled={loading}
+                className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6 mb-4"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <RefreshCw className="w-5 h-5 mr-2" />
+                    Resend Verification Email
+                  </>
+                )}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setStep('credentials')
+                  setUnverifiedEmail('')
+                  setError('')
+                  setSuccess('')
+                }}
+                className="w-full rounded-xl border-[#0F0F0F]/10"
+              >
+                Back to Login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Verify Email Screen (after signup)
   if (step === 'verify-email') {
     return (
-      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
         <div className="w-full max-w-md">
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
+              <Ticket className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+          </div>
+
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardContent className="p-8 text-center">
               <div className="w-16 h-16 bg-[#2969FF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -154,12 +251,44 @@ export function WebAuth() {
               </div>
               <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Check Your Email</h2>
               <p className="text-[#0F0F0F]/60 mb-6">
-                We've sent a verification link to <strong>{formData.email}</strong>. 
+                We've sent a verification link to <strong>{signupEmail || formData.email}</strong>. 
                 Please click the link to verify your account.
               </p>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+
+              {success && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{success}</span>
+                </div>
+              )}
+
               <p className="text-sm text-[#0F0F0F]/40 mb-6">
-                Didn't receive the email? Check your spam folder or wait a few minutes.
+                Didn't receive the email? Check your spam folder or click below to resend.
               </p>
+
+              <Button
+                onClick={handleResendVerification}
+                disabled={loading}
+                variant="outline"
+                className="w-full rounded-xl border-[#0F0F0F]/10 mb-4"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <RefreshCw className="w-5 h-5 mr-2" />
+                    Resend Verification Email
+                  </>
+                )}
+              </Button>
+
               <Button
                 variant="outline"
                 onClick={() => navigate('/login')}
@@ -177,7 +306,7 @@ export function WebAuth() {
   // OTP Verification Screen
   if (step === 'otp') {
     return (
-      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
@@ -272,7 +401,7 @@ export function WebAuth() {
 
   // Main Login/Signup Form
   return (
-    <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
@@ -297,6 +426,13 @@ export function WebAuth() {
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">{error}</span>
+              </div>
+            )}
+
+            {success && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-600">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{success}</span>
               </div>
             )}
 
