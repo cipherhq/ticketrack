@@ -1,52 +1,267 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { validateEmail, validatePassword, validatePhone, validateName, validateOTP } from '@/utils/validation'
 
 const AuthContext = createContext({})
+
+// Generic error messages to avoid leaking information
+const AUTH_ERRORS = {
+  INVALID_CREDENTIALS: 'Invalid email or password',
+  EMAIL_NOT_VERIFIED: 'Please verify your email before signing in',
+  RATE_LIMITED: 'Too many attempts. Please try again later',
+  NETWORK_ERROR: 'Network error. Please check your connection',
+  UNKNOWN: 'An error occurred. Please try again',
+  OTP_EXPIRED: 'OTP has expired. Please request a new one',
+  OTP_INVALID: 'Invalid OTP. Please try again',
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [otpSent, setOtpSent] = useState(false)
+  const [pendingUser, setPendingUser] = useState(null)
 
   useEffect(() => {
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    let mounted = true
+    let subscription = null
+
+    const initAuth = async () => {
+      try {
+        // Check current session
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.warn('Session check failed:', error.message)
+        }
+        
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      } catch (err) {
+        console.warn('Auth init error:', err)
+        if (mounted) {
+          setUser(null)
+          setLoading(false)
+        }
+      }
+    }
+
+    initAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
+    try {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (mounted) {
+          setUser(session?.user ?? null)
+          if (session?.user) {
+            setPendingUser(null)
+            setOtpSent(false)
+          }
+        }
+      })
+      subscription = data.subscription
+    } catch (err) {
+      console.warn('Auth listener error:', err)
+    }
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      if (subscription) {
+        subscription.unsubscribe()
+      }
+    }
   }, [])
 
-  const signUp = async (email, password, userData) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: userData
+  // Sign up with email, password, and phone
+  const signUp = useCallback(async (email, password, fullName, phone) => {
+    const emailResult = validateEmail(email)
+    if (!emailResult.valid) throw new Error(emailResult.error)
+
+    const passwordResult = validatePassword(password)
+    if (!passwordResult.valid) throw new Error(passwordResult.error)
+
+    const nameResult = validateName(fullName)
+    if (!nameResult.valid) throw new Error(nameResult.error)
+
+    const phoneResult = validatePhone(phone)
+    if (!phoneResult.valid) throw new Error(phoneResult.error)
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: emailResult.value,
+        password,
+        options: {
+          data: {
+            full_name: nameResult.value,
+            phone: phoneResult.value,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
+      })
+
+      if (error) {
+        if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        if (error.message?.includes('already registered')) {
+          throw new Error('Unable to create account. Please try again or sign in.')
+        }
+        throw new Error(AUTH_ERRORS.UNKNOWN)
       }
-    })
-    if (error) throw error
-    return data
-  }
 
-  const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    if (error) throw error
-    return data
-  }
+      return { success: true, message: 'Please check your email to verify your account' }
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      throw error
+    }
+  }, [])
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-  }
+  // Sign in - Email/Password
+  const signIn = useCallback(async (email, password) => {
+    const emailResult = validateEmail(email)
+    if (!emailResult.valid) throw new Error(emailResult.error)
+
+    if (!password) throw new Error('Password is required')
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailResult.value,
+        password,
+      })
+
+      if (error) {
+        if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        if (error.message?.includes('Email not confirmed')) {
+          throw new Error(AUTH_ERRORS.EMAIL_NOT_VERIFIED)
+        }
+        throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
+      }
+
+      // Store user data for OTP step
+      setPendingUser(data.user)
+      
+      // Send OTP to phone
+      const phone = data.user.user_metadata?.phone
+      if (phone) {
+        await sendOTP(phone)
+        return { success: true, requiresOTP: true }
+      }
+
+      return { success: true, requiresOTP: false }
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      throw error
+    }
+  }, [])
+
+  // Send OTP to phone
+  const sendOTP = useCallback(async (phone) => {
+    const phoneResult = validatePhone(phone)
+    if (!phoneResult.valid) throw new Error(phoneResult.error)
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: phoneResult.value,
+      })
+
+      if (error) {
+        if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        throw new Error('Failed to send OTP. Please try again.')
+      }
+
+      setOtpSent(true)
+      return { success: true }
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      throw error
+    }
+  }, [])
+
+  // Verify OTP
+  const verifyOTP = useCallback(async (phone, otp) => {
+    const phoneResult = validatePhone(phone)
+    if (!phoneResult.valid) throw new Error(phoneResult.error)
+
+    const otpResult = validateOTP(otp)
+    if (!otpResult.valid) throw new Error(otpResult.error)
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: phoneResult.value,
+        token: otpResult.value,
+        type: 'sms',
+      })
+
+      if (error) {
+        if (error.message?.includes('expired')) throw new Error(AUTH_ERRORS.OTP_EXPIRED)
+        throw new Error(AUTH_ERRORS.OTP_INVALID)
+      }
+
+      setOtpSent(false)
+      setPendingUser(null)
+      return { success: true }
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      throw error
+    }
+  }, [])
+
+  // Resend OTP
+  const resendOTP = useCallback(async () => {
+    const phone = pendingUser?.user_metadata?.phone
+    if (!phone) throw new Error('No phone number on file')
+    return sendOTP(phone)
+  }, [pendingUser, sendOTP])
+
+  // Sign out
+  const signOut = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      setUser(null)
+      setPendingUser(null)
+      setOtpSent(false)
+    } catch (error) {
+      throw new Error('Failed to sign out')
+    }
+  }, [])
+
+  // Reset password
+  const resetPassword = useCallback(async (email) => {
+    const emailResult = validateEmail(email)
+    if (!emailResult.valid) throw new Error(emailResult.error)
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(emailResult.value, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+
+      if (error) {
+        if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        throw new Error(AUTH_ERRORS.UNKNOWN)
+      }
+
+      return { success: true, message: 'If an account exists, you will receive a password reset email' }
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      throw error
+    }
+  }, [])
+
+  // Update password
+  const updatePassword = useCallback(async (newPassword) => {
+    const passwordResult = validatePassword(newPassword)
+    if (!passwordResult.valid) throw new Error(passwordResult.error)
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw new Error('Failed to update password')
+      return { success: true }
+    } catch (error) {
+      throw error
+    }
+  }, [])
+
+  const isEmailVerified = user?.email_confirmed_at != null
 
   const value = {
     user,
@@ -54,7 +269,15 @@ export function AuthProvider({ children }) {
     signUp,
     signIn,
     signOut,
-    isAuthenticated: !!user
+    sendOTP,
+    verifyOTP,
+    resendOTP,
+    resetPassword,
+    updatePassword,
+    isAuthenticated: !!user && isEmailVerified,
+    isEmailVerified,
+    otpSent,
+    pendingUser,
   }
 
   return (

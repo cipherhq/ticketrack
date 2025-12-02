@@ -1,6 +1,8 @@
 export { WebLayout } from './WebLayout'
 export { WebHome } from './WebHome'
 export { WebAuth } from './WebAuth'
+export { AuthCallback } from './AuthCallback'
+export { ForgotPassword } from './ForgotPassword'
 export { WebEventBrowse } from './WebEventBrowse'
 export { WebEventDetails } from './WebEventDetails'
 export { WebSearch } from './WebSearch'

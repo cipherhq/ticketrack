@@ -1,32 +1,276 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Mail, Lock, User, Phone, Eye, EyeOff, Ticket } from 'lucide-react'
+import { Mail, Lock, User, Phone, Eye, EyeOff, Ticket, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function WebAuth() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { signIn, signUp, verifyOTP, resendOTP, user, otpSent, pendingUser } = useAuth()
+  
   const isLogin = location.pathname === '/login'
+  const from = location.state?.from || '/'
 
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [step, setStep] = useState('credentials') // 'credentials' | 'otp' | 'verify-email'
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
+    otp: '',
   })
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log('Form submitted:', formData)
-    navigate('/events')
+  // Password strength indicator
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: '' })
+
+  // Show success message from redirect (email verification)
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccess(location.state.message)
+    }
+    if (location.state?.error) {
+      setError(location.state.error)
+    }
+  }, [location.state])
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate(from, { replace: true })
+    }
+  }, [user, navigate, from])
+
+  // Check password strength
+  useEffect(() => {
+    if (!formData.password) {
+      setPasswordStrength({ score: 0, feedback: '' })
+      return
+    }
+
+    let score = 0
+    const feedback = []
+
+    if (formData.password.length >= 8) score++
+    else feedback.push('8+ characters')
+
+    if (/[A-Z]/.test(formData.password)) score++
+    else feedback.push('uppercase')
+
+    if (/[a-z]/.test(formData.password)) score++
+    else feedback.push('lowercase')
+
+    if (/[0-9]/.test(formData.password)) score++
+    else feedback.push('number')
+
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) score++
+    else feedback.push('special char')
+
+    setPasswordStrength({
+      score,
+      feedback: feedback.length > 0 ? `Need: ${feedback.join(', ')}` : 'Strong password!'
+    })
+  }, [formData.password])
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target
+    setFormData(prev => ({ ...prev, [id]: value }))
+    setError('') // Clear error on input change
   }
 
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setLoading(true)
+
+    try {
+      if (step === 'otp') {
+        // Verify OTP
+        const phone = pendingUser?.user_metadata?.phone
+        await verifyOTP(phone, formData.otp)
+        navigate(from, { replace: true })
+        return
+      }
+
+      if (isLogin) {
+        // Login flow
+        const result = await signIn(formData.email, formData.password)
+        if (result.requiresOTP) {
+          setStep('otp')
+          setSuccess('OTP sent to your phone')
+        } else {
+          navigate(from, { replace: true })
+        }
+      } else {
+        // Signup flow
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error('Passwords do not match')
+        }
+
+        await signUp(formData.email, formData.password, formData.name, formData.phone)
+        setStep('verify-email')
+        setSuccess('Account created! Please check your email to verify.')
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResendOTP = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      await resendOTP()
+      setSuccess('New OTP sent!')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Verify Email Screen
+  if (step === 'verify-email') {
+    return (
+      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-[#2969FF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Mail className="w-8 h-8 text-[#2969FF]" />
+              </div>
+              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Check Your Email</h2>
+              <p className="text-[#0F0F0F]/60 mb-6">
+                We've sent a verification link to <strong>{formData.email}</strong>. 
+                Please click the link to verify your account.
+              </p>
+              <p className="text-sm text-[#0F0F0F]/40 mb-6">
+                Didn't receive the email? Check your spam folder or wait a few minutes.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/login')}
+                className="w-full rounded-xl border-[#0F0F0F]/10"
+              >
+                Back to Login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // OTP Verification Screen
+  if (step === 'otp') {
+    return (
+      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
+              <Ticket className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+          </div>
+
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-2xl text-[#0F0F0F] text-center">
+                Verify Your Phone
+              </CardTitle>
+              <p className="text-center text-[#0F0F0F]/60 mt-2">
+                Enter the 6-digit code sent to your phone
+              </p>
+            </CardHeader>
+            <CardContent>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+
+              {success && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{success}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="otp">Verification Code</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="000000"
+                    value={formData.otp}
+                    onChange={handleInputChange}
+                    className="text-center text-2xl tracking-widest rounded-xl border-[#0F0F0F]/10"
+                    maxLength={6}
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading || formData.otp.length !== 6}
+                  className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    'Verify'
+                  )}
+                </Button>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    disabled={loading}
+                    className="text-sm text-[#2969FF] hover:underline"
+                  >
+                    Resend Code
+                  </button>
+                </div>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('credentials')
+                      setFormData(prev => ({ ...prev, otp: '' }))
+                    }}
+                    className="text-sm text-[#0F0F0F]/60 hover:underline"
+                  >
+                    Back to Login
+                  </button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Main Login/Signup Form
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -43,17 +287,34 @@ export function WebAuth() {
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </CardTitle>
             <p className="text-center text-[#0F0F0F]/60 mt-2">
-              {isLogin ? 'Sign in to access your tickets and more' : 'Sign up to start booking amazing events'}
+              {isLogin 
+                ? 'Sign in to access your tickets and more' 
+                : 'Sign up to start booking amazing events'}
             </p>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-                    <Input id="name" placeholder="Enter your full name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="pl-10 rounded-xl border-[#0F0F0F]/10" required />
+                    <Input
+                      id="name"
+                      placeholder="Enter your full name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                      required
+                      autoComplete="name"
+                    />
                   </div>
                 </div>
               )}
@@ -62,7 +323,16 @@ export function WebAuth() {
                 <Label htmlFor="email">Email Address</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-                  <Input id="email" type="email" placeholder="Enter your email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="pl-10 rounded-xl border-[#0F0F0F]/10" required />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                    required
+                    autoComplete="email"
+                  />
                 </div>
               </div>
 
@@ -71,8 +341,20 @@ export function WebAuth() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-                    <Input id="phone" type="tel" placeholder="+234 801 234 5678" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="pl-10 rounded-xl border-[#0F0F0F]/10" required />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+234 801 234 5678"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                      required
+                      autoComplete="tel"
+                    />
                   </div>
+                  <p className="text-xs text-[#0F0F0F]/40">
+                    Include country code (e.g., +234 for Nigeria)
+                  </p>
                 </div>
               )}
 
@@ -80,11 +362,53 @@ export function WebAuth() {
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-                  <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="pl-10 pr-10 rounded-xl border-[#0F0F0F]/10" required />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="pl-10 pr-10 rounded-xl border-[#0F0F0F]/10"
+                    required
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                  >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {!isLogin && formData.password && (
+                  <div className="space-y-1">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full ${
+                            i <= passwordStrength.score
+                              ? passwordStrength.score <= 2
+                                ? 'bg-red-500'
+                                : passwordStrength.score <= 4
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                              : 'bg-[#0F0F0F]/10'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className={`text-xs ${
+                      passwordStrength.score <= 2
+                        ? 'text-red-500'
+                        : passwordStrength.score <= 4
+                        ? 'text-yellow-600'
+                        : 'text-green-600'
+                    }`}>
+                      {passwordStrength.feedback}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {!isLogin && (
@@ -92,50 +416,70 @@ export function WebAuth() {
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-                    <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} placeholder="Confirm your password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} className="pl-10 rounded-xl border-[#0F0F0F]/10" required />
+                    <Input
+                      id="confirmPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Confirm your password"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                      required
+                      autoComplete="new-password"
+                    />
                   </div>
+                  {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                    <p className="text-xs text-red-500">Passwords do not match</p>
+                  )}
                 </div>
               )}
 
               {isLogin && (
                 <div className="flex items-center justify-end">
-                  <button type="button" className="text-sm text-[#2969FF] hover:underline">Forgot Password?</button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-sm text-[#2969FF] hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
                 </div>
               )}
 
-              <Button type="submit" className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6">
-                {isLogin ? 'Sign In' : 'Create Account'}
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isLogin ? (
+                  'Sign In'
+                ) : (
+                  'Create Account'
+                )}
               </Button>
             </form>
-
-            <div className="mt-6">
-              <div className="relative">
-                <Separator />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-sm text-[#0F0F0F]/60">OR</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 mt-6">
-                <Button variant="outline" className="rounded-xl border-[#0F0F0F]/10">
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                  Google
-                </Button>
-                <Button variant="outline" className="rounded-xl border-[#0F0F0F]/10">
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                  Facebook
-                </Button>
-              </div>
-            </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-[#0F0F0F]/60">
                 {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                <button onClick={() => navigate(isLogin ? '/signup' : '/login')} className="text-[#2969FF] hover:underline">
+                <button
+                  onClick={() => navigate(isLogin ? '/signup' : '/login')}
+                  className="text-[#2969FF] hover:underline"
+                >
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </button>
               </p>
             </div>
           </CardContent>
         </Card>
+
+        <p className="text-xs text-[#0F0F0F]/40 text-center mt-6">
+          By continuing, you agree to our{' '}
+          <a href="/terms" className="text-[#2969FF] hover:underline">Terms of Service</a>
+          {' '}and{' '}
+          <a href="/privacy" className="text-[#2969FF] hover:underline">Privacy Policy</a>
+        </p>
       </div>
     </div>
   )
