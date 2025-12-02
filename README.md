@@ -52,3 +52,4 @@ Push to GitHub and Vercel will auto-deploy.
 - Phase 3: Organizer Dashboard (24 pages)
 - Phase 4: Admin Portal (17 pages)
 - Phase 5: Mobile App (10 screens)
+# Ticketrack
