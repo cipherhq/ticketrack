@@ -3,8 +3,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
 
 export function ProtectedRoute({ children }) {
-  const { user, loading, isEmailVerified } = useAuth()
+  const { user, loading } = useAuth()
   const location = useLocation()
+
+  // Debug logging
+  console.log('ProtectedRoute check:', { user: !!user, loading, path: location.pathname })
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -20,13 +23,10 @@ export function ProtectedRoute({ children }) {
 
   // Not logged in - redirect to login with return URL
   if (!user) {
+    console.log('No user, redirecting to login')
     return <Navigate to="/login" state={{ from: location.pathname }} replace />
   }
 
-  // Logged in but email not verified
-  if (!isEmailVerified) {
-    return <Navigate to="/verify-email" replace />
-  }
-
+  console.log('User authenticated, rendering children')
   return children
 }

@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CheckCircle, Download, Mail, Calendar, MapPin, Ticket, ArrowRight, QrCode } from 'lucide-react'
+import { CheckCircle, Download, Mail, Calendar, MapPin, Ticket, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import { QRCodeSVG } from 'qrcode.react'
 
 export function WebPaymentSuccess() {
   const navigate = useNavigate()
@@ -38,6 +39,49 @@ export function WebPaymentSuccess() {
     })
   }
 
+  const downloadAllTickets = () => {
+    // For each ticket, trigger download
+    tickets?.forEach((ticket, index) => {
+      setTimeout(() => {
+        const svg = document.getElementById(`success-qr-${index}`)
+        if (svg) {
+          const svgData = new XMLSerializer().serializeToString(svg)
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          const img = new Image()
+          img.onload = () => {
+            canvas.width = img.width
+            canvas.height = img.height
+            ctx.fillStyle = '#ffffff'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+            ctx.drawImage(img, 0, 0)
+            const link = document.createElement('a')
+            link.download = `ticket-${ticket.ticket_number}.png`
+            link.href = canvas.toDataURL('image/png')
+            link.click()
+          }
+          img.src = 'data:image/svg+xml;base64,' + btoa(svgData)
+        }
+      }, index * 500)
+    })
+  }
+
+  const emailTickets = () => {
+    const subject = encodeURIComponent(`Your Tickets for ${event.title}`)
+    const body = encodeURIComponent(
+      `Thank you for your purchase!\n\n` +
+      `Event: ${event.title}\n` +
+      `Date: ${formatDate(event.start_date)}\n` +
+      `Time: ${formatTime(event.start_date)}\n` +
+      `Venue: ${event.venue_name}, ${event.city}\n\n` +
+      `Number of tickets: ${tickets?.length || 0}\n` +
+      `Order Number: ${order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}\n\n` +
+      `Please show your QR code at the venue entrance.\n\n` +
+      `View your tickets: ${window.location.origin}/tickets`
+    )
+    window.location.href = `mailto:${order.buyer_email}?subject=${subject}&body=${body}`
+  }
+
   return (
     <div className="min-h-screen bg-[#F4F6FA] py-12 px-4">
       <div className="max-w-2xl mx-auto">
@@ -59,7 +103,7 @@ export function WebPaymentSuccess() {
                 <div>
                   <p className="text-sm text-[#0F0F0F]/60">Order Number</p>
                   <p className="font-mono font-bold text-[#2969FF]">
-                    TKT-{order.id.slice(0, 8).toUpperCase()}
+                    {order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}
                   </p>
                 </div>
                 <Badge className="bg-green-100 text-green-700 border-0">Confirmed</Badge>
@@ -84,7 +128,7 @@ export function WebPaymentSuccess() {
                     <span>{formatDate(event.start_date)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-4" /> {/* Spacer */}
+                    <span className="w-4" />
                     <span>{formatTime(event.start_date)} - {formatTime(event.end_date)}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -97,7 +141,7 @@ export function WebPaymentSuccess() {
 
             <Separator className="mb-6" />
 
-            {/* Tickets */}
+            {/* Tickets with QR Codes */}
             <div className="mb-6">
               <h3 className="font-semibold text-[#0F0F0F] mb-4 flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-[#2969FF]" />
@@ -105,17 +149,32 @@ export function WebPaymentSuccess() {
               </h3>
               
               <div className="space-y-3">
-                {tickets?.map((ticket, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
-                    <div>
-                      <p className="font-medium text-[#0F0F0F]">Ticket #{index + 1}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{ticket.attendee_name}</p>
+                {tickets?.map((ticket, index) => {
+                  const qrValue = JSON.stringify({
+                    ticketId: ticket.id || `temp-${index}`,
+                    qrCode: ticket.ticket_number,
+                    eventId: event.id,
+                    attendee: ticket.attendee_name
+                  })
+                  
+                  return (
+                    <div key={index} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                      <div>
+                        <p className="font-medium text-[#0F0F0F]">Ticket #{index + 1}</p>
+                        <p className="text-sm text-[#0F0F0F]/60">{ticket.attendee_name}</p>
+                        <p className="text-xs text-[#0F0F0F]/40 font-mono mt-1">{ticket.ticket_number}</p>
+                      </div>
+                      <div className="bg-white rounded-lg p-2 border border-[#0F0F0F]/10">
+                        <QRCodeSVG 
+                          id={`success-qr-${index}`}
+                          value={qrValue}
+                          size={64}
+                          level="H"
+                        />
+                      </div>
                     </div>
-                    <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center border border-[#0F0F0F]/10">
-                      <QrCode className="w-10 h-10 text-[#0F0F0F]/30" />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
@@ -149,7 +208,7 @@ export function WebPaymentSuccess() {
               <Button 
                 variant="outline" 
                 className="flex-1 rounded-xl border-[#0F0F0F]/10"
-                onClick={() => {/* Download functionality */}}
+                onClick={downloadAllTickets}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download Tickets
@@ -157,7 +216,7 @@ export function WebPaymentSuccess() {
               <Button 
                 variant="outline" 
                 className="flex-1 rounded-xl border-[#0F0F0F]/10"
-                onClick={() => {/* Email functionality */}}
+                onClick={emailTickets}
               >
                 <Mail className="w-4 h-4 mr-2" />
                 Email Tickets

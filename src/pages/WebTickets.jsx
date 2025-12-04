@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, QrCode, Loader2, ArrowLeft } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { QRCodeSVG } from 'qrcode.react'
+import { downloadTicketPDF } from '@/utils/ticketGenerator'
 
 export function WebTickets() {
   const navigate = useNavigate()
@@ -16,7 +18,7 @@ export function WebTickets() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth')
+      navigate('/login')
       return
     }
     loadTickets()
@@ -31,7 +33,7 @@ export function WebTickets() {
           *,
           event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url),
           ticket_type:ticket_types(name, price),
-          order:orders(id, total_amount, payment_reference, created_at)
+          order:orders(id, order_number, total_amount, payment_reference, created_at)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -83,9 +85,85 @@ export function WebTickets() {
     }
   }
 
-  // Check if event date has passed
   const isEventPast = (eventDate) => {
     return new Date(eventDate) < new Date()
+  }
+
+  // Download ticket as image
+  const downloadTicket = (ticket) => {
+    const ticketElement = document.getElementById(`ticket-${ticket.id}`)
+    if (!ticketElement) return
+
+    // Create canvas from the ticket card
+    import('html2canvas').then(({ default: html2canvas }) => {
+      html2canvas(ticketElement, { 
+        scale: 2,
+        backgroundColor: '#ffffff'
+      }).then(canvas => {
+        const link = document.createElement('a')
+        link.download = `ticket-${ticket.ticket_number}.png`
+        link.href = canvas.toDataURL('image/png')
+        link.click()
+      })
+    }).catch(() => {
+      // Fallback: download QR code only
+      const svg = document.getElementById(`qr-${ticket.id}`)
+      if (svg) {
+        const svgData = new XMLSerializer().serializeToString(svg)
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        const img = new Image()
+        img.onload = () => {
+          canvas.width = img.width
+          canvas.height = img.height
+          ctx.fillStyle = '#ffffff'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          ctx.drawImage(img, 0, 0)
+          const link = document.createElement('a')
+          link.download = `qr-${ticket.ticket_number}.png`
+          link.href = canvas.toDataURL('image/png')
+          link.click()
+        }
+        img.src = 'data:image/svg+xml;base64,' + btoa(svgData)
+      }
+    })
+  }
+
+  // Email ticket
+  const emailTicket = (ticket) => {
+    const subject = encodeURIComponent(`Your Ticket for ${ticket.event?.title}`)
+    const body = encodeURIComponent(
+      `Here are your ticket details:\n\n` +
+      `Event: ${ticket.event?.title}\n` +
+      `Date: ${formatDate(ticket.event?.start_date)}\n` +
+      `Time: ${formatTime(ticket.event?.start_date)}\n` +
+      `Venue: ${ticket.event?.venue_name}, ${ticket.event?.city}\n` +
+      `Ticket Type: ${ticket.ticket_type?.name || 'General'}\n` +
+      `QR Code: ${ticket.ticket_number}\n\n` +
+      `Please show your QR code at the venue entrance.`
+    )
+    window.location.href = `mailto:${ticket.attendee_email}?subject=${subject}&body=${body}`
+  }
+
+  // Share ticket
+  const shareTicket = async (ticket) => {
+    const shareData = {
+      title: `Ticket for ${ticket.event?.title}`,
+      text: `I'm attending ${ticket.event?.title} on ${formatDate(ticket.event?.start_date)}!`,
+      url: window.location.href
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch (err) {
+        console.log('Share cancelled')
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
+      alert('Link copied to clipboard!')
+    }
   }
 
   const activeTickets = tickets.filter(t => t.status === 'valid' && !isEventPast(t.event?.end_date))
@@ -93,9 +171,15 @@ export function WebTickets() {
 
   const TicketCard = ({ ticket }) => {
     const isPast = isEventPast(ticket.event?.end_date)
+    const qrValue = JSON.stringify({
+      ticketId: ticket.id,
+      qrCode: ticket.ticket_number,
+      eventId: ticket.event_id,
+      attendee: ticket.attendee_name
+    })
     
     return (
-      <Card className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+      <Card id={`ticket-${ticket.id}`} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
         {/* Header */}
         <CardHeader className="bg-gradient-to-r from-[#2969FF] to-[#2969FF]/80 text-white p-4">
           <div className="flex items-start justify-between">
@@ -119,7 +203,7 @@ export function WebTickets() {
             <div className="md:col-span-2 grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Order Number</p>
-                <p className="text-[#0F0F0F] font-mono">TKT-{ticket.order?.id?.slice(0, 8).toUpperCase()}</p>
+                <p className="text-[#0F0F0F] font-mono">{ticket.order?.order_number || `TKT-${ticket.id.slice(0, 8).toUpperCase()}`}</p>
               </div>
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Ticket Type</p>
@@ -144,26 +228,52 @@ export function WebTickets() {
 
             {/* QR Code */}
             <div className="flex flex-col items-center justify-center bg-[#F4F6FA] rounded-xl p-3">
-              <div className="w-28 h-28 bg-white rounded-lg flex items-center justify-center border border-[#0F0F0F]/10 mb-2">
-                {/* QR Code placeholder - in production use a QR library */}
-                <div className="text-center">
-                  <QrCode className="w-16 h-16 text-[#0F0F0F]/30 mx-auto" />
-                </div>
+              <div className="bg-white rounded-lg p-2 border border-[#0F0F0F]/10 mb-2">
+                <QRCodeSVG 
+                  id={`qr-${ticket.id}`}
+                  value={qrValue}
+                  size={100}
+                  level="H"
+                  includeMargin={true}
+                />
               </div>
-              <p className="text-xs text-[#0F0F0F]/60 text-center font-mono">{ticket.qr_code}</p>
+              <p className="text-xs text-[#0F0F0F]/60 text-center font-mono">{ticket.ticket_number}</p>
+              <p className="text-xs text-[#0F0F0F]/40 text-center mt-1">Scan at venue</p>
             </div>
           </div>
 
           {/* Actions */}
           {ticket.status === 'valid' && !isPast && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#0F0F0F]/10">
-              <Button size="sm" variant="outline" className="rounded-xl border-[#0F0F0F]/10 flex items-center gap-2 text-xs">
-                <Download className="w-3 h-3" />Download
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="rounded-xl border-[#0F0F0F]/10 flex items-center gap-2 text-xs"
+                onClick={() => downloadTicket(ticket)}
+              >
+                <Download className="w-3 h-3" />Image
               </Button>
-              <Button size="sm" variant="outline" className="rounded-xl border-[#0F0F0F]/10 flex items-center gap-2 text-xs">
+              <Button 
+                size="sm" 
+                className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl flex items-center gap-2 text-xs"
+                onClick={() => downloadTicketPDF(ticket, ticket.event, ticket.ticket_type)}
+              >
+                <Download className="w-3 h-3" />PDF Ticket
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="rounded-xl border-[#0F0F0F]/10 flex items-center gap-2 text-xs"
+                onClick={() => emailTicket(ticket)}
+              >
                 <Mail className="w-3 h-3" />Email
               </Button>
-              <Button size="sm" variant="outline" className="rounded-xl border-[#0F0F0F]/10 flex items-center gap-2 text-xs">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="rounded-xl border-[#0F0F0F]/10 flex items-center gap-2 text-xs"
+                onClick={() => shareTicket(ticket)}
+              >
                 <Share2 className="w-3 h-3" />Share
               </Button>
               <Button 

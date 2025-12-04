@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,22 +10,54 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 
 export function WebLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [cartCount] = useState(0)
-  
-  // Simulating logged in state - in real app, this would come from auth context
-  const [isLoggedIn] = useState(false)
-  const [currentUser] = useState({
-    id: 'user_001',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 'sarah.johnson@example.com',
-    profileImage: '',
-  })
+  const [profile, setProfile] = useState(null)
+
+  // Load user profile when user changes
+  useEffect(() => {
+    async function loadProfile() {
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        setProfile(data)
+      } else {
+        setProfile(null)
+      }
+    }
+    loadProfile()
+  }, [user])
+
+  console.log("WebLayout auth state:", { user: !!user, userId: user?.id, email: user?.email })
+  const isLoggedIn = !!user
+  const currentUser = {
+    firstName: profile?.first_name || user?.email?.split('@')[0] || 'User',
+    lastName: profile?.last_name || '',
+    email: user?.email || '',
+    profileImage: profile?.avatar_url || '',
+  }
+
+  const getInitials = () => {
+    if (currentUser.firstName && currentUser.lastName) {
+      return `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase()
+    }
+    return currentUser.firstName?.[0]?.toUpperCase() || 'U'
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/')
+  }
 
   const isActive = (path) => location.pathname === path
 
@@ -101,8 +133,7 @@ export function WebLayout() {
                       <Avatar className="w-9 h-9">
                         <AvatarImage src={currentUser.profileImage} />
                         <AvatarFallback className="bg-[#2969FF] text-white text-sm">
-                          {currentUser.firstName[0]}
-                          {currentUser.lastName[0]}
+                          {getInitials()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="text-left hidden lg:block">
@@ -152,7 +183,7 @@ export function WebLayout() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => navigate('/login')}
+                      onClick={handleSignOut}
                       className="cursor-pointer rounded-lg text-red-600 focus:text-red-600"
                     >
                       <LogOut className="w-4 h-4 mr-2" />
@@ -181,89 +212,113 @@ export function WebLayout() {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden text-[#0F0F0F]"
+              className="md:hidden p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 text-[#0F0F0F]" />
+              ) : (
+                <Menu className="w-6 h-6 text-[#0F0F0F]" />
+              )}
             </button>
           </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-[#0F0F0F]/10">
-              <nav className="flex flex-col gap-4">
-                <button
-                  onClick={() => {
-                    navigate('/events')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="text-left text-[#0F0F0F] hover:text-[#2969FF] transition-colors"
-                >
-                  Browse Events
-                </button>
-                <button
-                  onClick={() => {
-                    navigate('/tickets')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="text-left text-[#0F0F0F] hover:text-[#2969FF] transition-colors"
-                >
-                  My Tickets
-                </button>
-                <button
-                  onClick={() => {
-                    navigate('/search')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="text-left text-[#0F0F0F] hover:text-[#2969FF] transition-colors"
-                >
-                  Search
-                </button>
-                <button
-                  onClick={() => {
-                    navigate('/cart')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="text-left text-[#0F0F0F] hover:text-[#2969FF] transition-colors"
-                >
-                  Cart {cartCount > 0 && `(${cartCount})`}
-                </button>
-                <div className="flex flex-col gap-2 pt-4 border-t border-[#0F0F0F]/10">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      navigate('/organizer')
-                      setMobileMenuOpen(false)
-                    }}
-                    className="rounded-xl w-full border-[#2969FF] text-[#2969FF] hover:bg-[#2969FF]/10 flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Create Event
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      navigate('/login')
-                      setMobileMenuOpen(false)
-                    }}
-                    className="rounded-xl w-full"
-                  >
-                    Login
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      navigate('/signup')
-                      setMobileMenuOpen(false)
-                    }}
-                    className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl w-full"
-                  >
-                    Sign Up
-                  </Button>
-                </div>
-              </nav>
-            </div>
-          )}
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-t border-[#0F0F0F]/10">
+            <div className="px-4 py-4 space-y-4">
+              <button
+                onClick={() => {
+                  navigate('/events')
+                  setMobileMenuOpen(false)
+                }}
+                className="block w-full text-left py-2 text-[#0F0F0F]"
+              >
+                Browse Events
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/tickets')
+                  setMobileMenuOpen(false)
+                }}
+                className="block w-full text-left py-2 text-[#0F0F0F]"
+              >
+                My Tickets
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/search')
+                  setMobileMenuOpen(false)
+                }}
+                className="block w-full text-left py-2 text-[#0F0F0F]"
+              >
+                Search
+              </button>
+              
+              <div className="pt-4 border-t border-[#0F0F0F]/10">
+                {isLoggedIn ? (
+                  <>
+                    <div className="flex items-center gap-3 mb-4">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={currentUser.profileImage} />
+                        <AvatarFallback className="bg-[#2969FF] text-white">
+                          {getInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium text-[#0F0F0F]">
+                          {currentUser.firstName} {currentUser.lastName}
+                        </p>
+                        <p className="text-xs text-[#0F0F0F]/60">{currentUser.email}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigate('/profile')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="block w-full text-left py-2 text-[#0F0F0F]"
+                    >
+                      My Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleSignOut()
+                        setMobileMenuOpen(false)
+                      }}
+                      className="block w-full text-left py-2 text-red-600"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        navigate('/login')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="flex-1 rounded-xl"
+                    >
+                      Login
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        navigate('/signup')
+                        setMobileMenuOpen(false)
+                      }}
+                      className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
+                    >
+                      Sign Up
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
@@ -272,58 +327,57 @@ export function WebLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#0F0F0F]/10 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <footer className="bg-[#0F0F0F] text-white py-12 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <div 
-                className="flex items-center gap-2 mb-4 cursor-pointer"
-                onClick={() => navigate('/')}
-              >
+              <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-[#2969FF] rounded-lg flex items-center justify-center">
                   <Ticket className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+                <span className="text-xl font-semibold">Ticketrack</span>
               </div>
-              <p className="text-[#0F0F0F]/60 text-sm">
-                Your trusted and secure event ticketing platform
+              <p className="text-white/60 text-sm">
+                The best platform for discovering and booking events across Africa.
               </p>
             </div>
 
             <div>
-              <h4 className="text-[#0F0F0F] font-medium mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-[#0F0F0F]/60">
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-white/60 text-sm">
                 <li>
-                  <button onClick={() => navigate('/about')} className="hover:text-[#2969FF]">
+                  <button onClick={() => navigate('/about')} className="hover:text-white transition-colors">
                     About Us
                   </button>
                 </li>
                 <li>
-                  <button className="hover:text-[#2969FF]">Careers</button>
+                  <button onClick={() => navigate('/contact')} className="hover:text-white transition-colors">
+                    Contact
+                  </button>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/contact')} className="hover:text-[#2969FF]">
-                    Contact
+                  <button onClick={() => navigate('/careers')} className="hover:text-white transition-colors">
+                    Careers
                   </button>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-[#0F0F0F] font-medium mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-[#0F0F0F]/60">
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-white/60 text-sm">
                 <li>
-                  <button onClick={() => navigate('/help')} className="hover:text-[#2969FF]">
+                  <button onClick={() => navigate('/help')} className="hover:text-white transition-colors">
                     Help Center
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/terms')} className="hover:text-[#2969FF]">
+                  <button onClick={() => navigate('/terms')} className="hover:text-white transition-colors">
                     Terms of Service
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/privacy')} className="hover:text-[#2969FF]">
+                  <button onClick={() => navigate('/privacy')} className="hover:text-white transition-colors">
                     Privacy Policy
                   </button>
                 </li>
@@ -331,25 +385,29 @@ export function WebLayout() {
             </div>
 
             <div>
-              <h4 className="text-[#0F0F0F] font-medium mb-4">Organizers</h4>
-              <ul className="space-y-2 text-sm text-[#0F0F0F]/60">
+              <h4 className="font-semibold mb-4">For Organizers</h4>
+              <ul className="space-y-2 text-white/60 text-sm">
                 <li>
-                  <button onClick={() => navigate('/organizer')} className="hover:text-[#2969FF]">
-                    Organizer Dashboard
+                  <button onClick={() => navigate('/organizer')} className="hover:text-white transition-colors">
+                    Create Event
                   </button>
                 </li>
                 <li>
-                  <button className="hover:text-[#2969FF]">Create Event</button>
+                  <button onClick={() => navigate('/pricing')} className="hover:text-white transition-colors">
+                    Pricing
+                  </button>
                 </li>
                 <li>
-                  <button className="hover:text-[#2969FF]">Pricing</button>
+                  <button onClick={() => navigate('/resources')} className="hover:text-white transition-colors">
+                    Resources
+                  </button>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-[#0F0F0F]/10 mt-8 pt-8 text-center text-sm text-[#0F0F0F]/60">
-            © 2024 Ticketrack. All rights reserved.
+          <div className="border-t border-white/10 mt-8 pt-8 text-center text-white/40 text-sm">
+            <p>© {new Date().getFullYear()} Ticketrack. All rights reserved.</p>
           </div>
         </div>
       </footer>

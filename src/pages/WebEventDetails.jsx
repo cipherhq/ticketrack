@@ -73,6 +73,7 @@ export function WebEventDetails() {
   }
 
   const totalTickets = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0)
+  const isFreeEvent = ticketTypes.length > 0 && ticketTypes.every(t => t.price === 0)
   const totalAmount = Object.entries(selectedTickets).reduce((sum, [tierId, qty]) => {
     const tier = ticketTypes.find(t => t.id === tierId)
     return sum + (tier?.price || 0) * qty
@@ -284,7 +285,7 @@ export function WebEventDetails() {
               <div>
                 <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Select Tickets</h2>
                 
-                {event.is_free ? (
+                {isFreeEvent ? (
                   <div className="text-center py-8">
                     <Badge className="bg-green-100 text-green-700 border-0 text-lg px-4 py-2 mb-4">
                       Free Event
@@ -371,9 +372,9 @@ export function WebEventDetails() {
               <Button 
                 className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6 text-lg"
                 onClick={handleCheckout}
-                disabled={totalTickets === 0 && !event.is_free}
+                disabled={totalTickets === 0 && !isFreeEvent}
               >
-                {event.is_free ? 'Register Now' : totalTickets > 0 ? 'Proceed to Checkout' : 'Select Tickets'}
+                {isFreeEvent ? 'Register Now' : totalTickets > 0 ? 'Proceed to Checkout' : 'Select Tickets'}
               </Button>
 
               <p className="text-xs text-center text-[#0F0F0F]/40">

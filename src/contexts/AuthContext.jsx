@@ -155,13 +155,6 @@ export function AuthProvider({ children }) {
         throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
       }
 
-      setPendingUser(data.user)
-      
-      const phone = data.user.user_metadata?.phone
-      if (phone) {
-        await sendOTP(phone)
-        return { success: true, requiresOTP: true }
-      }
 
       return { success: true, requiresOTP: false }
     } catch (error) {
