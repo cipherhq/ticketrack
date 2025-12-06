@@ -252,7 +252,7 @@ export function WebEventDetails() {
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Organized By</h2>
             <div 
               className="flex items-center gap-4 cursor-pointer hover:bg-[#F4F6FA] p-4 rounded-xl -ml-4 transition-colors"
-              onClick={() => navigate(`/organizer/${event.organizer?.id}`)}
+              onClick={() => navigate(`/o/${event.organizer?.id}`)}
             >
               <div className="w-16 h-16 rounded-full bg-[#2969FF]/10 flex items-center justify-center overflow-hidden">
                 {event.organizer?.logo_url ? (

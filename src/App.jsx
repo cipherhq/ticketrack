@@ -1,110 +1,76 @@
-import { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
-import { AuthProvider } from '@/contexts/AuthContext'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import {
-  WebLayout,
-  WebHome,
-  WebAuth,
-  AuthCallback,
-  ForgotPassword,
-  WebEventBrowse,
-  WebEventDetails,
-  WebSearch,
-  WebCart,
-  WebCheckout,
-  WebPaymentSuccess,
-  WebTickets,
-  AttendeeProfile,
-  OrganizerPublicProfile,
-  WebAbout,
-  WebContact,
-  WebHelp,
-  WebPrivacy,
-  WebTerms,
-} from './pages'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 
-function ScrollToTop() {
-  const { pathname } = useLocation()
-  
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
-  
-  return null
-}
+// Web Layout and Pages
+import { WebLayout } from './pages/WebLayout';
+import { WebHome } from './pages/WebHome';
+import { WebEventBrowse } from './pages/WebEventBrowse';
+import { WebEventDetails } from './pages/WebEventDetails';
+import { WebCheckout } from './pages/WebCheckout';
+import { WebPaymentSuccess } from './pages/WebPaymentSuccess';
+import { WebTickets } from './pages/WebTickets';
+import { WebSearch } from './pages/WebSearch';
+import { WebCart } from './pages/WebCart';
+import { WebAbout } from './pages/WebAbout';
+import { WebContact } from './pages/WebContact';
+import { WebHelp } from './pages/WebHelp';
+import { WebPrivacy } from './pages/WebPrivacy';
+import { WebTerms } from './pages/WebTerms';
+import { WebCreateEvent } from './pages/WebCreateEvent';
+import { AttendeeProfile } from './pages/AttendeeProfile';
+import { OrganizerPublicProfile } from './pages/OrganizerPublicProfile';
 
-function AppRoutes() {
-  const navigate = useNavigate()
-  const location = useLocation()
+// Auth Pages
+import { WebAuth } from './pages/WebAuth';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { AuthCallback } from './pages/AuthCallback';
 
-  // Handle auth redirects from Supabase (email verification, password reset)
-  useEffect(() => {
-    const hashParams = new URLSearchParams(location.hash.substring(1))
-    const accessToken = hashParams.get('access_token')
-    const type = hashParams.get('type')
-    const error = hashParams.get('error')
-    const errorDescription = hashParams.get('error_description')
-
-    if (error) {
-      navigate('/login', { state: { error: errorDescription || 'Authentication failed' }, replace: true })
-      return
-    }
-
-    if (accessToken) {
-      if (type === 'signup' || type === 'email') {
-        navigate('/login', { state: { message: 'Email verified successfully! Please sign in.' }, replace: true })
-      } else if (type === 'recovery') {
-        navigate('/reset-password', { replace: true })
-      } else {
-        navigate('/', { replace: true })
-      }
-    }
-  }, [location.hash, navigate])
-
-  return (
-    <Routes>
-      {/* Public routes with layout */}
-      <Route path="/" element={<WebLayout />}>
-        <Route index element={<WebHome />} />
-        <Route path="events" element={<WebEventBrowse />} />
-        <Route path="event/:id" element={<WebEventDetails />} />
-        <Route path="search" element={<WebSearch />} />
-        <Route path="about" element={<WebAbout />} />
-        <Route path="contact" element={<WebContact />} />
-        <Route path="help" element={<WebHelp />} />
-        <Route path="privacy" element={<WebPrivacy />} />
-        <Route path="terms" element={<WebTerms />} />
-        
-        {/* Protected routes */}
-        <Route path="cart" element={<ProtectedRoute><WebCart /></ProtectedRoute>} />
-        <Route path="checkout" element={<ProtectedRoute><WebCheckout /></ProtectedRoute>} />
-        <Route path="tickets" element={<ProtectedRoute><WebTickets /></ProtectedRoute>} />
-        <Route path="profile" element={<ProtectedRoute><AttendeeProfile /></ProtectedRoute>} />
-        <Route path="organizer/:id" element={<OrganizerPublicProfile />} />
-      </Route>
-
-      {/* Auth routes (no layout) */}
-      <Route path="/login" element={<WebAuth />} />
-      <Route path="/signup" element={<WebAuth />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-
-      {/* Payment success (no layout) */}
-      <Route path="/payment-success" element={<WebPaymentSuccess />} />
-    </Routes>
-  )
-}
+// Organizer Routes
+import { OrganizerRoutes } from './routes/OrganizerRoutes';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <ScrollToTop />
-        <AppRoutes />
-      </Router>
+      <CartProvider>
+        <Router>
+          <Routes>
+            {/* Organizer Dashboard Routes - MUST come first to avoid conflict */}
+            <Route path="/organizer/*" element={<OrganizerRoutes />} />
+
+            {/* Create Event - Public (no WebLayout, has its own header) */}
+            <Route path="/create-event" element={<WebCreateEvent />} />
+
+            {/* Auth Routes */}
+            <Route path="/login" element={<WebAuth />} />
+            <Route path="/signup" element={<WebAuth />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+
+            {/* Web Routes with Layout */}
+            <Route element={<WebLayout />}>
+              <Route path="/" element={<WebHome />} />
+              <Route path="/events" element={<WebEventBrowse />} />
+              <Route path="/events/:id" element={<WebEventDetails />} />
+              <Route path="/checkout" element={<WebCheckout />} />
+              <Route path="/payment-success" element={<WebPaymentSuccess />} />
+              <Route path="/tickets" element={<WebTickets />} />
+              <Route path="/search" element={<WebSearch />} />
+              <Route path="/cart" element={<WebCart />} />
+              <Route path="/about" element={<WebAbout />} />
+              <Route path="/contact" element={<WebContact />} />
+              <Route path="/help" element={<WebHelp />} />
+              <Route path="/privacy" element={<WebPrivacy />} />
+              <Route path="/terms" element={<WebTerms />} />
+              <Route path="/profile" element={<AttendeeProfile />} />
+              {/* Public organizer profile - use /o/:id to avoid conflict with /organizer/* */}
+              <Route path="/o/:id" element={<OrganizerPublicProfile />} />
+            </Route>
+          </Routes>
+        </Router>
+      </CartProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;

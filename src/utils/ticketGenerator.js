@@ -306,6 +306,3 @@ export async function downloadTicketPDF(ticket, event, ticketType) {
 }
 
 // Wrapper function for compatibility
-export async function downloadTicketPDF(ticket, event, ticketType) {
-  return generateTicketPDF(ticket, event)
-}

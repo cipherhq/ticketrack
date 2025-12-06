@@ -119,7 +119,7 @@ export function WebLayout() {
             <div className="hidden md:flex items-center gap-3">
               <Button
                 variant="outline"
-                onClick={() => navigate('/organizer')}
+                onClick={() => navigate('/create-event')}
                 className="rounded-xl border-[#2969FF] text-[#2969FF] hover:bg-[#2969FF]/10 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -154,11 +154,53 @@ export function WebLayout() {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       onClick={() => navigate('/profile')}
                       className="cursor-pointer rounded-lg"
                     >
                       <User className="w-4 h-4 mr-2" />
                       My Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => navigate('/tickets')}
@@ -168,11 +210,53 @@ export function WebLayout() {
                       My Tickets
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       onClick={() => navigate('/saved')}
                       className="cursor-pointer rounded-lg"
                     >
                       <Heart className="w-4 h-4 mr-2" />
                       Saved Events
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => navigate('/settings')}
@@ -182,6 +266,27 @@ export function WebLayout() {
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/organizer")}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Organizer Dashboard
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleSignOut}
                       className="cursor-pointer rounded-lg text-red-600 focus:text-red-600"
@@ -388,7 +493,7 @@ export function WebLayout() {
               <h4 className="font-semibold mb-4">For Organizers</h4>
               <ul className="space-y-2 text-white/60 text-sm">
                 <li>
-                  <button onClick={() => navigate('/organizer')} className="hover:text-white transition-colors">
+                  <button onClick={() => navigate('/create-event')} className="hover:text-white transition-colors">
                     Create Event
                   </button>
                 </li>
