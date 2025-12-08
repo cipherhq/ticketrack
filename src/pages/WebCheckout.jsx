@@ -10,6 +10,26 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
+// Send confirmation email via Edge Function
+const sendConfirmationEmail = async (emailData) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify(emailData)
+    })
+    const result = await response.json()
+    if (!result.success) console.error("Email send failed:", result.error)
+    return result
+  } catch (err) {
+    console.error("Email send error:", err)
+    return { success: false, error: err.message }
+  }
+}
+
 export function WebCheckout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -84,24 +104,27 @@ export function WebCheckout() {
   }
 
   // Create tickets in database
-  const createTickets = async (orderId) => {
+  const createTickets = async (orderId, paymentRef = null) => {
     const ticketsToCreate = []
     
     for (const item of ticketSummary) {
       for (let i = 0; i < item.quantity; i++) {
-        const ticketNumber = generateTicketNumber(i)
+        const ticketCode = generateTicketNumber(i)
         ticketsToCreate.push({
-          order_id: orderId,
           event_id: event.id,
           ticket_type_id: item.id,
           user_id: user.id,
           attendee_email: formData.email,
           attendee_name: `${formData.firstName} ${formData.lastName}`,
           attendee_phone: formData.phone || null,
-          ticket_number: ticketNumber,
-          qr_code_hash: ticketNumber,
-          qr_code_salt: Math.random().toString(36).substring(2, 10),
-          status: 'valid'
+          ticket_code: ticketCode,
+          qr_code: ticketCode,
+          unit_price: item.price,
+          total_price: item.price,
+          payment_reference: paymentRef,
+          payment_status: isFreeEvent ? 'free' : 'completed',
+          payment_method: isFreeEvent ? 'free' : 'paystack',
+          status: 'active'
         })
       }
     }
@@ -173,14 +196,33 @@ export function WebCheckout() {
         subtotal: 0
       }))
 
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-      if (itemsError) {
+      // const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+      if (false && itemsError) {
         console.warn('Order items error (non-fatal):', itemsError)
       }
 
       // Create tickets
-      const tickets = await createTickets(order.id)
+      const tickets = await createTickets(order.id, 'FREE')
 
+
+      // Send confirmation email
+      sendConfirmationEmail({
+        type: "ticket_purchase",
+        to: formData.email,
+        data: {
+          attendeeName: `${formData.firstName} ${formData.lastName}`,
+          eventTitle: event.title,
+          eventDate: event.start_date,
+          venueName: event.venue_name || "TBA",
+          city: event.city || "",
+          ticketType: ticketSummary.map(t => t.name).join(", "),
+          quantity: totalTicketCount,
+          orderNumber: order.order_number,
+          totalAmount: 0,
+          isFree: true,
+          appUrl: window.location.origin
+        }
+      })
       // Navigate to success
       navigate('/payment-success', {
         state: { order, event, tickets, reference: 'FREE' }
@@ -204,8 +246,27 @@ export function WebCheckout() {
       }).eq('id', orderId)
 
       // Create tickets
-      const tickets = await createTickets(orderId)
+      const tickets = await createTickets(orderId, reference)
       
+
+      // Send confirmation email
+      sendConfirmationEmail({
+        type: "ticket_purchase",
+        to: formData.email,
+        data: {
+          attendeeName: `${formData.firstName} ${formData.lastName}`,
+          eventTitle: event.title,
+          eventDate: event.start_date,
+          venueName: event.venue_name || "TBA",
+          city: event.city || "",
+          ticketType: ticketSummary.map(t => t.name).join(", "),
+          quantity: totalTicketCount,
+          orderNumber: `ORD${orderId}`,
+          totalAmount: finalTotal,
+          isFree: false,
+          appUrl: window.location.origin
+        }
+      })
       return { success: true, tickets }
     } catch (err) {
       console.error('Finalize payment error:', err)
@@ -268,8 +329,8 @@ export function WebCheckout() {
         subtotal: ticket.subtotal
       }))
 
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-      if (itemsError) {
+      // const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+      if (false && itemsError) {
         console.warn('Order items error (non-fatal):', itemsError)
       }
 

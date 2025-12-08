@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { ImpersonationProvider } from './contexts/ImpersonationContext';
+import { ImpersonationBanner } from './components/ImpersonationBanner';
 
 // Web Layout and Pages
 import { WebLayout } from './pages/WebLayout';
@@ -29,45 +31,60 @@ import { AuthCallback } from './pages/AuthCallback';
 // Organizer Routes
 import { OrganizerRoutes } from './routes/OrganizerRoutes';
 
+// Admin Routes
+import { AdminRoutes } from './routes/AdminRoutes';
+
+// Promoter Routes
+import { PromoterRoutes } from './routes/PromoterRoutes';
+
 function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <Router>
-          <Routes>
-            {/* Organizer Dashboard Routes - MUST come first to avoid conflict */}
-            <Route path="/organizer/*" element={<OrganizerRoutes />} />
+        <ImpersonationProvider>
+          <Router>
+            <ImpersonationBanner />
+            <Routes>
+              {/* Organizer Dashboard Routes */}
+              <Route path="/organizer/*" element={<OrganizerRoutes />} />
 
-            {/* Create Event - Public (no WebLayout, has its own header) */}
-            <Route path="/create-event" element={<WebCreateEvent />} />
+              {/* Admin Dashboard Routes */}
+              <Route path="/admin/*" element={<AdminRoutes />} />
 
-            {/* Auth Routes */}
-            <Route path="/login" element={<WebAuth />} />
-            <Route path="/signup" element={<WebAuth />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
+              {/* Promoter Portal Routes */}
+              <Route path="/promoter/*" element={<PromoterRoutes />} />
 
-            {/* Web Routes with Layout */}
-            <Route element={<WebLayout />}>
-              <Route path="/" element={<WebHome />} />
-              <Route path="/events" element={<WebEventBrowse />} />
-              <Route path="/events/:id" element={<WebEventDetails />} />
-              <Route path="/checkout" element={<WebCheckout />} />
-              <Route path="/payment-success" element={<WebPaymentSuccess />} />
-              <Route path="/tickets" element={<WebTickets />} />
-              <Route path="/search" element={<WebSearch />} />
-              <Route path="/cart" element={<WebCart />} />
-              <Route path="/about" element={<WebAbout />} />
-              <Route path="/contact" element={<WebContact />} />
-              <Route path="/help" element={<WebHelp />} />
-              <Route path="/privacy" element={<WebPrivacy />} />
-              <Route path="/terms" element={<WebTerms />} />
-              <Route path="/profile" element={<AttendeeProfile />} />
-              {/* Public organizer profile - use /o/:id to avoid conflict with /organizer/* */}
-              <Route path="/o/:id" element={<OrganizerPublicProfile />} />
-            </Route>
-          </Routes>
-        </Router>
+              {/* Create Event */}
+              <Route path="/create-event" element={<WebCreateEvent />} />
+
+              {/* Auth Routes */}
+              <Route path="/login" element={<WebAuth />} />
+              <Route path="/signup" element={<WebAuth />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+
+              {/* Web Routes with Layout */}
+              <Route element={<WebLayout />}>
+                <Route path="/" element={<WebHome />} />
+                <Route path="/events" element={<WebEventBrowse />} />
+                <Route path="/events/:id" element={<WebEventDetails />} />
+                <Route path="/event/:id" element={<WebEventDetails />} />
+                <Route path="/checkout" element={<WebCheckout />} />
+                <Route path="/payment-success" element={<WebPaymentSuccess />} />
+                <Route path="/tickets" element={<WebTickets />} />
+                <Route path="/search" element={<WebSearch />} />
+                <Route path="/cart" element={<WebCart />} />
+                <Route path="/about" element={<WebAbout />} />
+                <Route path="/contact" element={<WebContact />} />
+                <Route path="/help" element={<WebHelp />} />
+                <Route path="/privacy" element={<WebPrivacy />} />
+                <Route path="/terms" element={<WebTerms />} />
+                <Route path="/profile" element={<AttendeeProfile />} />
+                <Route path="/o/:id" element={<OrganizerPublicProfile />} />
+              </Route>
+            </Routes>
+          </Router>
+        </ImpersonationProvider>
       </CartProvider>
     </AuthProvider>
   );

@@ -442,7 +442,7 @@ export async function requestPayout(organizerId, bankAccountId, amount) {
 
 export async function getPromoCodes(organizerId) {
   const { data, error } = await supabase
-    .from('promo_codes')
+    .from('referral_codes')
     .select(`*, events (id, title)`)
     .eq('organizer_id', organizerId)
     .order('created_at', { ascending: false });
@@ -453,7 +453,7 @@ export async function getPromoCodes(organizerId) {
 
 export async function createPromoCode(organizerId, promoData) {
   const { data, error } = await supabase
-    .from('promo_codes')
+    .from('referral_codes')
     .insert({
       organizer_id: organizerId,
       code: promoData.code.toUpperCase(),
@@ -475,7 +475,7 @@ export async function createPromoCode(organizerId, promoData) {
 
 export async function updatePromoCode(promoCodeId, promoData) {
   const { data, error } = await supabase
-    .from('promo_codes')
+    .from('referral_codes')
     .update({ ...promoData, code: promoData.code?.toUpperCase(), updated_at: new Date().toISOString() })
     .eq('id', promoCodeId)
     .select()
@@ -486,13 +486,13 @@ export async function updatePromoCode(promoCodeId, promoData) {
 }
 
 export async function deletePromoCode(promoCodeId) {
-  const { error } = await supabase.from('promo_codes').delete().eq('id', promoCodeId);
+  const { error } = await supabase.from('referral_codes').delete().eq('id', promoCodeId);
   if (error) throw error;
 }
 
 export async function togglePromoCodeStatus(promoCodeId, isActive) {
   const { data, error } = await supabase
-    .from('promo_codes')
+    .from('referral_codes')
     .update({ is_active: isActive })
     .eq('id', promoCodeId)
     .select()
@@ -519,18 +519,31 @@ export async function getPromoters(organizerId) {
 
 export async function createPromoter(organizerId, promoterData) {
   const promoCode = `PROMO-${promoterData.name.substring(0, 3).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+  const baseUrl = window.location.origin;
 
   const { data, error } = await supabase
     .from('promoters')
     .insert({
       organizer_id: organizerId,
-      name: promoterData.name,
+      full_name: promoterData.name,
+      short_code: promoCode,
       email: promoterData.email,
-      phone: promoterData.phone,
+      name: promoterData.name,
+      phone: promoterData.phone || null,
       commission_type: promoterData.commission_type || 'percentage',
       commission_value: parseFloat(promoterData.commission_value) || 0,
-      promo_code: promoCode,
+      commission_rate: parseFloat(promoterData.commission_value) || 0,
+      referral_code: promoCode,
+      referral_link: `${baseUrl}/events?ref=${promoCode}`,
+      status: 'active',
       is_active: true,
+      total_clicks: 0,
+      total_sales: 0,
+      total_revenue: 0,
+      total_commission: 0,
+      paid_commission: 0,
+      total_earned: 0,
+      total_paid: 0,
     })
     .select()
     .single();

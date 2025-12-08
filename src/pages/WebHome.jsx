@@ -1,368 +1,644 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, ArrowRight, Calendar, MapPin, Star, TrendingUp, Shield, Ticket } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { getFeaturedEvents, getCategories, getEvents } from '@/services/events'
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { 
+  Search, MapPin, Calendar, ChevronRight, ChevronLeft, Star, 
+  Download, Shield, CreditCard, Headphones, TrendingUp, Clock,
+  Heart, Users, Ticket, Globe, X
+} from 'lucide-react';
 
-export function WebHome() {
-  const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [featuredEvents, setFeaturedEvents] = useState([])
-  const [nearbyEvents, setNearbyEvents] = useState([])
-  const [categories, setCategories] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [userCity] = useState('Lagos')
+// Category images mapping
+const categoryImages = {
+  'music-concerts': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=300&fit=crop',
+  'conferences': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop',
+  'festivals': 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&h=300&fit=crop',
+  'sports': 'https://images.unsplash.com/photo-1461896836934-28f9ba7a02e3?w=400&h=300&fit=crop',
+  'arts-theatre': 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=400&h=300&fit=crop',
+  'food-drink': 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop',
+  'nightlife': 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=300&fit=crop',
+  'comedy': 'https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=400&h=300&fit=crop',
+  'wellness': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=300&fit=crop',
+  'charity': 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=400&h=300&fit=crop',
+};
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [eventsData, categoriesData, nearbyData] = await Promise.all([
-          getFeaturedEvents(6),
-          getCategories(),
-          getEvents({ city: userCity, limit: 4 })
-        ])
-        setFeaturedEvents(eventsData)
-        setCategories(categoriesData)
-        setNearbyEvents(nearbyData)
-      } catch (error) {
-        console.error('Error loading home data:', error)
-      } finally {
-        setLoading(false)
+// Ad Component for Side Ads (300x600)
+const SideAd = ({ ad }) => {
+  const handleClick = async () => {
+    if (ad?.id) {
+      await supabase.rpc('increment_ad_clicks', { ad_id: ad.id });
+      if (ad.link_url) {
+        window.open(ad.link_url, '_blank', 'noopener,noreferrer');
       }
     }
-    loadData()
-  }, [userCity])
+  };
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
+  useEffect(() => {
+    if (ad?.id) {
+      supabase.rpc('increment_ad_impressions', { ad_id: ad.id });
     }
-  }
+  }, [ad?.id]);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
-
-  const formatPrice = (event) => {
-    if (event.is_free) return 'Free'
-    return 'From ₦15,000'
-  }
+  if (!ad) return null;
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#2969FF] to-[#1a4fd8] text-white py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <Badge className="bg-white/20 text-white border-0 mb-6">
-            <Star className="w-4 h-4 mr-1" />
-            Trusted by 10,000+ event organizers
-          </Badge>
-          
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Discover Amazing Events<br />Near You
-          </h1>
-          
-          <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-            Book tickets for concerts, conferences, festivals, and more. Your next experience starts here.
-          </p>
+    <div className="relative">
+      <div className="absolute -top-6 right-0 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+        Ad
+      </div>
+      <div 
+        onClick={handleClick}
+        className="w-[300px] h-[600px] bg-gray-100 rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-xl transition-shadow"
+      >
+        {ad.media_type === 'video' ? (
+          <video 
+            src={ad.image_url} 
+            className="w-full h-full object-cover"
+            autoPlay 
+            muted 
+            loop 
+            playsInline
+          />
+        ) : (
+          <img 
+            src={ad.image_url} 
+            alt={ad.advertiser_name || 'Advertisement'} 
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
+    </div>
+  );
+};
 
-          <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-            <div className="flex bg-white rounded-2xl p-2 shadow-lg">
-              <div className="flex-1 flex items-center px-4">
-                <Search className="w-5 h-5 text-gray-400 mr-3" />
-                <Input
+// Ad Component for Banner Ads (Top/Bottom - 1200x300)
+const BannerAd = ({ ad }) => {
+  const handleClick = async () => {
+    if (ad?.id) {
+      await supabase.rpc('increment_ad_clicks', { ad_id: ad.id });
+      if (ad.link_url) {
+        window.open(ad.link_url, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (ad?.id) {
+      supabase.rpc('increment_ad_impressions', { ad_id: ad.id });
+    }
+  }, [ad?.id]);
+
+  if (!ad) return null;
+
+  return (
+    <div className="relative max-w-[1200px] mx-auto my-8">
+      <div className="absolute -top-5 right-2 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+        Ad
+      </div>
+      <div 
+        onClick={handleClick}
+        className="w-full h-[200px] md:h-[300px] bg-gray-100 rounded-xl overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-shadow"
+      >
+        {ad.media_type === 'video' ? (
+          <video 
+            src={ad.image_url} 
+            className="w-full h-full object-cover"
+            autoPlay 
+            muted 
+            loop 
+            playsInline
+          />
+        ) : (
+          <img 
+            src={ad.image_url} 
+            alt={ad.advertiser_name || 'Advertisement'} 
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Event Card Component
+const EventCard = ({ event, showDistance = false }) => {
+  const formatPrice = (price, isFree) => {
+    if (isFree) return 'Free';
+    if (!price || price === 0) return 'Free';
+    return `₦${price.toLocaleString()}`;
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-NG', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  return (
+    <Link 
+      to={`/events/${event.id}`}
+      className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col min-w-[280px] max-w-[280px]"
+    >
+      <div className="relative h-[160px] overflow-hidden">
+        <img 
+          src={event.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'} 
+          alt={event.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        {event.category && (
+          <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
+            {event.category}
+          </span>
+        )}
+        {showDistance && event.distance && (
+          <span className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+            {event.distance} km
+          </span>
+        )}
+        {event.is_promoted && (
+          <span className="absolute bottom-3 left-3 bg-gray-900/80 text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
+            <TrendingUp size={12} /> PROMOTED
+          </span>
+        )}
+      </div>
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
+          {event.title}
+        </h3>
+        <div className="flex items-center gap-1 text-gray-500 text-sm mb-1">
+          <Calendar size={14} />
+          <span>{formatDate(event.start_date)}</span>
+        </div>
+        <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
+          <MapPin size={14} />
+          <span className="line-clamp-1">{event.venue || event.location}</span>
+        </div>
+        <div className="mt-auto flex items-center justify-between">
+          <span className="text-sm text-gray-500">From</span>
+          <span className="font-bold text-blue-600">{event.is_free ? 'Free' : formatPrice(event.min_price)}</span>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+// Horizontal Scroll Section
+const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = false, viewAllLink }) => {
+  const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 300;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const ref = scrollRef.current;
+    if (ref) {
+      ref.addEventListener('scroll', checkScroll);
+      return () => ref.removeEventListener('scroll', checkScroll);
+    }
+  }, [events]);
+
+  if (!events || events.length === 0) return null;
+
+  return (
+    <section className="py-8">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {Icon && <Icon className="text-blue-600" size={24} />}
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {viewAllLink && (
+            <Link to={viewAllLink} className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+              View All <ChevronRight size={16} />
+            </Link>
+          )}
+        </div>
+      </div>
+      
+      <div className="relative group">
+        {canScrollLeft && (
+          <button 
+            onClick={() => scroll('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
+          >
+            <ChevronLeft size={24} />
+          </button>
+        )}
+        
+        <div 
+          ref={scrollRef}
+          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {events.map(event => (
+            <EventCard key={event.id} event={event} showDistance={showDistance} />
+          ))}
+        </div>
+        
+        {canScrollRight && (
+          <button 
+            onClick={() => scroll('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
+          >
+            <ChevronRight size={24} />
+          </button>
+        )}
+      </div>
+    </section>
+  );
+};
+
+// Category Card
+const CategoryCard = ({ category, image }) => (
+  <Link 
+    to={`/events?category=${category.slug}`}
+    className="relative min-w-[160px] h-[140px] rounded-xl overflow-hidden group cursor-pointer"
+  >
+    <img 
+      src={image} 
+      alt={category.name}
+      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+    />
+    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+    <span className="absolute bottom-3 left-3 text-white font-semibold text-sm">
+      {category.name}
+    </span>
+  </Link>
+);
+
+export function WebHome() {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [events, setEvents] = useState({
+    trending: [],
+    popular: [],
+    featured: [],
+    nearYou: [],
+    weekend: [],
+    free: []
+  });
+  const [categories, setCategories] = useState([]);
+  const [ads, setAds] = useState({
+    top: null,
+    bottom: null,
+    left: null,
+    right: null
+  });
+  const [loading, setLoading] = useState(true);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    const checkScreen = () => setIsLargeScreen(window.innerWidth >= 1440);
+    checkScreen();
+    window.addEventListener('resize', checkScreen);
+    return () => window.removeEventListener('resize', checkScreen);
+  }, []);
+
+  const fetchAds = async () => {
+    const now = new Date().toISOString();
+    
+    const { data, error } = await supabase
+      .from('platform_adverts')
+      .select('*')
+      .eq('is_active', true)
+      .lte('start_date', now)
+      .gte('end_date', now)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const adsByPosition = {
+        top: data.find(ad => ad.position === 'top') || null,
+        bottom: data.find(ad => ad.position === 'bottom') || null,
+        left: data.find(ad => ad.position === 'left') || null,
+        right: data.find(ad => ad.position === 'right') || null
+      };
+      setAds(adsByPosition);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (categoriesData) {
+        setCategories(categoriesData);
+      }
+
+      const { data: allEvents } = await supabase
+        .from('events')
+        .select('*')
+        .eq('status', 'published')
+        .gte('end_date', new Date().toISOString())
+        .order('start_date', { ascending: true });
+
+      if (allEvents) {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const saturday = new Date(today);
+        saturday.setDate(today.getDate() + (6 - dayOfWeek));
+        saturday.setHours(0, 0, 0, 0);
+        const sunday = new Date(saturday);
+        sunday.setDate(saturday.getDate() + 1);
+        sunday.setHours(23, 59, 59, 999);
+
+        setEvents({
+          trending: allEvents.filter(e => e.is_trending).slice(0, 10),
+          popular: allEvents.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0)).slice(0, 10),
+          featured: allEvents.filter(e => e.is_featured).slice(0, 10),
+          nearYou: allEvents.slice(0, 10).map(e => ({ ...e, distance: Math.floor(Math.random() * 20) + 1 })),
+          weekend: allEvents.filter(e => {
+            const eventDate = new Date(e.start_date);
+            return eventDate >= saturday && eventDate <= sunday;
+          }).slice(0, 10),
+          free: allEvents.filter(e => e.is_free).slice(0, 10)
+        });
+      }
+
+      await fetchAds();
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/events?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white">
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="relative max-w-7xl mx-auto px-4 py-20 md:py-32">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+              Discover Amazing Events in Africa
+            </h1>
+            <p className="text-lg md:text-xl text-blue-100 mb-8">
+              Find concerts, festivals, conferences, and more happening near you
+            </p>
+            
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
                   type="text"
-                  placeholder="Search for events..."
+                  placeholder="Search events, artists, venues..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="border-0 focus-visible:ring-0 text-gray-900 placeholder:text-gray-400"
+                  className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-blue-300"
                 />
               </div>
-              <Button 
+              <button 
                 type="submit"
-                className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl px-8"
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 rounded-xl transition-colors"
               >
-                Search Events
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+                Search
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      {/* Top Banner Ad - Full width, above the 3-column layout */}
+      <div className="max-w-[1200px] mx-auto px-4">
+        {ads.top && <BannerAd ad={ads.top} />}
+      </div>
+
+      {/* Main Content Area with Side Ads - Starts at Popular Categories */}
+      <div className={`${isLargeScreen ? 'flex justify-center gap-6 px-4' : ''}`}>
+        
+        {/* Left Side Ad */}
+        {isLargeScreen && ads.left && (
+          <div className="flex-shrink-0 mt-8">
+            <SideAd ad={ads.left} />
+          </div>
+        )}
+
+        {/* Main Content */}
+        <main className="max-w-[1200px] w-full px-4">
+
+          {/* Popular Categories */}
+          <section className="py-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Popular categories</h2>
+              <Link to="/categories" className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+                View All <ChevronRight size={16} />
+              </Link>
             </div>
-          </form>
-        </div>
-      </section>
+            <div className="relative group">
+              <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none' }}>
+                {categories.map(category => (
+                  <CategoryCard 
+                    key={category.id} 
+                    category={category}
+                    image={categoryImages[category.slug] || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop'}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
 
-      {/* Categories Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-8">Browse by Category</h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {loading ? (
-              Array(5).fill(0).map((_, i) => (
-                <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-28" />
-              ))
-            ) : (
-              categories.slice(0, 5).map((category) => (
-                <Card 
-                  key={category.id}
-                  className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 border-[#0F0F0F]/10 rounded-2xl"
-                  onClick={() => navigate(`/events?category=${category.slug}`)}
-                >
-                  <CardContent className="p-5 text-center">
-                    <div className="text-3xl mb-2">{category.icon || '🎫'}</div>
-                    <h3 className="font-medium text-[#0F0F0F] text-sm">{category.name}</h3>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
+          {/* Event Sections */}
+          <EventSection 
+            title="Trending Now"
+            subtitle="Hottest events this week"
+            icon={TrendingUp}
+            events={events.trending}
+            viewAllLink="/events?filter=trending"
+          />
 
-      {/* Featured Events Section */}
-      <section className="py-16 px-4 bg-[#F4F6FA]">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-bold text-[#0F0F0F]">Featured Events</h2>
-            <Button 
-              variant="ghost" 
-              className="text-[#2969FF] hover:text-[#2969FF]/80"
-              onClick={() => navigate('/events')}
-            >
-              View All
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+          <EventSection 
+            title="Most Popular"
+            subtitle="Top selling events"
+            icon={Users}
+            events={events.popular}
+            viewAllLink="/events?filter=popular"
+          />
+
+          <EventSection 
+            title="Featured Events"
+            subtitle="Hand-picked by our team"
+            icon={Star}
+            events={events.featured}
+            viewAllLink="/events?filter=featured"
+          />
+
+          <EventSection 
+            title="Events Near You"
+            subtitle="Happening in your area"
+            icon={MapPin}
+            events={events.nearYou}
+            showDistance={true}
+            viewAllLink="/events?filter=nearby"
+          />
+
+          <EventSection 
+            title="This Weekend"
+            subtitle="Don't miss out"
+            icon={Clock}
+            events={events.weekend}
+            viewAllLink="/events?filter=weekend"
+          />
+
+          <EventSection 
+            title="Free Events"
+            subtitle="No ticket required"
+            icon={Heart}
+            events={events.free}
+            viewAllLink="/events?filter=free"
+          />
+
+          {/* Stats Section */}
+          <section className="py-12 my-8 bg-white rounded-2xl shadow-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">10K+</div>
+                <div className="text-gray-500 mt-1">Events</div>
+              </div>
+              <div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">500K+</div>
+                <div className="text-gray-500 mt-1">Tickets Sold</div>
+              </div>
+              <div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">15+</div>
+                <div className="text-gray-500 mt-1">Countries</div>
+              </div>
+              <div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">4.9</div>
+                <div className="text-gray-500 mt-1">User Rating</div>
+              </div>
+            </div>
+          </section>
+
+          {/* Why Choose Us */}
+          <section className="py-12">
+            <h2 className="text-2xl font-bold text-gray-900 text-center mb-10">Why Choose Ticketrack</h2>
+            <div className="grid md:grid-cols-4 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="text-blue-600" size={24} />
+                </div>
+                <h3 className="font-semibold mb-2">Secure Payments</h3>
+                <p className="text-sm text-gray-500">Your transactions are protected with bank-level security</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Ticket className="text-blue-600" size={24} />
+                </div>
+                <h3 className="font-semibold mb-2">Instant Delivery</h3>
+                <p className="text-sm text-gray-500">Get your tickets delivered to your email instantly</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CreditCard className="text-blue-600" size={24} />
+                </div>
+                <h3 className="font-semibold mb-2">Easy Refunds</h3>
+                <p className="text-sm text-gray-500">Hassle-free refund process for eligible events</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Headphones className="text-blue-600" size={24} />
+                </div>
+                <h3 className="font-semibold mb-2">24/7 Support</h3>
+                <p className="text-sm text-gray-500">Our team is always here to help you</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Bottom Banner Ad */}
+          {ads.bottom && <BannerAd ad={ads.bottom} />}
+
+        </main>
+
+        {/* Right Side Ad */}
+        {isLargeScreen && ads.right && (
+          <div className="flex-shrink-0 mt-8">
+            <SideAd ad={ads.right} />
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading ? (
-              Array(3).fill(0).map((_, i) => (
-                <div key={i} className="animate-pulse bg-white rounded-2xl h-96" />
-              ))
-            ) : (
-              featuredEvents.slice(0, 3).map((event) => (
-                <Card 
-                  key={event.id}
-                  className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group"
-                  onClick={() => navigate(`/event/${event.slug}`)}
-                >
-                  <div className="relative h-52 bg-gray-100">
-                    <img 
-                      src={event.image_url} 
-                      alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => { e.target.style.display = 'none' }}
-                    />
-                    <Badge className="absolute top-4 left-4 bg-white text-[#0F0F0F] border-0 font-medium shadow-sm">
-                      {event.category?.name || 'Event'}
-                    </Badge>
+        )}
+      </div>
+
+      {/* Download App Section */}
+      <section className="bg-[#F0EBFF] py-16 mt-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Get the Ticketrack App</h2>
+              <p className="text-gray-600 mb-6 max-w-md">
+                Download our app for a better experience. Get exclusive deals and manage your tickets on the go.
+              </p>
+              <div className="flex gap-4 justify-center md:justify-start">
+                <a href="#" className="bg-black text-white px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors">
+                  <Download size={20} />
+                  <div className="text-left">
+                    <div className="text-xs">Download on the</div>
+                    <div className="font-semibold">App Store</div>
                   </div>
-                  
-                  <CardContent className="p-5">
-                    <h3 className="font-semibold text-lg text-[#0F0F0F] mb-3 line-clamp-1">
-                      {event.title}
-                    </h3>
-                    
-                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-2">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(event.start_date)}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-4">
-                      <MapPin className="w-4 h-4" />
-                      {event.venue_name}
-                    </div>
-                    
-                    <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-[#2969FF] text-lg">
-                          {formatPrice(event)}
-                        </span>
-                        <Button 
-                          size="sm"
-                          className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-5"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/event/${event.slug}`)
-                          }}
-                        >
-                          Get Tickets
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Events Near You Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-2xl font-bold text-[#0F0F0F]">Events Near You</h2>
-            <Button 
-              variant="ghost" 
-              className="text-[#2969FF] hover:text-[#2969FF]/80"
-              onClick={() => navigate('/events')}
-            >
-              View All
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-          <p className="text-[#0F0F0F]/60 mb-8">Happening in {userCity}</p>
-          
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {loading ? (
-              Array(4).fill(0).map((_, i) => (
-                <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-80" />
-              ))
-            ) : (
-              nearbyEvents.slice(0, 4).map((event, index) => (
-                <Card 
-                  key={event.id}
-                  className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border border-[#0F0F0F]/10 rounded-2xl bg-white group"
-                  onClick={() => navigate(`/event/${event.slug}`)}
-                >
-                  <div className="relative h-36 bg-gray-100">
-                    <img 
-                      src={event.image_url} 
-                      alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => { e.target.style.display = 'none' }}
-                    />
-                    <Badge className="absolute top-3 right-3 bg-white text-[#0F0F0F] border-0 text-xs font-medium shadow-sm">
-                      {['2.5km away', '3.7km away', '4.8km away', '6.3km away'][index % 4]}
-                    </Badge>
+                </a>
+                <a href="#" className="bg-black text-white px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors">
+                  <Download size={20} />
+                  <div className="text-left">
+                    <div className="text-xs">Get it on</div>
+                    <div className="font-semibold">Google Play</div>
                   </div>
-                  
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-[#0F0F0F] mb-2 line-clamp-1">
-                      {event.title}
-                    </h3>
-                    
-                    <div className="flex items-center gap-2 text-xs text-[#0F0F0F]/60 mb-1">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(event.start_date)}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs text-[#0F0F0F]/60 mb-3">
-                      <MapPin className="w-3 h-3" />
-                      {event.venue_name}
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-[#2969FF] text-sm">
-                        {formatPrice(event)}
-                      </span>
-                      <Button 
-                        size="sm"
-                        className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-3 py-1 text-xs h-7"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          navigate(`/event/${event.slug}`)
-                        }}
-                      >
-                        Get Tickets
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 px-4 bg-[#F4F6FA]">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold text-[#2969FF] mb-2">10K+</div>
-              <div className="text-[#0F0F0F]/60">Events Hosted</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-[#2969FF] mb-2">500K+</div>
-              <div className="text-[#0F0F0F]/60">Tickets Sold</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-[#2969FF] mb-2">15+</div>
-              <div className="text-[#0F0F0F]/60">African Countries</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-[#2969FF] mb-2">4.9</div>
-              <div className="text-[#0F0F0F]/60">Average Rating</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl font-bold text-[#0F0F0F] text-center mb-12">Why Choose Ticketrack?</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#2969FF]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-[#2969FF]" />
+                </a>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Secure Payments</h3>
-              <p className="text-[#0F0F0F]/60">Your transactions are protected with bank-level security and encryption.</p>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#2969FF]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Ticket className="w-8 h-8 text-[#2969FF]" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Instant Tickets</h3>
-              <p className="text-[#0F0F0F]/60">Get your tickets instantly via email and SMS with QR codes for easy entry.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#2969FF]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-8 h-8 text-[#2969FF]" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Best Prices</h3>
-              <p className="text-[#0F0F0F]/60">We offer competitive pricing with no hidden fees. What you see is what you pay.</p>
+            <div className="w-64 h-64 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center">
+              <span className="text-white text-6xl">📱</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-[#2969FF] to-[#1a4fd8] text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-xl text-white/80 mb-8">
-            Join thousands of event-goers discovering amazing experiences
+      <section className="bg-blue-600 text-white py-16">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Host Your Own Event?</h2>
+          <p className="text-blue-100 mb-8">
+            Join thousands of event organizers who trust Ticketrack to sell their tickets
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => navigate('/signup')}
-              className="bg-white text-[#2969FF] hover:bg-white/90 rounded-xl px-8 py-6 text-lg font-semibold"
-            >
-              Sign Up Now
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => navigate('/events')}
-              className="border-2 border-white text-white bg-transparent hover:bg-white/10 rounded-xl px-8 py-6 text-lg font-semibold"
-            >
-              Browse Events
-            </Button>
-          </div>
+          <Link 
+            to="/create-event"
+            className="inline-block bg-white text-blue-600 font-semibold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors"
+          >
+            Create Your Event
+          </Link>
         </div>
       </section>
     </div>
-  )
+  );
 }

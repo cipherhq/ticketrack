@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase'
 
 export function AttendeeProfile() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, signOut } = useAuth()
   
   const [profile, setProfile] = useState(null)
@@ -25,6 +26,7 @@ export function AttendeeProfile() {
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [stats, setStats] = useState({ eventsAttended: 0, ticketsPurchased: 0, following: 0 })
+  const [activeTab, setActiveTab] = useState(location.state?.tab || "profile")
 
   useEffect(() => {
     if (!user) {
@@ -192,18 +194,18 @@ export function AttendeeProfile() {
 
               <nav className="space-y-1">
                 {[
-                  { icon: User, label: 'Profile', active: true },
-                  { icon: Ticket, label: 'My Tickets', onClick: () => navigate('/tickets') },
-                  { icon: Heart, label: 'Saved Events' },
-                  { icon: Settings, label: 'Settings' }
+                  { icon: User, label: "Profile", tab: "profile" },
+                  { icon: Ticket, label: "My Tickets", tab: "tickets" },
+                  { icon: Heart, label: "Saved Events", tab: "saved" },
+                  { icon: Settings, label: "Settings", tab: "settings" }
                 ].map((item, index) => {
                   const Icon = item.icon
                   return (
                     <button 
                       key={index} 
-                      onClick={item.onClick}
+                      onClick={() => setActiveTab(item.tab)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                        item.active 
+                        activeTab === item.tab 
                           ? 'bg-[#2969FF]/10 text-[#2969FF]' 
                           : 'text-[#0F0F0F]/70 hover:bg-[#F4F6FA]'
                       }`}
@@ -214,8 +216,6 @@ export function AttendeeProfile() {
                   )
                 })}
               </nav>
-
-              <Separator className="my-4" />
 
               <button 
                 onClick={handleSignOut}
@@ -230,7 +230,7 @@ export function AttendeeProfile() {
 
         {/* Main Content */}
         <main className="lg:col-span-3">
-          <Tabs defaultValue="profile" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="bg-white border border-[#0F0F0F]/10 rounded-xl p-1">
               <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Profile</TabsTrigger>
               <TabsTrigger value="tickets" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Tickets</TabsTrigger>

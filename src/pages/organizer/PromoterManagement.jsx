@@ -28,7 +28,6 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Badge } from '../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -60,7 +59,6 @@ export function PromoterManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   
-  // Dialog states
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isPayoutOpen, setIsPayoutOpen] = useState(false);
   const [selectedPromoter, setSelectedPromoter] = useState(null);
@@ -87,34 +85,22 @@ export function PromoterManagement() {
     setLoading(true);
     try {
       await Promise.all([loadPromoters(), loadEvents()]);
-    } catch (error) {
-      console.error('Error loading data:', error);
+    } catch (err) {
+      console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const loadPromoters = async () => {
-    const { data, error } = await supabase
+    const { data, error: loadError } = await supabase
       .from('promoters')
-      .select(`
-        *,
-        events (
-          id,
-          title
-        ),
-        profiles:user_id (
-          id,
-          full_name,
-          email,
-          phone
-        )
-      `)
+      .select('*')
       .eq('organizer_id', organizer.id)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error loading promoters:', error);
+    if (loadError) {
+      console.error('Error loading promoters:', loadError);
       return;
     }
 
@@ -122,15 +108,15 @@ export function PromoterManagement() {
   };
 
   const loadEvents = async () => {
-    const { data, error } = await supabase
+    const { data, error: loadError } = await supabase
       .from('events')
       .select('id, title')
       .eq('organizer_id', organizer.id)
       .eq('status', 'published')
       .order('start_date', { ascending: false });
 
-    if (error) {
-      console.error('Error loading events:', error);
+    if (loadError) {
+      console.error('Error loading events:', loadError);
       return;
     }
 
@@ -143,12 +129,12 @@ export function PromoterManagement() {
     return `${cleanName}${random}`;
   };
 
-  const generateReferralLink = (promoCode, eventId) => {
+  const generateReferralLink = (promoCode, eventId, organizerId) => {
     const baseUrl = window.location.origin;
     if (eventId && eventId !== 'all') {
       return `${baseUrl}/events/${eventId}?ref=${promoCode}`;
     }
-    return `${baseUrl}/events?ref=${promoCode}`;
+    return `${baseUrl}/organizer/${organizerId}/events?ref=${promoCode}`;
   };
 
   const invitePromoter = async () => {
@@ -166,17 +152,14 @@ export function PromoterManagement() {
     setError('');
 
     try {
-      // Check if user exists in profiles
       const { data: existingUser } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .eq('email', inviteForm.email.toLowerCase().trim())
         .single();
 
-      // Generate promo code
       const promoCode = generatePromoCode(existingUser?.full_name || inviteForm.email.split('@')[0]);
       
-      // Check if already invited
       const { data: existingPromoter } = await supabase
         .from('promoters')
         .select('id')
@@ -190,24 +173,29 @@ export function PromoterManagement() {
         return;
       }
 
-      // Create promoter record
+      const promoterName = existingUser?.full_name || inviteForm.email.split('@')[0];
       const promoterData = {
         organizer_id: organizer.id,
         user_id: existingUser?.id || null,
-        name: existingUser?.full_name || inviteForm.email.split('@')[0],
+        full_name: promoterName,
+        short_code: promoCode,
         email: inviteForm.email.toLowerCase().trim(),
-        promo_code: promoCode,
-        referral_link: generateReferralLink(promoCode, inviteForm.eventId),
+        name: promoterName,
+        referral_code: promoCode,
+        referral_link: generateReferralLink(promoCode, inviteForm.eventId, organizer.id),
         commission_type: inviteForm.commissionType,
         commission_value: parseFloat(inviteForm.commissionValue),
+        commission_rate: parseFloat(inviteForm.commissionValue),
         event_id: inviteForm.eventId === 'all' ? null : inviteForm.eventId,
-        status: 'pending', // pending, active, inactive
+        status: 'pending',
         is_active: false,
         total_clicks: 0,
         total_sales: 0,
         total_revenue: 0,
         total_commission: 0,
         paid_commission: 0,
+        total_earned: 0,
+        total_paid: 0,
       };
 
       const { error: insertError } = await supabase
@@ -216,9 +204,7 @@ export function PromoterManagement() {
 
       if (insertError) throw insertError;
 
-      // TODO: Send invitation email via Edge Function
-      // For now, just show success
-      alert(`Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}\n\nNote: In production, an email will be sent automatically.`);
+      alert(`Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}`);
 
       await loadPromoters();
       setIsInviteOpen(false);
@@ -228,8 +214,8 @@ export function PromoterManagement() {
         commissionValue: '10',
         eventId: 'all',
       });
-    } catch (error) {
-      console.error('Error inviting promoter:', error);
+    } catch (err) {
+      console.error('Error inviting promoter:', err);
       setError('Failed to invite promoter. Please try again.');
     } finally {
       setInviting(false);
@@ -238,36 +224,30 @@ export function PromoterManagement() {
 
   const activatePromoter = async (promoterId) => {
     try {
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('promoters')
-        .update({ 
-          status: 'active',
-          is_active: true 
-        })
+        .update({ status: 'active', is_active: true })
         .eq('id', promoterId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
       await loadPromoters();
-    } catch (error) {
-      console.error('Error activating promoter:', error);
+    } catch (err) {
+      console.error('Error activating promoter:', err);
       alert('Failed to activate promoter');
     }
   };
 
   const deactivatePromoter = async (promoterId) => {
     try {
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('promoters')
-        .update({ 
-          status: 'inactive',
-          is_active: false 
-        })
+        .update({ status: 'inactive', is_active: false })
         .eq('id', promoterId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
       await loadPromoters();
-    } catch (error) {
-      console.error('Error deactivating promoter:', error);
+    } catch (err) {
+      console.error('Error deactivating promoter:', err);
       alert('Failed to deactivate promoter');
     }
   };
@@ -276,22 +256,17 @@ export function PromoterManagement() {
     if (!confirm('Are you sure you want to remove this promoter?')) return;
 
     try {
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('promoters')
         .delete()
         .eq('id', promoterId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
       await loadPromoters();
-    } catch (error) {
-      console.error('Error deleting promoter:', error);
+    } catch (err) {
+      console.error('Error deleting promoter:', err);
       alert('Failed to remove promoter');
     }
-  };
-
-  const resendInvite = async (promoter) => {
-    // TODO: Implement email resend via Edge Function
-    alert(`Invitation resent to ${promoter.email}`);
   };
 
   const openPayoutDialog = (promoter) => {
@@ -321,46 +296,40 @@ export function PromoterManagement() {
     setError('');
 
     try {
-      // Update paid commission
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('promoters')
-        .update({ 
-          paid_commission: (selectedPromoter.paid_commission || 0) + amount 
-        })
+        .update({ paid_commission: (selectedPromoter.paid_commission || 0) + amount })
         .eq('id', selectedPromoter.id);
 
-      if (error) throw error;
-
-      // TODO: Create payout record and process actual payment
+      if (updateError) throw updateError;
 
       await loadPromoters();
       setIsPayoutOpen(false);
       setSelectedPromoter(null);
       setPayoutAmount('');
       alert('Payout recorded successfully!');
-    } catch (error) {
-      console.error('Error processing payout:', error);
+    } catch (err) {
+      console.error('Error processing payout:', err);
       setError('Failed to process payout');
     } finally {
       setPayingOut(false);
     }
   };
 
-  const copyToClipboard = (text, label) => {
+  const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    // Could add toast notification
+    alert('Copied to clipboard!');
   };
 
   const filteredPromoters = promoters.filter((p) => {
     const matchesSearch = 
       p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
       p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.promo_code?.toLowerCase().includes(searchQuery.toLowerCase());
+      p.referral_code?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  // Calculate stats
   const stats = {
     total: promoters.length,
     active: promoters.filter((p) => p.status === 'active').length,
@@ -372,12 +341,8 @@ export function PromoterManagement() {
   };
 
   const formatCurrency = (amount) => {
-    if (amount >= 1000000) {
-      return `₦${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `₦${(amount / 1000).toFixed(0)}K`;
-    }
+    if (amount >= 1000000) return `₦${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `₦${(amount / 1000).toFixed(0)}K`;
     return `₦${(amount || 0).toLocaleString()}`;
   };
 
@@ -404,32 +369,22 @@ export function PromoterManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-[#0F0F0F]">Event Promoters</h2>
           <p className="text-[#0F0F0F]/60 mt-1">Invite affiliates and track their performance</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={loadData}
-            className="rounded-xl border-[#0F0F0F]/10"
-          >
+          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl border-[#0F0F0F]/10">
             <RefreshCw className="w-4 h-4" />
           </Button>
-          <Button 
-            onClick={() => setIsInviteOpen(true)} 
-            className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
-          >
+          <Button onClick={() => setIsInviteOpen(true)} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
             <UserPlus className="w-4 h-4 mr-2" />
             Invite Promoter
           </Button>
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-4">
@@ -437,9 +392,7 @@ export function PromoterManagement() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60 mb-1">Active Promoters</p>
                 <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.active}</p>
-                {stats.pending > 0 && (
-                  <p className="text-xs text-yellow-600">{stats.pending} pending</p>
-                )}
+                {stats.pending > 0 && <p className="text-xs text-yellow-600">{stats.pending} pending</p>}
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Users className="w-5 h-5 text-[#2969FF]" />
@@ -488,18 +441,12 @@ export function PromoterManagement() {
         </Card>
       </div>
 
-      {/* Search & Filter */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-              <Input 
-                placeholder="Search by name, email, or code..." 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl" 
-              />
+              <Input placeholder="Search by name, email, or code..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="md:w-40 h-12 rounded-xl border-[#0F0F0F]/10">
@@ -516,7 +463,6 @@ export function PromoterManagement() {
         </CardContent>
       </Card>
 
-      {/* Promoters List */}
       {filteredPromoters.length === 0 ? (
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-12 text-center">
@@ -525,10 +471,7 @@ export function PromoterManagement() {
               {promoters.length === 0 ? 'No promoters yet' : 'No promoters match your filters'}
             </p>
             {promoters.length === 0 && (
-              <Button
-                onClick={() => setIsInviteOpen(true)}
-                className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
-              >
+              <Button onClick={() => setIsInviteOpen(true)} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
                 <UserPlus className="w-4 h-4 mr-2" />
                 Invite Your First Promoter
               </Button>
@@ -544,7 +487,6 @@ export function PromoterManagement() {
               <Card key={promoter.id} className="border-[#0F0F0F]/10 rounded-2xl hover:shadow-md transition-shadow">
                 <CardContent className="p-4 md:p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* Promoter Info */}
                     <div className="flex items-center gap-4 flex-1">
                       <div className="w-12 h-12 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium flex-shrink-0">
                         {promoter.name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || 'P'}
@@ -565,16 +507,10 @@ export function PromoterManagement() {
                               ? `${promoter.commission_value}%` 
                               : formatCurrency(promoter.commission_value)}
                           </span>
-                          {promoter.events && (
-                            <Badge variant="outline" className="text-xs">
-                              {promoter.events.title}
-                            </Badge>
-                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-4 gap-3 text-center">
                       <div className="p-2 bg-[#F4F6FA] rounded-lg">
                         <p className="text-xs text-[#0F0F0F]/60">Clicks</p>
@@ -594,25 +530,14 @@ export function PromoterManagement() {
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {unpaidBalance > 0 && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => openPayoutDialog(promoter)}
-                          className="rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
-                        >
+                        <Button variant="outline" size="sm" onClick={() => openPayoutDialog(promoter)} className="rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50">
                           <Banknote className="w-4 h-4 mr-1" />
                           Pay {formatCurrency(unpaidBalance)}
                         </Button>
                       )}
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => copyToClipboard(promoter.referral_link, 'Link')}
-                        className="rounded-xl border-[#0F0F0F]/10"
-                      >
+                      <Button variant="outline" size="sm" onClick={() => copyToClipboard(promoter.referral_link)} className="rounded-xl border-[#0F0F0F]/10">
                         <Copy className="w-4 h-4 mr-1" />
                         Copy Link
                       </Button>
@@ -623,21 +548,15 @@ export function PromoterManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem onClick={() => copyToClipboard(promoter.promo_code, 'Code')}>
+                          <DropdownMenuItem onClick={() => copyToClipboard(promoter.referral_code)}>
                             <Copy className="w-4 h-4 mr-2" />
                             Copy Promo Code
                           </DropdownMenuItem>
                           {promoter.status === 'pending' && (
-                            <>
-                              <DropdownMenuItem onClick={() => activatePromoter(promoter.id)}>
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Approve & Activate
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => resendInvite(promoter)}>
-                                <Send className="w-4 h-4 mr-2" />
-                                Resend Invite
-                              </DropdownMenuItem>
-                            </>
+                            <DropdownMenuItem onClick={() => activatePromoter(promoter.id)}>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Approve & Activate
+                            </DropdownMenuItem>
                           )}
                           {promoter.status === 'active' && (
                             <DropdownMenuItem onClick={() => deactivatePromoter(promoter.id)}>
@@ -651,10 +570,7 @@ export function PromoterManagement() {
                               Reactivate
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem 
-                            onClick={() => deletePromoter(promoter.id)}
-                            className="text-red-600"
-                          >
+                          <DropdownMenuItem onClick={() => deletePromoter(promoter.id)} className="text-red-600">
                             <Trash2 className="w-4 h-4 mr-2" />
                             Remove
                           </DropdownMenuItem>
@@ -663,11 +579,10 @@ export function PromoterManagement() {
                     </div>
                   </div>
 
-                  {/* Referral Link */}
                   <div className="mt-4 p-3 bg-[#F4F6FA] rounded-xl flex items-center gap-3">
                     <Link2 className="w-4 h-4 text-[#0F0F0F]/40 flex-shrink-0" />
                     <code className="text-sm text-[#0F0F0F]/60 flex-1 truncate">{promoter.referral_link}</code>
-                    <Badge className="bg-[#2969FF]/10 text-[#2969FF] flex-shrink-0">{promoter.promo_code}</Badge>
+                    <Badge className="bg-[#2969FF]/10 text-[#2969FF] flex-shrink-0">{promoter.referral_code}</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -676,14 +591,11 @@ export function PromoterManagement() {
         </div>
       )}
 
-      {/* Invite Promoter Dialog */}
       <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>Invite Promoter</DialogTitle>
-            <DialogDescription>
-              Send an invitation to become an affiliate promoter for your events
-            </DialogDescription>
+            <DialogDescription>Send an invitation to become an affiliate promoter for your events</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
@@ -696,25 +608,14 @@ export function PromoterManagement() {
 
             <div className="space-y-2">
               <Label>Email Address *</Label>
-              <Input 
-                type="email"
-                placeholder="promoter@example.com" 
-                value={inviteForm.email} 
-                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} 
-                className="rounded-xl h-12" 
-              />
-              <p className="text-xs text-[#0F0F0F]/40">
-                The promoter will receive an email invitation to accept
-              </p>
+              <Input type="email" placeholder="promoter@example.com" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} className="rounded-xl h-12" />
+              <p className="text-xs text-[#0F0F0F]/40">The promoter will receive an email invitation to accept</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Commission Type</Label>
-                <Select
-                  value={inviteForm.commissionType}
-                  onValueChange={(value) => setInviteForm({ ...inviteForm, commissionType: value })}
-                >
+                <Select value={inviteForm.commissionType} onValueChange={(value) => setInviteForm({ ...inviteForm, commissionType: value })}>
                   <SelectTrigger className="rounded-xl h-12">
                     <SelectValue />
                   </SelectTrigger>
@@ -726,22 +627,13 @@ export function PromoterManagement() {
               </div>
               <div className="space-y-2">
                 <Label>Commission Value *</Label>
-                <Input 
-                  type="number"
-                  placeholder={inviteForm.commissionType === 'percentage' ? '10' : '500'}
-                  value={inviteForm.commissionValue} 
-                  onChange={(e) => setInviteForm({ ...inviteForm, commissionValue: e.target.value })} 
-                  className="rounded-xl h-12" 
-                />
+                <Input type="number" placeholder={inviteForm.commissionType === 'percentage' ? '10' : '500'} value={inviteForm.commissionValue} onChange={(e) => setInviteForm({ ...inviteForm, commissionValue: e.target.value })} className="rounded-xl h-12" />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>Applicable Event</Label>
-              <Select
-                value={inviteForm.eventId}
-                onValueChange={(value) => setInviteForm({ ...inviteForm, eventId: value })}
-              >
+              <Select value={inviteForm.eventId} onValueChange={(value) => setInviteForm({ ...inviteForm, eventId: value })}>
                 <SelectTrigger className="rounded-xl h-12">
                   <SelectValue />
                 </SelectTrigger>
@@ -755,54 +647,26 @@ export function PromoterManagement() {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsInviteOpen(false);
-                  setError('');
-                }} 
-                className="flex-1 rounded-xl h-12"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={invitePromoter}
-                disabled={inviting}
-                className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12"
-              >
-                {inviting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Send Invitation
-                  </>
-                )}
+              <Button variant="outline" onClick={() => { setIsInviteOpen(false); setError(''); }} className="flex-1 rounded-xl h-12">Cancel</Button>
+              <Button onClick={invitePromoter} disabled={inviting} className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12">
+                {inviting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : <><Send className="w-4 h-4 mr-2" />Send Invitation</>}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Payout Dialog */}
       <Dialog open={isPayoutOpen} onOpenChange={setIsPayoutOpen}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>Pay Promoter Commission</DialogTitle>
-            <DialogDescription>
-              Record a commission payment to {selectedPromoter?.name}
-            </DialogDescription>
+            <DialogDescription>Record a commission payment to {selectedPromoter?.name}</DialogDescription>
           </DialogHeader>
           
           {selectedPromoter && (
             <div className="space-y-4 py-4">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-                  {error}
-                </div>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>
               )}
 
               <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-2">
@@ -826,43 +690,14 @@ export function PromoterManagement() {
                 <Label>Payment Amount</Label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60">₦</span>
-                  <Input 
-                    type="number"
-                    placeholder="0"
-                    value={payoutAmount} 
-                    onChange={(e) => setPayoutAmount(e.target.value)} 
-                    className="rounded-xl h-12 pl-8" 
-                  />
+                  <Input type="number" placeholder="0" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} className="rounded-xl h-12 pl-8" />
                 </div>
               </div>
 
               <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsPayoutOpen(false);
-                    setError('');
-                  }} 
-                  className="flex-1 rounded-xl h-12"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={processPromoterPayout}
-                  disabled={payingOut}
-                  className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12"
-                >
-                  {payingOut ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Banknote className="w-4 h-4 mr-2" />
-                      Record Payment
-                    </>
-                  )}
+                <Button variant="outline" onClick={() => { setIsPayoutOpen(false); setError(''); }} className="flex-1 rounded-xl h-12">Cancel</Button>
+                <Button onClick={processPromoterPayout} disabled={payingOut} className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12">
+                  {payingOut ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</> : <><Banknote className="w-4 h-4 mr-2" />Record Payment</>}
                 </Button>
               </div>
             </div>

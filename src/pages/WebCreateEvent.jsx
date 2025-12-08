@@ -87,6 +87,9 @@ export function WebCreateEvent() {
     promoVideoUrl: '',
     // Fee Handling
     feeHandling: 'pass_to_attendee',
+    // Free Event
+    isFreeEvent: false,
+    freeEventCapacity: '',
   });
 
   // Tickets State
@@ -313,8 +316,8 @@ export function WebCreateEvent() {
       return;
     }
 
-    const validTickets = tickets.filter(t => t.name && t.price && t.quantity);
-    if (validTickets.length === 0) {
+    const validTickets = formData.isFreeEvent ? [] : tickets.filter(t => t.name && t.price && t.quantity);
+    if (!formData.isFreeEvent && validTickets.length === 0) {
       setError('Please add at least one ticket type');
       setActiveTab('ticketing');
       return;
@@ -385,10 +388,21 @@ export function WebCreateEvent() {
         image_url: imageUrl,
         promo_video_url: formData.promoVideoUrl,
         fee_handling: formData.feeHandling,
+        is_free: formData.isFreeEvent,
       });
 
-      // Create regular ticket types
-      await createTicketTypes(event.id, validTickets);
+      // Create ticket types
+      if (formData.isFreeEvent) {
+        // Create single free registration ticket
+        await createTicketTypes(event.id, [{
+          name: 'Free Registration',
+          price: '0',
+          quantity: formData.freeEventCapacity || '9999',
+          description: 'Free event registration'
+        }]);
+      } else {
+        await createTicketTypes(event.id, validTickets);
+      }
 
       // Create table tickets as ticket types
       const validTableTickets = tableTickets.filter(t => t.name && t.price && t.quantity);
@@ -882,6 +896,47 @@ export function WebCreateEvent() {
             {/* Ticketing Tab */}
             {activeTab === 'ticketing' && (
               <div className="space-y-6">
+                {/* Free Event Toggle */}
+                <Card className="border-[#0F0F0F]/10 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <Ticket className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-[#0F0F0F]">This is a Free Event</h3>
+                          <p className="text-sm text-[#0F0F0F]/60">No tickets required - attendees register for free</p>
+                        </div>
+                      </div>
+                      <Checkbox
+                        id="freeEvent"
+                        checked={formData.isFreeEvent}
+                        onCheckedChange={(checked) => handleInputChange('isFreeEvent', checked)}
+                        className="h-6 w-6"
+                      />
+                    </div>
+                    
+                    {formData.isFreeEvent && (
+                      <div className="mt-4 pt-4 border-t border-green-200">
+                        <div className="space-y-2">
+                          <Label>Maximum Registrations (Optional)</Label>
+                          <Input
+                            type="number"
+                            placeholder="Leave empty for unlimited"
+                            value={formData.freeEventCapacity}
+                            onChange={(e) => handleInputChange('freeEventCapacity', e.target.value)}
+                            className="h-12 rounded-xl bg-white border-green-200"
+                          />
+                          <p className="text-xs text-[#0F0F0F]/50">Set a limit or leave empty for unlimited registrations</p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                {!formData.isFreeEvent && (
+                  <>
+
                 {/* Regular Tickets */}
                 <div className="flex items-center justify-between">
                   <div>
@@ -1130,6 +1185,8 @@ export function WebCreateEvent() {
                     </div>
                   </CardContent>
                 </Card>
+                  </>
+                )}
               </div>
             )}
 

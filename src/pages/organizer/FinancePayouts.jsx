@@ -1,28 +1,209 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Clock, CheckCircle, Plus, CreditCard, Building2 } from 'lucide-react';
+import { 
+  DollarSign, Clock, CheckCircle, Plus, CreditCard, Building2, 
+  Download, Calendar, Loader2, FileText 
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-
-const payouts = [
-  { id: 1, amount: '₦850,000', date: 'Nov 20, 2025', status: 'Completed', event: 'Summer Fest' },
-  { id: 2, amount: '₦450,000', date: 'Nov 25, 2025', status: 'Pending', event: 'Tech Conference' },
-  { id: 3, amount: '₦320,000', date: 'Nov 28, 2025', status: 'Processing', event: 'Business Summit' },
-];
+import { useOrganizer } from '../../contexts/OrganizerContext';
+import { supabase } from '@/lib/supabase';
 
 export function FinancePayouts() {
   const navigate = useNavigate();
-  
+  const { organizer } = useOrganizer();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    inEscrow: 0,
+    upcomingPayouts: 0,
+    totalPaidOut: 0,
+  });
+  const [upcomingPayouts, setUpcomingPayouts] = useState([]);
+  const [payoutHistory, setPayoutHistory] = useState([]);
+
+  useEffect(() => {
+    if (organizer?.id) {
+      loadPayoutData();
+    }
+  }, [organizer?.id]);
+
+  const loadPayoutData = async () => {
+    setLoading(true);
+    try {
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      // Fetch all events with their order totals
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select(`
+          id,
+          title,
+          end_date,
+          orders (
+            id,
+            total_amount,
+            status,
+            created_at
+          )
+        `)
+        .eq('organizer_id', organizer.id);
+
+      if (eventsError) throw eventsError;
+
+      // Fetch completed payouts
+      const { data: payouts, error: payoutsError } = await supabase
+        .from('organizer_payouts')
+        .select('*')
+        .eq('organizer_id', organizer.id)
+        .order('created_at', { ascending: false });
+
+      // Calculate stats and categorize
+      let inEscrow = 0;
+      let upcomingTotal = 0;
+      const upcoming = [];
+
+      events?.forEach(event => {
+        const eventEndDate = new Date(event.end_date);
+        const payoutDate = new Date(eventEndDate.getTime() + 24 * 60 * 60 * 1000);
+        
+        // Sum completed orders for this event
+        const eventRevenue = event.orders
+          ?.filter(o => o.status === 'completed')
+          ?.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0) || 0;
+
+        if (eventRevenue === 0) return;
+
+        // Platform fee (e.g., 5%)
+        const platformFee = eventRevenue * 0.05;
+        const netAmount = eventRevenue - platformFee;
+
+        if (eventEndDate > now) {
+          // Event hasn't ended yet - In Escrow
+          inEscrow += netAmount;
+        } else if (payoutDate > now) {
+          // Event ended, within 24 hours - Upcoming Payout
+          upcomingTotal += netAmount;
+          upcoming.push({
+            id: event.id,
+            event: event.title,
+            grossAmount: eventRevenue,
+            netAmount: netAmount,
+            eventEndDate: event.end_date,
+            payoutDate: payoutDate.toISOString(),
+            status: 'Scheduled',
+          });
+        }
+      });
+
+      // Total paid out from payouts table
+      const totalPaidOut = payouts
+        ?.filter(p => p.status === 'completed')
+        ?.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) || 0;
+
+      setStats({
+        inEscrow,
+        upcomingPayouts: upcomingTotal,
+        totalPaidOut,
+      });
+
+      setUpcomingPayouts(upcoming);
+      setPayoutHistory(payouts || []);
+
+    } catch (error) {
+      console.error('Error loading payout data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+    }).format(amount || 0);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
+  const downloadPayoutReport = (payout) => {
+    // Generate CSV report
+    const csvContent = `Payout Report
+Event,${payout.event}
+Gross Amount,${formatCurrency(payout.grossAmount)}
+Platform Fee (5%),${formatCurrency(payout.grossAmount * 0.05)}
+Net Amount,${formatCurrency(payout.netAmount)}
+Event End Date,${formatDate(payout.eventEndDate)}
+Payout Date,${formatDateTime(payout.payoutDate)}
+Status,${payout.status}
+`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payout-report-${payout.event.replace(/\s+/g, '-').toLowerCase()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const downloadFullReport = () => {
+    // Generate full payout history report
+    let csvContent = `Payout History Report\nGenerated,${new Date().toISOString()}\n\nEvent,Amount,Status,Date\n`;
+    
+    payoutHistory.forEach(payout => {
+      csvContent += `"${payout.event_title || 'N/A'}",${formatCurrency(payout.amount)},${payout.status},${formatDate(payout.created_at)}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payout-history-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-[#0F0F0F]">Finance & Payouts</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage your earnings and bank accounts</p>
+          <p className="text-[#0F0F0F]/60 mt-1">Track your earnings and payout schedule</p>
         </div>
         <div className="flex gap-2">
           <Button 
-            onClick={() => navigate('/organizer/bank-accounts')}
+            onClick={() => navigate('/organizer/bank-account')}
             variant="outline"
             className="rounded-xl border-[#0F0F0F]/10"
           >
@@ -30,7 +211,7 @@ export function FinancePayouts() {
             Manage Bank Accounts
           </Button>
           <Button 
-            onClick={() => navigate('/organizer/add-bank')}
+            onClick={() => navigate('/organizer/bank-account')}
             className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -39,75 +220,143 @@ export function FinancePayouts() {
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
-            <DollarSign className="w-8 h-8 text-[#2969FF] mb-3" />
-            <p className="text-[#0F0F0F]/60 mb-2">Available Balance</p>
-            <h2 className="text-2xl font-semibold text-[#2969FF]">₦1,450,000</h2>
+            <Clock className="w-8 h-8 text-orange-500 mb-3" />
+            <p className="text-[#0F0F0F]/60 mb-2">In Escrow</p>
+            <h2 className="text-2xl font-semibold text-[#0F0F0F]">{formatCurrency(stats.inEscrow)}</h2>
+            <p className="text-xs text-[#0F0F0F]/40 mt-1">From upcoming events</p>
           </CardContent>
         </Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
-            <Clock className="w-8 h-8 text-[#0F0F0F]/40 mb-3" />
-            <p className="text-[#0F0F0F]/60 mb-2">In Escrow</p>
-            <h2 className="text-2xl font-semibold text-[#0F0F0F]">₦680,000</h2>
+            <Calendar className="w-8 h-8 text-[#2969FF] mb-3" />
+            <p className="text-[#0F0F0F]/60 mb-2">Upcoming Payouts</p>
+            <h2 className="text-2xl font-semibold text-[#2969FF]">{formatCurrency(stats.upcomingPayouts)}</h2>
+            <p className="text-xs text-[#0F0F0F]/40 mt-1">To be paid within 24 hours</p>
           </CardContent>
         </Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
             <CheckCircle className="w-8 h-8 text-green-500 mb-3" />
             <p className="text-[#0F0F0F]/60 mb-2">Total Paid Out</p>
-            <h2 className="text-2xl font-semibold text-[#0F0F0F]">₦4,200,000</h2>
+            <h2 className="text-2xl font-semibold text-green-600">{formatCurrency(stats.totalPaidOut)}</h2>
+            <p className="text-xs text-[#0F0F0F]/40 mt-1">Successfully transferred</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Request Payout Card */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl bg-[#2969FF]/5">
+      {/* Payout Info Card */}
+      <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50/50">
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-5 h-5 text-[#2969FF]" />
+            </div>
             <div>
-              <h3 className="font-medium text-[#0F0F0F] mb-1">Request a Payout</h3>
+              <h3 className="font-medium text-[#0F0F0F] mb-1">Automatic Payouts</h3>
               <p className="text-sm text-[#0F0F0F]/60">
-                Withdraw your available balance to your bank account. Processing takes 24-48 hours.
+                Your earnings are automatically paid to your registered bank account within 24 hours after each event ends. 
+                A 5% platform fee is deducted from ticket sales.
               </p>
             </div>
-            <Button className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
-              <DollarSign className="w-5 h-5 mr-2" />
-              Request Payout
-            </Button>
           </div>
         </CardContent>
       </Card>
 
+      {/* Upcoming Payouts */}
+      {upcomingPayouts.length > 0 && (
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-[#0F0F0F]">Upcoming Payouts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {upcomingPayouts.map((payout) => (
+                <div key={payout.id} className="p-4 rounded-xl bg-[#F4F6FA]">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.event}</h4>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                        <span>Event ended: {formatDate(payout.eventEndDate)}</span>
+                        <span className="text-[#2969FF] font-medium">
+                          Payout: {formatDateTime(payout.payoutDate)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-[#2969FF] font-semibold text-lg">{formatCurrency(payout.netAmount)}</p>
+                        <p className="text-xs text-[#0F0F0F]/40">Net amount</p>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-700">
+                        {payout.status}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadPayoutReport(payout)}
+                        className="rounded-lg"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payout History */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-[#0F0F0F]">Payout History</CardTitle>
+          {payoutHistory.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadFullReport}
+              className="rounded-xl"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Download Report
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
-          {payouts.length === 0 ? (
+          {payoutHistory.length === 0 ? (
             <div className="text-center py-12">
               <Building2 className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
               <p className="text-[#0F0F0F]/60">No payout history yet</p>
+              <p className="text-sm text-[#0F0F0F]/40 mt-1">
+                Your completed payouts will appear here
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {payouts.map((payout) => (
+              {payoutHistory.map((payout) => (
                 <div key={payout.id} className="p-4 rounded-xl bg-[#F4F6FA]">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.event}</h4>
-                      <p className="text-sm text-[#0F0F0F]/60">{payout.date}</p>
+                      <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.event_title || 'Payout'}</h4>
+                      <p className="text-sm text-[#0F0F0F]/60">{formatDate(payout.created_at)}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-[#2969FF] font-medium mb-2">{payout.amount}</p>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-[#2969FF] font-medium">{formatCurrency(payout.amount)}</p>
+                      </div>
                       <Badge
                         className={`${
-                          payout.status === 'Completed'
+                          payout.status === 'completed'
                             ? 'bg-green-100 text-green-700'
-                            : payout.status === 'Processing'
+                            : payout.status === 'processing'
                             ? 'bg-blue-100 text-blue-700'
+                            : payout.status === 'failed'
+                            ? 'bg-red-100 text-red-700'
                             : 'bg-[#0F0F0F]/10 text-[#0F0F0F]/60'
                         }`}
                       >

@@ -6,6 +6,7 @@ export async function getEvents({
   city = null, 
   search = null,
   featured = null,
+  organizerId = null,
   limit = 20,
   offset = 0 
 } = {}) {
@@ -33,6 +34,10 @@ export async function getEvents({
 
   if (featured === true) {
     query = query.eq('is_featured', true)
+  }
+
+  if (organizerId) {
+    query = query.eq('organizer_id', organizerId)
   }
 
   query = query.range(offset, offset + limit - 1)
@@ -129,4 +134,36 @@ export async function getCities() {
   // Get unique cities
   const cities = [...new Set(data.map(e => e.city))].filter(Boolean).sort()
   return cities
+}
+
+// Look up promoter by promo code and track click
+export async function getPromoterByCode(promoCode) {
+  const { data, error } = await supabase
+    .from('promoters')
+    .select('id, organizer_id, referral_code')
+    .or(`referral_code.eq.${promoCode},short_code.eq.${promoCode}`)
+    .single()
+
+  if (error) {
+    console.error('Error fetching promoter:', error)
+    return null
+  }
+
+  return data
+}
+
+// Track promoter click
+export async function trackPromoterClick(promoterId) {
+  // Increment total_clicks on the promoter
+  const { error } = await supabase.rpc('increment_promoter_clicks', { 
+    promoter_id: promoterId 
+  })
+
+  // If RPC doesn't exist, fall back to manual update
+  if (error) {
+    await supabase
+      .from('promoters')
+      .update({ total_clicks: supabase.raw('total_clicks + 1') })
+      .eq('id', promoterId)
+  }
 }

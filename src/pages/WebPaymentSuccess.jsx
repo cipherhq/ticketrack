@@ -56,7 +56,7 @@ export function WebPaymentSuccess() {
             ctx.fillRect(0, 0, canvas.width, canvas.height)
             ctx.drawImage(img, 0, 0)
             const link = document.createElement('a')
-            link.download = `ticket-${ticket.ticket_number}.png`
+            link.download = `ticket-${ticket.ticket_code}.png`
             link.href = canvas.toDataURL('image/png')
             link.click()
           }
@@ -152,7 +152,7 @@ export function WebPaymentSuccess() {
                 {tickets?.map((ticket, index) => {
                   const qrValue = JSON.stringify({
                     ticketId: ticket.id || `temp-${index}`,
-                    qrCode: ticket.ticket_number,
+                    qrCode: ticket.ticket_code,
                     eventId: event.id,
                     attendee: ticket.attendee_name
                   })
@@ -162,7 +162,7 @@ export function WebPaymentSuccess() {
                       <div>
                         <p className="font-medium text-[#0F0F0F]">Ticket #{index + 1}</p>
                         <p className="text-sm text-[#0F0F0F]/60">{ticket.attendee_name}</p>
-                        <p className="text-xs text-[#0F0F0F]/40 font-mono mt-1">{ticket.ticket_number}</p>
+                        <p className="text-xs text-[#0F0F0F]/40 font-mono mt-1">{ticket.ticket_code}</p>
                       </div>
                       <div className="bg-white rounded-lg p-2 border border-[#0F0F0F]/10">
                         <QRCodeSVG 

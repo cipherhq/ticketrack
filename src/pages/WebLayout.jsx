@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut } from 'lucide-react'
+import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -20,25 +20,45 @@ export function WebLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [cartCount] = useState(0)
   const [profile, setProfile] = useState(null)
+  const [isOrganizer, setIsOrganizer] = useState(false)
+  const [isPromoter, setIsPromoter] = useState(false)
 
-  // Load user profile when user changes
+  // Load user profile and check roles
   useEffect(() => {
-    async function loadProfile() {
+    async function loadUserData() {
       if (user) {
-        const { data } = await supabase
+        // Load profile
+        const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single()
-        setProfile(data)
+        setProfile(profileData)
+
+        // Check if user is an organizer (has created any events)
+        const { count: eventCount } = await supabase
+          .from('events')
+          .select('id', { count: 'exact', head: true })
+          .eq('organizer_id', user.id)
+        setIsOrganizer(eventCount > 0)
+
+        // Check if user is a promoter (has any promoter assignments)
+        const { count: promoterCount } = await supabase
+          .from('promoter_assignments')
+          .select('id', { count: 'exact', head: true })
+          .eq('promoter_id', user.id)
+          .eq('status', 'accepted')
+        setIsPromoter(promoterCount > 0)
+
       } else {
         setProfile(null)
+        setIsOrganizer(false)
+        setIsPromoter(false)
       }
     }
-    loadProfile()
+    loadUserData()
   }, [user])
 
-  console.log("WebLayout auth state:", { user: !!user, userId: user?.id, email: user?.email })
   const isLoggedIn = !!user
   const currentUser = {
     firstName: profile?.first_name || user?.email?.split('@')[0] || 'User',
@@ -72,9 +92,7 @@ export function WebLayout() {
               className="flex items-center cursor-pointer gap-2"
               onClick={() => navigate('/')}
             >
-              <div className="w-8 h-8 bg-[#2969FF] rounded-lg flex items-center justify-center">
-                <Ticket className="w-5 h-5 text-white" />
-              </div>
+              <img src="https://bkvbvggngttrizbchygy.supabase.co/storage/v1/object/public/media/adverts/unnamed.png" alt="Ticketrack" className="w-8 h-8 rounded-lg" />
               <span className="text-xl font-semibold text-[#0F0F0F]">Ticketrack</span>
             </div>
 
@@ -89,7 +107,7 @@ export function WebLayout() {
                 Browse Events
               </button>
               <button
-                onClick={() => navigate('/tickets')}
+                onClick={() => navigate('/profile', { state: { tab: 'tickets' } })}
                 className={`text-[#0F0F0F] hover:text-[#2969FF] transition-colors ${
                   isActive('/tickets') ? 'text-[#2969FF]' : ''
                 }`}
@@ -145,7 +163,7 @@ export function WebLayout() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 rounded-xl">
                     <div className="px-2 py-2">
-                      <p className="text-sm text-[#0F0F0F]">
+                      <p className="text-sm font-medium text-[#0F0F0F]">
                         {currentUser.firstName} {currentUser.lastName}
                       </p>
                       <p className="text-xs text-[#0F0F0F]/60">
@@ -153,27 +171,31 @@ export function WebLayout() {
                       </p>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
+                    
+                    {/* Organizer Dashboard - Only if user has created events */}
+                    {isOrganizer && (
+                      <DropdownMenuItem
+                        onClick={() => navigate("/organizer")}
+                        className="cursor-pointer rounded-lg"
+                      >
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        Organizer Dashboard
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {/* Promoter Dashboard - Only if user is an active promoter */}
+                    {isPromoter && (
+                      <DropdownMenuItem
+                        onClick={() => navigate("/promoter")}
+                        className="cursor-pointer rounded-lg"
+                      >
+                        <Megaphone className="w-4 h-4 mr-2" />
+                        Promoter Dashboard
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {(isOrganizer || isPromoter) && <DropdownMenuSeparator />}
+                    
                     <DropdownMenuItem
                       onClick={() => navigate('/profile')}
                       className="cursor-pointer rounded-lg"
@@ -182,111 +204,27 @@ export function WebLayout() {
                       My Profile
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate('/tickets')}
+                      onClick={() => navigate('/profile', { state: { tab: 'tickets' } })}
                       className="cursor-pointer rounded-lg"
                     >
                       <Ticket className="w-4 h-4 mr-2" />
                       My Tickets
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate('/saved')}
+                      onClick={() => navigate('/profile', { state: { tab: 'saved' } })}
                       className="cursor-pointer rounded-lg"
                     >
                       <Heart className="w-4 h-4 mr-2" />
                       Saved Events
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate('/settings')}
+                      onClick={() => navigate('/profile', { state: { tab: 'settings' } })}
                       className="cursor-pointer rounded-lg"
                     >
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/organizer")}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Organizer Dashboard
-                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleSignOut}
                       className="cursor-pointer rounded-lg text-red-600 focus:text-red-600"
@@ -344,7 +282,7 @@ export function WebLayout() {
               </button>
               <button
                 onClick={() => {
-                  navigate('/tickets')
+                  navigate('/profile', { state: { tab: 'tickets' } })
                   setMobileMenuOpen(false)
                 }}
                 className="block w-full text-left py-2 text-[#0F0F0F]"
@@ -378,6 +316,31 @@ export function WebLayout() {
                         <p className="text-xs text-[#0F0F0F]/60">{currentUser.email}</p>
                       </div>
                     </div>
+                    
+                    {isOrganizer && (
+                      <button
+                        onClick={() => {
+                          navigate('/organizer')
+                          setMobileMenuOpen(false)
+                        }}
+                        className="block w-full text-left py-2 text-[#0F0F0F]"
+                      >
+                        Organizer Dashboard
+                      </button>
+                    )}
+                    
+                    {isPromoter && (
+                      <button
+                        onClick={() => {
+                          navigate('/promoter')
+                          setMobileMenuOpen(false)
+                        }}
+                        className="block w-full text-left py-2 text-[#0F0F0F]"
+                      >
+                        Promoter Dashboard
+                      </button>
+                    )}
+                    
                     <button
                       onClick={() => {
                         navigate('/profile')
@@ -437,9 +400,7 @@ export function WebLayout() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-[#2969FF] rounded-lg flex items-center justify-center">
-                  <Ticket className="w-5 h-5 text-white" />
-                </div>
+                <img src="https://bkvbvggngttrizbchygy.supabase.co/storage/v1/object/public/media/adverts/unnamed.png" alt="Ticketrack" className="w-8 h-8 rounded-lg" />
                 <span className="text-xl font-semibold">Ticketrack</span>
               </div>
               <p className="text-white/60 text-sm">

@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 const OrganizerContext = createContext(null);
 
 export function OrganizerProvider({ children }) {
-  const [organizer, setOrganizer] = useState({ id: 'demo', business_name: 'My Organization' });
+  const [organizer, setOrganizer] = useState({ id: null, business_name: 'My Organization' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -18,7 +18,7 @@ export function OrganizerProvider({ children }) {
       
       if (!user) {
         // Demo mode - use placeholder organizer
-        setOrganizer({ id: 'demo', business_name: 'My Organization' });
+        setOrganizer({ id: null, business_name: 'My Organization' });
         return;
       }
 

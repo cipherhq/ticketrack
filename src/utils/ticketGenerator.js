@@ -74,7 +74,7 @@ export async function generateTicketPDF(ticket, event) {
   pdf.setLineDashPattern([], 0)
 
   // TICKET NUMBER (vertical on left edge)
-  const ticketNum = ticket.ticket_number || `TKT${Date.now().toString(36).toUpperCase()}`
+  const ticketNum = ticket.ticket_code || `TKT${Date.now().toString(36).toUpperCase()}`
   
   pdf.setFontSize(7)
   pdf.setFont('helvetica', 'normal')

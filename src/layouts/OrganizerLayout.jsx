@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Users, Ticket, BarChart3,
   DollarSign, Tag, UserPlus, Mail, MessageCircle, MessageSquare,
   Settings, LogOut, Menu, X, ChevronDown, Bell, Shield,
-  QrCode, Building,
+  QrCode, Building, CreditCard,
 } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,9 +36,9 @@ const menuItems = [
     path: '/organizer/analytics',
   },
   {
-    title: 'Finance',
+    title: 'Payouts',
     icon: DollarSign,
-    path: '/organizer/finance',
+    path: '/organizer/payouts',
   },
   {
     title: 'Marketing',
@@ -46,9 +46,10 @@ const menuItems = [
     submenu: [
       { title: 'Promo Codes', path: '/organizer/promo-codes' },
       { title: 'Promoters', path: '/organizer/promoters' },
-      { title: 'Email Campaigns', path: '/organizer/email-campaigns' },
+      { title: 'Communications', path: '/organizer/communications' },
       { title: 'WhatsApp', path: '/organizer/whatsapp' },
-      { title: 'SMS', path: '/organizer/sms' },
+      { title: 'SMS Credits', path: '/organizer/sms-credits' },
+      { title: 'WhatsApp Credits', path: '/organizer/whatsapp-credits' },
     ],
   },
   {
@@ -61,7 +62,7 @@ const menuItems = [
     icon: Settings,
     submenu: [
       { title: 'Profile', path: '/organizer/profile' },
-      { title: 'Bank Accounts', path: '/organizer/bank-accounts' },
+      { title: 'Bank Account', path: '/organizer/bank-account' },
       { title: 'KYC Verification', path: '/organizer/kyc' },
     ],
   },
@@ -110,7 +111,6 @@ export function OrganizerLayout({ children }) {
         </Link>
         <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative">
           <Bell className="w-6 h-6 text-[#0F0F0F]" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
         </button>
       </header>
 
@@ -254,7 +254,6 @@ export function OrganizerLayout({ children }) {
           <div className="flex items-center gap-4">
             <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative">
               <Bell className="w-5 h-5 text-[#0F0F0F]/60" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
             <Link
               to="/organizer/profile"

@@ -32,8 +32,7 @@ export function WebTickets() {
         .select(`
           *,
           event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url),
-          ticket_type:ticket_types(name, price),
-          order:orders(id, order_number, total_amount, payment_reference, created_at)
+          ticket_type:ticket_types(name, price)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -67,7 +66,7 @@ export function WebTickets() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'valid': return 'bg-green-100 text-green-700'
+      case 'active': return 'bg-green-100 text-green-700'
       case 'used': return 'bg-gray-100 text-gray-600'
       case 'expired': return 'bg-red-100 text-red-600'
       case 'cancelled': return 'bg-orange-100 text-orange-600'
@@ -77,7 +76,7 @@ export function WebTickets() {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'valid': return 'Active'
+      case 'active': return 'Active'
       case 'used': return 'Used'
       case 'expired': return 'Expired'
       case 'cancelled': return 'Cancelled'
@@ -101,7 +100,7 @@ export function WebTickets() {
         backgroundColor: '#ffffff'
       }).then(canvas => {
         const link = document.createElement('a')
-        link.download = `ticket-${ticket.ticket_number}.png`
+        link.download = `ticket-${ticket.ticket_code}.png`
         link.href = canvas.toDataURL('image/png')
         link.click()
       })
@@ -120,7 +119,7 @@ export function WebTickets() {
           ctx.fillRect(0, 0, canvas.width, canvas.height)
           ctx.drawImage(img, 0, 0)
           const link = document.createElement('a')
-          link.download = `qr-${ticket.ticket_number}.png`
+          link.download = `qr-${ticket.ticket_code}.png`
           link.href = canvas.toDataURL('image/png')
           link.click()
         }
@@ -139,7 +138,7 @@ export function WebTickets() {
       `Time: ${formatTime(ticket.event?.start_date)}\n` +
       `Venue: ${ticket.event?.venue_name}, ${ticket.event?.city}\n` +
       `Ticket Type: ${ticket.ticket_type?.name || 'General'}\n` +
-      `QR Code: ${ticket.ticket_number}\n\n` +
+      `QR Code: ${ticket.ticket_code}\n\n` +
       `Please show your QR code at the venue entrance.`
     )
     window.location.href = `mailto:${ticket.attendee_email}?subject=${subject}&body=${body}`
@@ -166,14 +165,14 @@ export function WebTickets() {
     }
   }
 
-  const activeTickets = tickets.filter(t => t.status === 'valid' && !isEventPast(t.event?.end_date))
-  const pastTickets = tickets.filter(t => t.status !== 'valid' || isEventPast(t.event?.end_date))
+  const activeTickets = tickets.filter(t => t.status === 'active' && !isEventPast(t.event?.end_date))
+  const pastTickets = tickets.filter(t => t.status !== 'active' || isEventPast(t.event?.end_date))
 
   const TicketCard = ({ ticket }) => {
     const isPast = isEventPast(ticket.event?.end_date)
     const qrValue = JSON.stringify({
       ticketId: ticket.id,
-      qrCode: ticket.ticket_number,
+      qrCode: ticket.ticket_code,
       eventId: ticket.event_id,
       attendee: ticket.attendee_name
     })
@@ -217,6 +216,18 @@ export function WebTickets() {
                 <p className="text-xs text-[#0F0F0F]/60">Attendee</p>
                 <p className="text-[#0F0F0F]">{ticket.attendee_name}</p>
               </div>
+              <div>
+                <p className="text-xs text-[#0F0F0F]/60">Transaction ID</p>
+                <p className="text-[#0F0F0F] font-mono text-xs">{ticket.payment_reference || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[#0F0F0F]/60">Amount Paid</p>
+                <p className="text-[#0F0F0F]">{ticket.payment_status === "free" ? "Free" : `₦${(ticket.total_price || 0).toLocaleString()}`}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[#0F0F0F]/60">Payment Method</p>
+                <p className="text-[#0F0F0F] capitalize">{ticket.payment_method || "N/A"}</p>
+              </div>
               <div className="col-span-2">
                 <p className="text-xs text-[#0F0F0F]/60">Venue</p>
                 <p className="text-[#0F0F0F] text-sm flex items-center gap-1">
@@ -237,13 +248,13 @@ export function WebTickets() {
                   includeMargin={true}
                 />
               </div>
-              <p className="text-xs text-[#0F0F0F]/60 text-center font-mono">{ticket.ticket_number}</p>
+              <p className="text-xs text-[#0F0F0F]/60 text-center font-mono">{ticket.ticket_code}</p>
               <p className="text-xs text-[#0F0F0F]/40 text-center mt-1">Scan at venue</p>
             </div>
           </div>
 
           {/* Actions */}
-          {ticket.status === 'valid' && !isPast && (
+          {ticket.status === 'active' && !isPast && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#0F0F0F]/10">
               <Button 
                 size="sm" 
