@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 
 export function WebEventDetails() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { id } = useParams()
   
   const [event, setEvent] = useState(null)
@@ -80,6 +82,10 @@ export function WebEventDetails() {
   }, 0)
 
   const handleCheckout = () => {
+    if (!user) {
+      navigate("/login", { state: { from: `/event/${id}` } })
+      return
+    }
     if (totalTickets > 0) {
       navigate('/checkout', { 
         state: { 
