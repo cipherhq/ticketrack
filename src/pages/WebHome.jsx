@@ -447,7 +447,7 @@ export function WebHome() {
       {/* Main Content Area with Side Ads - Starts at Popular Categories */}
       <div className={`${isLargeScreen ? 'flex justify-center gap-6 px-4' : ''}`}>
         
-        {/*         {/* Left Side Ad */} */}
+        {/* Left Side Ad */}
         {/*         {false && ads.left && ( */}
         {/*           <div className="flex-shrink-0 mt-8"> */}
         {/*             <SideAd ad={ads.left} /> */}
