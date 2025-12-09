@@ -32,7 +32,7 @@ export function AttendeeProfile() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth')
+      navigate('/login')
       return
     }
     loadProfileData()
