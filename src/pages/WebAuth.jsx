@@ -42,7 +42,7 @@ export function WebAuth() {
   }, [location.state])
 
   useEffect(() => {
-    if (user) navigate(from, { replace: true })
+    if (user) navigate(from, { replace: true, state: location.state })
   }, [user, navigate, from])
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export function WebAuth() {
       if (step === 'otp') {
         const phone = pendingUser?.user_metadata?.phone
         await verifyOTP(phone, formData.otp)
-        navigate(from, { replace: true })
+        navigate(from, { replace: true, state: location.state })
         return
       }
 
@@ -127,7 +127,7 @@ export function WebAuth() {
           setStep('otp')
           setSuccess('OTP sent to your phone')
         } else {
-          navigate(from, { replace: true })
+          navigate(from, { replace: true, state: location.state })
         }
       } else {
         if (formData.password !== formData.confirmPassword) {
