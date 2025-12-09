@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -27,6 +28,7 @@ export function AttendeeProfile() {
   const [editForm, setEditForm] = useState({})
   const [stats, setStats] = useState({ eventsAttended: 0, ticketsPurchased: 0, following: 0 })
   const [activeTab, setActiveTab] = useState(location.state?.tab || "profile")
+  const [notificationSettings, setNotificationSettings] = useState({ email: true, sms: false })
 
   useEffect(() => {
     if (!user) {
@@ -54,6 +56,7 @@ export function AttendeeProfile() {
           email: profileData.email || '',
           phone: profileData.phone || '',
         })
+        setNotificationSettings({ email: profileData.email_notifications ?? true, sms: profileData.sms_notifications ?? false })
       }
 
       // Load tickets with event details
@@ -120,6 +123,20 @@ export function AttendeeProfile() {
   const handleSignOut = async () => {
     await signOut()
     navigate('/')
+  }
+
+  const handleNotificationToggle = async (type) => {
+    const newValue = !notificationSettings[type]
+    setNotificationSettings(prev => ({ ...prev, [type]: newValue }))
+    try {
+      await supabase
+        .from("profiles")
+        .update({ [`${type}_notifications`]: newValue })
+        .eq("id", user.id)
+    } catch (error) {
+      console.error("Error updating notification settings:", error)
+      setNotificationSettings(prev => ({ ...prev, [type]: !newValue }))
+    }
   }
 
   const formatDate = (dateString) => {
@@ -398,14 +415,22 @@ export function AttendeeProfile() {
                       <p className="font-medium text-[#0F0F0F]">Email Notifications</p>
                       <p className="text-sm text-[#0F0F0F]/60">Receive updates about your tickets</p>
                     </div>
-                    <Badge className="bg-green-100 text-green-700">Enabled</Badge>
+                    <Checkbox 
+                      checked={notificationSettings.email} 
+                      onCheckedChange={() => handleNotificationToggle('email')}
+                      className="h-6 w-6 data-[state=checked]:bg-[#2969FF]"
+                    />
                   </div>
                   <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
                     <div>
                       <p className="font-medium text-[#0F0F0F]">SMS Notifications</p>
                       <p className="text-sm text-[#0F0F0F]/60">Get reminders via SMS</p>
                     </div>
-                    <Badge className="bg-gray-100 text-gray-600">Disabled</Badge>
+                    <Checkbox 
+                      checked={notificationSettings.sms} 
+                      onCheckedChange={() => handleNotificationToggle('sms')}
+                      className="h-6 w-6 data-[state=checked]:bg-[#2969FF]"
+                    />
                   </div>
                   <Separator />
                   <Button variant="outline" className="w-full rounded-xl text-red-500 border-red-200 hover:bg-red-50" onClick={handleSignOut}>

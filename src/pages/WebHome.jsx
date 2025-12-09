@@ -123,7 +123,7 @@ const BannerAd = ({ ad }) => {
 const EventCard = ({ event, showDistance = false }) => {
   const formatPrice = (price, isFree) => {
     if (isFree) return 'Free';
-    if (!price || price === 0) return 'Free';
+    if (!price && price !== 0) return '₦0';
     return `₦${price.toLocaleString()}`;
   };
 
@@ -354,12 +354,19 @@ export function WebHome() {
 
       const { data: allEvents } = await supabase
         .from('events')
-        .select('*')
+        .select('*, ticket_types(price)')
         .eq('status', 'published')
         .gte('end_date', new Date().toISOString())
         .order('start_date', { ascending: true });
 
-      if (allEvents) {
+      // Compute min_price from ticket_types for each event
+      const eventsWithPrices = allEvents?.map(event => {
+        const prices = event.ticket_types?.map(t => t.price).filter(p => p !== null && p !== undefined) || [];
+        const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+        return { ...event, min_price: minPrice };
+      }) || [];
+
+      if (eventsWithPrices.length > 0) {
         const today = new Date();
         const dayOfWeek = today.getDay();
         const saturday = new Date(today);
@@ -370,15 +377,15 @@ export function WebHome() {
         sunday.setHours(23, 59, 59, 999);
 
         setEvents({
-          trending: allEvents.filter(e => e.is_trending).slice(0, 10),
-          popular: allEvents.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0)).slice(0, 10),
-          featured: allEvents.filter(e => e.is_featured).slice(0, 10),
-          nearYou: allEvents.slice(0, 10).map(e => ({ ...e, distance: Math.floor(Math.random() * 20) + 1 })),
-          weekend: allEvents.filter(e => {
+          trending: eventsWithPrices.filter(e => e.is_trending).slice(0, 10),
+          popular: eventsWithPrices.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0)).slice(0, 10),
+          featured: eventsWithPrices.filter(e => e.is_featured).slice(0, 10),
+          nearYou: eventsWithPrices.slice(0, 10).map(e => ({ ...e, distance: Math.floor(Math.random() * 20) + 1 })),
+          weekend: eventsWithPrices.filter(e => {
             const eventDate = new Date(e.start_date);
             return eventDate >= saturday && eventDate <= sunday;
           }).slice(0, 10),
-          free: allEvents.filter(e => e.is_free).slice(0, 10)
+          free: eventsWithPrices.filter(e => e.is_free).slice(0, 10)
         });
       }
 
@@ -440,12 +447,12 @@ export function WebHome() {
       {/* Main Content Area with Side Ads - Starts at Popular Categories */}
       <div className={`${isLargeScreen ? 'flex justify-center gap-6 px-4' : ''}`}>
         
-        {/* Left Side Ad */}
-        {isLargeScreen && ads.left && (
-          <div className="flex-shrink-0 mt-8">
-            <SideAd ad={ads.left} />
-          </div>
-        )}
+        {/*         {/* Left Side Ad */} */}
+        {/*         {false && ads.left && ( */}
+        {/*           <div className="flex-shrink-0 mt-8"> */}
+        {/*             <SideAd ad={ads.left} /> */}
+        {/*           </div> */}
+        {/*         )} */}
 
         {/* Main Content */}
         <main className="max-w-[1200px] w-full px-4">
@@ -584,7 +591,7 @@ export function WebHome() {
         </main>
 
         {/* Right Side Ad */}
-        {isLargeScreen && ads.right && (
+        {false && ads.right && (
           <div className="flex-shrink-0 mt-8">
             <SideAd ad={ads.right} />
           </div>
