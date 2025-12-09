@@ -92,7 +92,7 @@ export function WebLayout() {
               className="flex items-center cursor-pointer gap-2"
               onClick={() => navigate('/')}
             >
-              <img src="https://bkvbvggngttrizbchygy.supabase.co/storage/v1/object/public/media/adverts/unnamed.png" alt="Ticketrack" className="w-8 h-8 rounded-lg" />
+              <img src="https://bkvbvggngttrizbchygy.supabase.co/storage/v1/object/public/media/adverts/Ticketrack.png" alt="Ticketrack" className="w-8 h-8 rounded-lg" />
               <span className="text-xl font-semibold text-[#0F0F0F]">Ticketrack</span>
             </div>
 
@@ -400,7 +400,7 @@ export function WebLayout() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src="https://bkvbvggngttrizbchygy.supabase.co/storage/v1/object/public/media/adverts/unnamed.png" alt="Ticketrack" className="w-8 h-8 rounded-lg" />
+                <img src="https://bkvbvggngttrizbchygy.supabase.co/storage/v1/object/public/media/adverts/Ticketrack.png" alt="Ticketrack" className="w-8 h-8 rounded-lg" />
                 <span className="text-xl font-semibold">Ticketrack</span>
               </div>
               <p className="text-white/60 text-sm">
