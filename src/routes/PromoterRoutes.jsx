@@ -7,6 +7,7 @@ import { PromoterPerformance } from '@/pages/promoter/PromoterPerformance';
 import { BankAccountManagement } from '@/pages/promoter/BankAccountManagement';
 import { PaymentHistory } from '@/pages/promoter/PaymentHistory';
 import { PromoterProfile } from '@/pages/promoter/PromoterProfile';
+import { AcceptInvitation } from '@/pages/promoter/AcceptInvitation';
 import { Loader2 } from 'lucide-react';
 
 export function PromoterRoutes() {
@@ -27,6 +28,7 @@ export function PromoterRoutes() {
   return (
     <PromoterProvider>
       <Routes>
+        <Route path="accept" element={<AcceptInvitation />} />
         <Route element={<PromoterLayout />}>
           <Route index element={<PromoterDashboard />} />
           <Route path="performance" element={<PromoterPerformance />} />

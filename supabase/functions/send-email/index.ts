@@ -16,7 +16,7 @@ type EmailType =
   | 'daily_sales_summary' | 'event_published' | 'event_cancelled_organizer'
   | 'payout_processed' | 'sms_units_purchased' | 'low_ticket_alert'
   | 'event_reminder_organizer' | 'refund_request' | 'post_event_summary'
-  | 'promoter_commission' | 'promoter_payout' | 'promo_code_used'
+  | 'promoter_commission' | 'promoter_payout' | 'promo_code_used' | 'promoter_invite' | 'promoter_accepted'
   | 'admin_new_organizer' | 'admin_new_event' | 'admin_flagged_content' | 'admin_daily_stats'
 
 interface EmailRequest {
@@ -161,6 +161,17 @@ const templates: Record<EmailType, (data: Record<string, any>) => { subject: str
   promo_code_used: (data) => ({
     subject: `🎫 Your promo code was used!`,
     html: baseTemplate(`<h2>Promo Code Used!</h2><p>Someone used your code:</p><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Code</span><span class="info-value">${data.promoCode}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Total Uses</span><span class="info-value">${data.totalUses}</span></div></div><a href="${data.appUrl}/promoter" class="button">View Dashboard</a>`)
+  }),
+
+
+  promoter_invite: (data) => ({
+    subject: `🎉 You've been invited to promote ${data.eventTitle || 'events'} on Ticketrack!`,
+    html: baseTemplate(`<h2>You're Invited to Promote!</h2><p><strong>${data.organizerName}</strong> has invited you to become a promoter on Ticketrack.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Organizer</span><span class="info-value">${data.organizerName}</span></div><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle || 'All Events'}</span></div><div class="info-row"><span class="info-label">Commission</span><span class="info-value">${data.commissionValue}${data.commissionType === 'percentage' ? '%' : ' NGN'} per ticket</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Your Promo Code</span><span class="info-value" style="color:#2969FF;font-weight:bold;">${data.promoCode}</span></div></div><p>Share your unique link and earn commission on every ticket sold!</p><a href="${data.appUrl}/promoter/accept?code=${data.promoCode}" class="button">${data.isNewUser ? 'Sign Up to Accept' : 'Accept Invitation'}</a><p style="color:#666;font-size:14px;margin-top:24px;">${data.isNewUser ? 'You will need to create a Ticketrack account to start promoting.' : 'Click above to view your promoter dashboard.'}</p>`)
+  }),
+
+  promoter_accepted: (data) => ({
+    subject: `✅ ${data.promoterName} accepted your promoter invitation!`,
+    html: baseTemplate(`<div class="success"><strong>✅ Invitation Accepted!</strong></div><h2>New Promoter Joined</h2><p><strong>${data.promoterName}</strong> has accepted your invitation to promote ${data.eventTitle || 'your events'}.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Promoter</span><span class="info-value">${data.promoterName}</span></div><div class="info-row"><span class="info-label">Email</span><span class="info-value">${data.promoterEmail}</span></div><div class="info-row"><span class="info-label">Promo Code</span><span class="info-value" style="color:#2969FF;font-weight:bold;">${data.promoCode}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Commission Rate</span><span class="info-value">${data.commissionValue}${data.commissionType === 'percentage' ? '%' : ' NGN'}</span></div></div><a href="${data.appUrl}/organizer/promoters" class="button">View Promoters</a>`)
   }),
 
   admin_new_organizer: (data) => ({

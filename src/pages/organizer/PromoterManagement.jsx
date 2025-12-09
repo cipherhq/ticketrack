@@ -51,6 +51,29 @@ import {
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 
+
+// Send email via Edge Function
+const sendEmail = async (emailData) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify(emailData)
+    });
+    const result = await response.json();
+    if (!result.success) console.error("Email send failed:", result.error);
+    return result;
+  } catch (err) {
+    console.error("Email send error:", err);
+    return { success: false, error: err.message };
+  }
+};
+
+
+
 export function PromoterManagement() {
   const { organizer } = useOrganizer();
   const [loading, setLoading] = useState(true);
@@ -203,6 +226,22 @@ export function PromoterManagement() {
         .insert(promoterData);
 
       if (insertError) throw insertError;
+
+      // Send invitation email to the promoter
+      const selectedEvent = events.find(e => e.id === inviteForm.eventId);
+      await sendEmail({
+        type: 'promoter_invite',
+        to: inviteForm.email.toLowerCase().trim(),
+        data: {
+          organizerName: organizer.business_name || organizer.name,
+          eventTitle: selectedEvent?.title || 'All Events',
+          commissionType: inviteForm.commissionType,
+          commissionValue: inviteForm.commissionValue,
+          promoCode: promoCode,
+          isNewUser: !existingUser,
+          appUrl: window.location.origin
+        }
+      });
 
       alert(`Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}`);
 
