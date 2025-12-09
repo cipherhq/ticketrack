@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { useAuth } from '@/contexts/AuthContext'
 import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,7 +12,6 @@ import { supabase } from '@/lib/supabase'
 export function WebEventDetails() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { user } = useAuth()
   const { id } = useParams()
   const location = useLocation()
   
@@ -22,7 +20,7 @@ export function WebEventDetails() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   
-  const [selectedTickets, setSelectedTickets] = useState({})
+  const [selectedTickets, setSelectedTickets] = useState(location.state?.selectedTickets || {})
   const [isFavorite, setIsFavorite] = useState(false)
 
   useEffect(() => {
@@ -87,10 +85,6 @@ export function WebEventDetails() {
   const handleCheckout = () => {
     if (!user) {
       navigate("/login", { state: { from: location.pathname, selectedTickets } })
-      return
-    }
-    if (!user) {
-      navigate("/login", { state: { from: `/event/${id}` } })
       return
     }
     if (totalTickets > 0) {
