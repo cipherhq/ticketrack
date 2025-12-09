@@ -10,6 +10,66 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
+
+// Credit promoter for referral sale
+const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
+  try {
+    const refCode = localStorage.getItem('referral_code')
+    const refEventId = localStorage.getItem('referral_event_id')
+    
+    // Only credit if referral is for this event or all events
+    if (!refCode) return
+    
+    // Find promoter by code
+    const { data: promoter } = await supabase
+      .from('promoters')
+      .select('id, commission_type, commission_value, commission_rate, organizer_id')
+      .or(`short_code.eq.${refCode},referral_code.eq.${refCode}`)
+      .single()
+    
+    if (!promoter) return
+    
+    // Calculate commission
+    const commissionRate = promoter.commission_value || promoter.commission_rate || 10
+    const commissionType = promoter.commission_type || 'percentage'
+    let commissionAmount = 0
+    
+    if (commissionType === 'percentage') {
+      commissionAmount = (saleAmount * commissionRate) / 100
+    } else {
+      commissionAmount = commissionRate * ticketCount
+    }
+    
+    // Create promoter_sales record
+    await supabase.from('promoter_sales').insert({
+      promoter_id: promoter.id,
+      event_id: eventId,
+      order_id: orderId,
+      ticket_count: ticketCount,
+      sale_amount: saleAmount,
+      commission_rate: commissionRate,
+      commission_amount: commissionAmount,
+      status: 'pending'
+    })
+    
+    // Update promoter totals
+    await supabase.rpc('update_promoter_sales', { 
+      p_promoter_id: promoter.id,
+      p_sale_amount: saleAmount,
+      p_commission: commissionAmount,
+      p_ticket_count: ticketCount
+    })
+    
+    // Clear referral from localStorage
+    localStorage.removeItem('referral_code')
+    localStorage.removeItem('referral_event_id')
+    
+    console.log('Promoter credited:', { promoter_id: promoter.id, commission: commissionAmount })
+  } catch (err) {
+    console.error('Error crediting promoter:', err)
+  }
+}
+
 // Send confirmation email via Edge Function
 const sendConfirmationEmail = async (emailData) => {
   try {
@@ -245,6 +305,8 @@ export function WebCheckout() {
       // Create tickets
       const tickets = await createTickets(order.id, 'FREE')
 
+      // Credit promoter for referral (even for free tickets, track the conversion)
+      await creditPromoter(order.id, event.id, 0, totalTicketCount)
 
       // Send confirmation email
       sendConfirmationEmail({
@@ -288,7 +350,9 @@ export function WebCheckout() {
 
       // Create tickets
       const tickets = await createTickets(orderId, reference)
-      
+
+      // Credit promoter for referral sale
+      await creditPromoter(orderId, event.id, finalTotal, totalTicketCount)
 
       // Send confirmation email
       sendConfirmationEmail({

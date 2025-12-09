@@ -150,6 +150,7 @@ export async function createEvent(organizerId, eventData) {
       views_count: 0,
       is_featured: false,
       is_free: false,
+      country_code: 'NG',
       ...eventData,
     })
     .select()

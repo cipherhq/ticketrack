@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -14,6 +14,7 @@ export function WebEventDetails() {
   const { user } = useAuth()
   const { id } = useParams()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   
   const [event, setEvent] = useState(null)
   const [ticketTypes, setTicketTypes] = useState([])
@@ -64,6 +65,44 @@ export function WebEventDetails() {
       loadEvent()
     }
   }, [id])
+
+  // Track referral code from URL
+  useEffect(() => {
+    const refCode = searchParams.get('ref')
+    if (refCode && id) {
+      // Store in localStorage for checkout
+      localStorage.setItem('referral_code', refCode)
+      localStorage.setItem('referral_event_id', id)
+      
+      // Record click in database
+      const recordClick = async () => {
+        try {
+          // Find promoter by short_code or referral_code
+          const { data: promoter } = await supabase
+            .from('promoters')
+            .select('id')
+            .or(`short_code.eq.${refCode},referral_code.eq.${refCode}`)
+            .single()
+          
+          if (promoter) {
+            // Record the click
+            await supabase.from('promoter_clicks').insert({
+              promoter_id: promoter.id,
+              event_id: id,
+              referrer: document.referrer || null
+            })
+            
+            // Update promoter total_clicks
+            await supabase.rpc('increment_promoter_clicks', { promoter_id: promoter.id })
+          }
+        } catch (err) {
+          console.error('Error recording referral click:', err)
+        }
+      }
+      recordClick()
+    }
+  }, [searchParams, id])
+
 
   const updateTicketQuantity = (tierId, delta) => {
     setSelectedTickets(prev => {

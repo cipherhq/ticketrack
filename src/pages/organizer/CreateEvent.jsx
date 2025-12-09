@@ -81,6 +81,10 @@ export function CreateEvent() {
     promoVideoUrl: '',
     // Fee Handling
     feeHandling: 'pass_to_attendee',
+    // Free Event
+    isFree: false,
+    // Terms
+    agreedToTerms: false,
   });
 
   // Tickets State
@@ -110,6 +114,22 @@ export function CreateEvent() {
     { id: 'ticketing', label: 'Ticketing', icon: Ticket },
     { id: 'media', label: 'Media & Sponsors', icon: ImageIcon },
   ];
+
+  const currentTabIndex = tabs.findIndex(t => t.id === activeTab);
+  const isLastTab = currentTabIndex === tabs.length - 1;
+  const isFirstTab = currentTabIndex === 0;
+
+  const goToNextTab = () => {
+    if (!isLastTab) {
+      setActiveTab(tabs[currentTabIndex + 1].id);
+    }
+  };
+
+  const goToPrevTab = () => {
+    if (!isFirstTab) {
+      setActiveTab(tabs[currentTabIndex - 1].id);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -639,38 +659,6 @@ export function CreateEvent() {
               </div>
 
               <div className="space-y-2">
-                <Label>Google Map Link</Label>
-                <div className="relative">
-                  <Input
-                    placeholder="Auto-filled from address or paste manually"
-                    value={formData.googleMapLink}
-                    onChange={(e) => handleInputChange('googleMapLink', e.target.value)}
-                    className="h-12 rounded-xl bg-[#F4F6FA] border-0 pr-12"
-                  />
-                  {formData.googleMapLink && (
-                    <a 
-                      href={formData.googleMapLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2969FF] hover:text-[#2969FF]/80"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                    </a>
-                  )}
-                </div>
-                {formData.googleMapLink && (
-                  <a 
-                    href={formData.googleMapLink} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#2969FF] hover:underline inline-flex items-center gap-1"
-                  >
-                    <MapPin className="w-3 h-3" /> View on Google Maps
-                  </a>
-                )}
-              </div>
-
-              <div className="space-y-2">
                 <Label>Venue Type <span className="text-red-500">*</span></Label>
                 <div className="grid grid-cols-2 gap-3">
                   {['indoor', 'outdoor'].map((type) => (
@@ -1181,6 +1169,29 @@ export function CreateEvent() {
                   Sponsor logos will be displayed on digital event tickets that attendees receive via email and can download. Upload high-quality logos for best results.
                 </div>
               </div>
+
+              {/* Terms and Conditions */}
+              <div className="mt-8 p-4 bg-[#F4F6FA] rounded-xl">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="terms"
+                    checked={formData.agreedToTerms}
+                    onCheckedChange={(checked) => handleInputChange('agreedToTerms', checked)}
+                    className="mt-1"
+                  />
+                  <label htmlFor="terms" className="text-sm text-[#0F0F0F]/80 cursor-pointer">
+                    I agree to the{' '}
+                    <a href="/terms" target="_blank" className="text-[#2969FF] hover:underline">
+                      Terms and Conditions
+                    </a>{' '}
+                    and{' '}
+                    <a href="/privacy" target="_blank" className="text-[#2969FF] hover:underline">
+                      Privacy Policy
+                    </a>
+                    . I confirm that I have the right to organize this event and all information provided is accurate.
+                  </label>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1190,22 +1201,31 @@ export function CreateEvent() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/organizer/events')}
+            onClick={isFirstTab ? () => navigate('/organizer/events') : goToPrevTab}
             className="rounded-xl px-6"
           >
-            Cancel
+            {isFirstTab ? 'Cancel' : 'Back'}
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-8"
-          >
-            {saving ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</>
-            ) : (
-              'Create Event'
-            )}
-          </Button>
+          {isLastTab ? (
+            <Button
+              onClick={handleSubmit}
+              disabled={saving || !formData.agreedToTerms}
+              className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-8 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</>
+              ) : (
+                'Create Event'
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={goToNextTab}
+              className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-8"
+            >
+              Next
+            </Button>
+          )}
         </div>
       </div>
     </div>
