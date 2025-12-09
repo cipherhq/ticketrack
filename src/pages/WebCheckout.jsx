@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, CheckCircle } from 'lucide-react'
+import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, CheckCircle, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -45,6 +45,10 @@ export function WebCheckout() {
     lastName: ''
   })
   const [loading, setLoading] = useState(false)
+
+  // Checkout countdown timer (5 minutes)
+  const [timeLeft, setTimeLeft] = useState(300)
+  const [timerExpired, setTimerExpired] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -76,6 +80,43 @@ export function WebCheckout() {
     }
   }, [event, selectedTickets, navigate])
 
+
+  // Countdown timer with localStorage persistence
+  useEffect(() => {
+    const TIMER_KEY = `checkout_timer_${event?.id}`
+    const TIMER_DURATION = 300 // 5 minutes in seconds
+    
+    // Get or set start time
+    let startTime = localStorage.getItem(TIMER_KEY)
+    if (!startTime) {
+      startTime = Date.now()
+      localStorage.setItem(TIMER_KEY, startTime)
+    } else {
+      startTime = parseInt(startTime)
+    }
+    
+    const updateTimer = () => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000)
+      const remaining = TIMER_DURATION - elapsed
+      
+      if (remaining <= 0) {
+        setTimeLeft(0)
+        setTimerExpired(true)
+        localStorage.removeItem(TIMER_KEY)
+        alert("Time expired! Your session has ended. Please select your tickets again.")
+        navigate(`/event/${event?.id}`)
+      } else {
+        setTimeLeft(remaining)
+      }
+    }
+    
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+    
+    return () => {
+      clearInterval(interval)
+    }
+  }, [event?.id, navigate])
   if (!event) return null
 
   const serviceFee = isFreeEvent ? 0 : Math.round(totalAmount * 0.05)
@@ -392,6 +433,17 @@ export function WebCheckout() {
         <ArrowLeft className="w-4 h-4 mr-2" />Back
       </Button>
 
+
+      {/* Countdown Timer */}
+      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-amber-600" />
+          <span className="text-amber-800 font-medium">Complete checkout in:</span>
+        </div>
+        <span className={`text-xl font-bold ${timeLeft <= 60 ? "text-red-600" : "text-amber-800"}`}>
+          {String(Math.floor(timeLeft / 60)).padStart(2, "0")}:{String(timeLeft % 60).padStart(2, "0")}
+        </span>
+      </div>
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-[#0F0F0F] mb-2">{isFreeEvent ? 'Register' : 'Checkout'}</h1>
         <p className="text-[#0F0F0F]/60">{isFreeEvent ? 'Complete your free registration' : 'Complete your ticket purchase'}</p>
