@@ -35,12 +35,22 @@ export function WebLayout() {
           .single()
         setProfile(profileData)
 
-        // Check if user is an organizer (has created any events)
-        const { count: eventCount } = await supabase
-          .from('events')
-          .select('id', { count: 'exact', head: true })
-          .eq('organizer_id', user.id)
-        setIsOrganizer(eventCount > 0)
+        // Check if user is an organizer (has an organizer profile with events)
+        const { data: organizerData } = await supabase
+          .from('organizers')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+        
+        if (organizerData) {
+          const { count: eventCount } = await supabase
+            .from('events')
+            .select('id', { count: 'exact', head: true })
+            .eq('organizer_id', organizerData.id)
+          setIsOrganizer(eventCount > 0)
+        } else {
+          setIsOrganizer(false)
+        }
 
         // Check if user is a promoter (has any promoter assignments)
         const { count: promoterCount } = await supabase
@@ -92,8 +102,7 @@ export function WebLayout() {
               className="flex items-center cursor-pointer gap-2"
               onClick={() => navigate('/')}
             >
-              <img src="https://bkvbvggngttrizbchygy.supabase.co/storage/v1/object/public/media/adverts/Ticketrack.png" alt="Ticketrack" className="w-8 h-8 rounded-lg" />
-              <span className="text-xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+              <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-10" />
             </div>
 
             {/* Desktop Navigation */}
@@ -400,8 +409,7 @@ export function WebLayout() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src="https://bkvbvggngttrizbchygy.supabase.co/storage/v1/object/public/media/adverts/Ticketrack.png" alt="Ticketrack" className="w-8 h-8 rounded-lg" />
-                <span className="text-xl font-semibold">Ticketrack</span>
+                <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-10" />
               </div>
               <p className="text-white/60 text-sm">
                 The best platform for discovering and booking events across Africa.

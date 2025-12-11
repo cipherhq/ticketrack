@@ -106,8 +106,8 @@ export function OrganizerLayout({ children }) {
         >
           <Menu className="w-6 h-6 text-[#0F0F0F]" />
         </button>
-        <Link to="/organizer" className="text-xl font-bold text-[#2969FF]">
-          Ticketrack
+        <Link to="/organizer" className="flex items-center gap-2">
+<img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" />
         </Link>
         <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative">
           <Bell className="w-6 h-6 text-[#0F0F0F]" />
@@ -131,8 +131,8 @@ export function OrganizerLayout({ children }) {
         <div className="h-full flex flex-col">
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-[#0F0F0F]/10">
-            <Link to="/organizer" className="text-xl font-bold text-[#2969FF]">
-              Ticketrack
+            <Link to="/organizer" className="flex items-center gap-2">
+<img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" />
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}

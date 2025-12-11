@@ -340,55 +340,77 @@ export function WebEventDetails() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {ticketTypes.map(tier => (
-                      <div key={tier.id} className="p-4 border border-[#0F0F0F]/10 rounded-xl space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-semibold text-[#0F0F0F]">{tier.name}</h3>
-                            <p className="text-2xl font-bold text-[#2969FF] mt-1">
-                              ₦{tier.price.toLocaleString()}
-                            </p>
+                    {ticketTypes.map(tier => {
+                      const remaining = tier.quantity_available - (tier.quantity_sold || 0);
+                      const isSoldOut = remaining <= 0;
+                      
+                      return (
+                        <div 
+                          key={tier.id} 
+                          className={`p-4 border rounded-xl space-y-3 ${
+                            isSoldOut 
+                              ? 'border-red-200 bg-red-50/50 opacity-75' 
+                              : 'border-[#0F0F0F]/10'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className={`font-semibold ${isSoldOut ? 'text-[#0F0F0F]/50' : 'text-[#0F0F0F]'}`}>
+                                {tier.name}
+                              </h3>
+                              <p className={`text-2xl font-bold mt-1 ${isSoldOut ? 'text-[#0F0F0F]/40' : 'text-[#2969FF]'}`}>
+                                ₦{tier.price.toLocaleString()}
+                              </p>
+                            </div>
+                            {isSoldOut ? (
+                              <Badge className="bg-red-100 text-red-600 border-red-200 rounded-lg">
+                                Sold Out
+                              </Badge>
+                            ) : (
+                              <Badge 
+                                variant="outline" 
+                                className={`border-[#0F0F0F]/20 rounded-lg ${
+                                  remaining < 20 ? 'text-orange-600 border-orange-300' : 'text-[#0F0F0F]/60'
+                                }`}
+                              >
+                                {remaining} left
+                              </Badge>
+                            )}
                           </div>
-                          <Badge 
-                            variant="outline" 
-                            className={`border-[#0F0F0F]/20 rounded-lg ${
-                              tier.quantity_available < 20 ? 'text-orange-600 border-orange-300' : 'text-[#0F0F0F]/60'
-                            }`}
-                          >
-                            {tier.quantity_available} left
-                          </Badge>
+                          {!isSoldOut && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-[#0F0F0F]/60">Quantity</span>
+                              <div className="flex items-center gap-3">
+                                <Button 
+                                  size="icon" 
+                                  variant="outline" 
+                                  onClick={() => updateTicketQuantity(tier.id, -1)} 
+                                  disabled={!selectedTickets[tier.id]} 
+                                  className="w-8 h-8 rounded-lg"
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </Button>
+                                <span className="w-8 text-center font-medium text-[#0F0F0F]">
+                                  {selectedTickets[tier.id] || 0}
+                                </span>
+                                <Button 
+                                  size="icon" 
+                                  variant="outline" 
+                                  onClick={() => updateTicketQuantity(tier.id, 1)} 
+                                  disabled={
+                                    (selectedTickets[tier.id] || 0) >= remaining || 
+                                    (selectedTickets[tier.id] || 0) >= 10
+                                  } 
+                                  className="w-8 h-8 rounded-lg"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-[#0F0F0F]/60">Quantity</span>
-                          <div className="flex items-center gap-3">
-                            <Button 
-                              size="icon" 
-                              variant="outline" 
-                              onClick={() => updateTicketQuantity(tier.id, -1)} 
-                              disabled={!selectedTickets[tier.id]} 
-                              className="w-8 h-8 rounded-lg"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </Button>
-                            <span className="w-8 text-center font-medium text-[#0F0F0F]">
-                              {selectedTickets[tier.id] || 0}
-                            </span>
-                            <Button 
-                              size="icon" 
-                              variant="outline" 
-                              onClick={() => updateTicketQuantity(tier.id, 1)} 
-                              disabled={
-                                (selectedTickets[tier.id] || 0) >= tier.quantity_available || 
-                                (selectedTickets[tier.id] || 0) >= 10
-                              } 
-                              className="w-8 h-8 rounded-lg"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -70,7 +70,7 @@ export function AdminLayout({ children }) {
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#0F0F0F]/10 fixed h-full">
         <div className="p-6 border-b border-[#0F0F0F]/10">
-          <h1 className="text-xl font-bold text-[#2969FF]">Ticketrack</h1>
+          <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" />
           <p className="text-sm text-[#0F0F0F]/60 mt-1">Admin Portal</p>
         </div>
         
@@ -124,7 +124,7 @@ export function AdminLayout({ children }) {
           >
             <div className="p-6 border-b border-[#0F0F0F]/10 flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-bold text-[#2969FF]">Ticketrack</h1>
+                <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" />
                 <p className="text-sm text-[#0F0F0F]/60 mt-1">Admin Portal</p>
               </div>
               <button onClick={() => setSidebarOpen(false)}>

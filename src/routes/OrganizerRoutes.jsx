@@ -49,6 +49,8 @@ export function OrganizerRoutes() {
           <Route path="/events" element={<EventManagement />} />
           <Route path="/events/create" element={<CreateEvent />} />
           <Route path="/create-event" element={<CreateEvent />} />
+          <Route path="/events/:id/edit" element={<CreateEvent />} />
+          <Route path="/events/:id/attendees" element={<ManageAttendees />} />
           <Route path="/payouts" element={<FinancePayouts />} />
           <Route path="/profile" element={<OrganizerProfile />} />
           <Route path="/communications" element={<OrganizerCommunications />} />

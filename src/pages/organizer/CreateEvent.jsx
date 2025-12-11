@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   X, Calendar, Clock, MapPin, Ticket, Image as ImageIcon,
   Plus, Trash2, Upload, Loader2, DollarSign, Info, ExternalLink,
@@ -13,7 +13,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Checkbox } from '../../components/ui/checkbox';
 import { AddressAutocomplete } from '../../components/ui/AddressAutocomplete';
 import { useOrganizer } from '../../contexts/OrganizerContext';
-import { createEvent, createTicketTypes } from '../../services/organizerService';
+import { createEvent, createTicketTypes, updateEvent } from '../../services/organizerService';
 import { supabase } from '@/lib/supabase';
 
 const eventTypes = [
@@ -33,6 +33,10 @@ const timezones = [
 ];
 
 export function CreateEvent() {
+  const { id } = useParams();
+  const location = useLocation();
+  const isEditMode = Boolean(id);
+  const templateData = location.state?.template;
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
   const [activeTab, setActiveTab] = useState('details');
@@ -106,6 +110,110 @@ export function CreateEvent() {
   // Images State (for gallery)
   const [eventImages, setEventImages] = useState([]);
   const [sponsorLogos, setSponsorLogos] = useState([]);
+  const [loadingEvent, setLoadingEvent] = useState(false);
+
+  // Load event data for edit mode or template
+  useEffect(() => {
+    const loadEventData = async () => {
+      // Edit mode - load from database
+      if (isEditMode && id) {
+        setLoadingEvent(true);
+        try {
+          const { data: event, error } = await supabase
+            .from("events")
+            .select("*, ticket_types(*)")
+            .eq("id", id)
+            .single();
+
+          if (error) throw error;
+          if (event) {
+            setFormData({
+              title: event.title || "",
+              eventType: event.event_type || "",
+              description: event.description || "",
+              category: event.category || "",
+              startDate: event.start_date ? event.start_date.split("T")[0] : "",
+              startTime: event.start_date ? event.start_date.split("T")[1]?.substring(0, 5) : "",
+              endDate: event.end_date ? event.end_date.split("T")[0] : "",
+              endTime: event.end_date ? event.end_date.split("T")[1]?.substring(0, 5) : "",
+              gateOpeningTime: event.gate_opening_time || "",
+              timezone: event.timezone || "Africa/Lagos",
+              isMultiDay: event.is_multi_day || false,
+              isRecurring: event.is_recurring || false,
+              recurringPattern: event.recurring_pattern || "",
+              venueName: event.venue_name || "",
+              venueAddress: event.venue_address || "",
+              googleMapLink: event.google_map_link || "",
+              venueType: event.venue_type || "indoor",
+              venueCapacity: event.total_capacity || "",
+              seatingType: event.seating_type || "Standing",
+              city: event.city || "",
+              country: event.country_code || "",
+              venueLat: event.venue_lat || null,
+              venueLng: event.venue_lng || null,
+              isAdultOnly: event.is_adult_only || false,
+              isWheelchairAccessible: event.is_wheelchair_accessible || false,
+              isBYOB: event.is_byob || false,
+              dressCode: event.dress_code || "",
+              promoVideoUrl: event.promo_video_url || "",
+              feeHandling: event.fee_handling || "pass_to_attendee",
+              isFree: event.is_free || false,
+              agreedToTerms: true,
+            });
+            if (event.image_url) {
+              setBannerPreview(event.image_url);
+            }
+            if (event.ticket_types && event.ticket_types.length > 0) {
+              setTickets(event.ticket_types.map((t, idx) => ({
+                dbId: t.id,
+                id: idx + 1,
+                name: t.name || "",
+                price: t.price || "",
+                quantity: t.quantity_available || "",
+                description: t.description || "",
+                isRefundable: t.is_refundable !== false,
+              })));
+            }
+          }
+        } catch (err) {
+          console.error("Error loading event:", err);
+          setError("Failed to load event data");
+        } finally {
+          setLoadingEvent(false);
+        }
+      }
+      // Template mode - load from location state
+      else if (templateData) {
+        setFormData(prev => ({
+          ...prev,
+          title: templateData.title ? templateData.title + " (Copy)" : "",
+          description: templateData.description || "",
+          category: templateData.category || "",
+          venueName: templateData.venue_name || "",
+          venueAddress: templateData.venue_address || "",
+          city: templateData.city || "",
+          country: templateData.country_code || "",
+          timezone: templateData.timezone || "Africa/Lagos",
+          isFree: templateData.is_free || false,
+        }));
+        if (templateData.image_url) {
+          setBannerPreview(templateData.image_url);
+        }
+        if (templateData.ticket_types && templateData.ticket_types.length > 0) {
+          setTickets(templateData.ticket_types.map((t, idx) => ({
+            id: idx + 1,
+            name: t.name || "",
+            price: t.price || "",
+            quantity: t.quantity_available || "",
+            description: t.description || "",
+            isRefundable: true,
+          })));
+        }
+      }
+    };
+    loadEventData();
+  }, [id, isEditMode, templateData]);
+
 
   const tabs = [
     { id: 'details', label: 'Event Details', icon: Calendar },
@@ -289,8 +397,8 @@ export function CreateEvent() {
     setError('');
 
     try {
-      // Upload banner image
-      let imageUrl = null;
+      // Upload banner image if new one selected
+      let imageUrl = (bannerPreview && !bannerPreview.startsWith('blob:')) ? bannerPreview : null;
       if (bannerImage) {
         const fileExt = bannerImage.name.split('.').pop();
         const fileName = `${organizer.id}/${Date.now()}.${fileExt}`;
@@ -304,6 +412,8 @@ export function CreateEvent() {
             .from('event-images')
             .getPublicUrl(fileName);
           imageUrl = publicUrl;
+        } else {
+          console.error("Image upload failed:", uploadError);
         }
       }
 
@@ -314,7 +424,7 @@ export function CreateEvent() {
 
       const totalCapacity = validTickets.reduce((sum, t) => sum + (parseInt(t.quantity) || 0), 0);
 
-      const event = await createEvent(organizer.id, {
+      const eventData = {
         title: formData.title,
         description: formData.description,
         event_type: formData.eventType,
@@ -342,29 +452,113 @@ export function CreateEvent() {
         image_url: imageUrl,
         promo_video_url: formData.promoVideoUrl,
         fee_handling: formData.feeHandling,
-      });
+        status: 'published',
+      };
 
-      // Create regular ticket types
-      await createTicketTypes(event.id, validTickets);
+      let savedEvent;
 
-      // Create table tickets as ticket types
-      const validTableTickets = tableTickets.filter(t => t.name && t.price && t.quantity);
-      if (validTableTickets.length > 0) {
-        const tableTicketsFormatted = validTableTickets.map(t => ({
-          name: t.name,
-          price: t.price,
-          quantity: t.quantity,
-          description: t.description || `Table with ${t.seatsPerTable} seats`,
-          isTableTicket: true,
-          seatsPerTable: t.seatsPerTable,
-        }));
-        await createTicketTypes(event.id, tableTicketsFormatted);
+      if (isEditMode && id) {
+        // EDIT MODE: Update existing event
+        
+        // Fetch current event data for audit history
+        const { data: currentEvent } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        // Update the event
+        savedEvent = await updateEvent(id, eventData);
+
+        // Determine which fields changed
+        const changedFields = [];
+        Object.keys(eventData).forEach(key => {
+          if (JSON.stringify(currentEvent[key]) !== JSON.stringify(eventData[key])) {
+            changedFields.push(key);
+          }
+        });
+
+        // Log to event_history for audit trail
+        if (changedFields.length > 0) {
+          const { data: { user } } = await supabase.auth.getUser();
+          await supabase.from('event_history').insert({
+            event_id: id,
+            changed_by: user?.id,
+            change_type: 'updated',
+            previous_data: currentEvent,
+            new_data: savedEvent,
+            changed_fields: changedFields,
+          });
+        }
+
+        // Update existing ticket types
+        for (const ticket of validTickets) {
+          if (ticket.dbId) {
+            // Update existing ticket type
+            await supabase
+              .from('ticket_types')
+              .update({
+                name: ticket.name,
+                price: parseFloat(ticket.price) || 0,
+                quantity_available: parseInt(ticket.quantity) || 0,
+                description: ticket.description || '',
+                is_refundable: ticket.isRefundable !== false,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', ticket.dbId);
+          } else {
+            // Create new ticket type
+            await supabase
+              .from('ticket_types')
+              .insert({
+                event_id: id,
+                name: ticket.name,
+                price: parseFloat(ticket.price) || 0,
+                quantity_available: parseInt(ticket.quantity) || 0,
+                description: ticket.description || '',
+                is_refundable: ticket.isRefundable !== false,
+                is_active: true,
+              });
+          }
+        }
+
+      } else {
+        // CREATE MODE: Create new event
+        savedEvent = await createEvent(organizer.id, eventData);
+
+        // Log creation to event_history
+        const { data: { user } } = await supabase.auth.getUser();
+        await supabase.from('event_history').insert({
+          event_id: savedEvent.id,
+          changed_by: user?.id,
+          change_type: 'created',
+          previous_data: null,
+          new_data: savedEvent,
+          changed_fields: Object.keys(eventData),
+        });
+
+        // Create regular ticket types
+        await createTicketTypes(savedEvent.id, validTickets);
+
+        // Create table tickets as ticket types
+        const validTableTickets = tableTickets.filter(t => t.name && t.price && t.quantity);
+        if (validTableTickets.length > 0) {
+          const tableTicketsFormatted = validTableTickets.map(t => ({
+            name: t.name,
+            price: t.price,
+            quantity: t.quantity,
+            description: t.description || `Table with ${t.seatsPerTable} seats`,
+            isTableTicket: true,
+            seatsPerTable: t.seatsPerTable,
+          }));
+          await createTicketTypes(savedEvent.id, tableTicketsFormatted);
+        }
       }
 
       navigate('/organizer/events');
     } catch (err) {
-      console.error('Error creating event:', err);
-      setError(err.message || 'Failed to create event');
+      console.error('Error saving event:', err);
+      setError(err.message || 'Failed to save event');
     } finally {
       setSaving(false);
     }

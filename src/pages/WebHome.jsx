@@ -406,18 +406,40 @@ export function WebHome() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative max-w-7xl mx-auto px-4 py-20 md:py-32">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              Discover Amazing Events in Africa
+      <section className="relative min-h-[600px] md:min-h-[700px] overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1920&q=80" 
+            alt="Concert crowd"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/95 via-[#0f2847]/85 to-[#1a3a5c]/70" />
+        </div>
+        
+        {/* Content */}
+        <div className="relative max-w-7xl mx-auto px-4 py-24 md:py-32 lg:py-40">
+          <div className="max-w-2xl">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+              <span className="text-lg">✨</span>
+              Africa's #1 Ticketing Platform
+            </div>
+            
+            {/* Headline */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+              Your Next<br />
+              <span className="text-blue-500">Unforgettable</span><br />
+              Experience Awaits
             </h1>
-            <p className="text-lg md:text-xl text-blue-100 mb-8">
-              Find concerts, festivals, conferences, and more happening near you
+            
+            {/* Subtitle */}
+            <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-xl">
+              From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening across Africa.
             </p>
             
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-xl mb-12">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
@@ -425,16 +447,33 @@ export function WebHome() {
                   placeholder="Search events, artists, venues..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-blue-300"
+                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <button 
                 type="submit"
-                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 rounded-xl transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
-                Search
+                Explore Events
+                <ChevronRight size={20} />
               </button>
             </form>
+            
+            {/* Stats */}
+            <div className="flex flex-wrap gap-8 md:gap-12">
+              <div>
+                <div className="text-3xl md:text-4xl font-bold text-white">10K+</div>
+                <div className="text-gray-400 text-sm">Events Hosted</div>
+              </div>
+              <div>
+                <div className="text-3xl md:text-4xl font-bold text-white">500K+</div>
+                <div className="text-gray-400 text-sm">Tickets Sold</div>
+              </div>
+              <div>
+                <div className="text-3xl md:text-4xl font-bold text-white">6</div>
+                <div className="text-gray-400 text-sm">Countries</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

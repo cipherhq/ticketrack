@@ -197,6 +197,49 @@ export function WebCheckout() {
 
   const totalTicketCount = ticketSummary.reduce((sum, t) => sum + t.quantity, 0)
 
+  // Reserve tickets atomically (prevents overselling)
+  const reserveAllTickets = async () => {
+    const reservations = []
+    
+    for (const item of ticketSummary) {
+      const { data, error } = await supabase.rpc('reserve_tickets', {
+        p_ticket_type_id: item.id,
+        p_quantity: item.quantity
+      })
+      
+      if (error) {
+        console.error('Reserve tickets RPC error:', error)
+        // Release any already reserved tickets
+        await releaseAllTickets(reservations)
+        throw new Error(`Failed to reserve tickets: ${error.message}`)
+      }
+      
+      if (!data.success) {
+        // Release any already reserved tickets
+        await releaseAllTickets(reservations)
+        throw new Error(data.error || 'Not enough tickets available')
+      }
+      
+      reservations.push({ ticketTypeId: item.id, quantity: item.quantity })
+    }
+    
+    return reservations
+  }
+
+  // Release tickets (for failed payments or refunds)
+  const releaseAllTickets = async (reservations) => {
+    for (const res of reservations) {
+      try {
+        await supabase.rpc('release_tickets', {
+          p_ticket_type_id: res.ticketTypeId,
+          p_quantity: res.quantity
+        })
+      } catch (err) {
+        console.error('Failed to release tickets:', err)
+      }
+    }
+  }
+
   // Generate unique ticket number
   const generateTicketNumber = (index) => {
     const timestamp = Date.now().toString(36).toUpperCase()
@@ -257,6 +300,8 @@ export function WebCheckout() {
     setError(null)
 
     try {
+      // Reserve tickets first (prevents overselling)
+      await reserveAllTickets()
       // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -395,6 +440,8 @@ export function WebCheckout() {
     setError(null)
 
     try {
+      // Reserve tickets first (prevents overselling)
+      await reserveAllTickets()
       // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')

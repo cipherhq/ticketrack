@@ -144,7 +144,7 @@ export async function createEvent(organizerId, eventData) {
     .insert({
       organizer_id: organizerId,
       slug,
-      status: 'draft',
+      status: 'published',
       tickets_sold: 0,
       total_revenue: 0,
       views_count: 0,
@@ -206,7 +206,7 @@ export async function duplicateEvent(eventId) {
   const newEvent = await createEvent(event.organizer_id, {
     ...eventData,
     title: `${eventData.title} (Copy)`,
-    status: 'draft',
+    status: 'published',
   });
 
   if (ticket_types?.length > 0) {
@@ -595,7 +595,7 @@ export async function createEmailCampaign(organizerId, campaignData) {
       body: campaignData.body,
       target_audience: campaignData.target_audience || 'all',
       event_id: campaignData.event_id || null,
-      status: 'draft',
+      status: 'published',
     })
     .select()
     .single();
@@ -657,7 +657,7 @@ export async function createSmsCampaign(organizerId, campaignData) {
       message: campaignData.message,
       target_audience: campaignData.target_audience || 'all',
       event_id: campaignData.event_id || null,
-      status: 'draft',
+      status: 'published',
     })
     .select()
     .single();
