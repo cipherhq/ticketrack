@@ -1,0 +1,129 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const body = await req.text();
+    const signature = req.headers.get("stripe-signature");
+
+    // Get webhook secret from config
+    const { data: gatewayConfig } = await supabase
+      .from("payment_gateway_config")
+      .select("webhook_secret_encrypted, secret_key_encrypted")
+      .eq("provider", "stripe")
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+
+    if (!gatewayConfig) {
+      throw new Error("Stripe not configured");
+    }
+
+    const stripe = new Stripe(gatewayConfig.secret_key_encrypted, {
+      apiVersion: "2023-10-16",
+    });
+
+    // Verify webhook signature
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        signature!,
+        gatewayConfig.webhook_secret_encrypted
+      );
+    } catch (err) {
+      console.error("Webhook signature verification failed:", err);
+      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
+    }
+
+    // Handle the event
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const orderId = session.metadata?.order_id;
+
+      if (orderId) {
+        // Update order status
+        await supabase
+          .from("orders")
+          .update({
+            status: "completed",
+            payment_reference: session.payment_intent,
+            paid_at: new Date().toISOString(),
+          })
+          .eq("id", orderId);
+
+        // Get order details for ticket creation
+        const { data: order } = await supabase
+          .from("orders")
+          .select("*, order_items(*)")
+          .eq("id", orderId)
+          .single();
+
+        if (order) {
+          // Create tickets
+          const ticketInserts: any[] = [];
+          for (const item of order.order_items || []) {
+            for (let i = 0; i < item.quantity; i++) {
+              ticketInserts.push({
+                order_id: orderId,
+                event_id: order.event_id,
+                ticket_type_id: item.ticket_type_id,
+                user_id: order.user_id,
+                status: "valid",
+                qr_code: "TKT-" + orderId.slice(0, 8) + "-" + Date.now() + "-" + i,
+                payment_status: "completed",
+                total_price: item.unit_price,
+              });
+            }
+          }
+
+          if (ticketInserts.length > 0) {
+            await supabase.from("tickets").insert(ticketInserts);
+          }
+
+          // Update ticket_types quantities
+          for (const item of order.order_items || []) {
+            await supabase.rpc("decrement_ticket_quantity", {
+              p_ticket_type_id: item.ticket_type_id,
+              p_quantity: item.quantity,
+            });
+          }
+        }
+      }
+    } else if (event.type === "checkout.session.expired") {
+      const session = event.data.object;
+      const orderId = session.metadata?.order_id;
+
+      if (orderId) {
+        await supabase
+          .from("orders")
+          .update({ status: "expired" })
+          .eq("id", orderId);
+      }
+    }
+
+    return new Response(JSON.stringify({ received: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

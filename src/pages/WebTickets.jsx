@@ -1,3 +1,4 @@
+import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle } from 'lucide-react'
@@ -222,7 +223,7 @@ export function WebTickets() {
               </div>
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Amount Paid</p>
-                <p className="text-[#0F0F0F]">{ticket.payment_status === "free" ? "Free" : `₦${(ticket.total_price || 0).toLocaleString()}`}</p>
+                <p className="text-[#0F0F0F]">{ticket.payment_status === "free" ? "Free" : formatPrice(ticket.total_price || 0, ticket.currency)}</p>
               </div>
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Payment Method</p>

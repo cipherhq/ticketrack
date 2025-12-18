@@ -8,14 +8,63 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { supabase } from '@/lib/supabase';
+import { formatMultiCurrencyCompact } from '@/config/currencies';
 
 export function PromoterProfile() {
   const { promoter, refreshPromoter, loading: promoterLoading } = usePromoter();
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editedProfile, setEditedProfile] = useState({ full_name: '', email: '', phone: '', bio: '' });
+  const [earningsByCurrency, setEarningsByCurrency] = useState({});
+  const [paidByCurrency, setPaidByCurrency] = useState({});
 
-  useEffect(() => { if (promoter) setEditedProfile({ full_name: promoter.full_name || '', email: promoter.email || '', phone: promoter.phone || '', bio: promoter.bio || '' }); }, [promoter]);
+  useEffect(() => { 
+    if (promoter) {
+      setEditedProfile({ full_name: promoter.full_name || '', email: promoter.email || '', phone: promoter.phone || '', bio: promoter.bio || '' });
+      loadCurrencyData();
+    }
+  }, [promoter]);
+
+  const loadCurrencyData = async () => {
+    try {
+      // Get earnings grouped by currency
+      const { data: salesData } = await supabase
+        .from('promoter_sales')
+        .select('commission_amount, events(currency)')
+        .eq('promoter_id', promoter.id);
+
+      const earnings = {};
+      salesData?.forEach(sale => {
+        const currency = sale.events?.currency;
+        if (!currency) {
+          console.warn('Sale missing currency:', sale);
+          return;
+        }
+        earnings[currency] = (earnings[currency] || 0) + parseFloat(sale.commission_amount || 0);
+      });
+      setEarningsByCurrency(earnings);
+
+      // Get payouts grouped by currency
+      const { data: payoutsData } = await supabase
+        .from('promoter_payouts')
+        .select('amount, currency')
+        .eq('promoter_id', promoter.id)
+        .eq('status', 'completed');
+
+      const paid = {};
+      payoutsData?.forEach(payout => {
+        const currency = payout.currency;
+        if (!currency) {
+          console.warn('Payout missing currency:', payout);
+          return;
+        }
+        paid[currency] = (paid[currency] || 0) + parseFloat(payout.amount || 0);
+      });
+      setPaidByCurrency(paid);
+    } catch (error) { 
+      console.error('Error loading currency data:', error); 
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -58,7 +107,7 @@ export function PromoterProfile() {
       <div className="grid md:grid-cols-3 gap-4">
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Promo Code</p><p className="text-2xl text-[#2969FF] font-bold">{promoter.short_code}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Commission Rate</p><p className="text-2xl text-green-600">{promoter.commission_rate}%</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Earned</p><p className="text-xl text-[#0F0F0F]">₦{(parseFloat(promoter.total_earned || 0) / 1000).toFixed(0)}K</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Earned</p><p className="text-xl text-[#0F0F0F]">{formatMultiCurrencyCompact(earningsByCurrency)}</p></CardContent></Card>
       </div>
 
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -91,8 +140,8 @@ export function PromoterProfile() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-[#F4F6FA] rounded-xl text-center"><p className="text-2xl font-bold text-[#0F0F0F]">{promoter.total_clicks || 0}</p><p className="text-sm text-[#0F0F0F]/60">Total Clicks</p></div>
             <div className="p-4 bg-[#F4F6FA] rounded-xl text-center"><p className="text-2xl font-bold text-green-600">{promoter.total_sales || 0}</p><p className="text-sm text-[#0F0F0F]/60">Tickets Sold</p></div>
-            <div className="p-4 bg-[#F4F6FA] rounded-xl text-center"><p className="text-2xl font-bold text-[#2969FF]">₦{(parseFloat(promoter.total_earned || 0) / 1000).toFixed(0)}K</p><p className="text-sm text-[#0F0F0F]/60">Total Earned</p></div>
-            <div className="p-4 bg-[#F4F6FA] rounded-xl text-center"><p className="text-2xl font-bold text-orange-600">₦{(parseFloat(promoter.total_paid || 0) / 1000).toFixed(0)}K</p><p className="text-sm text-[#0F0F0F]/60">Total Paid</p></div>
+            <div className="p-4 bg-[#F4F6FA] rounded-xl text-center"><p className="text-2xl font-bold text-[#2969FF]">{formatMultiCurrencyCompact(earningsByCurrency)}</p><p className="text-sm text-[#0F0F0F]/60">Total Earned</p></div>
+            <div className="p-4 bg-[#F4F6FA] rounded-xl text-center"><p className="text-2xl font-bold text-orange-600">{formatMultiCurrencyCompact(paidByCurrency)}</p><p className="text-sm text-[#0F0F0F]/60">Total Paid</p></div>
           </div>
         </CardContent>
       </Card>

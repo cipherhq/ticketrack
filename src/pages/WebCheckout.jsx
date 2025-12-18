@@ -1,3 +1,7 @@
+import { getFeesByCurrency, DEFAULT_FEES } from '@/config/fees'
+import { getPaymentProvider, getProviderInfo, getPaymentMethods, initStripeCheckout, initPayPalCheckout } from '@/config/payments'
+import { formatPrice } from '@/config/currencies'
+import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, CheckCircle, Clock } from 'lucide-react'
@@ -94,6 +98,7 @@ export function WebCheckout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  const { isEnabledForCurrency } = useFeatureFlags()
   
   const { event, selectedTickets, ticketTypes, totalAmount, isFreeEvent } = location.state || {}
   
@@ -110,6 +115,9 @@ export function WebCheckout() {
   const [timeLeft, setTimeLeft] = useState(300)
   const [timerExpired, setTimerExpired] = useState(false)
   const [error, setError] = useState(null)
+  const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
+  const [paymentProvider, setPaymentProvider] = useState('paystack')
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState([{ id: 'card', icon: 'CreditCard', label: 'Card' }])
 
   useEffect(() => {
     async function loadProfile() {
@@ -141,7 +149,50 @@ export function WebCheckout() {
   }, [event, selectedTickets, navigate])
 
 
-  // Countdown timer with localStorage persistence
+  // Fetch service fee rate based on event currency
+  useEffect(() => {
+    async function loadFees() {
+      if (event?.currency) {
+        const fees = await getFeesByCurrency(event.currency);
+        setFeeRate(fees.serviceFee);
+      }
+    }
+    loadFees();
+  }, [event?.currency]);
+
+
+  // Detect payment provider and available methods based on currency and features
+  useEffect(() => {
+    const loadPaymentOptions = async () => {
+      if (!event?.currency) return;
+      
+      const provider = getPaymentProvider(event.currency);
+      setPaymentProvider(provider);
+      
+      // Build available payment methods based on provider and features
+      const methods = [];
+      
+      if (provider === 'stripe') {
+        methods.push({ id: 'card', label: 'Card / Apple Pay / Google Pay' });
+      } else if (provider === 'paypal') {
+        methods.push({ id: 'paypal', label: 'PayPal' });
+      } else {
+        // Paystack - check features for each method
+        methods.push({ id: 'card', label: 'Card' });
+        
+        const bankEnabled = await isEnabledForCurrency(event.currency, 'bank_transfer');
+        if (bankEnabled) methods.push({ id: 'bank', label: 'Bank Transfer' });
+        
+        const ussdEnabled = await isEnabledForCurrency(event.currency, 'ussd');
+        if (ussdEnabled) methods.push({ id: 'ussd', label: 'USSD' });
+      }
+      
+      setAvailablePaymentMethods(methods);
+      if (methods.length > 0) setPaymentMethod(methods[0].id);
+    };
+    
+    loadPaymentOptions();
+  }, [event?.currency]);
   useEffect(() => {
     const TIMER_KEY = `checkout_timer_${event?.id}`
     const TIMER_DURATION = 300 // 5 minutes in seconds
@@ -179,7 +230,7 @@ export function WebCheckout() {
   }, [event?.id, navigate])
   if (!event) return null
 
-  const serviceFee = isFreeEvent ? 0 : Math.round(totalAmount * 0.05)
+  const serviceFee = isFreeEvent ? 0 : Math.round(totalAmount * feeRate)
   const finalTotal = isFreeEvent ? 0 : totalAmount + serviceFee
 
   const ticketSummary = Object.entries(selectedTickets)
@@ -315,7 +366,7 @@ export function WebCheckout() {
           tax_amount: 0,
           discount_amount: 0,
           total_amount: 0,
-          currency: 'NGN',
+          currency: event?.currency,
           payment_method: 'free',
           payment_provider: 'none',
           buyer_email: formData.email,
@@ -455,7 +506,7 @@ export function WebCheckout() {
           tax_amount: 0,
           discount_amount: 0,
           total_amount: finalTotal,
-          currency: 'NGN',
+          currency: event?.currency,
           payment_method: paymentMethod,
           payment_provider: 'paystack',
           buyer_email: formData.email,
@@ -494,7 +545,7 @@ export function WebCheckout() {
           key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
           email: formData.email,
           amount: finalTotal * 100,
-          currency: 'NGN',
+          currency: event?.currency,
           ref: paymentRef,
           metadata: {
             order_id: order.id,
@@ -532,6 +583,161 @@ export function WebCheckout() {
       setLoading(false)
     }
   }
+
+  // Handle Stripe payment (USD, GBP, EUR)
+  const handleStripePayment = async () => {
+    if (!formData.email || !formData.firstName || !formData.lastName) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    if (!user) {
+      setError('Please log in to continue');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Reserve tickets first
+      await reserveAllTickets();
+
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          event_id: event.id,
+          order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
+          status: 'pending',
+          subtotal: totalAmount,
+          platform_fee: serviceFee,
+          tax_amount: 0,
+          discount_amount: 0,
+          total_amount: finalTotal,
+          currency: event?.currency || 'USD',
+          payment_method: 'card',
+          payment_provider: 'stripe',
+          buyer_email: formData.email,
+          buyer_phone: formData.phone || null,
+          buyer_name: `${formData.firstName} ${formData.lastName}`
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = ticketSummary.map(ticket => ({
+        order_id: order.id,
+        ticket_type_id: ticket.id,
+        quantity: ticket.quantity,
+        unit_price: ticket.price,
+        subtotal: ticket.subtotal
+      }));
+
+      await supabase.from('order_items').insert(orderItems);
+
+      // Initialize Stripe Checkout
+      const successUrl = `${window.location.origin}/payment-success`;
+      const cancelUrl = `${window.location.origin}/event/${event.id}`;
+
+      const { url } = await initStripeCheckout(order.id, successUrl, cancelUrl);
+
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('Failed to create Stripe checkout session');
+      }
+    } catch (err) {
+      console.error('Stripe checkout error:', err);
+      setError(err.message || 'An error occurred during checkout');
+      setLoading(false);
+    }
+  };
+
+  // Handle payment based on provider
+
+  // Handle PayPal payment
+  const handlePayPalPayment = async () => {
+    if (!formData.email || !formData.firstName || !formData.lastName) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    if (!user) {
+      setError('Please log in to continue');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await reserveAllTickets();
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          event_id: event.id,
+          order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
+          status: 'pending',
+          subtotal: totalAmount,
+          platform_fee: serviceFee,
+          tax_amount: 0,
+          discount_amount: 0,
+          total_amount: finalTotal,
+          currency: event?.currency || 'USD',
+          payment_method: 'paypal',
+          payment_provider: 'paypal',
+          buyer_email: formData.email,
+          buyer_phone: formData.phone || null,
+          buyer_name: `${formData.firstName} ${formData.lastName}`
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const orderItems = ticketSummary.map(ticket => ({
+        order_id: order.id,
+        ticket_type_id: ticket.id,
+        quantity: ticket.quantity,
+        unit_price: ticket.price,
+        subtotal: ticket.subtotal
+      }));
+
+      await supabase.from('order_items').insert(orderItems);
+
+      const successUrl = `${window.location.origin}/payment-success`;
+      const cancelUrl = `${window.location.origin}/event/${event.id}`;
+
+      const { approvalUrl } = await initPayPalCheckout(order.id, successUrl, cancelUrl);
+
+      if (approvalUrl) {
+        window.location.href = approvalUrl;
+      } else {
+        throw new Error('Failed to create PayPal checkout');
+      }
+    } catch (err) {
+      console.error('PayPal checkout error:', err);
+      setError(err.message || 'An error occurred during checkout');
+      setLoading(false);
+    }
+  };
+  const handlePayment = () => {
+    if (isFreeEvent) {
+      handleFreeRegistration();
+    } else if (paymentProvider === 'stripe') {
+      handleStripePayment();
+    } else if (paymentProvider === 'paypal') {
+      handlePayPalPayment();
+    } else {
+      handlePaystackPayment();
+    }
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -596,22 +802,25 @@ export function WebCheckout() {
             <Card className="border-[#0F0F0F]/10 rounded-2xl">
               <CardHeader><CardTitle className="text-[#0F0F0F]">Payment Method</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  {[{ id: 'card', icon: CreditCard, label: 'Card' }, { id: 'bank', icon: Building2, label: 'Bank' }, { id: 'ussd', icon: Smartphone, label: 'USSD' }].map(({ id, icon: Icon, label }) => (
-                    <button key={id} type="button" onClick={() => setPaymentMethod(id)} className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${paymentMethod === id ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'}`}>
-                      <Icon className={`w-6 h-6 ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`} />
-                      <span className={`text-sm ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`}>{label}</span>
-                    </button>
-                  ))}
+                <div className={`grid gap-3 ${availablePaymentMethods.length === 1 ? 'grid-cols-1' : availablePaymentMethods.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {availablePaymentMethods.map(({ id, label }) => {
+                    const Icon = id === 'card' ? CreditCard : id === 'bank' ? Building2 : id === 'ussd' ? Smartphone : id === 'paypal' ? CreditCard : CreditCard;
+                    return (
+                      <button key={id} type="button" onClick={() => setPaymentMethod(id)} className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${paymentMethod === id ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'}`}>
+                        <Icon className={`w-6 h-6 ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`} />
+                        <span className={`text-sm ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`}>{label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="p-4 bg-[#F4F6FA] rounded-xl">
                   <div className="flex items-center gap-2 mb-2">
                     <Lock className="w-4 h-4 text-[#2969FF]" />
-                    <p className="font-medium text-[#0F0F0F]">Secure Payment via Paystack</p>
+                    <p className="font-medium text-[#0F0F0F]">{getProviderInfo(event?.currency).description}</p>
                   </div>
                   <p className="text-sm text-[#0F0F0F]/60">
-                    {paymentMethod === 'card' && 'You will be redirected to enter your card details securely.'}
+                    {paymentMethod === 'card' && (paymentProvider === 'stripe' ? 'Pay securely with Card, Apple Pay, or Google Pay.' : 'You will be redirected to enter your card details securely.')}
                     {paymentMethod === 'bank' && 'You will receive bank transfer details to complete payment.'}
                     {paymentMethod === 'ussd' && 'You will receive a USSD code to dial from your phone.'}
                   </p>
@@ -665,7 +874,7 @@ export function WebCheckout() {
                 {ticketSummary.map((ticket, index) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span className="text-[#0F0F0F]/70">{ticket.name} × {ticket.quantity}</span>
-                    <span className="text-[#0F0F0F]">{isFreeEvent ? 'Free' : `₦${ticket.subtotal.toLocaleString()}`}</span>
+                    <span className="text-[#0F0F0F]">{isFreeEvent ? 'Free' : formatPrice(ticket.subtotal, event?.currency)}</span>
                   </div>
                 ))}
               </div>
@@ -675,24 +884,24 @@ export function WebCheckout() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#0F0F0F]/60">Subtotal ({totalTicketCount} tickets)</span>
-                  <span className="text-[#0F0F0F]">{isFreeEvent ? 'Free' : `₦${totalAmount.toLocaleString()}`}</span>
+                  <span className="text-[#0F0F0F]">{isFreeEvent ? 'Free' : formatPrice(totalAmount, event?.currency)}</span>
                 </div>
                 {!isFreeEvent && (
                   <div className="flex justify-between text-sm">
                     <span className="text-[#0F0F0F]/60">Service Fee</span>
-                    <span className="text-[#0F0F0F]">₦{serviceFee.toLocaleString()}</span>
+                    <span className="text-[#0F0F0F]">{formatPrice(serviceFee, event?.currency)}</span>
                   </div>
                 )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-[#0F0F0F]">Total</span>
-                  <span className="text-[#2969FF]">{isFreeEvent ? 'Free' : `₦${finalTotal.toLocaleString()}`}</span>
+                  <span className="text-[#2969FF]">{isFreeEvent ? 'Free' : formatPrice(finalTotal, event?.currency)}</span>
                 </div>
               </div>
 
               <Button 
                 className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6 text-lg" 
-                onClick={isFreeEvent ? handleFreeRegistration : handlePaystackPayment} 
+                onClick={handlePayment} 
                 disabled={loading || !formData.email || !formData.firstName || !formData.lastName}
               >
                 {loading ? (
@@ -700,7 +909,7 @@ export function WebCheckout() {
                 ) : isFreeEvent ? (
                   <><CheckCircle className="w-5 h-5 mr-2" />Complete Registration</>
                 ) : (
-                  <><Lock className="w-5 h-5 mr-2" />Pay ₦{finalTotal.toLocaleString()}</>
+                  <><Lock className="w-5 h-5 mr-2" />Pay {formatPrice(finalTotal, event?.currency)}</>
                 )}
               </Button>
 

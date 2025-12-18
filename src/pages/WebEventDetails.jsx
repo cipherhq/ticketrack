@@ -1,3 +1,5 @@
+import { getFeesByCurrency, DEFAULT_FEES } from '@/config/fees'
+import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
@@ -23,6 +25,7 @@ export function WebEventDetails() {
   
   const [selectedTickets, setSelectedTickets] = useState(location.state?.selectedTickets || {})
   const [isFavorite, setIsFavorite] = useState(false)
+  const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
 
   useEffect(() => {
     async function loadEvent() {
@@ -66,6 +69,17 @@ export function WebEventDetails() {
     }
   }, [id])
 
+
+  // Fetch service fee rate based on event currency
+  useEffect(() => {
+    async function loadFees() {
+      if (event?.currency) {
+        const fees = await getFeesByCurrency(event.currency);
+        setFeeRate(fees.serviceFee);
+      }
+    }
+    loadFees();
+  }, [event?.currency]);
   // Track referral code from URL
   useEffect(() => {
     const refCode = searchParams.get('ref')
@@ -359,7 +373,7 @@ export function WebEventDetails() {
                                 {tier.name}
                               </h3>
                               <p className={`text-2xl font-bold mt-1 ${isSoldOut ? 'text-[#0F0F0F]/40' : 'text-[#2969FF]'}`}>
-                                ₦{tier.price.toLocaleString()}
+                                {formatPrice(tier.price, event?.currency)}
                               </p>
                             </div>
                             {isSoldOut ? (
@@ -422,16 +436,16 @@ export function WebEventDetails() {
                   <div className="space-y-3">
                     <div className="flex justify-between text-[#0F0F0F]/60">
                       <span>Tickets ({totalTickets})</span>
-                      <span>₦{totalAmount.toLocaleString()}</span>
+                      <span>{formatPrice(totalAmount, event?.currency)}</span>
                     </div>
                     <div className="flex justify-between text-[#0F0F0F]/60">
                       <span>Service Fee</span>
-                      <span>₦{Math.round(totalAmount * 0.05).toLocaleString()}</span>
+                      <span>{formatPrice(Math.round(totalAmount * feeRate), event?.currency)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-lg text-[#0F0F0F]">
                       <span>Total</span>
-                      <span>₦{Math.round(totalAmount * 1.05).toLocaleString()}</span>
+                      <span>{formatPrice(Math.round(totalAmount * 1.05), event?.currency)}</span>
                     </div>
                   </div>
                 </>

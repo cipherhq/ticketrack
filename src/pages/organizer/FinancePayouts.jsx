@@ -1,3 +1,5 @@
+import { getCountryFees } from '@/config/fees';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -15,9 +17,9 @@ export function FinancePayouts() {
   const { organizer } = useOrganizer();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    inEscrow: 0,
-    upcomingPayouts: 0,
-    totalPaidOut: 0,
+    inEscrowByCurrency: {},
+    upcomingPayoutsByCurrency: {},
+    totalPaidOutByCurrency: {},
   });
   const [upcomingPayouts, setUpcomingPayouts] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
@@ -39,6 +41,7 @@ export function FinancePayouts() {
         .from('events')
         .select(`
           id,
+          currency,
           title,
           end_date,
           orders (
@@ -52,6 +55,9 @@ export function FinancePayouts() {
 
       if (eventsError) throw eventsError;
 
+
+      // Get platform fees from database
+      const feesByCurrency = await getCountryFees();
       // Fetch completed payouts
       const { data: payouts, error: payoutsError } = await supabase
         .from('organizer_payouts')
@@ -59,12 +65,13 @@ export function FinancePayouts() {
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false });
 
-      // Calculate stats and categorize
-      let inEscrow = 0;
-      let upcomingTotal = 0;
+      // Calculate stats and categorize by currency
+      const inEscrowByCurrency = {};
+      const upcomingPayoutsByCurrency = {};
       const upcoming = [];
 
       events?.forEach(event => {
+        const currency = event.currency;
         const eventEndDate = new Date(event.end_date);
         const payoutDate = new Date(eventEndDate.getTime() + 24 * 60 * 60 * 1000);
         
@@ -75,18 +82,20 @@ export function FinancePayouts() {
 
         if (eventRevenue === 0) return;
 
-        // Platform fee (e.g., 5%)
-        const platformFee = eventRevenue * 0.05;
+        // Platform fee from database
+        const platformFeeRate = feesByCurrency[currency]?.platformFee || 0.10;
+        const platformFee = eventRevenue * platformFeeRate;
         const netAmount = eventRevenue - platformFee;
 
         if (eventEndDate > now) {
           // Event hasn't ended yet - In Escrow
-          inEscrow += netAmount;
+          inEscrowByCurrency[currency] = (inEscrowByCurrency[currency] || 0) + netAmount;
         } else if (payoutDate > now) {
           // Event ended, within 24 hours - Upcoming Payout
-          upcomingTotal += netAmount;
+          upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
           upcoming.push({
             id: event.id,
+            currency,
             event: event.title,
             grossAmount: eventRevenue,
             netAmount: netAmount,
@@ -97,15 +106,17 @@ export function FinancePayouts() {
         }
       });
 
-      // Total paid out from payouts table
-      const totalPaidOut = payouts
-        ?.filter(p => p.status === 'completed')
-        ?.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) || 0;
+      // Total paid out from payouts table - group by currency
+      const totalPaidOutByCurrency = {};
+      payouts?.filter(p => p.status === 'completed')?.forEach(p => {
+        const currency = p.currency || 'USD';
+        totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + (parseFloat(p.amount) || 0);
+      });
 
       setStats({
-        inEscrow,
-        upcomingPayouts: upcomingTotal,
-        totalPaidOut,
+        inEscrowByCurrency,
+        upcomingPayoutsByCurrency,
+        totalPaidOutByCurrency,
       });
 
       setUpcomingPayouts(upcoming);
@@ -118,13 +129,7 @@ export function FinancePayouts() {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
-  };
+  
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -148,9 +153,9 @@ export function FinancePayouts() {
     // Generate CSV report
     const csvContent = `Payout Report
 Event,${payout.event}
-Gross Amount,${formatCurrency(payout.grossAmount)}
-Platform Fee (5%),${formatCurrency(payout.grossAmount * 0.05)}
-Net Amount,${formatCurrency(payout.netAmount)}
+Gross Amount,${formatPrice(payout.grossAmount, payout.currency)}
+Platform Fee,${formatPrice(payout.grossAmount - payout.netAmount, payout.currency)}
+Net Amount,${formatPrice(payout.netAmount, payout.currency)}
 Event End Date,${formatDate(payout.eventEndDate)}
 Payout Date,${formatDateTime(payout.payoutDate)}
 Status,${payout.status}
@@ -172,7 +177,7 @@ Status,${payout.status}
     let csvContent = `Payout History Report\nGenerated,${new Date().toISOString()}\n\nEvent,Amount,Status,Date\n`;
     
     payoutHistory.forEach(payout => {
-      csvContent += `"${payout.event_title || 'N/A'}",${formatCurrency(payout.amount)},${payout.status},${formatDate(payout.created_at)}\n`;
+      csvContent += `"${payout.event_title || 'N/A'}",${formatPrice(payout.amount, payout.currency)},${payout.status},${formatDate(payout.created_at)}\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -226,7 +231,7 @@ Status,${payout.status}
           <CardContent className="p-6">
             <Clock className="w-8 h-8 text-orange-500 mb-3" />
             <p className="text-[#0F0F0F]/60 mb-2">In Escrow</p>
-            <h2 className="text-2xl font-semibold text-[#0F0F0F]">{formatCurrency(stats.inEscrow)}</h2>
+            <h2 className="text-2xl font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.inEscrowByCurrency)}</h2>
             <p className="text-xs text-[#0F0F0F]/40 mt-1">From upcoming events</p>
           </CardContent>
         </Card>
@@ -234,7 +239,7 @@ Status,${payout.status}
           <CardContent className="p-6">
             <Calendar className="w-8 h-8 text-[#2969FF] mb-3" />
             <p className="text-[#0F0F0F]/60 mb-2">Upcoming Payouts</p>
-            <h2 className="text-2xl font-semibold text-[#2969FF]">{formatCurrency(stats.upcomingPayouts)}</h2>
+            <h2 className="text-2xl font-semibold text-[#2969FF]">{formatMultiCurrencyCompact(stats.upcomingPayoutsByCurrency)}</h2>
             <p className="text-xs text-[#0F0F0F]/40 mt-1">To be paid within 24 hours</p>
           </CardContent>
         </Card>
@@ -242,7 +247,7 @@ Status,${payout.status}
           <CardContent className="p-6">
             <CheckCircle className="w-8 h-8 text-green-500 mb-3" />
             <p className="text-[#0F0F0F]/60 mb-2">Total Paid Out</p>
-            <h2 className="text-2xl font-semibold text-green-600">{formatCurrency(stats.totalPaidOut)}</h2>
+            <h2 className="text-2xl font-semibold text-green-600">{formatMultiCurrencyCompact(stats.totalPaidOutByCurrency)}</h2>
             <p className="text-xs text-[#0F0F0F]/40 mt-1">Successfully transferred</p>
           </CardContent>
         </Card>

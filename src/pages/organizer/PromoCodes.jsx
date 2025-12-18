@@ -44,6 +44,7 @@ import {
 } from '../../components/ui/dropdown-menu';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { formatPrice } from '@/config/currencies';
 
 export function PromoCodes() {
   const { organizer } = useOrganizer();
@@ -67,8 +68,6 @@ export function PromoCodes() {
     startsAt: '',
     expiresAt: '',
     eventId: 'all',
-    minPurchaseAmount: '',
-    maxDiscountAmount: '',
     isActive: true,
   });
 
@@ -151,8 +150,6 @@ export function PromoCodes() {
       startsAt: '',
       expiresAt: '',
       eventId: 'all',
-      minPurchaseAmount: '',
-      maxDiscountAmount: '',
       isActive: true,
     });
     setEditingPromo(null);
@@ -169,8 +166,6 @@ export function PromoCodes() {
       startsAt: promo.starts_at?.split('T')[0] || '',
       expiresAt: promo.expires_at?.split('T')[0] || '',
       eventId: promo.event_id || 'all',
-      minPurchaseAmount: promo.min_purchase_amount?.toString() || '',
-      maxDiscountAmount: promo.max_discount_amount?.toString() || '',
       isActive: promo.is_active,
     });
     setIsCreateDialogOpen(true);
@@ -227,8 +222,7 @@ export function PromoCodes() {
         starts_at: formData.startsAt || null,
         expires_at: formData.expiresAt || null,
         event_id: formData.eventId === 'all' ? null : formData.eventId,
-        min_purchase_amount: formData.minPurchaseAmount ? parseFloat(formData.minPurchaseAmount) : null,
-        max_discount_amount: formData.maxDiscountAmount ? parseFloat(formData.maxDiscountAmount) : null,
+        
         is_active: formData.isActive,
       };
 
@@ -329,9 +323,7 @@ export function PromoCodes() {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(amount || 0);
-  };
+  
 
   if (loading) {
     return (
@@ -467,7 +459,7 @@ export function PromoCodes() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div className="flex items-center gap-2 text-[#0F0F0F]/60">
                         {promo.discount_type === 'percentage' ? <Percent className="w-4 h-4" /> : <DollarSign className="w-4 h-4" />}
-                        <span>{promo.discount_type === 'percentage' ? `${promo.discount_value}% off` : `${formatCurrency(promo.discount_value)} off`}</span>
+                        <span>{promo.discount_value}% off</span>
                       </div>
                       <div className="flex items-center gap-2 text-[#0F0F0F]/60">
                         <Users className="w-4 h-4" />
@@ -482,7 +474,7 @@ export function PromoCodes() {
                       {promo.min_purchase_amount > 0 && (
                         <div className="flex items-center gap-2 text-[#0F0F0F]/60">
                           <DollarSign className="w-4 h-4" />
-                          <span>Min: {formatCurrency(promo.min_purchase_amount)}</span>
+                          
                         </div>
                       )}
                     </div>
@@ -553,13 +545,12 @@ export function PromoCodes() {
                   <SelectTrigger className="rounded-xl h-12"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-xl">
                     <SelectItem value="percentage">Percentage (%)</SelectItem>
-                    <SelectItem value="fixed">Fixed Amount (₦)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Discount Value *</Label>
-                <Input type="number" placeholder={formData.discountType === 'percentage' ? '20' : '500'} value={formData.discountValue} onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })} className="rounded-xl h-12" />
+                <Input type="number" placeholder="e.g., 20" value={formData.discountValue} onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })} className="rounded-xl h-12" />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
@@ -602,18 +593,7 @@ export function PromoCodes() {
                 <p className="text-xs text-[#0F0F0F]/40">Leave empty for no expiry</p>
               </div>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Minimum Purchase Amount</Label>
-                <Input type="number" placeholder="No minimum" value={formData.minPurchaseAmount} onChange={(e) => setFormData({ ...formData, minPurchaseAmount: e.target.value })} className="rounded-xl h-12" />
-              </div>
-              {formData.discountType === 'percentage' && (
-                <div className="space-y-2">
-                  <Label>Maximum Discount Amount</Label>
-                  <Input type="number" placeholder="No maximum" value={formData.maxDiscountAmount} onChange={(e) => setFormData({ ...formData, maxDiscountAmount: e.target.value })} className="rounded-xl h-12" />
-                </div>
-              )}
-            </div>
+            
             <div className="flex gap-3 pt-4">
               <Button variant="outline" onClick={() => { setIsCreateDialogOpen(false); resetForm(); }} className="flex-1 rounded-xl h-12">Cancel</Button>
               <Button onClick={handleSubmit} disabled={saving} className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12">

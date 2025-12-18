@@ -40,6 +40,7 @@ const navItems = [
   { icon: MessageSquare, label: 'WhatsApp Packages', path: '/admin/whatsapp-packages' },
   { icon: Bell, label: 'SMS Campaigns', path: '/admin/sms' },
   { icon: Users, label: 'Roles & Permissions', path: '/admin/roles' },
+  { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ];
 
 export function AdminLayout({ children }) {

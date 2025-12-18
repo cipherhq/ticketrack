@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { supabase } from '@/lib/supabase';
+import { formatPrice, formatMultiCurrency } from '@/config/currencies';
 
 export function PaymentHistory() {
   const { promoter } = usePromoter();
@@ -14,12 +15,28 @@ export function PaymentHistory() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [paidByCurrency, setPaidByCurrency] = useState({});
+  const [pendingByCurrency, setPendingByCurrency] = useState({});
 
   useEffect(() => { if (promoter) loadPayments(); }, [promoter]);
 
   const loadPayments = async () => {
     const { data } = await supabase.from('promoter_payouts').select('*, promoter_bank_accounts(bank_name, account_number)').eq('promoter_id', promoter.id).order('created_at', { ascending: false });
     setPayments(data || []);
+
+    // Group by currency
+    const paid = {};
+    const pending = {};
+    data?.forEach(p => {
+      if (p.status === 'completed') {
+        paid[p.currency] = (paid[p.currency] || 0) + parseFloat(p.amount || 0);
+      } else if (p.status === 'pending' || p.status === 'processing') {
+        pending[p.currency] = (pending[p.currency] || 0) + parseFloat(p.amount || 0);
+      }
+    });
+    setPaidByCurrency(paid);
+    setPendingByCurrency(pending);
+
     setLoading(false);
   };
 
@@ -27,11 +44,6 @@ export function PaymentHistory() {
     const matchesSearch = (p.payment_reference || '').toLowerCase().includes(searchQuery.toLowerCase()) || (p.promoter_bank_accounts?.bank_name || '').toLowerCase().includes(searchQuery.toLowerCase());
     return (statusFilter === 'all' || p.status === statusFilter) && matchesSearch;
   });
-
-  const stats = {
-    totalPaid: payments.filter((p) => p.status === 'completed').reduce((sum, p) => sum + parseFloat(p.amount || 0), 0),
-    totalPending: payments.filter((p) => p.status === 'pending' || p.status === 'processing').reduce((sum, p) => sum + parseFloat(p.amount || 0), 0),
-  };
 
   const getStatusBadge = (status) => {
     if (status === 'completed') return <Badge className="bg-green-600"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
@@ -48,8 +60,8 @@ export function PaymentHistory() {
       <div className="flex items-center justify-between"><div><h2 className="text-2xl text-[#0F0F0F] mb-2">Payment History</h2><p className="text-[#0F0F0F]/60">Track all your commission payments</p></div><Button variant="outline" className="rounded-xl"><Download className="w-4 h-4 mr-2" />Export</Button></div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Paid</p><p className="text-2xl text-green-600">₦{stats.totalPaid.toLocaleString()}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Pending</p><p className="text-2xl text-blue-600">₦{stats.totalPending.toLocaleString()}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Paid</p><p className="text-2xl text-green-600">{formatMultiCurrency(paidByCurrency)}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Pending</p><p className="text-2xl text-blue-600">{formatMultiCurrency(pendingByCurrency)}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60 mb-1">Last Payment</p><p className="text-2xl text-[#0F0F0F]">{payments.length > 0 ? new Date(payments[0].created_at).toLocaleDateString() : 'N/A'}</p></CardContent></Card>
       </div>
 
@@ -63,7 +75,7 @@ export function PaymentHistory() {
               {filteredPayments.map((p) => (
                 <div key={p.id} className="p-4 border border-[#0F0F0F]/10 rounded-xl">
                   <div className="flex items-start justify-between mb-4">
-                    <div><div className="flex items-center gap-2 mb-2"><h3 className="text-lg text-[#0F0F0F]">₦{parseFloat(p.amount || 0).toLocaleString()}</h3>{getStatusBadge(p.status)}</div><p className="text-sm text-[#0F0F0F]/60">{new Date(p.created_at).toLocaleDateString()}</p></div>
+                    <div><div className="flex items-center gap-2 mb-2"><h3 className="text-lg text-[#0F0F0F]">{formatPrice(parseFloat(p.amount || 0), p.currency)}</h3>{getStatusBadge(p.status)}</div><p className="text-sm text-[#0F0F0F]/60">{new Date(p.created_at).toLocaleDateString()}</p></div>
                     <div className="text-right"><p className="text-sm text-[#0F0F0F]/60">Ref</p><p className="text-sm">{p.payment_reference || 'N/A'}</p></div>
                   </div>
                   <div className="grid md:grid-cols-2 gap-3">

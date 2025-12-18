@@ -19,9 +19,6 @@ export function WebCart() {
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const serviceFee = subtotal * 0.03
   const total = subtotal + serviceFee
-  
-  // Get currency from first cart item (all items should be same currency for checkout to work)
-  const cartCurrency = cartItems.length > 0 ? cartItems[0].currency : null
 
   return (
     <div className="min-h-screen bg-[#F4F6FA] py-8">
@@ -77,10 +74,10 @@ export function WebCart() {
               <div className="bg-white rounded-2xl p-6 sticky top-24">
                 <h2 className="text-xl font-semibold text-[#0F0F0F] mb-6">Order Summary</h2>
                 <div className="space-y-4 mb-6">
-                  <div className="flex justify-between text-[#0F0F0F]/60"><span>Subtotal</span><span>{formatPrice(subtotal, cartCurrency)}</span></div>
-                  <div className="flex justify-between text-[#0F0F0F]/60"><span>Service Fee (3%)</span><span>{formatPrice(serviceFee, cartCurrency)}</span></div>
+                  <div className="flex justify-between text-[#0F0F0F]/60"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
+                  <div className="flex justify-between text-[#0F0F0F]/60"><span>Service Fee (3%)</span><span>{formatPrice(serviceFee)}</span></div>
                   <div className="border-t border-[#0F0F0F]/10 pt-4">
-                    <div className="flex justify-between font-semibold text-[#0F0F0F]"><span>Total</span><span>{formatPrice(total, cartCurrency)}</span></div>
+                    <div className="flex justify-between font-semibold text-[#0F0F0F]"><span>Total</span><span>{formatPrice(total)}</span></div>
                   </div>
                 </div>
                 <Button onClick={() => navigate('/checkout')} className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12">Proceed to Checkout</Button>

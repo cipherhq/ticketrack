@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 
 export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -14,10 +13,10 @@ export function AdminDashboard() {
     pendingKYCs: 0,
     payoutQueue: 0,
     fraudAlerts: 0,
-    revenueByCurrency: {},
+    platformRevenue: 0,
     activeEventsToday: 0,
     ticketsSoldToday: 0,
-    revenueTodayByCurrency: {},
+    revenueToday: 0,
     openTickets: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
@@ -65,37 +64,13 @@ export function AdminDashboard() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
-
-    // Get all events with currency for mapping
-    const { data: allEvents } = await supabase
-      .from('events')
-      .select('id, currency');
-    
-    const eventCurrencyMap = {};
-    allEvents?.forEach(e => {
-      if (!e.currency) {
-        console.warn('Event missing currency:', e.id);
-        return;
-      }
-      eventCurrencyMap[e.id] = e.currency;
-    });
-
     // Platform revenue (sum of all completed ticket sales)
     const { data: revenueData } = await supabase
       .from('tickets')
-      .select('total_amount, event_id')
+      .select('total_amount')
       .eq('payment_status', 'completed');
     
-    const revenueByCurrency = {};
-    revenueData?.forEach(t => {
-      const currency = eventCurrencyMap[t.event_id];
-      if (!currency) {
-        console.warn('Ticket event missing currency mapping:', t.event_id);
-        return;
-      }
-      if (!revenueByCurrency[currency]) revenueByCurrency[currency] = 0;
-      revenueByCurrency[currency] += parseFloat(t.total_amount) || 0;
-    });
+    const platformRevenue = revenueData?.reduce((sum, t) => sum + (parseFloat(t.total_amount) || 0), 0) || 0;
 
     // Today's stats
     const today = new Date().toISOString().split('T')[0];
@@ -108,19 +83,12 @@ export function AdminDashboard() {
 
     const { data: todayTickets } = await supabase
       .from('tickets')
-      .select('total_amount, quantity, event_id')
+      .select('total_amount, quantity')
       .eq('payment_status', 'completed')
       .gte('created_at', `${today}T00:00:00`);
 
     const ticketsSoldToday = todayTickets?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
-    
-    const revenueTodayByCurrency = {};
-    todayTickets?.forEach(t => {
-      const currency = eventCurrencyMap[t.event_id];
-      if (!currency) return;
-      if (!revenueTodayByCurrency[currency]) revenueTodayByCurrency[currency] = 0;
-      revenueTodayByCurrency[currency] += parseFloat(t.total_amount) || 0;
-    });
+    const revenueToday = todayTickets?.reduce((sum, t) => sum + (parseFloat(t.total_amount) || 0), 0) || 0;
 
     // Open support tickets
     const { count: openTickets } = await supabase
@@ -134,10 +102,10 @@ export function AdminDashboard() {
       pendingKYCs: pendingKYCs || 0,
       payoutQueue: payoutQueue || 0,
       fraudAlerts: 0,
-      revenueByCurrency,
+      platformRevenue,
       activeEventsToday: activeEventsToday || 0,
       ticketsSoldToday,
-      revenueTodayByCurrency,
+      revenueToday,
       openTickets: openTickets || 0,
     });
   };
@@ -199,44 +167,14 @@ export function AdminDashboard() {
   };
 
   const loadTopAffiliates = async () => {
-    // Get promoters
-    const { data: promoters } = await supabase
+    const { data } = await supabase
       .from('promoters')
-      .select('id, name, promo_code, total_sales')
+      .select('name, promo_code, total_sales, total_revenue, events(title)')
       .eq('is_active', true)
-      .order('total_sales', { ascending: false })
+      .order('total_revenue', { ascending: false })
       .limit(4);
 
-    if (!promoters || promoters.length === 0) {
-      setTopAffiliates([]);
-      return;
-    }
-
-    const promoterIds = promoters.map(p => p.id);
-
-    // Get sales data with currency from events
-    const { data: salesData } = await supabase
-      .from('promoter_sales')
-      .select('promoter_id, sale_amount, events(currency)')
-      .in('promoter_id', promoterIds);
-
-    // Group revenue by currency per promoter
-    const promoterRevenueByCurrency = {};
-    salesData?.forEach(sale => {
-      const pid = sale.promoter_id;
-      const currency = sale.events?.currency;
-      if (!currency) return;
-      if (!promoterRevenueByCurrency[pid]) promoterRevenueByCurrency[pid] = {};
-      promoterRevenueByCurrency[pid][currency] = (promoterRevenueByCurrency[pid][currency] || 0) + parseFloat(sale.sale_amount || 0);
-    });
-
-    // Enrich promoters with revenueByCurrency
-    const enrichedAffiliates = promoters.map(p => ({
-      ...p,
-      revenueByCurrency: promoterRevenueByCurrency[p.id] || {}
-    }));
-
-    setTopAffiliates(enrichedAffiliates);
+    setTopAffiliates(data || []);
   };
 
   const getTimeAgo = (dateString) => {
@@ -253,6 +191,14 @@ export function AdminDashboard() {
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   };
 
+  const formatCurrency = (amount) => {
+    if (amount >= 1000000) {
+      return `₦${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `₦${(amount / 1000).toFixed(1)}K`;
+    }
+    return `₦${amount.toLocaleString()}`;
+  };
 
   const statCards = [
     { label: 'Total Events', value: stats.totalEvents, icon: Calendar, color: '#2969FF' },
@@ -260,6 +206,7 @@ export function AdminDashboard() {
     { label: 'Pending KYCs', value: stats.pendingKYCs, icon: Clock, color: '#f59e0b' },
     { label: 'Payout Queue', value: stats.payoutQueue, icon: DollarSign, color: '#2969FF' },
     { label: 'Fraud Alerts', value: stats.fraudAlerts, icon: AlertTriangle, color: '#ef4444' },
+    { label: 'Platform Revenue', value: formatCurrency(stats.platformRevenue), icon: TrendingUp, color: '#10b981' },
   ];
 
   if (loading) {
@@ -301,26 +248,6 @@ export function AdminDashboard() {
         ))}
       </div>
 
-
-      {/* Revenue by Currency */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {Object.entries(stats.revenueByCurrency || {}).map(([currency, amount]) => (
-          <Card key={currency} className="border-[#0F0F0F]/10 rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[#0F0F0F]/60 mb-2">{currency} Revenue</p>
-                  <h2 className="text-2xl font-semibold text-[#0F0F0F]">{formatPrice(amount, currency)}</h2>
-                  <p className="text-sm text-green-600">Platform total</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
       {/* Recent Activity & Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -362,12 +289,10 @@ export function AdminDashboard() {
                 <span className="text-[#0F0F0F]">Tickets Sold Today</span>
                 <span className="text-[#2969FF] font-semibold">{stats.ticketsSoldToday.toLocaleString()}</span>
               </div>
-              {Object.entries(stats.revenueTodayByCurrency || {}).map(([currency, amount]) => (
-                <div key={currency} className="flex items-center justify-between p-4 rounded-xl bg-[#F4F6FA]">
-                  <span className="text-[#0F0F0F]">{currency} Revenue Today</span>
-                  <span className="text-[#2969FF] font-semibold">{formatPrice(amount, currency)}</span>
-                </div>
-              ))}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-[#F4F6FA]">
+                <span className="text-[#0F0F0F]">Revenue Today</span>
+                <span className="text-[#2969FF] font-semibold">{formatCurrency(stats.revenueToday)}</span>
+              </div>
               <div className="flex items-center justify-between p-4 rounded-xl bg-[#F4F6FA]">
                 <span className="text-[#0F0F0F]">Support Tickets Open</span>
                 <span className="text-[#2969FF] font-semibold">{stats.openTickets}</span>
@@ -405,7 +330,7 @@ export function AdminDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-[#0F0F0F]">{affiliate.total_sales || 0} sales</p>
-                    <p className="text-sm text-green-600">{formatMultiCurrencyCompact(affiliate.revenueByCurrency || {})}</p>
+                    <p className="text-sm text-green-600">{formatCurrency(affiliate.total_revenue || 0)}</p>
                   </div>
                 </div>
               ))}

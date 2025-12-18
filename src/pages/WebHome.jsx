@@ -1,3 +1,4 @@
+import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -121,11 +122,6 @@ const BannerAd = ({ ad }) => {
 
 // Event Card Component
 const EventCard = ({ event, showDistance = false }) => {
-  const formatPrice = (price, isFree) => {
-    if (isFree) return 'Free';
-    if (!price && price !== 0) return '₦0';
-    return `₦${price.toLocaleString()}`;
-  };
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-NG', {
@@ -176,7 +172,7 @@ const EventCard = ({ event, showDistance = false }) => {
         </div>
         <div className="mt-auto flex items-center justify-between">
           <span className="text-sm text-gray-500">From</span>
-          <span className="font-bold text-blue-600">{event.is_free ? 'Free' : formatPrice(event.min_price)}</span>
+          <span className="font-bold text-blue-600">{event.is_free ? 'Free' : formatPrice(event.min_price, event.currency)}</span>
         </div>
       </div>
     </Link>

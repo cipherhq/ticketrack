@@ -1,3 +1,4 @@
+import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, Calendar, MapPin, SlidersHorizontal, ArrowRight } from 'lucide-react'
@@ -26,7 +27,8 @@ export function WebEventBrowse() {
     searchParams.get('category') ? [searchParams.get('category')] : []
   )
   const [selectedCity, setSelectedCity] = useState(searchParams.get('city') || '')
-  const [priceRange, setPriceRange] = useState([])
+  const [minPrice, setMinPrice] = useState("")
+  const [maxPrice, setMaxPrice] = useState("")
 
   // Load initial data
   useEffect(() => {
@@ -113,15 +115,12 @@ export function WebEventBrowse() {
     })
   }
 
-  const formatPrice = (event) => {
-    if (event.is_free) return 'Free'
-    return 'From ₦15,000'
-  }
 
   const clearFilters = () => {
     setSelectedCategories([])
     setSelectedCity('')
-    setPriceRange([])
+    setMinPrice("")
+    setMaxPrice("")
     setSearchTerm('')
     setSearchParams({})
   }
@@ -164,23 +163,38 @@ export function WebEventBrowse() {
           ))}
         </div>
       </div>
-
       {/* Price Range */}
       <div className="pt-6 border-t border-[#0F0F0F]/10">
         <h3 className="font-medium text-[#0F0F0F] mb-4">Price Range</h3>
         <div className="space-y-3">
-          {['Free', 'Under ₦10,000', '₦10,000 - ₦30,000', 'Above ₦30,000'].map(range => (
-            <div key={range} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`price-${range}`} 
-                checked={priceRange.includes(range)} 
-                onCheckedChange={() => setPriceRange(prev => 
-                  prev.includes(range) ? prev.filter(r => r !== range) : [...prev, range]
-                )} 
-              />
-              <Label htmlFor={`price-${range}`} className="cursor-pointer">{range}</Label>
-            </div>
-          ))}
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              placeholder="Min"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="w-full px-3 py-2 border border-[#0F0F0F]/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+            />
+            <span className="text-[#0F0F0F]/40">-</span>
+            <input
+              type="number"
+              placeholder="Max"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="w-full px-3 py-2 border border-[#0F0F0F]/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="price-free" 
+              checked={minPrice === "0" && maxPrice === "0"} 
+              onCheckedChange={(checked) => {
+                if (checked) { setMinPrice("0"); setMaxPrice("0"); }
+                else { setMinPrice(""); setMaxPrice(""); }
+              }} 
+            />
+            <Label htmlFor="price-free" className="cursor-pointer">Free events only</Label>
+          </div>
         </div>
       </div>
 
@@ -351,7 +365,7 @@ export function WebEventBrowse() {
                     <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-[#2969FF] text-lg">
-                          {formatPrice(event)}
+                          {event.is_free ? "Free" : formatPrice(event.min_price, event.currency)}
                         </span>
                         <Button 
                           size="sm"

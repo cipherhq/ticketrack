@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { supabase } from '@/lib/supabase';
+import { formatMultiCurrency, formatMultiCurrencyCompact } from '@/config/currencies';
 
 export function PromoterDashboard() {
   const { promoter, loading: promoterLoading } = usePromoter();
@@ -13,6 +14,8 @@ export function PromoterDashboard() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [earningsByCurrency, setEarningsByCurrency] = useState({});
+  const [paidByCurrency, setPaidByCurrency] = useState({});
 
   useEffect(() => {
     if (promoter) { loadData(); } else { setLoading(false); }
@@ -22,8 +25,45 @@ export function PromoterDashboard() {
     try {
       const { data: bankData } = await supabase.from('promoter_bank_accounts').select('*').eq('promoter_id', promoter.id);
       setBankAccounts(bankData || []);
+      
       const { data: eventData } = await supabase.from('promoter_events').select('*, events(id, title)').eq('promoter_id', promoter.id).eq('is_active', true);
       setEvents(eventData || []);
+
+      // Get earnings grouped by currency
+      const { data: salesData } = await supabase
+        .from('promoter_sales')
+        .select('commission_amount, events(currency)')
+        .eq('promoter_id', promoter.id);
+
+      const earnings = {};
+      salesData?.forEach(sale => {
+        const currency = sale.events?.currency;
+        if (!currency) {
+          console.warn('Sale missing currency:', sale);
+          return;
+        }
+        earnings[currency] = (earnings[currency] || 0) + parseFloat(sale.commission_amount || 0);
+      });
+      setEarningsByCurrency(earnings);
+
+      // Get payouts grouped by currency (join with promoter_sales via event)
+      const { data: payoutsData } = await supabase
+        .from('promoter_payouts')
+        .select('amount, currency')
+        .eq('promoter_id', promoter.id)
+        .eq('status', 'completed');
+
+      const paid = {};
+      payoutsData?.forEach(payout => {
+        const currency = payout.currency;
+        if (!currency) {
+          console.warn('Payout missing currency:', payout);
+          return;
+        }
+        paid[currency] = (paid[currency] || 0) + parseFloat(payout.amount || 0);
+      });
+      setPaidByCurrency(paid);
+
     } catch (error) { console.error('Error loading data:', error); }
     finally { setLoading(false); }
   };
@@ -51,8 +91,17 @@ export function PromoterDashboard() {
   }
 
   const hasBankAccount = bankAccounts.length > 0;
-  const unpaidBalance = parseFloat(promoter.total_earned || 0) - parseFloat(promoter.total_paid || 0);
   const conversionRate = promoter.total_clicks > 0 ? ((promoter.total_sales / promoter.total_clicks) * 100).toFixed(2) : 0;
+
+  // Calculate unpaid by currency
+  const unpaidByCurrency = {};
+  Object.keys(earningsByCurrency).forEach(currency => {
+    const earned = earningsByCurrency[currency] || 0;
+    const paid = paidByCurrency[currency] || 0;
+    if (earned - paid > 0) {
+      unpaidByCurrency[currency] = earned - paid;
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -80,16 +129,16 @@ export function PromoterDashboard() {
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4 text-blue-600" /><span className="text-sm text-[#0F0F0F]/60">Total Clicks</span></div><p className="text-2xl text-[#0F0F0F]">{(promoter.total_clicks || 0).toLocaleString()}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ShoppingCart className="w-4 h-4 text-green-600" /><span className="text-sm text-[#0F0F0F]/60">Tickets Sold</span></div><p className="text-2xl text-green-600">{promoter.total_sales || 0}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-purple-600" /><span className="text-sm text-[#0F0F0F]/60">Conversion</span></div><p className="text-2xl text-[#0F0F0F]">{conversionRate}%</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-[#2969FF]" /><span className="text-sm text-[#0F0F0F]/60">Total Earned</span></div><p className="text-xl text-[#2969FF]">₦{(parseFloat(promoter.total_earned || 0) / 1000).toFixed(0)}K</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-[#2969FF]" /><span className="text-sm text-[#0F0F0F]/60">Total Earned</span></div><p className="text-xl text-[#2969FF]">{formatMultiCurrencyCompact(earningsByCurrency)}</p></CardContent></Card>
       </div>
 
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardHeader><CardTitle>Earnings Overview</CardTitle></CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-green-50 border border-green-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Earned</p><p className="text-2xl text-[#0F0F0F] mb-2">₦{parseFloat(promoter.total_earned || 0).toLocaleString()}</p><p className="text-sm text-green-600">{promoter.commission_rate}% Commission Rate</p></div>
-            <div className="p-4 rounded-xl bg-blue-50 border border-blue-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Paid</p><p className="text-2xl text-blue-600 mb-2">₦{parseFloat(promoter.total_paid || 0).toLocaleString()}</p><Link to="/promoter/payment-history" className="text-sm text-blue-600 hover:underline">View Payment History →</Link></div>
-            <div className="p-4 rounded-xl bg-orange-50 border border-orange-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Unpaid Balance</p><p className="text-2xl text-orange-600 mb-2">₦{unpaidBalance.toLocaleString()}</p><p className="text-sm text-[#0F0F0F]/60">Pending payment</p></div>
+            <div className="p-4 rounded-xl bg-green-50 border border-green-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Earned</p><p className="text-2xl text-[#0F0F0F] mb-2">{formatMultiCurrency(earningsByCurrency)}</p><p className="text-sm text-green-600">{promoter.commission_rate}% Commission Rate</p></div>
+            <div className="p-4 rounded-xl bg-blue-50 border border-blue-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Paid</p><p className="text-2xl text-blue-600 mb-2">{formatMultiCurrency(paidByCurrency)}</p><Link to="/promoter/payment-history" className="text-sm text-blue-600 hover:underline">View Payment History →</Link></div>
+            <div className="p-4 rounded-xl bg-orange-50 border border-orange-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Unpaid Balance</p><p className="text-2xl text-orange-600 mb-2">{formatMultiCurrency(unpaidByCurrency)}</p><p className="text-sm text-[#0F0F0F]/60">Pending payment</p></div>
           </div>
         </CardContent>
       </Card>

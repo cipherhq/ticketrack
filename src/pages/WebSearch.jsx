@@ -1,3 +1,4 @@
+import { formatPrice } from '@/config/currencies'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, X, Calendar, MapPin, Clock, TrendingUp, History } from 'lucide-react'
@@ -8,9 +9,9 @@ import { Badge } from '@/components/ui/badge'
 import { ImageWithFallback } from '@/components/ui/image-with-fallback'
 
 const mockResults = [
-  { id: '1', name: 'Lagos Tech Summit 2024', date: 'Dec 15, 2024', location: 'Eko Convention Center', price: '₦15,000', category: 'Technology', image: 'tech conference' },
-  { id: '2', name: 'Afrobeats Festival', date: 'Dec 25, 2024', location: 'Landmark Event Center', price: '₦35,000', category: 'Music', image: 'music festival' },
-  { id: '3', name: 'Business Conference 2024', date: 'Dec 20, 2024', location: 'Lagos Business School', price: '₦25,000', category: 'Business', image: 'business conference' },
+  { id: '1', name: 'Lagos Tech Summit 2024', date: 'Dec 15, 2024', location: 'Eko Convention Center', price: 15000, currency: 'NGN', category: 'Technology', image: 'tech conference' },
+  { id: '2', name: 'Afrobeats Festival', date: 'Dec 25, 2024', location: 'Landmark Event Center', price: 35000, currency: 'NGN', category: 'Music', image: 'music festival' },
+  { id: '3', name: 'Business Conference 2024', date: 'Dec 20, 2024', location: 'Lagos Business School', price: 25000, currency: 'NGN', category: 'Business', image: 'business conference' },
 ]
 
 const trendingSearches = ['Tech', 'Music', 'Food Festival', 'Lagos', 'Free Events']
@@ -116,7 +117,7 @@ export function WebSearch() {
                             <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{event.date}</div>
                             <div className="flex items-center gap-1"><MapPin className="w-4 h-4" />{event.location}</div>
                           </div>
-                          <div className="text-lg font-bold text-[#2969FF]">From {event.price}</div>
+                          <div className="text-lg font-bold text-[#2969FF]">{formatPrice(event.price, event.currency)}</div>
                         </div>
                       </div>
                     </CardContent>

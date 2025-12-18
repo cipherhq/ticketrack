@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import { CartProvider } from './contexts/CartContext';
 import { ImpersonationProvider } from './contexts/ImpersonationContext';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
@@ -39,7 +40,7 @@ import { PromoterRoutes } from './routes/PromoterRoutes';
 
 function App() {
   return (
-    <AuthProvider>
+    <AuthProvider><FeatureFlagsProvider>
       <CartProvider>
         <ImpersonationProvider>
           <Router>
@@ -69,6 +70,7 @@ function App() {
                 <Route path="/events" element={<WebEventBrowse />} />
                 <Route path="/events/:id" element={<WebEventDetails />} />
                 <Route path="/event/:id" element={<WebEventDetails />} />
+                <Route path="/e/:id" element={<WebEventDetails />} />
                 <Route path="/checkout" element={<WebCheckout />} />
                 <Route path="/payment-success" element={<WebPaymentSuccess />} />
                 <Route path="/tickets" element={<WebTickets />} />
@@ -86,7 +88,7 @@ function App() {
           </Router>
         </ImpersonationProvider>
       </CartProvider>
-    </AuthProvider>
+    </FeatureFlagsProvider></AuthProvider>
   );
 }
 

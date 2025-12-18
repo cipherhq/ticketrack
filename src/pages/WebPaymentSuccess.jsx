@@ -1,5 +1,8 @@
-import { useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { formatPrice } from '@/config/currencies'
+import { supabase } from '@/lib/supabase'
+import { capturePayPalPayment } from '@/config/payments'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { CheckCircle, Download, Mail, Calendar, MapPin, Ticket, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,19 +10,98 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { QRCodeSVG } from 'qrcode.react'
 
+
 export function WebPaymentSuccess() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { order, event, tickets, reference } = location.state || {}
+  const [searchParams] = useSearchParams()
+  
+  const [order, setOrder] = useState(location.state?.order || null)
+  const [event, setEvent] = useState(location.state?.event || null)
+  const [tickets, setTickets] = useState(location.state?.tickets || [])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const reference = location.state?.reference || searchParams.get('session_id')
 
   useEffect(() => {
-    if (!order || !event) {
+    const orderId = searchParams.get('order_id')
+    const sessionId = searchParams.get('session_id')
+    const provider = searchParams.get('provider')
+    
+    if (location.state?.order) return
+    
+    if (orderId && provider === 'paypal') {
+      handlePayPalReturn(orderId)
+    } else if (orderId || sessionId) {
+      loadStripeOrder(orderId)
+    } else if (!location.state?.order && !location.state?.event) {
       navigate('/events')
     }
-  }, [order, event, navigate])
+  }, [searchParams])
+
+  const handlePayPalReturn = async (orderId) => {
+    setLoading(true)
+    try {
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('payment_reference')
+        .eq('id', orderId)
+        .single()
+
+      if (orderData?.payment_reference) {
+        await capturePayPalPayment(orderId, orderData.payment_reference)
+      }
+
+      await loadStripeOrder(orderId)
+    } catch (err) {
+      console.error('PayPal capture error:', err)
+      setError('Payment verification failed')
+      setLoading(false)
+    }
+  }
+
+  const loadStripeOrder = async (orderId) => {
+    setLoading(true)
+    try {
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('*, events(*)') 
+        .eq('id', orderId)
+        .single()
+
+      if (orderError || !orderData) {
+        navigate('/events')
+        return
+      }
+
+      const { data: ticketsData } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('order_id', orderId)
+
+      setOrder(orderData)
+      setEvent(orderData.events)
+      setTickets(ticketsData || [])
+    } catch (err) {
+      console.error('Error:', err)
+      navigate('/events')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#2969FF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#0F0F0F]/60">Loading your tickets...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!order || !event) return null
-
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', { 
@@ -184,16 +266,16 @@ export function WebPaymentSuccess() {
             <div className="space-y-2 mb-6">
               <div className="flex justify-between text-sm">
                 <span className="text-[#0F0F0F]/60">Subtotal</span>
-                <span className="text-[#0F0F0F]">₦{order.subtotal?.toLocaleString()}</span>
+                <span className="text-[#0F0F0F]">{formatPrice(order.subtotal, order.currency)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-[#0F0F0F]/60">Service Fee</span>
-                <span className="text-[#0F0F0F]">₦{order.platform_fee?.toLocaleString()}</span>
+                <span className="text-[#0F0F0F]">{formatPrice(order.platform_fee, order.currency)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold">
                 <span className="text-[#0F0F0F]">Total Paid</span>
-                <span className="text-[#2969FF]">₦{order.total_amount?.toLocaleString()}</span>
+                <span className="text-[#2969FF]">{formatPrice(order.total_amount, order.currency)}</span>
               </div>
               {reference && (
                 <div className="flex justify-between text-xs">

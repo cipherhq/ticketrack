@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, formatMultiCurrencyCompact, getUserDefaultCurrency } from '@/config/currencies';
 
 export function OrganizerHome() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ salesByCurrency: {},
+  const [stats, setStats] = useState({
+    totalSales: 0,
+    totalRevenue: 0,
     totalAttendees: 0,
     totalEvents: 0,
   });
@@ -19,11 +20,10 @@ export function OrganizerHome() {
   const [promoterStats, setPromoterStats] = useState({
     activePromoters: 0,
     ticketsSold: 0,
-    revenueByCurrency: {},
-    unpaidByCurrency: {},
+    revenue: 0,
+    unpaidCommission: 0,
   });
   const [topPromoters, setTopPromoters] = useState([]);
-  const [defaultCurrency, setDefaultCurrency] = useState('USD'); // Fallback from user's country
 
   useEffect(() => {
     if (organizer?.id) {
@@ -34,12 +34,6 @@ export function OrganizerHome() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Fetch user's default currency from their country
-      if (organizer?.user_id) {
-        const currency = await getUserDefaultCurrency(supabase, organizer.user_id);
-        if (currency) setDefaultCurrency(currency);
-      }
-      
       await Promise.all([
         loadStats(),
         loadUpcomingEvents(),
@@ -53,43 +47,36 @@ export function OrganizerHome() {
   };
 
   const loadStats = async () => {
-    // Get total events with currency
+    // Get total events
     const { data: events, error: eventsError } = await supabase
       .from('events')
-      .select('id, currency')
+      .select('id')
       .eq('organizer_id', organizer.id);
 
     if (eventsError) throw eventsError;
 
     const eventIds = events?.map(e => e.id) || [];
-    const eventCurrencyMap = {};
-    events?.forEach(e => { eventCurrencyMap[e.id] = e.currency || defaultCurrency; });
 
     // Get tickets sold for these events
     let totalTickets = 0;
-    const salesByCurrency = {};
+    let totalRevenue = 0;
 
     if (eventIds.length > 0) {
       const { data: tickets, error: ticketsError } = await supabase
         .from('tickets')
-        .select('quantity, total_price, event_id')
+        .select('quantity, total_price')
         .in('event_id', eventIds)
         .eq('payment_status', 'completed');
 
       if (!ticketsError && tickets) {
         totalTickets = tickets.reduce((sum, t) => sum + (t.quantity || 1), 0);
-        
-        // Group by currency
-        tickets.forEach(t => {
-          const currency = eventCurrencyMap[t.event_id] || defaultCurrency;
-          if (!salesByCurrency[currency]) salesByCurrency[currency] = 0;
-          salesByCurrency[currency] += parseFloat(t.total_price) || 0;
-        });
+        totalRevenue = tickets.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0);
       }
     }
 
     setStats({
-      salesByCurrency,
+      totalSales: totalRevenue,
+      totalRevenue: totalRevenue * 0.9, // After platform fees
       totalAttendees: totalTickets,
       totalEvents: events?.length || 0,
     });
@@ -101,7 +88,6 @@ export function OrganizerHome() {
       .select(`
         id,
         title,
-        currency,
         start_date,
         total_capacity,
         ticket_types (
@@ -137,7 +123,6 @@ export function OrganizerHome() {
         ticketsSold,
         totalTickets,
         revenue,
-        currency: event.currency || defaultCurrency,
       };
     }) || [];
 
@@ -158,71 +143,31 @@ export function OrganizerHome() {
     }
 
     const activePromoters = promoters?.length || 0;
-    const promoterIds = promoters?.map(p => p.id) || [];
-
-    // Get sales data with currency from events
-    let ticketsSold = 0;
-    const revenueByCurrency = {};
-    const earnedByCurrency = {};
-    const promoterEarnedByCurrency = {}; // Per-promoter earnings by currency
-
-    if (promoterIds.length > 0) {
-      const { data: salesData } = await supabase
-        .from('promoter_sales')
-        .select('promoter_id, sale_amount, commission_amount, tickets_sold, events(currency)')
-        .in('promoter_id', promoterIds);
-
-      salesData?.forEach(sale => {
-        const currency = sale.events?.currency || 'USD';
-        const promoterId = sale.promoter_id;
-        ticketsSold += sale.tickets_sold || 0;
-        revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + parseFloat(sale.sale_amount || 0);
-        earnedByCurrency[currency] = (earnedByCurrency[currency] || 0) + parseFloat(sale.commission_amount || 0);
-        
-        // Track per-promoter earnings by currency
-        if (!promoterEarnedByCurrency[promoterId]) {
-          promoterEarnedByCurrency[promoterId] = {};
-        }
-        promoterEarnedByCurrency[promoterId][currency] = (promoterEarnedByCurrency[promoterId][currency] || 0) + parseFloat(sale.commission_amount || 0);
-      });
-
-      // Get completed payouts (grouped by currency when available)
-      const { data: payoutsData } = await supabase
-        .from('promoter_payouts')
-        .select('promoter_id, amount, currency')
-        .in('promoter_id', promoterIds)
-        .eq('status', 'completed');
-
-      const paidByCurrency = {};
-      payoutsData?.forEach(payout => {
-        const currency = payout.currency || 'USD';
-        paidByCurrency[currency] = (paidByCurrency[currency] || 0) + parseFloat(payout.amount || 0);
-      });
-
-      // Calculate unpaid by currency
-      const unpaidByCurrency = {};
-      Object.keys(earnedByCurrency).forEach(currency => {
-        const unpaid = (earnedByCurrency[currency] || 0) - (paidByCurrency[currency] || 0);
-        if (unpaid > 0) unpaidByCurrency[currency] = unpaid;
-      });
-    }
+    const ticketsSold = promoters?.reduce((sum, p) => sum + (p.total_sales || 0), 0) || 0;
+    const revenue = promoters?.reduce((sum, p) => sum + (parseFloat(p.total_revenue) || 0), 0) || 0;
+    const totalCommission = promoters?.reduce((sum, p) => sum + (parseFloat(p.total_commission) || 0), 0) || 0;
 
     setPromoterStats({
       activePromoters,
       ticketsSold,
-      revenueByCurrency,
-      unpaidByCurrency: typeof unpaidByCurrency !== 'undefined' ? unpaidByCurrency : {},
+      revenue,
+      unpaidCommission: totalCommission,
     });
 
-    // Top promoters by sales - enriched with earnedByCurrency
-    const enrichedPromoters = (promoters || []).map(p => ({
-      ...p,
-      earnedByCurrency: promoterEarnedByCurrency[p.id] || {}
-    }));
-    const sorted = enrichedPromoters.sort((a, b) => (b.total_sales || 0) - (a.total_sales || 0));
+    // Top promoters by sales
+    const sorted = [...(promoters || [])].sort((a, b) => (b.total_sales || 0) - (a.total_sales || 0));
     setTopPromoters(sorted.slice(0, 3));
   };
 
+  const formatCurrency = (amount) => {
+    if (amount >= 1000000) {
+      return `₦${(amount / 1000000).toFixed(1)}M`;
+    }
+    if (amount >= 1000) {
+      return `₦${(amount / 1000).toFixed(0)}K`;
+    }
+    return `₦${amount.toLocaleString()}`;
+  };
 
   if (loading) {
     return (
@@ -234,26 +179,41 @@ export function OrganizerHome() {
 
   return (
     <div className="space-y-6">
-      {/* Revenue by Currency */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {Object.entries(stats.salesByCurrency || {}).map(([currency, amount]) => (
-          <Card key={currency} className="border-[#0F0F0F]/10 rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[#0F0F0F]/60 mb-2">{currency} Sales</p>
-                  <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-1">
-                    {formatPrice(amount, currency)}
-                  </h2>
-                  <p className="text-sm text-green-600">Net: {formatPrice(amount * 0.9, currency)}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-[#2969FF]" />
-                </div>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[#0F0F0F]/60 mb-2">Total Sales</p>
+                <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-1">
+                  {formatCurrency(stats.totalSales)}
+                </h2>
+                <p className="text-sm text-green-600">Lifetime</p>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <div className="w-12 h-12 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-[#2969FF]" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[#0F0F0F]/60 mb-2">Net Revenue</p>
+                <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-1">
+                  {formatCurrency(stats.totalRevenue)}
+                </h2>
+                <p className="text-sm text-green-600">After fees</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
@@ -289,6 +249,7 @@ export function OrganizerHome() {
           </CardContent>
         </Card>
       </div>
+
       {/* Quick Actions */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardHeader>
@@ -370,7 +331,7 @@ export function OrganizerHome() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[#2969FF] font-medium mb-1">{formatPrice(event.revenue, event.currency)}</p>
+                    <p className="text-[#2969FF] font-medium mb-1">{formatCurrency(event.revenue)}</p>
                     <div className="w-24 h-2 bg-white rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#2969FF]"
@@ -420,14 +381,14 @@ export function OrganizerHome() {
                   <TrendingUp className="w-4 h-4 text-purple-600" />
                   <span className="text-sm text-[#0F0F0F]/60">Revenue</span>
                 </div>
-                <p className="text-xl font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(promoterStats.revenueByCurrency)}</p>
+                <p className="text-xl font-semibold text-[#0F0F0F]">{formatCurrency(promoterStats.revenue)}</p>
               </div>
               <div className="p-4 rounded-xl bg-orange-50 border border-orange-100">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-orange-600" />
                   <span className="text-sm text-[#0F0F0F]/60">Unpaid</span>
                 </div>
-                <p className="text-xl font-semibold text-orange-600">{formatMultiCurrencyCompact(promoterStats.unpaidByCurrency)}</p>
+                <p className="text-xl font-semibold text-orange-600">{formatCurrency(promoterStats.unpaidCommission)}</p>
               </div>
             </div>
 
@@ -450,7 +411,7 @@ export function OrganizerHome() {
                     </div>
                     <div className="text-right">
                       <p className="text-[#0F0F0F] font-medium">{promoter.total_sales || 0} tickets</p>
-                      <p className="text-sm text-green-600">{formatMultiCurrencyCompact(promoter.earnedByCurrency || {})} earned</p>
+                      <p className="text-sm text-green-600">{formatCurrency(promoter.total_commission || 0)} earned</p>
                     </div>
                   </div>
                 ))}

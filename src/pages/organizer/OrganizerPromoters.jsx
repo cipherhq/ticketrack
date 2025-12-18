@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { formatMultiCurrency, formatMultiCurrencyCompact, formatPrice } from '@/config/currencies';
 
 export function OrganizerPromoters() {
   const { organizer } = useOrganizer();
@@ -27,6 +28,7 @@ export function OrganizerPromoters() {
   const [selectedPromoter, setSelectedPromoter] = useState(null);
   const [saving, setSaving] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [statsByCurrency, setStatsByCurrency] = useState({ revenue: {}, commissions: {}, unpaid: {} });
 
   const [newPromoter, setNewPromoter] = useState({
     full_name: '',
@@ -51,7 +53,7 @@ export function OrganizerPromoters() {
       // Load organizer's events
       const { data: eventData } = await supabase
         .from('events')
-        .select('id, title')
+        .select('id, title, currency')
         .eq('organizer_id', organizer.id);
       setEvents(eventData || []);
 
@@ -81,14 +83,88 @@ export function OrganizerPromoters() {
         .select('*')
         .in('id', promoterIds);
 
-      // Enrich with event assignments
+      // Get sales data with currency for each promoter
+      const { data: salesData } = await supabase
+        .from('promoter_sales')
+        .select('promoter_id, sale_amount, commission_amount, events(currency)')
+        .in('promoter_id', promoterIds);
+
+      // Build currency map per promoter
+      const promoterCurrencyData = {};
+      salesData?.forEach(sale => {
+        const pid = sale.promoter_id;
+        const currency = sale.events?.currency;
+        if (!currency) {
+          console.warn('Promoter sale missing currency:', sale);
+          return;
+        }
+        if (!promoterCurrencyData[pid]) {
+          promoterCurrencyData[pid] = { revenue: {}, earned: {} };
+        }
+        promoterCurrencyData[pid].revenue[currency] = (promoterCurrencyData[pid].revenue[currency] || 0) + parseFloat(sale.sale_amount || 0);
+        promoterCurrencyData[pid].earned[currency] = (promoterCurrencyData[pid].earned[currency] || 0) + parseFloat(sale.commission_amount || 0);
+      });
+
+      // Get payouts per promoter (currently no currency column, default to NGN)
+      const { data: payoutsData } = await supabase
+        .from('promoter_payouts')
+        .select('promoter_id, amount, status, currency')
+        .in('promoter_id', promoterIds)
+        .eq('status', 'completed');
+
+      const promoterPaidData = {};
+      payoutsData?.forEach(payout => {
+        const pid = payout.promoter_id;
+        const currency = payout.currency;
+        if (!currency) {
+          console.warn('Promoter payout missing currency:', payout);
+          return;
+        }
+        if (!promoterPaidData[pid]) promoterPaidData[pid] = {};
+        promoterPaidData[pid][currency] = (promoterPaidData[pid][currency] || 0) + parseFloat(payout.amount || 0);
+      });
+
+      // Calculate unpaid by currency per promoter
+      const promoterUnpaidData = {};
+      Object.keys(promoterCurrencyData).forEach(pid => {
+        promoterUnpaidData[pid] = {};
+        const earned = promoterCurrencyData[pid].earned || {};
+        const paid = promoterPaidData[pid] || {};
+        Object.keys(earned).forEach(currency => {
+          const unpaid = (earned[currency] || 0) - (paid[currency] || 0);
+          if (unpaid > 0) promoterUnpaidData[pid][currency] = unpaid;
+        });
+      });
+
+      // Enrich with event assignments and currency data
       const enrichedPromoters = promoterData?.map(p => ({
         ...p,
         assigned_events: promoterEvents?.filter(pe => pe.promoter_id === p.id) || [],
-        unpaid_balance: parseFloat(p.total_earned || 0) - parseFloat(p.total_paid || 0)
+        revenueByCurrency: promoterCurrencyData[p.id]?.revenue || {},
+        earnedByCurrency: promoterCurrencyData[p.id]?.earned || {},
+        paidByCurrency: promoterPaidData[p.id] || {},
+        unpaidByCurrency: promoterUnpaidData[p.id] || {}
       })) || [];
 
       setPromoters(enrichedPromoters);
+
+      // Calculate aggregate stats by currency
+      const aggRevenue = {};
+      const aggCommissions = {};
+      const aggUnpaid = {};
+      enrichedPromoters.forEach(p => {
+        Object.entries(p.revenueByCurrency).forEach(([cur, amt]) => {
+          aggRevenue[cur] = (aggRevenue[cur] || 0) + amt;
+        });
+        Object.entries(p.earnedByCurrency).forEach(([cur, amt]) => {
+          aggCommissions[cur] = (aggCommissions[cur] || 0) + amt;
+        });
+        Object.entries(p.unpaidByCurrency).forEach(([cur, amt]) => {
+          aggUnpaid[cur] = (aggUnpaid[cur] || 0) + amt;
+        });
+      });
+      setStatsByCurrency({ revenue: aggRevenue, commissions: aggCommissions, unpaid: aggUnpaid });
+
     } catch (error) {
       console.error('Error loading promoters:', error);
     } finally {
@@ -254,15 +330,12 @@ export function OrganizerPromoters() {
     return matchesSearch && matchesStatus;
   });
 
-  // Calculate stats
+  // Calculate basic stats (non-currency)
   const stats = {
     total: promoters.length,
     active: promoters.filter(p => p.status === 'active').length,
     totalClicks: promoters.reduce((sum, p) => sum + (p.total_clicks || 0), 0),
-    ticketsSold: promoters.reduce((sum, p) => sum + (p.total_sales || 0), 0),
-    totalRevenue: promoters.reduce((sum, p) => sum + parseFloat(p.total_revenue || 0), 0),
-    commissions: promoters.reduce((sum, p) => sum + parseFloat(p.total_earned || 0), 0),
-    unpaid: promoters.reduce((sum, p) => sum + (parseFloat(p.total_earned || 0) - parseFloat(p.total_paid || 0)), 0)
+    ticketsSold: promoters.reduce((sum, p) => sum + (p.total_sales || 0), 0)
   };
 
   if (loading) {
@@ -316,19 +389,19 @@ export function OrganizerPromoters() {
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-4">
             <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Revenue</p>
-            <p className="text-xl text-[#0F0F0F]">₦{(stats.totalRevenue / 1000000).toFixed(1)}M</p>
+            <p className="text-xl text-[#0F0F0F]">{formatMultiCurrencyCompact(statsByCurrency.revenue)}</p>
           </CardContent>
         </Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-4">
             <p className="text-sm text-[#0F0F0F]/60 mb-1">Commissions</p>
-            <p className="text-xl text-[#0F0F0F]">₦{(stats.commissions / 1000).toFixed(0)}K</p>
+            <p className="text-xl text-[#0F0F0F]">{formatMultiCurrencyCompact(statsByCurrency.commissions)}</p>
           </CardContent>
         </Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-4">
             <p className="text-sm text-[#0F0F0F]/60 mb-1">Unpaid</p>
-            <p className="text-xl text-red-600">₦{(stats.unpaid / 1000).toFixed(0)}K</p>
+            <p className="text-xl text-red-600">{formatMultiCurrencyCompact(statsByCurrency.unpaid)}</p>
           </CardContent>
         </Card>
       </div>
@@ -385,8 +458,7 @@ export function OrganizerPromoters() {
                 const convRate = promoter.total_clicks > 0 
                   ? ((promoter.total_sales / promoter.total_clicks) * 100).toFixed(2) 
                   : 0;
-                const unpaid = parseFloat(promoter.total_earned || 0) - parseFloat(promoter.total_paid || 0);
-                const hasPendingPayment = unpaid > 0;
+                const hasUnpaid = Object.keys(promoter.unpaidByCurrency || {}).length > 0;
 
                 return (
                   <div key={promoter.id} className="p-6 border border-[#0F0F0F]/10 rounded-2xl">
@@ -398,7 +470,7 @@ export function OrganizerPromoters() {
                           <Badge className={promoter.status === 'active' ? 'bg-green-600' : 'bg-yellow-600'}>
                             {promoter.status}
                           </Badge>
-                          {hasPendingPayment ? (
+                          {hasUnpaid ? (
                             <Badge className="bg-yellow-600">Pending</Badge>
                           ) : (
                             <Badge className="bg-green-600">Paid</Badge>
@@ -419,8 +491,8 @@ export function OrganizerPromoters() {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-semibold text-[#0F0F0F]">{promoter.commission_rate}% Commission</p>
-                        {hasPendingPayment && (
-                          <p className="text-sm text-red-600">Unpaid: ₦{unpaid.toLocaleString()}</p>
+                        {hasUnpaid && (
+                          <p className="text-sm text-red-600">Unpaid: {formatMultiCurrency(promoter.unpaidByCurrency)}</p>
                         )}
                       </div>
                     </div>
@@ -478,12 +550,12 @@ export function OrganizerPromoters() {
                       <div className="p-3 bg-indigo-50 rounded-xl text-center">
                         <DollarSign className="w-4 h-4 text-indigo-600 mx-auto mb-1" />
                         <p className="text-xs text-[#0F0F0F]/60">Revenue</p>
-                        <p className="text-lg font-semibold text-[#0F0F0F]">₦{((promoter.total_revenue || 0) / 1000).toFixed(0)}K</p>
+                        <p className="text-lg font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(promoter.revenueByCurrency)}</p>
                       </div>
                       <div className="p-3 bg-[#2969FF]/10 rounded-xl text-center">
                         <DollarSign className="w-4 h-4 text-[#2969FF] mx-auto mb-1" />
                         <p className="text-xs text-[#0F0F0F]/60">Commission</p>
-                        <p className="text-lg font-semibold text-[#2969FF]">₦{((promoter.total_earned || 0) / 1000).toFixed(0)}K</p>
+                        <p className="text-lg font-semibold text-[#2969FF]">{formatMultiCurrencyCompact(promoter.earnedByCurrency)}</p>
                       </div>
                     </div>
 
@@ -502,13 +574,15 @@ export function OrganizerPromoters() {
                         <Edit2 className="w-4 h-4 mr-2" />
                         Edit
                       </Button>
-                      {hasPendingPayment && (
+                      {hasUnpaid && (
                         <Button 
                           size="sm" 
                           className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
                           onClick={() => { 
                             setSelectedPromoter(promoter); 
-                            setPaymentAmount(unpaid.toString());
+                            // Set default amount to first currency unpaid amount
+                            const firstCurrency = Object.keys(promoter.unpaidByCurrency)[0];
+                            setPaymentAmount(promoter.unpaidByCurrency[firstCurrency]?.toString() || '');
                             setIsPayOpen(true); 
                           }}
                         >
@@ -709,9 +783,10 @@ export function OrganizerPromoters() {
                 <p className="text-sm text-[#0F0F0F]/60">Paying commission to</p>
                 <p className="text-lg font-semibold text-[#0F0F0F]">{selectedPromoter.full_name}</p>
                 <p className="text-sm text-[#0F0F0F]/60">{selectedPromoter.email}</p>
+                <p className="text-sm text-red-600 mt-2">Unpaid: {formatMultiCurrency(selectedPromoter.unpaidByCurrency)}</p>
               </div>
               <div>
-                <Label>Amount (₦)</Label>
+                <Label>Amount</Label>
                 <Input
                   type="number"
                   min="1"
@@ -720,6 +795,7 @@ export function OrganizerPromoters() {
                   className="rounded-xl mt-1"
                   required
                 />
+                <p className="text-xs text-[#0F0F0F]/60 mt-1">Note: Payouts are currently processed in the local currency</p>
               </div>
               <div>
                 <Label>Notes (optional)</Label>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import {
+import { Settings,
   LayoutDashboard,
   Shield,
   Calendar,
@@ -39,6 +39,7 @@ const navItems = [
   { path: '/admin/whatsapp', icon: MessageSquare, label: 'WhatsApp' },
   { path: '/admin/sms', icon: Smartphone, label: 'SMS Campaigns' },
   { path: '/admin/roles', icon: UserCog, label: 'Roles & Permissions' },
+  { path: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function AdminLayout() {

@@ -51,26 +51,15 @@ export const currencies = {
   },
 };
 
-// Get currency by code - returns null if not found (no fallback)
-export const getCurrency = (code) => {
-  if (!code || !currencies[code]) {
-    console.warn(`getCurrency: Unknown or missing currency code: ${code}`);
-    return null;
-  }
-  return currencies[code];
-};
+// Default currency
+export const defaultCurrency = 'NGN';
 
-// Format price with currency - currency is REQUIRED
-export const formatPrice = (amount, currencyCode) => {
-  if (!currencyCode) {
-    console.warn('formatPrice: Currency code is required');
-    return '—';
-  }
-  
+// Get currency by code
+export const getCurrency = (code) => currencies[code] || currencies[defaultCurrency];
+
+// Format price with currency
+export const formatPrice = (amount, currencyCode = 'NGN') => {
   const currency = getCurrency(currencyCode);
-  if (!currency) {
-    return '—';
-  }
   
   if (amount === 0) return 'Free';
   if (!amount && amount !== 0) return `${currency.symbol}0`;
@@ -95,15 +84,15 @@ export const currencyOptions = Object.values(currencies).map(c => ({
 // Output: "₦5,000 · $200 · £150"
 export const formatMultiCurrency = (amountsByCurrency) => {
   if (!amountsByCurrency || typeof amountsByCurrency !== 'object') {
-    return '—';
+    return formatPrice(0, 'NGN');
   }
   
   const entries = Object.entries(amountsByCurrency)
-    .filter(([currency, amount]) => amount > 0 && getCurrency(currency))
+    .filter(([_, amount]) => amount > 0)
     .sort((a, b) => b[1] - a[1]); // Sort by amount descending
   
   if (entries.length === 0) {
-    return '—';
+    return formatPrice(0, 'NGN');
   }
   
   if (entries.length === 1) {
@@ -120,21 +109,19 @@ export const formatMultiCurrency = (amountsByCurrency) => {
 // Output: "₦50K · $200"
 export const formatMultiCurrencyCompact = (amountsByCurrency) => {
   if (!amountsByCurrency || typeof amountsByCurrency !== 'object') {
-    return '—';
+    return formatPrice(0, 'NGN');
   }
   
   const entries = Object.entries(amountsByCurrency)
-    .filter(([currency, amount]) => amount > 0 && getCurrency(currency))
+    .filter(([_, amount]) => amount > 0)
     .sort((a, b) => b[1] - a[1]);
   
   if (entries.length === 0) {
-    return '—';
+    return formatPrice(0, 'NGN');
   }
   
   const formatCompact = (amount, currencyCode) => {
     const currency = getCurrency(currencyCode);
-    if (!currency) return '—';
-    
     if (amount >= 1000000) {
       return `${currency.symbol}${(amount / 1000000).toFixed(1)}M`;
     } else if (amount >= 1000) {

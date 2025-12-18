@@ -13,7 +13,6 @@ import {
 } from '../../components/ui/select';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
-import { formatMultiCurrencyCompact } from '@/config/currencies';
 
 export function OrganizerFollowers() {
   const navigate = useNavigate();
@@ -53,19 +52,13 @@ export function OrganizerFollowers() {
 
       if (followersError) throw followersError;
 
-      // Get events for this organizer (with currency)
+      // Get events for this organizer
       const { data: events } = await supabase
         .from('events')
-        .select('id, currency')
+        .select('id')
         .eq('organizer_id', organizer.id);
 
       const eventIds = events?.map(e => e.id) || [];
-      
-      // Create a map of event_id -> currency for quick lookup
-      const eventCurrencyMap = {};
-      events?.forEach(e => {
-        eventCurrencyMap[e.id] = e.currency;
-      });
 
       // For each follower, get their ticket stats
       const followersWithStats = await Promise.all(
@@ -73,28 +66,19 @@ export function OrganizerFollowers() {
           if (!follower.profiles) return null;
 
           let eventsAttended = 0;
-          let totalSpentByCurrency = {}; // Track spending by currency
+          let totalSpent = 0;
           let lastActivity = follower.created_at;
 
           if (eventIds.length > 0) {
             const { data: tickets } = await supabase
               .from('tickets')
-              .select('id, total_amount, created_at, checked_in_at, event_id')
+              .select('id, total_amount, created_at, checked_in_at')
               .eq('user_id', follower.user_id)
               .in('event_id', eventIds)
               .eq('payment_status', 'completed');
 
             eventsAttended = tickets?.filter(t => t.checked_in_at)?.length || 0;
-            
-            // Sum spending by currency
-            tickets?.forEach(ticket => {
-              const currency = eventCurrencyMap[ticket.event_id];
-              if (!currency) {
-                console.warn('Ticket missing event currency:', ticket);
-                return; // Skip tickets without currency
-              }
-              totalSpentByCurrency[currency] = (totalSpentByCurrency[currency] || 0) + (ticket.total_amount || 0);
-            });
+            totalSpent = tickets?.reduce((sum, t) => sum + (t.total_amount || 0), 0) || 0;
             
             if (tickets?.length > 0) {
               const sorted = tickets.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -109,7 +93,7 @@ export function OrganizerFollowers() {
             phone: follower.profiles.phone || '',
             followedDate: follower.created_at,
             eventsAttended,
-            totalSpentByCurrency, // Now an object: { NGN: 5000, USD: 100 }
+            totalSpent,
             lastActivity,
             notificationsEnabled: follower.notifications_enabled ?? true,
           };
@@ -135,7 +119,7 @@ export function OrganizerFollowers() {
         f.phone,
         new Date(f.followedDate).toLocaleDateString(),
         f.eventsAttended,
-        formatMultiCurrencyCompact(f.totalSpentByCurrency), // Use formatted multi-currency string
+        f.totalSpent,
         new Date(f.lastActivity).toLocaleDateString(),
       ])
     ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
@@ -145,12 +129,6 @@ export function OrganizerFollowers() {
     link.href = URL.createObjectURL(blob);
     link.download = `followers-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-  };
-
-  // Helper to get total spent across all currencies for sorting
-  const getTotalSpent = (spentByCurrency) => {
-    if (!spentByCurrency || typeof spentByCurrency !== 'object') return 0;
-    return Object.values(spentByCurrency).reduce((sum, amount) => sum + (amount || 0), 0);
   };
 
   const filteredFollowers = followers
@@ -166,7 +144,7 @@ export function OrganizerFollowers() {
         case 'events':
           return b.eventsAttended - a.eventsAttended;
         case 'spent':
-          return getTotalSpent(b.totalSpentByCurrency) - getTotalSpent(a.totalSpentByCurrency);
+          return b.totalSpent - a.totalSpent;
         case 'active':
           return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
         default:
@@ -189,6 +167,14 @@ export function OrganizerFollowers() {
   }).length;
 
   const notificationsOn = followers.filter((f) => f.notificationsEnabled).length;
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+    }).format(amount || 0);
+  };
 
   if (loading) {
     return (
@@ -401,12 +387,12 @@ export function OrganizerFollowers() {
                     </div>
                     <div className="p-2 bg-[#F4F6FA] rounded-lg">
                       <p className="text-xs text-[#0F0F0F]/60">Spent</p>
-                      <p className="text-lg font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(follower.totalSpentByCurrency)}</p>
+                      <p className="text-lg font-semibold text-[#0F0F0F]">{formatCurrency(follower.totalSpent)}</p>
                     </div>
                     <div className="p-2 bg-[#F4F6FA] rounded-lg">
                       <p className="text-xs text-[#0F0F0F]/60">Last Active</p>
                       <p className="text-sm font-medium text-[#0F0F0F]">
-                        {new Date(follower.lastActivity).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {new Date(follower.lastActivity).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}
                       </p>
                     </div>
                   </div>

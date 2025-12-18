@@ -1,3 +1,4 @@
+import { currencyOptions, formatPrice } from '@/config/currencies'
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
@@ -42,6 +43,10 @@ export function CreateEvent() {
   const [activeTab, setActiveTab] = useState('details');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [tabErrors, setTabErrors] = useState({});
+  const [urlManuallyEdited, setUrlManuallyEdited] = useState(false);
+  const [urlStatus, setUrlStatus] = useState({ checking: false, available: null, message: "" });
+  const urlCheckTimeout = useRef(null);
 
   // Refs for file inputs
   const bannerInputRef = useRef(null);
@@ -53,6 +58,7 @@ export function CreateEvent() {
   const [formData, setFormData] = useState({
     // Event Details
     title: '',
+    custom_url: '',
     eventType: '',
     description: '',
     category: '',
@@ -75,6 +81,7 @@ export function CreateEvent() {
     seatingType: 'Standing',
     city: '',
     country: '',
+    currency: 'NGN',
     venueLat: null,
     venueLng: null,
     isAdultOnly: false,
@@ -158,6 +165,7 @@ export function CreateEvent() {
               promoVideoUrl: event.promo_video_url || "",
               feeHandling: event.fee_handling || "pass_to_attendee",
               isFree: event.is_free || false,
+              custom_url: event.custom_url || "",
               agreedToTerms: true,
             });
             if (event.image_url) {
@@ -239,7 +247,59 @@ export function CreateEvent() {
     }
   };
 
+
+  // Generate slug from title
+  const generateSlug = (title) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .substring(0, 50);
+  };
+
+  // Check URL availability
+  const checkUrlAvailability = async (url) => {
+    if (!url || url.length < 3) {
+      setUrlStatus({ checking: false, available: null, message: "" });
+      return;
+    }
+    setUrlStatus({ checking: true, available: null, message: "Checking..." });
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("id")
+        .or(`slug.eq.${url},custom_url.eq.${url}`)
+        .neq("id", eventId || "00000000-0000-0000-0000-000000000000")
+        .limit(1);
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setUrlStatus({ checking: false, available: false, message: "URL already taken" });
+      } else {
+        setUrlStatus({ checking: false, available: true, message: "Available!" });
+      }
+    } catch (err) {
+      setUrlStatus({ checking: false, available: null, message: "" });
+    }
+  };
+
   const handleInputChange = (field, value) => {
+    // Auto-populate custom_url from title
+    if (field === "title" && !urlManuallyEdited) {
+      const slug = generateSlug(value);
+      setFormData(prev => ({ ...prev, title: value, custom_url: slug }));
+      // Debounce URL check
+      clearTimeout(urlCheckTimeout.current);
+      urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(slug), 500);
+      return;
+    }
+    // Check URL when custom_url changes
+    if (field === "custom_url") {
+      setUrlManuallyEdited(true);
+      clearTimeout(urlCheckTimeout.current);
+      urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(value), 500);
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -388,8 +448,25 @@ export function CreateEvent() {
       return;
     }
 
-    if (!formData.title || !formData.startDate || !formData.venueName) {
-      setError('Please fill in required fields: Title, Start Date, and Venue Name');
+
+    // Validate and identify which tabs have errors
+    const errors = {};
+    if (!formData.title || !formData.eventType || !formData.description) {
+      errors.details = "Missing title, event type, or description";
+    }
+    if (!formData.startDate || !formData.startTime) {
+      errors.datetime = "Missing start date or time";
+    }
+    if (!formData.venueName || !formData.venueAddress) {
+      errors.venue = "Missing venue name or address";
+    }
+    
+    setTabErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      const firstErrorTab = Object.keys(errors)[0];
+      setActiveTab(firstErrorTab);
+      setError(Object.values(errors).join(". "));
       return;
     }
 
@@ -426,6 +503,7 @@ export function CreateEvent() {
 
       const eventData = {
         title: formData.title,
+        custom_url: formData.custom_url || null,
         description: formData.description,
         event_type: formData.eventType,
         category: formData.category,
@@ -452,6 +530,7 @@ export function CreateEvent() {
         image_url: imageUrl,
         promo_video_url: formData.promoVideoUrl,
         fee_handling: formData.feeHandling,
+        currency: formData.currency,
         status: 'published',
       };
 
@@ -503,6 +582,7 @@ export function CreateEvent() {
                 quantity_available: parseInt(ticket.quantity) || 0,
                 description: ticket.description || '',
                 is_refundable: ticket.isRefundable !== false,
+                currency: formData.currency,
                 updated_at: new Date().toISOString(),
               })
               .eq('id', ticket.dbId);
@@ -517,6 +597,7 @@ export function CreateEvent() {
                 quantity_available: parseInt(ticket.quantity) || 0,
                 description: ticket.description || '',
                 is_refundable: ticket.isRefundable !== false,
+                currency: formData.currency,
                 is_active: true,
               });
           }
@@ -587,7 +668,7 @@ export function CreateEvent() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
                   activeTab === tab.id
                     ? 'border-[#2969FF] text-[#2969FF]'
                     : 'border-transparent text-[#0F0F0F]/60 hover:text-[#0F0F0F]'
@@ -619,6 +700,25 @@ export function CreateEvent() {
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   className="h-12 rounded-xl bg-[#F4F6FA] border-0"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Custom Event URL</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-[#0F0F0F]/60 whitespace-nowrap">ticketrack.com/e/</span>
+                  <Input
+                    placeholder="my-awesome-event"
+                    value={formData.custom_url}
+                    onChange={(e) => handleInputChange("custom_url", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
+                    className="h-12 rounded-xl bg-[#F4F6FA] border-0 flex-1"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  {urlStatus.checking && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
+                  {urlStatus.available === true && <span className="text-xs text-green-600">✓ {urlStatus.message}</span>}
+                  {urlStatus.available === false && <span className="text-xs text-red-600">✗ {urlStatus.message}</span>}
+                  {!urlStatus.checking && urlStatus.available === null && <span className="text-xs text-[#0F0F0F]/40">Leave blank to auto-generate from title</span>}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -1004,6 +1104,20 @@ export function CreateEvent() {
                 <Button onClick={addTicket} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
                   <Plus className="w-4 h-4 mr-2" />Add Ticket
                 </Button>
+
+              {/* Currency Selection */}
+              <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
+                <Label className="font-medium text-[#0F0F0F]">Currency</Label>
+                <select
+                  value={formData.currency}
+                  onChange={(e) => handleInputChange('currency', e.target.value)}
+                  className="px-4 py-2 rounded-lg border border-[#0F0F0F]/10 bg-white focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+                >
+                  {currencyOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
               </div>
 
               {tickets.map((ticket, index) => (
@@ -1031,7 +1145,7 @@ export function CreateEvent() {
                         <Label>Price <span className="text-red-500">*</span></Label>
                         <Input
                           type="number"
-                          placeholder="₦ 0.00"
+                          placeholder="0.00"
                           value={ticket.price}
                           onChange={(e) => updateTicket(ticket.id, 'price', e.target.value)}
                           className="h-12 rounded-xl bg-[#F4F6FA] border-0"
@@ -1132,7 +1246,7 @@ export function CreateEvent() {
                           <Label>Price per Table <span className="text-red-500">*</span></Label>
                           <Input
                             type="number"
-                            placeholder="₦ 0.00"
+                            placeholder="0.00"
                             value={table.price}
                             onChange={(e) => updateTableTicket(table.id, 'price', e.target.value)}
                             className="h-12 rounded-xl bg-[#F4F6FA] border-0"

@@ -1,3 +1,4 @@
+import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock } from 'lucide-react';
@@ -165,14 +166,6 @@ export function EventManagement() {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
-    }).format(amount || 0);
-  };
-
   const getStatusBadge = (event) => {
     const status = getEventStatus(event);
     
@@ -300,7 +293,7 @@ export function EventManagement() {
                               /{event.totalTickets} sold
                             </span>
                             <span className="text-[#2969FF] font-medium">
-                              {formatCurrency(event.revenue)}
+                              {formatPrice(event.revenue, event.currency)}
                             </span>
                           </div>
                         </div>

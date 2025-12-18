@@ -56,15 +56,22 @@ export async function getEvents({
 export async function getEvent(idOrSlug) {
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug)
   
-  const { data, error } = await supabase
+  let query = supabase
     .from('events')
     .select(`
       *,
       category:categories(id, name, slug, icon),
       organizer:organizers(id, business_name, logo_url, description, is_verified, verification_level, social_twitter, social_facebook, social_instagram)
     `)
-    .eq(isUUID ? 'id' : 'slug', idOrSlug)
-    .single()
+  
+  if (isUUID) {
+    query = query.eq('id', idOrSlug)
+  } else {
+    // Check both slug and custom_url
+    query = query.or(`slug.eq.${idOrSlug},custom_url.eq.${idOrSlug}`)
+  }
+  
+  const { data, error } = await query.single()
 
   if (error) {
     console.error('Error fetching event:', error)
@@ -78,6 +85,7 @@ export async function getEvent(idOrSlug) {
     .eq('id', data.id)
 
   return data
+
 }
 
 // Fetch featured events

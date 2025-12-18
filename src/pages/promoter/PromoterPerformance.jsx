@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { supabase } from '@/lib/supabase';
+import { formatPrice } from '@/config/currencies';
 
 export function PromoterPerformance() {
   const { promoter } = usePromoter();
@@ -22,7 +23,7 @@ export function PromoterPerformance() {
       const startDate = new Date(); startDate.setDate(startDate.getDate() - daysBack);
 
       const { count: clickCount } = await supabase.from('promoter_clicks').select('*', { count: 'exact', head: true }).eq('promoter_id', promoter.id).gte('created_at', startDate.toISOString());
-      const { data: salesData } = await supabase.from('promoter_sales').select('*, events(title)').eq('promoter_id', promoter.id).gte('created_at', startDate.toISOString());
+      const { data: salesData } = await supabase.from('promoter_sales').select('*, events(title, currency)').eq('promoter_id', promoter.id).gte('created_at', startDate.toISOString());
 
       const ticketsSold = salesData?.reduce((sum, s) => sum + (s.ticket_count || 0), 0) || 0;
       const revenue = salesData?.reduce((sum, s) => sum + parseFloat(s.sale_amount || 0), 0) || 0;
@@ -32,8 +33,13 @@ export function PromoterPerformance() {
 
       const eventMap = {};
       salesData?.forEach(sale => {
+        const currency = sale.events?.currency;
+        if (!currency) {
+          console.warn('Sale missing currency:', sale);
+          return;
+        }
         const t = sale.events?.title || 'Unknown';
-        if (!eventMap[t]) eventMap[t] = { name: t, clicks: 0, ticketsSold: 0, revenue: 0, commission: 0 };
+        if (!eventMap[t]) eventMap[t] = { name: t, currency, clicks: 0, ticketsSold: 0, revenue: 0, commission: 0 };
         eventMap[t].ticketsSold += sale.ticket_count || 0;
         eventMap[t].revenue += parseFloat(sale.sale_amount || 0);
         eventMap[t].commission += parseFloat(sale.commission_amount || 0);
@@ -71,8 +77,8 @@ export function PromoterPerformance() {
                   <div className="flex items-center gap-2 mb-4"><h3 className="text-lg text-[#0F0F0F]">{event.name}</h3><Badge className="bg-green-600">Active</Badge></div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="p-3 bg-green-50 rounded-lg"><p className="text-xs text-[#0F0F0F]/60 mb-1">Tickets Sold</p><p className="text-lg text-green-600">{event.ticketsSold}</p></div>
-                    <div className="p-3 bg-indigo-50 rounded-lg"><p className="text-xs text-[#0F0F0F]/60 mb-1">Revenue</p><p className="text-lg text-[#0F0F0F]">₦{(event.revenue / 1000).toFixed(0)}K</p></div>
-                    <div className="p-3 bg-[#2969FF]/10 rounded-lg"><p className="text-xs text-[#0F0F0F]/60 mb-1">Commission</p><p className="text-lg text-[#2969FF]">₦{(event.commission / 1000).toFixed(0)}K</p></div>
+                    <div className="p-3 bg-indigo-50 rounded-lg"><p className="text-xs text-[#0F0F0F]/60 mb-1">Revenue</p><p className="text-lg text-[#0F0F0F]">{formatPrice(event.revenue, event.currency)}</p></div>
+                    <div className="p-3 bg-[#2969FF]/10 rounded-lg"><p className="text-xs text-[#0F0F0F]/60 mb-1">Commission</p><p className="text-lg text-[#2969FF]">{formatPrice(event.commission, event.currency)}</p></div>
                   </div>
                 </div>
               ))}
