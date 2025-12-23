@@ -1,11 +1,12 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { 
   Search, MapPin, Calendar, ChevronRight, ChevronLeft, Star, 
   Download, Shield, CreditCard, Headphones, TrendingUp, Clock,
-  Heart, Users, Ticket, Globe, X
+  Heart, Users, Ticket, Globe, X, ChevronDown
 } from 'lucide-react';
 
 // Category images mapping
@@ -21,6 +22,13 @@ const categoryImages = {
   'wellness': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=300&fit=crop',
   'charity': 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=400&h=300&fit=crop',
 };
+
+const dateOptions = [
+  { value: 'all', label: 'All Dates' },
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
+];
 
 // Ad Component for Side Ads (300x600)
 const SideAd = ({ ad }) => {
@@ -286,7 +294,14 @@ const CategoryCard = ({ category, image }) => (
 
 export function WebHome() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Search state
+  const [location, setLocation] = useState('');
+  const [dateFilter, setDateFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  
   const [events, setEvents] = useState({
     trending: [],
     popular: [],
@@ -310,6 +325,13 @@ export function WebHome() {
     checkScreen();
     window.addEventListener('resize', checkScreen);
     return () => window.removeEventListener('resize', checkScreen);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowDateDropdown(false);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   const fetchAds = async () => {
@@ -392,11 +414,12 @@ export function WebHome() {
     fetchData();
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/events?q=${encodeURIComponent(searchQuery)}`);
-    }
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (location) params.set('location', location);
+    if (dateFilter !== 'all') params.set('date', dateFilter);
+    navigate(`/events?${params.toString()}`);
   };
 
   return (
@@ -415,7 +438,7 @@ export function WebHome() {
         
         {/* Content */}
         <div className="relative max-w-7xl mx-auto px-4 py-24 md:py-32 lg:py-40">
-          <div className="max-w-2xl">
+          <div className="max-w-3xl">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
               <span className="text-lg">✨</span>
@@ -434,26 +457,90 @@ export function WebHome() {
               From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening across Africa.
             </p>
             
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 max-w-xl mb-12">
+            {/* New Search Bar */}
+            <div className="bg-white rounded-2xl p-2 flex flex-col lg:flex-row gap-2 max-w-4xl mb-12">
+              {/* Location Input */}
               <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search events, artists, venues..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase font-medium">Location</div>
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      placeholder="City or Venue"
+                      className="w-full outline-none text-sm text-gray-900 placeholder-gray-400"
+                    />
+                  </div>
+                  {location && (
+                    <button onClick={() => setLocation('')} className="text-gray-400 hover:text-gray-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {/* Date Filter */}
+              <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
+                <div 
+                  className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl cursor-pointer hover:border-blue-500/50"
+                  onClick={() => setShowDateDropdown(!showDateDropdown)}
+                >
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase font-medium">Dates</div>
+                    <div className="text-sm text-gray-900">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </div>
+                {showDateDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
+                    {dateOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 text-sm ${dateFilter === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-900'}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Search Input */}
+              <div className="flex-[2] relative">
+                <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl">
+                  <Search className="w-5 h-5 text-blue-600" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase font-medium">Search</div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      placeholder="Artist, Event or Venue"
+                      className="w-full outline-none text-sm text-gray-900 placeholder-gray-400"
+                    />
+                  </div>
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Search Button */}
               <button 
-                type="submit"
+                onClick={handleSearch}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
               >
-                Explore Events
-                <ChevronRight size={20} />
+                Search
               </button>
-            </form>
+            </div>
             
             {/* Stats */}
             <div className="flex flex-wrap gap-8 md:gap-12">
@@ -481,13 +568,6 @@ export function WebHome() {
 
       {/* Main Content Area with Side Ads - Starts at Popular Categories */}
       <div className={`${isLargeScreen ? 'flex justify-center gap-6 px-4' : ''}`}>
-        
-        {/* Left Side Ad */}
-        {/*         {false && ads.left && ( */}
-        {/*           <div className="flex-shrink-0 mt-8"> */}
-        {/*             <SideAd ad={ads.left} /> */}
-        {/*           </div> */}
-        {/*         )} */}
 
         {/* Main Content */}
         <main className="max-w-[1200px] w-full px-4">
@@ -673,12 +753,18 @@ export function WebHome() {
           <p className="text-blue-100 mb-8">
             Join thousands of event organizers who trust Ticketrack to sell their tickets
           </p>
-          <Link 
-            to="/create-event"
-            className="inline-block bg-white text-blue-600 font-semibold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors"
+          <button 
+            onClick={() => {
+              if (user) {
+                navigate('/create-event');
+              } else {
+                navigate('/login', { state: { from: '/create-event' } });
+              }
+            }}
+            className="inline-block bg-white text-blue-600 font-semibold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer"
           >
             Create Your Event
-          </Link>
+          </button>
         </div>
       </section>
     </div>

@@ -146,7 +146,13 @@ export function WebLayout() {
             <div className="hidden md:flex items-center gap-3">
               <Button
                 variant="outline"
-                onClick={() => navigate('/create-event')}
+                onClick={() => {
+                  if (user) {
+                    navigate('/create-event');
+                  } else {
+                    navigate('/login', { state: { from: '/create-event' } });
+                  }
+                }}
                 className="rounded-xl border-[#2969FF] text-[#2969FF] hover:bg-[#2969FF]/10 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -462,7 +468,16 @@ export function WebLayout() {
               <h4 className="font-semibold mb-4">For Organizers</h4>
               <ul className="space-y-2 text-white/60 text-sm">
                 <li>
-                  <button onClick={() => navigate('/create-event')} className="hover:text-white transition-colors">
+                  <button 
+                    onClick={() => {
+                      if (user) {
+                        navigate('/create-event');
+                      } else {
+                        navigate('/login', { state: { from: '/create-event' } });
+                      }
+                    }} 
+                    className="hover:text-white transition-colors"
+                  >
                     Create Event
                   </button>
                 </li>

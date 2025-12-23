@@ -958,7 +958,7 @@ export function CreateEvent() {
               <h2 className="text-2xl font-semibold text-[#0F0F0F]">Create Event — Full Details</h2>
               <p className="text-[#0F0F0F]/60">Fill in all event information to get started</p>
             </div>
-            <button onClick={() => navigate('/organizer/events')} className="p-2 hover:bg-[#F4F6FA] rounded-xl">
+            <button onClick={() => navigate('/')} className="p-2 hover:bg-[#F4F6FA] rounded-xl">
               <X className="w-6 h-6 text-[#0F0F0F]/60" />
             </button>
           </div>
@@ -2051,7 +2051,7 @@ export function CreateEvent() {
           <Button
             type="button"
             variant="outline"
-            onClick={isFirstTab ? () => navigate('/organizer/events') : goToPrevTab}
+            onClick={isFirstTab ? () => navigate('/') : goToPrevTab}
             className="rounded-xl px-6"
           >
             {isFirstTab ? 'Cancel' : 'Back'}
