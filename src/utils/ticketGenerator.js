@@ -150,7 +150,7 @@ export async function generateTicketPDF(ticket, event) {
   currentY += 18
 
   // SPONSORS SECTION - ONLY IF SPONSORS EXIST
-  const sponsors = event.sponsors || []
+  const sponsors = (event.event_sponsors || []).map(s => s.logo_url)
   if (sponsors.length > 0) {
     // White background bar for sponsor visibility
     pdf.setFillColor(255, 255, 255)

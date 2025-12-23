@@ -61,7 +61,9 @@ export async function getEvent(idOrSlug) {
     .select(`
       *,
       category:categories(id, name, slug, icon),
-      organizer:organizers(id, business_name, logo_url, description, is_verified, verification_level, social_twitter, social_facebook, social_instagram)
+      organizer:organizers(id, business_name, logo_url, description, is_verified, verification_level, social_twitter, social_facebook, social_instagram),
+      event_days(*, event_day_activities(*)),
+      event_sponsors(*)
     `)
   
   if (isUUID) {

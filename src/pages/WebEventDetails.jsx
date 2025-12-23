@@ -3,7 +3,7 @@ import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -284,10 +284,175 @@ export function WebEventDetails() {
           {/* About */}
           <div>
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">About This Event</h2>
-            <div className="text-[#0F0F0F]/80 space-y-4 whitespace-pre-line">
-              {event.description}
-            </div>
+            <div 
+              className="text-[#0F0F0F]/80 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: event.description }}
+            />
           </div>
+
+          {/* Promo Video */}
+          {event.promo_video_url && (
+            <>
+              <Separator />
+              <div>
+                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Event Video</h2>
+                <div className="aspect-video rounded-2xl overflow-hidden bg-[#F4F6FA]">
+                  {event.promo_video_url.includes('youtube.com') || event.promo_video_url.includes('youtu.be') ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${event.promo_video_url.includes('youtu.be') 
+                        ? event.promo_video_url.split('youtu.be/')[1]?.split('?')[0]
+                        : event.promo_video_url.split('v=')[1]?.split('&')[0]}`}
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  ) : event.promo_video_url.includes('vimeo.com') ? (
+                    <iframe
+                      src={`https://player.vimeo.com/video/${event.promo_video_url.split('vimeo.com/')[1]?.split('?')[0]}`}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  ) : event.promo_video_url.includes('tiktok.com') ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <a 
+                        href={event.promo_video_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-[#2969FF] hover:underline"
+                      >
+                        <Play className="w-8 h-8" />
+                        <span>Watch on TikTok</span>
+                      </a>
+                    </div>
+                  ) : (
+                    <video src={event.promo_video_url} controls className="w-full h-full" />
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Multi-Day Schedule */}
+          {event.is_multi_day && event.event_days && event.event_days.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Event Schedule</h2>
+                <div className="space-y-4">
+                  {event.event_days
+                    .sort((a, b) => a.day_number - b.day_number)
+                    .map((day) => (
+                    <Card key={day.id} className="border-[#0F0F0F]/10 rounded-xl overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full bg-[#2969FF]/10 flex items-center justify-center">
+                            <span className="text-[#2969FF] font-bold">{day.day_number}</span>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-[#0F0F0F]">
+                              {day.title || `Day ${day.day_number}`}
+                            </h3>
+                            <p className="text-sm text-[#0F0F0F]/60">
+                              {new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                              {day.start_time && ` • ${day.start_time.slice(0,5)} - ${day.end_time?.slice(0,5) || 'Late'}`}
+                            </p>
+                          </div>
+                        </div>
+                        {day.description && (
+                          <p className="text-[#0F0F0F]/70 text-sm ml-13 pl-13">{day.description}</p>
+                        )}
+                        {day.event_day_activities && day.event_day_activities.length > 0 && (
+                          <div className="mt-3 ml-13 pl-4 border-l-2 border-[#2969FF]/20 space-y-2">
+                            {day.event_day_activities
+                              .sort((a, b) => a.sort_order - b.sort_order)
+                              .map((activity) => (
+                              <div key={activity.id} className="text-sm">
+                                <span className="text-[#2969FF] font-medium">{activity.start_time?.slice(0,5)}</span>
+                                <span className="mx-2 text-[#0F0F0F]/40">•</span>
+                                <span className="text-[#0F0F0F]">{activity.title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Event Info Badges */}
+          {(event.gate_opening_time || event.dress_code || event.is_adult_only || event.is_wheelchair_accessible || event.is_byob || event.is_photography_allowed === false || event.is_recording_allowed === false || event.is_parking_available || event.is_outside_food_allowed) && (
+            <>
+              <Separator />
+              <div>
+                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Event Information</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {event.gate_opening_time && (
+                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                      <DoorOpen className="w-5 h-5 text-[#2969FF]" />
+                      <div>
+                        <p className="text-xs text-[#0F0F0F]/60">Gates Open</p>
+                        <p className="text-sm font-medium">{event.gate_opening_time.slice(0,5)}</p>
+                      </div>
+                    </div>
+                  )}
+                  {event.dress_code && (
+                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                      <Users className="w-5 h-5 text-[#2969FF]" />
+                      <div>
+                        <p className="text-xs text-[#0F0F0F]/60">Dress Code</p>
+                        <p className="text-sm font-medium">{event.dress_code}</p>
+                      </div>
+                    </div>
+                  )}
+                  {event.is_adult_only && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl">
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <p className="text-sm font-medium text-red-700">18+ Event</p>
+                    </div>
+                  )}
+                  {event.is_wheelchair_accessible && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl">
+                      <Accessibility className="w-5 h-5 text-green-600" />
+                      <p className="text-sm font-medium text-green-700">Wheelchair Accessible</p>
+                    </div>
+                  )}
+                  {event.is_parking_available && (
+                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                      <Car className="w-5 h-5 text-[#2969FF]" />
+                      <p className="text-sm font-medium">Parking Available</p>
+                    </div>
+                  )}
+                  {event.is_byob && (
+                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                      <Wine className="w-5 h-5 text-[#2969FF]" />
+                      <p className="text-sm font-medium">BYOB Allowed</p>
+                    </div>
+                  )}
+                  {event.is_outside_food_allowed && (
+                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                      <UtensilsCrossed className="w-5 h-5 text-[#2969FF]" />
+                      <p className="text-sm font-medium">Outside Food Allowed</p>
+                    </div>
+                  )}
+                  {event.is_photography_allowed === false && (
+                    <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl">
+                      <Camera className="w-5 h-5 text-amber-600" />
+                      <p className="text-sm font-medium text-amber-700">No Photography</p>
+                    </div>
+                  )}
+                  {event.is_recording_allowed === false && (
+                    <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl">
+                      <Video className="w-5 h-5 text-amber-600" />
+                      <p className="text-sm font-medium text-amber-700">No Recording</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 
@@ -295,15 +460,79 @@ export function WebEventDetails() {
           <div>
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Location</h2>
             <Card className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
-              <div className="aspect-video bg-[#F4F6FA] flex items-center justify-center">
-                <MapPin className="w-12 h-12 text-[#0F0F0F]/20" />
-              </div>
+              {event.google_map_link ? (
+                <div className="aspect-video">
+                  <iframe
+                    src={event.google_map_link.includes('embed') 
+                      ? event.google_map_link 
+                      : `https://maps.google.com/maps?q=${encodeURIComponent(event.venue_address + ', ' + event.city)}&output=embed`}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              ) : event.venue_lat && event.venue_lng ? (
+                <div className="aspect-video">
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${event.venue_lat},${event.venue_lng}&output=embed`}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div className="aspect-video bg-[#F4F6FA] flex items-center justify-center">
+                  <MapPin className="w-12 h-12 text-[#0F0F0F]/20" />
+                </div>
+              )}
               <CardContent className="p-6">
-                <h3 className="font-semibold text-[#0F0F0F] mb-2">{event.venue_name}</h3>
-                <p className="text-[#0F0F0F]/60">{event.venue_address}, {event.city}</p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    {event.venue_name && <h3 className="font-semibold text-[#0F0F0F] mb-2">{event.venue_name}</h3>}
+                    <p className="text-[#0F0F0F]/60">{event.venue_address}, {event.city}</p>
+                    {event.venue_type && (
+                      <p className="text-sm text-[#0F0F0F]/40 mt-1 capitalize">{event.venue_type} venue • {event.seating_type || 'General'} seating</p>
+                    )}
+                  </div>
+                  {event.google_map_link && (
+                    <a 
+                      href={event.google_map_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[#2969FF] hover:underline text-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Directions
+                    </a>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Sponsors */}
+          {event.event_sponsors && event.event_sponsors.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Sponsors</h2>
+                <div className="flex flex-wrap gap-6 items-center">
+                  {event.event_sponsors
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((sponsor) => (
+                    <div key={sponsor.id} className="bg-white rounded-xl p-4 border border-[#0F0F0F]/10 hover:shadow-md transition-shadow">
+                      <img 
+                        src={sponsor.logo_url} 
+                        alt={sponsor.name || 'Sponsor'}
+                        className="h-16 w-auto max-w-[150px] object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 

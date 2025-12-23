@@ -16,6 +16,8 @@ import { AddressAutocomplete } from '../../components/ui/AddressAutocomplete';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { createEvent, createTicketTypes, updateEvent } from '../../services/organizerService';
 import { supabase } from '@/lib/supabase';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const eventTypes = [
   'Concert', 'Party/Club', 'Wedding', 'Comedy',
@@ -70,6 +72,7 @@ export function CreateEvent() {
     gateOpeningTime: '',
     timezone: 'Africa/Lagos',
     isMultiDay: false,
+    eventDays: [],
     isRecurring: false,
     recurringPattern: '',
     // Venue Details
@@ -81,12 +84,16 @@ export function CreateEvent() {
     seatingType: 'Standing',
     city: '',
     country: '',
-    currency: 'NGN',
+    currency: '',
     venueLat: null,
     venueLng: null,
     isAdultOnly: false,
     isWheelchairAccessible: false,
     isBYOB: false,
+    isPhotographyAllowed: false,
+    isRecordingAllowed: false,
+    isParkingAvailable: false,
+    isOutsideFoodAllowed: false,
     dressCode: '',
     // Media
     promoVideoUrl: '',
@@ -156,11 +163,16 @@ export function CreateEvent() {
               seatingType: event.seating_type || "Standing",
               city: event.city || "",
               country: event.country_code || "",
+              currency: event.currency || "",
               venueLat: event.venue_lat || null,
               venueLng: event.venue_lng || null,
               isAdultOnly: event.is_adult_only || false,
               isWheelchairAccessible: event.is_wheelchair_accessible || false,
               isBYOB: event.is_byob || false,
+              isPhotographyAllowed: event.is_photography_allowed !== false,
+              isRecordingAllowed: event.is_recording_allowed !== false,
+              isParkingAvailable: event.is_parking_available || false,
+              isOutsideFoodAllowed: event.is_outside_food_allowed || false,
               dressCode: event.dress_code || "",
               promoVideoUrl: event.promo_video_url || "",
               feeHandling: event.fee_handling || "pass_to_attendee",
@@ -181,6 +193,54 @@ export function CreateEvent() {
                 description: t.description || "",
                 isRefundable: t.is_refundable !== false,
               })));
+
+            // Load event days for multi-day events
+            if (event.is_multi_day) {
+              const { data: eventDays, error: daysError } = await supabase
+                .from('event_days')
+                .select('*, event_day_activities(*)')
+                .eq('event_id', id)
+                .order('day_number', { ascending: true });
+
+              if (!daysError && eventDays && eventDays.length > 0) {
+                const formattedDays = eventDays.map(day => ({
+                  id: day.id,
+                  dayNumber: day.day_number,
+                  date: day.date,
+                  startTime: day.start_time || '',
+                  endTime: day.end_time || '',
+                  title: day.title || '',
+                  description: day.description || '',
+                  activities: (day.event_day_activities || [])
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map(act => ({
+                      id: act.id,
+                      title: act.title || '',
+                      startTime: act.start_time || '',
+                      endTime: act.end_time || '',
+                      description: act.description || '',
+                      location: act.location || '',
+                      sortOrder: act.sort_order,
+                    }))
+                }));
+                setFormData(prev => ({ ...prev, eventDays: formattedDays }));
+              }
+            }
+
+            // Load sponsor logos
+            const { data: sponsors, error: sponsorsError } = await supabase
+              .from('event_sponsors')
+              .select('*')
+              .eq('event_id', id)
+              .order('sort_order', { ascending: true });
+
+            if (!sponsorsError && sponsors && sponsors.length > 0) {
+              setSponsorLogos(sponsors.map(s => ({
+                id: s.id,
+                preview: s.logo_url,
+                file: null // Already uploaded
+              })));
+            }
             }
           }
         } catch (err) {
@@ -201,6 +261,7 @@ export function CreateEvent() {
           venueAddress: templateData.venue_address || "",
           city: templateData.city || "",
           country: templateData.country_code || "",
+          currency: templateData.currency || "",
           timezone: templateData.timezone || "Africa/Lagos",
           isFree: templateData.is_free || false,
         }));
@@ -300,8 +361,128 @@ export function CreateEvent() {
       clearTimeout(urlCheckTimeout.current);
       urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(value), 500);
     }
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'eventType') { setFormData(prev => ({ ...prev, eventType: value, category: value })); } else { setFormData(prev => ({ ...prev, [field]: value })); }
   };
+
+
+  // =====================================================
+  // MULTI-DAY EVENT HELPER FUNCTIONS
+  // =====================================================
+
+  // Add a new empty day card
+  const addEventDay = () => {
+    const lastDay = formData.eventDays[formData.eventDays.length - 1];
+    const nextDate = lastDay 
+      ? new Date(new Date(lastDay.date).getTime() + 86400000).toISOString().split("T")[0]
+      : formData.startDate || new Date().toISOString().split("T")[0];
+    
+    setFormData(prev => ({
+      ...prev,
+      eventDays: [...prev.eventDays, {
+        id: crypto.randomUUID(),
+        dayNumber: prev.eventDays.length + 1,
+        date: nextDate,
+        startTime: "",
+        endTime: "",
+        title: "",
+        description: "",
+        activities: []
+      }]
+    }));
+  };
+
+  // Remove a day card by index
+  const removeEventDay = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      eventDays: prev.eventDays
+        .filter((_, i) => i !== index)
+        .map((day, i) => ({ ...day, dayNumber: i + 1 }))
+    }));
+  };
+
+  // Update a specific field in a day card
+  const updateEventDay = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      eventDays: prev.eventDays.map((day, i) => 
+        i === index ? { ...day, [field]: value } : day
+      )
+    }));
+  };
+
+  // Auto-generate consecutive days from start date
+  const generateEventDays = (count) => {
+    const baseDate = formData.startDate || new Date().toISOString().split("T")[0];
+    const days = [];
+    for (let i = 0; i < count; i++) {
+      const date = new Date(new Date(baseDate).getTime() + (i * 86400000)).toISOString().split("T")[0];
+      days.push({
+        id: crypto.randomUUID(),
+        dayNumber: i + 1,
+        date: date,
+        startTime: formData.startTime || "",
+        endTime: formData.endTime || "",
+        title: "",
+        description: "",
+        activities: []
+      });
+    }
+    setFormData(prev => ({ ...prev, eventDays: days }));
+  };
+
+  // Add activity to a specific day
+  const addActivity = (dayIndex) => {
+    setFormData(prev => ({
+      ...prev,
+      eventDays: prev.eventDays.map((day, i) => 
+        i === dayIndex ? {
+          ...day,
+          activities: [...day.activities, {
+            id: crypto.randomUUID(),
+            title: "",
+            startTime: "",
+            endTime: "",
+            description: "",
+            location: "",
+            sortOrder: day.activities.length
+          }]
+        } : day
+      )
+    }));
+  };
+
+  // Remove activity from a day
+  const removeActivity = (dayIndex, activityIndex) => {
+    setFormData(prev => ({
+      ...prev,
+      eventDays: prev.eventDays.map((day, i) => 
+        i === dayIndex ? {
+          ...day,
+          activities: day.activities.filter((_, ai) => ai !== activityIndex)
+        } : day
+      )
+    }));
+  };
+
+  // Update activity field
+  const updateActivity = (dayIndex, activityIndex, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      eventDays: prev.eventDays.map((day, i) => 
+        i === dayIndex ? {
+          ...day,
+          activities: day.activities.map((act, ai) => 
+            ai === activityIndex ? { ...act, [field]: value } : act
+          )
+        } : day
+      )
+    }));
+  };
+
+  // =====================================================
+  // END MULTI-DAY EVENT HELPER FUNCTIONS
+  // =====================================================
 
   // Handle place selection from Google Maps autocomplete
   const handlePlaceSelect = (place) => {
@@ -457,8 +638,11 @@ export function CreateEvent() {
     if (!formData.startDate || !formData.startTime) {
       errors.datetime = "Missing start date or time";
     }
-    if (!formData.venueName || !formData.venueAddress) {
-      errors.venue = "Missing venue name or address";
+    if (!formData.venueAddress) {
+      errors.venue = "Missing venue address";
+    }
+    if (!formData.currency) {
+      errors.ticketing = "Please select a currency for your event";
     }
     
     setTabErrors(errors);
@@ -525,6 +709,10 @@ export function CreateEvent() {
         is_adult_only: formData.isAdultOnly,
         is_wheelchair_accessible: formData.isWheelchairAccessible,
         is_byob: formData.isBYOB,
+        is_photography_allowed: formData.isPhotographyAllowed,
+        is_recording_allowed: formData.isRecordingAllowed,
+        is_parking_available: formData.isParkingAvailable,
+        is_outside_food_allowed: formData.isOutsideFoodAllowed,
         dress_code: formData.dressCode,
         total_capacity: parseInt(formData.venueCapacity) || totalCapacity,
         image_url: imageUrl,
@@ -636,6 +824,121 @@ export function CreateEvent() {
         }
       }
 
+
+      // =====================================================
+      // SAVE MULTI-DAY EVENT SCHEDULE
+      // =====================================================
+      if (formData.isMultiDay && formData.eventDays.length > 0) {
+        const eventId = savedEvent.id;
+        
+        // In edit mode, delete existing days first (cascade deletes activities)
+        if (isEditMode && id) {
+          await supabase
+            .from('event_days')
+            .delete()
+            .eq('event_id', id);
+        }
+
+        // Insert each day
+        for (const day of formData.eventDays) {
+          const { data: savedDay, error: dayError } = await supabase
+            .from('event_days')
+            .insert({
+              event_id: eventId,
+              day_number: day.dayNumber,
+              date: day.date,
+              start_time: day.startTime || null,
+              end_time: day.endTime || null,
+              title: day.title || null,
+              description: day.description || null,
+            })
+            .select()
+            .single();
+
+          if (dayError) {
+            console.error('Error saving event day:', dayError);
+            continue;
+          }
+
+          // Insert activities for this day
+          if (day.activities && day.activities.length > 0) {
+            const activitiesData = day.activities.map((act, index) => ({
+              event_day_id: savedDay.id,
+              title: act.title,
+              start_time: act.startTime || null,
+              end_time: act.endTime || null,
+              description: act.description || null,
+              location: act.location || null,
+              sort_order: index,
+            }));
+
+            const { error: actError } = await supabase
+              .from('event_day_activities')
+              .insert(activitiesData);
+
+            if (actError) {
+              console.error('Error saving activities:', actError);
+            }
+          }
+        }
+      }
+      // =====================================================
+      // END MULTI-DAY SAVE
+      // =====================================================
+
+      // =====================================================
+      // SAVE SPONSOR LOGOS
+      // =====================================================
+      if (sponsorLogos.length > 0) {
+        const eventId = savedEvent.id;
+        
+        // In edit mode, delete existing sponsors first
+        if (isEditMode && id) {
+          await supabase
+            .from('event_sponsors')
+            .delete()
+            .eq('event_id', id);
+        }
+
+        // Upload and save each sponsor logo
+        for (let i = 0; i < sponsorLogos.length; i++) {
+          const logo = sponsorLogos[i];
+          let logoUrl = logo.preview;
+          
+          // If it's a new file (blob URL), upload to storage
+          if (logo.file && logo.preview.startsWith('blob:')) {
+            const fileExt = logo.file.name.split('.').pop();
+            const fileName = `${eventId}/sponsor_${i}_${Date.now()}.${fileExt}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('event-images')
+              .upload(fileName, logo.file);
+
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
+                .from('event-images')
+                .getPublicUrl(fileName);
+              logoUrl = publicUrl;
+            } else {
+              console.error('Sponsor logo upload failed:', uploadError);
+              continue;
+            }
+          }
+
+          // Save to database
+          await supabase
+            .from('event_sponsors')
+            .insert({
+              event_id: eventId,
+              logo_url: logoUrl,
+              sort_order: i,
+            });
+        }
+      }
+      // =====================================================
+      // END SPONSOR SAVE
+      // =====================================================
+
       navigate('/organizer/events');
     } catch (err) {
       console.error('Error saving event:', err);
@@ -722,7 +1025,7 @@ export function CreateEvent() {
               </div>
 
               <div className="space-y-2">
-                <Label>Event Type <span className="text-red-500">*</span></Label>
+                <Label>Event Category <span className="text-red-500">*</span></Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {eventTypes.map((type) => (
                     <button
@@ -743,23 +1046,27 @@ export function CreateEvent() {
 
               <div className="space-y-2">
                 <Label>Event Description <span className="text-red-500">*</span></Label>
-                <Textarea
-                  placeholder="Describe your event in detail..."
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  className="min-h-[150px] rounded-xl bg-[#F4F6FA] border-0"
-                />
+                <div className="rounded-xl overflow-hidden border border-[#E5E7EB] bg-white">
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.description}
+                    onChange={(value) => handleInputChange('description', value)}
+                    placeholder="Describe your event in detail..."
+                    modules={{
+                      toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['link'],
+                        ['clean']
+                      ]
+                    }}
+                    formats={['header', 'bold', 'italic', 'underline', 'list', 'bullet', 'link']}
+                    className="bg-[#F4F6FA] [&_.ql-editor]:min-h-[150px] [&_.ql-toolbar]:bg-white [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-[#E5E7EB] [&_.ql-container]:border-0"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Event Category <span className="text-red-500">*</span></Label>
-                <Input
-                  placeholder="e.g., Music, Business, Entertainment"
-                  value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                />
-              </div>
 
               {/* Event Banner Image - FIXED */}
               <div className="space-y-2">
@@ -900,7 +1207,186 @@ export function CreateEvent() {
                     onCheckedChange={(checked) => handleInputChange('isMultiDay', checked)}
                   />
                   <Label htmlFor="multiday" className="cursor-pointer">Multi-day event</Label>
-                </div>
+                </div>                
+                {/* Multi-Day Event UI - Shows when checkbox is checked */}
+                {formData.isMultiDay && (
+                  <div className="mt-4 p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30 space-y-5">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-[#0F0F0F] text-lg flex items-center gap-2">
+                        📅 Multi-Day Schedule
+                      </h3>
+                    </div>
+
+                    {/* Quick Start Buttons - Only show if no days exist */}
+                    {formData.eventDays.length === 0 && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-gray-600">How would you like to set up your event days?</p>
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() => generateEventDays(2)}
+                            className="px-4 py-2 bg-[#2969FF] text-white rounded-xl hover:bg-[#2969FF]/90 transition-colors text-sm font-medium"
+                          >
+                            📅 Generate 2 Days
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => generateEventDays(3)}
+                            className="px-4 py-2 bg-[#2969FF] text-white rounded-xl hover:bg-[#2969FF]/90 transition-colors text-sm font-medium"
+                          >
+                            📅 Generate 3 Days
+                          </button>
+                          <button
+                            type="button"
+                            onClick={addEventDay}
+                            className="px-4 py-2 bg-white border-2 border-[#2969FF] text-[#2969FF] rounded-xl hover:bg-[#2969FF]/5 transition-colors text-sm font-medium"
+                          >
+                            ✋ Add Manually
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Day Cards */}
+                    {formData.eventDays.length > 0 && (
+                      <div className="space-y-4">
+                        {formData.eventDays.map((day, dayIndex) => (
+                          <div key={day.id} className="bg-white rounded-xl p-4 border border-gray-200 space-y-4">
+                            {/* Day Header */}
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-semibold text-[#2969FF]">Day {day.dayNumber}</h4>
+                              <button
+                                type="button"
+                                onClick={() => removeEventDay(dayIndex)}
+                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Remove day"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            {/* Day Details Grid */}
+                            <div className="grid md:grid-cols-2 gap-3">
+                              <div className="space-y-1.5">
+                                <Label className="text-sm">Date <span className="text-red-500">*</span></Label>
+                                <Input
+                                  type="date"
+                                  value={day.date}
+                                  onChange={(e) => updateEventDay(dayIndex, 'date', e.target.value)}
+                                  className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-sm">Day Title (optional)</Label>
+                                <Input
+                                  placeholder="e.g., Opening Day"
+                                  value={day.title}
+                                  onChange={(e) => updateEventDay(dayIndex, 'title', e.target.value)}
+                                  className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-3">
+                              <div className="space-y-1.5">
+                                <Label className="text-sm">Start Time</Label>
+                                <Input
+                                  type="time"
+                                  value={day.startTime}
+                                  onChange={(e) => updateEventDay(dayIndex, 'startTime', e.target.value)}
+                                  className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-sm">End Time</Label>
+                                <Input
+                                  type="time"
+                                  value={day.endTime}
+                                  onChange={(e) => updateEventDay(dayIndex, 'endTime', e.target.value)}
+                                  className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-sm">Day Description</Label>
+                              <textarea
+                                placeholder="What's happening on this day?"
+                                value={day.description}
+                                onChange={(e) => updateEventDay(dayIndex, 'description', e.target.value)}
+                                className="w-full min-h-[80px] px-3 py-2 rounded-lg bg-[#F4F6FA] border-0 resize-none text-sm"
+                              />
+                            </div>
+
+                            {/* Activities Section */}
+                            <div className="space-y-3 pt-2 border-t border-gray-100">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium text-gray-700">Activities / Schedule (optional)</Label>
+                              </div>
+                              
+                              {day.activities.length > 0 && (
+                                <div className="space-y-2">
+                                  {day.activities.map((activity, actIndex) => (
+                                    <div key={activity.id} className="flex items-start gap-2 p-2 bg-[#F4F6FA] rounded-lg">
+                                      <div className="flex-1 grid grid-cols-3 gap-2">
+                                        <Input
+                                          type="time"
+                                          value={activity.startTime}
+                                          onChange={(e) => updateActivity(dayIndex, actIndex, 'startTime', e.target.value)}
+                                          className="h-8 rounded-md bg-white border-0 text-sm"
+                                          placeholder="Time"
+                                        />
+                                        <Input
+                                          placeholder="Activity title"
+                                          value={activity.title}
+                                          onChange={(e) => updateActivity(dayIndex, actIndex, 'title', e.target.value)}
+                                          className="h-8 rounded-md bg-white border-0 text-sm col-span-2"
+                                        />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeActivity(dayIndex, actIndex)}
+                                        className="p-1 text-red-400 hover:text-red-600 transition-colors"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              <button
+                                type="button"
+                                onClick={() => addActivity(dayIndex)}
+                                className="text-sm text-[#2969FF] hover:text-[#2969FF]/80 transition-colors flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" /> Add activity
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Add Another Day Button */}
+                        <button
+                          type="button"
+                          onClick={addEventDay}
+                          className="w-full py-3 border-2 border-dashed border-[#2969FF]/30 rounded-xl text-[#2969FF] hover:bg-[#2969FF]/5 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                        >
+                          <Plus className="w-4 h-4" /> Add another day
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                
+                {/* Multi-Day Event UI - Shows when checkbox is checked */}
+                {formData.isMultiDay && (
+                  <div className="mt-4 p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30 space-y-5">
+                    
+                  </div>
+                )}
                 
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
@@ -932,7 +1418,7 @@ export function CreateEvent() {
           {activeTab === 'venue' && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label>Venue Name <span className="text-red-500">*</span></Label>
+                <Label>Venue Name (optional)</Label>
                 <Input
                   placeholder="Enter venue name"
                   value={formData.venueName}
@@ -1078,6 +1564,38 @@ export function CreateEvent() {
                     />
                     <Label htmlFor="byob" className="cursor-pointer">BYOB (Bring Your Own Bottle/Beverage)</Label>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="photography"
+                      checked={formData.isPhotographyAllowed}
+                      onCheckedChange={(checked) => handleInputChange('isPhotographyAllowed', checked)}
+                    />
+                    <Label htmlFor="photography" className="cursor-pointer">Photography allowed</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="recording"
+                      checked={formData.isRecordingAllowed}
+                      onCheckedChange={(checked) => handleInputChange('isRecordingAllowed', checked)}
+                    />
+                    <Label htmlFor="recording" className="cursor-pointer">Video recording allowed</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="parking"
+                      checked={formData.isParkingAvailable}
+                      onCheckedChange={(checked) => handleInputChange('isParkingAvailable', checked)}
+                    />
+                    <Label htmlFor="parking" className="cursor-pointer">Parking available</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="outsidefood"
+                      checked={formData.isOutsideFoodAllowed}
+                      onCheckedChange={(checked) => handleInputChange('isOutsideFoodAllowed', checked)}
+                    />
+                    <Label htmlFor="outsidefood" className="cursor-pointer">Outside food allowed</Label>
+                  </div>
                   <div className="space-y-2 pt-2">
                     <Label>Dress Code</Label>
                     <Input
@@ -1095,32 +1613,44 @@ export function CreateEvent() {
           {/* Ticketing Tab */}
           {activeTab === 'ticketing' && (
             <div className="space-y-6">
-              {/* Regular Tickets */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-[#0F0F0F]">Ticket Categories</h3>
-                  <p className="text-sm text-[#0F0F0F]/60">Create unlimited ticket types for your event</p>
-                </div>
-                <Button onClick={addTicket} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
-                  <Plus className="w-4 h-4 mr-2" />Add Ticket
-                </Button>
-
-              {/* Currency Selection */}
-              <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
-                <Label className="font-medium text-[#0F0F0F]">Currency</Label>
+              {/* Currency Selection - REQUIRED FIRST */}
+              <div className="p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30">
+                <Label className="font-semibold text-[#0F0F0F] text-lg flex items-center gap-2 mb-3">
+                  <span className="text-xl">💰</span> Event Currency <span className="text-red-500">*</span>
+                </Label>
                 <select
                   value={formData.currency}
                   onChange={(e) => handleInputChange('currency', e.target.value)}
-                  className="px-4 py-2 rounded-lg border border-[#0F0F0F]/10 bg-white focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+                  className={`w-full sm:w-auto px-4 py-3 rounded-xl border-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#2969FF] text-base font-medium ${
+                    !formData.currency ? 'border-amber-300' : 'border-[#2969FF]/30'
+                  }`}
                 >
+                  <option value="">-- Select Currency --</option>
                   {currencyOptions.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
-              </div>
+                {!formData.currency && (
+                  <p className="text-sm text-amber-600 mt-2 flex items-center gap-1">
+                    <span>⚠️</span> Please select the currency for ticket prices
+                  </p>
+                )}
               </div>
 
-              {tickets.map((ticket, index) => (
+              {/* Show message if no currency selected */}
+              {!formData.currency ? (
+                <div className="text-center py-12 bg-[#F4F6FA] rounded-xl border-2 border-dashed border-[#0F0F0F]/20">
+                  <p className="text-[#0F0F0F]/50 text-lg">Select a currency above to add tickets</p>
+                </div>
+              ) : (
+                <>
+                  {/* Regular Tickets */}
+                  <div>
+                    <h3 className="font-semibold text-[#0F0F0F]">Ticket Categories</h3>
+                    <p className="text-sm text-[#0F0F0F]/60">Create unlimited ticket types for your event</p>
+                  </div>
+
+                  {tickets.map((ticket, index) => (
                 <Card key={ticket.id} className="border-[#0F0F0F]/10 rounded-xl">
                   <CardContent className="p-5 space-y-4">
                     <div className="flex items-center justify-between">
@@ -1201,6 +1731,16 @@ export function CreateEvent() {
                   </CardContent>
                 </Card>
               ))}
+
+                  {/* Add Ticket Button */}
+                  <button
+                    type="button"
+                    onClick={addTicket}
+                    className="w-full py-3 border-2 border-dashed border-[#2969FF]/30 rounded-xl text-[#2969FF] hover:bg-[#2969FF]/5 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add another ticket type
+                  </button>
 
               <hr className="border-[#0F0F0F]/10" />
 
@@ -1357,6 +1897,8 @@ export function CreateEvent() {
                   </div>
                 </CardContent>
               </Card>
+                </>
+              )}
             </div>
           )}
 
