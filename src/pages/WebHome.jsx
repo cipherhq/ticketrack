@@ -165,6 +165,11 @@ const EventCard = ({ event, showDistance = false }) => {
             <TrendingUp size={12} /> PROMOTED
           </span>
         )}
+        {event.isLowStock && !event.is_promoted && (
+          <span className="absolute bottom-3 left-3 bg-amber-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+            🔥 Few left
+          </span>
+        )}
       </div>
       <div className="p-4 flex flex-col flex-1">
         <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
@@ -187,40 +192,15 @@ const EventCard = ({ event, showDistance = false }) => {
   );
 };
 
-// Horizontal Scroll Section
+// Grid Event Section with View More
 const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = false, viewAllLink }) => {
-  const scrollRef = useRef(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = 300;
-      scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  useEffect(() => {
-    checkScroll();
-    const ref = scrollRef.current;
-    if (ref) {
-      ref.addEventListener('scroll', checkScroll);
-      return () => ref.removeEventListener('scroll', checkScroll);
-    }
-  }, [events]);
-
+  const [expanded, setExpanded] = useState(false);
+  const initialCount = 8;
+  
   if (!events || events.length === 0) return null;
+  
+  const displayedEvents = expanded ? events : events.slice(0, initialCount);
+  const hasMore = events.length > initialCount;
 
   return (
     <section className="py-8">
@@ -232,44 +212,74 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {viewAllLink && (
-            <Link to={viewAllLink} className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
-              View All <ChevronRight size={16} />
-            </Link>
-          )}
-        </div>
+        {viewAllLink && (
+          <Link to={viewAllLink} className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+            View All <ChevronRight size={16} />
+          </Link>
+        )}
       </div>
       
-      <div className="relative group">
-        {canScrollLeft && (
-          <button 
-            onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {displayedEvents.map(event => (
+          <Link 
+            key={event.id}
+            to={`/events/${event.id}`}
+            className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col"
           >
-            <ChevronLeft size={24} />
-          </button>
-        )}
-        
-        <div 
-          ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {events.map(event => (
-            <EventCard key={event.id} event={event} showDistance={showDistance} />
-          ))}
-        </div>
-        
-        {canScrollRight && (
-          <button 
-            onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-50"
-          >
-            <ChevronRight size={24} />
-          </button>
-        )}
+            <div className="relative h-[160px] overflow-hidden">
+              <img 
+                src={event.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'} 
+                alt={event.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              {event.category && (
+                <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
+                  {event.category}
+                </span>
+              )}
+              {showDistance && event.distance && (
+                <span className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                  {event.distance} km
+                </span>
+              )}
+              {event.isLowStock && (
+                <span className="absolute bottom-3 left-3 bg-amber-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+                  🔥 Few left
+                </span>
+              )}
+            </div>
+            <div className="p-4 flex flex-col flex-1">
+              <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
+                {event.title}
+              </h3>
+              <div className="flex items-center gap-1 text-gray-500 text-sm mb-1">
+                <Calendar size={14} />
+                <span>{new Date(event.start_date).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              </div>
+              <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
+                <MapPin size={14} />
+                <span className="line-clamp-1">{event.venue_name || event.city}</span>
+              </div>
+              <div className="mt-auto flex items-center justify-between">
+                <span className="text-sm text-gray-500">From</span>
+                <span className="font-bold text-blue-600">{event.is_free ? 'Free' : formatPrice(event.min_price, event.currency)}</span>
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
+      
+      {hasMore && !expanded && (
+        <div className="mt-6 text-center">
+          <button 
+            onClick={() => setExpanded(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-50 text-blue-600 font-medium rounded-xl hover:bg-blue-100 transition-colors"
+          >
+            View More ({events.length - initialCount} more)
+            <ChevronDown size={18} />
+          </button>
+        </div>
+      )}
     </section>
   );
 };
@@ -372,16 +382,28 @@ export function WebHome() {
 
       const { data: allEvents } = await supabase
         .from('events')
-        .select('*, ticket_types(price)')
+        .select('*, ticket_types(price, quantity_available, quantity_sold)')
         .eq('status', 'published')
         .gte('end_date', new Date().toISOString())
         .order('start_date', { ascending: true });
 
-      // Compute min_price from ticket_types for each event
+      // Compute min_price and low stock status from ticket_types for each event
       const eventsWithPrices = allEvents?.map(event => {
         const prices = event.ticket_types?.map(t => t.price).filter(p => p !== null && p !== undefined) || [];
         const minPrice = prices.length > 0 ? Math.min(...prices) : null;
-        return { ...event, min_price: minPrice };
+        
+        // Calculate total remaining tickets and check if low stock
+        let totalRemaining = 0;
+        let totalCapacity = 0;
+        event.ticket_types?.forEach(t => {
+          const remaining = (t.quantity_available || 0) - (t.quantity_sold || 0);
+          totalRemaining += remaining;
+          totalCapacity += (t.quantity_available || 0);
+        });
+        const percentRemaining = totalCapacity > 0 ? (totalRemaining / totalCapacity) * 100 : 100;
+        const isLowStock = totalCapacity > 0 && (totalRemaining <= 10 || percentRemaining <= 20);
+        
+        return { ...event, min_price: minPrice, isLowStock, totalRemaining };
       }) || [];
 
       if (eventsWithPrices.length > 0) {
@@ -395,15 +417,15 @@ export function WebHome() {
         sunday.setHours(23, 59, 59, 999);
 
         setEvents({
-          trending: eventsWithPrices.filter(e => e.is_trending).slice(0, 10),
-          popular: eventsWithPrices.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0)).slice(0, 10),
-          featured: eventsWithPrices.filter(e => e.is_featured).slice(0, 10),
-          nearYou: eventsWithPrices.slice(0, 10).map(e => ({ ...e, distance: Math.floor(Math.random() * 20) + 1 })),
+          trending: eventsWithPrices.filter(e => e.is_trending).slice(0, 20),
+          popular: eventsWithPrices.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0)).slice(0, 20),
+          featured: eventsWithPrices.filter(e => e.is_featured).slice(0, 20),
+          nearYou: eventsWithPrices.slice(0, 20).map(e => ({ ...e, distance: Math.floor(Math.random() * 20) + 1 })),
           weekend: eventsWithPrices.filter(e => {
             const eventDate = new Date(e.start_date);
             return eventDate >= saturday && eventDate <= sunday;
-          }).slice(0, 10),
-          free: eventsWithPrices.filter(e => e.is_free).slice(0, 10)
+          }).slice(0, 20),
+          free: eventsWithPrices.filter(e => e.is_free).slice(0, 20)
         });
       }
 
