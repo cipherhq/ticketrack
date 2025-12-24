@@ -69,7 +69,6 @@ export async function getEvent(idOrSlug) {
   if (isUUID) {
     query = query.eq('id', idOrSlug)
   } else {
-    // Check both slug and custom_url
     query = query.or(`slug.eq.${idOrSlug},custom_url.eq.${idOrSlug}`)
   }
   

@@ -141,7 +141,7 @@ const EventCard = ({ event, showDistance = false }) => {
 
   return (
     <Link 
-      to={`/events/${event.id}`}
+      to={`/e/${event.slug || event.id}`}
       className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col min-w-[280px] max-w-[280px]"
     >
       <div className="relative h-[160px] overflow-hidden">
@@ -223,7 +223,7 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
         {displayedEvents.map(event => (
           <Link 
             key={event.id}
-            to={`/events/${event.id}`}
+            to={`/e/${event.slug || event.id}`}
             className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col"
           >
             <div className="relative h-[160px] overflow-hidden">

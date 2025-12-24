@@ -3,6 +3,8 @@ import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { WaitlistDialog } from '@/components/WaitlistDialog'
+import { getWaitlistPosition } from '@/services/waitlist'
 import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +23,9 @@ export function WebEventDetails() {
   const [event, setEvent] = useState(null)
   const [ticketTypes, setTicketTypes] = useState([])
   const [loading, setLoading] = useState(true)
+  const [waitlistOpen, setWaitlistOpen] = useState(false)
+  const [isOnWaitlist, setIsOnWaitlist] = useState(false)
+  const [waitlistPosition, setWaitlistPosition] = useState(null)
   const [error, setError] = useState(null)
   
   const [selectedTickets, setSelectedTickets] = useState(location.state?.selectedTickets || {})
@@ -122,6 +127,7 @@ export function WebEventDetails() {
   }
 
   const totalTickets = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0)
+  const isAllSoldOut = ticketTypes.length > 0 && ticketTypes.every(t => (t.quantity_sold || 0) >= (t.quantity_available || t.quantity_total || 0))
   
   // Free event detection - use DB flag or fallback to checking ticket prices
   const isFreeEvent = event?.is_free || (ticketTypes.length === 0) || (ticketTypes.length > 0 && ticketTypes.every(t => t.price === 0))
@@ -711,7 +717,15 @@ export function WebEventDetails() {
               )}
 
               {/* Action Button */}
-              {isFreeEvent ? (
+              {isAllSoldOut && !isFreeEvent ? (
+                <Button 
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-6 text-lg"
+                  onClick={() => setWaitlistOpen(true)}
+                >
+                  <Clock className="w-5 h-5 mr-2" />
+                  {isOnWaitlist ? `On Waitlist (#${waitlistPosition})` : 'Join Waitlist'}
+                </Button>
+              ) : isFreeEvent ? (
                 <Button 
                   className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-6 text-lg"
                   onClick={handleCheckout}
@@ -736,6 +750,13 @@ export function WebEventDetails() {
           </Card>
         </div>
       </div>
+
+      {/* Waitlist Dialog */}
+      <WaitlistDialog 
+        open={waitlistOpen} 
+        onOpenChange={setWaitlistOpen} 
+        event={event}
+      />
     </div>
   )
 }
