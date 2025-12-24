@@ -1,5 +1,17 @@
 import { supabase } from '@/lib/supabase';
 
+// Send waitlist email
+async function sendWaitlistEmail(type, to, data) {
+  try {
+    const { error } = await supabase.functions.invoke('send-email', {
+      body: { type, to, data }
+    });
+    if (error) console.error('Email error:', error);
+  } catch (err) {
+    console.error('Failed to send email:', err);
+  }
+}
+
 // Join waitlist
 export async function joinWaitlist(eventId, userId, email, name, phone, quantity = 1) {
   const { data, error } = await supabase.rpc('join_waitlist', {
@@ -12,6 +24,34 @@ export async function joinWaitlist(eventId, userId, email, name, phone, quantity
   });
   
   if (error) throw error;
+  
+  // If successful, fetch event details and send confirmation email
+  if (data.success) {
+    try {
+      const { data: event } = await supabase
+        .from('events')
+        .select('title, slug, start_date, venue_name')
+        .eq('id', eventId)
+        .single();
+      
+      if (event) {
+        await sendWaitlistEmail('waitlist_joined', email, {
+          name,
+          position: data.position,
+          eventTitle: event.title,
+          eventSlug: event.slug,
+          eventDate: event.start_date,
+          venueName: event.venue_name || 'TBA',
+          quantity,
+          appUrl: window.location.origin
+        });
+      }
+    } catch (emailErr) {
+      console.error('Email send failed:', emailErr);
+      // Don't fail the join if email fails
+    }
+  }
+  
   return data;
 }
 
@@ -25,7 +65,7 @@ export async function getWaitlistPosition(eventId, email) {
     .in('status', ['waiting', 'notified'])
     .single();
   
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
+  if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
 
@@ -64,7 +104,7 @@ export async function getEventWaitlist(eventId) {
   return data || [];
 }
 
-// Notify next person (organizer)
+// Notify next person (organizer) - sends email automatically
 export async function notifyNextInWaitlist(eventId, hoursValid = 24) {
   const { data, error } = await supabase.rpc('notify_next_waitlist', {
     p_event_id: eventId,
@@ -72,6 +112,34 @@ export async function notifyNextInWaitlist(eventId, hoursValid = 24) {
   });
   
   if (error) throw error;
+  
+  // If someone was notified, send them an email
+  if (data.success && data.email) {
+    try {
+      const { data: event } = await supabase
+        .from('events')
+        .select('title, slug, start_date, venue_name')
+        .eq('id', eventId)
+        .single();
+      
+      if (event) {
+        await sendWaitlistEmail('waitlist_available', data.email, {
+          name: data.name,
+          eventTitle: event.title,
+          eventSlug: event.slug,
+          eventDate: event.start_date,
+          venueName: event.venue_name || 'TBA',
+          quantity: data.quantity,
+          purchaseToken: data.purchase_token,
+          expiresAt: data.expires_at,
+          appUrl: window.location.origin
+        });
+      }
+    } catch (emailErr) {
+      console.error('Notification email failed:', emailErr);
+    }
+  }
+  
   return data;
 }
 
@@ -112,6 +180,5 @@ export async function isEventSoldOut(eventId) {
   
   if (!data || data.length === 0) return false;
   
-  // Check if ALL ticket types are sold out
   return data.every(tt => (tt.quantity_sold || 0) >= tt.quantity_available);
 }

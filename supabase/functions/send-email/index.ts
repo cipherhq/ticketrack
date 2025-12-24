@@ -18,6 +18,7 @@ type EmailType =
   | 'event_reminder_organizer' | 'refund_request' | 'post_event_summary'
   | 'promoter_commission' | 'promoter_payout' | 'promo_code_used' | 'promoter_invite' | 'promoter_accepted'
   | 'admin_new_organizer' | 'admin_new_event' | 'admin_flagged_content' | 'admin_daily_stats'
+  | 'waitlist_joined' | 'waitlist_available'
 
 interface EmailRequest {
   type: EmailType
@@ -39,7 +40,237 @@ function formatTime(dateString: string): string {
 }
 
 function baseTemplate(content: string, preheader = ''): string {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${BRAND_NAME}</title><style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f4f6fa}.container{max-width:600px;margin:0 auto;background:#fff}.header{background:${BRAND_COLOR};padding:24px;text-align:center}.header h1{color:#fff;margin:0;font-size:24px;font-weight:700}.content{padding:32px 24px}.footer{background:#f4f6fa;padding:24px;text-align:center;font-size:12px;color:#666}.button{display:inline-block;background:${BRAND_COLOR};color:#fff!important;padding:14px 28px;text-decoration:none;border-radius:8px;font-weight:600;margin:16px 0}.ticket-card{background:#f4f6fa;border-radius:12px;padding:20px;margin:16px 0}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e0e0e0}.info-label{color:#666;font-size:14px}.info-value{color:#0f0f0f;font-weight:600;font-size:14px}.highlight{background:#fff3cd;padding:16px;border-radius:8px;margin:16px 0}.success{background:#d4edda;padding:16px;border-radius:8px;margin:16px 0}.warning{background:#f8d7da;padding:16px;border-radius:8px;margin:16px 0}h2{color:#0f0f0f;margin-top:0}p{color:#333;line-height:1.6}.preheader{display:none;max-height:0;overflow:hidden}</style></head><body><div class="preheader">${preheader}</div><div class="container"><div class="header"><h1>🎫 ${BRAND_NAME}</h1></div><div class="content">${content}</div><div class="footer"><p>© ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.</p><p>The best platform for discovering and booking events across Africa.</p></div></div></body></html>`
+  const LOGO_URL = 'https://ticketrack.com/logo.png'
+  const SOCIAL_TWITTER = 'https://twitter.com/ticketrack'
+  const SOCIAL_INSTAGRAM = 'https://instagram.com/ticketrack'
+  const SOCIAL_FACEBOOK = 'https://facebook.com/ticketrack'
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${BRAND_NAME}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    /* Reset */
+    body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    
+    /* Base */
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: #f4f6fa;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    /* Container */
+    .email-wrapper { width: 100%; background-color: #f4f6fa; padding: 40px 0; }
+    .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+    
+    /* Header */
+    .header { 
+      background: linear-gradient(135deg, ${BRAND_COLOR} 0%, #1a4fd8 100%);
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .logo { max-width: 180px; height: auto; margin-bottom: 8px; }
+    .header-tagline { color: rgba(255,255,255,0.9); font-size: 14px; margin: 0; }
+    
+    /* Content */
+    .content { padding: 40px 32px; }
+    .content h2 { color: #0f0f0f; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; }
+    .content p { color: #4a4a4a; font-size: 16px; line-height: 1.7; margin: 0 0 16px 0; }
+    .content ul { color: #4a4a4a; font-size: 16px; line-height: 1.8; padding-left: 24px; }
+    .content li { margin-bottom: 8px; }
+    
+    /* Button */
+    .button-wrapper { text-align: center; margin: 32px 0; }
+    .button {
+      display: inline-block;
+      background: linear-gradient(135deg, ${BRAND_COLOR} 0%, #1a4fd8 100%);
+      color: #ffffff !important;
+      padding: 16px 40px;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 14px rgba(41, 105, 255, 0.4);
+      transition: all 0.2s;
+    }
+    .button:hover { box-shadow: 0 6px 20px rgba(41, 105, 255, 0.5); }
+    
+    /* Card */
+    .ticket-card {
+      background: linear-gradient(135deg, #f8f9fc 0%, #f4f6fa 100%);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+      border: 1px solid #e8eaf0;
+    }
+    .ticket-card h3 { color: ${BRAND_COLOR}; margin: 0 0 16px 0; font-size: 18px; }
+    .info-row { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding: 12px 0; 
+      border-bottom: 1px solid #e8eaf0; 
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #6b7280; font-size: 14px; }
+    .info-value { color: #0f0f0f; font-weight: 600; font-size: 14px; text-align: right; }
+    
+    /* Alert Boxes */
+    .highlight {
+      background: linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 24px 0;
+      border-left: 4px solid #f59e0b;
+    }
+    .highlight strong { color: #92400e; }
+    .highlight p { color: #92400e; margin: 8px 0 0 0; font-size: 14px; }
+    
+    .success {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 24px 0;
+      border-left: 4px solid #10b981;
+    }
+    .success strong { color: #065f46; }
+    .success p { color: #065f46; margin: 8px 0 0 0; font-size: 14px; }
+    
+    .warning {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 24px 0;
+      border-left: 4px solid #ef4444;
+    }
+    .warning strong { color: #991b1b; }
+    .warning p { color: #991b1b; margin: 8px 0 0 0; font-size: 14px; }
+    
+    /* Divider */
+    .divider { height: 1px; background: #e8eaf0; margin: 32px 0; }
+    
+    /* Footer */
+    .footer {
+      background: #f8f9fc;
+      padding: 32px;
+      text-align: center;
+      border-top: 1px solid #e8eaf0;
+    }
+    .footer-logo { max-width: 120px; margin-bottom: 16px; opacity: 0.8; }
+    .social-links { margin: 20px 0; }
+    .social-link {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      background: #e8eaf0;
+      border-radius: 50%;
+      margin: 0 6px;
+      line-height: 36px;
+      text-decoration: none;
+    }
+    .footer-text { color: #6b7280; font-size: 12px; line-height: 1.6; margin: 0; }
+    .footer-links { margin-top: 16px; }
+    .footer-links a { color: #6b7280; text-decoration: none; font-size: 12px; margin: 0 12px; }
+    .footer-links a:hover { color: ${BRAND_COLOR}; }
+    
+    /* Position Badge */
+    .position-badge {
+      text-align: center;
+      padding: 24px 0;
+    }
+    .position-number {
+      font-size: 56px;
+      font-weight: 800;
+      color: ${BRAND_COLOR};
+      line-height: 1;
+    }
+    .position-label {
+      color: #6b7280;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    
+    /* Preheader */
+    .preheader {
+      display: none !important;
+      visibility: hidden;
+      mso-hide: all;
+      font-size: 1px;
+      line-height: 1px;
+      max-height: 0;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+    
+    /* Responsive */
+    @media only screen and (max-width: 600px) {
+      .email-container { margin: 0 16px; border-radius: 12px; }
+      .content { padding: 24px 20px; }
+      .button { padding: 14px 32px; font-size: 15px; }
+      .ticket-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="preheader">${preheader}</div>
+  <div class="email-wrapper">
+    <table role="presentation" class="email-container" width="100%" cellspacing="0" cellpadding="0">
+      <!-- Header -->
+      <tr>
+        <td class="header">
+          <img src="${LOGO_URL}" alt="${BRAND_NAME}" class="logo" onerror="this.style.display='none'">
+          <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">🎫 ${BRAND_NAME}</h1>
+          <p class="header-tagline">Your Gateway to Amazing Events</p>
+        </td>
+      </tr>
+      
+      <!-- Content -->
+      <tr>
+        <td class="content">
+          ${content}
+        </td>
+      </tr>
+      
+      <!-- Footer -->
+      <tr>
+        <td class="footer">
+          <div class="social-links">
+            <a href="${SOCIAL_TWITTER}" class="social-link" style="color:#1da1f2;">𝕏</a>
+            <a href="${SOCIAL_INSTAGRAM}" class="social-link" style="color:#e4405f;">📷</a>
+            <a href="${SOCIAL_FACEBOOK}" class="social-link" style="color:#1877f2;">f</a>
+          </div>
+          <p class="footer-text">
+            © ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.<br>
+            Africa's premier event discovery and ticketing platform.
+          </p>
+          <div class="footer-links">
+            <a href="https://ticketrack.com/help">Help Center</a>
+            <a href="https://ticketrack.com/privacy">Privacy</a>
+            <a href="https://ticketrack.com/terms">Terms</a>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>`
 }
 
 const templates: Record<EmailType, (data: Record<string, any>) => { subject: string; html: string }> = {
@@ -187,6 +418,87 @@ const templates: Record<EmailType, (data: Record<string, any>) => { subject: str
   admin_flagged_content: (data) => ({
     subject: `🚨 Flagged Content: ${data.contentType}`,
     html: baseTemplate(`<div class="warning"><strong>🚨 Review Required</strong></div><h2>Flagged Content</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Type</span><span class="info-value">${data.contentType}</span></div><div class="info-row"><span class="info-label">Reason</span><span class="info-value">${data.reason}</span></div><div class="info-row"><span class="info-label">Reported By</span><span class="info-value">${data.reportedBy || 'System'}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Time</span><span class="info-value">${formatDate(data.flaggedAt)}</span></div></div><a href="${data.appUrl}/admin/moderation/${data.flagId}" class="button">Review Now</a>`)
+  }),
+
+
+  waitlist_joined: (data) => ({
+    subject: `🎫 You're #${data.position} on the waitlist for ${data.eventTitle}`,
+    html: baseTemplate(`
+      <h2>You're on the Waitlist! 🎉</h2>
+      <p>Hi ${data.name},</p>
+      <p>Great news! You've been added to the waitlist for <strong>${data.eventTitle}</strong>.</p>
+      
+      <div class="ticket-card">
+        <div class="position-badge">
+          <div class="position-number">#${data.position}</div>
+          <div class="position-label">Your position in queue</div>
+        </div>
+        <div class="divider" style="margin:16px 0;"></div>
+        <div class="info-row">
+          <span class="info-label">📅 Event Date</span>
+          <span class="info-value">${formatDate(data.eventDate)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📍 Venue</span>
+          <span class="info-value">${data.venueName}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🎫 Tickets Requested</span>
+          <span class="info-value">${data.quantity}</span>
+        </div>
+      </div>
+      
+      <div class="highlight">
+        <strong>📬 What happens next?</strong>
+        <p>We'll email you immediately when tickets become available. You'll have <strong>24 hours</strong> to complete your purchase before the offer moves to the next person.</p>
+      </div>
+      
+      <div class="button-wrapper">
+        <a href="${data.appUrl}/e/${data.eventSlug}" class="button">View Event Details</a>
+      </div>
+    `, `You're #${data.position} on the waitlist for ${data.eventTitle}`)
+  }),
+
+  waitlist_available: (data) => ({
+    subject: `🎉 Tickets Available! Your turn for ${data.eventTitle}`,
+    html: baseTemplate(`
+      <div class="success">
+        <strong>🎉 Great news!</strong>
+        <p>Tickets are now available for you to purchase!</p>
+      </div>
+      
+      <h2>It's Your Turn!</h2>
+      <p>Hi ${data.name},</p>
+      <p>You've been waiting patiently, and now tickets for <strong>${data.eventTitle}</strong> are available just for you!</p>
+      
+      <div class="ticket-card">
+        <div class="info-row">
+          <span class="info-label">📅 Event Date</span>
+          <span class="info-value">${formatDate(data.eventDate)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📍 Venue</span>
+          <span class="info-value">${data.venueName}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🎫 Tickets Reserved</span>
+          <span class="info-value">${data.quantity}</span>
+        </div>
+      </div>
+      
+      <div class="warning">
+        <strong>⏰ Act Fast!</strong>
+        <p>This exclusive offer expires on <strong>${formatDate(data.expiresAt)}</strong> at <strong>${formatTime(data.expiresAt)}</strong>. After that, your spot goes to the next person in line.</p>
+      </div>
+      
+      <div class="button-wrapper">
+        <a href="${data.appUrl}/waitlist/purchase?token=${data.purchaseToken}" class="button">🎫 Buy Tickets Now</a>
+      </div>
+      
+      <p style="font-size:13px;color:#6b7280;text-align:center;margin-top:24px;">
+        If you no longer need tickets, simply ignore this email and the next person in queue will get the opportunity.
+      </p>
+    `, `Tickets available for ${data.eventTitle}! You have 24 hours to purchase.`)
   }),
 
   admin_daily_stats: (data) => ({
