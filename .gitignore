@@ -3,4 +3,6 @@ dist/
 .env
 .env.local
 .DS_Store
-.env.local
+playwright-report/
+test-results/
+*.backup
