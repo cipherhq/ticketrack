@@ -19,6 +19,7 @@ import { Image,
   LogOut,
   Loader2,
   Settings,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -40,6 +41,7 @@ const navItems = [
   { icon: MessageSquare, label: 'WhatsApp Packages', path: '/admin/whatsapp-packages' },
   { icon: Bell, label: 'SMS Campaigns', path: '/admin/sms' },
   { icon: Users, label: 'Roles & Permissions', path: '/admin/roles' },
+  { icon: Clock, label: 'Waitlist', path: '/admin/waitlist' },
   { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ];
 
