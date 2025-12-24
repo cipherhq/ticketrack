@@ -101,6 +101,9 @@ export function CreateEvent() {
     feeHandling: 'pass_to_attendee',
     // Free Event
     isFree: false,
+    acceptsDonations: false,
+    donationAmounts: [500, 1000, 2500],
+    allowCustomDonation: true,
     // Terms
     agreedToTerms: false,
   });
@@ -177,6 +180,9 @@ export function CreateEvent() {
               promoVideoUrl: event.promo_video_url || "",
               feeHandling: event.fee_handling || "pass_to_attendee",
               isFree: event.is_free || false,
+              acceptsDonations: event.accepts_donations || false,
+              donationAmounts: event.donation_amounts || [500, 1000, 2500],
+              allowCustomDonation: event.allow_custom_donation !== false,
               custom_url: event.custom_url || "",
               agreedToTerms: true,
             });
@@ -714,6 +720,10 @@ export function CreateEvent() {
         is_parking_available: formData.isParkingAvailable,
         is_outside_food_allowed: formData.isOutsideFoodAllowed,
         dress_code: formData.dressCode,
+        is_free: formData.isFree,
+        accepts_donations: formData.acceptsDonations,
+        donation_amounts: formData.donationAmounts,
+        allow_custom_donation: formData.allowCustomDonation,
         total_capacity: parseInt(formData.venueCapacity) || totalCapacity,
         image_url: imageUrl,
         promo_video_url: formData.promoVideoUrl,
@@ -958,7 +968,7 @@ export function CreateEvent() {
               <h2 className="text-2xl font-semibold text-[#0F0F0F]">Create Event — Full Details</h2>
               <p className="text-[#0F0F0F]/60">Fill in all event information to get started</p>
             </div>
-            <button onClick={() => navigate('/')} className="p-2 hover:bg-[#F4F6FA] rounded-xl">
+            <button onClick={() => navigate(-1)} className="p-2 hover:bg-[#F4F6FA] rounded-xl">
               <X className="w-6 h-6 text-[#0F0F0F]/60" />
             </button>
           </div>
@@ -1613,7 +1623,108 @@ export function CreateEvent() {
           {/* Ticketing Tab */}
           {activeTab === 'ticketing' && (
             <div className="space-y-6">
-              {/* Currency Selection - REQUIRED FIRST */}
+              {/* Free Event Toggle */}
+              <div className="p-5 bg-gradient-to-r from-green-500/10 to-green-500/5 rounded-xl border-2 border-green-500/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="font-semibold text-[#0F0F0F] text-lg flex items-center gap-2">
+                      <span className="text-xl">🎉</span> Free Event
+                    </Label>
+                    <p className="text-sm text-[#0F0F0F]/60 mt-1">No ticket purchase required - attendees just RSVP</p>
+                  </div>
+                  <Checkbox
+                    id="isFree"
+                    checked={formData.isFree}
+                    onCheckedChange={(checked) => handleInputChange('isFree', checked)}
+                    className="h-6 w-6"
+                  />
+                </div>
+                
+                {/* Donation Options - Only show if free event */}
+                {formData.isFree && (
+                  <div className="mt-4 pt-4 border-t border-green-500/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="font-medium text-[#0F0F0F] flex items-center gap-2">
+                          <span>💝</span> Accept Donations
+                        </Label>
+                        <p className="text-sm text-[#0F0F0F]/60">Allow attendees to support your event</p>
+                      </div>
+                      <Checkbox
+                        id="acceptsDonations"
+                        checked={formData.acceptsDonations}
+                        onCheckedChange={(checked) => handleInputChange('acceptsDonations', checked)}
+                        className="h-5 w-5"
+                      />
+                    </div>
+                    
+                    {/* Donation Tiers - Only show if donations enabled */}
+                    {formData.acceptsDonations && (
+                      <div className="space-y-3 pl-4 border-l-2 border-green-500/30">
+                        <div>
+                          <Label className="text-sm font-medium">Donation Amounts (up to 5)</Label>
+                          <p className="text-xs text-[#0F0F0F]/50">Click to edit, press + to add more</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.donationAmounts.map((amount, idx) => (
+                            <div key={idx} className="relative group">
+                              <input
+                                type="number"
+                                value={amount}
+                                onChange={(e) => {
+                                  const newAmounts = [...formData.donationAmounts];
+                                  newAmounts[idx] = parseInt(e.target.value) || 0;
+                                  handleInputChange('donationAmounts', newAmounts);
+                                }}
+                                className="w-24 px-3 py-2 rounded-lg bg-white border border-green-500/30 text-center font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
+                              />
+                              {formData.donationAmounts.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newAmounts = formData.donationAmounts.filter((_, i) => i !== idx);
+                                    handleInputChange('donationAmounts', newAmounts);
+                                  }}
+                                  className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {formData.donationAmounts.length < 5 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const lastAmount = formData.donationAmounts[formData.donationAmounts.length - 1] || 1000;
+                                handleInputChange('donationAmounts', [...formData.donationAmounts, lastAmount * 2]);
+                              }}
+                              className="w-24 px-3 py-2 rounded-lg border-2 border-dashed border-green-500/30 text-green-600 font-medium hover:bg-green-50 transition-colors"
+                            >
+                              + Add
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mt-3">
+                          <Checkbox
+                            id="allowCustomDonation"
+                            checked={formData.allowCustomDonation}
+                            onCheckedChange={(checked) => handleInputChange('allowCustomDonation', checked)}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor="allowCustomDonation" className="text-sm cursor-pointer">
+                            Allow custom donation amount
+                          </Label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Currency Selection - Only show if NOT free event */}
+              {!formData.isFree && (
               <div className="p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30">
                 <Label className="font-semibold text-[#0F0F0F] text-lg flex items-center gap-2 mb-3">
                   <span className="text-xl">💰</span> Event Currency <span className="text-red-500">*</span>
@@ -1636,9 +1747,20 @@ export function CreateEvent() {
                   </p>
                 )}
               </div>
+              )}
 
-              {/* Show message if no currency selected */}
-              {!formData.currency ? (
+              {/* Show message if free event */}
+              {formData.isFree ? (
+                <div className="text-center py-12 bg-green-50 rounded-xl border-2 border-dashed border-green-500/30">
+                  <span className="text-4xl mb-3 block">🎉</span>
+                  <p className="text-green-700 text-lg font-medium">This is a free event</p>
+                  <p className="text-green-600/70 text-sm mt-1">
+                    {formData.acceptsDonations 
+                      ? 'Attendees can RSVP for free or choose to donate' 
+                      : 'Attendees will RSVP without payment'}
+                  </p>
+                </div>
+              ) : !formData.currency ? (
                 <div className="text-center py-12 bg-[#F4F6FA] rounded-xl border-2 border-dashed border-[#0F0F0F]/20">
                   <p className="text-[#0F0F0F]/50 text-lg">Select a currency above to add tickets</p>
                 </div>
@@ -2051,7 +2173,7 @@ export function CreateEvent() {
           <Button
             type="button"
             variant="outline"
-            onClick={isFirstTab ? () => navigate('/') : goToPrevTab}
+            onClick={isFirstTab ? () => navigate(-1) : goToPrevTab}
             className="rounded-xl px-6"
           >
             {isFirstTab ? 'Cancel' : 'Back'}

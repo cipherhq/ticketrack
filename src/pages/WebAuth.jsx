@@ -32,6 +32,7 @@ export function WebAuth() {
     password: '',
     confirmPassword: '',
     otp: '',
+    countryCode: 'NG',
   })
 
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: '' })
@@ -139,7 +140,8 @@ export function WebAuth() {
           formData.password, 
           formData.firstName, 
           formData.lastName, 
-          formData.phone
+          formData.phone,
+          formData.countryCode
         )
         setSignupEmail(result.email)
         setStep('verify-email')
@@ -457,6 +459,7 @@ export function WebAuth() {
                   <PhoneInput
                     value={formData.phone}
                     onChange={handlePhoneChange}
+                    onCountryChange={(code) => setFormData(prev => ({ ...prev, countryCode: code }))}
                     required
                   />
                 </div>

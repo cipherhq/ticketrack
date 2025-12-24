@@ -86,6 +86,7 @@ export function WebTickets() {
   }
 
   const isEventPast = (eventDate) => {
+    if (!eventDate) return false
     return new Date(eventDate) < new Date()
   }
 

@@ -1,0 +1,346 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e6]:
+      - img "Ticketrack" [ref=e8] [cursor=pointer]
+      - navigation [ref=e9]:
+        - button "Browse Events" [ref=e10] [cursor=pointer]
+        - button "My Tickets" [ref=e11] [cursor=pointer]
+        - button [ref=e12] [cursor=pointer]:
+          - img [ref=e13]
+        - button [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+      - generic [ref=e21]:
+        - button "Create Event" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+          - text: Create Event
+        - button "Login" [ref=e24] [cursor=pointer]
+        - button "Sign Up" [ref=e25] [cursor=pointer]
+  - main [ref=e26]:
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - img "Concert crowd" [ref=e30]
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e35]: ✨
+            - text: "Africa's #1 Ticketing Platform"
+          - heading "Your Next Unforgettable Experience Awaits" [level=1] [ref=e36]:
+            - text: Your Next
+            - text: Unforgettable
+            - text: Experience Awaits
+          - paragraph [ref=e37]: From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening across Africa.
+          - generic [ref=e38]:
+            - generic [ref=e40]:
+              - img [ref=e41]
+              - generic [ref=e44]:
+                - generic [ref=e45]: Location
+                - textbox "City or Venue" [ref=e46]
+            - generic [ref=e48] [cursor=pointer]:
+              - img [ref=e49]
+              - generic [ref=e51]:
+                - generic [ref=e52]: Dates
+                - generic [ref=e53]: All Dates
+              - img [ref=e54]
+            - generic [ref=e57]:
+              - img [ref=e58]
+              - generic [ref=e61]:
+                - generic [ref=e62]: Search
+                - textbox "Artist, Event or Venue" [ref=e63]
+            - button "Search" [ref=e64] [cursor=pointer]
+          - generic [ref=e65]:
+            - generic [ref=e66]:
+              - generic [ref=e67]: 10K+
+              - generic [ref=e68]: Events Hosted
+            - generic [ref=e69]:
+              - generic [ref=e70]: 500K+
+              - generic [ref=e71]: Tickets Sold
+            - generic [ref=e72]:
+              - generic [ref=e73]: "6"
+              - generic [ref=e74]: Countries
+      - generic [ref=e76]:
+        - generic [ref=e77]: Ad
+        - img "Coca Cola" [ref=e79] [cursor=pointer]
+      - main [ref=e81]:
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - heading "Popular categories" [level=2] [ref=e84]
+            - link "View All" [ref=e85] [cursor=pointer]:
+              - /url: /categories
+              - text: View All
+              - img [ref=e86]
+          - generic [ref=e89]:
+            - link "Arts & Theatre Arts & Theatre" [ref=e90] [cursor=pointer]:
+              - /url: /events?category=arts-theatre
+              - img "Arts & Theatre" [ref=e91]
+              - generic [ref=e93]: Arts & Theatre
+            - link "Charity Charity" [ref=e94] [cursor=pointer]:
+              - /url: /events?category=charity
+              - img "Charity" [ref=e95]
+              - generic [ref=e97]: Charity
+            - link "Conferences Conferences" [ref=e98] [cursor=pointer]:
+              - /url: /events?category=conferences
+              - img "Conferences" [ref=e99]
+              - generic [ref=e101]: Conferences
+            - link "Festivals Festivals" [ref=e102] [cursor=pointer]:
+              - /url: /events?category=festivals
+              - img "Festivals" [ref=e103]
+              - generic [ref=e105]: Festivals
+            - link "Food & Drink Food & Drink" [ref=e106] [cursor=pointer]:
+              - /url: /events?category=food-drink
+              - img "Food & Drink" [ref=e107]
+              - generic [ref=e109]: Food & Drink
+            - link "Music & Concerts Music & Concerts" [ref=e110] [cursor=pointer]:
+              - /url: /events?category=music-concerts
+              - img "Music & Concerts" [ref=e111]
+              - generic [ref=e113]: Music & Concerts
+            - link "Networking Networking" [ref=e114] [cursor=pointer]:
+              - /url: /events?category=networking
+              - img "Networking" [ref=e115]
+              - generic [ref=e117]: Networking
+            - link "Other Other" [ref=e118] [cursor=pointer]:
+              - /url: /events?category=other
+              - img "Other" [ref=e119]
+              - generic [ref=e121]: Other
+            - link "Sports Sports" [ref=e122] [cursor=pointer]:
+              - /url: /events?category=sports
+              - img "Sports" [ref=e123]
+              - generic [ref=e125]: Sports
+            - link "Workshops Workshops" [ref=e126] [cursor=pointer]:
+              - /url: /events?category=workshops
+              - img "Workshops" [ref=e127]
+              - generic [ref=e129]: Workshops
+        - generic [ref=e130]:
+          - generic [ref=e131]:
+            - generic [ref=e132]:
+              - img [ref=e133]
+              - generic [ref=e138]:
+                - heading "Most Popular" [level=2] [ref=e139]
+                - paragraph [ref=e140]: Top selling events
+            - link "View All" [ref=e142] [cursor=pointer]:
+              - /url: /events?filter=popular
+              - text: View All
+              - img [ref=e143]
+          - generic [ref=e146]:
+            - link "606 and Park Music 606 and Park 21 Dec 2025 From ₦100" [ref=e147] [cursor=pointer]:
+              - /url: /events/691966ae-6574-45a4-b7f5-b6184057cab9
+              - generic [ref=e148]:
+                - img "606 and Park" [ref=e149]
+                - generic [ref=e150]: Music
+              - generic [ref=e151]:
+                - heading "606 and Park" [level=3] [ref=e152]
+                - generic [ref=e153]:
+                  - img [ref=e154]
+                  - generic [ref=e156]: 21 Dec 2025
+                - img [ref=e158]
+                - generic [ref=e161]:
+                  - generic [ref=e162]: From
+                  - generic [ref=e163]: ₦100
+            - link "Davide Detty December Music Davide Detty December 29 Dec 2025 From ₦50,000" [ref=e164] [cursor=pointer]:
+              - /url: /events/ca768ab7-587e-48cc-88bd-d8c97a5a25cb
+              - generic [ref=e165]:
+                - img "Davide Detty December" [ref=e166]
+                - generic [ref=e167]: Music
+              - generic [ref=e168]:
+                - heading "Davide Detty December" [level=3] [ref=e169]
+                - generic [ref=e170]:
+                  - img [ref=e171]
+                  - generic [ref=e173]: 29 Dec 2025
+                - img [ref=e175]
+                - generic [ref=e178]:
+                  - generic [ref=e179]: From
+                  - generic [ref=e180]: ₦50,000
+            - link "Afrobeats Night Live Music Afrobeats Night Live 2 Jan 2026 From ₦10,000" [ref=e181] [cursor=pointer]:
+              - /url: /events/34e345f4-359c-40e6-ad04-6a3aba6d238a
+              - generic [ref=e182]:
+                - img "Afrobeats Night Live" [ref=e183]
+                - generic [ref=e184]: Music
+              - generic [ref=e185]:
+                - heading "Afrobeats Night Live" [level=3] [ref=e186]
+                - generic [ref=e187]:
+                  - img [ref=e188]
+                  - generic [ref=e190]: 2 Jan 2026
+                - img [ref=e192]
+                - generic [ref=e195]:
+                  - generic [ref=e196]: From
+                  - generic [ref=e197]: ₦10,000
+            - link "Let it Vive Networking Let it Vive 29 Jan 2026 From ₦20,000" [ref=e198] [cursor=pointer]:
+              - /url: /events/887e452b-ff44-4474-a133-16b69c4dec88
+              - generic [ref=e199]:
+                - img "Let it Vive" [ref=e200]
+                - generic [ref=e201]: Networking
+              - generic [ref=e202]:
+                - heading "Let it Vive" [level=3] [ref=e203]
+                - generic [ref=e204]:
+                  - img [ref=e205]
+                  - generic [ref=e207]: 29 Jan 2026
+                - img [ref=e209]
+                - generic [ref=e212]:
+                  - generic [ref=e213]: From
+                  - generic [ref=e214]: ₦20,000
+        - generic [ref=e215]:
+          - generic [ref=e216]:
+            - generic [ref=e217]:
+              - img [ref=e218]
+              - generic [ref=e221]:
+                - heading "Events Near You" [level=2] [ref=e222]
+                - paragraph [ref=e223]: Happening in your area
+            - link "View All" [ref=e225] [cursor=pointer]:
+              - /url: /events?filter=nearby
+              - text: View All
+              - img [ref=e226]
+          - generic [ref=e229]:
+            - link "606 and Park Music 19 km 606 and Park 21 Dec 2025 From ₦100" [ref=e230] [cursor=pointer]:
+              - /url: /events/691966ae-6574-45a4-b7f5-b6184057cab9
+              - generic [ref=e231]:
+                - img "606 and Park" [ref=e232]
+                - generic [ref=e233]: Music
+                - generic [ref=e234]: 19 km
+              - generic [ref=e235]:
+                - heading "606 and Park" [level=3] [ref=e236]
+                - generic [ref=e237]:
+                  - img [ref=e238]
+                  - generic [ref=e240]: 21 Dec 2025
+                - img [ref=e242]
+                - generic [ref=e245]:
+                  - generic [ref=e246]: From
+                  - generic [ref=e247]: ₦100
+            - link "Davide Detty December Music 8 km Davide Detty December 29 Dec 2025 From ₦50,000" [ref=e248] [cursor=pointer]:
+              - /url: /events/ca768ab7-587e-48cc-88bd-d8c97a5a25cb
+              - generic [ref=e249]:
+                - img "Davide Detty December" [ref=e250]
+                - generic [ref=e251]: Music
+                - generic [ref=e252]: 8 km
+              - generic [ref=e253]:
+                - heading "Davide Detty December" [level=3] [ref=e254]
+                - generic [ref=e255]:
+                  - img [ref=e256]
+                  - generic [ref=e258]: 29 Dec 2025
+                - img [ref=e260]
+                - generic [ref=e263]:
+                  - generic [ref=e264]: From
+                  - generic [ref=e265]: ₦50,000
+            - link "Afrobeats Night Live Music 5 km Afrobeats Night Live 2 Jan 2026 From ₦10,000" [ref=e266] [cursor=pointer]:
+              - /url: /events/34e345f4-359c-40e6-ad04-6a3aba6d238a
+              - generic [ref=e267]:
+                - img "Afrobeats Night Live" [ref=e268]
+                - generic [ref=e269]: Music
+                - generic [ref=e270]: 5 km
+              - generic [ref=e271]:
+                - heading "Afrobeats Night Live" [level=3] [ref=e272]
+                - generic [ref=e273]:
+                  - img [ref=e274]
+                  - generic [ref=e276]: 2 Jan 2026
+                - img [ref=e278]
+                - generic [ref=e281]:
+                  - generic [ref=e282]: From
+                  - generic [ref=e283]: ₦10,000
+            - link "Let it Vive Networking 18 km Let it Vive 29 Jan 2026 From ₦20,000" [ref=e284] [cursor=pointer]:
+              - /url: /events/887e452b-ff44-4474-a133-16b69c4dec88
+              - generic [ref=e285]:
+                - img "Let it Vive" [ref=e286]
+                - generic [ref=e287]: Networking
+                - generic [ref=e288]: 18 km
+              - generic [ref=e289]:
+                - heading "Let it Vive" [level=3] [ref=e290]
+                - generic [ref=e291]:
+                  - img [ref=e292]
+                  - generic [ref=e294]: 29 Jan 2026
+                - img [ref=e296]
+                - generic [ref=e299]:
+                  - generic [ref=e300]: From
+                  - generic [ref=e301]: ₦20,000
+        - generic [ref=e303]:
+          - generic [ref=e304]:
+            - generic [ref=e305]: 10K+
+            - generic [ref=e306]: Events
+          - generic [ref=e307]:
+            - generic [ref=e308]: 500K+
+            - generic [ref=e309]: Tickets Sold
+          - generic [ref=e310]:
+            - generic [ref=e311]: 15+
+            - generic [ref=e312]: Countries
+          - generic [ref=e313]:
+            - generic [ref=e314]: "4.9"
+            - generic [ref=e315]: User Rating
+        - generic [ref=e316]:
+          - heading "Why Choose Ticketrack" [level=2] [ref=e317]
+          - generic [ref=e318]:
+            - generic [ref=e319]:
+              - img [ref=e321]
+              - heading "Secure Payments" [level=3] [ref=e323]
+              - paragraph [ref=e324]: Your transactions are protected with bank-level security
+            - generic [ref=e325]:
+              - img [ref=e327]
+              - heading "Instant Delivery" [level=3] [ref=e329]
+              - paragraph [ref=e330]: Get your tickets delivered to your email instantly
+            - generic [ref=e331]:
+              - img [ref=e333]
+              - heading "Easy Refunds" [level=3] [ref=e335]
+              - paragraph [ref=e336]: Hassle-free refund process for eligible events
+            - generic [ref=e337]:
+              - img [ref=e339]
+              - heading "24/7 Support" [level=3] [ref=e341]
+              - paragraph [ref=e342]: Our team is always here to help you
+        - generic [ref=e343]:
+          - generic [ref=e344]: Ad
+          - img "apple" [ref=e346] [cursor=pointer]
+      - generic [ref=e349]:
+        - generic [ref=e350]:
+          - heading "Get the Ticketrack App" [level=2] [ref=e351]
+          - paragraph [ref=e352]: Download our app for a better experience. Get exclusive deals and manage your tickets on the go.
+          - generic [ref=e353]:
+            - link "Download on the App Store" [ref=e354] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e355]
+              - generic [ref=e358]:
+                - generic [ref=e359]: Download on the
+                - generic [ref=e360]: App Store
+            - link "Get it on Google Play" [ref=e361] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e362]
+              - generic [ref=e365]:
+                - generic [ref=e366]: Get it on
+                - generic [ref=e367]: Google Play
+        - generic [ref=e369]: 📱
+      - generic [ref=e371]:
+        - heading "Ready to Host Your Own Event?" [level=2] [ref=e372]
+        - paragraph [ref=e373]: Join thousands of event organizers who trust Ticketrack to sell their tickets
+        - link "Create Your Event" [ref=e374] [cursor=pointer]:
+          - /url: /create-event
+  - contentinfo [ref=e375]:
+    - generic [ref=e376]:
+      - generic [ref=e377]:
+        - generic [ref=e378]:
+          - img "Ticketrack" [ref=e380]
+          - paragraph [ref=e381]: The best platform for discovering and booking events across Africa.
+        - generic [ref=e382]:
+          - heading "Company" [level=4] [ref=e383]
+          - list [ref=e384]:
+            - listitem [ref=e385]:
+              - button "About Us" [ref=e386] [cursor=pointer]
+            - listitem [ref=e387]:
+              - button "Contact" [ref=e388] [cursor=pointer]
+            - listitem [ref=e389]:
+              - button "Careers" [ref=e390] [cursor=pointer]
+        - generic [ref=e391]:
+          - heading "Support" [level=4] [ref=e392]
+          - list [ref=e393]:
+            - listitem [ref=e394]:
+              - button "Help Center" [ref=e395] [cursor=pointer]
+            - listitem [ref=e396]:
+              - button "Terms of Service" [ref=e397] [cursor=pointer]
+            - listitem [ref=e398]:
+              - button "Privacy Policy" [ref=e399] [cursor=pointer]
+        - generic [ref=e400]:
+          - heading "For Organizers" [level=4] [ref=e401]
+          - list [ref=e402]:
+            - listitem [ref=e403]:
+              - button "Create Event" [ref=e404] [cursor=pointer]
+            - listitem [ref=e405]:
+              - button "Pricing" [ref=e406] [cursor=pointer]
+            - listitem [ref=e407]:
+              - button "Resources" [ref=e408] [cursor=pointer]
+      - paragraph [ref=e410]: © 2025 Ticketrack. All rights reserved.
+```

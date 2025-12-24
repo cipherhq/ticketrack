@@ -1,16 +1,15 @@
 import { getFeesByCurrency, DEFAULT_FEES } from '@/config/fees'
-import { getPaymentProvider, getProviderInfo, getPaymentMethods, initStripeCheckout, initPayPalCheckout } from '@/config/payments'
+import { getPaymentProvider, getProviderInfo, initStripeCheckout, initPayPalCheckout } from '@/config/payments'
 import { formatPrice } from '@/config/currencies'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, CheckCircle, Clock } from 'lucide-react'
+import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
@@ -100,7 +99,7 @@ export function WebCheckout() {
   const { user } = useAuth()
   const { isEnabledForCurrency } = useFeatureFlags()
   
-  const { event, selectedTickets, ticketTypes, totalAmount, isFreeEvent } = location.state || {}
+  const { event, selectedTickets, ticketTypes, totalAmount } = location.state || {}
   
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [formData, setFormData] = useState({ 
@@ -143,6 +142,7 @@ export function WebCheckout() {
   }, [user])
 
   useEffect(() => {
+    // Require event and tickets for checkout
     if (!event || !selectedTickets || Object.keys(selectedTickets).length === 0) {
       navigate('/events')
     }
@@ -193,6 +193,7 @@ export function WebCheckout() {
     
     loadPaymentOptions();
   }, [event?.currency]);
+
   useEffect(() => {
     const TIMER_KEY = `checkout_timer_${event?.id}`
     const TIMER_DURATION = 300 // 5 minutes in seconds
@@ -228,10 +229,11 @@ export function WebCheckout() {
       clearInterval(interval)
     }
   }, [event?.id, navigate])
+
   if (!event) return null
 
-  const serviceFee = isFreeEvent ? 0 : Math.round(totalAmount * feeRate)
-  const finalTotal = isFreeEvent ? 0 : totalAmount + serviceFee
+  const serviceFee = Math.round(totalAmount * feeRate)
+  const finalTotal = totalAmount + serviceFee
 
   const ticketSummary = Object.entries(selectedTickets)
     .filter(([_, qty]) => qty > 0)
@@ -241,8 +243,8 @@ export function WebCheckout() {
         id: tierId,
         name: tier?.name || 'Ticket', 
         quantity: qty, 
-        price: isFreeEvent ? 0 : (tier?.price || 0), 
-        subtotal: isFreeEvent ? 0 : (tier?.price || 0) * qty 
+        price: tier?.price || 0, 
+        subtotal: (tier?.price || 0) * qty 
       }
     })
 
@@ -299,7 +301,7 @@ export function WebCheckout() {
   }
 
   // Create tickets in database
-  const createTickets = async (orderId, paymentRef = null) => {
+  const createTickets = async (orderId, paymentRef) => {
     const ticketsToCreate = []
     
     for (const item of ticketSummary) {
@@ -317,8 +319,8 @@ export function WebCheckout() {
           unit_price: item.price,
           total_price: item.price,
           payment_reference: paymentRef,
-          payment_status: isFreeEvent ? 'free' : 'completed',
-          payment_method: isFreeEvent ? 'free' : 'paystack',
+          payment_status: 'completed',
+          payment_method: 'paystack',
           status: 'active'
         })
       }
@@ -333,105 +335,6 @@ export function WebCheckout() {
     }
     
     return data || ticketsToCreate
-  }
-
-  // Handle FREE event registration
-  const handleFreeRegistration = async () => {
-    if (!formData.email || !formData.firstName || !formData.lastName) {
-      setError('Please fill in all required fields')
-      return
-    }
-
-    if (!user) {
-      setError('Please log in to continue')
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      // Reserve tickets first (prevents overselling)
-      await reserveAllTickets()
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          event_id: event.id,
-          order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
-          status: 'completed',
-          subtotal: 0,
-          platform_fee: 0,
-          tax_amount: 0,
-          discount_amount: 0,
-          total_amount: 0,
-          currency: event?.currency,
-          payment_method: 'free',
-          payment_provider: 'none',
-          buyer_email: formData.email,
-          buyer_phone: formData.phone || null,
-          buyer_name: `${formData.firstName} ${formData.lastName}`,
-          paid_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (orderError) {
-        console.error('Order error:', orderError)
-        throw orderError
-      }
-
-      console.log('Order created:', order)
-
-      // Create order items (optional, don't fail if error)
-      const orderItems = ticketSummary.map(ticket => ({
-        order_id: order.id,
-        ticket_type_id: ticket.id,
-        quantity: ticket.quantity,
-        unit_price: 0,
-        subtotal: 0
-      }))
-
-      // const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-      if (false && itemsError) {
-        console.warn('Order items error (non-fatal):', itemsError)
-      }
-
-      // Create tickets
-      const tickets = await createTickets(order.id, 'FREE')
-
-      // Credit promoter for referral (even for free tickets, track the conversion)
-      await creditPromoter(order.id, event.id, 0, totalTicketCount)
-
-      // Send confirmation email
-      sendConfirmationEmail({
-        type: "ticket_purchase",
-        to: formData.email,
-        data: {
-          attendeeName: `${formData.firstName} ${formData.lastName}`,
-          eventTitle: event.title,
-          eventDate: event.start_date,
-          venueName: event.venue_name || "TBA",
-          city: event.city || "",
-          ticketType: ticketSummary.map(t => t.name).join(", "),
-          quantity: totalTicketCount,
-          orderNumber: order.order_number,
-          totalAmount: 0,
-          isFree: true,
-          appUrl: window.location.origin
-        }
-      })
-      // Navigate to success
-      navigate('/payment-success', {
-        state: { order, event, tickets, reference: 'FREE' }
-      })
-    } catch (err) {
-      console.error('Registration error:', err)
-      setError(err.message || 'An error occurred during registration')
-    } finally {
-      setLoading(false)
-    }
   }
 
   // Finalize order after Paystack payment (called from callback)
@@ -493,6 +396,7 @@ export function WebCheckout() {
     try {
       // Reserve tickets first (prevents overselling)
       await reserveAllTickets()
+
       // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -522,20 +426,6 @@ export function WebCheckout() {
       }
 
       console.log('Order created:', order)
-
-      // Create order items (optional)
-      const orderItems = ticketSummary.map(ticket => ({
-        order_id: order.id,
-        ticket_type_id: ticket.id,
-        quantity: ticket.quantity,
-        unit_price: ticket.price,
-        subtotal: ticket.subtotal
-      }))
-
-      // const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-      if (false && itemsError) {
-        console.warn('Order items error (non-fatal):', itemsError)
-      }
 
       const paymentRef = `TKT-${order.id.slice(0, 8).toUpperCase()}-${Date.now()}`
 
@@ -657,8 +547,6 @@ export function WebCheckout() {
     }
   };
 
-  // Handle payment based on provider
-
   // Handle PayPal payment
   const handlePayPalPayment = async () => {
     if (!formData.email || !formData.firstName || !formData.lastName) {
@@ -727,10 +615,10 @@ export function WebCheckout() {
       setLoading(false);
     }
   };
+
+  // Handle payment based on provider
   const handlePayment = () => {
-    if (isFreeEvent) {
-      handleFreeRegistration();
-    } else if (paymentProvider === 'stripe') {
+    if (paymentProvider === 'stripe') {
       handleStripePayment();
     } else if (paymentProvider === 'paypal') {
       handlePayPalPayment();
@@ -750,7 +638,6 @@ export function WebCheckout() {
         <ArrowLeft className="w-4 h-4 mr-2" />Back
       </Button>
 
-
       {/* Countdown Timer */}
       <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -761,9 +648,10 @@ export function WebCheckout() {
           {String(Math.floor(timeLeft / 60)).padStart(2, "0")}:{String(timeLeft % 60).padStart(2, "0")}
         </span>
       </div>
+
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-[#0F0F0F] mb-2">{isFreeEvent ? 'Register' : 'Checkout'}</h1>
-        <p className="text-[#0F0F0F]/60">{isFreeEvent ? 'Complete your free registration' : 'Complete your ticket purchase'}</p>
+        <h1 className="text-4xl font-bold text-[#0F0F0F] mb-2">Checkout</h1>
+        <p className="text-[#0F0F0F]/60">Complete your ticket purchase</p>
       </div>
 
       {error && (
@@ -797,54 +685,34 @@ export function WebCheckout() {
             </CardContent>
           </Card>
 
-          {/* Only show payment method for paid events */}
-          {!isFreeEvent && (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
-              <CardHeader><CardTitle className="text-[#0F0F0F]">Payment Method</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <div className={`grid gap-3 ${availablePaymentMethods.length === 1 ? 'grid-cols-1' : availablePaymentMethods.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                  {availablePaymentMethods.map(({ id, label }) => {
-                    const Icon = id === 'card' ? CreditCard : id === 'bank' ? Building2 : id === 'ussd' ? Smartphone : id === 'paypal' ? CreditCard : CreditCard;
-                    return (
-                      <button key={id} type="button" onClick={() => setPaymentMethod(id)} className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${paymentMethod === id ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'}`}>
-                        <Icon className={`w-6 h-6 ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`} />
-                        <span className={`text-sm ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`}>{label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardHeader><CardTitle className="text-[#0F0F0F]">Payment Method</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className={`grid gap-3 ${availablePaymentMethods.length === 1 ? 'grid-cols-1' : availablePaymentMethods.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                {availablePaymentMethods.map(({ id, label }) => {
+                  const Icon = id === 'card' ? CreditCard : id === 'bank' ? Building2 : id === 'ussd' ? Smartphone : CreditCard;
+                  return (
+                    <button key={id} type="button" onClick={() => setPaymentMethod(id)} className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${paymentMethod === id ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'}`}>
+                      <Icon className={`w-6 h-6 ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`} />
+                      <span className={`text-sm ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`}>{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Lock className="w-4 h-4 text-[#2969FF]" />
-                    <p className="font-medium text-[#0F0F0F]">{getProviderInfo(event?.currency).description}</p>
-                  </div>
-                  <p className="text-sm text-[#0F0F0F]/60">
-                    {paymentMethod === 'card' && (paymentProvider === 'stripe' ? 'Pay securely with Card, Apple Pay, or Google Pay.' : 'You will be redirected to enter your card details securely.')}
-                    {paymentMethod === 'bank' && 'You will receive bank transfer details to complete payment.'}
-                    {paymentMethod === 'ussd' && 'You will receive a USSD code to dial from your phone.'}
-                  </p>
+              <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="w-4 h-4 text-[#2969FF]" />
+                  <p className="font-medium text-[#0F0F0F]">{getProviderInfo(event?.currency).description}</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Show free event info */}
-          {isFreeEvent && (
-            <Card className="border-green-200 bg-green-50/50 rounded-2xl">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[#0F0F0F]">Free Event</h3>
-                    <p className="text-sm text-[#0F0F0F]/60">No payment required - just fill in your details to register</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                <p className="text-sm text-[#0F0F0F]/60">
+                  {paymentMethod === 'card' && (paymentProvider === 'stripe' ? 'Pay securely with Card, Apple Pay, or Google Pay.' : 'You will be redirected to enter your card details securely.')}
+                  {paymentMethod === 'bank' && 'You will receive bank transfer details to complete payment.'}
+                  {paymentMethod === 'ussd' && 'You will receive a USSD code to dial from your phone.'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="lg:col-span-1">
@@ -862,19 +730,13 @@ export function WebCheckout() {
                 </div>
               </div>
 
-              {isFreeEvent && (
-                <Badge className="bg-green-100 text-green-700 border-0 w-full justify-center py-2">
-                  Free Event
-                </Badge>
-              )}
-
               <Separator />
 
               <div className="space-y-3">
                 {ticketSummary.map((ticket, index) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span className="text-[#0F0F0F]/70">{ticket.name} × {ticket.quantity}</span>
-                    <span className="text-[#0F0F0F]">{isFreeEvent ? 'Free' : formatPrice(ticket.subtotal, event?.currency)}</span>
+                    <span className="text-[#0F0F0F]">{formatPrice(ticket.subtotal, event?.currency)}</span>
                   </div>
                 ))}
               </div>
@@ -883,37 +745,33 @@ export function WebCheckout() {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#0F0F0F]/60">Subtotal ({totalTicketCount} tickets)</span>
-                  <span className="text-[#0F0F0F]">{isFreeEvent ? 'Free' : formatPrice(totalAmount, event?.currency)}</span>
+                  <span className="text-[#0F0F0F]/60">Subtotal ({totalTicketCount} {totalTicketCount === 1 ? 'ticket' : 'tickets'})</span>
+                  <span className="text-[#0F0F0F]">{formatPrice(totalAmount, event?.currency)}</span>
                 </div>
-                {!isFreeEvent && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#0F0F0F]/60">Service Fee</span>
-                    <span className="text-[#0F0F0F]">{formatPrice(serviceFee, event?.currency)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#0F0F0F]/60">Service Fee</span>
+                  <span className="text-[#0F0F0F]">{formatPrice(serviceFee, event?.currency)}</span>
+                </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-[#0F0F0F]">Total</span>
-                  <span className="text-[#2969FF]">{isFreeEvent ? 'Free' : formatPrice(finalTotal, event?.currency)}</span>
+                  <span className="text-[#2969FF]">{formatPrice(finalTotal, event?.currency)}</span>
                 </div>
               </div>
 
               <Button 
-                className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6 text-lg" 
+                className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6 text-lg"
                 onClick={handlePayment} 
                 disabled={loading || !formData.email || !formData.firstName || !formData.lastName}
               >
                 {loading ? (
                   <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</>
-                ) : isFreeEvent ? (
-                  <><CheckCircle className="w-5 h-5 mr-2" />Complete Registration</>
                 ) : (
                   <><Lock className="w-5 h-5 mr-2" />Pay {formatPrice(finalTotal, event?.currency)}</>
                 )}
               </Button>
 
-              <p className="text-xs text-center text-[#0F0F0F]/40">By {isFreeEvent ? 'registering' : 'purchasing'}, you agree to our Terms of Service</p>
+              <p className="text-xs text-center text-[#0F0F0F]/40">By purchasing, you agree to our Terms of Service</p>
             </CardContent>
           </Card>
         </div>

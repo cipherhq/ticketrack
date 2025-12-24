@@ -155,6 +155,9 @@ export const formatMultiCurrencyCompact = (amountsByCurrency) => {
 // Cache for user's default currency
 let userDefaultCurrency = null;
 
+// Cache for country currencies (country_code -> currency)
+let countryCurrencyCache = {};
+
 // Get user's default currency from their country
 export const getUserDefaultCurrency = async (supabase, userId) => {
   if (userDefaultCurrency) return userDefaultCurrency;
@@ -187,7 +190,80 @@ export const getUserDefaultCurrency = async (supabase, userId) => {
   return null; // Let component decide fallback
 };
 
+// Get currency from country code (e.g., 'NG' -> 'NGN', 'GH' -> 'GHS')
+// This is database-driven and cached for performance
+export const getCurrencyFromCountryCode = async (supabase, countryCode) => {
+  if (!countryCode) return null;
+  
+  // Check cache first
+  if (countryCurrencyCache[countryCode]) {
+    return countryCurrencyCache[countryCode];
+  }
+  
+  try {
+    const { data: country, error } = await supabase
+      .from('countries')
+      .select('default_currency')
+      .eq('code', countryCode)
+      .single();
+    
+    if (error) throw error;
+    
+    if (country?.default_currency) {
+      // Cache the result
+      countryCurrencyCache[countryCode] = country.default_currency;
+      return country.default_currency;
+    }
+  } catch (err) {
+    console.error('Error getting currency from country code:', err);
+  }
+  
+  return null;
+};
+
+// Synchronous version using pre-loaded countries data
+// Use this when you already have countries data loaded
+export const getCurrencyFromCountryCodeSync = (countryCode, countriesData) => {
+  if (!countryCode || !countriesData) return null;
+  
+  const country = countriesData.find(c => c.code === countryCode);
+  return country?.default_currency || null;
+};
+
+// Load all country currencies into cache (call once on app init or admin pages)
+export const loadCountryCurrencies = async (supabase) => {
+  try {
+    const { data: countries, error } = await supabase
+      .from('countries')
+      .select('code, default_currency');
+    
+    if (error) throw error;
+    
+    countries?.forEach(country => {
+      if (country.code && country.default_currency) {
+        countryCurrencyCache[country.code] = country.default_currency;
+      }
+    });
+    
+    return countryCurrencyCache;
+  } catch (err) {
+    console.error('Error loading country currencies:', err);
+    return {};
+  }
+};
+
+// Get cached currency (use after loadCountryCurrencies has been called)
+export const getCachedCurrencyFromCountryCode = (countryCode) => {
+  return countryCurrencyCache[countryCode] || null;
+};
+
 // Clear cache on logout
 export const clearUserCurrencyCache = () => {
   userDefaultCurrency = null;
+};
+
+// Clear all caches
+export const clearAllCurrencyCaches = () => {
+  userDefaultCurrency = null;
+  countryCurrencyCache = {};
 };

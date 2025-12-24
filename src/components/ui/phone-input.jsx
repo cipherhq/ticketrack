@@ -24,10 +24,29 @@ const COUNTRIES = [
   { code: 'IN', name: 'India', dial: '+91', flag: '🇮🇳' },
 ]
 
-export function PhoneInput({ value, onChange, className = '', required = false }) {
+// Export countries for use elsewhere
+export { COUNTRIES }
+
+export function PhoneInput({ 
+  value, 
+  onChange, 
+  onCountryChange,  // New: callback when country changes
+  defaultCountry = 'NG',  // New: default country code
+  className = '', 
+  required = false 
+}) {
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
+  const [selectedCountry, setSelectedCountry] = useState(
+    COUNTRIES.find(c => c.code === defaultCountry) || COUNTRIES[0]
+  )
   const [phoneNumber, setPhoneNumber] = useState('')
+
+  // Notify parent of initial country on mount
+  useEffect(() => {
+    if (onCountryChange) {
+      onCountryChange(selectedCountry.code)
+    }
+  }, [])
 
   useEffect(() => {
     // Parse existing value if provided
@@ -43,6 +62,12 @@ export function PhoneInput({ value, onChange, className = '', required = false }
   const handleCountrySelect = (country) => {
     setSelectedCountry(country)
     setIsOpen(false)
+    
+    // Notify parent of country change
+    if (onCountryChange) {
+      onCountryChange(country.code)
+    }
+    
     if (phoneNumber) {
       onChange(country.dial + phoneNumber.replace(/\D/g, ''))
     }

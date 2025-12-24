@@ -1,4 +1,16 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+}
 import { AuthProvider } from './contexts/AuthContext';
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import { CartProvider } from './contexts/CartContext';
@@ -11,6 +23,7 @@ import { WebHome } from './pages/WebHome';
 import { WebEventBrowse } from './pages/WebEventBrowse';
 import { WebEventDetails } from './pages/WebEventDetails';
 import { WebCheckout } from './pages/WebCheckout';
+import { WebFreeRSVP } from './pages/WebFreeRSVP';
 import { WebPaymentSuccess } from './pages/WebPaymentSuccess';
 import { WebTickets } from './pages/WebTickets';
 import { WebSearch } from './pages/WebSearch';
@@ -20,7 +33,8 @@ import { WebContact } from './pages/WebContact';
 import { WebHelp } from './pages/WebHelp';
 import { WebPrivacy } from './pages/WebPrivacy';
 import { WebTerms } from './pages/WebTerms';
-import { WebCreateEvent } from './pages/WebCreateEvent';
+import { CreateEvent } from './pages/organizer/CreateEvent';
+import { OrganizerProvider } from './contexts/OrganizerContext';
 import { AttendeeProfile } from './pages/AttendeeProfile';
 import { OrganizerPublicProfile } from './pages/OrganizerPublicProfile';
 
@@ -44,6 +58,7 @@ function App() {
       <CartProvider>
         <ImpersonationProvider>
           <Router>
+            <ScrollToTop />
             <ImpersonationBanner />
             <Routes>
               {/* Organizer Dashboard Routes */}
@@ -56,7 +71,7 @@ function App() {
               <Route path="/promoter/*" element={<PromoterRoutes />} />
 
               {/* Create Event */}
-              <Route path="/create-event" element={<WebCreateEvent />} />
+              <Route path="/create-event" element={<OrganizerProvider><CreateEvent /></OrganizerProvider>} />
 
               {/* Auth Routes */}
               <Route path="/login" element={<WebAuth />} />
@@ -72,6 +87,7 @@ function App() {
                 <Route path="/event/:id" element={<WebEventDetails />} />
                 <Route path="/e/:id" element={<WebEventDetails />} />
                 <Route path="/checkout" element={<WebCheckout />} />
+                <Route path="/free-rsvp" element={<WebFreeRSVP />} />
                 <Route path="/payment-success" element={<WebPaymentSuccess />} />
                 <Route path="/tickets" element={<WebTickets />} />
                 <Route path="/search" element={<WebSearch />} />

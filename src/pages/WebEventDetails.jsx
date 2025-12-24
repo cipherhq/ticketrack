@@ -46,16 +46,8 @@ export function WebEventDetails() {
         
         if (ticketsError) throw ticketsError
         
-        // If no ticket types, create mock ones for demo
-        if (!tickets || tickets.length === 0) {
-          setTicketTypes([
-            { id: 'early', name: 'Early Bird', price: 15000, quantity_available: 45, quantity_total: 100 },
-            { id: 'regular', name: 'Regular', price: 25000, quantity_available: 189, quantity_total: 300 },
-            { id: 'vip', name: 'VIP', price: 50000, quantity_available: 78, quantity_total: 100 },
-          ])
-        } else {
-          setTicketTypes(tickets)
-        }
+        // Set ticket types (empty array if none found - free events won't have tickets)
+        setTicketTypes(tickets || [])
       } catch (err) {
         console.error('Error loading event:', err)
         setError('Event not found')
@@ -80,6 +72,7 @@ export function WebEventDetails() {
     }
     loadFees();
   }, [event?.currency]);
+
   // Track referral code from URL
   useEffect(() => {
     const refCode = searchParams.get('ref')
@@ -129,24 +122,38 @@ export function WebEventDetails() {
   }
 
   const totalTickets = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0)
-  const isFreeEvent = ticketTypes.length > 0 && ticketTypes.every(t => t.price === 0)
+  
+  // Free event detection - use DB flag or fallback to checking ticket prices
+  const isFreeEvent = event?.is_free || (ticketTypes.length === 0) || (ticketTypes.length > 0 && ticketTypes.every(t => t.price === 0))
+  
   const totalAmount = Object.entries(selectedTickets).reduce((sum, [tierId, qty]) => {
     const tier = ticketTypes.find(t => t.id === tierId)
     return sum + (tier?.price || 0) * qty
   }, 0)
 
+  // Handle checkout/RSVP routing
   const handleCheckout = () => {
     if (!user) {
       navigate("/login", { state: { from: location.pathname, selectedTickets } })
       return
     }
+    
+    // Free event - go to free RSVP page
+    if (isFreeEvent) {
+      navigate('/free-rsvp', { 
+        state: { event } 
+      })
+      return
+    }
+    
+    // Paid event - need tickets selected, go to checkout
     if (totalTickets > 0) {
       navigate('/checkout', { 
         state: { 
           event,
           selectedTickets, 
           ticketTypes,
-          totalAmount 
+          totalAmount
         } 
       })
     }
@@ -572,14 +579,28 @@ export function WebEventDetails() {
           <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-24">
             <CardContent className="p-6 space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Select Tickets</h2>
+                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">
+                  {isFreeEvent ? 'Register' : 'Select Tickets'}
+                </h2>
                 
                 {isFreeEvent ? (
-                  <div className="text-center py-8">
-                    <Badge className="bg-green-100 text-green-700 border-0 text-lg px-4 py-2 mb-4">
-                      Free Event
-                    </Badge>
-                    <p className="text-[#0F0F0F]/60">This event is free to attend!</p>
+                  <div className="space-y-4">
+                    {/* Free Event Badge */}
+                    <div className="text-center py-4">
+                      <Badge className="bg-green-100 text-green-700 border-0 text-lg px-4 py-2">
+                        🎉 Free Event
+                      </Badge>
+                      <p className="text-[#0F0F0F]/60 mt-2">This event is free to attend!</p>
+                    </div>
+                    
+                    {/* Donation hint if available */}
+                    {event.accepts_donations && event.donation_amounts?.length > 0 && (
+                      <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                        <p className="text-sm text-green-700 text-center">
+                          💝 Optional donations available on the next page
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -609,16 +630,24 @@ export function WebEventDetails() {
                               <Badge className="bg-red-100 text-red-600 border-red-200 rounded-lg">
                                 Sold Out
                               </Badge>
-                            ) : (
-                              <Badge 
-                                variant="outline" 
-                                className={`border-[#0F0F0F]/20 rounded-lg ${
-                                  remaining < 20 ? 'text-orange-600 border-orange-300' : 'text-[#0F0F0F]/60'
-                                }`}
-                              >
-                                {remaining} left
-                              </Badge>
-                            )}
+                            ) : (() => {
+                              const total = tier.quantity_available || tier.quantity_total || 100;
+                              const percentRemaining = (remaining / total) * 100;
+                              const isLowStock = remaining <= 10 || percentRemaining <= 20;
+                              
+                              return (
+                                <Badge 
+                                  variant="outline" 
+                                  className={`rounded-lg ${
+                                    isLowStock 
+                                      ? 'bg-amber-50 text-amber-600 border-amber-300' 
+                                      : 'border-[#0F0F0F]/20 text-[#0F0F0F]/60'
+                                  }`}
+                                >
+                                  {isLowStock ? '🔥 Few left' : `${remaining} left`}
+                                </Badge>
+                              );
+                            })()}
                           </div>
                           {!isSoldOut && (
                             <div className="flex items-center justify-between">
@@ -658,7 +687,8 @@ export function WebEventDetails() {
                 )}
               </div>
 
-              {totalTickets > 0 && (
+              {/* Paid event totals */}
+              {!isFreeEvent && totalTickets > 0 && (
                 <>
                   <Separator />
                   
@@ -674,22 +704,33 @@ export function WebEventDetails() {
                     <Separator />
                     <div className="flex justify-between font-bold text-lg text-[#0F0F0F]">
                       <span>Total</span>
-                      <span>{formatPrice(Math.round(totalAmount * 1.05), event?.currency)}</span>
+                      <span>{formatPrice(Math.round(totalAmount * (1 + feeRate)), event?.currency)}</span>
                     </div>
                   </div>
                 </>
               )}
 
-              <Button 
-                className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6 text-lg"
-                onClick={handleCheckout}
-                disabled={totalTickets === 0 && !isFreeEvent}
-              >
-                {isFreeEvent ? 'Register Now' : totalTickets > 0 ? 'Proceed to Checkout' : 'Select Tickets'}
-              </Button>
+              {/* Action Button */}
+              {isFreeEvent ? (
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-6 text-lg"
+                  onClick={handleCheckout}
+                >
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  RSVP - Free
+                </Button>
+              ) : (
+                <Button 
+                  className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6 text-lg"
+                  onClick={handleCheckout}
+                  disabled={totalTickets === 0}
+                >
+                  {totalTickets > 0 ? 'Proceed to Checkout' : 'Select Tickets'}
+                </Button>
+              )}
 
               <p className="text-xs text-center text-[#0F0F0F]/40">
-                By purchasing, you agree to our Terms of Service
+                By {isFreeEvent ? 'registering' : 'purchasing'}, you agree to our Terms of Service
               </p>
             </CardContent>
           </Card>

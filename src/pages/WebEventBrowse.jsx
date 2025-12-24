@@ -1,129 +1,223 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, Calendar, MapPin, SlidersHorizontal, ArrowRight } from 'lucide-react'
+import { Search, Calendar, MapPin, SlidersHorizontal, ChevronDown, X, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
-import { getEvents, getCategories, getCities } from '@/services/events'
+import { getCategories } from '@/services/events'
+import { supabase } from '@/lib/supabase'
+
+const dateOptions = [
+  { value: 'all', label: 'All Dates' },
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
+]
+
+const sortOptions = [
+  { value: 'date', label: 'Date (Soonest)' },
+  { value: 'price-low', label: 'Price: Low to High' },
+  { value: 'price-high', label: 'Price: High to Low' },
+  { value: 'popular', label: 'Most Popular' },
+]
 
 export function WebEventBrowse() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   
-  const [events, setEvents] = useState([])
-  const [categories, setCategories] = useState([])
-  const [cities, setCities] = useState([])
-  const [loading, setLoading] = useState(true)
-  
+  // Search bar state
+  const [location, setLocation] = useState(searchParams.get('location') || '')
+  const [dateFilter, setDateFilter] = useState(searchParams.get('date') || 'all')
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '')
-  const [sortBy, setSortBy] = useState('date')
+  const [showDateDropdown, setShowDateDropdown] = useState(false)
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
+  
+  // Filter state
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'date')
   const [selectedCategories, setSelectedCategories] = useState(
     searchParams.get('category') ? [searchParams.get('category')] : []
   )
-  const [selectedCity, setSelectedCity] = useState(searchParams.get('city') || '')
   const [minPrice, setMinPrice] = useState("")
   const [maxPrice, setMaxPrice] = useState("")
+  
+  // Data state
+  const [events, setEvents] = useState([])
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Load initial data
+  // Load categories on mount
   useEffect(() => {
-    async function loadData() {
+    async function loadCategories() {
       try {
-        const [categoriesData, citiesData] = await Promise.all([
-          getCategories(),
-          getCities()
-        ])
+        const categoriesData = await getCategories()
         setCategories(categoriesData)
-        setCities(citiesData)
       } catch (error) {
-        console.error('Error loading filter data:', error)
+        console.error('Error loading categories:', error)
       }
     }
-    loadData()
+    loadCategories()
   }, [])
 
-  // Load events based on filters
+  // Load events when filters change
   useEffect(() => {
-    async function loadEvents() {
-      setLoading(true)
-      try {
-        const categoryId = selectedCategories.length === 1 
-          ? categories.find(c => c.slug === selectedCategories[0])?.id 
-          : null
-        
-        const eventsData = await getEvents({
-          search: searchTerm || null,
-          category: categoryId,
-          city: selectedCity || null,
-          limit: 20
-        })
-        
-        // Sort events
-        let sortedEvents = [...eventsData]
-        if (sortBy === 'date') {
-          sortedEvents.sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
-        } else if (sortBy === 'price-low') {
-          sortedEvents.sort((a, b) => (a.is_free ? 0 : 1) - (b.is_free ? 0 : 1))
-        } else if (sortBy === 'price-high') {
-          sortedEvents.sort((a, b) => (b.is_free ? 0 : 1) - (a.is_free ? 0 : 1))
-        } else if (sortBy === 'popular') {
-          sortedEvents.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
-        }
-        
-        setEvents(sortedEvents)
-      } catch (error) {
-        console.error('Error loading events:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
+    loadEvents()
+  }, [])
+
+  const getDateRange = () => {
+    const now = new Date()
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     
-    if (categories.length > 0) {
-      loadEvents()
+    switch (dateFilter) {
+      case 'today':
+        const endOfDay = new Date(startOfDay)
+        endOfDay.setDate(endOfDay.getDate() + 1)
+        return { start: startOfDay.toISOString(), end: endOfDay.toISOString() }
+      case 'week':
+        const endOfWeek = new Date(startOfDay)
+        endOfWeek.setDate(endOfWeek.getDate() + 7)
+        return { start: now.toISOString(), end: endOfWeek.toISOString() }
+      case 'month':
+        const endOfMonth = new Date(startOfDay)
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1)
+        return { start: now.toISOString(), end: endOfMonth.toISOString() }
+      default:
+        return { start: now.toISOString(), end: null }
     }
-  }, [searchTerm, selectedCategories, selectedCity, sortBy, categories])
+  }
+
+  const loadEvents = async () => {
+    setLoading(true)
+    
+    try {
+      const { start, end } = getDateRange()
+      
+      let query = supabase
+        .from('events')
+        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, ticket_types (price)')
+        .eq('status', 'published')
+        .gte('start_date', start)
+
+      // Date filter
+      if (end) {
+        query = query.lte('start_date', end)
+      }
+
+      // Location filter (search in city or venue)
+      if (location.trim()) {
+        const locationTerm = `%${location.trim()}%`
+        query = query.or(`city.ilike.${locationTerm},venue_name.ilike.${locationTerm}`)
+      }
+
+      // Text search
+      if (searchTerm.trim()) {
+        const term = `%${searchTerm.trim()}%`
+        query = query.or(`title.ilike.${term},description.ilike.${term},category.ilike.${term}`)
+      }
+
+      // Category filter
+      if (selectedCategories.length > 0) {
+        const cat = categories.find(c => c.slug === selectedCategories[0])
+        if (cat) {
+          query = query.eq('category', cat.name)
+        }
+      }
+
+      query = query.order('start_date', { ascending: true }).limit(50)
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      // Calculate min price for each event
+      let results = (data || []).map(event => ({
+        ...event,
+        min_price: event.ticket_types?.length > 0
+          ? Math.min(...event.ticket_types.map(t => parseFloat(t.price) || 0))
+          : 0
+      }))
+
+      // Client-side sorting
+      if (sortBy === 'price-low') {
+        results.sort((a, b) => a.min_price - b.min_price)
+      } else if (sortBy === 'price-high') {
+        results.sort((a, b) => b.min_price - a.min_price)
+      } else if (sortBy === 'popular') {
+        results.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
+      }
+
+      // Price range filter (client-side)
+      if (minPrice || maxPrice) {
+        results = results.filter(event => {
+          const price = event.min_price
+          if (minPrice && price < parseFloat(minPrice)) return false
+          if (maxPrice && price > parseFloat(maxPrice)) return false
+          return true
+        })
+      }
+
+      setEvents(results)
+    } catch (error) {
+      console.error('Error loading events:', error)
+      setEvents([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSearch = () => {
+    // Update URL params
+    const params = new URLSearchParams()
+    if (searchTerm) params.set('q', searchTerm)
+    if (location) params.set('location', location)
+    if (dateFilter !== 'all') params.set('date', dateFilter)
+    if (sortBy !== 'date') params.set('sort', sortBy)
+    if (selectedCategories.length === 1) params.set('category', selectedCategories[0])
+    setSearchParams(params)
+    
+    loadEvents()
+  }
 
   const handleCategoryToggle = (categorySlug) => {
     setSelectedCategories(prev => 
       prev.includes(categorySlug) 
         ? prev.filter(c => c !== categorySlug) 
-        : [...prev, categorySlug]
+        : [categorySlug] // Only allow one category
     )
   }
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    // Update URL params
-    const params = new URLSearchParams()
-    if (searchTerm) params.set('q', searchTerm)
-    if (selectedCategories.length === 1) params.set('category', selectedCategories[0])
-    if (selectedCity) params.set('city', selectedCity)
-    setSearchParams(params)
+  const clearFilters = () => {
+    setSelectedCategories([])
+    setMinPrice("")
+    setMaxPrice("")
+    setSearchTerm('')
+    setLocation('')
+    setDateFilter('all')
+    setSortBy('date')
+    setSearchParams({})
+    loadEvents()
   }
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
+    return new Date(dateString).toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric',
       year: 'numeric'
     })
   }
 
-
-  const clearFilters = () => {
-    setSelectedCategories([])
-    setSelectedCity('')
-    setMinPrice("")
-    setMaxPrice("")
-    setSearchTerm('')
-    setSearchParams({})
-  }
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowDateDropdown(false)
+      setShowSortDropdown(false)
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
 
   const FilterPanel = () => (
     <div className="space-y-6">
@@ -147,22 +241,6 @@ export function WebEventBrowse() {
         </div>
       </div>
 
-      {/* Cities */}
-      <div className="pt-6 border-t border-[#0F0F0F]/10">
-        <h3 className="font-medium text-[#0F0F0F] mb-4">City</h3>
-        <div className="space-y-3">
-          {cities.map(city => (
-            <div key={city} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`city-${city}`} 
-                checked={selectedCity === city} 
-                onCheckedChange={() => setSelectedCity(selectedCity === city ? '' : city)} 
-              />
-              <Label htmlFor={`city-${city}`} className="cursor-pointer">{city}</Label>
-            </div>
-          ))}
-        </div>
-      </div>
       {/* Price Range */}
       <div className="pt-6 border-t border-[#0F0F0F]/10">
         <h3 className="font-medium text-[#0F0F0F] mb-4">Price Range</h3>
@@ -198,8 +276,14 @@ export function WebEventBrowse() {
         </div>
       </div>
 
-      {/* Clear Filters */}
-      <div className="pt-6 border-t border-[#0F0F0F]/10">
+      {/* Apply & Clear Buttons */}
+      <div className="pt-6 border-t border-[#0F0F0F]/10 space-y-3">
+        <Button 
+          className="w-full rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90 text-white" 
+          onClick={handleSearch}
+        >
+          Apply Filters
+        </Button>
         <Button 
           variant="outline" 
           className="w-full rounded-xl" 
@@ -212,178 +296,292 @@ export function WebEventBrowse() {
   )
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-[#0F0F0F] mb-2">Browse Events</h1>
-        <p className="text-[#0F0F0F]/60">Discover amazing events happening near you</p>
+    <div className="min-h-screen bg-[#F4F6FA]">
+      {/* Search Header */}
+      <div className="bg-[#2969FF] py-6">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="bg-white rounded-2xl p-2 flex flex-col md:flex-row gap-2">
+            {/* Location Input */}
+            <div className="flex-1 relative">
+              <div className="flex items-center gap-2 px-4 py-3 border border-[#0F0F0F]/10 rounded-xl">
+                <MapPin className="w-5 h-5 text-[#2969FF]" />
+                <div className="flex-1">
+                  <div className="text-xs text-[#0F0F0F]/60 uppercase font-medium">Location</div>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder="City or Venue"
+                    className="w-full outline-none text-sm text-[#0F0F0F] placeholder-[#0F0F0F]/40"
+                  />
+                </div>
+                {location && (
+                  <button onClick={() => setLocation('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F]">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Date Filter */}
+            <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
+              <div 
+                className="flex items-center gap-2 px-4 py-3 border border-[#0F0F0F]/10 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
+                onClick={() => setShowDateDropdown(!showDateDropdown)}
+              >
+                <Calendar className="w-5 h-5 text-[#2969FF]" />
+                <div className="flex-1">
+                  <div className="text-xs text-[#0F0F0F]/60 uppercase font-medium">Dates</div>
+                  <div className="text-sm text-[#0F0F0F]">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
+                </div>
+                <ChevronDown className="w-4 h-4 text-[#0F0F0F]/40" />
+              </div>
+              {showDateDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#0F0F0F]/10 rounded-xl shadow-lg z-20">
+                  {dateOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
+                      className={`w-full text-left px-4 py-3 hover:bg-[#F4F6FA] text-sm ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Search Input */}
+            <div className="flex-[2] relative">
+              <div className="flex items-center gap-2 px-4 py-3 border border-[#0F0F0F]/10 rounded-xl">
+                <Search className="w-5 h-5 text-[#2969FF]" />
+                <div className="flex-1">
+                  <div className="text-xs text-[#0F0F0F]/60 uppercase font-medium">Search</div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    placeholder="Artist, Event or Venue"
+                    className="w-full outline-none text-sm"
+                  />
+                </div>
+                {searchTerm && (
+                  <button onClick={() => setSearchTerm('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F]">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Search Button */}
+            <Button 
+              onClick={handleSearch}
+              className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-8 py-6"
+            >
+              Search
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Search and Sort */}
-      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-          <Input 
-            placeholder="Search events..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
-            className="pl-10 rounded-xl border-[#0F0F0F]/10" 
-          />
-        </div>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="md:w-48 rounded-xl border-[#0F0F0F]/10">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="date">Date</SelectItem>
-            <SelectItem value="price-low">Price: Low to High</SelectItem>
-            <SelectItem value="price-high">Price: High to Low</SelectItem>
-            <SelectItem value="popular">Most Popular</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        {/* Mobile Filter Button */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="md:hidden rounded-xl border-[#0F0F0F]/10">
-              <SlidersHorizontal className="w-5 h-5 mr-2" />
-              Filters
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-80">
-            <SheetHeader>
-              <SheetTitle>Filters</SheetTitle>
-            </SheetHeader>
-            <div className="mt-6">
-              <FilterPanel />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </form>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Results Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-[#0F0F0F]">
+              {searchTerm || location ? 'Search Results' : 'Browse Events'}
+            </h1>
+            <p className="text-[#0F0F0F]/60">
+              {loading ? 'Loading...' : `${events.length} events found`}
+            </p>
+          </div>
+          
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-3">
+            {/* Mobile Filter Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="md:hidden rounded-xl border-[#0F0F0F]/10">
+                  <SlidersHorizontal className="w-5 h-5 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80">
+                <SheetHeader>
+                  <SheetTitle>Filters</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">
+                  <FilterPanel />
+                </div>
+              </SheetContent>
+            </Sheet>
 
-      {/* Main Content */}
-      <div className="flex gap-8">
-        {/* Desktop Sidebar Filters */}
-        <div className="hidden md:block w-64 flex-shrink-0">
-          <div className="sticky top-24">
-            <h2 className="text-lg font-semibold text-[#0F0F0F] mb-4">Filters</h2>
-            <FilterPanel />
+            <div className="relative hidden md:block" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setShowSortDropdown(!showSortDropdown)}
+                className="flex items-center gap-2 px-4 py-2 border border-[#0F0F0F]/10 rounded-xl bg-white"
+              >
+                <SlidersHorizontal className="w-4 h-4 text-[#0F0F0F]/60" />
+                <span className="text-sm">Sort: {sortOptions.find(s => s.value === sortBy)?.label}</span>
+                <ChevronDown className="w-4 h-4 text-[#0F0F0F]/40" />
+              </button>
+              {showSortDropdown && (
+                <div className="absolute top-full right-0 mt-1 bg-white border border-[#0F0F0F]/10 rounded-xl shadow-lg z-20 min-w-[200px]">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => { setSortBy(option.value); setShowSortDropdown(false); handleSearch(); }}
+                      className={`w-full text-left px-4 py-3 hover:bg-[#F4F6FA] text-sm ${sortBy === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Events Grid */}
-        <div className="flex-1">
-          {/* Active Filters */}
-          {(selectedCategories.length > 0 || selectedCity) && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              {selectedCategories.map(catSlug => {
-                const cat = categories.find(c => c.slug === catSlug)
-                return cat ? (
-                  <Badge 
-                    key={catSlug}
-                    variant="secondary" 
-                    className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg px-3 py-1 cursor-pointer"
-                    onClick={() => handleCategoryToggle(catSlug)}
-                  >
-                    {cat.icon} {cat.name} ✕
-                  </Badge>
-                ) : null
-              })}
-              {selectedCity && (
-                <Badge 
-                  variant="secondary" 
-                  className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg px-3 py-1 cursor-pointer"
-                  onClick={() => setSelectedCity('')}
-                >
-                  📍 {selectedCity} ✕
-                </Badge>
-              )}
+        {/* Main Content */}
+        <div className="flex gap-8">
+          {/* Desktop Sidebar Filters */}
+          <div className="hidden md:block w-64 flex-shrink-0">
+            <div className="sticky top-24 bg-white rounded-2xl p-6 border border-[#0F0F0F]/10">
+              <h2 className="text-lg font-semibold text-[#0F0F0F] mb-4">Filters</h2>
+              <FilterPanel />
             </div>
-          )}
-
-          {/* Results Count */}
-          <p className="text-[#0F0F0F]/60 mb-6">
-            {loading ? 'Loading...' : `${events.length} events found`}
-          </p>
+          </div>
 
           {/* Events Grid */}
-          {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array(6).fill(0).map((_, i) => (
-                <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-80" />
-              ))}
-            </div>
-          ) : events.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">🎫</div>
-              <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No events found</h3>
-              <p className="text-[#0F0F0F]/60 mb-6">Try adjusting your filters or search terms</p>
-              <Button onClick={clearFilters} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
-                Clear Filters
-              </Button>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.map((event) => (
-                <Card 
-                  key={event.id}
-                  className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group"
-                  onClick={() => navigate(`/event/${event.slug}`)}
-                >
-                  <div className="relative h-48 bg-gray-100">
-                    <img 
-                      src={event.image_url} 
-                      alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => { e.target.style.display = 'none' }}
-                    />
-                    <Badge className="absolute top-4 left-4 bg-white text-[#0F0F0F] border-0 font-medium shadow-sm">
-                      {event.category?.name || 'Event'}
+          <div className="flex-1">
+            {/* Active Filters */}
+            {(selectedCategories.length > 0 || location || searchTerm || dateFilter !== 'all') && (
+              <div className="flex flex-wrap gap-2 mb-6">
+                {selectedCategories.map(catSlug => {
+                  const cat = categories.find(c => c.slug === catSlug)
+                  return cat ? (
+                    <Badge 
+                      key={catSlug}
+                      variant="secondary" 
+                      className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg px-3 py-1 cursor-pointer"
+                      onClick={() => handleCategoryToggle(catSlug)}
+                    >
+                      {cat.icon} {cat.name} ✕
                     </Badge>
-                    {event.is_free && (
-                      <Badge className="absolute top-4 right-4 bg-green-500 text-white border-0">
-                        Free
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <CardContent className="p-5">
-                    <h3 className="font-semibold text-lg text-[#0F0F0F] mb-3 line-clamp-1">
-                      {event.title}
-                    </h3>
-                    
-                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-2">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(event.start_date)}
+                  ) : null
+                })}
+                {location && (
+                  <Badge 
+                    variant="secondary" 
+                    className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg px-3 py-1 cursor-pointer"
+                    onClick={() => { setLocation(''); handleSearch(); }}
+                  >
+                    📍 {location} ✕
+                  </Badge>
+                )}
+                {searchTerm && (
+                  <Badge 
+                    variant="secondary" 
+                    className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg px-3 py-1 cursor-pointer"
+                    onClick={() => { setSearchTerm(''); handleSearch(); }}
+                  >
+                    🔍 {searchTerm} ✕
+                  </Badge>
+                )}
+                {dateFilter !== 'all' && (
+                  <Badge 
+                    variant="secondary" 
+                    className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg px-3 py-1 cursor-pointer"
+                    onClick={() => { setDateFilter('all'); handleSearch(); }}
+                  >
+                    📅 {dateOptions.find(d => d.value === dateFilter)?.label} ✕
+                  </Badge>
+                )}
+              </div>
+            )}
+
+            {/* Loading State */}
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
+                <span className="ml-3 text-[#0F0F0F]/60">Loading events...</span>
+              </div>
+            ) : events.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-2xl">
+                <div className="text-6xl mb-4">🎫</div>
+                <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No events found</h3>
+                <p className="text-[#0F0F0F]/60 mb-6">Try adjusting your filters or search terms</p>
+                <Button onClick={clearFilters} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
+                  Clear Filters
+                </Button>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {events.map((event) => (
+                  <Card 
+                    key={event.id}
+                    className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group"
+                    onClick={() => navigate(`/event/${event.slug || event.id}`)}
+                  >
+                    <div className="relative h-48 bg-gray-100">
+                      <img 
+                        src={event.image_url} 
+                        alt={event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => { e.target.style.display = 'none' }}
+                      />
+                      {event.category && (
+                        <Badge className="absolute top-4 left-4 bg-white text-[#0F0F0F] border-0 font-medium shadow-sm">
+                          {event.category}
+                        </Badge>
+                      )}
+                      {event.is_free && (
+                        <Badge className="absolute top-4 right-4 bg-green-500 text-white border-0">
+                          Free
+                        </Badge>
+                      )}
                     </div>
                     
-                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-4">
-                      <MapPin className="w-4 h-4" />
-                      {event.venue_name}, {event.city}
-                    </div>
-                    
-                    <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-[#2969FF] text-lg">
-                          {event.is_free ? "Free" : formatPrice(event.min_price, event.currency)}
-                        </span>
-                        <Button 
-                          size="sm"
-                          className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-5"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/event/${event.slug}`)
-                          }}
-                        >
-                          Get Tickets
-                        </Button>
+                    <CardContent className="p-5">
+                      <h3 className="font-semibold text-lg text-[#0F0F0F] mb-3 line-clamp-1">
+                        {event.title}
+                      </h3>
+                      
+                      <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-2">
+                        <Calendar className="w-4 h-4" />
+                        {formatDate(event.start_date)}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                      
+                      <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-4">
+                        <MapPin className="w-4 h-4" />
+                        <span className="line-clamp-1">{event.venue_name}{event.city ? `, ${event.city}` : ''}</span>
+                      </div>
+                      
+                      <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-[#2969FF] text-lg">
+                            {event.is_free ? "Free" : formatPrice(event.min_price, event.currency)}
+                          </span>
+                          <Button 
+                            size="sm"
+                            className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-5"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/event/${event.slug || event.id}`)
+                            }}
+                          >
+                            Get Tickets
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

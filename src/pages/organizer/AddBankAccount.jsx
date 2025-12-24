@@ -16,9 +16,6 @@ import {
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 
-// Paystack test secret key - replace with env variable in production
-const PAYSTACK_SECRET_KEY = 'sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-
 export function AddBankAccount() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
@@ -49,21 +46,11 @@ export function AddBankAccount() {
   const fetchBanks = async () => {
     setLoadingBanks(true);
     try {
-      // Paystack Get Banks API
-      const response = await fetch('https://api.paystack.co/bank?country=nigeria', {
-        headers: {
-          'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
-        },
-      });
-      
-      const data = await response.json();
-      
-      if (data.status && data.data) {
-        // Sort banks alphabetically
-        const sortedBanks = data.data.sort((a, b) => a.name.localeCompare(b.name));
-        setBanks(sortedBanks);
+      const { data, error } = await supabase.functions.invoke('get-banks');
+      if (error) throw error;
+      if (data?.status && data?.data) {
+        setBanks(data.data);
       } else {
-        // Fallback to static list if API fails
         setBanks(fallbackBanks);
       }
     } catch (error) {
@@ -82,7 +69,6 @@ export function AddBankAccount() {
         .select('*')
         .eq('organizer_id', organizer.id)
         .order('is_default', { ascending: false });
-
       if (error) throw error;
       setBankAccounts(data || []);
     } catch (error) {
@@ -94,9 +80,8 @@ export function AddBankAccount() {
 
   const handleAccountNumberChange = (e) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-    setFormData({ ...formData, accountNumber: value });
-    setIsVerified(false);
     setFormData(prev => ({ ...prev, accountNumber: value, accountName: '' }));
+    setIsVerified(false);
     setError('');
   };
 
@@ -117,35 +102,22 @@ export function AddBankAccount() {
       setError('Please enter a valid 10-digit account number and select a bank');
       return;
     }
-
     setIsVerifying(true);
     setError('');
-
     try {
-      // Paystack Resolve Account API
-      const response = await fetch(
-        `https://api.paystack.co/bank/resolve?account_number=${formData.accountNumber}&bank_code=${formData.bankCode}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.status && data.data) {
+      const { data, error } = await supabase.functions.invoke('verify-bank-account', {
+        body: { account_number: formData.accountNumber, bank_code: formData.bankCode },
+      });
+      if (error) throw error;
+      if (data?.status && data?.data) {
         setIsVerified(true);
-        setFormData({
-          ...formData,
-          accountName: data.data.account_name,
-        });
+        setFormData({ ...formData, accountName: data.data.account_name });
       } else {
-        setError(data.message || 'Could not verify account. Please check the details and try again.');
+        setError(data?.message || 'Could not verify account. Please check the details and try again.');
       }
     } catch (error) {
       console.error('Error verifying account:', error);
-      setError('Failed to verify account. Please try again.');
+      setError(error.message || 'Failed to verify account. Please try again.');
     } finally {
       setIsVerifying(false);
     }
@@ -153,42 +125,28 @@ export function AddBankAccount() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!isVerified) {
       setError('Please verify your account details first');
       return;
     }
-
     setIsSaving(true);
     setError('');
-
     try {
-      // Check if this is the first account (make it default)
-      const isFirst = bankAccounts.length === 0;
-
-      const { error: insertError } = await supabase
-        .from('bank_accounts')
-        .insert({
-          organizer_id: organizer.id,
-          bank_name: formData.bankName,
-          bank_code: formData.bankCode,
-          account_number: formData.accountNumber,
-          account_name: formData.accountName,
-          is_verified: true,
-          is_default: isFirst,
-        });
-
-      if (insertError) throw insertError;
-
-      // Reset form and reload accounts
+      const { data, error: rpcError } = await supabase.rpc('add_bank_account', {
+        p_organizer_id: organizer.id,
+        p_bank_name: formData.bankName,
+        p_bank_code: formData.bankCode,
+        p_account_number: formData.accountNumber,
+        p_account_name: formData.accountName,
+      });
+      if (rpcError) throw rpcError;
       setFormData({ accountName: '', accountNumber: '', bankCode: '', bankName: '' });
       setIsVerified(false);
       await loadBankAccounts();
-      
       alert('Bank account added successfully!');
     } catch (error) {
       console.error('Error saving bank account:', error);
-      setError('Failed to save bank account. Please try again.');
+      setError(error.message || 'Failed to save bank account. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -196,18 +154,8 @@ export function AddBankAccount() {
 
   const setDefaultAccount = async (accountId) => {
     try {
-      // Remove default from all accounts
-      await supabase
-        .from('bank_accounts')
-        .update({ is_default: false })
-        .eq('organizer_id', organizer.id);
-
-      // Set new default
-      await supabase
-        .from('bank_accounts')
-        .update({ is_default: true })
-        .eq('id', accountId);
-
+      await supabase.from('bank_accounts').update({ is_default: false }).eq('organizer_id', organizer.id);
+      await supabase.from('bank_accounts').update({ is_default: true }).eq('id', accountId);
       await loadBankAccounts();
     } catch (error) {
       console.error('Error setting default:', error);
@@ -216,13 +164,8 @@ export function AddBankAccount() {
 
   const deleteAccount = async (accountId) => {
     if (!confirm('Are you sure you want to delete this bank account?')) return;
-
     try {
-      const { error } = await supabase
-        .from('bank_accounts')
-        .delete()
-        .eq('id', accountId);
-
+      const { error } = await supabase.from('bank_accounts').delete().eq('id', accountId);
       if (error) throw error;
       await loadBankAccounts();
     } catch (error) {
@@ -231,20 +174,10 @@ export function AddBankAccount() {
     }
   };
 
-  const maskAccountNumber = (number) => {
-    if (!number) return '';
-    return `${number.slice(0, 3)}****${number.slice(-3)}`;
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/organizer/finance')}
-          className="rounded-xl"
-        >
+        <Button variant="ghost" size="icon" onClick={() => navigate('/organizer/finance')} className="rounded-xl">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
@@ -254,13 +187,11 @@ export function AddBankAccount() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Add New Account Form */}
         <div className="lg:col-span-2">
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                Add New Bank Account
+                <Plus className="w-5 h-5" />Add New Bank Account
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -272,18 +203,13 @@ export function AddBankAccount() {
                       <Loader2 className="w-5 h-5 animate-spin text-[#0F0F0F]/40" />
                     </div>
                   ) : (
-                    <Select
-                      value={formData.bankCode}
-                      onValueChange={handleBankChange}
-                    >
+                    <Select value={formData.bankCode} onValueChange={handleBankChange}>
                       <SelectTrigger className="rounded-xl border-[#0F0F0F]/10 h-12">
                         <SelectValue placeholder="Select your bank" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl max-h-64">
                         {banks.map((bank) => (
-                          <SelectItem key={bank.code} value={bank.code}>
-                            {bank.name}
-                          </SelectItem>
+                          <SelectItem key={bank.code} value={bank.code}>{bank.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -293,132 +219,55 @@ export function AddBankAccount() {
                 <div className="space-y-2">
                   <Label htmlFor="accountNumber">Account Number</Label>
                   <div className="flex gap-2">
-                    <Input
-                      id="accountNumber"
-                      placeholder="Enter 10-digit account number"
-                      value={formData.accountNumber}
-                      onChange={handleAccountNumberChange}
-                      maxLength={10}
-                      className="rounded-xl border-[#0F0F0F]/10 h-12"
-                    />
-                    <Button
-                      type="button"
-                      onClick={verifyAccount}
-                      disabled={isVerifying || formData.accountNumber.length !== 10 || !formData.bankCode}
-                      className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-6"
-                    >
-                      {isVerifying ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Verifying
-                        </>
-                      ) : (
-                        'Verify'
-                      )}
+                    <Input id="accountNumber" placeholder="Enter 10-digit account number" value={formData.accountNumber} onChange={handleAccountNumberChange} maxLength={10} className="rounded-xl border-[#0F0F0F]/10 h-12" />
+                    <Button type="button" onClick={verifyAccount} disabled={isVerifying || formData.accountNumber.length !== 10 || !formData.bankCode} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-6">
+                      {isVerifying ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verifying</> : 'Verify'}
                     </Button>
                   </div>
-                  <p className="text-sm text-[#0F0F0F]/60">
-                    {formData.accountNumber.length}/10 digits
-                  </p>
+                  <p className="text-sm text-[#0F0F0F]/60">{formData.accountNumber.length}/10 digits</p>
                 </div>
 
                 {isVerified && (
                   <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-green-800">Account Verified</p>
-                      <p className="text-sm text-green-700 mt-1">{formData.accountName}</p>
-                    </div>
+                    <div><p className="font-medium text-green-800">Account Verified</p><p className="text-sm text-green-700 mt-1">{formData.accountName}</p></div>
                   </div>
                 )}
 
                 {error && (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
-                    <p className="text-red-800">{error}</p>
+                    <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" /><p className="text-red-800">{error}</p>
                   </div>
                 )}
 
                 <div className="space-y-2">
                   <Label htmlFor="accountName">Account Name</Label>
-                  <Input
-                    id="accountName"
-                    value={formData.accountName}
-                    disabled
-                    placeholder="Will be filled after verification"
-                    className="rounded-xl border-[#0F0F0F]/10 bg-[#F4F6FA] h-12"
-                  />
+                  <Input id="accountName" value={formData.accountName} disabled placeholder="Will be filled after verification" className="rounded-xl border-[#0F0F0F]/10 bg-[#F4F6FA] h-12" />
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={!isVerified || isSaving}
-                  className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Bank Account
-                    </>
-                  )}
+                <Button type="submit" disabled={!isVerified || isSaving} className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12">
+                  {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : <><Plus className="w-4 h-4 mr-2" />Add Bank Account</>}
                 </Button>
               </form>
             </CardContent>
           </Card>
         </div>
 
-        {/* Info Cards */}
         <div className="space-y-6">
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                Why verify?
-              </CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-[#0F0F0F] flex items-center gap-2"><Building className="w-5 h-5" />Why verify?</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <p className="font-medium text-[#0F0F0F]">Instant Verification</p>
-                <p className="text-sm text-[#0F0F0F]/60">
-                  We verify your account details instantly using Paystack to ensure accurate payouts
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="font-medium text-[#0F0F0F]">Secure Payments</p>
-                <p className="text-sm text-[#0F0F0F]/60">
-                  Your bank details are encrypted and stored securely
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="font-medium text-[#0F0F0F]">Fast Payouts</p>
-                <p className="text-sm text-[#0F0F0F]/60">
-                  Verified accounts receive payouts within 24-48 hours
-                </p>
-              </div>
+              <div className="space-y-2"><p className="font-medium text-[#0F0F0F]">Instant Verification</p><p className="text-sm text-[#0F0F0F]/60">We verify your account details instantly using Paystack to ensure accurate payouts</p></div>
+              <div className="space-y-2"><p className="font-medium text-[#0F0F0F]">Secure Payments</p><p className="text-sm text-[#0F0F0F]/60">Your bank details are encrypted and stored securely</p></div>
+              <div className="space-y-2"><p className="font-medium text-[#0F0F0F]">Fast Payouts</p><p className="text-sm text-[#0F0F0F]/60">Verified accounts receive payouts within 24-48 hours</p></div>
             </CardContent>
           </Card>
-
           <Card className="border-[#0F0F0F]/10 rounded-2xl bg-[#2969FF]/5">
             <CardContent className="p-6">
               <div className="flex items-start gap-3">
                 <CreditCard className="w-5 h-5 text-[#2969FF] mt-0.5" />
-                <div className="space-y-2">
-                  <p className="font-medium text-[#0F0F0F]">Need Help?</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
-                    Having trouble adding your bank account? Contact our support team.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/contact')}
-                    className="rounded-xl border-[#2969FF] text-[#2969FF] w-full mt-2"
-                  >
-                    Contact Support
-                  </Button>
+                <div className="space-y-2"><p className="font-medium text-[#0F0F0F]">Need Help?</p><p className="text-sm text-[#0F0F0F]/60">Having trouble adding your bank account? Contact our support team.</p>
+                  <Button variant="outline" onClick={() => navigate('/contact')} className="rounded-xl border-[#2969FF] text-[#2969FF] w-full mt-2">Contact Support</Button>
                 </div>
               </div>
             </CardContent>
@@ -426,69 +275,27 @@ export function AddBankAccount() {
         </div>
       </div>
 
-      {/* Existing Bank Accounts */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Your Bank Accounts</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-[#0F0F0F]">Your Bank Accounts</CardTitle></CardHeader>
         <CardContent>
           {loadingAccounts ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
-            </div>
+            <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" /></div>
           ) : bankAccounts.length === 0 ? (
-            <div className="text-center py-8">
-              <Building className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No bank accounts added yet</p>
-              <p className="text-sm text-[#0F0F0F]/40">Add your first bank account above</p>
-            </div>
+            <div className="text-center py-8"><Building className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" /><p className="text-[#0F0F0F]/60">No bank accounts added yet</p><p className="text-sm text-[#0F0F0F]/40">Add your first bank account above</p></div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {bankAccounts.map((account) => (
-                <div
-                  key={account.id}
-                  className={`p-4 rounded-xl border ${account.is_default ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 bg-[#F4F6FA]'}`}
-                >
+                <div key={account.id} className={`p-4 rounded-xl border ${account.is_default ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 bg-[#F4F6FA]'}`}>
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Building className="w-5 h-5 text-[#0F0F0F]/60" />
-                      <span className="font-medium text-[#0F0F0F]">{account.bank_name}</span>
-                    </div>
-                    {account.is_default && (
-                      <Badge className="bg-[#2969FF] text-white">Default</Badge>
-                    )}
+                    <div className="flex items-center gap-2"><Building className="w-5 h-5 text-[#0F0F0F]/60" /><span className="font-medium text-[#0F0F0F]">{account.bank_name}</span></div>
+                    {account.is_default && <Badge className="bg-[#2969FF] text-white">Default</Badge>}
                   </div>
                   <p className="text-[#0F0F0F]/60 text-sm mb-1">{account.account_name}</p>
-                  <p className="text-[#0F0F0F] font-mono">{maskAccountNumber(account.account_number)}</p>
-                  
-                  {account.is_verified && (
-                    <div className="flex items-center gap-1 mt-2 text-green-600">
-                      <CheckCircle className="w-3 h-3" />
-                      <span className="text-xs">Verified</span>
-                    </div>
-                  )}
-
+                  <p className="text-[#0F0F0F] font-mono text-sm">••••••••••</p>
+                  {account.is_verified && <div className="flex items-center gap-1 mt-2 text-green-600"><CheckCircle className="w-3 h-3" /><span className="text-xs">Verified</span></div>}
                   <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#0F0F0F]/10">
-                    {!account.is_default && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDefaultAccount(account.id)}
-                        className="text-[#2969FF] rounded-lg text-xs"
-                      >
-                        <Star className="w-3 h-3 mr-1" />
-                        Set Default
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteAccount(account.id)}
-                      className="text-red-600 rounded-lg text-xs ml-auto"
-                    >
-                      <Trash2 className="w-3 h-3 mr-1" />
-                      Delete
-                    </Button>
+                    {!account.is_default && <Button variant="ghost" size="sm" onClick={() => setDefaultAccount(account.id)} className="text-[#2969FF] rounded-lg text-xs"><Star className="w-3 h-3 mr-1" />Set Default</Button>}
+                    <Button variant="ghost" size="sm" onClick={() => deleteAccount(account.id)} className="text-red-600 rounded-lg text-xs ml-auto"><Trash2 className="w-3 h-3 mr-1" />Delete</Button>
                   </div>
                 </div>
               ))}
@@ -500,31 +307,13 @@ export function AddBankAccount() {
   );
 }
 
-// Fallback bank list if Paystack API fails
 const fallbackBanks = [
-  { code: '044', name: 'Access Bank' },
-  { code: '023', name: 'Citibank Nigeria' },
-  { code: '050', name: 'Ecobank Nigeria' },
-  { code: '070', name: 'Fidelity Bank' },
-  { code: '011', name: 'First Bank of Nigeria' },
-  { code: '214', name: 'First City Monument Bank' },
-  { code: '058', name: 'Guaranty Trust Bank' },
-  { code: '030', name: 'Heritage Bank' },
-  { code: '082', name: 'Keystone Bank' },
-  { code: '526', name: 'Parallex Bank' },
-  { code: '076', name: 'Polaris Bank' },
-  { code: '101', name: 'Providus Bank' },
-  { code: '221', name: 'Stanbic IBTC Bank' },
-  { code: '068', name: 'Standard Chartered Bank' },
-  { code: '232', name: 'Sterling Bank' },
-  { code: '100', name: 'Suntrust Bank' },
-  { code: '032', name: 'Union Bank of Nigeria' },
-  { code: '033', name: 'United Bank For Africa' },
-  { code: '215', name: 'Unity Bank' },
-  { code: '035', name: 'Wema Bank' },
-  { code: '057', name: 'Zenith Bank' },
-  { code: '090267', name: 'Kuda Bank' },
-  { code: '999992', name: 'Opay' },
-  { code: '50515', name: 'Moniepoint' },
-  { code: '999991', name: 'PalmPay' },
+  { code: '044', name: 'Access Bank' },{ code: '023', name: 'Citibank Nigeria' },{ code: '050', name: 'Ecobank Nigeria' },
+  { code: '070', name: 'Fidelity Bank' },{ code: '011', name: 'First Bank of Nigeria' },{ code: '214', name: 'First City Monument Bank' },
+  { code: '058', name: 'Guaranty Trust Bank' },{ code: '030', name: 'Heritage Bank' },{ code: '082', name: 'Keystone Bank' },
+  { code: '076', name: 'Polaris Bank' },{ code: '101', name: 'Providus Bank' },{ code: '221', name: 'Stanbic IBTC Bank' },
+  { code: '068', name: 'Standard Chartered Bank' },{ code: '232', name: 'Sterling Bank' },{ code: '032', name: 'Union Bank of Nigeria' },
+  { code: '033', name: 'United Bank For Africa' },{ code: '215', name: 'Unity Bank' },{ code: '035', name: 'Wema Bank' },
+  { code: '057', name: 'Zenith Bank' },{ code: '090267', name: 'Kuda Bank' },{ code: '999992', name: 'Opay' },
+  { code: '50515', name: 'Moniepoint' },{ code: '999991', name: 'PalmPay' },
 ];

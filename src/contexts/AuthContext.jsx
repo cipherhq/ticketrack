@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const signUp = useCallback(async (email, password, firstName, lastName, phone) => {
+  const signUp = useCallback(async (email, password, firstName, lastName, phone, countryCode = 'NG') => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
 
@@ -90,6 +90,7 @@ export function AuthProvider({ children }) {
             last_name: lastNameResult.value,
             full_name: `${firstNameResult.value} ${lastNameResult.value}`,
             phone: phoneResult.value,
+            country_code: countryCode,
           },
           emailRedirectTo: `${window.location.origin}/`,
         }
@@ -170,6 +171,7 @@ export function AuthProvider({ children }) {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         phone: phoneResult.value,
+            country_code: countryCode,
       })
 
       if (error) {
@@ -195,6 +197,7 @@ export function AuthProvider({ children }) {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         phone: phoneResult.value,
+            country_code: countryCode,
         token: otpResult.value,
         type: 'sms',
       })
