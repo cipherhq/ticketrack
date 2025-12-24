@@ -41,11 +41,11 @@ function AdminAuthGuard({ children }) {
 
       const { data } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('role')
         .eq('id', user.id)
         .single();
 
-      setIsAdmin(data?.is_admin || false);
+      setIsAdmin(data?.role === 'admin' || data?.role === 'super_admin');
       setLoading(false);
     };
 

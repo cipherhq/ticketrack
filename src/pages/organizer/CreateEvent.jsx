@@ -60,7 +60,7 @@ export function CreateEvent() {
   const [formData, setFormData] = useState({
     // Event Details
     title: '',
-    custom_url: '',
+    slug: '',
     eventType: '',
     description: '',
     category: '',
@@ -183,7 +183,7 @@ export function CreateEvent() {
               acceptsDonations: event.accepts_donations || false,
               donationAmounts: event.donation_amounts || [500, 1000, 2500],
               allowCustomDonation: event.allow_custom_donation !== false,
-              custom_url: event.custom_url || "",
+              slug: event.slug || "",
               agreedToTerms: true,
             });
             if (event.image_url) {
@@ -337,7 +337,7 @@ export function CreateEvent() {
       const { data, error } = await supabase
         .from("events")
         .select("id")
-        .or(`slug.eq.${url},custom_url.eq.${url}`)
+        .eq("slug", url)
         .neq("id", eventId || "00000000-0000-0000-0000-000000000000")
         .limit(1);
       if (error) throw error;
@@ -352,17 +352,17 @@ export function CreateEvent() {
   };
 
   const handleInputChange = (field, value) => {
-    // Auto-populate custom_url from title
+    // Auto-populate slug from title
     if (field === "title" && !urlManuallyEdited) {
       const slug = generateSlug(value);
-      setFormData(prev => ({ ...prev, title: value, custom_url: slug }));
+      setFormData(prev => ({ ...prev, title: value, slug: slug }));
       // Debounce URL check
       clearTimeout(urlCheckTimeout.current);
       urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(slug), 500);
       return;
     }
-    // Check URL when custom_url changes
-    if (field === "custom_url") {
+    // Check URL when slug changes
+    if (field === "slug") {
       setUrlManuallyEdited(true);
       clearTimeout(urlCheckTimeout.current);
       urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(value), 500);
@@ -693,7 +693,7 @@ export function CreateEvent() {
 
       const eventData = {
         title: formData.title,
-        custom_url: formData.custom_url || null,
+        slug: formData.slug || null,
         description: formData.description,
         event_type: formData.eventType,
         category: formData.category,
@@ -1016,13 +1016,13 @@ export function CreateEvent() {
               </div>
 
               <div className="space-y-2">
-                <Label>Custom Event URL</Label>
+                <Label>Custom Event URL <span className="text-red-500">*</span></Label>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-[#0F0F0F]/60 whitespace-nowrap">ticketrack.com/e/</span>
                   <Input
                     placeholder="my-awesome-event"
-                    value={formData.custom_url}
-                    onChange={(e) => handleInputChange("custom_url", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
+                    value={formData.slug}
+                    onChange={(e) => handleInputChange("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
                     className="h-12 rounded-xl bg-[#F4F6FA] border-0 flex-1"
                   />
                 </div>
@@ -1030,7 +1030,7 @@ export function CreateEvent() {
                   {urlStatus.checking && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
                   {urlStatus.available === true && <span className="text-xs text-green-600">✓ {urlStatus.message}</span>}
                   {urlStatus.available === false && <span className="text-xs text-red-600">✗ {urlStatus.message}</span>}
-                  {!urlStatus.checking && urlStatus.available === null && <span className="text-xs text-[#0F0F0F]/40">Leave blank to auto-generate from title</span>}
+                  {!urlStatus.checking && urlStatus.available === null && <span className="text-xs text-[#0F0F0F]/40">Required - this will be your shareable event link</span>}
                 </div>
               </div>
 

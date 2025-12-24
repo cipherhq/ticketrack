@@ -26,6 +26,8 @@ export function AdminSettings() {
   const [branding, setBranding] = useState({});
   const [legalDocs, setLegalDocs] = useState([]);
   const [limits, setLimits] = useState([]);
+  const [platformSettings, setPlatformSettings] = useState([]);
+  const [savedKey, setSavedKey] = useState(null);
   
   // Modal states
   const [currencyModal, setCurrencyModal] = useState({ open: false, data: null });
@@ -43,7 +45,7 @@ export function AdminSettings() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [currencyRes, countryRes, featureRes, cfRes, gatewayRes, brandingRes, legalRes, limitsRes] = await Promise.all([
+      const [currencyRes, countryRes, featureRes, cfRes, gatewayRes, brandingRes, legalRes, limitsRes, platformSettingsRes] = await Promise.all([
         supabase.from('currencies').select('*').order('sort_order'),
         supabase.from('countries').select('*').order('name'),
         supabase.from('features').select('*').order('category, name'),
@@ -52,6 +54,7 @@ export function AdminSettings() {
         supabase.from('platform_branding').select('*').single(),
         supabase.from('legal_documents').select('*').order('applies_to'),
         supabase.from('platform_limits').select('*').order('country_code, limit_key'),
+        supabase.from('platform_settings').select('*').order('category, key'),
       ]);
       
       setCurrencies(currencyRes.data || []);
@@ -62,6 +65,7 @@ export function AdminSettings() {
       setBranding(brandingRes.data || {});
       setLegalDocs(legalRes.data || []);
       setLimits(limitsRes.data || []);
+      setPlatformSettings(platformSettingsRes.data || []);
       
       if (countryRes.data?.length > 0) {
         setSelectedCountry(countryRes.data[0].code);
@@ -814,6 +818,57 @@ export function AdminSettings() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Platform Settings Section */}
+              <div className="mt-6 pt-6 border-t border-[#0F0F0F]/10">
+                <h4 className="font-medium text-[#0F0F0F] mb-4">Global Platform Settings (RSVP & Free Events)</h4>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {platformSettings.map(setting => (
+                    <div key={setting.key} className="p-4 bg-white rounded-xl border border-[#0F0F0F]/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-[#0F0F0F]/60 uppercase">{setting.category}</p>
+                      </div>
+                      <p className="text-sm text-[#0F0F0F]/80 mb-2">{setting.description}</p>
+                      {setting.value === 'true' || setting.value === 'false' ? (
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={setting.value === 'true'}
+                            onCheckedChange={async (checked) => {
+                              const newValue = checked ? 'true' : 'false';
+                              setPlatformSettings(prev => prev.map(s => s.key === setting.key ? { ...s, value: newValue } : s));
+                              const { error } = await supabase.from('platform_settings').update({ value: newValue, updated_at: new Date().toISOString() }).eq('key', setting.key);
+                              if (error) console.error('Save error:', error);
+                              setSavedKey(setting.key);
+                              setTimeout(() => setSavedKey(null), 2000);
+                            }}
+                          />
+                          {savedKey === setting.key && <span className="text-xs text-green-600">Saved!</span>}
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <Input
+                            value={setting.value}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              setPlatformSettings(prev => prev.map(s => s.key === setting.key ? { ...s, value: newValue } : s));
+                            }}
+                            onBlur={async (e) => {
+                              console.log('Saving:', setting.key, '=', e.target.value);
+                              const { data, error } = await supabase.from('platform_settings').update({ value: e.target.value, updated_at: new Date().toISOString() }).eq('key', setting.key).select();
+                              console.log('Result:', data, error);
+                              if (error) console.error('Save error:', error);
+                              setSavedKey(setting.key);
+                              setTimeout(() => setSavedKey(null), 2000);
+                            }}
+                            className="rounded-lg"
+                          />
+                          {savedKey === setting.key && <span className="text-xs text-green-600">Saved!</span>}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

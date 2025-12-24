@@ -216,7 +216,7 @@ export function WebCheckout() {
         setTimerExpired(true)
         localStorage.removeItem(TIMER_KEY)
         alert("Time expired! Your session has ended. Please select your tickets again.")
-        navigate(`/event/${event?.id}`)
+        navigate(`/e/${event?.slug || event?.id}`)
       } else {
         setTimeLeft(remaining)
       }
@@ -531,7 +531,7 @@ export function WebCheckout() {
 
       // Initialize Stripe Checkout
       const successUrl = `${window.location.origin}/payment-success`;
-      const cancelUrl = `${window.location.origin}/event/${event.id}`;
+      const cancelUrl = `${window.location.origin}/e/${event.slug || event.id}`;
 
       const { url } = await initStripeCheckout(order.id, successUrl, cancelUrl);
 
@@ -600,7 +600,7 @@ export function WebCheckout() {
       await supabase.from('order_items').insert(orderItems);
 
       const successUrl = `${window.location.origin}/payment-success`;
-      const cancelUrl = `${window.location.origin}/event/${event.id}`;
+      const cancelUrl = `${window.location.origin}/e/${event.slug || event.id}`;
 
       const { approvalUrl } = await initPayPalCheckout(order.id, successUrl, cancelUrl);
 

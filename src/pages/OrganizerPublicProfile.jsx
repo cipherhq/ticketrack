@@ -304,7 +304,7 @@ export function OrganizerPublicProfile() {
                   </Card>
                 ) : (
                   upcomingEvents.map(event => (
-                    <Card key={event.id} onClick={() => navigate('/event/' + event.id)} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                    <Card key={event.id} onClick={() => navigate('/e/' + (event.slug || event.id))} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
                       <CardContent className="p-0">
                         <div className="flex gap-4">
                           <div className="w-40 h-28 flex-shrink-0"><ImageWithFallback src={event.image_url} alt={event.title} className="w-full h-full object-cover" /></div>

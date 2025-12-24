@@ -434,7 +434,7 @@ export function WebSearch() {
                 {searchResults.map((event) => (
                   <Card
                     key={event.id}
-                    onClick={() => navigate(`/event/${event.id}`)}
+                    onClick={() => navigate(`/e/${event.slug || event.id}`)}
                     className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-white"
                   >
                     <CardContent className="p-0">

@@ -304,7 +304,7 @@ export function EventManagement() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => navigate(`/event/${event.id}`)}
+                          onClick={() => navigate(`/e/${event.slug || event.id}`)}
                           className="rounded-lg"
                           title="View Public Page"
                         >
@@ -341,7 +341,7 @@ export function EventManagement() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl">
-                            <DropdownMenuItem onClick={() => navigate(`/event/${event.id}`)}>
+                            <DropdownMenuItem onClick={() => navigate(`/e/${event.slug || event.id}`)}>
                               <Eye className="w-4 h-4 mr-2" />
                               View Public Page
                             </DropdownMenuItem>

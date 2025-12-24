@@ -523,7 +523,7 @@ export function WebEventBrowse() {
                   <Card 
                     key={event.id}
                     className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group"
-                    onClick={() => navigate(`/event/${event.slug || event.id}`)}
+                    onClick={() => navigate(`/e/${event.slug || event.id}`)}
                   >
                     <div className="relative h-48 bg-gray-100">
                       <img 
@@ -569,7 +569,7 @@ export function WebEventBrowse() {
                             className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-5"
                             onClick={(e) => {
                               e.stopPropagation()
-                              navigate(`/event/${event.slug || event.id}`)
+                              navigate(`/e/${event.slug || event.id}`)
                             }}
                           >
                             Get Tickets
