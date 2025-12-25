@@ -13,7 +13,7 @@ import { formatPrice } from '@/config/currencies';
 export function AdminRefunds() {
   const [loading, setLoading] = useState(true);
   const [refunds, setRefunds] = useState([]);
-  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, processed: 0, total: 0, totalAmount: 0 });
+  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, processed: 0, escalated: 0, total: 0, totalAmount: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [processModal, setProcessModal] = useState({ open: false, refund: null });
@@ -45,8 +45,9 @@ export function AdminRefunds() {
       const approved = data?.filter(r => r.status === 'approved' && !r.refund_reference).length || 0;
       const rejected = data?.filter(r => r.status === 'rejected').length || 0;
       const processed = data?.filter(r => r.refund_reference).length || 0;
+      const escalated = data?.filter(r => r.escalated_to_admin && !r.refund_reference).length || 0;
       const totalAmount = data?.filter(r => r.refund_reference).reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
-      setStats({ pending, approved, rejected, processed, total: data?.length || 0, totalAmount });
+      setStats({ pending, approved, rejected, processed, escalated, total: data?.length || 0, totalAmount });
     } catch (error) {
       console.error('Error loading refunds:', error);
     } finally {
@@ -54,7 +55,32 @@ export function AdminRefunds() {
     }
   };
 
-  const processRefund = async () => {
+  
+  const overrideAndApprove = async (refund) => {
+    if (!confirm('Override organizer decision and approve this refund?')) return;
+    setProcessing(true);
+    try {
+      await supabase
+        .from('refund_requests')
+        .update({
+          status: 'approved',
+          organizer_decision: 'approved',
+          organizer_notes: (refund.organizer_notes || '') + ' [Admin Override]',
+          organizer_decided_at: new Date().toISOString()
+        })
+        .eq('id', refund.id);
+      
+      alert('Refund approved. You can now process it.');
+      loadRefunds();
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Failed to override');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+const processRefund = async () => {
     if (!processModal.refund) return;
     setProcessing(true);
     try {
@@ -87,6 +113,7 @@ export function AdminRefunds() {
 
   const getStatusBadge = (refund) => {
     if (refund.refund_reference) return <Badge className="bg-green-100 text-green-700">Processed</Badge>;
+    if (refund.escalated_to_admin && refund.status !== 'approved') return <Badge className="bg-purple-100 text-purple-700">⚠️ Escalated</Badge>;
     if (refund.status === 'approved') return <Badge className="bg-blue-100 text-blue-700">Approved - Pending Payment</Badge>;
     if (refund.status === 'rejected') return <Badge className="bg-red-100 text-red-700">Rejected</Badge>;
     if (refund.organizer_decision === 'pending') return <Badge className="bg-yellow-100 text-yellow-700">Awaiting Organizer</Badge>;
@@ -98,6 +125,7 @@ export function AdminRefunds() {
     if (statusFilter === 'approved' && (r.status !== 'approved' || r.refund_reference)) return false;
     if (statusFilter === 'processed' && !r.refund_reference) return false;
     if (statusFilter === 'rejected' && r.status !== 'rejected') return false;
+    if (statusFilter === 'escalated' && !r.escalated_to_admin) return false;
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       return r.ticket?.attendee_name?.toLowerCase().includes(s) || r.ticket?.attendee_email?.toLowerCase().includes(s) || r.event?.title?.toLowerCase().includes(s) || r.order?.order_number?.toLowerCase().includes(s);
@@ -123,6 +151,7 @@ export function AdminRefunds() {
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Ready to Process</p><p className="text-2xl font-bold text-blue-600">{stats.approved}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Processed</p><p className="text-2xl font-bold text-green-600">{stats.processed}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Rejected</p><p className="text-2xl font-bold text-red-600">{stats.rejected}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl border-purple-300"><CardContent className="p-4"><p className="text-sm text-purple-600">Escalated</p><p className="text-2xl font-bold text-purple-600">{stats.escalated}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Total Refunded</p><p className="text-2xl font-bold text-[#2969FF]">{formatPrice(stats.totalAmount, 'NGN')}</p></CardContent></Card>
       </div>
 
@@ -140,6 +169,7 @@ export function AdminRefunds() {
             <SelectItem value="approved">Ready to Process</SelectItem>
             <SelectItem value="processed">Processed</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="escalated">Escalated</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -181,6 +211,11 @@ export function AdminRefunds() {
                       {refund.status === 'approved' && !refund.refund_reference && (
                         <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white rounded-xl" onClick={() => setProcessModal({ open: true, refund })}>
                           <CreditCard className="w-4 h-4 mr-1" /> Process
+                        </Button>
+                      )}
+                      {refund.escalated_to_admin && refund.status !== 'approved' && !refund.refund_reference && (
+                        <Button size="sm" className="bg-purple-500 hover:bg-purple-600 text-white rounded-xl" onClick={() => overrideAndApprove(refund)}>
+                          <CheckCircle className="w-4 h-4 mr-1" /> Approve Override
                         </Button>
                       )}
                     </div>
@@ -243,6 +278,7 @@ export function AdminRefunds() {
               </div>
               {detailModal.refund.reason && <div><p className="text-[#0F0F0F]/60 text-sm">Reason</p><p className="bg-[#F4F6FA] p-3 rounded-xl text-sm">{detailModal.refund.reason}</p></div>}
               {detailModal.refund.organizer_notes && <div><p className="text-[#0F0F0F]/60 text-sm">Organizer Notes</p><p className="bg-[#F4F6FA] p-3 rounded-xl text-sm">{detailModal.refund.organizer_notes}</p></div>}
+              {detailModal.refund.escalated_to_admin && <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl"><p className="text-sm text-purple-800 font-medium">⚠️ Escalated to Admin</p>{detailModal.refund.escalation_reason && <p className="text-sm text-purple-700 mt-1">{detailModal.refund.escalation_reason}</p>}</div>}
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setDetailModal({ open: false, refund: null })} className="rounded-xl">Close</Button></DialogFooter>

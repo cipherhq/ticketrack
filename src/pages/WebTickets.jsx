@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +23,10 @@ export function WebTickets() {
   const [refundLoading, setRefundLoading] = useState(false)
   const [refundConfig, setRefundConfig] = useState(null)
   const [refundError, setRefundError] = useState('')
+  const [ticketRefundStatus, setTicketRefundStatus] = useState({})
+  const [escalateModal, setEscalateModal] = useState({ open: false, refund: null })
+  const [escalateReason, setEscalateReason] = useState('')
+  const [escalating, setEscalating] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -30,6 +34,7 @@ export function WebTickets() {
       return
     }
     loadTickets()
+    loadRefundStatus()
   }, [user, navigate])
 
   const loadTickets = async () => {
@@ -303,6 +308,56 @@ export function WebTickets() {
     }
   };
 
+  
+
+  // Load refund status for all tickets
+  const loadRefundStatus = async () => {
+    try {
+      const { data } = await supabase
+        .from('refund_requests')
+        .select('id, ticket_id, status, organizer_decision, escalated_to_admin, amount, reason, organizer_notes')
+        .eq('user_id', user.id);
+      
+      const statusMap = {};
+      (data || []).forEach(r => {
+        statusMap[r.ticket_id] = r;
+      });
+      setTicketRefundStatus(statusMap);
+    } catch (err) {
+      console.error('Error loading refund status:', err);
+    }
+  };
+
+  // Escalate refund to admin
+  const escalateRefund = async () => {
+    if (!escalateReason.trim()) {
+      alert('Please provide a reason for escalation');
+      return;
+    }
+    setEscalating(true);
+    try {
+      await supabase
+        .from('refund_requests')
+        .update({
+          escalated_to_admin: true,
+          escalation_reason: escalateReason.trim(),
+          escalated_at: new Date().toISOString(),
+          status: 'escalated'
+        })
+        .eq('id', escalateModal.refund.id);
+      
+      setEscalateModal({ open: false, refund: null });
+      setEscalateReason('');
+      alert('Your refund has been escalated to admin for review.');
+      loadRefundStatus();
+    } catch (err) {
+      console.error('Error escalating:', err);
+      alert('Failed to escalate. Please try again.');
+    } finally {
+      setEscalating(false);
+    }
+  };
+
   const activeTickets = tickets.filter(t => t.status === 'active' && !isEventPast(t.event?.end_date))
   const pastTickets = tickets.filter(t => t.status !== 'active' || isEventPast(t.event?.end_date))
 
@@ -425,14 +480,29 @@ export function WebTickets() {
               >
                 <Share2 className="w-3 h-3" />Share
               </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="rounded-xl border-orange-300 text-orange-600 hover:bg-orange-50 flex items-center gap-2 text-xs"
-                onClick={() => openRefundModal(ticket)}
-              >
-                <RotateCcw className="w-3 h-3" />Refund
-              </Button>
+              {!ticketRefundStatus[ticket.id] ? (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="rounded-xl border-orange-300 text-orange-600 hover:bg-orange-50 flex items-center gap-2 text-xs"
+                  onClick={() => openRefundModal(ticket)}
+                >
+                  <RotateCcw className="w-3 h-3" />Refund
+                </Button>
+              ) : (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  disabled
+                  className="rounded-xl border-yellow-300 text-yellow-600 bg-yellow-50 flex items-center gap-2 text-xs cursor-not-allowed"
+                >
+                  <Clock className="w-3 h-3" />
+                  {ticketRefundStatus[ticket.id].refund_reference ? 'Refunded' : 
+                   ticketRefundStatus[ticket.id].status === 'approved' ? 'Refund Approved' :
+                   ticketRefundStatus[ticket.id].status === 'rejected' ? 'Refund Rejected' :
+                   'Refund Requested'}
+                </Button>
+              )}
               <Button 
                 size="sm" 
                 className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl ml-auto text-xs"
@@ -440,6 +510,54 @@ export function WebTickets() {
               >
                 View Event
               </Button>
+            </div>
+          )}
+
+          {/* Refund Status */}
+          {ticketRefundStatus[ticket.id] && (
+            <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10">
+              {ticketRefundStatus[ticket.id].status === 'pending' || ticketRefundStatus[ticket.id].organizer_decision === 'pending' ? (
+                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm text-yellow-800">Refund request pending</span>
+                  </div>
+                </div>
+              ) : ticketRefundStatus[ticket.id].status === 'approved' ? (
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-green-800">Refund approved - processing</span>
+                  </div>
+                </div>
+              ) : ticketRefundStatus[ticket.id].status === 'rejected' && !ticketRefundStatus[ticket.id].escalated_to_admin ? (
+                <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-red-600" />
+                      <span className="text-sm text-red-800">Refund rejected</span>
+                    </div>
+                    {ticketRefundStatus[ticket.id].organizer_notes && (
+                      <p className="text-xs text-red-600 mt-1">Reason: {ticketRefundStatus[ticket.id].organizer_notes}</p>
+                    )}
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="rounded-xl border-red-300 text-red-600 hover:bg-red-100 text-xs"
+                    onClick={() => setEscalateModal({ open: true, refund: ticketRefundStatus[ticket.id] })}
+                  >
+                    Escalate to Admin
+                  </Button>
+                </div>
+              ) : ticketRefundStatus[ticket.id].escalated_to_admin ? (
+                <div className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-purple-600" />
+                    <span className="text-sm text-purple-800">Escalated to admin - under review</span>
+                  </div>
+                </div>
+              ) : null}
             </div>
           )}
         </CardContent>
