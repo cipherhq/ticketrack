@@ -30,6 +30,8 @@ export function WebEventDetails() {
   
   const [selectedTickets, setSelectedTickets] = useState(location.state?.selectedTickets || {})
   const [isFavorite, setIsFavorite] = useState(false)
+  const [childEvents, setChildEvents] = useState([])
+  const [selectedDate, setSelectedDate] = useState(null)
   const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
 
   useEffect(() => {
@@ -77,6 +79,21 @@ export function WebEventDetails() {
     }
     loadFees();
   }, [event?.currency]);
+
+  // Load child events for recurring events
+  useEffect(() => {
+    async function loadChildEvents() {
+      if (event?.is_recurring) {
+        const { data: children } = await supabase
+          .from('events')
+          .select('id, title, start_date, end_date, slug')
+          .eq('parent_event_id', event.id)
+          .order('start_date', { ascending: true });
+        setChildEvents(children || []);
+      }
+    }
+    loadChildEvents();
+  }, [event?.is_recurring, event?.id]);
 
   // Track referral code from URL
   useEffect(() => {
@@ -253,9 +270,21 @@ export function WebEventDetails() {
           {/* Event Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <Badge className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg mb-3">
-                {event.category?.icon} {event.category?.name || 'Event'}
-              </Badge>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <Badge className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg">
+                  {event.category?.icon} {event.category?.name || 'Event'}
+                </Badge>
+                {event.is_recurring && (
+                  <Badge className="bg-purple-100 text-purple-700 border-0 rounded-lg">
+                    🔄 Recurring Event
+                  </Badge>
+                )}
+                {event.parent_event_id && (
+                  <Badge className="bg-orange-100 text-orange-700 border-0 rounded-lg">
+                    Part of Series
+                  </Badge>
+                )}
+              </div>
               <h1 className="text-3xl md:text-4xl font-bold text-[#0F0F0F] mb-4">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-[#0F0F0F]/60">
                 <div className="flex items-center gap-2">
@@ -302,6 +331,80 @@ export function WebEventDetails() {
               dangerouslySetInnerHTML={{ __html: event.description }}
             />
           </div>
+
+          {/* Upcoming Dates - for recurring events */}
+          {event.is_recurring && childEvents.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">🔄 Upcoming Dates</h2>
+                <p className="text-[#0F0F0F]/60 mb-4">This is a recurring event. Choose a date below:</p>
+                <div className="grid gap-3">
+                  {/* Current/Parent Event */}
+                  <div 
+                    className="p-4 bg-[#2969FF]/5 border-2 border-[#2969FF] rounded-xl cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-[#0F0F0F]">
+                          {new Date(event.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
+                        <p className="text-sm text-[#0F0F0F]/60">
+                          {new Date(event.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(event.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <Badge className="bg-[#2969FF] text-white">Current</Badge>
+                    </div>
+                  </div>
+                  
+                  {/* Child Events */}
+                  {childEvents.map((child) => (
+                    <div 
+                      key={child.id}
+                      onClick={() => navigate(`/event/${child.slug || child.id}`)}
+                      className="p-4 bg-[#F4F6FA] hover:bg-[#2969FF]/10 border border-[#0F0F0F]/10 rounded-xl cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-[#0F0F0F]">
+                            {new Date(child.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                          </p>
+                          <p className="text-sm text-[#0F0F0F]/60">
+                            {new Date(child.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(child.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="border-[#0F0F0F]/20">View</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Link to parent event if this is a child */}
+          {event.parent_event_id && (
+            <>
+              <Separator />
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                <p className="text-orange-800 mb-2">This event is part of a recurring series.</p>
+                <Button 
+                  variant="outline" 
+                  className="border-orange-300 text-orange-700 hover:bg-orange-100 rounded-xl"
+                  onClick={async () => {
+                    const { data } = await supabase
+                      .from('events')
+                      .select('slug, id')
+                      .eq('id', event.parent_event_id)
+                      .single();
+                    if (data) navigate(`/event/${data.slug || data.id}`);
+                  }}
+                >
+                  View All Dates
+                </Button>
+              </div>
+            </>
+          )}
 
           {/* Promo Video */}
           {event.promo_video_url && (

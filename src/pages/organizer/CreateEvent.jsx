@@ -12,6 +12,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Checkbox } from '../../components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { AddressAutocomplete } from '../../components/ui/AddressAutocomplete';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { createEvent, createTicketTypes, updateEvent } from '../../services/organizerService';
@@ -74,7 +75,11 @@ export function CreateEvent() {
     isMultiDay: false,
     eventDays: [],
     isRecurring: false,
-    recurringPattern: '',
+    recurringType: 'weekly',
+    recurringDays: [],
+    recurringEndType: 'occurrences',
+    recurringOccurrences: 4,
+    recurringEndDate: '',
     // Venue Details
     venueName: '',
     venueAddress: '',
@@ -157,7 +162,11 @@ export function CreateEvent() {
               timezone: event.timezone || "Africa/Lagos",
               isMultiDay: event.is_multi_day || false,
               isRecurring: event.is_recurring || false,
-              recurringPattern: event.recurring_pattern || "",
+              recurringType: event.recurring_type || 'weekly',
+              recurringDays: event.recurring_days || [],
+              recurringEndType: event.recurring_end_type || 'occurrences',
+              recurringOccurrences: event.recurring_occurrences || 4,
+              recurringEndDate: event.recurring_end_date || '',
               venueName: event.venue_name || "",
               venueAddress: event.venue_address || "",
               googleMapLink: event.google_map_link || "",
@@ -703,7 +712,12 @@ export function CreateEvent() {
         timezone: formData.timezone,
         is_multi_day: formData.isMultiDay,
         is_recurring: formData.isRecurring,
-        recurring_pattern: formData.recurringPattern,
+        recurring_type: formData.recurringType,
+        recurring_days: formData.recurringDays,
+        recurring_end_type: formData.recurringEndType,
+        recurring_occurrences: formData.recurringOccurrences,
+        recurring_end_date: formData.recurringEndDate || null,
+        parent_event_id: null,
         venue_name: formData.venueName,
         venue_address: formData.venueAddress,
         google_map_link: formData.googleMapLink,
@@ -832,6 +846,53 @@ export function CreateEvent() {
           }));
           await createTicketTypes(savedEvent.id, tableTicketsFormatted);
         }
+
+        // Generate recurring child events if this is a recurring event
+        if (formData.isRecurring && !isEditMode) {
+          const recurringDates = generateRecurringDates(
+            formData.startDate,
+            formData.startTime,
+            formData.endTime,
+            formData.recurringType,
+            formData.recurringDays,
+            formData.recurringEndType,
+            formData.recurringOccurrences,
+            formData.recurringEndDate
+          );
+          
+          // Skip first date (parent event already created)
+          const childDates = recurringDates.slice(1);
+          
+          for (const date of childDates) {
+            const dateStr = date.toISOString().split('T')[0];
+            const childStartDateTime = `${dateStr}T${formData.startTime}:00`;
+            const childEndDateTime = formData.isMultiDay 
+              ? `${formData.endDate}T${formData.endTime || '23:59'}:00`
+              : `${dateStr}T${formData.endTime || '23:59'}:00`;
+            
+            const childEventData = {
+              ...eventData,
+              start_date: childStartDateTime,
+              end_date: childEndDateTime,
+              parent_event_id: savedEvent.id,
+              is_recurring: false, // Child events are not recurring themselves
+            };
+            
+            const { data: childEvent, error: childError } = await supabase
+              .from('events')
+              .insert(childEventData)
+              .select()
+              .single();
+            
+            if (!childError && childEvent) {
+              // Create ticket types for child event
+              await createTicketTypes(childEvent.id, validTickets);
+            }
+          }
+          
+          console.log(`Created ${childDates.length} recurring child events`);
+        }
+
       }
 
 
@@ -1148,7 +1209,8 @@ export function CreateEvent() {
                   <Label>Start Date <span className="text-red-500">*</span></Label>
                   <Input
                     type="date"
-                    value={formData.startDate}
+                            min={new Date().toISOString().split('T')[0]}
+                            value={formData.startDate}
                     onChange={(e) => handleInputChange('startDate', e.target.value)}
                     className="h-12 rounded-xl bg-[#F4F6FA] border-0"
                   />
@@ -1165,23 +1227,31 @@ export function CreateEvent() {
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>End Date <span className="text-red-500">*</span></Label>
-                  <Input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleInputChange('endDate', e.target.value)}
-                    className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>End Time <span className="text-red-500">*</span></Label>
-                  <Input
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) => handleInputChange('endTime', e.target.value)}
-                    className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                  />
+                {!formData.isRecurring && (
+                  <div className="space-y-2">
+                    <Label>End Date <span className="text-red-500">*</span></Label>
+                    <Input
+                      type="date"
+                      value={formData.endDate}
+                      min={formData.startDate || new Date().toISOString().split('T')[0]}
+                      onChange={(e) => handleInputChange('endDate', e.target.value)}
+                      className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                    />
+                  </div>
+                )}
+                <div className={formData.isRecurring ? "col-span-2" : ""}>
+                  <div className="space-y-2">
+                    <Label>End Time <span className="text-red-500">*</span></Label>
+                    <Input
+                      type="time"
+                      value={formData.endTime}
+                      onChange={(e) => handleInputChange('endTime', e.target.value)}
+                      className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                    />
+                    {formData.isRecurring && (
+                      <p className="text-xs text-[#0F0F0F]/60">Each recurring event will end at this time on the same day</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1403,20 +1473,118 @@ export function CreateEvent() {
                     <Checkbox
                       id="recurring"
                       checked={formData.isRecurring}
-                      onCheckedChange={(checked) => handleInputChange('isRecurring', checked)}
+                      onCheckedChange={(checked) => { 
+                      handleInputChange('isRecurring', checked); 
+                      if(checked) {
+                        handleInputChange('isMultiDay', false);
+                        handleInputChange('endDate', ''); // Clear end date for recurring
+                      }
+                    }}
                     />
                     <Label htmlFor="recurring" className="cursor-pointer">Recurring event (weekly parties, services, etc.)</Label>
                   </div>
                   
                   {formData.isRecurring && (
-                    <div className="ml-7 space-y-2">
-                      <Label>Recurring Pattern</Label>
-                      <Input
-                        placeholder="e.g., Every Friday at 8 PM"
-                        value={formData.recurringPattern}
-                        onChange={(e) => handleInputChange('recurringPattern', e.target.value)}
-                        className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                      />
+                    <div className="ml-7 space-y-4 p-4 bg-[#F4F6FA] rounded-xl">
+                      {/* Frequency */}
+                      <div className="space-y-2">
+                        <Label>Frequency</Label>
+                        <Select value={formData.recurringType} onValueChange={(v) => handleInputChange('recurringType', v)}>
+                          <SelectTrigger className="h-12 rounded-xl bg-white border-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="biweekly">Bi-weekly (every 2 weeks)</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Days of Week (for weekly/biweekly) */}
+                      {(formData.recurringType === 'weekly' || formData.recurringType === 'biweekly') && (
+                        <div className="space-y-2">
+                          <Label>Repeat on</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
+                              <button
+                                key={day}
+                                type="button"
+                                onClick={() => {
+                                  const days = formData.recurringDays.includes(idx)
+                                    ? formData.recurringDays.filter(d => d !== idx)
+                                    : [...formData.recurringDays, idx].sort();
+                                  handleInputChange('recurringDays', days);
+                                }}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  formData.recurringDays.includes(idx)
+                                    ? 'bg-[#2969FF] text-white'
+                                    : 'bg-white text-[#0F0F0F]/60 hover:bg-[#0F0F0F]/5'
+                                }`}
+                              >
+                                {day}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* End Condition */}
+                      <div className="space-y-2">
+                        <Label>Ends</Label>
+                        <Select value={formData.recurringEndType} onValueChange={(v) => handleInputChange('recurringEndType', v)}>
+                          <SelectTrigger className="h-12 rounded-xl bg-white border-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="occurrences">After number of events</SelectItem>
+                            <SelectItem value="date">On specific date</SelectItem>
+                            <SelectItem value="never">Never (max 52 events)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {formData.recurringEndType === 'occurrences' && (
+                        <div className="space-y-2">
+                          <Label>Number of events</Label>
+                          <Input
+                            type="number"
+                            min="2"
+                            max="52"
+                            value={formData.recurringOccurrences}
+                            onChange={(e) => handleInputChange('recurringOccurrences', parseInt(e.target.value) || 4)}
+                            className="h-12 rounded-xl bg-white border-0 w-32"
+                          />
+                        </div>
+                      )}
+
+                      {formData.recurringEndType === 'date' && (
+                        <div className="space-y-2">
+                          <Label>End date</Label>
+                          <Input
+                            type="date"
+                            value={formData.recurringEndDate}
+                            min={formData.startDate || new Date().toISOString().split('T')[0]}
+                            onChange={(e) => handleInputChange('recurringEndDate', e.target.value)}
+                            className="h-12 rounded-xl bg-white border-0"
+                          />
+                        </div>
+                      )}
+
+                      {/* Preview */}
+                      <div className="p-3 bg-white rounded-xl border border-[#0F0F0F]/10">
+                        <p className="text-sm font-medium text-[#0F0F0F] mb-2">Preview</p>
+                        <p className="text-sm text-[#0F0F0F]/60">
+                          {formData.recurringType === 'daily' && 'Every day'}
+                          {formData.recurringType === 'weekly' && `Every week on ${formData.recurringDays.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ') || '(select days)'}`}
+                          {formData.recurringType === 'biweekly' && `Every 2 weeks on ${formData.recurringDays.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ') || '(select days)'}`}
+                          {formData.recurringType === 'monthly' && 'Same day each month'}
+                          {formData.recurringEndType === 'occurrences' && ` • ${formData.recurringOccurrences} events`}
+                          {formData.recurringEndType === 'date' && formData.recurringEndDate && ` • Until ${new Date(formData.recurringEndDate).toLocaleDateString()}`}
+                          {formData.recurringEndType === 'never' && ' • Up to 52 events'}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
