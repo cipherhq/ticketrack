@@ -25,7 +25,7 @@ type EmailType =
   | 'event_reminder_organizer' | 'refund_request' | 'post_event_summary'
   | 'promoter_commission' | 'promoter_payout' | 'promo_code_used' | 'promoter_invite' | 'promoter_accepted'
   | 'admin_new_organizer' | 'admin_new_event' | 'admin_flagged_content' | 'admin_daily_stats'
-  | 'waitlist_joined' | 'waitlist_available'
+  | 'waitlist_joined' | 'waitlist_available' | 'refund_approved' | 'refund_rejected'
   | 'event_reminder_24h' | 'event_reminder_1h'
 
 interface EmailRequest {
@@ -382,6 +382,16 @@ const templates: Record<EmailType, (data: Record<string, any>) => { subject: str
   event_reminder_organizer: (data) => ({
     subject: `📅 Your event is ${data.timeUntil}: ${data.eventTitle}`,
     html: baseTemplate(`<h2>Your Event is ${data.timeUntil}!</h2><p>Prepare for <strong>${data.eventTitle}</strong>!</p><div class="ticket-card"><div class="info-row"><span class="info-label">📅 Date</span><span class="info-value">${formatDate(data.eventDate)}</span></div><div class="info-row"><span class="info-label">📍 Venue</span><span class="info-value">${data.venueName}</span></div><div class="info-row"><span class="info-label">🎫 Sold</span><span class="info-value">${data.ticketsSold}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">💰 Revenue</span><span class="info-value">${formatCurrency(data.revenue)}</span></div></div><h3>Checklist:</h3><ul><li>✅ Download attendee list</li><li>✅ Set up check-in devices</li><li>✅ Brief team on scanner app</li></ul><a href="${data.appUrl}/organizer/events/${data.eventId}/check-in" class="button">Open Check-In</a>`)
+  }),
+
+  refund_approved: (data) => ({
+    subject: `✅ Refund Approved: ${data.eventTitle}`,
+    html: baseTemplate`<div class="success"><strong>✅ Refund Approved!</strong></div><h2>Your Refund Has Been Approved</h2><p>Hi ${data.attendeeName},</p><p>Good news! Your refund request for <strong>${data.eventTitle}</strong> has been approved.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Refund Amount</span><span class="info-value" style="color:#16a34a;font-weight:bold;">${formatCurrency(data.refundAmount)}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Processing Time</span><span class="info-value">5-7 business days</span></div></div>${data.organizerNotes ? `<p><strong>Note from organizer:</strong> ${data.organizerNotes}</p>` : ''}<p style="font-size:14px;color:#666;">The refund will be credited to your original payment method.</p><a href="${data.appUrl}/tickets" class="button">View My Tickets</a>`
+  }),
+
+  refund_rejected: (data) => ({
+    subject: `❌ Refund Request Update: ${data.eventTitle}`,
+    html: baseTemplate`<h2>Refund Request Update</h2><p>Hi ${data.attendeeName},</p><p>We regret to inform you that your refund request for <strong>${data.eventTitle}</strong> could not be approved at this time.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Requested Amount</span><span class="info-value">${formatCurrency(data.refundAmount)}</span></div></div>${data.organizerNotes ? `<div class="warning"><strong>Reason:</strong> ${data.organizerNotes}</div>` : ''}<p>If you believe this decision was made in error, you can escalate this to our support team.</p><a href="${data.appUrl}/support" class="button">Contact Support</a>`
   }),
 
   refund_request: (data) => ({

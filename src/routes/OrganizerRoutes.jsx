@@ -23,6 +23,7 @@ import { WhatsAppBroadcast } from '@/pages/organizer/WhatsAppBroadcast';
 import { WhatsAppSettings } from '@/pages/organizer/WhatsAppSettings';
 import { SMSCredits } from '@/pages/organizer/SMSCredits';
 import { SMSCampaigns } from '@/pages/organizer/SMSCampaigns';
+import { OrganizerRefunds } from '@/pages/organizer/OrganizerRefunds';
 import { Loader2 } from 'lucide-react';
 
 export function OrganizerRoutes() {
@@ -68,6 +69,7 @@ export function OrganizerRoutes() {
           <Route path="/sms-credits" element={<SMSCredits />} />
           <Route path="/whatsapp-credits" element={<BuyWhatsAppCredits />} />
           <Route path="/sms" element={<SMSCampaigns />} />
+          <Route path="/refunds" element={<OrganizerRefunds />} />
         </Routes>
       </OrganizerLayout>
     </OrganizerProvider>
