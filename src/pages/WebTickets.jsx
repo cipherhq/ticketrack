@@ -1,11 +1,13 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { QRCodeSVG } from 'qrcode.react'
@@ -16,6 +18,11 @@ export function WebTickets() {
   const { user } = useAuth()
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
+  const [refundModal, setRefundModal] = useState({ open: false, ticket: null })
+  const [refundReason, setRefundReason] = useState('')
+  const [refundLoading, setRefundLoading] = useState(false)
+  const [refundConfig, setRefundConfig] = useState(null)
+  const [refundError, setRefundError] = useState('')
 
   useEffect(() => {
     if (!user) {
@@ -167,6 +174,135 @@ export function WebTickets() {
     }
   }
 
+  
+
+  // Check if ticket is eligible for refund
+  const checkRefundEligibility = async (ticket) => {
+    try {
+      // Get event details with refund settings
+      const { data: event } = await supabase
+        .from('events')
+        .select('allow_refunds, refund_deadline_hours, start_date, country_code')
+        .eq('id', ticket.event_id)
+        .single();
+
+      if (!event) return { eligible: false, reason: 'Event not found' };
+      if (!event.allow_refunds) return { eligible: false, reason: 'This event does not allow refunds' };
+
+      const eventStart = new Date(event.start_date);
+      const now = new Date();
+      const hoursUntilEvent = (eventStart - now) / (1000 * 60 * 60);
+
+      if (hoursUntilEvent <= 0) return { eligible: false, reason: 'Event has already started' };
+      if (hoursUntilEvent < (event.refund_deadline_hours || 48)) {
+        return { eligible: false, reason: 'Refund deadline has passed (' + (event.refund_deadline_hours || 48) + ' hours before event)' };
+      }
+
+      // Check if refund already requested
+      const { data: existingRefund } = await supabase
+        .from('refund_requests')
+        .select('id, status')
+        .eq('ticket_id', ticket.id)
+        .in('status', ['pending', 'approved'])
+        .single();
+
+      if (existingRefund) return { eligible: false, reason: 'Refund already requested for this ticket' };
+
+      // Get refund fee config
+      const { data: feeConfig } = await supabase
+        .from('country_features')
+        .select('config')
+        .eq('country_code', event.country_code || 'NG')
+        .eq('feature_id', 'refund_fee')
+        .single();
+
+      const config = feeConfig?.config || { fee_type: 'percentage', fee_value: 5, min_fee: 0, max_fee: 99999 };
+      const ticketPrice = ticket.total_price || ticket.ticket_type?.price || 0;
+      
+      let fee = config.fee_type === 'percentage' 
+        ? ticketPrice * (config.fee_value / 100) 
+        : config.fee_value;
+      fee = Math.max(config.min_fee || 0, Math.min(config.max_fee || 99999, fee));
+      
+      return { 
+        eligible: true, 
+        config,
+        originalAmount: ticketPrice,
+        refundFee: fee,
+        refundAmount: ticketPrice - fee,
+        currency: ticket.currency || 'NGN'
+      };
+    } catch (error) {
+      console.error('Error checking refund eligibility:', error);
+      return { eligible: false, reason: 'Unable to check refund eligibility' };
+    }
+  };
+
+  const openRefundModal = async (ticket) => {
+    setRefundError('');
+    setRefundReason('');
+    const eligibility = await checkRefundEligibility(ticket);
+    
+    if (!eligibility.eligible) {
+      setRefundError(eligibility.reason);
+      setRefundModal({ open: true, ticket, eligible: false });
+    } else {
+      setRefundConfig(eligibility);
+      setRefundModal({ open: true, ticket, eligible: true });
+    }
+  };
+
+  const submitRefundRequest = async () => {
+    if (!refundReason.trim()) {
+      setRefundError('Please provide a reason for your refund request');
+      return;
+    }
+
+    setRefundLoading(true);
+    setRefundError('');
+
+    try {
+      const ticket = refundModal.ticket;
+      
+      // Get order and organizer info
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('id, payment_reference, organizer_id')
+        .eq('id', ticket.order_id)
+        .single();
+
+      const { error } = await supabase
+        .from('refund_requests')
+        .insert({
+          order_id: ticket.order_id,
+          user_id: user.id,
+          ticket_id: ticket.id,
+          event_id: ticket.event_id,
+          organizer_id: orderData?.organizer_id,
+          original_amount: refundConfig.originalAmount,
+          refund_fee: refundConfig.refundFee,
+          amount: refundConfig.refundAmount,
+          currency: refundConfig.currency,
+          reason: refundReason.trim(),
+          status: 'pending',
+          organizer_decision: 'pending',
+          payment_reference: orderData?.payment_reference
+        });
+
+      if (error) throw error;
+
+      setRefundModal({ open: false, ticket: null });
+      setRefundReason('');
+      alert('Refund request submitted successfully! You will be notified once the organizer reviews your request.');
+      loadTickets();
+    } catch (error) {
+      console.error('Error submitting refund:', error);
+      setRefundError('Failed to submit refund request. Please try again.');
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
   const activeTickets = tickets.filter(t => t.status === 'active' && !isEventPast(t.event?.end_date))
   const pastTickets = tickets.filter(t => t.status !== 'active' || isEventPast(t.event?.end_date))
 
@@ -291,6 +427,14 @@ export function WebTickets() {
               </Button>
               <Button 
                 size="sm" 
+                variant="outline"
+                className="rounded-xl border-orange-300 text-orange-600 hover:bg-orange-50 flex items-center gap-2 text-xs"
+                onClick={() => openRefundModal(ticket)}
+              >
+                <RotateCcw className="w-3 h-3" />Refund
+              </Button>
+              <Button 
+                size="sm" 
                 className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl ml-auto text-xs"
                 onClick={() => navigate(`/event/${ticket.event?.slug}`)}
               >
@@ -384,6 +528,95 @@ export function WebTickets() {
           </TabsContent>
         </Tabs>
       )}
+
+      {/* Refund Request Modal */}
+      <Dialog open={refundModal.open} onOpenChange={(o) => { if(!o) setRefundModal({ open: false, ticket: null }); }}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-orange-500" />
+              Request Refund
+            </DialogTitle>
+          </DialogHeader>
+          
+          {refundModal.ticket && (
+            <div className="space-y-4">
+              {/* Ticket Info */}
+              <div className="p-3 bg-[#F4F6FA] rounded-xl">
+                <p className="font-medium text-[#0F0F0F]">{refundModal.ticket.event?.title}</p>
+                <p className="text-sm text-[#0F0F0F]/60">{refundModal.ticket.ticket_type?.name} - {refundModal.ticket.attendee_name}</p>
+              </div>
+
+              {!refundModal.eligible ? (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-red-700">Refund Not Available</p>
+                      <p className="text-sm text-red-600 mt-1">{refundError}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Refund Breakdown */}
+                  <div className="space-y-2 p-3 border border-[#0F0F0F]/10 rounded-xl">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#0F0F0F]/60">Original Amount</span>
+                      <span className="text-[#0F0F0F]">{formatPrice(refundConfig?.originalAmount || 0, refundConfig?.currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#0F0F0F]/60">Processing Fee</span>
+                      <span className="text-red-600">-{formatPrice(refundConfig?.refundFee || 0, refundConfig?.currency)}</span>
+                    </div>
+                    <hr className="border-[#0F0F0F]/10" />
+                    <div className="flex justify-between font-medium">
+                      <span className="text-[#0F0F0F]">Refund Amount</span>
+                      <span className="text-green-600">{formatPrice(refundConfig?.refundAmount || 0, refundConfig?.currency)}</span>
+                    </div>
+                  </div>
+
+                  {/* Reason */}
+                  <div>
+                    <label className="text-sm font-medium text-[#0F0F0F]">Reason for refund *</label>
+                    <Textarea 
+                      value={refundReason}
+                      onChange={(e) => setRefundReason(e.target.value)}
+                      placeholder="Please explain why you're requesting a refund..."
+                      className="mt-1 rounded-xl resize-none"
+                      rows={3}
+                    />
+                  </div>
+
+                  {refundError && (
+                    <p className="text-sm text-red-600">{refundError}</p>
+                  )}
+
+                  <p className="text-xs text-[#0F0F0F]/60">
+                    Your request will be reviewed by the event organizer. Approved refunds are typically processed within 5-7 business days.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundModal({ open: false, ticket: null })} className="rounded-xl">
+              {refundModal.eligible ? 'Cancel' : 'Close'}
+            </Button>
+            {refundModal.eligible && (
+              <Button 
+                onClick={submitRefundRequest} 
+                disabled={refundLoading}
+                className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl"
+              >
+                {refundLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Request'}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   )
 }

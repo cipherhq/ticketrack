@@ -33,6 +33,7 @@ const navItems = [
   { icon: UserCheck, label: 'Attendees', path: '/admin/attendees' },
   { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' },
   { icon: RefreshCw, label: 'Refunds', path: '/admin/refunds' },
+  { icon: Settings, label: 'Refund Settings', path: '/admin/refund-settings' },
   { icon: TrendingUp, label: 'Promoters', path: '/admin/affiliates' },
   { icon: MessageSquare, label: 'Support', path: '/admin/support' },
   { icon: Mail, label: 'Email Templates', path: '/admin/email-templates' },

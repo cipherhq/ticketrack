@@ -12,3 +12,4 @@ export { AdminSendEmails } from './AdminSendEmails';
 export { AdminWhatsApp } from './AdminWhatsApp';
 export { AdminSMS } from './AdminSMS';
 export { AdminRoles } from './AdminRoles';
+export { AdminRefundSettings } from './AdminRefundSettings';

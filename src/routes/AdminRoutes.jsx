@@ -22,6 +22,7 @@ import AdminWhatsAppPackages from '@/pages/admin/AdminWhatsAppPackages';
 import AdminAdverts from '../pages/admin/AdminAdverts';
 import { AdminRoles } from '@/pages/admin/AdminRoles';
 import { AdminSettings } from '@/pages/admin/AdminSettings';
+import { AdminRefundSettings } from '@/pages/admin/AdminRefundSettings';
 import { AdminWaitlist } from '@/pages/admin/AdminWaitlist';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -103,6 +104,7 @@ export function AdminRoutes() {
             <Route path="/roles" element={<AdminRoles />} />
             <Route path="/waitlist" element={<AdminWaitlist />} />
             <Route path="/settings" element={<AdminSettings />} />
+            <Route path="/refund-settings" element={<AdminRefundSettings />} />
           </Routes>
         </AdminLayout>
       </AdminProvider>
