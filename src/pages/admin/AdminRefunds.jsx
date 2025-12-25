@@ -1,102 +1,52 @@
 import { useState, useEffect } from 'react';
-import {
-  Search,
-  MoreVertical,
-  RefreshCw as RefundIcon,
-  Loader2,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Clock,
-  DollarSign,
-  AlertTriangle,
-} from 'lucide-react';
+import { Search, Loader2, RefreshCw, CheckCircle, XCircle, Clock, DollarSign, AlertTriangle, CreditCard, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
-import { useAdmin } from '@/contexts/AdminContext';
+import { formatPrice } from '@/config/currencies';
 
 export function AdminRefunds() {
-  const { logAdminAction } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [refunds, setRefunds] = useState([]);
+  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, processed: 0, total: 0, totalAmount: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedRefund, setSelectedRefund] = useState(null);
-  const [actionDialog, setActionDialog] = useState(null);
+  const [processModal, setProcessModal] = useState({ open: false, refund: null });
+  const [detailModal, setDetailModal] = useState({ open: false, refund: null });
   const [processing, setProcessing] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
 
-  useEffect(() => {
-    loadRefunds();
-  }, []);
+  useEffect(() => { loadRefunds(); }, []);
 
   const loadRefunds = async () => {
     setLoading(true);
     try {
-      // Check if refunds table exists, if not use tickets with refund_requested status
       const { data, error } = await supabase
-        .from('tickets')
+        .from('refund_requests')
         .select(`
           *,
-          events (
-            id,
-            title,
-            organizers (
-              id,
-              business_name
-            )
-          ),
-          profiles:user_id (
-            full_name,
-            email
-          )
+          ticket:tickets(id, ticket_code, attendee_name, attendee_email, total_price),
+          event:events(id, title, start_date, image_url, country_code),
+          order:orders(id, order_number, payment_reference, payment_provider),
+          user:profiles(full_name, email),
+          organizer:organizers(id, business_name)
         `)
-        .in('payment_status', ['refund_requested', 'refunded', 'refund_rejected'])
-        .order('updated_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
+      setRefunds(data || []);
 
-      const transformedRefunds = (data || []).map((ticket) => ({
-        id: ticket.id,
-        ticketId: ticket.id,
-        customerName: ticket.attendee_name || ticket.profiles?.full_name || 'Unknown',
-        customerEmail: ticket.attendee_email || ticket.profiles?.email || 'N/A',
-        eventName: ticket.events?.title || 'Unknown Event',
-        organizerName: ticket.events?.organizers?.business_name || 'Unknown',
-        amount: parseFloat(ticket.total_amount) || 0,
-        quantity: ticket.quantity || 1,
-        status: ticket.payment_status === 'refund_requested' ? 'pending' : 
-                ticket.payment_status === 'refunded' ? 'approved' : 'rejected',
-        requestedAt: ticket.updated_at,
-        reason: ticket.refund_reason || 'Not specified',
-      }));
-
-      setRefunds(transformedRefunds);
+      // Calculate stats
+      const pending = data?.filter(r => r.status === 'pending' || r.organizer_decision === 'pending').length || 0;
+      const approved = data?.filter(r => r.status === 'approved' && !r.refund_reference).length || 0;
+      const rejected = data?.filter(r => r.status === 'rejected').length || 0;
+      const processed = data?.filter(r => r.refund_reference).length || 0;
+      const totalAmount = data?.filter(r => r.refund_reference).reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
+      setStats({ pending, approved, rejected, processed, total: data?.length || 0, totalAmount });
     } catch (error) {
       console.error('Error loading refunds:', error);
     } finally {
@@ -104,395 +54,198 @@ export function AdminRefunds() {
     }
   };
 
-  const handleAction = (action, refund) => {
-    setSelectedRefund(refund);
-    setActionDialog(action);
-    setRejectionReason('');
-  };
-
-  const confirmAction = async () => {
-    if (!selectedRefund) return;
+  const processRefund = async () => {
+    if (!processModal.refund) return;
     setProcessing(true);
-
     try {
-      if (actionDialog === 'approve') {
-        const { error } = await supabase
-          .from('tickets')
-          .update({ 
-            payment_status: 'refunded',
-            refunded_at: new Date().toISOString()
-          })
-          .eq('id', selectedRefund.ticketId);
-        if (error) throw error;
-        await logAdminAction('refund_approved', 'ticket', selectedRefund.ticketId);
-        alert('Refund approved successfully');
-      } else if (actionDialog === 'reject') {
-        if (!rejectionReason.trim()) {
-          alert('Please provide a rejection reason');
-          setProcessing(false);
-          return;
-        }
-        const { error } = await supabase
-          .from('tickets')
-          .update({ 
-            payment_status: 'refund_rejected',
-            refund_rejection_reason: rejectionReason
-          })
-          .eq('id', selectedRefund.ticketId);
-        if (error) throw error;
-        await logAdminAction('refund_rejected', 'ticket', selectedRefund.ticketId, { reason: rejectionReason });
-        alert('Refund rejected');
+      const session = await supabase.auth.getSession();
+      const response = await fetch('https://bkvbvggngttrizbchygy.supabase.co/functions/v1/process-refund', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + session.data.session?.access_token
+        },
+        body: JSON.stringify({ refundRequestId: processModal.refund.id })
+      });
+      const result = await response.json();
+      if (result.success) {
+        alert('Refund processed successfully! Reference: ' + result.refundReference);
+        setProcessModal({ open: false, refund: null });
+        loadRefunds();
+      } else {
+        alert('Failed: ' + result.error);
       }
-
-      setActionDialog(null);
-      setSelectedRefund(null);
-      loadRefunds();
     } catch (error) {
-      console.error('Action error:', error);
-      alert('Failed to perform action');
+      console.error('Error processing refund:', error);
+      alert('Failed to process refund');
     } finally {
       setProcessing(false);
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
+  const formatDate = (date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+  const getStatusBadge = (refund) => {
+    if (refund.refund_reference) return <Badge className="bg-green-100 text-green-700">Processed</Badge>;
+    if (refund.status === 'approved') return <Badge className="bg-blue-100 text-blue-700">Approved - Pending Payment</Badge>;
+    if (refund.status === 'rejected') return <Badge className="bg-red-100 text-red-700">Rejected</Badge>;
+    if (refund.organizer_decision === 'pending') return <Badge className="bg-yellow-100 text-yellow-700">Awaiting Organizer</Badge>;
+    return <Badge className="bg-gray-100 text-gray-700">Pending</Badge>;
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-500 text-white rounded-lg">Approved</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-500 text-white rounded-lg">Pending</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-500 text-white rounded-lg">Rejected</Badge>;
-      default:
-        return <Badge className="bg-gray-500 text-white rounded-lg">{status}</Badge>;
+  const filteredRefunds = refunds.filter(r => {
+    if (statusFilter === 'pending' && r.status !== 'pending' && r.organizer_decision !== 'pending') return false;
+    if (statusFilter === 'approved' && (r.status !== 'approved' || r.refund_reference)) return false;
+    if (statusFilter === 'processed' && !r.refund_reference) return false;
+    if (statusFilter === 'rejected' && r.status !== 'rejected') return false;
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      return r.ticket?.attendee_name?.toLowerCase().includes(s) || r.ticket?.attendee_email?.toLowerCase().includes(s) || r.event?.title?.toLowerCase().includes(s) || r.order?.order_number?.toLowerCase().includes(s);
     }
-  };
-
-  const filteredRefunds = refunds.filter((refund) => {
-    const matchesSearch =
-      refund.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      refund.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      refund.eventName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || refund.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return true;
   });
 
-  const stats = {
-    pending: refunds.filter((r) => r.status === 'pending').length,
-    pendingAmount: refunds.filter((r) => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0),
-    approved: refunds.filter((r) => r.status === 'approved').length,
-    approvedAmount: refunds.filter((r) => r.status === 'approved').reduce((sum, r) => sum + r.amount, 0),
-    rejected: refunds.filter((r) => r.status === 'rejected').length,
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Refund Management</h2>
+          <h1 className="text-2xl font-semibold text-[#0F0F0F]">Refund Management</h1>
           <p className="text-[#0F0F0F]/60 mt-1">Review and process refund requests</p>
         </div>
-        <Button variant="outline" size="icon" onClick={loadRefunds} className="rounded-xl">
-          <RefreshCw className="w-4 h-4" />
-        </Button>
+        <Button variant="outline" onClick={loadRefunds} className="rounded-xl"><RefreshCw className="w-4 h-4 mr-2" /> Refresh</Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Pending Refunds</p>
-                <h3 className="text-2xl font-semibold text-yellow-600">{stats.pending}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.pendingAmount)}</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-yellow-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Approved</p>
-                <h3 className="text-2xl font-semibold text-green-600">{stats.approved}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.approvedAmount)}</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Rejected</p>
-                <h3 className="text-2xl font-semibold text-red-600">{stats.rejected}</h3>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-                <XCircle className="w-5 h-5 text-red-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Total Requests</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{refunds.length}</h3>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
-                <RefundIcon className="w-5 h-5 text-[#2969FF]" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Pending</p><p className="text-2xl font-bold text-yellow-600">{stats.pending}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Ready to Process</p><p className="text-2xl font-bold text-blue-600">{stats.approved}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Processed</p><p className="text-2xl font-bold text-green-600">{stats.processed}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Rejected</p><p className="text-2xl font-bold text-red-600">{stats.rejected}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Total Refunded</p><p className="text-2xl font-bold text-[#2969FF]">{formatPrice(stats.totalAmount, 'NGN')}</p></CardContent></Card>
       </div>
 
-      {/* Search & Filter */}
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Input placeholder="Search by name, email, event..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 rounded-xl" />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px] rounded-xl"><SelectValue placeholder="All Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="approved">Ready to Process</SelectItem>
+            <SelectItem value="processed">Processed</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Refund List */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-              <Input
-                placeholder="Search refunds..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white border-[#0F0F0F]/10 rounded-xl"
-              />
+        <CardContent className="p-0">
+          {filteredRefunds.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <RefreshCw className="w-12 h-12 text-[#0F0F0F]/20 mb-4" />
+              <p className="text-[#0F0F0F]/60">No refund requests found</p>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          ) : (
+            <div className="divide-y divide-[#0F0F0F]/10">
+              {filteredRefunds.map(refund => (
+                <div key={refund.id} className="p-4 hover:bg-[#F4F6FA]/50 transition-colors">
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-[#F4F6FA] overflow-hidden flex-shrink-0">
+                      {refund.event?.image_url ? <img src={refund.event.image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#0F0F0F]/20" /></div>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-medium text-[#0F0F0F] truncate">{refund.event?.title}</h3>
+                          <p className="text-sm text-[#0F0F0F]/60">{refund.ticket?.attendee_name} • {refund.ticket?.attendee_email}</p>
+                        </div>
+                        {getStatusBadge(refund)}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                        <span className="text-[#0F0F0F]/60">Order: <span className="font-mono">{refund.order?.order_number || 'N/A'}</span></span>
+                        <span className="text-[#0F0F0F]/60">Amount: <span className="text-[#0F0F0F] font-medium">{formatPrice(refund.amount, refund.currency)}</span></span>
+                        <span className="text-[#0F0F0F]/60">Provider: <span className="capitalize">{refund.order?.payment_provider || 'N/A'}</span></span>
+                        <span className="text-[#0F0F0F]/60">{formatDate(refund.created_at)}</span>
+                      </div>
+                      {refund.reason && <p className="mt-2 text-sm text-[#0F0F0F]/70 bg-[#F4F6FA] p-2 rounded-lg line-clamp-1"><strong>Reason:</strong> {refund.reason}</p>}
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDetailModal({ open: true, refund })}><Eye className="w-4 h-4" /></Button>
+                      {refund.status === 'approved' && !refund.refund_reference && (
+                        <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white rounded-xl" onClick={() => setProcessModal({ open: true, refund })}>
+                          <CreditCard className="w-4 h-4 mr-1" /> Process
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Refunds Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Refund Requests ({filteredRefunds.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#0F0F0F]/10">
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Customer</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Event</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Tickets</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Amount</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Reason</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Date</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                  <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRefunds.map((refund) => (
-                  <tr key={refund.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
-                    <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F] font-medium">{refund.customerName}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{refund.customerEmail}</p>
-                    </td>
-                    <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/80">{refund.eventName}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{refund.organizerName}</p>
-                    </td>
-                    <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]">{refund.quantity}</p>
-                    </td>
-                    <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F] font-medium">{formatCurrency(refund.amount)}</p>
-                    </td>
-                    <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/80 text-sm max-w-xs truncate">{refund.reason}</p>
-                    </td>
-                    <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/60">
-                        {new Date(refund.requestedAt).toLocaleDateString()}
-                      </p>
-                    </td>
-                    <td className="py-4 px-4">{getStatusBadge(refund.status)}</td>
-                    <td className="py-4 px-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="rounded-xl">
-                            <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem onClick={() => handleAction('details', refund)}>
-                            View Details
-                          </DropdownMenuItem>
-                          {refund.status === 'pending' && (
-                            <>
-                              <DropdownMenuItem onClick={() => handleAction('approve', refund)}>
-                                <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                                Approve Refund
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-500"
-                                onClick={() => handleAction('reject', refund)}
-                              >
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Reject Refund
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-                {filteredRefunds.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-[#0F0F0F]/60">
-                      No refund requests found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Action Dialog */}
-      <Dialog open={!!actionDialog} onOpenChange={() => setActionDialog(null)}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-[#0F0F0F]">
-              {actionDialog === 'approve' && 'Approve Refund'}
-              {actionDialog === 'reject' && 'Reject Refund'}
-              {actionDialog === 'details' && 'Refund Details'}
-            </DialogTitle>
-          </DialogHeader>
-
-          {actionDialog === 'details' && selectedRefund && (
-            <div className="space-y-3 py-4">
-              <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Customer:</span>
-                <span className="text-[#0F0F0F]">{selectedRefund.customerName}</span>
+      {/* Process Modal */}
+      <Dialog open={processModal.open} onOpenChange={(o) => { if(!o) setProcessModal({ open: false, refund: null }); }}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5 text-green-500" /> Process Refund</DialogTitle></DialogHeader>
+          {processModal.refund && (
+            <div className="space-y-4">
+              <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-2">
+                <div className="flex justify-between"><span className="text-[#0F0F0F]/60">Attendee</span><span className="font-medium">{processModal.refund.ticket?.attendee_name}</span></div>
+                <div className="flex justify-between"><span className="text-[#0F0F0F]/60">Event</span><span className="font-medium">{processModal.refund.event?.title}</span></div>
+                <div className="flex justify-between"><span className="text-[#0F0F0F]/60">Original Amount</span><span>{formatPrice(processModal.refund.original_amount, processModal.refund.currency)}</span></div>
+                <div className="flex justify-between"><span className="text-[#0F0F0F]/60">Processing Fee</span><span className="text-red-600">-{formatPrice(processModal.refund.refund_fee, processModal.refund.currency)}</span></div>
+                <hr />
+                <div className="flex justify-between font-bold"><span>Refund Amount</span><span className="text-green-600">{formatPrice(processModal.refund.amount, processModal.refund.currency)}</span></div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Email:</span>
-                <span className="text-[#0F0F0F]">{selectedRefund.customerEmail}</span>
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+                <p className="text-sm text-yellow-800"><strong>Payment Provider:</strong> {processModal.refund.order?.payment_provider || 'Unknown'}</p>
+                <p className="text-sm text-yellow-800"><strong>Reference:</strong> {processModal.refund.order?.payment_reference || 'N/A'}</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Event:</span>
-                <span className="text-[#0F0F0F]">{selectedRefund.eventName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Amount:</span>
-                <span className="text-[#2969FF] font-medium">{formatCurrency(selectedRefund.amount)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Reason:</span>
-                <span className="text-[#0F0F0F] max-w-xs text-right">{selectedRefund.reason}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Status:</span>
-                {getStatusBadge(selectedRefund.status)}
-              </div>
+              <p className="text-sm text-[#0F0F0F]/60">This will initiate the refund via {processModal.refund.order?.payment_provider || 'the payment provider'}. The attendee will receive the funds within 5-10 business days.</p>
             </div>
           )}
-
-          {actionDialog === 'approve' && (
-            <div className="py-4">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
-                  <div>
-                    <p className="text-[#0F0F0F] font-medium">Approve refund of {formatCurrency(selectedRefund?.amount)}</p>
-                    <p className="text-sm text-[#0F0F0F]/60 mt-1">
-                      This will process a refund to {selectedRefund?.customerName} for their ticket to {selectedRefund?.eventName}.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {actionDialog === 'reject' && (
-            <div className="py-4 space-y-4">
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
-                  <div>
-                    <p className="text-[#0F0F0F] font-medium">Reject refund request</p>
-                    <p className="text-sm text-[#0F0F0F]/60 mt-1">
-                      The customer will be notified that their refund has been rejected.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Rejection Reason *</Label>
-                <Textarea
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Provide a reason for rejection..."
-                  className="rounded-xl"
-                />
-              </div>
-            </div>
-          )}
-
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setActionDialog(null)}
-              className="rounded-xl border-[#0F0F0F]/10"
-            >
-              {actionDialog === 'details' ? 'Close' : 'Cancel'}
+            <Button variant="outline" onClick={() => setProcessModal({ open: false, refund: null })} className="rounded-xl">Cancel</Button>
+            <Button onClick={processRefund} disabled={processing} className="bg-green-500 hover:bg-green-600 text-white rounded-xl">
+              {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-2" />Process Refund</>}
             </Button>
-            {actionDialog !== 'details' && (
-              <Button
-                onClick={confirmAction}
-                disabled={processing || (actionDialog === 'reject' && !rejectionReason.trim())}
-                className={`rounded-xl ${
-                  actionDialog === 'reject' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
-                } text-white`}
-              >
-                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
-              </Button>
-            )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Modal */}
+      <Dialog open={detailModal.open} onOpenChange={(o) => { if(!o) setDetailModal({ open: false, refund: null }); }}>
+        <DialogContent className="rounded-2xl max-w-lg">
+          <DialogHeader><DialogTitle>Refund Details</DialogTitle></DialogHeader>
+          {detailModal.refund && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><p className="text-[#0F0F0F]/60">Attendee</p><p className="font-medium">{detailModal.refund.ticket?.attendee_name}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Email</p><p className="font-medium">{detailModal.refund.ticket?.attendee_email}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Event</p><p className="font-medium">{detailModal.refund.event?.title}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Organizer</p><p className="font-medium">{detailModal.refund.organizer?.business_name || 'N/A'}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Original Amount</p><p className="font-medium">{formatPrice(detailModal.refund.original_amount, detailModal.refund.currency)}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Refund Fee</p><p className="font-medium text-red-600">-{formatPrice(detailModal.refund.refund_fee, detailModal.refund.currency)}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Refund Amount</p><p className="font-medium text-green-600">{formatPrice(detailModal.refund.amount, detailModal.refund.currency)}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Status</p>{getStatusBadge(detailModal.refund)}</div>
+                <div><p className="text-[#0F0F0F]/60">Requested</p><p className="font-medium">{formatDate(detailModal.refund.created_at)}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Payment Provider</p><p className="font-medium capitalize">{detailModal.refund.order?.payment_provider || 'N/A'}</p></div>
+                {detailModal.refund.refund_reference && <div className="col-span-2"><p className="text-[#0F0F0F]/60">Refund Reference</p><p className="font-mono bg-green-50 p-2 rounded">{detailModal.refund.refund_reference}</p></div>}
+              </div>
+              {detailModal.refund.reason && <div><p className="text-[#0F0F0F]/60 text-sm">Reason</p><p className="bg-[#F4F6FA] p-3 rounded-xl text-sm">{detailModal.refund.reason}</p></div>}
+              {detailModal.refund.organizer_notes && <div><p className="text-[#0F0F0F]/60 text-sm">Organizer Notes</p><p className="bg-[#F4F6FA] p-3 rounded-xl text-sm">{detailModal.refund.organizer_notes}</p></div>}
+            </div>
+          )}
+          <DialogFooter><Button variant="outline" onClick={() => setDetailModal({ open: false, refund: null })} className="rounded-xl">Close</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
