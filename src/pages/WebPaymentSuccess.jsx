@@ -1,5 +1,6 @@
 import { formatPrice } from '@/config/currencies'
 import { supabase } from '@/lib/supabase'
+import { markWaitlistPurchased } from '@/services/waitlist'
 import { capturePayPalPayment } from '@/config/payments'
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
@@ -60,6 +61,18 @@ export function WebPaymentSuccess() {
     }
   }
 
+  // Mark waitlist as purchased if order came from waitlist
+  const handleWaitlistCompletion = async (orderData) => {
+    if (orderData?.waitlist_id) {
+      try {
+        await markWaitlistPurchased(orderData.waitlist_id)
+        console.log('Waitlist entry marked as purchased:', orderData.waitlist_id)
+      } catch (err) {
+        console.error('Failed to update waitlist status:', err)
+      }
+    }
+  }
+
   const loadStripeOrder = async (orderId) => {
     setLoading(true)
     try {
@@ -82,6 +95,9 @@ export function WebPaymentSuccess() {
       setOrder(orderData)
       setEvent(orderData.events)
       setTickets(ticketsData || [])
+
+      // Mark waitlist as purchased if applicable
+      await handleWaitlistCompletion(orderData)
     } catch (err) {
       console.error('Error:', err)
       navigate('/events')

@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { markWaitlistPurchased } from '@/services/waitlist'
 
 
 // Credit promoter for referral sale
@@ -99,7 +100,8 @@ export function WebCheckout() {
   const { user } = useAuth()
   const { isEnabledForCurrency } = useFeatureFlags()
   
-  const { event, selectedTickets, ticketTypes, totalAmount } = location.state || {}
+  // Extract checkout data - includes waitlist info if coming from waitlist purchase
+  const { event, selectedTickets, ticketTypes, totalAmount, fromWaitlist, waitlistId } = location.state || {}
   
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [formData, setFormData] = useState({ 
@@ -350,6 +352,16 @@ export function WebCheckout() {
       // Create tickets
       const tickets = await createTickets(orderId, reference)
 
+      // If this purchase came from waitlist, mark the waitlist entry as purchased
+      if (fromWaitlist && waitlistId) {
+        try {
+          await markWaitlistPurchased(waitlistId)
+          console.log('Waitlist entry marked as purchased:', waitlistId)
+        } catch (waitlistErr) {
+          console.error('Failed to update waitlist status:', waitlistErr)
+        }
+      }
+
       // Credit promoter for referral sale
       await creditPromoter(orderId, event.id, finalTotal, totalTicketCount)
 
@@ -415,7 +427,8 @@ export function WebCheckout() {
           payment_provider: 'paystack',
           buyer_email: formData.email,
           buyer_phone: formData.phone || null,
-          buyer_name: `${formData.firstName} ${formData.lastName}`
+          buyer_name: `${formData.firstName} ${formData.lastName}`,
+          waitlist_id: fromWaitlist ? waitlistId : null
         })
         .select()
         .single()
@@ -511,7 +524,8 @@ export function WebCheckout() {
           payment_provider: 'stripe',
           buyer_email: formData.email,
           buyer_phone: formData.phone || null,
-          buyer_name: `${formData.firstName} ${formData.lastName}`
+          buyer_name: `${formData.firstName} ${formData.lastName}`,
+          waitlist_id: fromWaitlist ? waitlistId : null
         })
         .select()
         .single();
@@ -582,7 +596,8 @@ export function WebCheckout() {
           payment_provider: 'paypal',
           buyer_email: formData.email,
           buyer_phone: formData.phone || null,
-          buyer_name: `${formData.firstName} ${formData.lastName}`
+          buyer_name: `${formData.firstName} ${formData.lastName}`,
+          waitlist_id: fromWaitlist ? waitlistId : null
         })
         .select()
         .single();

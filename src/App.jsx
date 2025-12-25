@@ -23,6 +23,7 @@ import { WebHome } from './pages/WebHome';
 import { WebEventBrowse } from './pages/WebEventBrowse';
 import { WebEventDetails } from './pages/WebEventDetails';
 import { WebCheckout } from './pages/WebCheckout';
+import { WaitlistPurchase } from './pages/WaitlistPurchase';
 import { WebFreeRSVP } from './pages/WebFreeRSVP';
 import { WebPaymentSuccess } from './pages/WebPaymentSuccess';
 import { WebTickets } from './pages/WebTickets';
@@ -86,6 +87,7 @@ function App() {
                 <Route path="/events/:id" element={<WebEventDetails />} />
                 <Route path="/event/:id" element={<WebEventDetails />} />
                 <Route path="/e/:id" element={<WebEventDetails />} />
+                <Route path="/waitlist/purchase" element={<WaitlistPurchase />} />
                 <Route path="/checkout" element={<WebCheckout />} />
                 <Route path="/free-rsvp" element={<WebFreeRSVP />} />
                 <Route path="/payment-success" element={<WebPaymentSuccess />} />
