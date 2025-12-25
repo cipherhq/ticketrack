@@ -8,6 +8,13 @@ const FROM_EMAIL = 'Ticketrack <tickets@ticketrack.com>'
 const BRAND_COLOR = '#2969FF'
 const BRAND_NAME = 'Ticketrack'
 
+// Supabase client for logging communications
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
 // Email Types
 type EmailType = 
   | 'welcome' | 'email_verification' | 'password_reset' | 'ticket_purchase'
@@ -19,12 +26,20 @@ type EmailType =
   | 'promoter_commission' | 'promoter_payout' | 'promo_code_used' | 'promoter_invite' | 'promoter_accepted'
   | 'admin_new_organizer' | 'admin_new_event' | 'admin_flagged_content' | 'admin_daily_stats'
   | 'waitlist_joined' | 'waitlist_available'
+  | 'event_reminder_24h' | 'event_reminder_1h'
 
 interface EmailRequest {
   type: EmailType
   to: string
   data: Record<string, any>
   attachments?: Array<{ filename: string; content: string; type: string }>
+  // Optional tracking fields for communication_logs
+  userId?: string
+  eventId?: string
+  ticketId?: string
+  orderId?: string
+  waitlistId?: string
+  skipLogging?: boolean  // Set true to skip logging (for internal/test emails)
 }
 
 function formatCurrency(amount: number, currency = 'NGN'): string {
@@ -501,19 +516,149 @@ const templates: Record<EmailType, (data: Record<string, any>) => { subject: str
     `, `Tickets available for ${data.eventTitle}! You have 24 hours to purchase.`)
   }),
 
+
+  event_reminder_24h: (data) => ({
+    subject: `📅 Tomorrow: ${data.eventTitle} - Don't Forget!`,
+    html: baseTemplate(`
+      <h2>Your Event is Tomorrow! 🎉</h2>
+      <p>Hi ${data.attendeeName},</p>
+      <p>Just a friendly reminder that <strong>${data.eventTitle}</strong> is happening <strong>tomorrow</strong>!</p>
+      
+      <div class="ticket-card">
+        <h3 style="margin-top:0;color:${BRAND_COLOR};">${data.eventTitle}</h3>
+        <div class="info-row">
+          <span class="info-label">📅 Date</span>
+          <span class="info-value">${formatDate(data.eventDate)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">⏰ Time</span>
+          <span class="info-value">${formatTime(data.eventDate)}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📍 Venue</span>
+          <span class="info-value">${data.venueName}${data.city ? ', ' + data.city : ''}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🎫 Ticket</span>
+          <span class="info-value">${data.ticketType}</span>
+        </div>
+        <div class="info-row" style="border-bottom:none;">
+          <span class="info-label">🔢 Code</span>
+          <span class="info-value" style="font-family:monospace;">${data.ticketCode}</span>
+        </div>
+      </div>
+      
+      <div class="highlight">
+        <strong>📝 Quick Checklist:</strong>
+        <ul style="margin:8px 0 0 0;padding-left:20px;">
+          <li>Save/screenshot your ticket QR code</li>
+          <li>Check the venue location</li>
+          <li>Plan your travel time</li>
+        </ul>
+      </div>
+      
+      ${data.venueAddress ? `
+      <div class="button-wrapper">
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.venueAddress)}" class="button" style="background:#34a853;">📍 Get Directions</a>
+      </div>
+      ` : ''}
+      
+      <div class="button-wrapper">
+        <a href="${data.appUrl}/tickets" class="button">View Your Ticket</a>
+      </div>
+      
+      <p style="text-align:center;color:#6b7280;font-size:14px;">See you there! 🎊</p>
+    `, `Reminder: ${data.eventTitle} is tomorrow!`)
+  }),
+
+  event_reminder_1h: (data) => ({
+    subject: `⏰ Starting Soon: ${data.eventTitle} in 1 Hour!`,
+    html: baseTemplate(`
+      <div class="warning" style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);border-left-color:#f59e0b;">
+        <strong>⏰ Starting in 1 Hour!</strong>
+      </div>
+      
+      <h2>It's Almost Time! 🚀</h2>
+      <p>Hi ${data.attendeeName},</p>
+      <p><strong>${data.eventTitle}</strong> starts in about <strong>1 hour</strong>!</p>
+      
+      <div class="ticket-card">
+        <div class="info-row">
+          <span class="info-label">📍 Venue</span>
+          <span class="info-value">${data.venueName}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">⏰ Starts At</span>
+          <span class="info-value" style="color:${BRAND_COLOR};font-weight:bold;">${formatTime(data.eventDate)}</span>
+        </div>
+        <div class="info-row" style="border-bottom:none;">
+          <span class="info-label">🎫 Your Code</span>
+          <span class="info-value" style="font-family:monospace;font-size:16px;">${data.ticketCode}</span>
+        </div>
+      </div>
+      
+      <div class="success">
+        <strong>📱 Show your QR code at the entrance</strong>
+        <p>Have your ticket ready on your phone for quick check-in!</p>
+      </div>
+      
+      ${data.venueAddress ? `
+      <div class="button-wrapper">
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.venueAddress)}" class="button" style="background:#34a853;">📍 Navigate to Venue</a>
+      </div>
+      ` : ''}
+      
+      <div class="button-wrapper">
+        <a href="${data.appUrl}/tickets" class="button">Open My Ticket</a>
+      </div>
+      
+      <p style="text-align:center;color:#6b7280;font-size:14px;">Have an amazing time! 🎉</p>
+    `, `${data.eventTitle} starts in 1 hour!`)
+  }),
+
   admin_daily_stats: (data) => ({
     subject: `📊 Daily Platform Stats - ${data.date}`,
     html: baseTemplate(`<h2>Daily Platform Summary</h2><p>Performance on ${data.date}:</p><div class="ticket-card"><div class="info-row"><span class="info-label">Revenue</span><span class="info-value" style="color:${BRAND_COLOR};font-size:24px;">${formatCurrency(data.totalRevenue)}</span></div><div class="info-row"><span class="info-label">Tickets</span><span class="info-value">${data.ticketsSold}</span></div><div class="info-row"><span class="info-label">New Users</span><span class="info-value">${data.newUsers}</span></div><div class="info-row"><span class="info-label">New Organizers</span><span class="info-value">${data.newOrganizers}</span></div><div class="info-row"><span class="info-label">New Events</span><span class="info-value">${data.newEvents}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Platform Fees</span><span class="info-value">${formatCurrency(data.platformFees)}</span></div></div><a href="${data.appUrl}/admin/analytics" class="button">View Dashboard</a>`)
   }),
 }
 
-async function sendEmail(request: EmailRequest): Promise<{ success: boolean; messageId?: string; error?: string }> {
+async function sendEmail(request: EmailRequest): Promise<{ success: boolean; messageId?: string; error?: string; logId?: string }> {
   if (!RESEND_API_KEY) return { success: false, error: 'RESEND_API_KEY not configured' }
   
   const template = templates[request.type]
   if (!template) return { success: false, error: `Unknown email type: ${request.type}` }
 
   const { subject, html } = template(request.data)
+
+  // Create communication log entry (status: queued)
+  let logId: string | undefined
+  if (!request.skipLogging) {
+    try {
+      const { data: logEntry, error: logError } = await supabase
+        .from('communication_logs')
+        .insert({
+          channel: 'email',
+          template_key: request.type,
+          recipient_email: request.to,
+          recipient_user_id: request.userId || null,
+          event_id: request.eventId || null,
+          ticket_id: request.ticketId || null,
+          order_id: request.orderId || null,
+          waitlist_id: request.waitlistId || null,
+          subject: subject,
+          status: 'queued',
+          provider: 'resend',
+          metadata: { templateData: request.data }
+        })
+        .select('id')
+        .single()
+      
+      if (logEntry) logId = logEntry.id
+      if (logError) console.error('Failed to create communication log:', logError)
+    } catch (err) {
+      console.error('Communication log error:', err)
+    }
+  }
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -523,14 +668,55 @@ async function sendEmail(request: EmailRequest): Promise<{ success: boolean; mes
     })
 
     const result = await response.json()
+    
     if (!response.ok) {
       console.error('Resend API error:', result)
-      return { success: false, error: result.message || 'Failed to send email' }
+      
+      // Update log with failure
+      if (logId) {
+        await supabase
+          .from('communication_logs')
+          .update({ 
+            status: 'failed', 
+            error_message: result.message || 'Failed to send email',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', logId)
+      }
+      
+      return { success: false, error: result.message || 'Failed to send email', logId }
     }
-    return { success: true, messageId: result.id }
+    
+    // Update log with success
+    if (logId) {
+      await supabase
+        .from('communication_logs')
+        .update({ 
+          status: 'sent', 
+          provider_message_id: result.id,
+          sent_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', logId)
+    }
+    
+    return { success: true, messageId: result.id, logId }
   } catch (error) {
     console.error('Email send error:', error)
-    return { success: false, error: error.message }
+    
+    // Update log with failure
+    if (logId) {
+      await supabase
+        .from('communication_logs')
+        .update({ 
+          status: 'failed', 
+          error_message: error.message,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', logId)
+    }
+    
+    return { success: false, error: error.message, logId }
   }
 }
 
