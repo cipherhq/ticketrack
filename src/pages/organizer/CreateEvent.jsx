@@ -86,6 +86,7 @@ export function CreateEvent() {
     googleMapLink: '',
     venueType: 'indoor',
     venueCapacity: '',
+    maxTicketsPerOrder: 10,
     seatingType: 'Standing',
     city: '',
     country: '',
@@ -172,6 +173,7 @@ export function CreateEvent() {
               googleMapLink: event.google_map_link || "",
               venueType: event.venue_type || "indoor",
               venueCapacity: event.total_capacity || "",
+              maxTicketsPerOrder: event.max_tickets_per_order || 10,
               seatingType: event.seating_type || "Standing",
               city: event.city || "",
               country: event.country_code || "",
@@ -739,6 +741,7 @@ export function CreateEvent() {
         donation_amounts: formData.donationAmounts,
         allow_custom_donation: formData.allowCustomDonation,
         total_capacity: parseInt(formData.venueCapacity) || totalCapacity,
+        max_tickets_per_order: parseInt(formData.maxTicketsPerOrder) || 10,
         image_url: imageUrl,
         promo_video_url: formData.promoVideoUrl,
         fee_handling: formData.feeHandling,
@@ -1659,6 +1662,20 @@ export function CreateEvent() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Max Tickets Per Order</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  placeholder="Maximum tickets per purchase (default: 10)"
+                  value={formData.maxTicketsPerOrder}
+                  onChange={(e) => handleInputChange('maxTicketsPerOrder', Math.max(1, Math.min(100, parseInt(e.target.value) || 10)))}
+                  className="h-12 rounded-xl bg-[#F4F6FA] border-0 w-48"
+                />
+                <p className="text-xs text-[#0F0F0F]/60">Limit how many tickets one customer can buy at once</p>
               </div>
 
               {/* Venue Layout Map - FIXED */}

@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -23,6 +23,7 @@ export function EventManagement() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
+  const [cancelingSeries, setCancelingSeries] = useState(null);
 
   useEffect(() => {
     if (organizer?.id) {
@@ -42,11 +43,26 @@ export function EventManagement() {
           ticket_types (id, price, quantity_available, quantity_sold)
         `)
         .eq('organizer_id', organizer.id)
+        .is('parent_event_id', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       // Calculate stats for each event
+      // Get child event counts for recurring events
+      const parentIds = (eventsData || []).filter(e => e.is_recurring).map(e => e.id);
+      let childCounts = {};
+      if (parentIds.length > 0) {
+        const { data: children } = await supabase
+          .from('events')
+          .select('parent_event_id')
+          .in('parent_event_id', parentIds);
+        childCounts = (children || []).reduce((acc, c) => {
+          acc[c.parent_event_id] = (acc[c.parent_event_id] || 0) + 1;
+          return acc;
+        }, {});
+      }
+
       const eventsWithStats = (eventsData || []).map(event => {
         const ticketTypes = event.ticket_types || [];
         const totalTickets = ticketTypes.reduce((sum, t) => sum + (t.quantity_available || 0), 0);
@@ -57,7 +73,8 @@ export function EventManagement() {
           ...event,
           totalTickets,
           soldTickets,
-          revenue
+          revenue,
+          childEventCount: childCounts[event.id] || 0
         };
       });
 
@@ -156,7 +173,42 @@ export function EventManagement() {
     }
   };
 
-  const formatDate = (dateString) => {
+  
+  // Cancel entire recurring series
+  const cancelSeries = async (event) => {
+    if (!event.is_recurring) return;
+    
+    const confirmed = confirm(
+      'Cancel entire series? This will cancel this event and all ' + (event.childEventCount || 0) + ' upcoming events in the series. Attendees will be notified.'
+    );
+    if (!confirmed) return;
+
+    try {
+      setCancelingSeries(event.id);
+      
+      // Cancel parent event
+      await supabase
+        .from('events')
+        .update({ status: 'cancelled' })
+        .eq('id', event.id);
+      
+      // Cancel all child events
+      await supabase
+        .from('events')
+        .update({ status: 'cancelled' })
+        .eq('parent_event_id', event.id);
+      
+      alert('Series cancelled successfully. Consider notifying attendees via email.');
+      loadEvents();
+    } catch (err) {
+      console.error('Error cancelling series:', err);
+      alert('Failed to cancel series');
+    } finally {
+      setCancelingSeries(null);
+    }
+  };
+
+const formatDate = (dateString) => {
     if (!dateString) return 'No date set';
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -272,6 +324,12 @@ export function EventManagement() {
                               <Badge className="bg-amber-100 text-amber-700 flex items-center gap-1">
                                 <Lock className="w-3 h-3" />
                                 {event.soldTickets} sold
+                              </Badge>
+                            )}
+                            {event.is_recurring && (
+                              <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1">
+                                <RefreshCw className="w-3 h-3" />
+                                Series ({event.childEventCount + 1} events)
                               </Badge>
                             )}
                           </div>

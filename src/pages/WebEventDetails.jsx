@@ -137,8 +137,9 @@ export function WebEventDetails() {
     setSelectedTickets(prev => {
       const current = prev[tierId] || 0
       const tier = ticketTypes.find(t => t.id === tierId)
-      const maxAvailable = tier?.quantity_available || 10
-      const newQuantity = Math.max(0, Math.min(maxAvailable, Math.min(10, current + delta)))
+      const maxAvailable = tier?.quantity_available || 100
+      const maxPerOrder = event?.max_tickets_per_order || 10;
+      const newQuantity = Math.max(0, Math.min(maxAvailable, Math.min(maxPerOrder, current + delta)))
       return { ...prev, [tierId]: newQuantity }
     })
   }
