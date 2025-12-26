@@ -24,6 +24,8 @@ import { WhatsAppSettings } from '@/pages/organizer/WhatsAppSettings';
 import { SMSCredits } from '@/pages/organizer/SMSCredits';
 import { SMSCampaigns } from '@/pages/organizer/SMSCampaigns';
 import { OrganizerRefunds } from '@/pages/organizer/OrganizerRefunds';
+import { OrganizerSupport } from '@/pages/organizer/OrganizerSupport';
+import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
 import { Loader2 } from 'lucide-react';
 
 export function OrganizerRoutes() {
@@ -52,6 +54,7 @@ export function OrganizerRoutes() {
           <Route path="/create-event" element={<CreateEvent />} />
           <Route path="/events/:id/edit" element={<CreateEvent />} />
           <Route path="/events/:id/attendees" element={<ManageAttendees />} />
+          <Route path="/events/:id/post-event" element={<PostEventDashboard />} />
           <Route path="/payouts" element={<FinancePayouts />} />
           <Route path="/profile" element={<OrganizerProfile />} />
           <Route path="/communications" element={<OrganizerCommunications />} />
@@ -70,6 +73,7 @@ export function OrganizerRoutes() {
           <Route path="/whatsapp-credits" element={<BuyWhatsAppCredits />} />
           <Route path="/sms" element={<SMSCampaigns />} />
           <Route path="/refunds" element={<OrganizerRefunds />} />
+          <Route path="/support" element={<OrganizerSupport />} />
         </Routes>
       </OrganizerLayout>
     </OrganizerProvider>

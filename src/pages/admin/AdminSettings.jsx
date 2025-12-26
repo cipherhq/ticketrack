@@ -336,7 +336,7 @@ export function AdminSettings() {
           </Card>
         </TabsContent>
 
-        {/* COUNTRIES TAB */}
+        {/* COUNTRIES TAB - UPDATED: Only 2 fees displayed */}
         <TabsContent value="countries" className="mt-6">
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -349,12 +349,12 @@ export function AdminSettings() {
                     code: '', 
                     name: '', 
                     default_currency: 'NGN',
-                    platform_fee_percentage: 10,
+                    platform_fee_percentage: 0,
                     service_fee_percentage: 5,
-                    service_fee_fixed: 0,
-                    payment_processing_fee_percentage: 1.5,
-                    payout_fee: 50,
-                    min_payout_amount: 5000,
+                    service_fee_fixed: 100,
+                    payment_processing_fee_percentage: 0,
+                    payout_fee: 0,
+                    min_payout_amount: 0,
                     payment_provider: 'paystack',
                     is_active: true
                   }
@@ -397,26 +397,15 @@ export function AdminSettings() {
                           </Button>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                      {/* UPDATED: Only showing 2 fee fields */}
+                      <div className="grid grid-cols-2 gap-3">
                         <div className="p-3 bg-white rounded-lg">
-                          <p className="text-xs text-[#0F0F0F]/60">Platform Fee</p>
-                          <p className="font-semibold text-[#0F0F0F]">{country.platform_fee_percentage}%</p>
-                        </div>
-                        <div className="p-3 bg-white rounded-lg">
-                          <p className="text-xs text-[#0F0F0F]/60">Service Fee</p>
+                          <p className="text-xs text-[#0F0F0F]/60">Service Fee (%)</p>
                           <p className="font-semibold text-[#0F0F0F]">{country.service_fee_percentage}%</p>
                         </div>
                         <div className="p-3 bg-white rounded-lg">
-                          <p className="text-xs text-[#0F0F0F]/60">Processing Fee</p>
-                          <p className="font-semibold text-[#0F0F0F]">{country.payment_processing_fee_percentage}%</p>
-                        </div>
-                        <div className="p-3 bg-white rounded-lg">
-                          <p className="text-xs text-[#0F0F0F]/60">Payout Fee</p>
-                          <p className="font-semibold text-[#0F0F0F]">{currency?.symbol}{country.payout_fee}</p>
-                        </div>
-                        <div className="p-3 bg-white rounded-lg">
-                          <p className="text-xs text-[#0F0F0F]/60">Min Payout</p>
-                          <p className="font-semibold text-[#0F0F0F]">{currency?.symbol}{country.min_payout_amount?.toLocaleString()}</p>
+                          <p className="text-xs text-[#0F0F0F]/60">Service Fee (Fixed)</p>
+                          <p className="font-semibold text-[#0F0F0F]">{currency?.symbol}{country.service_fee_fixed || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -933,7 +922,7 @@ export function AdminSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Country Modal */}
+      {/* Country Modal - UPDATED: Only 2 fee fields */}
       <Dialog open={countryModal.open} onOpenChange={(open) => !open && setCountryModal({ open: false, data: null })}>
         <DialogContent className="rounded-2xl max-w-2xl">
           <DialogHeader>
@@ -993,19 +982,10 @@ export function AdminSettings() {
                 </div>
               </div>
               
+              {/* UPDATED: Only 2 fee fields */}
               <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">Fee Configuration</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Platform Fee (%)</Label>
-                    <Input 
-                      type="number"
-                      step="0.1"
-                      value={countryModal.data.platform_fee_percentage} 
-                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, platform_fee_percentage: parseFloat(e.target.value) || 0 }}))}
-                      className="rounded-xl mt-1"
-                    />
-                  </div>
+                <h4 className="font-medium mb-3">Fee Configuration (Displayed on Pricing Page)</h4>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Service Fee (%)</Label>
                     <Input 
@@ -1015,36 +995,18 @@ export function AdminSettings() {
                       onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, service_fee_percentage: parseFloat(e.target.value) || 0 }}))}
                       className="rounded-xl mt-1"
                     />
+                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Percentage fee per ticket</p>
                   </div>
                   <div>
-                    <Label>Processing Fee (%)</Label>
+                    <Label>Service Fee (Fixed)</Label>
                     <Input 
                       type="number"
-                      step="0.1"
-                      value={countryModal.data.payment_processing_fee_percentage} 
-                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, payment_processing_fee_percentage: parseFloat(e.target.value) || 0 }}))}
+                      step="0.01"
+                      value={countryModal.data.service_fee_fixed} 
+                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, service_fee_fixed: parseFloat(e.target.value) || 0 }}))}
                       className="rounded-xl mt-1"
                     />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <Label>Payout Fee (fixed)</Label>
-                    <Input 
-                      type="number"
-                      value={countryModal.data.payout_fee} 
-                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, payout_fee: parseFloat(e.target.value) || 0 }}))}
-                      className="rounded-xl mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label>Minimum Payout</Label>
-                    <Input 
-                      type="number"
-                      value={countryModal.data.min_payout_amount} 
-                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, min_payout_amount: parseFloat(e.target.value) || 0 }}))}
-                      className="rounded-xl mt-1"
-                    />
+                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Fixed amount per ticket (in local currency)</p>
                   </div>
                 </div>
               </div>
@@ -1097,7 +1059,6 @@ export function AdminSettings() {
                       <SelectItem value="stripe">Stripe</SelectItem>
                       <SelectItem value="paypal">PayPal</SelectItem>
                       <SelectItem value="flutterwave">Flutterwave</SelectItem>
-                      <SelectItem value="paypal">PayPal</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -99,7 +99,6 @@ export function WebEventBrowse() {
         .from('events')
         .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, ticket_types (price)')
         .eq('status', 'published')
-        .or('visibility.eq.public,visibility.is.null')
         .gte('start_date', start)
 
       // Date filter

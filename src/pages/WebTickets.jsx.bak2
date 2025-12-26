@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,7 +44,7 @@ export function WebTickets() {
         .from('tickets')
         .select(`
           *,
-          event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, streaming_platform),
+          event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url),
           ticket_type:ticket_types(name, price)
         `)
         .eq('user_id', user.id)
@@ -422,36 +422,13 @@ export function WebTickets() {
                 <p className="text-[#0F0F0F] capitalize">{ticket.payment_method || "N/A"}</p>
               </div>
               <div className="col-span-2">
-                <p className="text-xs text-[#0F0F0F]/60">{ticket.event?.is_virtual ? 'Event Type' : 'Venue'}</p>
-                {ticket.event?.is_virtual ? (
-                  <p className="text-[#0F0F0F] text-sm flex items-center gap-1">
-                    <Monitor className="w-3 h-3 text-purple-600" />
-                    Virtual Event (Online)
-                  </p>
-                ) : (
-                  <p className="text-[#0F0F0F] text-sm flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {ticket.event?.venue_name}, {ticket.event?.city}
-                  </p>
-                )}
+                <p className="text-xs text-[#0F0F0F]/60">Venue</p>
+                <p className="text-[#0F0F0F] text-sm flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {ticket.event?.venue_name}, {ticket.event?.city}
+                </p>
               </div>
             </div>
-
-            {/* Virtual Event - Join Button */}
-            {ticket.event?.is_virtual && ticket.event?.streaming_url && (
-              <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
-                
-                <a
-                  href={ticket.event.streaming_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors text-sm"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Join Virtual Event
-                </a>
-              </div>
-            )}
 
             {/* QR Code */}
             <div className="flex flex-col items-center justify-center bg-[#F4F6FA] rounded-xl p-3">

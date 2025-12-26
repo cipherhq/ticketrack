@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Users, Ticket, BarChart3,
   DollarSign, Tag, UserPlus, Mail, MessageCircle, MessageSquare,
   Settings, LogOut, Menu, X, ChevronDown, Bell, Shield,
-  QrCode, Building, CreditCard, RotateCcw,
+  QrCode, Building, CreditCard, RotateCcw, HelpCircle, Home,
 } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,6 +46,11 @@ const menuItems = [
     path: '/organizer/refunds',
   },
   {
+    title: 'Support',
+    icon: HelpCircle,
+    path: '/organizer/support',
+  },
+  {
     title: 'Marketing',
     icon: Tag,
     submenu: [
@@ -77,7 +82,7 @@ export function OrganizerLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState([]);
 
@@ -97,7 +102,7 @@ export function OrganizerLayout({ children }) {
   };
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigate('/');
   };
 
@@ -112,7 +117,7 @@ export function OrganizerLayout({ children }) {
           <Menu className="w-6 h-6 text-[#0F0F0F]" />
         </button>
         <Link to="/organizer" className="flex items-center gap-2">
-<img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" />
+<img src="/ticketrackLogo.png" alt="Ticketrack" className="h-10" />
         </Link>
         <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative">
           <Bell className="w-6 h-6 text-[#0F0F0F]" />
@@ -137,7 +142,7 @@ export function OrganizerLayout({ children }) {
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-[#0F0F0F]/10">
             <Link to="/organizer" className="flex items-center gap-2">
-<img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" />
+<img src="/ticketrackLogo.png" alt="Ticketrack" className="h-10" />
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -235,6 +240,17 @@ export function OrganizerLayout({ children }) {
               ))}
             </ul>
           </nav>
+
+          {/* Back to Website */}
+          <div className="px-4 pb-2">
+            <Link
+              to="/"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-[#0F0F0F]/60 hover:bg-[#F4F6FA] transition-colors"
+            >
+              <Home className="w-5 h-5" />
+              Back to Website
+            </Link>
+          </div>
 
           {/* Logout */}
           <div className="p-4 border-t border-[#0F0F0F]/10">

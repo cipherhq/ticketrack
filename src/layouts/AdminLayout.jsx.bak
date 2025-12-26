@@ -19,9 +19,7 @@ import { Image,
   LogOut,
   Loader2,
   Settings,
-  Clock,
-  Home,
-  FolderOpen, // NEW: Icon for Categories
+  Clock, Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -31,7 +29,6 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: Shield, label: 'KYC Verification', path: '/admin/kyc' },
   { icon: Calendar, label: 'Events', path: '/admin/events' },
-  { icon: FolderOpen, label: 'Categories', path: '/admin/categories' }, // NEW: Categories link
   { icon: Building, label: 'Organizers', path: '/admin/organizers' },
   { icon: UserCheck, label: 'Attendees', path: '/admin/attendees' },
   { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' },

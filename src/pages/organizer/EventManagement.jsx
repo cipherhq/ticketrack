@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -424,6 +424,12 @@ const formatDate = (dateString) => {
                             <DropdownMenuItem onClick={() => navigate(`/organizer/analytics?event=${event.id}`)}>
                               View Analytics
                             </DropdownMenuItem>
+                            {eventStatus === 'completed' && (
+                              <DropdownMenuItem onClick={() => navigate(`/organizer/events/${event.id}/post-event`)}>
+                                <BarChart3 className="w-4 h-4 mr-2" />
+                                Post-Event Report
+                              </DropdownMenuItem>
+                            )}
                             {eventStatus !== 'completed' && (
                               <DropdownMenuItem onClick={() => navigate(`/organizer/check-in?event=${event.id}`)}>
                                 Check-In Attendees

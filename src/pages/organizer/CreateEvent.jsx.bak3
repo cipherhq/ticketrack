@@ -4,7 +4,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   X, Calendar, Clock, MapPin, Ticket, Image as ImageIcon,
   Plus, Trash2, Upload, Loader2, DollarSign, Info, ExternalLink,
-  Users, Pencil, Shield, Monitor,
+  Users, Pencil, Shield,
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -118,10 +118,6 @@ export function CreateEvent() {
     visibility: 'public',
     accessPassword: '',
     accessSettings: {},
-    // Virtual Event
-    isVirtual: false,
-    streamingUrl: '',
-    streamingPlatform: '',
   });
 
   // Tickets State
@@ -208,12 +204,6 @@ export function CreateEvent() {
               visibility: event.visibility || 'public',
               accessPassword: event.access_password || '',
               accessSettings: event.access_settings || {},
-              isVirtual: event.is_virtual || false,
-              streamingUrl: event.streaming_url || '',
-              streamingPlatform: event.streaming_platform || '',
-              isVirtual: event.is_virtual || false,
-              streamingUrl: event.streaming_url || '',
-              streamingPlatform: event.streaming_platform || '',
               isWheelchairAccessible: event.is_wheelchair_accessible || false,
               isBYOB: event.is_byob || false,
               isPhotographyAllowed: event.is_photography_allowed !== false,
@@ -778,12 +768,6 @@ export function CreateEvent() {
         image_url: imageUrl,
         promo_video_url: formData.promoVideoUrl,
         fee_handling: formData.feeHandling,
-        is_virtual: formData.isVirtual,
-        streaming_url: formData.streamingUrl,
-        streaming_platform: formData.streamingPlatform,
-        is_virtual: formData.isVirtual,
-        streaming_url: formData.streamingUrl,
-        streaming_platform: formData.streamingPlatform,
         currency: formData.currency,
         visibility: formData.visibility,
         access_password: formData.accessPassword,
@@ -1658,148 +1642,87 @@ export function CreateEvent() {
           {/* Venue Details Tab */}
           {activeTab === 'venue' && (
             <div className="space-y-6">
-              {/* Virtual Event Toggle */}
-              <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                      <Monitor className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-[#0F0F0F]">Virtual / Online Event</h4>
-                      <p className="text-sm text-[#0F0F0F]/60">Enable if this event will be streamed online</p>
-                    </div>
-                  </div>
-                  <Checkbox
-                    id="isVirtual"
-                    checked={formData.isVirtual}
-                    onCheckedChange={(checked) => handleInputChange('isVirtual', checked)}
-                    className="h-5 w-5"
-                  />
-                </div>
-                
-                {formData.isVirtual && (
-                  <div className="mt-4 pt-4 border-t border-purple-200 space-y-4">
-                    <div className="space-y-2">
-                      <Label>Streaming Platform</Label>
-                      <select
-                        value={formData.streamingPlatform}
-                        onChange={(e) => handleInputChange('streamingPlatform', e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl bg-white border border-[#0F0F0F]/10 text-[#0F0F0F]"
-                      >
-                        <option value="">Select platform...</option>
-                        <option value="zoom">Zoom</option>
-                        <option value="google_meet">Google Meet</option>
-                        <option value="youtube">YouTube Live</option>
-                        <option value="twitch">Twitch</option>
-                        <option value="teams">Microsoft Teams</option>
-                        <option value="webex">Cisco Webex</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Streaming Link <span className="text-red-500">*</span></Label>
-                      <Input
-                        type="url"
-                        placeholder="https://zoom.us/j/123456789 or YouTube Live URL"
-                        value={formData.streamingUrl}
-                        onChange={(e) => handleInputChange('streamingUrl', e.target.value)}
-                        className="h-12 rounded-xl bg-white border border-[#0F0F0F]/10"
-                      />
-                      <p className="text-xs text-[#0F0F0F]/50 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        This link will only be shared with ticket holders. You can update it anytime.
-                      </p>
-                    </div>
-                  </div>
-                )}
+              <div className="space-y-2">
+                <Label>Venue Name (optional)</Label>
+                <Input
+                  placeholder="Enter venue name"
+                  value={formData.venueName}
+                  onChange={(e) => handleInputChange('venueName', e.target.value)}
+                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                />
               </div>
 
-              {/* Physical Venue Fields - Hidden when virtual */}
-              {!formData.isVirtual && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Venue Name (optional)</Label>
-                    <Input
-                      placeholder="Enter venue name"
-                      value={formData.venueName}
-                      onChange={(e) => handleInputChange('venueName', e.target.value)}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label>Full Address <span className="text-red-500">*</span></Label>
+                <AddressAutocomplete
+                  value={formData.venueAddress}
+                  onChange={(address) => handleInputChange('venueAddress', address)}
+                  onPlaceSelect={handlePlaceSelect}
+                  placeholder="Search for venue address..."
+                />
+                <p className="text-xs text-[#0F0F0F]/50">Start typing to search for venues and addresses</p>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label>Full Address <span className="text-red-500">*</span></Label>
-                    <AddressAutocomplete
-                      value={formData.venueAddress}
-                      onChange={(address) => handleInputChange('venueAddress', address)}
-                      onPlaceSelect={handlePlaceSelect}
-                      placeholder="Search for venue address..."
-                    />
-                    <p className="text-xs text-[#0F0F0F]/50">Start typing to search for venues and addresses</p>
-                  </div>
+              <div className="space-y-2">
+                <Label>Venue Type <span className="text-red-500">*</span></Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {['indoor', 'outdoor'].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => handleInputChange('venueType', type)}
+                      className={`p-4 rounded-xl border text-center capitalize transition-all ${
+                        formData.venueType === type
+                          ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
+                          : 'border-[#0F0F0F]/10'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label>Venue Type <span className="text-red-500">*</span></Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['indoor', 'outdoor'].map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => handleInputChange('venueType', type)}
-                          className={`p-4 rounded-xl border text-center capitalize transition-all ${
-                            formData.venueType === type
-                              ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
-                              : 'border-[#0F0F0F]/10'
-                          }`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Venue Capacity <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="number"
+                    placeholder="Maximum attendees"
+                    value={formData.venueCapacity}
+                    onChange={(e) => handleInputChange('venueCapacity', e.target.value)}
+                    className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Seating Type <span className="text-red-500">*</span></Label>
+                  <select
+                    value={formData.seatingType}
+                    onChange={(e) => handleInputChange('seatingType', e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
+                  >
+                    {seatingTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Venue Capacity <span className="text-red-500">*</span></Label>
-                      <Input
-                        type="number"
-                        placeholder="Maximum attendees"
-                        value={formData.venueCapacity}
-                        onChange={(e) => handleInputChange('venueCapacity', e.target.value)}
-                        className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Seating Type <span className="text-red-500">*</span></Label>
-                      <select
-                        value={formData.seatingType}
-                        onChange={(e) => handleInputChange('seatingType', e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
-                      >
-                        {seatingTypes.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+              <div className="space-y-2">
+                <Label>Max Tickets Per Order</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  placeholder="Maximum tickets per purchase (default: 10)"
+                  value={formData.maxTicketsPerOrder}
+                  onChange={(e) => handleInputChange('maxTicketsPerOrder', Math.max(1, Math.min(100, parseInt(e.target.value) || 10)))}
+                  className="h-12 rounded-xl bg-[#F4F6FA] border-0 w-48"
+                />
+                <p className="text-xs text-[#0F0F0F]/60">Limit how many tickets one customer can buy at once</p>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label>Max Tickets Per Order</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="100"
-                      placeholder="Maximum tickets per purchase (default: 10)"
-                      value={formData.maxTicketsPerOrder}
-                      onChange={(e) => handleInputChange('maxTicketsPerOrder', Math.max(1, Math.min(100, parseInt(e.target.value) || 10)))}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0 w-48"
-                    />
-                    <p className="text-xs text-[#0F0F0F]/60">Limit how many tickets one customer can buy at once</p>
-                  </div>
-
-                  {/* Venue Layout Map - FIXED */}
+              {/* Venue Layout Map - FIXED */}
               <div className="space-y-2">
                 <Label>Upload Venue Layout Map (Optional)</Label>
                 
@@ -1923,8 +1846,6 @@ export function CreateEvent() {
                   </div>
                 </CardContent>
               </Card>
-                </>
-              )}
             </div>
           )}
 

@@ -124,14 +124,6 @@ export function WebLayout() {
                 My Tickets
               </button>
               <button
-                onClick={() => navigate('/pricing')}
-                className={`text-[#0F0F0F] hover:text-[#2969FF] transition-colors ${
-                  isActive('/pricing') ? 'text-[#2969FF]' : ''
-                }`}
-              >
-                Pricing
-              </button>
-              <button
                 onClick={() => navigate('/search')}
                 className="text-[#0F0F0F] hover:text-[#2969FF] transition-colors"
               >
@@ -320,15 +312,6 @@ export function WebLayout() {
                 className="block w-full text-left py-2 text-[#0F0F0F]"
               >
                 Search
-              </button>
-              <button
-                onClick={() => {
-                  navigate('/pricing')
-                  setMobileMenuOpen(false)
-                }}
-                className="block w-full text-left py-2 text-[#0F0F0F]"
-              >
-                Pricing
               </button>
               
               <div className="pt-4 border-t border-[#0F0F0F]/10">

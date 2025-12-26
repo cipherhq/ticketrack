@@ -32,6 +32,8 @@ import { WebCart } from './pages/WebCart';
 import { WebAbout } from './pages/WebAbout';
 import { WebContact } from './pages/WebContact';
 import { WebHelp } from './pages/WebHelp';
+import { WebSupport } from './pages/WebSupport';
+import { WebPricing } from './pages/WebPricing';
 import { WebPrivacy } from './pages/WebPrivacy';
 import { WebTerms } from './pages/WebTerms';
 import { CreateEvent } from './pages/organizer/CreateEvent';
@@ -97,6 +99,8 @@ function App() {
                 <Route path="/about" element={<WebAbout />} />
                 <Route path="/contact" element={<WebContact />} />
                 <Route path="/help" element={<WebHelp />} />
+                <Route path="/support" element={<WebSupport />} />
+                <Route path="/pricing" element={<WebPricing />} />
                 <Route path="/privacy" element={<WebPrivacy />} />
                 <Route path="/terms" element={<WebTerms />} />
                 <Route path="/profile" element={<AttendeeProfile />} />

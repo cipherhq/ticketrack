@@ -259,7 +259,6 @@ export function WebPaymentSuccess() {
                   </div>
                 </div>
                 
-                <a
                   href={event.streaming_url}
                   target="_blank"
                   rel="noopener noreferrer"

@@ -211,9 +211,6 @@ export function CreateEvent() {
               isVirtual: event.is_virtual || false,
               streamingUrl: event.streaming_url || '',
               streamingPlatform: event.streaming_platform || '',
-              isVirtual: event.is_virtual || false,
-              streamingUrl: event.streaming_url || '',
-              streamingPlatform: event.streaming_platform || '',
               isWheelchairAccessible: event.is_wheelchair_accessible || false,
               isBYOB: event.is_byob || false,
               isPhotographyAllowed: event.is_photography_allowed !== false,
@@ -778,9 +775,6 @@ export function CreateEvent() {
         image_url: imageUrl,
         promo_video_url: formData.promoVideoUrl,
         fee_handling: formData.feeHandling,
-        is_virtual: formData.isVirtual,
-        streaming_url: formData.streamingUrl,
-        streaming_platform: formData.streamingPlatform,
         is_virtual: formData.isVirtual,
         streaming_url: formData.streamingUrl,
         streaming_platform: formData.streamingPlatform,
@@ -1716,90 +1710,87 @@ export function CreateEvent() {
                 )}
               </div>
 
-              {/* Physical Venue Fields - Hidden when virtual */}
-              {!formData.isVirtual && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Venue Name (optional)</Label>
-                    <Input
-                      placeholder="Enter venue name"
-                      value={formData.venueName}
-                      onChange={(e) => handleInputChange('venueName', e.target.value)}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label>Venue Name {formData.isVirtual ? '(optional for virtual events)' : '(optional)'}</Label>
+                <Input
+                  placeholder="Enter venue name"
+                  value={formData.venueName}
+                  onChange={(e) => handleInputChange('venueName', e.target.value)}
+                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label>Full Address <span className="text-red-500">*</span></Label>
-                    <AddressAutocomplete
-                      value={formData.venueAddress}
-                      onChange={(address) => handleInputChange('venueAddress', address)}
-                      onPlaceSelect={handlePlaceSelect}
-                      placeholder="Search for venue address..."
-                    />
-                    <p className="text-xs text-[#0F0F0F]/50">Start typing to search for venues and addresses</p>
-                  </div>
+              <div className="space-y-2">
+                <Label>Full Address <span className="text-red-500">*</span></Label>
+                <AddressAutocomplete
+                  value={formData.venueAddress}
+                  onChange={(address) => handleInputChange('venueAddress', address)}
+                  onPlaceSelect={handlePlaceSelect}
+                  placeholder="Search for venue address..."
+                />
+                <p className="text-xs text-[#0F0F0F]/50">Start typing to search for venues and addresses</p>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label>Venue Type <span className="text-red-500">*</span></Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['indoor', 'outdoor'].map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => handleInputChange('venueType', type)}
-                          className={`p-4 rounded-xl border text-center capitalize transition-all ${
-                            formData.venueType === type
-                              ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
-                              : 'border-[#0F0F0F]/10'
-                          }`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              <div className="space-y-2">
+                <Label>Venue Type <span className="text-red-500">*</span></Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {['indoor', 'outdoor'].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => handleInputChange('venueType', type)}
+                      className={`p-4 rounded-xl border text-center capitalize transition-all ${
+                        formData.venueType === type
+                          ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
+                          : 'border-[#0F0F0F]/10'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Venue Capacity <span className="text-red-500">*</span></Label>
-                      <Input
-                        type="number"
-                        placeholder="Maximum attendees"
-                        value={formData.venueCapacity}
-                        onChange={(e) => handleInputChange('venueCapacity', e.target.value)}
-                        className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Seating Type <span className="text-red-500">*</span></Label>
-                      <select
-                        value={formData.seatingType}
-                        onChange={(e) => handleInputChange('seatingType', e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
-                      >
-                        {seatingTypes.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Venue Capacity <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="number"
+                    placeholder="Maximum attendees"
+                    value={formData.venueCapacity}
+                    onChange={(e) => handleInputChange('venueCapacity', e.target.value)}
+                    className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Seating Type <span className="text-red-500">*</span></Label>
+                  <select
+                    value={formData.seatingType}
+                    onChange={(e) => handleInputChange('seatingType', e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
+                  >
+                    {seatingTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label>Max Tickets Per Order</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="100"
-                      placeholder="Maximum tickets per purchase (default: 10)"
-                      value={formData.maxTicketsPerOrder}
-                      onChange={(e) => handleInputChange('maxTicketsPerOrder', Math.max(1, Math.min(100, parseInt(e.target.value) || 10)))}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0 w-48"
-                    />
-                    <p className="text-xs text-[#0F0F0F]/60">Limit how many tickets one customer can buy at once</p>
-                  </div>
+              <div className="space-y-2">
+                <Label>Max Tickets Per Order</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  placeholder="Maximum tickets per purchase (default: 10)"
+                  value={formData.maxTicketsPerOrder}
+                  onChange={(e) => handleInputChange('maxTicketsPerOrder', Math.max(1, Math.min(100, parseInt(e.target.value) || 10)))}
+                  className="h-12 rounded-xl bg-[#F4F6FA] border-0 w-48"
+                />
+                <p className="text-xs text-[#0F0F0F]/60">Limit how many tickets one customer can buy at once</p>
+              </div>
 
-                  {/* Venue Layout Map - FIXED */}
+              {/* Venue Layout Map - FIXED */}
               <div className="space-y-2">
                 <Label>Upload Venue Layout Map (Optional)</Label>
                 
@@ -1923,8 +1914,6 @@ export function CreateEvent() {
                   </div>
                 </CardContent>
               </Card>
-                </>
-              )}
             </div>
           )}
 

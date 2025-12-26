@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { getEvent } from '@/services/events'
 import { supabase } from '@/lib/supabase'
-import { EventAccessGate } from '@/components/EventAccessGate'
 
 export function WebEventDetails() {
   const navigate = useNavigate()
@@ -34,7 +33,6 @@ export function WebEventDetails() {
   const [childEvents, setChildEvents] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
   const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
-  const [accessGranted, setAccessGranted] = useState(false)
 
   useEffect(() => {
     async function loadEvent() {
@@ -69,29 +67,6 @@ export function WebEventDetails() {
       loadEvent()
     }
   }, [id])
-
-  // Check if access has been granted for private events
-  useEffect(() => {
-    if (event) {
-      const visibility = event.visibility || 'public'
-      
-      // Public and unlisted events don't need access verification
-      if (visibility === 'public' || visibility === 'unlisted') {
-        setAccessGranted(true)
-        return
-      }
-      
-      // Check if access was previously granted (stored in sessionStorage)
-      const storedAccess = sessionStorage.getItem(`event_access_${event.id}`)
-      if (storedAccess === 'granted') {
-        setAccessGranted(true)
-        return
-      }
-      
-      // Access not yet granted for private events
-      setAccessGranted(false)
-    }
-  }, [event])
 
 
   // Fetch service fee rate based on event currency
@@ -263,21 +238,6 @@ export function WebEventDetails() {
           Browse Events
         </Button>
       </div>
-    )
-  }
-
-  // Show access gate for private events
-  const needsAccessGate = event && 
-    ['password', 'invite_only', 'email_whitelist'].includes(event.visibility) && 
-    !accessGranted
-
-  if (needsAccessGate) {
-    return (
-      <EventAccessGate
-        event={event}
-        onAccessGranted={() => setAccessGranted(true)}
-        onBack={() => navigate('/events')}
-      />
     )
   }
 
