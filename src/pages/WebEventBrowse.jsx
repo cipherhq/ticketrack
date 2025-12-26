@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, Calendar, MapPin, SlidersHorizontal, ChevronDown, X, Loader2 } from 'lucide-react'
+import { Search, Calendar, MapPin, SlidersHorizontal, ChevronDown, X, Loader2, Monitor } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -97,7 +97,7 @@ export function WebEventBrowse() {
       
       let query = supabase
         .from('events')
-        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, ticket_types (price)')
+        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, is_virtual, ticket_types (price)')
         .eq('status', 'published')
         .or('visibility.eq.public,visibility.is.null')
         .gte('start_date', start)
@@ -541,6 +541,11 @@ export function WebEventBrowse() {
                       {event.is_free && (
                         <Badge className="absolute top-4 right-4 bg-green-500 text-white border-0">
                           Free
+                        </Badge>
+                      )}
+                      {event.is_virtual && (
+                        <Badge className="absolute bottom-4 left-4 bg-purple-600 text-white border-0 flex items-center gap-1">
+                          <Monitor className="w-3 h-3" /> Virtual
                         </Badge>
                       )}
                     </div>

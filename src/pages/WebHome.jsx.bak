@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { 
   Search, MapPin, Calendar, ChevronRight, ChevronLeft, Star, 
   Download, Shield, CreditCard, Headphones, TrendingUp, Clock,
-  Heart, Users, Ticket, Globe, X, ChevronDown, Monitor
+  Heart, Users, Ticket, Globe, X, ChevronDown
 } from 'lucide-react';
 
 // Category images mapping
@@ -155,12 +155,7 @@ const EventCard = ({ event, showDistance = false }) => {
             {event.category}
           </span>
         )}
-        {event.is_virtual && (
-          <span className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
-            <Monitor size={12} /> Virtual
-          </span>
-        )}
-        {showDistance && event.distance && !event.is_virtual && (
+        {showDistance && event.distance && (
           <span className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
             {event.distance} km
           </span>
@@ -387,9 +382,8 @@ export function WebHome() {
 
       const { data: allEvents } = await supabase
         .from('events')
-        .select('*, ticket_types(price, quantity_available, quantity_sold), is_virtual')
+        .select('*, ticket_types(price, quantity_available, quantity_sold)')
         .eq('status', 'published')
-        .or('visibility.eq.public,visibility.is.null')
         .gte('end_date', new Date().toISOString())
         .order('start_date', { ascending: true });
 
