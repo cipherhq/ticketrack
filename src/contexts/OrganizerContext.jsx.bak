@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useImpersonation } from './ImpersonationContext';
 
 const OrganizerContext = createContext(null);
 
@@ -8,33 +7,13 @@ export function OrganizerProvider({ children }) {
   const [organizer, setOrganizer] = useState({ id: null, business_name: 'My Organization' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Get impersonation context
-  const impersonation = useImpersonation();
-  const isImpersonating = impersonation?.isImpersonating;
-  const impersonationType = impersonation?.impersonationType;
-  const impersonationTarget = impersonation?.impersonationTarget;
 
   useEffect(() => {
     loadOrganizer();
-  }, [isImpersonating, impersonationTarget?.id]);
+  }, []);
 
   const loadOrganizer = async () => {
     try {
-      // If impersonating an organizer, use the impersonated organizer
-      if (isImpersonating && impersonationType === 'organizer' && impersonationTarget?.id) {
-        const { data: impersonatedOrg } = await supabase
-          .from('organizers')
-          .select('*')
-          .eq('id', impersonationTarget.id)
-          .single();
-        
-        if (impersonatedOrg) {
-          setOrganizer(impersonatedOrg);
-          return;
-        }
-      }
-
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {

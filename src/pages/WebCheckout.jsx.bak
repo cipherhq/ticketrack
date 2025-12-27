@@ -110,8 +110,6 @@ export function WebCheckout() {
     firstName: '',
     lastName: ''
   })
-  const [customFields, setCustomFields] = useState([])
-  const [customFieldResponses, setCustomFieldResponses] = useState({})
   const [loading, setLoading] = useState(false)
 
   // Checkout countdown timer (5 minutes)
@@ -152,30 +150,6 @@ export function WebCheckout() {
     }
   }, [event, selectedTickets, navigate])
 
-
-  // Load custom fields for the event
-  useEffect(() => {
-    async function loadCustomFields() {
-      if (event?.id) {
-        const { data, error } = await supabase
-          .from('event_custom_fields')
-          .select('*')
-          .eq('event_id', event.id)
-          .order('display_order', { ascending: true });
-        
-        if (!error && data) {
-          setCustomFields(data);
-          // Initialize responses object
-          const initialResponses = {};
-          data.forEach(field => {
-            initialResponses[field.id] = '';
-          });
-          setCustomFieldResponses(initialResponses);
-        }
-      }
-    }
-    loadCustomFields();
-  }, [event?.id]);
 
   // Fetch service fee rate based on event currency
   useEffect(() => {
@@ -378,33 +352,6 @@ export function WebCheckout() {
       // Create tickets
       const tickets = await createTickets(orderId, reference)
 
-      // Save custom field responses
-      if (customFields.length > 0 && tickets && tickets.length > 0) {
-        const responsesToInsert = []
-        tickets.forEach(ticket => {
-          customFields.forEach(field => {
-            const response = customFieldResponses[field.id]
-            if (response) {
-              responsesToInsert.push({
-                custom_field_id: field.id,
-                ticket_id: ticket.id,
-                response_value: response
-              })
-            }
-          })
-        })
-        
-        if (responsesToInsert.length > 0) {
-          const { error: responseError } = await supabase
-            .from('custom_field_responses')
-            .insert(responsesToInsert)
-          
-          if (responseError) {
-            console.error('Error saving custom field responses:', responseError)
-          }
-        }
-      }
-
       // If this purchase came from waitlist, mark the waitlist entry as purchased
       if (fromWaitlist && waitlistId) {
         try {
@@ -447,16 +394,6 @@ export function WebCheckout() {
   const handlePaystackPayment = async () => {
     if (!formData.email || !formData.firstName || !formData.lastName) {
       setError('Please fill in all required fields')
-      return
-    }
-
-    // Validate required custom fields
-    const missingRequiredFields = customFields
-      .filter(field => field.is_required && !customFieldResponses[field.id])
-      .map(field => field.field_label)
-    
-    if (missingRequiredFields.length > 0) {
-      setError(`Please fill in required fields: ${missingRequiredFields.join(', ')}`)
       return
     }
 
@@ -762,45 +699,6 @@ export function WebCheckout() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Custom Form Fields */}
-          {customFields.length > 0 && (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
-              <CardHeader><CardTitle className="text-[#0F0F0F]">Additional Information</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                {customFields.map((field) => (
-                  <div key={field.id} className="space-y-2">
-                    <Label htmlFor={`custom-${field.id}`}>
-                      {field.field_label} {field.is_required && <span className="text-red-500">*</span>}
-                    </Label>
-                    {field.field_type === 'text' && (
-                      <Input
-                        id={`custom-${field.id}`}
-                        value={customFieldResponses[field.id] || ''}
-                        onChange={(e) => setCustomFieldResponses(prev => ({ ...prev, [field.id]: e.target.value }))}
-                        className="rounded-xl border-[#0F0F0F]/10"
-                        required={field.is_required}
-                      />
-                    )}
-                    {field.field_type === 'dropdown' && (
-                      <select
-                        id={`custom-${field.id}`}
-                        value={customFieldResponses[field.id] || ''}
-                        onChange={(e) => setCustomFieldResponses(prev => ({ ...prev, [field.id]: e.target.value }))}
-                        className="w-full h-12 px-4 rounded-xl border border-[#0F0F0F]/10 bg-white"
-                        required={field.is_required}
-                      >
-                        <option value="">Select an option</option>
-                        {(field.field_options || []).map((option, idx) => (
-                          <option key={idx} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
 
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardHeader><CardTitle className="text-[#0F0F0F]">Payment Method</CardTitle></CardHeader>

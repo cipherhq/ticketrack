@@ -1,7 +1,6 @@
-import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Search, Mail, Download, Filter, MoreVertical, Loader2, Users, CheckCircle, Clock, Calendar, RefreshCw, Eye, ChevronUp } from 'lucide-react';
+import { Search, Mail, Download, Filter, MoreVertical, Loader2, Users, CheckCircle, Clock, Calendar, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
@@ -34,9 +33,6 @@ export function ManageAttendees() {
   const [eventFilter, setEventFilter] = useState(eventIdParam || 'all');
   const [checkInFilter, setCheckInFilter] = useState('all');
   const [selectedAttendees, setSelectedAttendees] = useState([]);
-  const [customFieldsByEvent, setCustomFieldsByEvent] = useState({});
-  const [customResponses, setCustomResponses] = useState({});
-  const [expandedRows, setExpandedRows] = useState([]);
 
   useEffect(() => {
     if (organizer?.id) {
@@ -47,7 +43,7 @@ export function ManageAttendees() {
   const loadData = async () => {
     setLoading(true);
     try {
-      await Promise.all([loadEvents(), loadAttendees(), loadCustomFields()]);
+      await Promise.all([loadEvents(), loadAttendees()]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -132,61 +128,6 @@ export function ManageAttendees() {
     setAttendees(formattedAttendees);
   };
 
-  const loadCustomFields = async () => {
-    const { data: orgEvents } = await supabase
-      .from('events')
-      .select('id')
-      .eq('organizer_id', organizer.id);
-
-    if (!orgEvents || orgEvents.length === 0) return;
-
-    const eventIds = orgEvents.map(e => e.id);
-
-    const { data: fields } = await supabase
-      .from('event_custom_fields')
-      .select('*')
-      .in('event_id', eventIds)
-      .order('display_order');
-
-    if (fields && fields.length > 0) {
-      const fieldsByEvent = {};
-      fields.forEach(field => {
-        if (!fieldsByEvent[field.event_id]) {
-          fieldsByEvent[field.event_id] = [];
-        }
-        fieldsByEvent[field.event_id].push(field);
-      });
-      setCustomFieldsByEvent(fieldsByEvent);
-
-      const { data: responses } = await supabase
-        .from('custom_field_responses')
-        .select('*, event_custom_fields(field_label, event_id)')
-        .in('custom_field_id', fields.map(f => f.id));
-
-      if (responses) {
-        const responsesByTicket = {};
-        responses.forEach(r => {
-          if (!responsesByTicket[r.ticket_id]) {
-            responsesByTicket[r.ticket_id] = [];
-          }
-          responsesByTicket[r.ticket_id].push({
-            label: r.event_custom_fields?.field_label,
-            value: r.response_value
-          });
-        });
-        setCustomResponses(responsesByTicket);
-      }
-    }
-  };
-
-  const toggleRowExpand = (ticketId) => {
-    setExpandedRows(prev => 
-      prev.includes(ticketId) 
-        ? prev.filter(id => id !== ticketId)
-        : [...prev, ticketId]
-    );
-  };
-
   const filteredAttendees = attendees.filter((attendee) => {
     const matchesSearch =
       attendee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -215,46 +156,21 @@ export function ManageAttendees() {
   };
 
   const exportToCSV = () => {
-    // Only collect custom field labels from the filtered attendees being exported
-    const allFieldLabels = new Set();
-    filteredAttendees.forEach(a => {
-      const responses = customResponses[a.id] || [];
-      responses.forEach(r => {
-        if (r.label) allFieldLabels.add(r.label);
-      });
-    });
-    const fieldLabelsArray = Array.from(allFieldLabels);
-
-    // Base headers + custom field headers (only if there are any)
-    const headers = [
-      'Name', 'Email', 'Phone', 'Event', 'Ticket Type', 
-      'Ticket ID', 'Purchase Date', 'Status', 'Check-in Time',
-      ...fieldLabelsArray
-    ];
-    
-    const csvData = filteredAttendees.map(a => {
-      const responses = customResponses[a.id] || [];
-      const customValues = fieldLabelsArray.map(label => {
-        const response = responses.find(r => r.label === label);
-        return response?.value || '';
-      });
-
-      return [
-        a.name,
-        a.email,
-        a.phone,
-        a.event,
-        a.ticketType,
-        a.ticketId,
-        formatDate(a.purchaseDate),
-        a.checkedIn ? 'Checked In' : 'Pending',
-        a.checkInTime ? formatDateTime(a.checkInTime) : 'N/A',
-        ...customValues
-      ];
-    });
+    const headers = ['Name', 'Email', 'Phone', 'Event', 'Ticket Type', 'Ticket ID', 'Purchase Date', 'Status', 'Check-in Time'];
+    const csvData = filteredAttendees.map(a => [
+      a.name,
+      a.email,
+      a.phone,
+      a.event,
+      a.ticketType,
+      a.ticketId,
+      formatDate(a.purchaseDate),
+      a.checkedIn ? 'Checked In' : 'Pending',
+      a.checkInTime ? formatDateTime(a.checkInTime) : 'N/A'
+    ]);
 
     const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell || ''}"`).join(','))
+      .map(row => row.map(cell => `"${cell}"`).join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -520,8 +436,7 @@ export function ManageAttendees() {
                 </thead>
                 <tbody>
                   {filteredAttendees.map((attendee) => (
-                    <React.Fragment key={attendee.id}>
-                    <tr className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                    <tr key={attendee.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
                       <td className="py-4 px-4">
                         <input
                           type="checkbox"
@@ -559,23 +474,7 @@ export function ManageAttendees() {
                         )}
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {customResponses[attendee.id]?.length > 0 && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="rounded-xl"
-                              onClick={() => toggleRowExpand(attendee.id)}
-                              title="View custom form responses"
-                            >
-                              {expandedRows.includes(attendee.id) ? (
-                                <ChevronUp className="w-5 h-5 text-[#2969FF]" />
-                              ) : (
-                                <Eye className="w-5 h-5 text-[#2969FF]" />
-                              )}
-                            </Button>
-                          )}
-                          <DropdownMenu>
+                        <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-xl">
                               <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
@@ -602,29 +501,9 @@ export function ManageAttendees() {
                               Send Email
                             </DropdownMenuItem>
                           </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                        </DropdownMenu>
                       </td>
                     </tr>
-                    {/* Expandable row for custom field responses */}
-                    {expandedRows.includes(attendee.id) && customResponses[attendee.id]?.length > 0 && (
-                      <tr className="bg-[#F4F6FA]/50 border-b border-[#0F0F0F]/10">
-                        <td colSpan="7" className="py-4 px-8">
-                          <div className="mb-2">
-                            <span className="text-sm font-medium text-[#0F0F0F]">Custom Form Responses</span>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {customResponses[attendee.id].map((response, idx) => (
-                              <div key={idx} className="bg-white p-3 rounded-lg border border-[#0F0F0F]/10">
-                                <p className="text-xs text-[#0F0F0F]/60 mb-1">{response.label}</p>
-                                <p className="text-sm font-medium text-[#0F0F0F]">{response.value}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
