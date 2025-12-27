@@ -50,12 +50,13 @@ serve(async (req) => {
     const paymentReference = refundRequest.order?.payment_reference || refundRequest.payment_reference;
     const countryCode = refundRequest.order?.country_code || "NG";
     const refundAmount = Math.round(refundRequest.amount * 100); // Convert to kobo/cents
+    const currency = refundRequest.currency || refundRequest.order?.currency || "NGN";
 
     let refundReference = null;
     let refundStatus = "processing";
 
+    // ========== PAYSTACK REFUND ==========
     if (paymentProvider === "paystack") {
-      // Process Paystack refund
       const { data: paystackConfig } = await supabase
         .from("payment_gateway_config")
         .select("secret_key_encrypted")
@@ -90,8 +91,8 @@ serve(async (req) => {
         throw new Error(paystackResult.message || "Paystack refund failed");
       }
 
+    // ========== STRIPE REFUND ==========
     } else if (paymentProvider === "stripe") {
-      // Process Stripe refund
       const { data: stripeConfig } = await supabase
         .from("payment_gateway_config")
         .select("secret_key_encrypted")
@@ -117,6 +118,100 @@ serve(async (req) => {
       refundReference = refund.id;
       refundStatus = refund.status === "succeeded" ? "processed" : "processing";
 
+    // ========== PAYPAL REFUND ==========
+    } else if (paymentProvider === "paypal") {
+      // Get PayPal config
+      const { data: paypalConfig } = await supabase
+        .from("payment_gateway_config")
+        .select("*")
+        .eq("provider", "paypal")
+        .eq("is_active", true)
+        .limit(1)
+        .single();
+
+      if (!paypalConfig) {
+        throw new Error("PayPal not configured");
+      }
+
+      const clientId = paypalConfig.public_key;
+      const clientSecret = paypalConfig.secret_key_encrypted;
+      const sandboxMode = paypalConfig.sandbox_mode;
+      const baseUrl = sandboxMode 
+        ? "https://api-m.sandbox.paypal.com" 
+        : "https://api-m.paypal.com";
+
+      // Step 1: Get PayPal access token
+      const authResponse = await fetch(`${baseUrl}/v1/oauth2/token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+        },
+        body: "grant_type=client_credentials",
+      });
+
+      const authData = await authResponse.json();
+      if (!authData.access_token) {
+        console.error("PayPal auth failed:", authData);
+        throw new Error("Failed to get PayPal access token");
+      }
+
+      const accessToken = authData.access_token;
+
+      // Step 2: Get the order details to find the capture ID
+      // payment_reference stores the PayPal Order ID
+      const orderResponse = await fetch(`${baseUrl}/v2/checkout/orders/${paymentReference}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const orderData = await orderResponse.json();
+      
+      if (!orderData.id) {
+        console.error("PayPal order fetch failed:", orderData);
+        throw new Error("Failed to fetch PayPal order details");
+      }
+
+      // Extract capture ID from order - look in purchase_units[0].payments.captures[0].id
+      const captureId = orderData.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+      
+      if (!captureId) {
+        console.error("No capture found in order:", JSON.stringify(orderData, null, 2));
+        throw new Error("No PayPal capture found for this order. The payment may not have been captured yet.");
+      }
+
+      // Step 3: Process the refund using the capture ID
+      const refundAmountDecimal = (refundRequest.amount).toFixed(2);
+      
+      const refundResponse = await fetch(`${baseUrl}/v2/payments/captures/${captureId}/refund`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: {
+            value: refundAmountDecimal,
+            currency_code: currency.toUpperCase() === "NGN" ? "USD" : currency.toUpperCase(), // PayPal doesn't support NGN
+          },
+          note_to_payer: "Refund from Ticketrack",
+        }),
+      });
+
+      const refundData = await refundResponse.json();
+
+      if (refundData.id && (refundData.status === "COMPLETED" || refundData.status === "PENDING")) {
+        refundReference = refundData.id;
+        refundStatus = refundData.status === "COMPLETED" ? "processed" : "processing";
+      } else {
+        console.error("PayPal refund failed:", refundData);
+        const errorMessage = refundData.details?.[0]?.description || refundData.message || "PayPal refund failed";
+        throw new Error(errorMessage);
+      }
+
     } else {
       throw new Error(`Unsupported payment provider: ${paymentProvider}`);
     }
@@ -137,6 +232,43 @@ serve(async (req) => {
         .from("tickets")
         .update({ status: "cancelled" })
         .eq("id", refundRequest.ticket_id);
+    }
+
+    // Send email notification to attendee
+    try {
+      const attendeeEmail = refundRequest.ticket?.attendee_email;
+      const attendeeName = refundRequest.ticket?.attendee_name || "Customer";
+      
+      if (attendeeEmail) {
+        await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            to: attendeeEmail,
+            subject: "Your Refund Has Been Processed",
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2969FF;">Refund Processed</h2>
+                <p>Hi ${attendeeName},</p>
+                <p>Great news! Your refund has been processed successfully.</p>
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <p style="margin: 5px 0;"><strong>Refund Amount:</strong> ${currency} ${refundRequest.amount.toFixed(2)}</p>
+                  <p style="margin: 5px 0;"><strong>Reference:</strong> ${refundReference}</p>
+                  <p style="margin: 5px 0;"><strong>Status:</strong> ${refundStatus === "processed" ? "Completed" : "Processing"}</p>
+                </div>
+                <p>The funds should appear in your account within 5-10 business days depending on your payment provider.</p>
+                <p>Thank you for using Ticketrack!</p>
+              </div>
+            `,
+          }),
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send refund email:", emailError);
+      // Don't fail the refund if email fails
     }
 
     // Log to audit trail
