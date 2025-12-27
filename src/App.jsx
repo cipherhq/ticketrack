@@ -31,7 +31,7 @@ import { WebSearch } from './pages/WebSearch';
 import { WebCart } from './pages/WebCart';
 import { WebAbout } from './pages/WebAbout';
 import { WebContact } from './pages/WebContact';
-import { WebHelp } from './pages/WebHelp';
+import { HelpCenter } from './pages/HelpCenter';
 import { WebSupport } from './pages/WebSupport';
 import { WebPricing } from './pages/WebPricing';
 import { WebPrivacy } from './pages/WebPrivacy';
@@ -98,7 +98,7 @@ function App() {
                 <Route path="/cart" element={<WebCart />} />
                 <Route path="/about" element={<WebAbout />} />
                 <Route path="/contact" element={<WebContact />} />
-                <Route path="/help" element={<WebHelp />} />
+                <Route path="/help" element={<HelpCenter />} />
                 <Route path="/support" element={<WebSupport />} />
                 <Route path="/pricing" element={<WebPricing />} />
                 <Route path="/privacy" element={<WebPrivacy />} />
