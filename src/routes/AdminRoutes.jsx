@@ -9,6 +9,7 @@ import { AdminAttendees } from '@/pages/admin/AdminAttendees';
 import { AdminPayouts } from '@/pages/admin/AdminPayouts';
 import { AdminProcessPayout } from '@/pages/admin/AdminProcessPayout';
 import { AdminRefunds } from '@/pages/admin/AdminRefunds';
+import { AdminOrders } from "@/pages/admin/AdminOrders";
 import { AdminAffiliates } from '@/pages/admin/AdminAffiliates';
 import { AdminSupport } from '@/pages/admin/AdminSupport';
 import { AdminEmailTemplates } from '@/pages/admin/AdminEmailTemplates';
@@ -18,6 +19,9 @@ import { AdminWhatsAppSettings } from '@/pages/admin/AdminWhatsAppSettings';
 import { AdminSMS } from '@/pages/admin/AdminSMS';
 import { AdminSMSRevenue } from '@/pages/admin/AdminSMSRevenue';
 import { AdminSMSSettings } from '@/pages/admin/AdminSMSSettings';
+import { AdminAffiliateSettings } from "@/pages/admin/AdminAffiliateSettings";
+import { AdminAffiliatesManagement } from "@/pages/admin/AdminAffiliatesManagement";
+import { AdminFlaggedReferrals } from "@/pages/admin/AdminFlaggedReferrals";
 import AdminWhatsAppPackages from '@/pages/admin/AdminWhatsAppPackages';
 import AdminAdverts from '../pages/admin/AdminAdverts';
 import { AdminRoles } from '@/pages/admin/AdminRoles';
@@ -90,7 +94,9 @@ export function AdminRoutes() {
             <Route path="/payouts" element={<AdminPayouts />} />
             <Route path="/payouts/process" element={<AdminProcessPayout />} />
             <Route path="/refunds" element={<AdminRefunds />} />
-            <Route path="/affiliates" element={<AdminAffiliates />} />
+            <Route path="/orders" element={<AdminOrders />} />
+            <Route path="/promoters" element={<AdminAffiliates />} />
+            <Route path="/affiliates" element={<AdminAffiliatesManagement />} />
             <Route path="/support" element={<AdminSupport />} />
             <Route path="/email-templates" element={<AdminEmailTemplates />} />
             <Route path="/send-emails" element={<AdminSendEmails />} />
@@ -102,6 +108,8 @@ export function AdminRoutes() {
             <Route path="/sms-revenue" element={<AdminSMSRevenue />} />
             <Route path="/sms-revenue" element={<AdminSMSRevenue />} />
             <Route path="/sms-settings" element={<AdminSMSSettings />} />
+            <Route path="/affiliate-settings" element={<AdminAffiliateSettings />} />
+            <Route path="/flagged-referrals" element={<AdminFlaggedReferrals />} />
             <Route path="/roles" element={<AdminRoles />} />
             <Route path="/waitlist" element={<AdminWaitlist />} />
             <Route path="/categories" element={<AdminCategories />} />  {/* NEW: Categories route */}

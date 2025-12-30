@@ -7,7 +7,6 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { PhoneInput } from '@/components/ui/phone-input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -24,7 +23,7 @@ const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
     const refEventId = localStorage.getItem('referral_event_id')
     
     // Only credit if referral is for this event or all events
-    if (!refCode || !/^[A-Za-z0-9-]+$/.test(refCode)) return
+    if (!refCode) return
     
     // Find promoter by code
     const { data: promoter } = await supabase
@@ -95,168 +94,6 @@ const sendConfirmationEmail = async (emailData) => {
     return { success: false, error: err.message }
   }
 }
-
-
-// Credit affiliate for referral sale (platform-wide, different from promoters)
-const creditAffiliate = async (orderId, eventId, platformFee, currency, buyerId, buyerEmail, buyerPhone) => {
-  try {
-    const affiliateCode = localStorage.getItem('affiliate_code')
-    if (!affiliateCode) return
-
-    // Get buyer IP for fraud detection
-    let buyerIP = null
-    try {
-      const ipResponse = await fetch('https://api.ipify.org?format=json')
-      const ipData = await ipResponse.json()
-      buyerIP = ipData.ip
-    } catch (e) {
-      console.log('Could not fetch IP')
-    }
-
-    // Validate affiliate code format (alphanumeric only - XSS prevention)
-    if (!/^[A-Za-z0-9-]+$/.test(affiliateCode)) {
-      console.log('Invalid affiliate code format')
-      localStorage.removeItem('affiliate_code')
-      return
-    }
-
-    // Find user by referral code
-    const { data: referrer } = await supabase
-      .from('profiles')
-      .select('id, email, phone, referral_code, affiliate_status')
-      .eq('referral_code', affiliateCode).eq('affiliate_status', 'approved')
-      .single()
-
-    if (!referrer) {
-      localStorage.removeItem('affiliate_code')
-      return
-    }
-
-    // FRAUD CHECK: Prevent self-referral
-    if (referrer.id === buyerId) {
-      console.log('Affiliate fraud blocked: self-referral')
-      localStorage.removeItem('affiliate_code')
-      return
-    }
-
-    // FRAUD CHECK: Same email
-    if (referrer.email && buyerEmail && referrer.email.toLowerCase() === buyerEmail.toLowerCase()) {
-      console.log('Affiliate fraud blocked: same email')
-      localStorage.removeItem('affiliate_code')
-      return
-    }
-
-    // FRAUD CHECK: Same phone (normalize for comparison)
-    if (referrer.phone && buyerPhone) {
-      const normalizedReferrerPhone = referrer.phone.replace(/\D/g, '')
-      const normalizedBuyerPhone = buyerPhone.replace(/\D/g, '')
-      if (normalizedReferrerPhone === normalizedBuyerPhone) {
-        console.log('Affiliate fraud blocked: same phone')
-        localStorage.removeItem('affiliate_code')
-        return
-      }
-    }
-
-    // FRAUD FLAG: Check for same IP on recent referrals (flag, don't block)
-    let isFlagged = false
-    let flagReason = null
-    
-    if (buyerIP) {
-      const { data: recentSameIP } = await supabase
-        .from('referral_earnings')
-        .select('id')
-        .eq('user_id', referrer.id)
-        .eq('ip_address', buyerIP)
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-        .limit(1)
-
-      if (recentSameIP && recentSameIP.length > 0) {
-        isFlagged = true
-        flagReason = 'Same IP as previous referral within 24 hours'
-      }
-    }
-
-    // FRAUD FLAG: Similar email pattern detection
-    if (referrer.email && buyerEmail) {
-      const referrerBase = referrer.email.toLowerCase().split('@')[0].replace(/[0-9]/g, '')
-      const buyerBase = buyerEmail.toLowerCase().split('@')[0].replace(/[0-9]/g, '')
-      if (referrerBase === buyerBase && referrer.email !== buyerEmail) {
-        isFlagged = true
-        flagReason = (flagReason ? flagReason + '; ' : '') + 'Similar email pattern detected'
-      }
-    }
-
-    // Get affiliate settings
-    const { data: settings } = await supabase
-      .from('affiliate_settings')
-      .select('commission_percent, payout_delay_days, is_enabled')
-      .single()
-
-    if (!settings || !settings.is_enabled) return
-
-    // Calculate commission (percentage of platform fee)
-    const commissionPercent = settings.commission_percent || 40
-    const commissionAmount = (platformFee * commissionPercent) / 100
-
-    if (commissionAmount <= 0) return
-
-    // Get event date for payout availability
-    const { data: event } = await supabase
-      .from('events')
-      .select('end_date')
-      .eq('id', eventId)
-      .single()
-
-    const payoutDelayDays = settings.payout_delay_days || 7
-    const eventEndDate = event?.end_date ? new Date(event.end_date) : new Date()
-    const availableAt = new Date(eventEndDate.getTime() + (payoutDelayDays * 24 * 60 * 60 * 1000))
-
-    // Create referral earning record
-    await supabase.from('referral_earnings').insert({
-      user_id: referrer.id,
-      order_id: orderId,
-      event_id: eventId,
-      buyer_id: buyerId,
-      order_amount: platformFee,
-      platform_fee: platformFee,
-      commission_percent: commissionPercent,
-      commission_amount: commissionAmount,
-      currency: currency,
-      status: 'pending',
-      available_at: availableAt.toISOString(),
-      ip_address: buyerIP,
-      is_flagged: isFlagged,
-      flag_reason: flagReason,
-    })
-
-    // Update order with referral info
-    await supabase
-      .from('orders')
-      .update({
-        referred_by: referrer.id,
-        referral_code_used: affiliateCode,
-        referral_commission: commissionAmount,
-        referral_status: 'pending'
-      })
-      .eq('id', orderId)
-
-    // Update referrer's referral count
-    await supabase
-      .from('profiles')
-      .update({ 
-        referral_count: referrer.referral_count ? referrer.referral_count + 1 : 1 
-      })
-      .eq('id', referrer.id)
-
-    // Clear affiliate code from localStorage
-    localStorage.removeItem('affiliate_code')
-    
-    console.log('Affiliate commission recorded:', commissionAmount, currency)
-  } catch (error) {
-    console.error('Error crediting affiliate:', error)
-  }
-}
-
 
 export function WebCheckout() {
   const navigate = useNavigate()
@@ -513,7 +350,6 @@ export function WebCheckout() {
           payment_reference: paymentRef,
           payment_status: 'completed',
           payment_method: 'paystack',
-          order_id: orderId,
           status: 'active'
         })
       }
@@ -582,9 +418,6 @@ export function WebCheckout() {
 
       // Credit promoter for referral sale
       await creditPromoter(orderId, event.id, finalTotal, totalTicketCount)
-
-      // Credit affiliate for referral sale
-      await creditAffiliate(orderId, event.id, serviceFee, event.currency, user?.id, formData.email, formData.phone)
 
       // Generate PDF tickets and send confirmation email
       try {
@@ -967,7 +800,7 @@ export function WebCheckout() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <PhoneInput value={formData.phone} onChange={(phone) => setFormData({ ...formData, phone })} />
+                <Input id="phone" type="tel" placeholder="+234 801 234 5678" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" />
               </div>
             </CardContent>
           </Card>

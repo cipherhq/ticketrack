@@ -125,10 +125,6 @@ export function CreateEvent() {
     streamingPlatform: '',
     // Custom Form Fields
     customFields: [],
-    // Scheduled Publishing
-    publishOption: 'now',
-    publishDate: '',
-    publishTime: '',
   });
 
   // Tickets State
@@ -882,10 +878,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         visibility: formData.visibility,
         access_password: formData.accessPassword,
         access_settings: formData.accessSettings,
-        status: formData.publishOption === 'schedule' ? 'scheduled' : 'published',
-        publish_at: formData.publishOption === 'schedule' && formData.publishDate 
-          ? `${formData.publishDate}T${formData.publishTime || '00:00'}:00` 
-          : null,
+        status: 'published',
       };
 
       let savedEvent;
@@ -2607,82 +2600,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 </div>
               </div>
 
-              
-              {/* When to Publish */}
-              <div className="mt-8 p-6 bg-white rounded-2xl border border-[#0F0F0F]/10">
-                <h3 className="text-lg font-semibold text-[#0F0F0F] mb-4 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-[#2969FF]" />
-                  When to Publish
-                </h3>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div 
-                      onClick={() => setFormData({ ...formData, publishOption: 'now' })}
-                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'now' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.publishOption === 'now' ? 'border-[#2969FF]' : 'border-[#0F0F0F]/30'}`}>
-                          {formData.publishOption === 'now' && <div className="w-3 h-3 rounded-full bg-[#2969FF]" />}
-                        </div>
-                        <div>
-                          <p className="font-medium text-[#0F0F0F]">Publish Now</p>
-                          <p className="text-sm text-[#0F0F0F]/60">Event goes live immediately</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div 
-                      onClick={() => setFormData({ ...formData, publishOption: 'schedule' })}
-                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'schedule' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.publishOption === 'schedule' ? 'border-[#2969FF]' : 'border-[#0F0F0F]/30'}`}>
-                          {formData.publishOption === 'schedule' && <div className="w-3 h-3 rounded-full bg-[#2969FF]" />}
-                        </div>
-                        <div>
-                          <p className="font-medium text-[#0F0F0F]">Schedule for Later</p>
-                          <p className="text-sm text-[#0F0F0F]/60">Choose when to go live</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {formData.publishOption === 'schedule' && (
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Publish Date *</Label>
-                          <Input
-                            type="date"
-                            value={formData.publishDate}
-                            onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="rounded-xl"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Publish Time *</Label>
-                          <Input
-                            type="time"
-                            value={formData.publishTime}
-                            onChange={(e) => setFormData({ ...formData, publishTime: e.target.value })}
-                            className="rounded-xl"
-                            required
-                          />
-                        </div>
-                      </div>
-                      {formData.publishDate && formData.publishTime && (
-                        <div className="flex items-center gap-2 text-sm text-[#2969FF]">
-                          <Clock className="w-4 h-4" />
-                          Event will go live on {new Date(formData.publishDate + 'T' + formData.publishTime).toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-{/* Terms and Conditions */}
+              {/* Terms and Conditions */}
               <div className="mt-8 p-4 bg-[#F4F6FA] rounded-xl">
                 <div className="flex items-start gap-3">
                   <Checkbox
@@ -2727,7 +2645,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               {saving ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</>
               ) : (
-                formData.publishOption === 'schedule' ? 'Schedule Event' : 'Create Event'
+                'Create Event'
               )}
             </Button>
           ) : (

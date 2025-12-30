@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Loader2, Calendar, MapPin, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { formatPrice } from '@/config/currencies'
+import { generateTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { getRSVPSettings, checkRSVPLimit } from '@/services/settings'
 
 // Send confirmation email via Edge Function
@@ -36,7 +38,7 @@ const sendConfirmationEmail = async (emailData) => {
 const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
   try {
     const refCode = localStorage.getItem('referral_code')
-    if (!refCode) return
+    if (!refCode || !/^[A-Za-z0-9-]+$/.test(refCode)) return
     
     const { data: promoter } = await supabase
       .from('promoters')
@@ -283,24 +285,61 @@ export function WebFreeRSVP() {
       // Credit promoter (even for free, track conversion)
       await creditPromoter(order.id, event.id, 0, quantity)
 
-      // Send confirmation email
-      sendConfirmationEmail({
-        type: "ticket_purchase",
-        to: formData.email,
-        data: {
-          attendeeName: `${formData.firstName} ${formData.lastName}`,
-          eventTitle: event.title,
-          eventDate: event.start_date,
-          venueName: event.venue_name || "TBA",
-          city: event.city || "",
-          ticketType: "Free Admission",
-          quantity: quantity,
-          orderNumber: order.order_number,
-          totalAmount: 0,
-          isFree: true,
-          appUrl: window.location.origin
-        }
-      })
+      // Generate PDF and send confirmation email
+      try {
+        const firstTicket = tickets[0]
+        const pdfData = await generateTicketPDFBase64(
+          {
+            ticket_code: firstTicket.ticket_code,
+            attendee_name: `${formData.firstName} ${formData.lastName}`,
+            attendee_email: formData.email,
+            ticket_type_name: 'Free Admission'
+          },
+          event
+        )
+        
+        sendConfirmationEmail({
+          type: "ticket_purchase",
+          to: formData.email,
+          data: {
+            attendeeName: `${formData.firstName} ${formData.lastName}`,
+            eventTitle: event.title,
+            eventDate: event.start_date,
+            venueName: event.venue_name || "TBA",
+            city: event.city || "",
+            ticketType: "Free Admission",
+            quantity: quantity,
+            orderNumber: order.order_number,
+            totalAmount: 0,
+            isFree: true,
+            appUrl: window.location.origin
+          },
+          attachments: [{
+            filename: pdfData.filename,
+            content: pdfData.base64,
+            type: 'application/pdf'
+          }]
+        })
+      } catch (pdfErr) {
+        console.error('PDF generation failed:', pdfErr)
+        sendConfirmationEmail({
+          type: "ticket_purchase",
+          to: formData.email,
+          data: {
+            attendeeName: `${formData.firstName} ${formData.lastName}`,
+            eventTitle: event.title,
+            eventDate: event.start_date,
+            venueName: event.venue_name || "TBA",
+            city: event.city || "",
+            ticketType: "Free Admission",
+            quantity: quantity,
+            orderNumber: order.order_number,
+            totalAmount: 0,
+            isFree: true,
+            appUrl: window.location.origin
+          }
+        })
+      }
 
       // Navigate to success
       navigate('/payment-success', {
@@ -447,24 +486,61 @@ export function WebFreeRSVP() {
       // Credit promoter
       await creditPromoter(order.id, event.id, actualDonation, quantity)
 
-      // Send confirmation email
-      sendConfirmationEmail({
-        type: "ticket_purchase",
-        to: formData.email,
-        data: {
-          attendeeName: `${formData.firstName} ${formData.lastName}`,
-          eventTitle: event.title,
-          eventDate: event.start_date,
-          venueName: event.venue_name || "TBA",
-          city: event.city || "",
-          ticketType: "Free Admission + Donation",
-          quantity: quantity,
-          orderNumber: order.order_number,
-          totalAmount: actualDonation,
-          isFree: false,
-          appUrl: window.location.origin
-        }
-      })
+      // Generate PDF and send confirmation email
+      try {
+        const firstTicket = tickets[0]
+        const pdfData = await generateTicketPDFBase64(
+          {
+            ticket_code: firstTicket.ticket_code,
+            attendee_name: `${formData.firstName} ${formData.lastName}`,
+            attendee_email: formData.email,
+            ticket_type_name: 'Free Admission + Donation'
+          },
+          event
+        )
+        
+        sendConfirmationEmail({
+          type: "ticket_purchase",
+          to: formData.email,
+          data: {
+            attendeeName: `${formData.firstName} ${formData.lastName}`,
+            eventTitle: event.title,
+            eventDate: event.start_date,
+            venueName: event.venue_name || "TBA",
+            city: event.city || "",
+            ticketType: "Free Admission + Donation",
+            quantity: quantity,
+            orderNumber: order.order_number,
+            totalAmount: actualDonation,
+            isFree: false,
+            appUrl: window.location.origin
+          },
+          attachments: [{
+            filename: pdfData.filename,
+            content: pdfData.base64,
+            type: 'application/pdf'
+          }]
+        })
+      } catch (pdfErr) {
+        console.error('PDF generation failed:', pdfErr)
+        sendConfirmationEmail({
+          type: "ticket_purchase",
+          to: formData.email,
+          data: {
+            attendeeName: `${formData.firstName} ${formData.lastName}`,
+            eventTitle: event.title,
+            eventDate: event.start_date,
+            venueName: event.venue_name || "TBA",
+            city: event.city || "",
+            ticketType: "Free Admission + Donation",
+            quantity: quantity,
+            orderNumber: order.order_number,
+            totalAmount: actualDonation,
+            isFree: false,
+            appUrl: window.location.origin
+          }
+        })
+      }
 
       navigate('/payment-success', {
         state: { order, event, tickets, reference: paymentRef }
@@ -517,23 +593,61 @@ export function WebFreeRSVP() {
 
       await creditPromoter(existingOrder.id, event.id, 0, quantity)
 
-      sendConfirmationEmail({
-        type: "ticket_purchase",
-        to: formData.email,
-        data: {
-          attendeeName: `${formData.firstName} ${formData.lastName}`,
-          eventTitle: event.title,
-          eventDate: event.start_date,
-          venueName: event.venue_name || "TBA",
-          city: event.city || "",
-          ticketType: "Free Admission",
-          quantity: quantity,
-          orderNumber: existingOrder.order_number,
-          totalAmount: 0,
-          isFree: true,
-          appUrl: window.location.origin
-        }
-      })
+      // Generate PDF and send confirmation email
+      try {
+        const firstTicket = tickets[0]
+        const pdfData = await generateTicketPDFBase64(
+          {
+            ticket_code: firstTicket.ticket_code,
+            attendee_name: `${formData.firstName} ${formData.lastName}`,
+            attendee_email: formData.email,
+            ticket_type_name: 'Free Admission'
+          },
+          event
+        )
+        
+        sendConfirmationEmail({
+          type: "ticket_purchase",
+          to: formData.email,
+          data: {
+            attendeeName: `${formData.firstName} ${formData.lastName}`,
+            eventTitle: event.title,
+            eventDate: event.start_date,
+            venueName: event.venue_name || "TBA",
+            city: event.city || "",
+            ticketType: "Free Admission",
+            quantity: quantity,
+            orderNumber: existingOrder.order_number,
+            totalAmount: 0,
+            isFree: true,
+            appUrl: window.location.origin
+          },
+          attachments: [{
+            filename: pdfData.filename,
+            content: pdfData.base64,
+            type: 'application/pdf'
+          }]
+        })
+      } catch (pdfErr) {
+        console.error('PDF generation failed:', pdfErr)
+        sendConfirmationEmail({
+          type: "ticket_purchase",
+          to: formData.email,
+          data: {
+            attendeeName: `${formData.firstName} ${formData.lastName}`,
+            eventTitle: event.title,
+            eventDate: event.start_date,
+            venueName: event.venue_name || "TBA",
+            city: event.city || "",
+            ticketType: "Free Admission",
+            quantity: quantity,
+            orderNumber: existingOrder.order_number,
+            totalAmount: 0,
+            isFree: true,
+            appUrl: window.location.origin
+          }
+        })
+      }
 
       navigate('/payment-success', {
         state: { order: existingOrder, event, tickets, reference: 'FREE' }
@@ -686,14 +800,9 @@ export function WebFreeRSVP() {
                 <Label htmlFor="phone">
                   Phone Number {settings.requirePhone ? '*' : '(Optional)'}
                 </Label>
-                <Input 
-                  id="phone" 
-                  type="tel" 
-                  placeholder="+234 801 234 5678" 
+                <PhoneInput 
                   value={formData.phone} 
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                  className="rounded-xl border-[#0F0F0F]/10"
-                  disabled={atLimit}
+                  onChange={(phone) => setFormData({ ...formData, phone })} 
                   required={settings.requirePhone}
                 />
               </div>

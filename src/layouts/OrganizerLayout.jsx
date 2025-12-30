@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Users, Ticket, BarChart3,
   DollarSign, Tag, UserPlus, Mail, MessageCircle, MessageSquare,
   Settings, LogOut, Menu, X, ChevronDown, Bell, Shield,
-  QrCode, Building, CreditCard, RotateCcw, HelpCircle, Home,
+  QrCode, Building, CreditCard, RotateCcw, HelpCircle, Home, Receipt,
 } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,11 @@ const menuItems = [
     title: 'Events',
     icon: Calendar,
     path: '/organizer/events',
+  },
+  {
+    title: 'Orders',
+    icon: Receipt,
+    path: '/organizer/orders',
   },
   {
     title: 'Attendees',
@@ -58,6 +63,7 @@ const menuItems = [
       { title: 'Promoters', path: '/organizer/promoters' },
       { title: 'Communications', path: '/organizer/communications' },
       { title: 'WhatsApp', path: '/organizer/whatsapp' },
+      { title: 'Send SMS', path: '/organizer/sms' },
       { title: 'SMS Credits', path: '/organizer/sms-credits' },
       { title: 'WhatsApp Credits', path: '/organizer/whatsapp-credits' },
     ],

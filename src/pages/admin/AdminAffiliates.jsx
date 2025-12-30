@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { formatPrice } from "@/config/currencies";
 import {
   Search,
   MoreVertical,
@@ -27,7 +28,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
+  DialogTitle, DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -147,11 +148,7 @@ export function AdminAffiliates() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
+    return formatPrice(amount || 0, 'NGN');
   };
 
   const getStatusBadge = (affiliate) => {
@@ -405,7 +402,7 @@ export function AdminAffiliates() {
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
         <DialogContent className="max-w-2xl rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Affiliate Details</DialogTitle>
+            <DialogTitle>Affiliate Details</DialogTitle><DialogDescription>View affiliate performance and details</DialogDescription>
           </DialogHeader>
           {selectedAffiliate && (
             <div className="space-y-4 py-4">

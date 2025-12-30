@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle } from 'lucide-react'
+import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle, DollarSign, Gift, Copy, ExternalLink, Share2, Banknote, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,9 @@ export function AttendeeProfile() {
   const [stats, setStats] = useState({ eventsAttended: 0, ticketsPurchased: 0, following: 0 })
   const [activeTab, setActiveTab] = useState(location.state?.tab || "profile")
   const [notificationSettings, setNotificationSettings] = useState({ email: true, sms: false })
+  const [earnings, setEarnings] = useState({ balance: 0, total: 0, pending: 0, referralCode: '', referralCount: 0, affiliateStatus: null })
+  const [earningsHistory, setEarningsHistory] = useState([])
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -36,6 +39,7 @@ export function AttendeeProfile() {
       return
     }
     loadProfileData()
+    loadEarnings()
   }, [user, navigate])
 
   const loadProfileData = async () => {
@@ -86,6 +90,101 @@ export function AttendeeProfile() {
       console.error('Error loading profile:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+
+  // Load affiliate earnings data
+  const loadEarnings = async () => {
+    if (!user) return
+    try {
+      // Get profile with referral info
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('referral_code, affiliate_balance, total_referral_earnings, referral_count, affiliate_status')
+        .eq('id', user.id)
+        .single()
+
+      // Get pending earnings (not yet available)
+      const { data: pendingData } = await supabase
+        .from('referral_earnings')
+        .select('commission_amount')
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+
+      const pendingTotal = pendingData?.reduce((sum, e) => sum + parseFloat(e.commission_amount || 0), 0) || 0
+
+      // Get recent earnings history
+      const { data: historyData } = await supabase
+        .from('referral_earnings')
+        .select(`
+          id, commission_amount, currency, status, created_at,
+          events:event_id (title)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      setEarnings({
+        balance: parseFloat(profileData?.affiliate_balance || 0),
+        total: parseFloat(profileData?.total_referral_earnings || 0),
+        pending: pendingTotal,
+        referralCode: profileData?.referral_code || '',
+        referralCount: profileData?.referral_count || 0,
+        affiliateStatus: profileData?.affiliate_status || null
+      })
+      setEarningsHistory(historyData || [])
+    } catch (error) {
+      console.error('Error loading earnings:', error)
+    }
+  }
+
+  // Copy referral link to clipboard
+  const copyReferralLink = () => {
+    const link = `${window.location.origin}?aff=${earnings.referralCode}`
+    navigator.clipboard.writeText(link)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  // Share referral link
+  const shareReferralLink = async () => {
+    const link = `${window.location.origin}?aff=${earnings.referralCode}`
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join Ticketrack',
+          text: 'Get tickets to amazing events!',
+          url: link
+        })
+      } catch (err) {
+        copyReferralLink()
+      }
+    } else {
+      copyReferralLink()
+    }
+  }
+
+  // Handle becoming an affiliate (opt-in)
+
+  // Handle becoming an affiliate
+  const handleBecomeAffiliate = async () => {
+    if (!user) return
+    setSaving(true)
+    try {
+      const { data, error } = await supabase.rpc('become_affiliate', { p_user_id: user.id })
+      if (error) throw error
+      if (data?.success) {
+        await loadEarnings()
+        alert(data.message)
+      } else {
+        alert(data?.message || 'Failed to join')
+      }
+    } catch (err) {
+      console.error('Error:', err)
+      alert('Something went wrong')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -253,6 +352,9 @@ export function AttendeeProfile() {
               <TabsTrigger value="tickets" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Tickets</TabsTrigger>
               <TabsTrigger value="saved" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Saved</TabsTrigger>
               <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Settings</TabsTrigger>
+              <TabsTrigger value="earnings" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">
+                <DollarSign className="w-4 h-4 mr-1" />Earnings
+              </TabsTrigger>
             </TabsList>
 
             {/* Profile Tab */}
@@ -438,6 +540,189 @@ export function AttendeeProfile() {
                   </Button>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Earnings Tab */}
+            <TabsContent value="earnings">
+              {!earnings.affiliateStatus ? (
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardContent className="py-12 text-center">
+                    <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Gift className="w-10 h-10 text-purple-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-[#0F0F0F] mb-3">Earn Money Sharing Events</h2>
+                    <p className="text-[#0F0F0F]/60 mb-6 max-w-md mx-auto">
+                      Join our affiliate program and earn <span className="font-semibold text-green-600">40% commission</span> on platform fees when people buy tickets using your link.
+                    </p>
+                    <Button onClick={handleBecomeAffiliate} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-8 py-6 text-lg">
+                      {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Gift className="w-5 h-5 mr-2" />}
+                      Become an Affiliate
+                    </Button>
+                    <p className="text-xs text-[#0F0F0F]/40 mt-4">Minimum withdrawal: ₦5,000 / $10 / £8</p>
+                  </CardContent>
+                </Card>
+              ) : earnings.affiliateStatus === 'suspended' ? (
+                <Card className="border-red-200 bg-red-50 rounded-2xl">
+                  <CardContent className="py-12 text-center">
+                    <h2 className="text-xl font-bold text-red-700 mb-2">Affiliate Account Suspended</h2>
+                    <p className="text-red-600">Please contact support.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+              <div className="space-y-6">
+                {/* Earnings Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-[#0F0F0F]/60">Available Balance</p>
+                          <h3 className="text-2xl font-bold text-green-600">₦{earnings.balance.toLocaleString()}</h3>
+                        </div>
+                        <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                          <Banknote className="w-6 h-6 text-green-600" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                          <h3 className="text-2xl font-bold text-[#0F0F0F]">₦{earnings.pending.toLocaleString()}</h3>
+                          <p className="text-xs text-[#0F0F0F]/50">Available after event</p>
+                        </div>
+                        <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
+                          <TrendingUp className="w-6 h-6 text-yellow-600" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-[#0F0F0F]/60">Total Earned</p>
+                          <h3 className="text-2xl font-bold text-[#0F0F0F]">₦{earnings.total.toLocaleString()}</h3>
+                          <p className="text-xs text-[#0F0F0F]/50">{earnings.referralCount} referrals</p>
+                        </div>
+                        <div className="w-12 h-12 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
+                          <Gift className="w-6 h-6 text-[#2969FF]" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Referral Link Card */}
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Share2 className="w-5 h-5 text-[#2969FF]" />
+                      Your Referral Link
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-[#0F0F0F]/70">
+                      Share your unique link and earn <span className="font-semibold text-green-600">40%</span> of our platform fee when someone buys a ticket!
+                    </p>
+                    
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-[#F4F6FA] rounded-xl px-4 py-3 font-mono text-sm truncate">
+                        {window.location.origin}?aff={earnings.referralCode}
+                      </div>
+                      <Button 
+                        onClick={copyReferralLink}
+                        variant="outline" 
+                        className="rounded-xl border-[#0F0F0F]/10"
+                      >
+                        {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                      <Button 
+                        onClick={shareReferralLink}
+                        className="rounded-xl bg-[#2969FF] hover:bg-[#1e4fcc]"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
+                      <p className="font-medium mb-1">💡 How it works:</p>
+                      <ol className="list-decimal list-inside space-y-1 text-blue-700">
+                        <li>Share your link with friends</li>
+                        <li>They buy tickets to any event</li>
+                        <li>You earn 40% of our service fee</li>
+                        <li>Withdraw after the event happens</li>
+                      </ol>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Earnings History */}
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-[#2969FF]" />
+                        Earnings History
+                      </span>
+                      {earnings.balance >= 5000 && (
+                        <Button 
+                          onClick={() => navigate('/affiliate/withdraw')}
+                          className="rounded-xl bg-green-600 hover:bg-green-700"
+                        >
+                          Withdraw ₦{earnings.balance.toLocaleString()}
+                        </Button>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {earningsHistory.length === 0 ? (
+                      <div className="text-center py-8 text-[#0F0F0F]/50">
+                        <Gift className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                        <p>No earnings yet</p>
+                        <p className="text-sm">Share your referral link to start earning!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {earningsHistory.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                            <div>
+                              <p className="font-medium text-[#0F0F0F]">{item.events?.title || 'Event'}</p>
+                              <p className="text-xs text-[#0F0F0F]/60">
+                                {new Date(item.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-green-600">
+                                +₦{parseFloat(item.commission_amount).toLocaleString()}
+                              </p>
+                              <Badge className={`text-xs ${
+                                item.status === 'available' ? 'bg-green-100 text-green-700' :
+                                item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                item.status === 'paid' ? 'bg-blue-100 text-blue-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {item.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {earnings.balance > 0 && earnings.balance < 5000 && (
+                      <div className="mt-4 p-3 bg-yellow-50 rounded-xl text-sm text-yellow-800">
+                        <p>Minimum withdrawal is ₦5,000. You need ₦{(5000 - earnings.balance).toLocaleString()} more to withdraw.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+              )}
             </TabsContent>
           </Tabs>
         </main>

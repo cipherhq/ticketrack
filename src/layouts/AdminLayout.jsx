@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Image,
+import { AlertTriangle, Image,
   LayoutDashboard,
   Shield,
   Calendar,
@@ -21,7 +21,7 @@ import { Image,
   Settings,
   Clock,
   Home,
-  FolderOpen, // NEW: Icon for Categories
+  FolderOpen, Receipt,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -36,8 +36,12 @@ const navItems = [
   { icon: UserCheck, label: 'Attendees', path: '/admin/attendees' },
   { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' },
   { icon: RefreshCw, label: 'Refunds', path: '/admin/refunds' },
+  { icon: Receipt, label: 'Orders', path: '/admin/orders' },
   { icon: Settings, label: 'Refund Settings', path: '/admin/refund-settings' },
-  { icon: TrendingUp, label: 'Promoters', path: '/admin/affiliates' },
+  { icon: Users, label: 'Affiliate Settings', path: '/admin/affiliate-settings' },
+  { icon: Users, label: 'Affiliates', path: '/admin/affiliates' },
+  { icon: AlertTriangle, label: 'Flagged Referrals', path: '/admin/flagged-referrals' },
+  { icon: TrendingUp, label: 'Promoters', path: '/admin/promoters' },
   { icon: MessageSquare, label: 'Support', path: '/admin/support' },
   { icon: Mail, label: 'Email Templates', path: '/admin/email-templates' },
   { icon: Send, label: 'Send Emails', path: '/admin/send-emails' },

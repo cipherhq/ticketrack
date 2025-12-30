@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, TrendingUp, Calendar, Mail, MessageSquare, Search, Filter,
-  Download, UserPlus, Bell, Loader2, RefreshCw, Phone,
+  Download, UserPlus, Bell, Loader2, RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -44,8 +44,7 @@ export function OrganizerFollowers() {
           profiles:user_id (
             id,
             full_name,
-            email,
-            phone
+            email
           )
         `)
         .eq('organizer_id', organizer.id)
@@ -106,7 +105,6 @@ export function OrganizerFollowers() {
             id: follower.id,
             name: follower.profiles.full_name || 'Unknown',
             email: follower.profiles.email || '',
-            phone: follower.profiles.phone || '',
             followedDate: follower.created_at,
             eventsAttended,
             totalSpentByCurrency, // Now an object: { NGN: 5000, USD: 100 }
@@ -128,11 +126,10 @@ export function OrganizerFollowers() {
     if (followers.length === 0) return;
     
     const csvContent = [
-      ['Name', 'Email', 'Phone', 'Followed Date', 'Events Attended', 'Total Spent', 'Last Activity'],
+      ['Name', 'Email', 'Followed Date', 'Events Attended', 'Total Spent', 'Last Activity'],
       ...followers.map(f => [
         f.name,
         f.email,
-        f.phone,
         new Date(f.followedDate).toLocaleDateString(),
         f.eventsAttended,
         formatMultiCurrencyCompact(f.totalSpentByCurrency), // Use formatted multi-currency string
@@ -309,7 +306,7 @@ export function OrganizerFollowers() {
               className="rounded-xl h-auto py-4 border-[#0F0F0F]/10"
               onClick={() => navigate('/organizer/sms')}
             >
-              <Phone className="w-5 h-5 mr-3" />
+              <MessageSquare className="w-5 h-5 mr-3" />
               <div className="text-left">
                 <p className="font-medium">SMS Campaign</p>
                 <p className="text-xs text-[#0F0F0F]/60">Send SMS messages</p>
@@ -381,12 +378,6 @@ export function OrganizerFollowers() {
                         <Mail className="w-4 h-4 flex-shrink-0" />
                         {follower.email}
                       </span>
-                      {follower.phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-4 h-4" />
-                          {follower.phone}
-                        </span>
-                      )}
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         Followed {new Date(follower.followedDate).toLocaleDateString()}

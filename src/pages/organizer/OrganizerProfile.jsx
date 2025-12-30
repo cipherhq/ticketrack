@@ -7,6 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { PhoneInput } from '../../components/ui/phone-input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { useOrganizer } from '../../contexts/OrganizerContext';
@@ -282,14 +283,7 @@ export function OrganizerProfile() {
                 <Phone className="w-4 h-4" />
                 Phone Number
               </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="h-12 rounded-xl"
-                placeholder="+234 800 000 0000"
-              />
+              <PhoneInput value={formData.phone} onChange={(phone) => setFormData({ ...formData, phone })} />
             </div>
           </div>
 

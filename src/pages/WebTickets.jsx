@@ -296,6 +296,51 @@ export function WebTickets() {
 
       if (error) throw error;
 
+      // Notify organizer about the refund request
+      try {
+        const session = await supabase.auth.getSession();
+        
+        // Get organizer's email
+        const { data: organizerData } = await supabase
+          .from('organizers')
+          .select('user_id, business_name')
+          .eq('id', orderData?.organizer_id)
+          .single();
+        
+        if (organizerData?.user_id) {
+          const { data: organizerProfile } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', organizerData.user_id)
+            .single();
+          
+          if (organizerProfile?.email) {
+            await fetch('https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + session.data.session?.access_token
+              },
+              body: JSON.stringify({
+                type: 'refund_request',
+                to: organizerProfile.email,
+                data: {
+                  eventTitle: ticket.event?.title,
+                  attendeeName: ticket.attendee_name,
+                  ticketType: ticket.ticket_type?.name,
+                  amount: refundConfig.refundAmount,
+                  reason: refundReason.trim(),
+                  appUrl: window.location.origin
+                }
+              })
+            });
+          }
+        }
+      } catch (emailErr) {
+        console.error('Failed to send organizer notification:', emailErr);
+        // Don't fail the refund request if email fails
+      }
+
       setRefundModal({ open: false, ticket: null });
       setRefundReason('');
       alert('Refund request submitted successfully! You will be notified once the organizer reviews your request.');

@@ -307,44 +307,9 @@ const templates: Record<EmailType, (data: Record<string, any>) => { subject: str
 
   ticket_purchase: (data) => ({
     subject: `Your tickets for ${data.eventTitle}`,
-    html: baseTemplate(`
-      <div class="success"><strong>✅ Booking Confirmed!</strong></div>
-      <h2>You're going to ${data.eventTitle}!</h2>
-      <p>Hi ${data.attendeeName},</p>
-      <p>Your ticket purchase was successful!</p>
-      <div class="ticket-card">
-        <h3 style="margin-top:0;color:#2969FF;font-size:20px;">${data.eventTitle}</h3>
-        <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
-          <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">📅 Date</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${formatDate(data.eventDate)}</span>
-        </div>
-        <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
-          <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">⏰ Time</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${formatTime(data.eventDate)}</span>
-        </div>
-        <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
-          <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">📍 Venue</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${data.venueName}${data.city ? ', ' + data.city : ''}</span>
-        </div>
-        <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
-          <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">🎫 Ticket</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${data.ticketType} × ${data.quantity}</span>
-        </div>
-        <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
-          <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">🔢 Order</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${data.orderNumber}</span>
-        </div>
-        <div style="padding:12px 0;">
-          <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">💰 Total</span>
-          <span style="color:#2969FF;font-weight:700;font-size:18px;display:block;">${data.isFree ? 'FREE' : formatCurrency(data.totalAmount, data.currency)}</span>
-        </div>
-      </div>
-      <div class="button-wrapper">
-        <a href="${data.appUrl}/tickets" class="button">View My Tickets</a>
-      </div>
-      <div class="highlight"><strong>📱 Pro Tip:</strong> Save or screenshot your ticket before the event!</div>
-    `, 'Your tickets for ' + data.eventTitle + ' are confirmed!')
+    html: baseTemplate(`<div class="success"><strong>✅ Booking Confirmed!</strong></div><h2>You're going to ${data.eventTitle}!</h2><p>Hi ${data.attendeeName},</p><p>Your ticket purchase was successful!</p><div class="ticket-card"><h3 style="margin-top:0;color:${BRAND_COLOR};">${data.eventTitle}</h3><div class="info-row"><span class="info-label">📅 Date</span><span class="info-value">${formatDate(data.eventDate)}</span></div><div class="info-row"><span class="info-label">⏰ Time</span><span class="info-value">${formatTime(data.eventDate)}</span></div><div class="info-row"><span class="info-label">📍 Venue</span><span class="info-value">${data.venueName}, ${data.city}</span></div><div class="info-row"><span class="info-label">🎫 Ticket</span><span class="info-value">${data.ticketType} × ${data.quantity}</span></div><div class="info-row"><span class="info-label">💳 Order</span><span class="info-value">${data.orderNumber}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">💰 Total</span><span class="info-value">${data.isFree ? 'FREE' : formatCurrency(data.totalAmount)}</span></div></div><p><strong>Your ticket is attached as a PDF.</strong></p><a href="${data.appUrl}/tickets" class="button">View My Tickets</a><div class="highlight"><strong>📱 Pro Tip:</strong> Download your ticket before the event!</div>`, `Your tickets for ${data.eventTitle} are confirmed!`)
   }),
+
   ticket_cancelled: (data) => ({
     subject: `Ticket Cancelled - ${data.eventTitle}`,
     html: baseTemplate(`<h2>Ticket Cancellation Confirmed</h2><p>Hi ${data.attendeeName},</p><p>Your ticket for <strong>${data.eventTitle}</strong> has been cancelled.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Ticket Code</span><span class="info-value">${data.ticketCode}</span></div></div>${data.refundAmount ? `<div class="success"><strong>💰 Refund of ${formatCurrency(data.refundAmount)} is being processed.</strong></div>` : ''}<a href="${data.appUrl}/events" class="button">Browse Events</a>`)

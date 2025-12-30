@@ -1,5 +1,4 @@
 import { getFeesByCurrency, DEFAULT_FEES } from '@/config/fees'
-import DOMPurify from 'dompurify'
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
@@ -36,7 +35,6 @@ export function WebEventDetails() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
   const [accessGranted, setAccessGranted] = useState(false)
-  const [recommendedEvents, setRecommendedEvents] = useState([])
 
   useEffect(() => {
     async function loadEvent() {
@@ -95,41 +93,6 @@ export function WebEventDetails() {
     }
   }, [event])
 
-  // Load recommended events based on category and city
-  useEffect(() => {
-    async function loadRecommendedEvents() {
-      if (!event) return
-      
-      try {
-        const { data, error } = await supabase
-          .from('events')
-          .select('id, title, slug, image_url, start_date, venue_name, city, category, is_free, currency')
-          .eq('status', 'published')
-          .neq('id', event.id)
-          .gte('start_date', new Date().toISOString())
-          .order('start_date', { ascending: true })
-          .limit(20)
-        
-        if (error) throw error
-        
-        // Score and sort by relevance
-        const scored = (data || []).map(e => {
-          let score = 0
-          if (e.category === event.category) score += 3
-          if (e.city === event.city) score += 2
-          return { ...e, score }
-        }).sort((a, b) => b.score - a.score).slice(0, 5)
-        
-        setRecommendedEvents(scored)
-      } catch (err) {
-        console.error('Error loading recommended events:', err)
-      }
-    }
-    
-    loadRecommendedEvents()
-  }, [event])
-
-
 
   // Fetch service fee rate based on event currency
   useEffect(() => {
@@ -160,7 +123,7 @@ export function WebEventDetails() {
   // Track referral code from URL
   useEffect(() => {
     const refCode = searchParams.get('ref')
-    if (refCode && id && /^[A-Za-z0-9-]+$/.test(refCode)) {
+    if (refCode && id) {
       // Store in localStorage for checkout
       localStorage.setItem('referral_code', refCode)
       localStorage.setItem('referral_event_id', id)
@@ -427,7 +390,7 @@ export function WebEventDetails() {
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">About This Event</h2>
             <div 
               className="text-[#0F0F0F]/80 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description || '', { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
+              dangerouslySetInnerHTML={{ __html: event.description }}
             />
           </div>
 
@@ -953,59 +916,7 @@ export function WebEventDetails() {
         </div>
       </div>
 
-      
-
-      {/* Recommended Events */}
-      {recommendedEvents.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 py-12">
-          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6">You Might Also Like</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {recommendedEvents.map(recEvent => (
-              <Card 
-                key={recEvent.id} 
-                className="border-0 rounded-2xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden group"
-                onClick={() => navigate(`/events/${recEvent.slug || recEvent.id}`)}
-              >
-                <div className="aspect-[4/3] relative overflow-hidden">
-                  <img 
-                    src={recEvent.image_url || '/placeholder-event.jpg'} 
-                    alt={recEvent.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => { e.target.src = '/placeholder-event.jpg' }}
-                  />
-                  {recEvent.is_free && (
-                    <Badge className="absolute top-3 left-3 bg-green-500 text-white border-0">
-                      Free
-                    </Badge>
-                  )}
-                  {recEvent.category === event?.category && (
-                    <Badge className="absolute top-3 right-3 bg-[#2969FF]/90 text-white border-0 text-xs">
-                      Similar
-                    </Badge>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-[#0F0F0F] line-clamp-2 mb-2 group-hover:text-[#2969FF] transition-colors">
-                    {recEvent.title}
-                  </h3>
-                  <div className="space-y-1 text-sm text-[#0F0F0F]/60">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 flex-shrink-0" />
-                      <span>{new Date(recEvent.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{recEvent.city || recEvent.venue_name || 'TBA'}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-{/* Waitlist Dialog */}
+      {/* Waitlist Dialog */}
       <WaitlistDialog 
         open={waitlistOpen} 
         onOpenChange={setWaitlistOpen} 

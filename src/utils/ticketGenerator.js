@@ -306,3 +306,181 @@ export async function downloadTicketPDF(ticket, event, ticketType) {
 }
 
 // Wrapper function for compatibility
+
+// Generate ticket PDF as base64 for email attachment
+export async function generateTicketPDFBase64(ticket, event) {
+  // Ticket dimensions in points (72 points = 1 inch)
+  const width = 432
+  const height = 162
+  
+  const pdf = new jsPDF({
+    orientation: 'landscape',
+    unit: 'pt',
+    format: [width, height]
+  })
+
+  // Main ticket background - TICKETRACK BLUE
+  pdf.setFillColor(TICKETRACK_BLUE.r, TICKETRACK_BLUE.g, TICKETRACK_BLUE.b)
+  pdf.rect(0, 0, width, height, 'F')
+
+  // Right stub background - DARKER TICKETRACK BLUE
+  pdf.setFillColor(TICKETRACK_BLUE_DARK.r, TICKETRACK_BLUE_DARK.g, TICKETRACK_BLUE_DARK.b)
+  pdf.rect(width - 100, 0, 100, height, 'F')
+
+  // Perforated line - dashed
+  pdf.setDrawColor(255, 255, 255)
+  pdf.setLineDashPattern([4, 4], 0)
+  pdf.setLineWidth(0.5)
+  pdf.line(width - 100, 0, width - 100, height)
+  pdf.setLineDashPattern([], 0)
+
+  // TICKET NUMBER
+  const ticketNum = ticket.ticket_code || `TKT${Date.now().toString(36).toUpperCase()}`
+  
+  pdf.setFontSize(7)
+  pdf.setFont('helvetica', 'normal')
+  pdf.setTextColor(255, 255, 255)
+  pdf.text('Ticket:', 8, height - 15, { angle: 90 })
+  
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(9)
+  pdf.text(ticketNum, 18, height - 15, { angle: 90 })
+
+  // MAIN CONTENT
+  const contentX = 35
+  let currentY = 22
+
+  // Event Title
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(20)
+  pdf.setTextColor(255, 255, 255)
+  const title = event.title || 'Event Name'
+  const maxTitleLength = 24
+  const displayTitle = title.length > maxTitleLength ? title.substring(0, maxTitleLength) + '...' : title
+  pdf.text(displayTitle, contentX, currentY)
+  currentY += 14
+
+  // Venue
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(9)
+  pdf.setTextColor(230, 230, 230)
+  const venue = `📍 ${event.venue_name || 'Venue'}, ${event.city || 'City'}`
+  pdf.text(venue, contentX, currentY)
+  currentY += 16
+
+  // Date & Attendee
+  const col1X = contentX
+  const col2X = 180
+
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(7)
+  pdf.setTextColor(200, 200, 200)
+  pdf.text('DATE', col1X, currentY)
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(11)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text(formatDate(event.start_date), col1X, currentY + 10)
+
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(7)
+  pdf.setTextColor(200, 200, 200)
+  pdf.text('ATTENDEE', col2X, currentY)
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(11)
+  pdf.setTextColor(255, 255, 255)
+  const attendeeName = ticket.attendee_name || 'Guest'
+  const maxNameLength = 18
+  const displayName = attendeeName.length > maxNameLength ? attendeeName.substring(0, maxNameLength) + '...' : attendeeName
+  pdf.text(displayName, col2X, currentY + 10)
+
+  currentY += 22
+
+  // Time
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(7)
+  pdf.setTextColor(200, 200, 200)
+  pdf.text('TIME', col1X, currentY)
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(11)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text(formatTime(event.start_date), col1X, currentY + 10)
+
+  // POWERED BY TICKETRACK
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(7)
+  pdf.setTextColor(200, 200, 200)
+  pdf.text('Powered by', contentX, height - 8)
+  
+  try {
+    pdf.addImage(TICKETRACK_LOGO_WHITE, 'PNG', contentX + 42, height - 18, 55, 12)
+  } catch (e) {
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(8)
+    pdf.setTextColor(255, 255, 255)
+    pdf.text('Ticketrack', contentX + 45, height - 8)
+  }
+
+  // RIGHT STUB
+  const stubCenterX = width - 50
+
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(7)
+  pdf.setTextColor(100, 130, 180)
+  pdf.text('ADMIT ONE', width - 97, height / 2, { angle: 90 })
+
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(7)
+  pdf.setTextColor(180, 200, 230)
+  pdf.text('Type', stubCenterX, 18, { align: 'center' })
+  
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(12)
+  pdf.setTextColor(255, 255, 255)
+  const ticketType = ticket.ticket_type?.name || ticket.ticket_type_name || 'General'
+  pdf.text(ticketType, stubCenterX, 32, { align: 'center' })
+
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(7)
+  pdf.setTextColor(180, 200, 230)
+  pdf.text('Qty', stubCenterX, 48, { align: 'center' })
+  
+  pdf.setFont('helvetica', 'bold')
+  pdf.setFontSize(14)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text('01', stubCenterX, 62, { align: 'center' })
+
+  // BARCODE
+  try {
+    const barcodeCanvas = document.createElement('canvas')
+    JsBarcode(barcodeCanvas, ticketNum, {
+      format: 'CODE128',
+      width: 1,
+      height: 35,
+      displayValue: false,
+      margin: 0,
+      background: '#ffffff',
+      lineColor: '#000000'
+    })
+    
+    pdf.setFillColor(255, 255, 255)
+    pdf.roundedRect(width - 95, 75, 85, 50, 3, 3, 'F')
+    
+    const barcodeDataUrl = barcodeCanvas.toDataURL('image/png')
+    pdf.addImage(barcodeDataUrl, 'PNG', width - 90, 80, 75, 30)
+  } catch (e) {
+    console.log('Barcode generation skipped:', e)
+  }
+
+  pdf.setFont('helvetica', 'normal')
+  pdf.setFontSize(5)
+  pdf.setTextColor(0, 0, 0)
+  pdf.text(ticketNum, stubCenterX, 120, { align: 'center' })
+
+  // Return as base64 string (without data URI prefix)
+  const pdfBase64 = pdf.output('datauristring').split(',')[1]
+  
+  return {
+    base64: pdfBase64,
+    filename: `ticket-${ticketNum}.pdf`
+  }
+}

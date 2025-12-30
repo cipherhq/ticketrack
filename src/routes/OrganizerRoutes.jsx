@@ -23,6 +23,7 @@ import { WhatsAppBroadcast } from '@/pages/organizer/WhatsAppBroadcast';
 import { WhatsAppSettings } from '@/pages/organizer/WhatsAppSettings';
 import { SMSCredits } from '@/pages/organizer/SMSCredits';
 import { SMSCampaigns } from '@/pages/organizer/SMSCampaigns';
+import { OrganizerOrders } from "@/pages/organizer/OrganizerOrders";
 import { OrganizerRefunds } from '@/pages/organizer/OrganizerRefunds';
 import { OrganizerSupport } from '@/pages/organizer/OrganizerSupport';
 import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
@@ -70,6 +71,7 @@ export function OrganizerRoutes() {
           <Route path="/whatsapp" element={<WhatsAppBroadcast />} />
           <Route path="/whatsapp-settings" element={<WhatsAppSettings />} />
           <Route path="/sms-credits" element={<SMSCredits />} />
+          <Route path="/orders" element={<OrganizerOrders />} />
           <Route path="/whatsapp-credits" element={<BuyWhatsAppCredits />} />
           <Route path="/sms" element={<SMSCampaigns />} />
           <Route path="/refunds" element={<OrganizerRefunds />} />

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Bell, Send, Users, Plus, CreditCard, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Send, Users, Plus, CreditCard, AlertCircle, Loader2, CheckCircle, XCircle, RefreshCw, History } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -13,47 +14,259 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import { useOrganizer } from '../../contexts/OrganizerContext';
+import { supabase } from '@/lib/supabase';
+import { getWalletBalance } from '@/lib/smsWallet';
 
 export function SMSCampaigns() {
+  const navigate = useNavigate();
+  const { organizer } = useOrganizer();
+  
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  
+  const [campaignName, setCampaignName] = useState('');
   const [message, setMessage] = useState('');
-  const [audience, setAudience] = useState('all');
+  const [audience, setAudience] = useState('all_contacts');
+  const [selectedEvent, setSelectedEvent] = useState('');
+  
+  const [smsCredits, setSmsCredits] = useState(0);
+  const [events, setEvents] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [audienceCounts, setAudienceCounts] = useState({
+    all_contacts: 0,
+    event_attendees: 0,
+    followers: 0,
+  });
+  const [stats, setStats] = useState({
+    totalSent: 0,
+    deliveryRate: 0,
+    totalCampaigns: 0,
+  });
 
-  const smsCredits = 500;
+  useEffect(() => {
+    if (organizer?.id) {
+      loadData();
+    }
+  }, [organizer?.id]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        loadCredits(),
+        loadEvents(),
+        loadCampaigns(),
+        loadAudienceCounts(),
+      ]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCredits = async () => {
+    const balance = await getWalletBalance(organizer.id);
+    setSmsCredits(balance);
+  };
+
+  const loadEvents = async () => {
+    const { data, error } = await supabase
+      .from('events')
+      .select('id, title')
+      .eq('organizer_id', organizer.id)
+      .eq('status', 'published')
+      .order('start_date', { ascending: false });
+
+    if (!error) setEvents(data || []);
+  };
+
+  const loadCampaigns = async () => {
+    const { data, error } = await supabase
+      .from('sms_campaigns')
+      .select('*')
+      .eq('organizer_id', organizer.id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!error && data) {
+      setCampaigns(data);
+      
+      const totalSent = data.reduce((sum, c) => sum + (c.sent_count || 0), 0);
+      const totalRecipients = data.reduce((sum, c) => sum + (c.recipient_count || 0), 0);
+      const deliveryRate = totalRecipients > 0 ? Math.round((totalSent / totalRecipients) * 100) : 0;
+      
+      setStats({
+        totalSent,
+        deliveryRate,
+        totalCampaigns: data.length,
+      });
+    }
+  };
+
+  const loadAudienceCounts = async () => {
+    try {
+      const { data: orgEvents } = await supabase
+        .from('events')
+        .select('id')
+        .eq('organizer_id', organizer.id);
+
+      const eventIds = (orgEvents || []).map(e => e.id);
+
+      let attendeesCount = 0;
+      if (eventIds.length > 0) {
+        const { count } = await supabase
+          .from('tickets')
+          .select('id', { count: 'exact', head: true })
+          .in('event_id', eventIds)
+          .eq('payment_status', 'completed')
+          .not('attendee_phone', 'is', null);
+        
+        attendeesCount = count || 0;
+      }
+
+      const { data: followers } = await supabase
+        .from('followers')
+        .select('profiles:user_id (phone)')
+        .eq('organizer_id', organizer.id);
+
+      const followersWithPhone = (followers || []).filter(f => f.profiles?.phone).length;
+
+      setAudienceCounts({
+        all_contacts: attendeesCount + followersWithPhone,
+        event_attendees: attendeesCount,
+        followers: followersWithPhone,
+      });
+    } catch (error) {
+      console.error('Error loading audience counts:', error);
+    }
+  };
+
   const messageLength = message.length;
-  const smsCount = Math.ceil(messageLength / 160) || 1;
+  const smsSegments = Math.ceil(messageLength / 160) || 1;
+  
+  const getRecipientCount = () => {
+    return audienceCounts[audience] || 0;
+  };
+
+  const recipientCount = getRecipientCount();
+  const creditsNeeded = recipientCount * smsSegments;
+  const hasEnoughCredits = smsCredits >= creditsNeeded;
+
+  const handleSendCampaign = async () => {
+    if (!message.trim() || !hasEnoughCredits) return;
+    
+    setShowConfirm(false);
+    setSending(true);
+
+    try {
+      const payload = {
+        organizer_id: organizer.id,
+        audience_type: audience,
+        event_id: audience === 'event_attendees' ? selectedEvent : null,
+        message: message.trim(),
+        campaign_name: campaignName.trim() || `SMS Campaign ${new Date().toLocaleDateString()}`,
+      };
+
+      const { data, error } = await supabase.functions.invoke('send-sms', {
+        body: payload,
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        alert(`SMS Campaign sent!\n\nRecipients: ${data.recipients}\nDelivered: ${data.sent}\nFailed: ${data.failed}\nCredits used: ${data.credits_used}`);
+        
+        setShowCompose(false);
+        setCampaignName('');
+        setMessage('');
+        setAudience('all_contacts');
+        setSelectedEvent('');
+        
+        await loadData();
+      } else {
+        throw new Error(data.error || 'Failed to send SMS');
+      }
+    } catch (error) {
+      console.error('SMS send error:', error);
+      alert(`Failed to send SMS: ${error.message}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-NG', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-700">Completed</Badge>;
+      case 'partial':
+        return <Badge className="bg-yellow-100 text-yellow-700">Partial</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-700">Failed</Badge>;
+      case 'sending':
+        return <Badge className="bg-blue-100 text-blue-700">Sending</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-700">{status}</Badge>;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-2">SMS Campaigns</h2>
           <p className="text-[#0F0F0F]/60">Send SMS messages to your attendees and followers</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl">
+          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl border-[#0F0F0F]/10">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" className="rounded-xl" onClick={() => navigate('/organizer/sms/credits')}>
             <CreditCard className="w-4 h-4 mr-2" />
             Buy Credits
           </Button>
-          <Button
-            onClick={() => setShowCompose(!showCompose)}
-            className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
-          >
+          <Button onClick={() => setShowCompose(!showCompose)} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
             <Plus className="w-4 h-4 mr-2" />
             New SMS Campaign
           </Button>
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60 mb-1">SMS Credits</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{smsCredits}</p>
+                <p className="text-2xl font-semibold text-[#0F0F0F]">{smsCredits.toLocaleString()}</p>
               </div>
               <CreditCard className="w-8 h-8 text-[#2969FF]" />
             </div>
@@ -64,7 +277,7 @@ export function SMSCampaigns() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60 mb-1">Messages Sent</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">1,234</p>
+                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalSent.toLocaleString()}</p>
               </div>
               <Send className="w-8 h-8 text-green-600" />
             </div>
@@ -75,7 +288,7 @@ export function SMSCampaigns() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60 mb-1">Delivery Rate</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">98%</p>
+                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.deliveryRate}%</p>
               </div>
               <Bell className="w-8 h-8 text-[#2969FF]" />
             </div>
@@ -86,7 +299,7 @@ export function SMSCampaigns() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60 mb-1">Campaigns</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">8</p>
+                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalCampaigns}</p>
               </div>
               <Users className="w-8 h-8 text-[#2969FF]" />
             </div>
@@ -94,23 +307,21 @@ export function SMSCampaigns() {
         </Card>
       </div>
 
-      {/* Low Credits Warning */}
       {smsCredits < 100 && (
         <Card className="border-yellow-300 bg-yellow-50 rounded-2xl">
           <CardContent className="p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-yellow-600" />
             <div className="flex-1">
               <p className="font-medium text-yellow-800">Low SMS Credits</p>
-              <p className="text-sm text-yellow-700">You have less than 100 credits remaining. Buy more to continue sending campaigns.</p>
+              <p className="text-sm text-yellow-700">You have less than 100 credits remaining.</p>
             </div>
-            <Button className="bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl">
+            <Button className="bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl" onClick={() => navigate('/organizer/sms/credits')}>
               Buy Credits
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Compose New SMS */}
       {showCompose && (
         <Card className="border-[#2969FF] border-2 rounded-2xl">
           <CardHeader>
@@ -122,10 +333,7 @@ export function SMSCampaigns() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Campaign Name</Label>
-              <Input
-                placeholder="e.g., Event Reminder"
-                className="rounded-xl"
-              />
+              <Input placeholder="e.g., Event Reminder" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} className="rounded-xl" />
             </div>
 
             <div className="space-y-2">
@@ -135,25 +343,35 @@ export function SMSCampaigns() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="all">All Contacts (1,250)</SelectItem>
-                  <SelectItem value="attendees">Event Attendees (450)</SelectItem>
-                  <SelectItem value="followers">Followers Only (800)</SelectItem>
+                  <SelectItem value="all_contacts">All Contacts ({audienceCounts.all_contacts.toLocaleString()})</SelectItem>
+                  <SelectItem value="event_attendees">Event Attendees ({audienceCounts.event_attendees.toLocaleString()})</SelectItem>
+                  <SelectItem value="followers">Followers Only ({audienceCounts.followers.toLocaleString()})</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
+            {audience === 'event_attendees' && (
+              <div className="space-y-2">
+                <Label>Select Event</Label>
+                <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Choose an event" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {events.map((event) => (
+                      <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Message</Label>
-              <Textarea
-                placeholder="Type your SMS message here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="rounded-xl min-h-[120px]"
-                maxLength={480}
-              />
+              <Textarea placeholder="Type your SMS message here..." value={message} onChange={(e) => setMessage(e.target.value)} className="rounded-xl min-h-[120px]" maxLength={480} />
               <div className="flex justify-between text-sm text-[#0F0F0F]/60">
                 <span>{messageLength}/480 characters</span>
-                <span>{smsCount} SMS ({smsCount > 1 ? 'Long message' : 'Standard'})</span>
+                <span>{smsSegments} SMS ({smsSegments > 1 ? 'Long message' : 'Standard'})</span>
               </div>
             </div>
 
@@ -164,22 +382,25 @@ export function SMSCampaigns() {
                   <p className="text-sm text-[#0F0F0F]/60">Based on selected audience</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-semibold text-[#0F0F0F]">{smsCount * 1250} credits</p>
-                  <p className="text-sm text-[#0F0F0F]/60">{1250} recipients × {smsCount} SMS</p>
+                  <p className="text-2xl font-semibold text-[#0F0F0F]">{creditsNeeded.toLocaleString()} credits</p>
+                  <p className="text-sm text-[#0F0F0F]/60">{recipientCount.toLocaleString()} recipients × {smsSegments} SMS</p>
                 </div>
               </div>
+              {!hasEnoughCredits && creditsNeeded > 0 && (
+                <div className="mt-3 p-2 bg-red-50 rounded-lg flex items-center gap-2 text-red-700 text-sm">
+                  <XCircle className="w-4 h-4" />
+                  Insufficient credits. You need {(creditsNeeded - smsCredits).toLocaleString()} more.
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowCompose(false)}
-                className="rounded-xl flex-1"
-              >
+              <Button variant="outline" onClick={() => setShowCompose(false)} className="rounded-xl flex-1">
                 Cancel
               </Button>
               <Button
-                disabled={!message.trim() || smsCredits < smsCount * 1250}
+                disabled={!message.trim() || !hasEnoughCredits || recipientCount === 0 || (audience === 'event_attendees' && !selectedEvent)}
+                onClick={() => setShowConfirm(true)}
                 className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl flex-1"
               >
                 <Send className="w-4 h-4 mr-2" />
@@ -190,72 +411,84 @@ export function SMSCampaigns() {
         </Card>
       )}
 
-      {/* Recent Campaigns */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Recent Campaigns</CardTitle>
+          <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+            <History className="w-5 h-5" />
+            Recent Campaigns
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <div className="p-4 rounded-xl bg-[#F4F6FA]">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h4 className="font-medium text-[#0F0F0F]">Event Reminder</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">Lagos Tech Summit tomorrow at 9 AM!</p>
-                </div>
-                <Badge className="bg-green-100 text-green-700">Sent</Badge>
-              </div>
-              <div className="flex gap-4 text-sm text-[#0F0F0F]/60">
-                <span>450 recipients</span>
-                <span>448 delivered (99.6%)</span>
-                <span>Nov 28, 2024</span>
-              </div>
+          {campaigns.length === 0 ? (
+            <div className="text-center py-8">
+              <Send className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+              <p className="text-[#0F0F0F]/60">No campaigns sent yet</p>
             </div>
-
-            <div className="p-4 rounded-xl bg-[#F4F6FA]">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h4 className="font-medium text-[#0F0F0F]">Early Bird Promo</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">20% off early bird tickets - use code EARLY20</p>
+          ) : (
+            <div className="space-y-3">
+              {campaigns.map((campaign) => (
+                <div key={campaign.id} className="p-4 rounded-xl bg-[#F4F6FA]">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 className="font-medium text-[#0F0F0F]">{campaign.campaign_name}</h4>
+                      <p className="text-sm text-[#0F0F0F]/60 line-clamp-1">{campaign.message}</p>
+                    </div>
+                    {getStatusBadge(campaign.status)}
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-sm text-[#0F0F0F]/60">
+                    <span>{campaign.recipient_count} recipients</span>
+                    <span className="flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3 text-green-600" />
+                      {campaign.sent_count || 0} delivered
+                    </span>
+                    {campaign.failed_count > 0 && (
+                      <span className="flex items-center gap-1 text-red-600">
+                        <XCircle className="w-3 h-3" />
+                        {campaign.failed_count} failed
+                      </span>
+                    )}
+                    <span>{campaign.credits_used} credits</span>
+                    <span>{formatDate(campaign.created_at)}</span>
+                  </div>
                 </div>
-                <Badge className="bg-green-100 text-green-700">Sent</Badge>
-              </div>
-              <div className="flex gap-4 text-sm text-[#0F0F0F]/60">
-                <span>800 recipients</span>
-                <span>784 delivered (98%)</span>
-                <span>Nov 15, 2024</span>
-              </div>
+              ))}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Pricing Info */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">SMS Credit Pricing</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl border border-[#0F0F0F]/10 text-center">
-              <p className="text-2xl font-semibold text-[#0F0F0F] mb-1">₦5,000</p>
-              <p className="text-[#0F0F0F]/60">500 Credits</p>
-              <p className="text-sm text-green-600 mt-2">₦10/SMS</p>
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Confirm SMS Campaign</DialogTitle>
+            <DialogDescription>This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-[#0F0F0F]/60">Recipients:</span>
+              <span className="font-medium">{recipientCount.toLocaleString()}</span>
             </div>
-            <div className="p-4 rounded-xl border-2 border-[#2969FF] bg-[#2969FF]/5 text-center">
-              <Badge className="bg-[#2969FF] text-white mb-2">Popular</Badge>
-              <p className="text-2xl font-semibold text-[#0F0F0F] mb-1">₦18,000</p>
-              <p className="text-[#0F0F0F]/60">2,000 Credits</p>
-              <p className="text-sm text-green-600 mt-2">₦9/SMS</p>
+            <div className="flex justify-between text-sm">
+              <span className="text-[#0F0F0F]/60">Credits to use:</span>
+              <span className="font-medium">{creditsNeeded.toLocaleString()}</span>
             </div>
-            <div className="p-4 rounded-xl border border-[#0F0F0F]/10 text-center">
-              <p className="text-2xl font-semibold text-[#0F0F0F] mb-1">₦40,000</p>
-              <p className="text-[#0F0F0F]/60">5,000 Credits</p>
-              <p className="text-sm text-green-600 mt-2">₦8/SMS</p>
+            <div className="flex justify-between text-sm">
+              <span className="text-[#0F0F0F]/60">Balance after:</span>
+              <span className="font-medium">{(smsCredits - creditsNeeded).toLocaleString()}</span>
+            </div>
+            <div className="p-3 bg-[#F4F6FA] rounded-xl">
+              <p className="text-xs text-[#0F0F0F]/60 mb-1">Message:</p>
+              <p className="text-sm">{message}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirm(false)} className="rounded-xl">Cancel</Button>
+            <Button onClick={handleSendCampaign} disabled={sending} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
+              {sending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : <><Send className="w-4 h-4 mr-2" />Confirm & Send</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

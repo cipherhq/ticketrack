@@ -24,7 +24,7 @@ import { supabase } from '@/lib/supabase';
 
 export function ManageAttendees() {
   const navigate = useNavigate();
-  const { id: eventIdParam } = useParams(); // Optional event ID from URL
+  const { id: eventIdParam } = useParams();
   const { organizer } = useOrganizer();
   
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,6 @@ export function ManageAttendees() {
   };
 
   const loadAttendees = async () => {
-    // First get all event IDs for this organizer
     const { data: orgEvents, error: eventsError } = await supabase
       .from('events')
       .select('id')
@@ -81,14 +80,12 @@ export function ManageAttendees() {
       return;
     }
 
-    // Get tickets for these events
     const { data: tickets, error: ticketsError } = await supabase
       .from('tickets')
       .select(`
         id,
         attendee_name,
         attendee_email,
-        attendee_phone,
         ticket_code,
         quantity,
         total_price,
@@ -97,15 +94,9 @@ export function ManageAttendees() {
         checked_in_at,
         created_at,
         event_id,
-        events (
-          id,
-          title
-        ),
+        events (id, title),
         ticket_type_id,
-        ticket_types (
-          id,
-          name
-        )
+        ticket_types (id, name)
       `)
       .in('event_id', eventIds)
       .eq('payment_status', 'completed')
@@ -117,7 +108,6 @@ export function ManageAttendees() {
       id: ticket.id,
       name: ticket.attendee_name,
       email: ticket.attendee_email,
-      phone: ticket.attendee_phone || 'N/A',
       event: ticket.events?.title || 'Unknown Event',
       eventId: ticket.event_id,
       ticketType: ticket.ticket_types?.name || 'Standard',
@@ -215,7 +205,6 @@ export function ManageAttendees() {
   };
 
   const exportToCSV = () => {
-    // Only collect custom field labels from the filtered attendees being exported
     const allFieldLabels = new Set();
     filteredAttendees.forEach(a => {
       const responses = customResponses[a.id] || [];
@@ -225,9 +214,8 @@ export function ManageAttendees() {
     });
     const fieldLabelsArray = Array.from(allFieldLabels);
 
-    // Base headers + custom field headers (only if there are any)
     const headers = [
-      'Name', 'Email', 'Phone', 'Event', 'Ticket Type', 
+      'Name', 'Email', 'Event', 'Ticket Type', 
       'Ticket ID', 'Purchase Date', 'Status', 'Check-in Time',
       ...fieldLabelsArray
     ];
@@ -242,7 +230,6 @@ export function ManageAttendees() {
       return [
         a.name,
         a.email,
-        a.phone,
         a.event,
         a.ticketType,
         a.ticketId,
@@ -265,9 +252,7 @@ export function ManageAttendees() {
   };
 
   const resendTicket = async (attendee) => {
-    // This would trigger an email with the ticket
     alert(`Ticket resent to ${attendee.email}`);
-    // TODO: Implement actual email sending via Edge Function
   };
 
   const manualCheckIn = async (attendeeId, checkedIn) => {
@@ -314,15 +299,6 @@ export function ManageAttendees() {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
-  // Stats calculations
   const totalAttendees = attendees.length;
   const checkedInCount = attendees.filter(a => a.checkedIn).length;
   const pendingCount = attendees.filter(a => !a.checkedIn).length;
@@ -344,28 +320,15 @@ export function ManageAttendees() {
           <p className="text-[#0F0F0F]/60 mt-1">View and manage all your event attendees</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            onClick={loadData}
-            variant="outline"
-            size="icon"
-            className="rounded-xl border-[#0F0F0F]/10"
-          >
+          <Button onClick={loadData} variant="outline" size="icon" className="rounded-xl border-[#0F0F0F]/10">
             <RefreshCw className="w-4 h-4" />
           </Button>
-          <Button
-            onClick={exportToCSV}
-            variant="outline"
-            className="rounded-xl border-[#0F0F0F]/10"
-            disabled={filteredAttendees.length === 0}
-          >
+          <Button onClick={exportToCSV} variant="outline" className="rounded-xl border-[#0F0F0F]/10" disabled={filteredAttendees.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
           {selectedAttendees.length > 0 && (
-            <Button
-              onClick={() => navigate('/organizer/email-campaigns', { state: { attendeeIds: selectedAttendees } })}
-              className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
-            >
+            <Button onClick={() => navigate('/organizer/email-campaigns', { state: { attendeeIds: selectedAttendees } })} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
               <Mail className="w-4 h-4 mr-2" />
               Email Selected ({selectedAttendees.length})
             </Button>
@@ -373,7 +336,6 @@ export function ManageAttendees() {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
@@ -429,18 +391,12 @@ export function ManageAttendees() {
         </Card>
       </div>
 
-      {/* Filters */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-              <Input
-                placeholder="Search by name, email, or ticket ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl"
-              />
+              <Input placeholder="Search by name, email, or ticket ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl" />
             </div>
             <Select value={eventFilter} onValueChange={setEventFilter}>
               <SelectTrigger className="md:w-64 h-12 rounded-xl border-[#0F0F0F]/10">
@@ -450,9 +406,7 @@ export function ManageAttendees() {
               <SelectContent className="rounded-xl">
                 <SelectItem value="all">All Events</SelectItem>
                 {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
+                  <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -470,21 +424,13 @@ export function ManageAttendees() {
         </CardContent>
       </Card>
 
-      {/* Attendees Table */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="text-[#0F0F0F] flex items-center justify-between">
             <span>All Attendees ({filteredAttendees.length})</span>
             {filteredAttendees.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSelectAll}
-                className="rounded-xl text-[#2969FF]"
-              >
-                {selectedAttendees.length === filteredAttendees.length
-                  ? 'Deselect All'
-                  : 'Select All'}
+              <Button variant="ghost" size="sm" onClick={toggleSelectAll} className="rounded-xl text-[#2969FF]">
+                {selectedAttendees.length === filteredAttendees.length ? 'Deselect All' : 'Select All'}
               </Button>
             )}
           </CardTitle>
@@ -493,9 +439,7 @@ export function ManageAttendees() {
           {filteredAttendees.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">
-                {attendees.length === 0 ? 'No attendees yet' : 'No attendees match your filters'}
-              </p>
+              <p className="text-[#0F0F0F]/60">{attendees.length === 0 ? 'No attendees yet' : 'No attendees match your filters'}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -503,15 +447,10 @@ export function ManageAttendees() {
                 <thead>
                   <tr className="border-b border-[#0F0F0F]/10">
                     <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium w-12">
-                      <input
-                        type="checkbox"
-                        checked={selectedAttendees.length === filteredAttendees.length && filteredAttendees.length > 0}
-                        onChange={toggleSelectAll}
-                        className="rounded"
-                      />
+                      <input type="checkbox" checked={selectedAttendees.length === filteredAttendees.length && filteredAttendees.length > 0} onChange={toggleSelectAll} className="rounded" />
                     </th>
                     <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Attendee</th>
-                    <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium hidden md:table-cell">Contact</th>
+                    <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium hidden md:table-cell">Email</th>
                     <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium hidden lg:table-cell">Event</th>
                     <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Ticket</th>
                     <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
@@ -523,12 +462,7 @@ export function ManageAttendees() {
                     <React.Fragment key={attendee.id}>
                     <tr className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
                       <td className="py-4 px-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedAttendees.includes(attendee.id)}
-                          onChange={() => toggleSelectAttendee(attendee.id)}
-                          className="rounded"
-                        />
+                        <input type="checkbox" checked={selectedAttendees.includes(attendee.id)} onChange={() => toggleSelectAttendee(attendee.id)} className="rounded" />
                       </td>
                       <td className="py-4 px-4">
                         <p className="font-medium text-[#0F0F0F]">{attendee.name}</p>
@@ -536,7 +470,6 @@ export function ManageAttendees() {
                       </td>
                       <td className="py-4 px-4 hidden md:table-cell">
                         <p className="text-[#0F0F0F]/60 text-sm">{attendee.email}</p>
-                        <p className="text-[#0F0F0F]/60 text-sm">{attendee.phone}</p>
                       </td>
                       <td className="py-4 px-4 hidden lg:table-cell">
                         <p className="text-[#0F0F0F]/60 truncate max-w-[200px]">{attendee.event}</p>
@@ -544,9 +477,7 @@ export function ManageAttendees() {
                       </td>
                       <td className="py-4 px-4">
                         <p className="text-[#0F0F0F] font-mono text-sm">{attendee.ticketId}</p>
-                        <Badge className="bg-[#F4F6FA] text-[#0F0F0F] rounded-lg mt-1">
-                          {attendee.ticketType}
-                        </Badge>
+                        <Badge className="bg-[#F4F6FA] text-[#0F0F0F] rounded-lg mt-1">{attendee.ticketType}</Badge>
                       </td>
                       <td className="py-4 px-4">
                         {attendee.checkedIn ? (
@@ -561,52 +492,37 @@ export function ManageAttendees() {
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {customResponses[attendee.id]?.length > 0 && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="rounded-xl"
-                              onClick={() => toggleRowExpand(attendee.id)}
-                              title="View custom form responses"
-                            >
-                              {expandedRows.includes(attendee.id) ? (
-                                <ChevronUp className="w-5 h-5 text-[#2969FF]" />
-                              ) : (
-                                <Eye className="w-5 h-5 text-[#2969FF]" />
-                              )}
+                            <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => toggleRowExpand(attendee.id)} title="View custom form responses">
+                              {expandedRows.includes(attendee.id) ? <ChevronUp className="w-5 h-5 text-[#2969FF]" /> : <Eye className="w-5 h-5 text-[#2969FF]" />}
                             </Button>
                           )}
                           <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-xl">
-                              <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-xl">
-                            {attendee.checkedIn ? (
-                              <DropdownMenuItem onClick={() => manualCheckIn(attendee.id, false)}>
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Undo Check-in
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="rounded-xl">
+                                <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              {attendee.checkedIn ? (
+                                <DropdownMenuItem onClick={() => manualCheckIn(attendee.id, false)}>
+                                  <CheckCircle className="w-4 h-4 mr-2" />Undo Check-in
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem onClick={() => manualCheckIn(attendee.id, true)}>
+                                  <CheckCircle className="w-4 h-4 mr-2" />Manual Check-in
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => resendTicket(attendee)}>
+                                <Mail className="w-4 h-4 mr-2" />Resend Ticket
                               </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem onClick={() => manualCheckIn(attendee.id, true)}>
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Manual Check-in
+                              <DropdownMenuItem onClick={() => window.open(`mailto:${attendee.email}`)}>
+                                <Mail className="w-4 h-4 mr-2" />Send Email
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={() => resendTicket(attendee)}>
-                              <Mail className="w-4 h-4 mr-2" />
-                              Resend Ticket
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => window.open(`mailto:${attendee.email}`)}>
-                              <Mail className="w-4 h-4 mr-2" />
-                              Send Email
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
+                            </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
                       </td>
                     </tr>
-                    {/* Expandable row for custom field responses */}
                     {expandedRows.includes(attendee.id) && customResponses[attendee.id]?.length > 0 && (
                       <tr className="bg-[#F4F6FA]/50 border-b border-[#0F0F0F]/10">
                         <td colSpan="7" className="py-4 px-8">

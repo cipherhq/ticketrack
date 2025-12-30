@@ -3,6 +3,7 @@ import { Loader2, Clock, Users, CheckCircle, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { joinWaitlist, getWaitlistPosition, cancelWaitlist, getWaitlistCount } from '@/services/waitlist';
@@ -240,12 +241,9 @@ export function WaitlistDialog({ open, onOpenChange, event }) {
 
             <div className="space-y-2">
               <Label>Phone (optional)</Label>
-              <Input
-                type="tel"
-                placeholder="+234..."
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="rounded-xl"
+              <PhoneInput 
+                value={formData.phone} 
+                onChange={(phone) => setFormData(prev => ({ ...prev, phone }))} 
               />
             </div>
 

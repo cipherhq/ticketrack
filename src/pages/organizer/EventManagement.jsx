@@ -93,6 +93,7 @@ export function EventManagement() {
   // Get event status: 'draft', 'cancelled', 'completed', 'live', 'upcoming'
   const getEventStatus = (event) => {
     if (event.status === 'draft') return 'draft';
+    if (event.status === 'scheduled') return 'scheduled';
     if (event.status === 'cancelled') return 'cancelled';
     
     const now = new Date();
@@ -107,7 +108,7 @@ export function EventManagement() {
   // Check if event can be edited (only upcoming and live events)
   const canEditEvent = (event) => {
     const status = getEventStatus(event);
-    return status === 'upcoming' || status === 'live' || status === 'draft';
+    return status === 'upcoming' || status === 'live' || status === 'draft' || status === 'scheduled';
   };
 
   // Check if event can be deleted (no tickets sold)
@@ -237,6 +238,8 @@ const formatDate = (dateString) => {
         );
       case 'upcoming':
         return <Badge className="bg-blue-100 text-blue-700">Upcoming</Badge>;
+      case 'scheduled':
+        return <Badge className="bg-purple-100 text-purple-700">Scheduled</Badge>;
       default:
         return <Badge className="bg-yellow-100 text-yellow-700">{event.status}</Badge>;
     }
