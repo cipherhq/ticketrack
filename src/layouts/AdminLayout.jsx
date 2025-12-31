@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Image,
+import { AlertTriangle, ArrowRightLeft, Image,
   LayoutDashboard,
   Shield,
   Calendar,
@@ -50,6 +50,7 @@ const navItems = [
   { icon: Bell, label: 'SMS Campaigns', path: '/admin/sms' },
   { icon: Users, label: 'Roles & Permissions', path: '/admin/roles' },
   { icon: Clock, label: 'Waitlist', path: '/admin/waitlist' },
+  { icon: ArrowRightLeft, label: 'Transfers', path: '/admin/transfers' },
   { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ];
 

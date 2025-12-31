@@ -1,14 +1,13 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { QRCodeSVG } from 'qrcode.react'
@@ -28,13 +27,6 @@ export function WebTickets() {
   const [escalateModal, setEscalateModal] = useState({ open: false, refund: null })
   const [escalateReason, setEscalateReason] = useState('')
   const [escalating, setEscalating] = useState(false)
-  const [transferModal, setTransferModal] = useState({ open: false, ticket: null })
-  const [transferEmail, setTransferEmail] = useState('')
-  const [transferLoading, setTransferLoading] = useState(false)
-  const [transferError, setTransferError] = useState('')
-  const [transferFee, setTransferFee] = useState(0)
-  const [transferCurrency, setTransferCurrency] = useState('NGN')
-  const [transferredOutTickets, setTransferredOutTickets] = useState([])
 
   useEffect(() => {
     if (!user) {
@@ -43,7 +35,6 @@ export function WebTickets() {
     }
     loadTickets()
     loadRefundStatus()
-    loadTransferredOut()
   }, [user, navigate])
 
   const loadTickets = async () => {
@@ -167,197 +158,7 @@ export function WebTickets() {
     window.location.href = `mailto:${ticket.attendee_email}?subject=${subject}&body=${body}`
   }
 
-  
-
-  
-
-  // Load tickets user has transferred out
-  const loadTransferredOut = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ticket_transfers')
-        .select('*')
-        .eq('from_user_id', user.id)
-        .order('created_at', { ascending: false })
-      
-      if (error) {
-        console.error('Error loading transfers:', error)
-        return
-      }
-      
-      // Enrich with ticket and user data
-      const enriched = await Promise.all((data || []).map(async (transfer) => {
-        // Get ticket with event
-        const { data: ticket } = await supabase
-          .from('tickets')
-          .select('id, ticket_code, attendee_name, event:events(id, title, slug, start_date, image_url)')
-          .eq('id', transfer.ticket_id)
-          .single()
-        
-        // Get recipient user
-        const { data: toUser } = await supabase
-          .from('profiles')
-          .select('full_name, email')
-          .eq('id', transfer.to_user_id)
-          .single()
-        
-        return { ...transfer, ticket, to_user: toUser }
-      }))
-      
-      setTransferredOutTickets(enriched)
-    } catch (err) {
-      console.error('Error loading transferred tickets:', err)
-    }
-  }
-
-  // Transfer ticket to another user
-  const openTransferModal = async (ticket) => {
-    setTransferError('')
-    setTransferEmail('')
-    
-    // Check if event allows transfers
-    const { data: event } = await supabase
-      .from('events')
-      .select('allow_transfers, currency')
-      .eq('id', ticket.event_id)
-      .single()
-    
-    // Get global transfer fee from admin settings
-    const { data: settings } = await supabase
-      .from('platform_settings')
-      .select('value')
-      .eq('key', 'transfer_fee')
-      .single()
-    
-    const currency = event?.currency || 'NGN'
-    const feesByCountry = settings?.value || {}
-    const fee = feesByCountry[currency] || 0
-    
-    setTransferFee(fee)
-    setTransferCurrency(currency)
-    
-    if (!event?.allow_transfers) {
-      alert('Transfers are disabled for this event')
-      return
-    }
-    
-    if (ticket.transfer_count >= (event.max_transfers || 2)) {
-      alert('Maximum transfer limit reached for this ticket')
-      return
-    }
-    
-    setTransferModal({ open: true, ticket })
-  }
-  
-  const handleTransfer = async () => {
-    if (!transferEmail.trim()) {
-      setTransferError('Please enter recipient email')
-      return
-    }
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(transferEmail)) {
-      setTransferError('Please enter a valid email address')
-      return
-    }
-    
-    setTransferLoading(true)
-    setTransferError('')
-    
-    try {
-      // Check if payment is required
-      if (transferFee > 0) {
-        // Initiate Paystack payment
-        const reference = 'TRF-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase()
-        
-        // Get Paystack public key
-        const { data: config } = await supabase
-          .from('payment_gateway_config')
-          .select('public_key')
-          .eq('provider', 'paystack')
-          .eq('is_active', true)
-          .limit(1)
-          .single()
-        
-        if (!config?.public_key) {
-          setTransferError('Payment not configured. Contact support.')
-          setTransferLoading(false)
-          return
-        }
-        
-        // Load Paystack if not loaded
-        if (!window.PaystackPop) {
-          const script = document.createElement('script')
-          script.src = 'https://js.paystack.co/v1/inline.js'
-          script.async = true
-          await new Promise((resolve, reject) => {
-            script.onload = resolve
-            script.onerror = reject
-            document.body.appendChild(script)
-          })
-        }
-        
-        // Initialize Paystack popup
-        const handler = window.PaystackPop.setup({
-          key: config.public_key,
-          email: user.email,
-          amount: Math.round(transferFee * 100), // Paystack uses kobo
-          currency: transferCurrency,
-          ref: reference,
-          metadata: {
-            type: 'ticket_transfer',
-            ticket_id: transferModal.ticket.id,
-            recipient_email: transferEmail.trim().toLowerCase()
-          },
-          callback: async (response) => {
-            // Payment successful - complete transfer
-            await completeTransfer(response.reference)
-          },
-          onClose: () => {
-            setTransferLoading(false)
-          }
-        })
-        handler.openIframe()
-      } else {
-        // Free transfer - proceed directly
-        await completeTransfer(null)
-      }
-    } catch (err) {
-      console.error('Transfer error:', err)
-      setTransferError('Failed to initiate transfer. Please try again.')
-      setTransferLoading(false)
-    }
-  }
-  
-  // Complete transfer after payment
-  const completeTransfer = async (paymentReference) => {
-    try {
-      const { data, error } = await supabase.rpc('transfer_ticket', {
-        p_ticket_id: transferModal.ticket.id,
-        p_from_user_id: user.id,
-        p_to_user_email: transferEmail.trim().toLowerCase(),
-        p_payment_reference: paymentReference
-      })
-      
-      if (error) throw error
-      
-      if (data?.success) {
-        alert('Ticket transferred successfully!\n\nTransfer ID: ' + (data.transfer_reference || 'N/A') + '\nRecipient: ' + data.recipient_name + ' (' + data.recipient_email + ')')
-        setTransferModal({ open: false, ticket: null })
-        setTransferEmail('')
-        loadTickets()
-        loadTransferredOut()
-      } else {
-        setTransferError(data?.message || 'Transfer failed')
-      }
-    } catch (err) {
-      console.error('Transfer error:', err)
-      setTransferError('Failed to complete transfer. Please try again.')
-    } finally {
-      setTransferLoading(false)
-    }
-  }
-
-// Share ticket
+  // Share ticket
   const shareTicket = async (ticket) => {
     const shareData = {
       title: `Ticket for ${ticket.event?.title}`,
@@ -626,16 +427,9 @@ export function WebTickets() {
                 <span>{formatDate(ticket.event?.start_date)}</span>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <Badge className={`${getStatusColor(isPast ? 'used' : ticket.status)} capitalize text-xs`}>
-                {isPast ? 'Past' : getStatusLabel(ticket.status)}
-              </Badge>
-              {ticket.transfer_count > 0 && (
-                <Badge className="bg-purple-100 text-purple-700 text-xs">
-                  Received
-                </Badge>
-              )}
-            </div>
+            <Badge className={`${getStatusColor(isPast ? 'used' : ticket.status)} capitalize text-xs`}>
+              {isPast ? 'Past' : getStatusLabel(ticket.status)}
+            </Badge>
           </div>
         </CardHeader>
 
@@ -754,16 +548,6 @@ export function WebTickets() {
               >
                 <Share2 className="w-3 h-3" />Share
               </Button>
-              {ticket.transfer_count === 0 && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="rounded-xl border-purple-300 text-purple-600 hover:bg-purple-50 flex items-center gap-2 text-xs"
-                onClick={() => openTransferModal(ticket)}
-              >
-                <Send className="w-3 h-3" />Transfer
-              </Button>
-              )}
               {!ticketRefundStatus[ticket.id] ? (
                 <Button 
                   size="sm" 
@@ -896,9 +680,6 @@ export function WebTickets() {
             <TabsTrigger value="past" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">
               Past ({pastTickets.length})
             </TabsTrigger>
-            <TabsTrigger value="transferred" className="rounded-lg data-[state=active]:bg-purple-600 data-[state=active]:text-white">
-              Transferred ({transferredOutTickets.length})
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="space-y-6">
@@ -929,80 +710,6 @@ export function WebTickets() {
               </Card>
             ) : (
               pastTickets.map(ticket => <TicketCard key={ticket.id} ticket={ticket} />)
-            )}
-          </TabsContent>
-          <TabsContent value="transferred" className="space-y-6">
-            {transferredOutTickets.length === 0 ? (
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4">
-                    <Send className="w-8 h-8 text-purple-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-[#0F0F0F] mb-2">No transferred tickets</h3>
-                  <p className="text-[#0F0F0F]/60">Tickets you transfer to others will appear here</p>
-                </CardContent>
-              </Card>
-            ) : (
-              transferredOutTickets.map((transfer) => (
-                <Card key={transfer.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      {transfer.ticket?.event?.image_url && (
-                        <img 
-                          src={transfer.ticket.event.image_url} 
-                          alt="" 
-                          className="w-16 h-16 rounded-xl object-cover"
-                        />
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-[#0F0F0F]">{transfer.ticket?.event?.title || 'Event'}</h3>
-                        <p className="text-sm text-[#0F0F0F]/60">
-                          {transfer.ticket?.event?.start_date && new Date(transfer.ticket.event.start_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Badge className="bg-purple-100 text-purple-700 border-0">Transferred Out</Badge>
-                    </div>
-                    <div className="mt-3 p-3 bg-purple-50 rounded-xl space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#0F0F0F]/60">Transfer ID:</span>
-                        <span className="font-mono text-[#0F0F0F]">{transfer.transfer_reference || '-'}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#0F0F0F]/60">Old Ticket Code:</span>
-                        <span className="font-mono text-red-600">{transfer.old_ticket_code || '-'}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#0F0F0F]/60">New Ticket Code:</span>
-                        <span className="font-mono text-green-600">{transfer.new_ticket_code || '-'}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#0F0F0F]/60">Original Transaction:</span>
-                        <span className="font-mono text-xs text-[#0F0F0F]">{transfer.original_transaction_id || '-'}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm border-t border-purple-200 pt-2 mt-2">
-                        <span className="text-[#0F0F0F]/60">Transferred to:</span>
-                        <span className="font-medium text-[#0F0F0F]">{transfer.to_user?.full_name || 'Unknown'} ({transfer.to_user?.email})</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#0F0F0F]/60">Date:</span>
-                        <span className="text-[#0F0F0F]">{new Date(transfer.created_at).toLocaleString()}</span>
-                      </div>
-                      {transfer.fee_amount > 0 && (
-                        <>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-[#0F0F0F]/60">Transfer fee:</span>
-                            <span className="text-[#0F0F0F]">{formatPrice(transfer.fee_amount, transfer.fee_currency)}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-[#0F0F0F]/60">Payment Ref:</span>
-                            <span className="font-mono text-xs text-[#0F0F0F]">{transfer.payment_reference || '-'}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
             )}
           </TabsContent>
         </Tabs>
@@ -1092,87 +799,6 @@ export function WebTickets() {
                 {refundLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Request'}
               </Button>
             )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Transfer Ticket Modal */}
-      <Dialog open={transferModal.open} onOpenChange={(o) => { if(!o) { setTransferModal({ open: false, ticket: null }); setTransferError(''); } }}>
-        <DialogContent className="rounded-2xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="w-5 h-5 text-purple-600" />
-              Transfer Ticket
-            </DialogTitle>
-          </DialogHeader>
-          
-          {transferModal.ticket && (
-            <div className="space-y-4">
-              {/* Ticket Info */}
-              <div className="p-3 bg-purple-50 rounded-xl">
-                <p className="font-medium text-[#0F0F0F]">{transferModal.ticket.event?.title}</p>
-                <p className="text-sm text-[#0F0F0F]/60">{transferModal.ticket.ticket_type?.name} - {transferModal.ticket.attendee_name}</p>
-                <p className="text-xs text-purple-600 mt-1">
-                  This ticket can only be transferred once
-                </p>
-              </div>
-              
-              {/* Recipient Email */}
-              <div>
-                <label className="text-sm font-medium text-[#0F0F0F]">Recipient Email *</label>
-                <Input 
-                  type="email"
-                  value={transferEmail}
-                  onChange={(e) => setTransferEmail(e.target.value)}
-                  placeholder="Enter recipient's email address"
-                  className="mt-1 rounded-xl"
-                />
-                <p className="text-xs text-[#0F0F0F]/50 mt-1">
-                  Recipient must have a Ticketrack account
-                </p>
-              </div>
-              
-              {transferFee > 0 && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-blue-800">Transfer Fee:</span>
-                    <span className="font-bold text-blue-800">{formatPrice(transferFee, transferCurrency)}</span>
-                  </div>
-                  <p className="text-xs text-blue-600 mt-1">Payment required to complete transfer</p>
-                </div>
-              )}
-              
-              {transferError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-sm text-red-600 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    {transferError}
-                  </p>
-                </div>
-              )}
-              
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <p className="text-sm text-amber-800 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>
-                    <strong>Important:</strong> Once transferred, you will no longer have access to this ticket. A new QR code will be generated for the recipient.
-                  </span>
-                </p>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setTransferModal({ open: false, ticket: null }); setTransferError(''); }} className="rounded-xl">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleTransfer} 
-              disabled={transferLoading || !transferEmail.trim()}
-              className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
-            >
-              {transferLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (transferFee > 0 ? 'Pay & Transfer' : 'Transfer Ticket')}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

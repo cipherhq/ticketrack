@@ -125,6 +125,14 @@ export function CreateEvent() {
     streamingPlatform: '',
     // Custom Form Fields
     customFields: [],
+    // Ticket Transfer Settings
+    allowTransfers: false,
+    maxTransfers: 1,
+    transferFee: 0,
+    // Ticket Transfer Settings
+    allowTransfers: true,
+    maxTransfers: 2,
+    transferFee: 0,
     // Scheduled Publishing
     publishOption: 'now',
     publishDate: '',
@@ -309,6 +317,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               allowCustomDonation: event.allow_custom_donation !== false,
               slug: event.slug || "",
               agreedToTerms: true,
+              allowTransfers: event.allow_transfers !== false,
+              maxTransfers: event.max_transfers || 2,
+              transferFee: event.transfer_fee || 0,
+              allowTransfers: event.allow_transfers !== false,
+              maxTransfers: event.max_transfers || 2,
+              transferFee: event.transfer_fee || 0,
             });
             if (event.image_url) {
               setBannerPreview(event.image_url);
@@ -876,6 +890,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         visibility: formData.visibility,
         access_password: formData.accessPassword,
         access_settings: formData.accessSettings,
+        allow_transfers: formData.allowTransfers,
+        max_transfers: parseInt(formData.maxTransfers) || 2,
+        transfer_fee: parseFloat(formData.transferFee) || 0,
+        allow_transfers: formData.allowTransfers,
+        max_transfers: parseInt(formData.maxTransfers) || 2,
+        transfer_fee: parseFloat(formData.transferFee) || 0,
         status: formData.publishOption === 'schedule' ? 'scheduled' : 'published',
         publish_at: formData.publishOption === 'schedule' && formData.publishDate 
           ? `${formData.publishDate}T${formData.publishTime || '00:00'}:00` 

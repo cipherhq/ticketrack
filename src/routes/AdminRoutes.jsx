@@ -28,6 +28,7 @@ import { AdminRoles } from '@/pages/admin/AdminRoles';
 import { AdminSettings } from '@/pages/admin/AdminSettings';
 import { AdminRefundSettings } from '@/pages/admin/AdminRefundSettings';
 import { AdminWaitlist } from '@/pages/admin/AdminWaitlist';
+import { AdminTransfers } from '@/pages/admin/AdminTransfers';
 import { AdminCategories } from '@/pages/admin/AdminCategories'; // NEW: Categories management
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -112,6 +113,7 @@ export function AdminRoutes() {
             <Route path="/flagged-referrals" element={<AdminFlaggedReferrals />} />
             <Route path="/roles" element={<AdminRoles />} />
             <Route path="/waitlist" element={<AdminWaitlist />} />
+            <Route path="/transfers" element={<AdminTransfers />} />
             <Route path="/categories" element={<AdminCategories />} />  {/* NEW: Categories route */}
             <Route path="/settings" element={<AdminSettings />} />
             <Route path="/refund-settings" element={<AdminRefundSettings />} />

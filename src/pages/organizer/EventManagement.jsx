@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -106,6 +106,25 @@ export function EventManagement() {
   };
 
   // Check if event can be edited (only upcoming and live events)
+  const toggleTransfers = async (eventId, currentValue) => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ allow_transfers: !currentValue })
+        .eq('id', eventId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setEvents(prev => prev.map(e => 
+        e.id === eventId ? { ...e, allow_transfers: !currentValue } : e
+      ));
+    } catch (err) {
+      console.error('Error toggling transfers:', err);
+      alert('Failed to update transfer setting');
+    }
+  };
+
   const canEditEvent = (event) => {
     const status = getEventStatus(event);
     return status === 'upcoming' || status === 'live' || status === 'draft' || status === 'scheduled';
@@ -438,6 +457,13 @@ const formatDate = (dateString) => {
                                 Check-In Attendees
                               </DropdownMenuItem>
                             )}
+                            
+                            <DropdownMenuSeparator />
+                            
+                            <DropdownMenuItem onClick={() => toggleTransfers(event.id, event.allow_transfers)}>
+                              <ArrowRightLeft className="w-4 h-4 mr-2" />
+                              {event.allow_transfers ? 'Disable Transfers' : 'Enable Transfers'}
+                            </DropdownMenuItem>
                             
                             <DropdownMenuSeparator />
                             

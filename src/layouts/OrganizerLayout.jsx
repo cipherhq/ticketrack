@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Users, Ticket, BarChart3,
   DollarSign, Tag, UserPlus, Mail, MessageCircle, MessageSquare,
   Settings, LogOut, Menu, X, ChevronDown, Bell, Shield,
-  QrCode, Building, CreditCard, RotateCcw, HelpCircle, Home, Receipt,
+  QrCode, Building, CreditCard, RotateCcw, HelpCircle, Home, Receipt, ArrowRightLeft
 } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -49,6 +49,11 @@ const menuItems = [
     title: 'Refunds',
     icon: RotateCcw,
     path: '/organizer/refunds',
+  },
+  {
+    title: 'Transfers',
+    icon: ArrowRightLeft,
+    path: '/organizer/transfers',
   },
   {
     title: 'Support',
