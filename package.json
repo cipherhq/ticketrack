@@ -23,7 +23,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.0.4",
     "@react-google-maps/api": "^2.20.7",
-    "@supabase/supabase-js": "^2.39.0",
+    "@supabase/supabase-js": "^2.87.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
