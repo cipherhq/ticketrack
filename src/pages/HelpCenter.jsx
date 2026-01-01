@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Search, ChevronDown, ChevronUp, Ticket, Users, Megaphone, Settings,
+  Search, ChevronDown, ChevronUp, Ticket, Users, Megaphone, Settings, ArrowRightLeft, Send, CalendarPlus, Star,
   ShoppingCart, CreditCard, RotateCcw, QrCode, Calendar, BarChart3,
   FileText, Download, CheckCircle, UserPlus, Link as LinkIcon, Wallet,
   HelpCircle, Mail, Shield, Bell, Eye, Plus, Edit, Trash2, Clock,
@@ -106,7 +106,78 @@ const helpContent = {
         ],
         screenshot: '/help/refund-status.png',
         tips: ['Pending means the organizer is reviewing', 'Approved means money is being processed', 'Processed means the refund is complete']
-      }
+      },
+      {
+        id: 'transfer-ticket',
+        title: 'How to Transfer a Ticket',
+        icon: Send,
+        steps: [
+          'Go to "My Tickets" in your account.',
+          'Find the ticket you want to transfer.',
+          'Click the purple "Transfer" button.',
+          'Enter the recipient\'s email address (they must have a Ticketrack account).',
+          'Review the transfer details and any applicable fee.',
+          'Click "Transfer Ticket" or "Pay & Transfer" if a fee applies.',
+          'The ticket will be removed from your account and sent to the recipient.'
+        ],
+        screenshot: '/help/transfer-ticket.png',
+        tips: [
+          'Each ticket can only be transferred once',
+          'Only the original buyer can transfer (not someone who received a transfer)',
+          'The recipient must have a Ticketrack account before you can transfer'
+        ],
+        important: 'Once transferred, you will no longer have access to this ticket. A new QR code will be generated for the recipient.'
+      },
+      {
+        id: 'view-transferred-tickets',
+        title: 'How to View Transferred Tickets',
+        icon: ArrowRightLeft,
+        steps: [
+          'Go to "My Tickets" in your account.',
+          'Click the "Transferred" tab (purple button).',
+          'View all tickets you have transferred to others.',
+          'Each transfer shows: Transfer ID, old ticket code, new ticket code, recipient name, and date.'
+        ],
+        screenshot: '/help/transferred-tickets.png',
+        tips: [
+          'This is your audit trail for tickets you\'ve sent to others',
+          'Received tickets will show a "Received" badge in your Active tickets'
+        ]
+      },
+      {
+        id: 'add-to-calendar',
+        title: 'How to Add Event to Calendar',
+        icon: CalendarPlus,
+        steps: [
+          'Go to any event page you\'re interested in or have tickets for.',
+          'Click the "Add to Calendar" button.',
+          'Choose your calendar: Google Calendar, Apple Calendar, or Outlook.',
+          'The event will be added with date, time, and location details.',
+          'You\'ll receive a reminder before the event starts.'
+        ],
+        screenshot: '/help/add-calendar.png',
+        tips: [
+          'Google Calendar opens in a new tab for easy adding',
+          'Apple and Outlook download an .ics file - open it to add to your calendar',
+          'Calendar event includes venue address and event link'
+        ]
+      },
+      {
+        id: 'recommended-events',
+        title: 'How to Find Recommended Events',
+        icon: Star,
+        steps: [
+          'Go to the Browse Events page.',
+          'Scroll down to see "Recommended for You" section.',
+          'These events are selected based on popularity and relevance.',
+          'Click any event card to view details and buy tickets.'
+        ],
+        screenshot: '/help/recommended-events.png',
+        tips: [
+          'Recommendations update regularly with new events',
+          'Check back often to discover new events in your area'
+        ]
+      },
     ]
   },
   organizers: {
@@ -131,6 +202,26 @@ const helpContent = {
         ],
         screenshot: '/help/create-event.png',
         tips: ['Use a high-quality event image (1200x630px recommended)', 'Write a compelling description to attract attendees']
+      },
+      {
+        id: 'schedule-event-publishing',
+        title: 'How to Schedule Event Publishing',
+        icon: Clock,
+        steps: [
+          'When creating or editing an event, go to the "Visibility" section.',
+          'Toggle on "Schedule Publishing" option.',
+          'Set the date and time when you want the event to go live.',
+          'Save/publish your event.',
+          'The event will remain hidden until the scheduled date/time.',
+          'At the scheduled time, it automatically becomes visible to the public.'
+        ],
+        screenshot: '/help/schedule-publishing.png',
+        tips: [
+          'Great for coordinating marketing campaigns with event launch',
+          'Use for surprise event announcements',
+          'You can edit the scheduled time before it goes live'
+        ],
+        important: 'Scheduled events show a "Scheduled" badge in your Events list. You can still edit them before they go live.'
       },
       {
         id: 'custom-checkout-forms',
@@ -224,7 +315,46 @@ const helpContent = {
         ],
         screenshot: '/help/analytics.png',
         tips: ['Check analytics regularly to understand your audience', 'Use insights to improve future events']
-      }
+      },
+      {
+        id: 'enable-transfers',
+        title: 'How to Enable/Disable Ticket Transfers',
+        icon: ArrowRightLeft,
+        steps: [
+          'Go to Organizer Dashboard → Events.',
+          'Find the event you want to update.',
+          'Click the three-dot menu (⋮) on the event card.',
+          'Click "Enable Transfers" to allow attendees to transfer tickets.',
+          'Or click "Disable Transfers" to turn it off.',
+          'The setting updates immediately - no need to save.'
+        ],
+        screenshot: '/help/enable-transfers.png',
+        tips: [
+          'Transfers are disabled by default for all events',
+          'Enable transfers for events where attendees may need flexibility',
+          'Disable for exclusive or VIP events where you want strict ticket control'
+        ],
+        important: 'Each ticket can only be transferred once. Only the original buyer can transfer.'
+      },
+      {
+        id: 'view-event-transfers',
+        title: 'How to View Ticket Transfers for Your Events',
+        icon: ArrowRightLeft,
+        steps: [
+          'Go to Organizer Dashboard → Transfers.',
+          'View all ticket transfers for your events.',
+          'See details: Transfer ID, date, from/to users, old/new ticket codes.',
+          'Click the eye icon (👁️) to see full transfer details.',
+          'Use the search bar to find specific transfers.',
+          'Click "Export" to download transfer data as CSV.'
+        ],
+        screenshot: '/help/organizer-transfers.png',
+        tips: [
+          'Monitor transfers to track ticket movement',
+          'Use the audit trail for any disputes or issues',
+          'Export data for record keeping'
+        ]
+      },
     ]
   },
   promoters: {

@@ -51,7 +51,7 @@ export function AddressAutocomplete({
     // Initialize autocomplete
     autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
       types: ['establishment', 'geocode'],
-      componentRestrictions: { country: ['ng', 'gh', 'ke', 'za', 'eg', 'tz', 'ug', 'rw', 'et', 'sn', 'ci', 'cm', 'ma'] }, // African countries
+      componentRestrictions: { country: ['ng', 'gh', 'ke', 'za', 'us', 'gb', 'ca'] }, // Supported countries
       fields: ['formatted_address', 'geometry', 'name', 'place_id', 'address_components'],
     });
 

@@ -1,0 +1,267 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  TrendingUp, DollarSign, Clock, CheckCircle, Users, 
+  Calendar, ArrowRight, Loader2, AlertCircle
+} from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { formatPrice } from '@/config/currencies';
+import { useFinance } from '@/contexts/FinanceContext';
+
+export function FinanceDashboard() {
+  const navigate = useNavigate();
+  const { financeUser, logFinanceAction } = useFinance();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    pendingPayouts: 0,
+    completedPayouts: 0,
+    pendingEventCount: 0,
+    recentPayouts: []
+  });
+
+  useEffect(() => {
+    loadDashboardData();
+    logFinanceAction('view_dashboard');
+  }, []);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Total platform revenue
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('platform_fee')
+        .eq('status', 'completed');
+      
+      const totalRevenue = orders?.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0) || 0;
+
+      // Pending events count (ended but not paid)
+      const now = new Date().toISOString();
+      const { data: pendingEvents, count } = await supabase
+        .from('events')
+        .select('id', { count: 'exact' })
+        .lt('end_date', now)
+        .neq('payout_status', 'paid');
+
+      // Completed payouts
+      const { data: completedPayouts } = await supabase
+        .from('payouts')
+        .select('net_amount')
+        .eq('status', 'completed');
+      
+      const completedAmount = completedPayouts?.reduce((sum, p) => sum + parseFloat(p.net_amount || 0), 0) || 0;
+
+      // Pending payouts
+      const { data: pendingPayoutsData } = await supabase
+        .from('payouts')
+        .select('net_amount')
+        .in('status', ['pending', 'processing']);
+      
+      const pendingAmount = pendingPayoutsData?.reduce((sum, p) => sum + parseFloat(p.net_amount || 0), 0) || 0;
+
+      // Recent payout activity
+      const { data: recentPayouts } = await supabase
+        .from('payouts')
+        .select('*, organizers(business_name)')
+        .eq('status', 'completed')
+        .order('processed_at', { ascending: false })
+        .limit(5);
+
+      setStats({
+        totalRevenue,
+        pendingPayouts: pendingAmount,
+        completedPayouts: completedAmount,
+        pendingEventCount: count || 0,
+        recentPayouts: recentPayouts || []
+      });
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-[#0F0F0F]">Finance Dashboard</h1>
+        <p className="text-[#0F0F0F]/60">Welcome back, {financeUser?.email}</p>
+      </div>
+
+      {/* Alert for pending payouts */}
+      {stats.pendingEventCount > 0 && (
+        <Card className="border-yellow-200 bg-yellow-50 rounded-2xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-600" />
+              <p className="text-yellow-800">
+                <span className="font-semibold">{stats.pendingEventCount} events</span> have ended and are awaiting payout
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate('/finance/payouts/events')}
+              className="bg-yellow-600 hover:bg-yellow-700 rounded-xl"
+            >
+              Process Payouts
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[#0F0F0F]/60">Platform Revenue</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.totalRevenue, 'NGN')}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
+                <Clock className="w-6 h-6 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.pendingPayouts, 'NGN')}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[#0F0F0F]/60">Total Paid Out</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.completedPayouts, 'NGN')}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[#0F0F0F]/60">Pending Events</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{stats.pendingEventCount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions */}
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-between rounded-xl h-14"
+              onClick={() => navigate('/finance/payouts/events')}
+            >
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-[#2969FF]" />
+                <span>Process Event Payouts</span>
+              </div>
+              <Badge className="bg-yellow-100 text-yellow-800">{stats.pendingEventCount} pending</Badge>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-between rounded-xl h-14"
+              onClick={() => navigate('/finance/payouts/affiliates')}
+            >
+              <div className="flex items-center gap-3">
+                <DollarSign className="w-5 h-5 text-green-600" />
+                <span>Process Affiliate Payouts</span>
+              </div>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-between rounded-xl h-14"
+              onClick={() => navigate('/finance/revenue/overview')}
+            >
+              <div className="flex items-center gap-3">
+                <TrendingUp className="w-5 h-5 text-purple-600" />
+                <span>View Revenue Reports</span>
+              </div>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Recent Payouts */}
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Recent Payouts</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/finance/payouts/history')}
+              className="text-[#2969FF]"
+            >
+              View All
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {stats.recentPayouts.length === 0 ? (
+              <p className="text-center text-[#0F0F0F]/60 py-8">No payouts yet</p>
+            ) : (
+              <div className="space-y-3">
+                {stats.recentPayouts.map((payout) => (
+                  <div key={payout.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                    <div>
+                      <p className="font-medium text-[#0F0F0F]">{payout.organizers?.business_name}</p>
+                      <p className="text-xs text-[#0F0F0F]/60">
+                        {new Date(payout.processed_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-600">{formatPrice(payout.net_amount, payout.currency || 'NGN')}</p>
+                      <Badge className="bg-green-100 text-green-800 text-xs">Paid</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

@@ -7,6 +7,7 @@ import { AdminEvents } from '@/pages/admin/AdminEvents';
 import { AdminOrganizers } from '@/pages/admin/AdminOrganizers';
 import { AdminAttendees } from '@/pages/admin/AdminAttendees';
 import { AdminPayouts } from '@/pages/admin/AdminPayouts';
+import { AdminFinance } from '@/pages/admin/AdminFinance';
 import { AdminProcessPayout } from '@/pages/admin/AdminProcessPayout';
 import { AdminRefunds } from '@/pages/admin/AdminRefunds';
 import { AdminOrders } from "@/pages/admin/AdminOrders";
@@ -92,6 +93,7 @@ export function AdminRoutes() {
             <Route path="/events" element={<AdminEvents />} />
             <Route path="/organizers" element={<AdminOrganizers />} />
             <Route path="/attendees" element={<AdminAttendees />} />
+            <Route path="/finance" element={<AdminFinance />} />
             <Route path="/payouts" element={<AdminPayouts />} />
             <Route path="/payouts/process" element={<AdminProcessPayout />} />
             <Route path="/refunds" element={<AdminRefunds />} />

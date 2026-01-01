@@ -34,7 +34,7 @@ const navItems = [
   { icon: FolderOpen, label: 'Categories', path: '/admin/categories' }, // NEW: Categories link
   { icon: Building, label: 'Organizers', path: '/admin/organizers' },
   { icon: UserCheck, label: 'Attendees', path: '/admin/attendees' },
-  { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' },
+  { icon: DollarSign, label: 'Finance', path: '/admin/finance' },
   { icon: RefreshCw, label: 'Refunds', path: '/admin/refunds' },
   { icon: Receipt, label: 'Orders', path: '/admin/orders' },
   { icon: Settings, label: 'Refund Settings', path: '/admin/refund-settings' },

@@ -451,7 +451,44 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
   const isLastTab = currentTabIndex === tabs.length - 1;
   const isFirstTab = currentTabIndex === 0;
 
+  const validateCurrentTab = () => {
+    const errors = [];
+    
+    if (activeTab === "details") {
+      if (!formData.title?.trim()) errors.push("Event title is required");
+      if (!formData.eventType) errors.push("Event type is required");
+      if (!formData.category) errors.push("Category is required");
+      if (!formData.description?.trim()) errors.push("Description is required");
+    }
+    
+    if (activeTab === "datetime") {
+      if (!formData.startDate) errors.push("Start date is required");
+      if (!formData.startTime) errors.push("Start time is required");
+      if (!formData.endDate) errors.push("End date is required");
+      if (!formData.endTime) errors.push("End time is required");
+    }
+    
+    if (activeTab === "venue") {
+      if (!formData.venueName?.trim()) errors.push("Venue name is required");
+      if (!formData.venueAddress?.trim()) errors.push("Venue address is required");
+    }
+    
+    if (activeTab === "ticketing") {
+      if (!formData.currency) errors.push("Currency is required");
+      const validTickets = tickets.filter(t => t.name?.trim() && t.quantity);
+      if (validTickets.length === 0 && !formData.isFreeEvent) errors.push("At least one ticket type is required");
+    }
+    
+    return errors;
+  };
+  
   const goToNextTab = () => {
+    const errors = validateCurrentTab();
+    if (errors.length > 0) {
+      setError(errors.join(". "));
+      return;
+    }
+    setError("");
     if (!isLastTab) {
       setActiveTab(tabs[currentTabIndex + 1].id);
     }
@@ -896,7 +933,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         allow_transfers: formData.allowTransfers,
         max_transfers: parseInt(formData.maxTransfers) || 2,
         transfer_fee: parseFloat(formData.transferFee) || 0,
-        status: formData.publishOption === 'schedule' ? 'scheduled' : 'published',
+        status: formData.publishOption === 'schedule' ? 'scheduled' : formData.publishOption === 'draft' ? 'draft' : 'published',
         publish_at: formData.publishOption === 'schedule' && formData.publishDate 
           ? `${formData.publishDate}T${formData.publishTime || '00:00'}:00` 
           : null,
@@ -2629,7 +2666,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   When to Publish
                 </h3>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div 
                       onClick={() => setFormData({ ...formData, publishOption: 'now' })}
                       className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'now' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'}`}
@@ -2658,11 +2695,25 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         </div>
                       </div>
                     </div>
+                    <div 
+                      onClick={() => setFormData({ ...formData, publishOption: 'draft' })}
+                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'draft' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.publishOption === 'draft' ? 'border-[#2969FF]' : 'border-[#0F0F0F]/30'}`}>
+                          {formData.publishOption === 'draft' && <div className="w-3 h-3 rounded-full bg-[#2969FF]" />}
+                        </div>
+                        <div>
+                          <p className="font-medium text-[#0F0F0F]">Save as Draft</p>
+                          <p className="text-sm text-[#0F0F0F]/60">Finish editing later</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   
                   {formData.publishOption === 'schedule' && (
                     <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                           <Label className="text-sm font-medium mb-2 block">Publish Date *</Label>
                           <Input
@@ -2741,7 +2792,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               {saving ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</>
               ) : (
-                formData.publishOption === 'schedule' ? 'Schedule Event' : 'Create Event'
+                formData.publishOption === 'schedule' ? 'Schedule Event' : formData.publishOption === 'draft' ? 'Save Draft' : 'Create Event'
               )}
             </Button>
           ) : (

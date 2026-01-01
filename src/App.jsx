@@ -55,6 +55,9 @@ import { AdminRoutes } from './routes/AdminRoutes';
 // Promoter Routes
 import { PromoterRoutes } from './routes/PromoterRoutes';
 
+// Finance Routes
+import { FinanceApp } from './routes/FinanceRoutes';
+
 function App() {
   return (
     <AuthProvider><FeatureFlagsProvider>
@@ -72,6 +75,9 @@ function App() {
 
               {/* Promoter Portal Routes */}
               <Route path="/promoter/*" element={<PromoterRoutes />} />
+
+              {/* Finance Portal Routes */}
+              <Route path="/finance/*" element={<FinanceApp />} />
 
               {/* Create Event */}
               <Route path="/create-event" element={<OrganizerProvider><CreateEvent /></OrganizerProvider>} />
