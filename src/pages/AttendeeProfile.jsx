@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { TaxDocuments } from '@/components/TaxDocuments';
 
 export function AttendeeProfile() {
   const navigate = useNavigate()

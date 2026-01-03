@@ -4,7 +4,8 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { 
   LayoutDashboard, Banknote, Users, Link2, History, 
   TrendingUp, Globe, PieChart, FileText, Settings,
-  LogOut, Menu, X, DollarSign, Shield, ChevronDown, ChevronRight
+  LogOut, Menu, X, DollarSign, Shield, ChevronDown, ChevronRight,
+  Calendar, UserCheck, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,9 +22,11 @@ const navGroups = [
     label: 'Payouts',
     icon: Banknote,
     children: [
-      { label: 'Event Payouts', path: '/finance/payouts/events', icon: Users },
+      { label: 'Event Payouts', path: '/finance/payouts/events', icon: Calendar },
+      { label: 'Promoter Payouts', path: '/finance/payouts/promoters', icon: UserCheck },
       { label: 'Affiliate Payouts', path: '/finance/payouts/affiliates', icon: Link2 },
       { label: 'Payout History', path: '/finance/payouts/history', icon: History },
+      { label: 'Back Office Funding', path: '/finance/payouts/funding', icon: Star },
     ]
   },
   {

@@ -5,7 +5,7 @@ import {
   DollarSign, Tag, UserPlus, Mail, MessageCircle, MessageSquare,
   Settings, LogOut, Menu, X, ChevronDown, Bell, Shield,
   QrCode, Building, CreditCard, RotateCcw, HelpCircle, Home, Receipt, ArrowRightLeft
-} from 'lucide-react';
+, FileText } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -85,6 +85,7 @@ const menuItems = [
       { title: 'Profile', path: '/organizer/profile' },
       { title: 'Bank Account', path: '/organizer/bank-account' },
       { title: 'KYC Verification', path: '/organizer/kyc' },
+      { title: 'Tax Documents', path: '/organizer/tax-documents' },
     ],
   },
 ];

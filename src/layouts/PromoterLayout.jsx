@@ -9,7 +9,7 @@ import {
   X,
   History,
   LogOut,
-  Bell,
+  Bell, FileText,
 } from 'lucide-react';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +19,7 @@ const navItems = [
   { icon: TrendingUp, label: 'Performance', path: '/promoter/performance' },
   { icon: CreditCard, label: 'Bank Accounts', path: '/promoter/bank-accounts' },
   { icon: History, label: 'Payment History', path: '/promoter/payment-history' },
+  { icon: FileText, label: 'Tax Documents', path: '/promoter/tax-documents' },
   { icon: UserCircle, label: 'Profile', path: '/promoter/profile' },
 ];
 

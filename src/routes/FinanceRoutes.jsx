@@ -3,17 +3,17 @@ import { FinanceProvider, useFinance } from '@/contexts/FinanceContext';
 import { FinanceLayout } from '@/layouts/FinanceLayout';
 import { FinanceLogin } from '@/pages/finance/FinanceLogin';
 import { FinanceDashboard } from '@/pages/finance/FinanceDashboard';
+import { EventPayouts } from '@/pages/finance/EventPayouts';
+import { PromoterPayouts } from '@/pages/finance/PromoterPayouts';
+import { AffiliatePayouts } from '@/pages/finance/AffiliatePayouts';
+import { PayoutHistory } from '@/pages/finance/PayoutHistory';
+import { BackOfficeFunding } from '@/pages/finance/BackOfficeFunding';
+import { RevenueOverview } from '@/pages/finance/RevenueOverview';
+import { RevenueByCountry } from '@/pages/finance/RevenueByCountry';
+import { RevenueByCategory } from '@/pages/finance/RevenueByCategory';
+import { FinanceReports } from '@/pages/finance/FinanceReports';
+import { FinanceSettings } from '@/pages/finance/FinanceSettings';
 import { Loader2 } from 'lucide-react';
-
-// Placeholder components - we'll build these next
-const EventPayouts = () => <div>Event Payouts - Coming</div>;
-const AffiliatePayouts = () => <div>Affiliate Payouts - Coming</div>;
-const PayoutHistory = () => <div>Payout History - Coming</div>;
-const RevenueOverview = () => <div>Revenue Overview - Coming</div>;
-const RevenueByCountry = () => <div>Revenue By Country - Coming</div>;
-const RevenueByCategory = () => <div>Revenue By Category - Coming</div>;
-const FinanceReports = () => <div>Finance Reports - Coming</div>;
-const FinanceSettings = () => <div>Finance Settings - Coming</div>;
 
 // Auth guard component
 function FinanceGuard({ children }) {
@@ -54,8 +54,10 @@ export function FinanceRoutes() {
         
         {/* Payouts */}
         <Route path="payouts/events" element={<EventPayouts />} />
+        <Route path="payouts/promoters" element={<PromoterPayouts />} />
         <Route path="payouts/affiliates" element={<AffiliatePayouts />} />
         <Route path="payouts/history" element={<PayoutHistory />} />
+        <Route path="payouts/funding" element={<BackOfficeFunding />} />
         
         {/* Revenue */}
         <Route path="revenue/overview" element={<RevenueOverview />} />

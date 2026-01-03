@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { supabase } from '@/lib/supabase';
 import { formatMultiCurrency, formatMultiCurrencyCompact } from '@/config/currencies';
+import { TaxDocuments } from '@/components/TaxDocuments';
 
 export function PromoterDashboard() {
   const { promoter, loading: promoterLoading } = usePromoter();
@@ -172,6 +173,11 @@ export function PromoterDashboard() {
         <Link to="/promoter/performance"><Card className="border-[#0F0F0F]/10 rounded-2xl hover:border-[#2969FF] transition-colors cursor-pointer"><CardContent className="p-6"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center"><TrendingUp className="w-6 h-6 text-purple-600" /></div><div><h3 className="text-[#0F0F0F] mb-1">View Performance</h3><p className="text-sm text-[#0F0F0F]/60">Detailed analytics and stats</p></div></div></CardContent></Card></Link>
         <Link to="/promoter/bank-accounts"><Card className="border-[#0F0F0F]/10 rounded-2xl hover:border-[#2969FF] transition-colors cursor-pointer"><CardContent className="p-6"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center"><CreditCard className="w-6 h-6 text-blue-600" /></div><div><h3 className="text-[#0F0F0F] mb-1">Manage Bank Accounts</h3><p className="text-sm text-[#0F0F0F]/60">Add or update payment details</p></div></div></CardContent></Card></Link>
       </div>
+
+      {/* Tax Documents */}
+      {promoter?.id && (
+        <TaxDocuments type="promoter" recipientId={promoter.id} countryCode="NG" />
+      )}
     </div>
   );
 }

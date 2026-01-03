@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact, getUserDefaultCurrency } from '@/config/currencies';
+import { TaxDocuments } from '@/components/TaxDocuments';
 
 export function OrganizerHome() {
   const navigate = useNavigate();
@@ -473,6 +474,11 @@ export function OrganizerHome() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Tax Documents */}
+      {organizer?.id && (
+        <TaxDocuments type="organizer" recipientId={organizer.id} countryCode={organizer?.country_code || 'NG'} />
+      )}
     </div>
   );
 }

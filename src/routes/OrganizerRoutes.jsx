@@ -27,6 +27,7 @@ import { OrganizerOrders } from "@/pages/organizer/OrganizerOrders";
 import { OrganizerRefunds } from '@/pages/organizer/OrganizerRefunds';
 import { OrganizerTransfers } from '@/pages/organizer/OrganizerTransfers';
 import { OrganizerSupport } from '@/pages/organizer/OrganizerSupport';
+import { TaxDocuments } from '@/pages/organizer/TaxDocuments';
 import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
 import { Loader2 } from 'lucide-react';
 
@@ -64,6 +65,7 @@ export function OrganizerRoutes() {
           <Route path="/check-in" element={<CheckInByEvents />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/kyc" element={<KYCVerification />} />
+          <Route path="/tax-documents" element={<TaxDocuments />} />
           <Route path="/promo-codes" element={<PromoCodes />} />
           <Route path="/promoters" element={<PromoterManagement />} />
           <Route path="/followers" element={<OrganizerFollowers />} />

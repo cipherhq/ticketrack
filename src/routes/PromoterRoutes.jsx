@@ -6,6 +6,7 @@ import { PromoterDashboard } from '@/pages/promoter/PromoterDashboard';
 import { PromoterPerformance } from '@/pages/promoter/PromoterPerformance';
 import { BankAccountManagement } from '@/pages/promoter/BankAccountManagement';
 import { PaymentHistory } from '@/pages/promoter/PaymentHistory';
+import { PromoterTaxDocuments } from '@/pages/promoter/TaxDocuments';
 import { PromoterProfile } from '@/pages/promoter/PromoterProfile';
 import { AcceptInvitation } from '@/pages/promoter/AcceptInvitation';
 import { Loader2 } from 'lucide-react';
@@ -34,6 +35,7 @@ export function PromoterRoutes() {
           <Route path="performance" element={<PromoterPerformance />} />
           <Route path="bank-accounts" element={<BankAccountManagement />} />
           <Route path="payment-history" element={<PaymentHistory />} />
+          <Route path="tax-documents" element={<PromoterTaxDocuments />} />
           <Route path="profile" element={<PromoterProfile />} />
         </Route>
       </Routes>
