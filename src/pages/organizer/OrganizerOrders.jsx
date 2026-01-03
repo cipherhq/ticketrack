@@ -132,6 +132,7 @@ export function OrganizerOrders() {
         promo_code_id
       `)
       .in('event_id', eventIds)
+      .not('status', 'in', '("cancelled","failed")')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -173,11 +174,16 @@ export function OrganizerOrders() {
     const pending = ordersWithTickets.filter(o => o.status === 'pending');
     const totalRevenue = completed.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
 
+    // Determine primary currency from orders
+    const currencies = [...new Set(completed.map(o => o.currency).filter(Boolean))];
+    const primaryCurrency = currencies.length === 1 ? currencies[0] : (currencies[0] || 'NGN');
+    
     setStats({
       totalOrders: ordersWithTickets.length,
       totalRevenue,
       completedOrders: completed.length,
       pendingOrders: pending.length,
+      currency: primaryCurrency,
     });
   };
 
@@ -392,7 +398,7 @@ export function OrganizerOrders() {
               </div>
               <div>
                 <p className="text-[#0F0F0F]/60 text-sm">Revenue</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">₦{stats.totalRevenue.toLocaleString()}</h3>
+                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{formatPrice(stats.totalRevenue, stats.currency || 'NGN')}</h3>
               </div>
             </div>
           </CardContent>
