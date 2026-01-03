@@ -28,6 +28,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
+import { Pagination, usePagination } from '@/components/ui/pagination';
 
 export function OrganizerOrders() {
   const { organizer } = useOrganizer();
@@ -189,6 +190,17 @@ export function OrganizerOrders() {
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesEvent && matchesStatus;
   });
+
+  // Pagination
+  const { 
+    currentPage, totalPages, totalItems, itemsPerPage, 
+    paginatedItems: paginatedOrders, handlePageChange, setCurrentPage 
+  } = usePagination(filteredOrders, 20);
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, eventFilter, statusFilter]);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -467,7 +479,7 @@ export function OrganizerOrders() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredOrders.map((order) => (
+              {paginatedOrders.map((order) => (
                 <div key={order.id} className="border border-[#0F0F0F]/10 rounded-xl overflow-hidden">
                   {/* Order Row */}
                   <div 
@@ -610,6 +622,17 @@ export function OrganizerOrders() {
                 </div>
               ))}
             </div>
+          )}
+          
+          {/* Pagination */}
+          {filteredOrders.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
           )}
         </CardContent>
       </Card>

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
+import { Pagination, usePagination } from '@/components/ui/pagination';
 
 export function OrganizerRefunds() {
   const { organizer } = useOrganizer();
@@ -154,6 +155,17 @@ export function OrganizerRefunds() {
     return true;
   });
 
+  // Pagination
+  const { 
+    currentPage, totalPages, totalItems, itemsPerPage, 
+    paginatedItems: paginatedRefunds, handlePageChange, setCurrentPage 
+  } = usePagination(filteredRefunds, 20);
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, search]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -258,7 +270,7 @@ export function OrganizerRefunds() {
             </div>
           ) : (
             <div className="divide-y divide-[#0F0F0F]/10">
-              {filteredRefunds.map(refund => (
+              {paginatedRefunds.map(refund => (
                 <div key={refund.id} className="p-4 hover:bg-[#F4F6FA]/50 transition-colors">
                   <div className="flex flex-col md:flex-row md:items-center gap-4">
                     {/* Event Image */}
@@ -332,6 +344,17 @@ export function OrganizerRefunds() {
                 </div>
               ))}
             </div>
+          )}
+          
+          {/* Pagination */}
+          {filteredRefunds.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
           )}
         </CardContent>
       </Card>

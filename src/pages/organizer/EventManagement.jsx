@@ -17,6 +17,7 @@ import {
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { Pagination, usePagination } from '@/components/ui/pagination';
 
 const MANUAL_ISSUE_TYPES = [
   { value: 'complimentary', label: 'Complimentary' },
@@ -109,6 +110,17 @@ export function EventManagement() {
   const filteredEvents = events.filter(event =>
     event.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Pagination
+  const { 
+    currentPage, totalPages, totalItems, itemsPerPage, 
+    paginatedItems: paginatedEvents, handlePageChange, setCurrentPage 
+  } = usePagination(filteredEvents, 20);
+  
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const getEventStatus = (event) => {
     if (event.status === 'draft') return 'draft';
@@ -387,7 +399,7 @@ export function EventManagement() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredEvents.map((event) => {
+              {paginatedEvents.map((event) => {
                 const eventStatus = getEventStatus(event);
                 const isEditable = canEditEvent(event);
                 const isDeletable = canDeleteEvent(event);
@@ -452,6 +464,17 @@ export function EventManagement() {
                 );
               })}
             </div>
+          )}
+          
+          {/* Pagination */}
+          {filteredEvents.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
           )}
         </CardContent>
       </Card>

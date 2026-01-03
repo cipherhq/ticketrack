@@ -21,6 +21,7 @@ import {
 } from '../../components/ui/dropdown-menu';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { Pagination, usePagination } from '@/components/ui/pagination';
 
 export function ManageAttendees() {
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ export function ManageAttendees() {
   const [loading, setLoading] = useState(true);
   const [attendees, setAttendees] = useState([]);
   const [groupedAttendees, setGroupedAttendees] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [eventFilter, setEventFilter] = useState(eventIdParam || 'all');
@@ -388,6 +391,18 @@ export function ManageAttendees() {
   const checkedInCount = attendees.filter(a => a.checkedIn).length;
   const pendingCount = attendees.filter(a => !a.checkedIn).length;
   const uniqueAttendeesCount = groupedAttendees.length;
+  
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(groupedAttendees.length / itemsPerPage));
+  const paginatedAttendees = groupedAttendees.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, eventFilter, checkInFilter]);
 
   if (loading) {
     return (
@@ -543,7 +558,7 @@ export function ManageAttendees() {
                   </tr>
                 </thead>
                 <tbody>
-                  {groupedAttendees.map((group) => (
+                  {paginatedAttendees.map((group) => (
                     <React.Fragment key={group.email}>
                       <tr className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
                         <td className="py-4 px-4">
@@ -707,6 +722,17 @@ export function ManageAttendees() {
                 </tbody>
               </table>
             </div>
+          )}
+          
+          {/* Pagination */}
+          {groupedAttendees.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={groupedAttendees.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           )}
         </CardContent>
       </Card>
