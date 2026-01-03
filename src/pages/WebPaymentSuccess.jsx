@@ -79,7 +79,7 @@ export function WebPaymentSuccess() {
       // Fetch order with event and order items
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('*, events(*), order_items(*, ticket_types(name, price))') 
+        .select('*, events(*, organizer:organizers(id, email, business_name)), order_items(*, ticket_types(name, price))') 
         .eq('id', orderId)
         .single()
 
@@ -169,11 +169,11 @@ export function WebPaymentSuccess() {
           console.log('Attendee confirmation email sent')
 
           // Send notification to organizer
-          if (eventData?.organizer_email) {
+          if (eventData?.organizer?.email) {
             await supabase.functions.invoke('send-email', {
               body: {
                 type: 'new_ticket_sale',
-                to: eventData.organizer_email,
+                to: eventData.organizer.email,
                 data: {
                   eventTitle: eventData?.title,
                   eventId: eventData?.id,
