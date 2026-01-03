@@ -316,27 +316,27 @@ const templates: Record<EmailType, (data: Record<string, any>) => { subject: str
         <h3 style="margin-top:0;color:#2969FF;font-size:20px;">${data.eventTitle}</h3>
         <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
           <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">📅 Date</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${formatDate(data.eventDate)}</span>
+          <span style="color:#1a1a1a !important;font-weight:600;font-size:15px;display:block;background:#ffffff;">${formatDate(data.eventDate)}</span>
         </div>
         <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
           <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">⏰ Time</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${formatTime(data.eventDate)}</span>
+          <span style="color:#1a1a1a !important;font-weight:600;font-size:15px;display:block;background:#ffffff;">${formatTime(data.eventDate)}</span>
         </div>
         <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
           <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">📍 Venue</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${data.venueName}${data.city ? ', ' + data.city : ''}</span>
+          <span style="color:#1a1a1a !important;font-weight:600;font-size:15px;display:block;background:#ffffff;">${data.venueName}${data.city ? ', ' + data.city : ''}</span>
         </div>
         <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
           <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">🎫 Ticket</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${data.ticketType} × ${data.quantity}</span>
+          <span style="color:#1a1a1a !important;font-weight:600;font-size:15px;display:block;background:#ffffff;">${data.ticketType} × ${data.quantity}</span>
         </div>
         <div style="padding:12px 0;border-bottom:1px solid #e8eaf0;">
           <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">🔢 Order</span>
-          <span style="color:#0f0f0f;font-weight:600;font-size:15px;display:block;">${data.orderNumber}</span>
+          <span style="color:#1a1a1a !important;font-weight:600;font-size:15px;display:block;background:#ffffff;">${data.orderNumber}</span>
         </div>
         <div style="padding:12px 0;">
           <span style="color:#6b7280;font-size:14px;display:block;margin-bottom:4px;">💰 Total</span>
-          <span style="color:#2969FF;font-weight:700;font-size:18px;display:block;">${data.isFree ? 'FREE' : formatCurrency(data.totalAmount, data.currency)}</span>
+          <span style="color:#2969FF !important;font-weight:700;font-size:18px;display:block;background:#ffffff;">${data.isFree ? 'FREE' : formatCurrency(data.totalAmount, data.currency)}</span>
         </div>
       </div>
       <div class="button-wrapper">

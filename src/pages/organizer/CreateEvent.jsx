@@ -1976,10 +1976,11 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       <Label>Venue Capacity <span className="text-[#0F0F0F]/40">(Optional)</span></Label>
                       <Input
                         type="number"
-                        placeholder="Maximum attendees"
+                        placeholder="Maximum attendees (leave blank if no limit)"
                         min="1"
                         value={formData.venueCapacity}
                         onChange={(e) => handleInputChange('venueCapacity', e.target.value)}
+                        onBlur={(e) => { if (e.target.value === '0') handleInputChange('venueCapacity', ''); }}
                         className="h-12 rounded-xl bg-[#F4F6FA] border-0"
                       />
                     </div>
@@ -2006,6 +2007,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       placeholder="Maximum tickets per purchase (default: 10)"
                       value={formData.maxTicketsPerOrder}
                       onChange={(e) => handleInputChange('maxTicketsPerOrder', e.target.value)}
+                      onBlur={(e) => { if (e.target.value === '0' || e.target.value === '') handleInputChange('maxTicketsPerOrder', '10'); }}
                       className="h-12 rounded-xl bg-[#F4F6FA] border-0 w-48"
                     />
                     <p className="text-xs text-[#0F0F0F]/60">Limit how many tickets one customer can buy at once</p>

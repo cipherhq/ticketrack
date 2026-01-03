@@ -104,7 +104,7 @@ export async function generateTicketPDF(ticket, event) {
   pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
   pdf.setTextColor(230, 230, 230)
-  const venue = `📍 ${event.venue_name || 'Venue'}, ${event.city || 'City'}`
+  const venue = `${event.venue_name || 'Venue'}, ${event.city || 'City'}`
   pdf.text(venue, contentX, currentY)
   currentY += 16
 
@@ -364,7 +364,7 @@ export async function generateTicketPDFBase64(ticket, event) {
   pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
   pdf.setTextColor(230, 230, 230)
-  const venue = `📍 ${event.venue_name || 'Venue'}, ${event.city || 'City'}`
+  const venue = `${event.venue_name || 'Venue'}, ${event.city || 'City'}`
   pdf.text(venue, contentX, currentY)
   currentY += 16
 
