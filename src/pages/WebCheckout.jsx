@@ -4,7 +4,7 @@ import { formatPrice } from '@/config/currencies'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, Clock } from 'lucide-react'
+import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, Clock, Tag, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -276,6 +276,12 @@ export function WebCheckout() {
   })
   const [customFields, setCustomFields] = useState([])
   const [customFieldResponses, setCustomFieldResponses] = useState({})
+  
+  // Promo code state
+  const [promoCode, setPromoCode] = useState('')
+  const [promoApplied, setPromoApplied] = useState(null)
+  const [promoError, setPromoError] = useState('')
+  const [applyingPromo, setApplyingPromo] = useState(false)
   const [loading, setLoading] = useState(false)
 
   // Checkout countdown timer (5 minutes)
@@ -425,7 +431,8 @@ export function WebCheckout() {
   if (!event) return null
 
   const serviceFee = Math.round(totalAmount * feeRate)
-  const finalTotal = totalAmount + serviceFee
+  const discountAmount = promoApplied?.discountAmount || 0
+  const finalTotal = totalAmount + serviceFee - discountAmount
 
   const ticketSummary = Object.entries(selectedTickets)
     .filter(([_, qty]) => qty > 0)
@@ -583,6 +590,15 @@ export function WebCheckout() {
       // Credit promoter for referral sale
       await creditPromoter(orderId, event.id, finalTotal, totalTicketCount)
 
+      // Increment promo code usage if applied
+      if (promoApplied?.id) {
+        try {
+          await supabase.rpc('increment_promo_usage', { promo_id: promoApplied.id })
+        } catch (promoErr) {
+          console.error('Failed to increment promo usage:', promoErr)
+        }
+      }
+
       // Credit affiliate for referral sale
       await creditAffiliate(orderId, event.id, serviceFee, event.currency, user?.id, formData.email, formData.phone)
 
@@ -692,7 +708,8 @@ export function WebCheckout() {
           subtotal: totalAmount,
           platform_fee: serviceFee,
           tax_amount: 0,
-          discount_amount: 0,
+          discount_amount: discountAmount,
+          promo_code_id: promoApplied?.id || null,
           total_amount: finalTotal,
           currency: event?.currency,
           payment_method: paymentMethod,
@@ -789,7 +806,8 @@ export function WebCheckout() {
           subtotal: totalAmount,
           platform_fee: serviceFee,
           tax_amount: 0,
-          discount_amount: 0,
+          discount_amount: discountAmount,
+          promo_code_id: promoApplied?.id || null,
           total_amount: finalTotal,
           currency: event?.currency || 'USD',
           payment_method: 'card',
@@ -861,7 +879,8 @@ export function WebCheckout() {
           subtotal: totalAmount,
           platform_fee: serviceFee,
           tax_amount: 0,
-          discount_amount: 0,
+          discount_amount: discountAmount,
+          promo_code_id: promoApplied?.id || null,
           total_amount: finalTotal,
           currency: event?.currency || 'USD',
           payment_method: 'paypal',
@@ -914,7 +933,101 @@ export function WebCheckout() {
     }
   };
 
-  const formatDate = (dateString) => {
+  
+  // Apply promo code
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) return
+    
+    setApplyingPromo(true)
+    setPromoError('')
+    
+    try {
+      const code = promoCode.trim().toUpperCase()
+      
+      // Find promo code in database
+      const { data: promo, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('is_active', true)
+        .single()
+      
+      if (error || !promo) {
+        setPromoError('Invalid promo code')
+        setPromoApplied(null)
+        return
+      }
+      
+      // Check if promo is for this event or all events
+      if (promo.event_id && promo.event_id !== event?.id) {
+        setPromoError('This code is not valid for this event')
+        setPromoApplied(null)
+        return
+      }
+      
+      // Check if promo has started
+      if (promo.starts_at && new Date(promo.starts_at) > new Date()) {
+        setPromoError('This promo code is not yet active')
+        setPromoApplied(null)
+        return
+      }
+      
+      // Check if promo has expired
+      if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+        setPromoError('This promo code has expired')
+        setPromoApplied(null)
+        return
+      }
+      
+      // Check usage limit
+      if (promo.max_uses && promo.times_used >= promo.max_uses) {
+        setPromoError('This promo code has reached its usage limit')
+        setPromoApplied(null)
+        return
+      }
+      
+      // Check minimum purchase amount
+      if (promo.min_purchase_amount && totalAmount < promo.min_purchase_amount) {
+        setPromoError('Minimum purchase of ' + formatPrice(promo.min_purchase_amount, event?.currency) + ' required')
+        setPromoApplied(null)
+        return
+      }
+      
+      // Calculate discount
+      let discountAmt = 0
+      if (promo.discount_type === 'percentage') {
+        discountAmt = Math.round(totalAmount * (promo.discount_value / 100))
+        // Apply max discount cap if set
+        if (promo.max_discount_amount && discountAmt > promo.max_discount_amount) {
+          discountAmt = promo.max_discount_amount
+        }
+      } else {
+        // Fixed amount discount
+        discountAmt = Math.min(promo.discount_value, totalAmount)
+      }
+      
+      setPromoApplied({
+        ...promo,
+        discountAmount: discountAmt
+      })
+      setPromoError('')
+      
+    } catch (err) {
+      console.error('Error applying promo:', err)
+      setPromoError('Failed to apply promo code')
+    } finally {
+      setApplyingPromo(false)
+    }
+  }
+  
+  // Remove promo code
+  const removePromoCode = () => {
+    setPromoCode('')
+    setPromoApplied(null)
+    setPromoError('')
+  }
+
+const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
   }
@@ -1069,6 +1182,46 @@ export function WebCheckout() {
 
               <Separator />
 
+              {/* Promo Code Input */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-[#0F0F0F]">Have a promo code?</p>
+                {promoApplied ? (
+                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-green-600" />
+                      <span className="font-mono font-medium text-green-700">{promoApplied.code}</span>
+                      <span className="text-sm text-green-600">
+                        ({promoApplied.discount_type === 'percentage' ? promoApplied.discount_value + '% off' : formatPrice(promoApplied.discount_value, event?.currency) + ' off'})
+                      </span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={removePromoCode} className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      className="rounded-xl border-[#0F0F0F]/10 font-mono uppercase flex-1"
+                      onKeyDown={(e) => e.key === 'Enter' && applyPromoCode()}
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={applyPromoCode} 
+                      disabled={applyingPromo || !promoCode.trim()}
+                      className="rounded-xl border-[#0F0F0F]/10"
+                    >
+                      {applyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                    </Button>
+                  </div>
+                )}
+                {promoError && <p className="text-sm text-red-500">{promoError}</p>}
+              </div>
+
+              <Separator />
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#0F0F0F]/60">Subtotal ({totalTicketCount} {totalTicketCount === 1 ? 'ticket' : 'tickets'})</span>
@@ -1078,6 +1231,12 @@ export function WebCheckout() {
                   <span className="text-[#0F0F0F]/60">Service Fee</span>
                   <span className="text-[#0F0F0F]">{formatPrice(serviceFee, event?.currency)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-600">Discount ({promoApplied?.code})</span>
+                    <span className="text-green-600">-{formatPrice(discountAmount, event?.currency)}</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-[#0F0F0F]">Total</span>
