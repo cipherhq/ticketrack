@@ -1973,10 +1973,11 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Venue Capacity <span className="text-red-500">*</span></Label>
+                      <Label>Venue Capacity <span className="text-[#0F0F0F]/40">(Optional)</span></Label>
                       <Input
                         type="number"
                         placeholder="Maximum attendees"
+                        min="1"
                         value={formData.venueCapacity}
                         onChange={(e) => handleInputChange('venueCapacity', e.target.value)}
                         className="h-12 rounded-xl bg-[#F4F6FA] border-0"
