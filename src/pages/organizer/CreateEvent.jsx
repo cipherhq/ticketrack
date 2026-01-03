@@ -49,6 +49,7 @@ export function CreateEvent() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [tabErrors, setTabErrors] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [urlManuallyEdited, setUrlManuallyEdited] = useState(false);
   const [urlStatus, setUrlStatus] = useState({ checking: false, available: null, message: "" });
   const [categories, setCategories] = useState([]);
@@ -461,22 +462,37 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (!formData.endTime) errors.push("End time is required");
       
       // Validate end time is after start time for same-day events
-      if (formData.startDate && formData.endDate && formData.startTime && formData.endTime) {
-        if (formData.startDate === formData.endDate && formData.endTime <= formData.startTime) {
+      if (formData.startDate && formData.endDate) {
+        if (formData.endDate < formData.startDate) {
+          errors.push("End date cannot be before start date");
+        }
+        if (formData.startDate === formData.endDate && formData.startTime && formData.endTime && formData.endTime <= formData.startTime) {
           errors.push("End time must be after start time for same-day events");
         }
       }
     }
     
     if (activeTab === "venue") {
-      if (!formData.venueName?.trim()) errors.push("Venue name is required");
+      // Venue name is optional
       if (!formData.venueAddress?.trim()) errors.push("Venue address is required");
     }
     
     if (activeTab === "ticketing") {
       if (!formData.currency) errors.push("Currency is required");
-      const validTickets = tickets.filter(t => t.name?.trim() && t.quantity);
+      const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0);
       if (validTickets.length === 0 && !formData.isFreeEvent) errors.push("At least one ticket type is required");
+      
+      // Check for invalid tickets (name but no valid quantity/price)
+      tickets.forEach((t, idx) => {
+        if (t.name?.trim()) {
+          if (!t.quantity || parseInt(t.quantity) <= 0) {
+            errors.push(\`Ticket "\${t.name}" must have quantity greater than 0\`);
+          }
+          if (!formData.isFreeEvent && (!t.price || parseFloat(t.price) <= 0)) {
+            errors.push(\`Ticket "\${t.name}" must have a price greater than 0\`);
+          }
+        }
+      });
     }
     
     return errors;
@@ -814,7 +830,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       return;
     }
 
-    const validTickets = tickets.filter(t => t.name && t.price && t.quantity);
+    const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0 && (formData.isFreeEvent || parseFloat(t.price) > 0));
     if (validTickets.length === 0) {
       setError('Please add at least one ticket type');
       setActiveTab('ticketing');
@@ -1312,7 +1328,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   placeholder="Enter event title"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                  className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors.title ? 'border-2 border-red-500' : 'border-0'}`}
                 />
               </div>
 
@@ -1467,10 +1483,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   <Label>Start Date <span className="text-red-500">*</span></Label>
                   <Input
                     type="date"
-                            min={new Date().toISOString().split('T')[0]}
-                            value={formData.startDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    value={formData.startDate}
                     onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                    className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors.startDate ? 'border-2 border-red-500' : 'border-0'}`}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1479,7 +1495,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     type="time"
                     value={formData.startTime}
                     onChange={(e) => handleInputChange('startTime', e.target.value)}
-                    className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                    className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors.startTime ? 'border-2 border-red-500' : 'border-0'}`}
                   />
                 </div>
               </div>
@@ -1493,7 +1509,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       value={formData.endDate}
                       min={formData.startDate || new Date().toISOString().split('T')[0]}
                       onChange={(e) => handleInputChange('endDate', e.target.value)}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                      className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors.endDate ? 'border-2 border-red-500' : 'border-0'}`}
                     />
                   </div>
                 )}
@@ -1988,7 +2004,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       max="100"
                       placeholder="Maximum tickets per purchase (default: 10)"
                       value={formData.maxTicketsPerOrder}
-                      onChange={(e) => handleInputChange('maxTicketsPerOrder', Math.max(1, Math.min(100, parseInt(e.target.value) || 10)))}
+                      onChange={(e) => handleInputChange('maxTicketsPerOrder', e.target.value)}
                       className="h-12 rounded-xl bg-[#F4F6FA] border-0 w-48"
                     />
                     <p className="text-xs text-[#0F0F0F]/60">Limit how many tickets one customer can buy at once</p>
@@ -2301,9 +2317,11 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         <Input
                           type="number"
                           placeholder="0.00"
+                          min="0.01"
+                          step="0.01"
                           value={ticket.price}
                           onChange={(e) => updateTicket(ticket.id, 'price', e.target.value)}
-                          className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                          className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors['ticket_price_' + ticket.id] ? 'border-2 border-red-500' : 'border-0'}`}
                         />
                       </div>
                     </div>
@@ -2313,9 +2331,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         <Input
                           type="number"
                           placeholder="Number of tickets"
+                          min="1"
                           value={ticket.quantity}
                           onChange={(e) => updateTicket(ticket.id, 'quantity', e.target.value)}
-                          className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                          className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors['ticket_quantity_' + ticket.id] ? 'border-2 border-red-500' : 'border-0'}`}
                         />
                       </div>
                       <div className="space-y-2">
