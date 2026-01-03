@@ -46,6 +46,8 @@ export function FinancePayouts() {
           end_date,
           orders (
             id,
+            subtotal,
+            platform_fee,
             total_amount,
             status,
             created_at
@@ -76,16 +78,13 @@ export function FinancePayouts() {
         const payoutDate = new Date(eventEndDate.getTime() + 24 * 60 * 60 * 1000);
         
         // Sum completed orders for this event
-        const eventRevenue = event.orders
-          ?.filter(o => o.status === 'completed')
-          ?.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0) || 0;
+        // Organizer receives subtotal (platform fee is already separated)
+        const completedOrders = event.orders?.filter(o => o.status === 'completed') || [];
+        const grossRevenue = completedOrders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
+        const netAmount = completedOrders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
+        const platformFeeTotal = completedOrders.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
 
-        if (eventRevenue === 0) return;
-
-        // Platform fee from database
-        const platformFeeRate = feesByCurrency[currency]?.platformFee || 0.10;
-        const platformFee = eventRevenue * platformFeeRate;
-        const netAmount = eventRevenue - platformFee;
+        if (netAmount === 0) return;
 
         if (eventEndDate > now) {
           // Event hasn't ended yet - In Escrow
@@ -97,7 +96,8 @@ export function FinancePayouts() {
             id: event.id,
             currency,
             event: event.title,
-            grossAmount: eventRevenue,
+            grossAmount: grossRevenue,
+            platformFee: platformFeeTotal,
             netAmount: netAmount,
             eventEndDate: event.end_date,
             payoutDate: payoutDate.toISOString(),
