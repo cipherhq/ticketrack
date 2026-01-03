@@ -95,11 +95,11 @@ export function AdminOrganizers() {
 
           const { data: tickets } = await supabase
             .from('tickets')
-            .select('total_amount, quantity, events!inner(organizer_id)')
+            .select('total_price, quantity, events!inner(organizer_id)')
             .eq('events.organizer_id', org.id)
             .eq('payment_status', 'completed');
 
-          const totalRevenue = tickets?.reduce((sum, t) => sum + (parseFloat(t.total_amount) || 0), 0) || 0;
+          const totalRevenue = tickets?.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0) || 0;
           const totalTickets = tickets?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
 
           return {

@@ -105,12 +105,12 @@ export function AdminEvents() {
         (data || []).map(async (event) => {
           const { data: tickets } = await supabase
             .from('tickets')
-            .select('quantity, total_amount')
+            .select('quantity, total_price')
             .eq('event_id', event.id)
             .eq('payment_status', 'completed');
 
           const ticketsSold = tickets?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
-          const revenue = tickets?.reduce((sum, t) => sum + (parseFloat(t.total_amount) || 0), 0) || 0;
+          const revenue = tickets?.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0) || 0;
 
           return {
             ...event,
@@ -133,7 +133,7 @@ export function AdminEvents() {
       // Load attendees
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('id, customer_name, customer_email, customer_phone, quantity, total_amount, payment_status, created_at, checked_in')
+        .select('id, customer_name, customer_email, customer_phone, quantity, total_price, payment_status, created_at, checked_in')
         .eq('event_id', event.id)
         .order('created_at', { ascending: false })
         .limit(50);

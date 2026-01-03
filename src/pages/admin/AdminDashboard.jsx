@@ -83,7 +83,7 @@ export function AdminDashboard() {
     // Platform revenue (sum of all completed ticket sales)
     const { data: revenueData } = await supabase
       .from('tickets')
-      .select('total_amount, event_id')
+      .select('total_price, event_id')
       .eq('payment_status', 'completed');
     
     const revenueByCurrency = {};
@@ -94,7 +94,7 @@ export function AdminDashboard() {
         return;
       }
       if (!revenueByCurrency[currency]) revenueByCurrency[currency] = 0;
-      revenueByCurrency[currency] += parseFloat(t.total_amount) || 0;
+      revenueByCurrency[currency] += parseFloat(t.total_price) || 0;
     });
 
     // Today's stats
@@ -108,7 +108,7 @@ export function AdminDashboard() {
 
     const { data: todayTickets } = await supabase
       .from('tickets')
-      .select('total_amount, quantity, event_id')
+      .select('total_price, quantity, event_id')
       .eq('payment_status', 'completed')
       .gte('created_at', `${today}T00:00:00`);
 
@@ -119,7 +119,7 @@ export function AdminDashboard() {
       const currency = eventCurrencyMap[t.event_id];
       if (!currency) return;
       if (!revenueTodayByCurrency[currency]) revenueTodayByCurrency[currency] = 0;
-      revenueTodayByCurrency[currency] += parseFloat(t.total_amount) || 0;
+      revenueTodayByCurrency[currency] += parseFloat(t.total_price) || 0;
     });
 
     // Open support tickets
