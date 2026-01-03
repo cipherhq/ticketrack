@@ -282,13 +282,16 @@ export function CheckInByEvents() {
         return;
       }
 
+      // Get current user ID for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Perform check-in/out
       const { error: updateError } = await supabase
         .from('tickets')
         .update({
           is_checked_in: !isUndo,
           checked_in_at: !isUndo ? new Date().toISOString() : null,
-          checked_in_by: !isUndo ? deviceId.current : null,
+          checked_in_by: !isUndo ? user?.id : null,
         })
         .eq('id', tickets.id);
 

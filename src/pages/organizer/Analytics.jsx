@@ -670,7 +670,7 @@ export function Analytics() {
                     <tr key={`${row.month}-${row.year}`} className="border-b border-[#0F0F0F]/5">
                       <td className="py-3 px-4 text-[#0F0F0F]">{row.month} {row.year}</td>
                       <td className="py-3 px-4 text-right text-[#0F0F0F]">{formatCurrency(row.gross)}</td>
-                      <td className="py-3 px-4 text-right text-red-600">-{formatCurrency(row.platformFee)}</td>
+                      <td className="py-3 px-4 text-right text-[#0F0F0F]/60">{formatCurrency(row.platformFee)}</td>
                       <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrency(row.net)}</td>
                     </tr>
                   ))}
@@ -679,8 +679,8 @@ export function Analytics() {
                     <td className="py-3 px-4 text-right text-[#0F0F0F]">
                       {formatCurrency(monthlyRevenue.reduce((s, r) => s + r.gross, 0))}
                     </td>
-                    <td className="py-3 px-4 text-right text-red-600">
-                      -{formatCurrency(monthlyRevenue.reduce((s, r) => s + r.platformFee, 0))}
+                    <td className="py-3 px-4 text-right text-[#0F0F0F]/60">
+                      {formatCurrency(monthlyRevenue.reduce((s, r) => s + r.platformFee, 0))}
                     </td>
                     <td className="py-3 px-4 text-right text-green-600">
                       {formatCurrency(monthlyRevenue.reduce((s, r) => s + r.net, 0))}
