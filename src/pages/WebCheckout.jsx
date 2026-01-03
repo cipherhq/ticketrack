@@ -639,6 +639,28 @@ export function WebCheckout() {
             type: 'application/pdf'
           }]
         })
+
+        // Send notification to organizer
+        if (event.organizer?.email) {
+          sendConfirmationEmail({
+            type: "new_ticket_sale",
+            to: event.organizer.email,
+            data: {
+              eventTitle: event.title,
+              eventId: event.id,
+              ticketType: ticketSummary.map(t => t.name).join(", "),
+              quantity: totalTicketCount,
+              buyerName: `${formData.firstName} ${formData.lastName}`,
+              buyerEmail: formData.email,
+              buyerPhone: formData.phone || null,
+              amount: finalTotal,
+              isFree: false,
+              totalSold: event.tickets_sold || 0,
+              totalCapacity: event.capacity || 0,
+              appUrl: window.location.origin
+            }
+          })
+        }
       } catch (pdfErr) {
         console.error('PDF generation failed, sending email without attachment:', pdfErr)
         // Fallback: send email without PDF attachment

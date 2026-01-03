@@ -166,7 +166,32 @@ export function WebPaymentSuccess() {
               }
             }
           })
-          console.log('Confirmation email sent')
+          console.log('Attendee confirmation email sent')
+
+          // Send notification to organizer
+          if (eventData?.organizer_email) {
+            await supabase.functions.invoke('send-email', {
+              body: {
+                type: 'new_ticket_sale',
+                to: eventData.organizer_email,
+                data: {
+                  eventTitle: eventData?.title,
+                  eventId: eventData?.id,
+                  ticketType: ticketTypes,
+                  quantity: totalQty,
+                  buyerName: orderData.buyer_name,
+                  buyerEmail: orderData.buyer_email,
+                  buyerPhone: orderData.buyer_phone || null,
+                  amount: orderData.total_amount,
+                  isFree: parseFloat(orderData.total_amount) === 0,
+                  totalSold: eventData?.tickets_sold || 0,
+                  totalCapacity: eventData?.capacity || 0,
+                  appUrl: window.location.origin
+                }
+              }
+            })
+            console.log('Organizer notification email sent')
+          }
         } catch (emailErr) {
           console.error('Email error:', emailErr)
         }
