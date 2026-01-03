@@ -486,10 +486,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       tickets.forEach((t, idx) => {
         if (t.name?.trim()) {
           if (!t.quantity || parseInt(t.quantity) <= 0) {
-            errors.push(\`Ticket "\${t.name}" must have quantity greater than 0\`);
+            errors.push("Ticket \"" + t.name + "\" must have quantity greater than 0");
           }
           if (!formData.isFreeEvent && (!t.price || parseFloat(t.price) <= 0)) {
-            errors.push(\`Ticket "\${t.name}" must have a price greater than 0\`);
+            errors.push("Ticket \"" + t.name + "\" must have a price greater than 0");
           }
         }
       });
