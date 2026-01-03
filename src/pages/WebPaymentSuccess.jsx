@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { QRCodeSVG } from 'qrcode.react'
+import { generateTicketPDFBase64 } from '@/utils/ticketGenerator'
 
 
 export function WebPaymentSuccess() {
@@ -140,11 +141,35 @@ export function WebPaymentSuccess() {
           }
         }
 
-        // Send confirmation email
+        // Send confirmation email with PDF attachment
         try {
           const eventData = orderData.events
           const ticketTypes = orderItems.map(i => i.ticket_types?.name || 'Ticket').join(', ')
           const totalQty = orderItems.reduce((sum, i) => sum + i.quantity, 0)
+          
+          // Generate PDF ticket
+          let pdfAttachment = null
+          try {
+            const firstTicket = ticketsToCreate[0]
+            if (firstTicket) {
+              const pdfData = await generateTicketPDFBase64(
+                {
+                  ticket_code: firstTicket.ticket_code,
+                  attendee_name: orderData.buyer_name,
+                  attendee_email: orderData.buyer_email,
+                  ticket_type_name: orderItems[0]?.ticket_types?.name || 'Ticket'
+                },
+                eventData
+              )
+              pdfAttachment = [{
+                filename: pdfData.filename,
+                content: pdfData.base64,
+                type: 'application/pdf'
+              }]
+            }
+          } catch (pdfErr) {
+            console.error('PDF generation failed:', pdfErr)
+          }
           
           await supabase.functions.invoke('send-email', {
             body: {
@@ -163,7 +188,8 @@ export function WebPaymentSuccess() {
                 currency: orderData.currency,
                 isFree: parseFloat(orderData.total_amount) === 0,
                 appUrl: window.location.origin
-              }
+              },
+              ...(pdfAttachment && { attachments: pdfAttachment })
             }
           })
           console.log('Attendee confirmation email sent')

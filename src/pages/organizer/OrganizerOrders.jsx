@@ -42,7 +42,7 @@ export function OrganizerOrders() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [stats, setStats] = useState({
     totalOrders: 0,
-    totalRevenue: 0,
+    revenueByCurrency: {},
     completedOrders: 0,
     pendingOrders: 0,
   });
@@ -172,18 +172,18 @@ export function OrganizerOrders() {
     // Calculate stats
     const completed = ordersWithTickets.filter(o => o.status === 'completed');
     const pending = ordersWithTickets.filter(o => o.status === 'pending');
-    const totalRevenue = completed.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
-
-    // Determine primary currency from orders
-    const currencies = [...new Set(completed.map(o => o.currency).filter(Boolean))];
-    const primaryCurrency = currencies.length === 1 ? currencies[0] : (currencies[0] || 'NGN');
+    // Group revenue by currency
+    const revenueByCurrency = completed.reduce((acc, o) => {
+      const currency = o.currency || 'NGN';
+      acc[currency] = (acc[currency] || 0) + (parseFloat(o.total_amount) || 0);
+      return acc;
+    }, {});
     
     setStats({
       totalOrders: ordersWithTickets.length,
-      totalRevenue,
+      revenueByCurrency,
       completedOrders: completed.length,
       pendingOrders: pending.length,
-      currency: primaryCurrency,
     });
   };
 
@@ -398,7 +398,7 @@ export function OrganizerOrders() {
               </div>
               <div>
                 <p className="text-[#0F0F0F]/60 text-sm">Revenue</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{formatPrice(stats.totalRevenue, stats.currency || 'NGN')}</h3>
+                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{Object.entries(stats.revenueByCurrency || {}).map(([currency, amount]) => formatPrice(amount, currency)).join(' | ') || formatPrice(0, 'NGN')}</h3>
               </div>
             </div>
           </CardContent>
