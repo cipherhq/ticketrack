@@ -47,6 +47,7 @@ export function CheckInByEvents() {
   const [attendees, setAttendees] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [eventSearchTerm, setEventSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   
   // Dialogs
@@ -515,17 +516,34 @@ export function CheckInByEvents() {
         </div>
       </div>
 
-      {/* Event Selection */}
+      {/* Event Selection with Search */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <Calendar className="w-5 h-5 text-[#2969FF]" />
-            <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+            <Select value={selectedEvent} onValueChange={(val) => { setSelectedEvent(val); setEventSearchTerm(''); }}>
               <SelectTrigger className="flex-1 rounded-xl border-[#0F0F0F]/10 h-12">
                 <SelectValue placeholder="Select an event" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {events.map((event) => (
+              <SelectContent className="rounded-xl max-h-80">
+                <div className="p-2 border-b border-[#0F0F0F]/10 sticky top-0 bg-white z-10">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+                    <Input
+                      placeholder="Search events..."
+                      value={eventSearchTerm}
+                      onChange={(e) => setEventSearchTerm(e.target.value)}
+                      className="pl-9 h-9 text-sm"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+                {events
+                  .filter(event => 
+                    event.title?.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
+                    event.venue_name?.toLowerCase().includes(eventSearchTerm.toLowerCase())
+                  )
+                  .map((event) => (
                   <SelectItem key={event.id} value={event.id}>
                     <div className="flex flex-col">
                       <span>{event.title}</span>
@@ -537,6 +555,12 @@ export function CheckInByEvents() {
                     </div>
                   </SelectItem>
                 ))}
+                {events.filter(event => 
+                  event.title?.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
+                  event.venue_name?.toLowerCase().includes(eventSearchTerm.toLowerCase())
+                ).length === 0 && (
+                  <div className="p-4 text-center text-sm text-[#0F0F0F]/60">No events found</div>
+                )}
               </SelectContent>
             </Select>
           </div>

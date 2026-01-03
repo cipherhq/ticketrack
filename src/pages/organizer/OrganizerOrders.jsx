@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
   Search, Filter, Download, RefreshCw, Loader2, 
-  Receipt, CreditCard, Calendar, User, Mail, ChevronDown, ChevronUp,
-  CheckCircle, Clock, XCircle, AlertCircle, Eye, RotateCcw
+  Receipt, CreditCard, Calendar, User, Mail, ChevronDown, ChevronUp, Clock,
+  CheckCircle, XCircle, AlertCircle, Eye, RotateCcw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -49,8 +49,20 @@ export function OrganizerOrders() {
   // Refund dialog state
   const [refundDialog, setRefundDialog] = useState(false);
   const [refundOrder, setRefundOrder] = useState(null);
+  const [refundReasonCategory, setRefundReasonCategory] = useState('');
   const [refundReason, setRefundReason] = useState('');
   const [refunding, setRefunding] = useState(false);
+
+  // Predefined refund reasons
+  const refundReasons = [
+    'Event cancelled',
+    'Event postponed',
+    'Attendee cannot attend',
+    'Duplicate purchase',
+    'Technical issue during purchase',
+    'Pricing error',
+    'Other'
+  ];
 
   useEffect(() => {
     if (organizer?.id) {
@@ -237,75 +249,83 @@ export function OrganizerOrders() {
 
   const handleRefundClick = (order) => {
     setRefundOrder(order);
+    setRefundReasonCategory('');
     setRefundReason('');
     setRefundDialog(true);
   };
 
   const processRefund = async () => {
-    if (!refundOrder || !refundReason.trim()) return;
+    if (!refundOrder || !refundReasonCategory || (refundReasonCategory === 'Other' && !refundReason.trim())) return;
     
     setRefunding(true);
     try {
-      // Update order status
+      // Get the first ticket from this order to create a refund request
+      const { data: orderTickets, error: ticketError } = await supabase
+        .from('tickets')
+        .select('id, total_price, event_id, user_id')
+        .eq('order_id', refundOrder.id)
+        .limit(1);
+
+      if (ticketError || !orderTickets || orderTickets.length === 0) {
+        throw new Error('No tickets found for this order');
+      }
+
+      const ticket = orderTickets[0];
+
+      // Check if refund request already exists
+      const { data: existingRequest } = await supabase
+        .from('refund_requests')
+        .select('id, status')
+        .eq('order_id', refundOrder.id)
+        .not('status', 'eq', 'rejected')
+        .single();
+
+      if (existingRequest) {
+        alert('A refund request already exists for this order. Status: ' + existingRequest.status);
+        setRefundDialog(false);
+        return;
+      }
+
+      // Create refund request for finance team to review
+      const { error: insertError } = await supabase
+        .from('refund_requests')
+        .insert({
+          ticket_id: ticket.id,
+          order_id: refundOrder.id,
+          event_id: ticket.event_id,
+          organizer_id: organizer.id,
+          user_id: refundOrder.user_id || ticket.user_id,
+          amount: parseFloat(refundOrder.total_amount) || ticket.total_price,
+          original_amount: parseFloat(refundOrder.total_amount) || ticket.total_price,
+          currency: refundOrder.currency || 'NGN',
+          reason: refundReasonCategory === 'Other' ? refundReason : refundReasonCategory,
+          status: 'pending',
+          organizer_decision: 'approved',
+          organizer_notes: refundReasonCategory === 'Other' ? refundReason : `Reason: ${refundReasonCategory}`,
+          organizer_decided_at: new Date().toISOString(),
+          escalated_to_admin: true,
+          escalated_at: new Date().toISOString(),
+          escalation_reason: 'Organizer initiated refund request',
+        });
+
+      if (insertError) throw insertError;
+
+      // Update order to show refund is pending
       await supabase
         .from('orders')
         .update({ 
-          status: 'refunded',
-          notes: `Refund reason: ${refundReason}`
+          status: 'refund_pending',
+          notes: `Refund requested: ${refundReason}`
         })
         .eq('id', refundOrder.id);
 
-      // Update tickets
-      await supabase
-        .from('tickets')
-        .update({ 
-          status: 'refunded',
-          refund_reason: refundReason,
-          refunded_at: new Date().toISOString()
-        })
-        .eq('order_id', refundOrder.id);
-
-      // Reverse affiliate commission if applicable
-      if (refundOrder.referred_by && refundOrder.referral_commission > 0) {
-        // Update referral earning status to reversed
-        await supabase
-          .from('referral_earnings')
-          .update({ 
-            status: 'reversed',
-            flag_reason: `Refund: ${refundReason}`
-          })
-          .eq('order_id', refundOrder.id);
-
-        // Deduct from affiliate balance if already credited
-        const { data: earning } = await supabase
-          .from('referral_earnings')
-          .select('user_id, commission_amount, status')
-          .eq('order_id', refundOrder.id)
-          .single();
-
-        if (earning && earning.status === 'available') {
-          await supabase
-            .from('profiles')
-            .update({ 
-              affiliate_balance: supabase.rpc('greatest', { a: 0, b: supabase.raw('affiliate_balance - ' + earning.commission_amount) })
-            })
-            .eq('id', earning.user_id);
-        }
-
-        // Update order referral status
-        await supabase
-          .from('orders')
-          .update({ referral_status: 'reversed' })
-          .eq('id', refundOrder.id);
-      }
-
-      alert('Refund processed successfully. Note: Actual payment refund must be processed manually through your payment provider.');
+      alert('Refund request submitted successfully!\n\nTicketrack Finance has received your request and will process it within 3-5 business days.\n\nYou and the attendee will receive an email once the refund is completed.');
       
       setRefundDialog(false);
       loadOrders();
     } catch (error) {
-      console.error('Refund error:', error);
-      alert('Failed to process refund');
+      console.error('Refund request error:', error);
+      alert('Failed to submit refund request: ' + (error.message || 'Unknown error'));
     } finally {
       setRefunding(false);
     }
@@ -559,16 +579,30 @@ export function OrganizerOrders() {
                       </div>
 
                       {/* Actions */}
-                      {order.status === 'completed' && (
-                        <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10 flex justify-end">
-                          <Button 
-                            variant="outline" 
-                            className="rounded-xl text-red-600 border-red-200 hover:bg-red-50"
-                            onClick={(e) => { e.stopPropagation(); handleRefundClick(order); }}
-                          >
-                            <RotateCcw className="w-4 h-4 mr-2" />
-                            Process Refund
-                          </Button>
+                      {((order.status === 'completed' && parseFloat(order.total_amount) > 0) || order.status === 'refund_pending' || order.status === 'refunded') && (
+                        <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10 flex justify-end items-center gap-3">
+                          {order.status === 'completed' && parseFloat(order.total_amount) > 0 && (
+                            <Button 
+                              variant="outline" 
+                              className="rounded-xl text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={(e) => { e.stopPropagation(); handleRefundClick(order); }}
+                            >
+                              <RotateCcw className="w-4 h-4 mr-2" />
+                              Request Refund
+                            </Button>
+                          )}
+                          {order.status === 'refund_pending' && (
+                            <Badge className="bg-yellow-100 text-yellow-700 rounded-lg px-3 py-1">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Refund Pending Review
+                            </Badge>
+                          )}
+                          {order.status === 'refunded' && (
+                            <Badge className="bg-green-100 text-green-700 rounded-lg px-3 py-1">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Refunded
+                            </Badge>
+                          )}
                         </div>
                       )}
                     </div>
@@ -584,9 +618,9 @@ export function OrganizerOrders() {
       <Dialog open={refundDialog} onOpenChange={setRefundDialog}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Process Refund</DialogTitle>
+            <DialogTitle>Request Refund</DialogTitle>
             <DialogDescription>
-              This will mark the order as refunded. You must process the actual payment refund manually through your payment provider.
+              This will submit a refund request to Ticketrack Finance. The finance team will review and process the actual refund within 3-5 business days.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -602,17 +636,33 @@ export function OrganizerOrders() {
             </div>
             <div className="space-y-2">
               <Label>Refund Reason *</Label>
-              <Textarea 
-                placeholder="Enter the reason for this refund..."
-                value={refundReason}
-                onChange={(e) => setRefundReason(e.target.value)}
-                className="rounded-xl"
-              />
+              <Select value={refundReasonCategory} onValueChange={setRefundReasonCategory}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Select a reason..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {refundReasons.map((reason) => (
+                    <SelectItem key={reason} value={reason}>{reason}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="p-3 bg-yellow-50 rounded-xl flex gap-2">
-              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-              <p className="text-sm text-yellow-800">
-                Remember to process the actual payment refund through Paystack or your payment provider's dashboard.
+            {refundReasonCategory === 'Other' && (
+              <div className="space-y-2">
+                <Label>Please explain *</Label>
+                <Textarea 
+                  placeholder="Enter the specific reason for this refund..."
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  className="rounded-xl"
+                  rows={3}
+                />
+              </div>
+            )}
+            <div className="p-3 bg-blue-50 rounded-xl flex gap-2">
+              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+              <p className="text-sm text-blue-800">
+                Ticketrack Finance will process the actual refund. You and the attendee will be notified via email once completed.
               </p>
             </div>
           </div>
@@ -622,10 +672,10 @@ export function OrganizerOrders() {
             </Button>
             <Button 
               onClick={processRefund} 
-              disabled={!refundReason.trim() || refunding}
+              disabled={!refundReasonCategory || (refundReasonCategory === 'Other' && !refundReason.trim()) || refunding}
               className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
             >
-              {refunding ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</> : 'Confirm Refund'}
+              {refunding ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : 'Submit Request'}
             </Button>
           </DialogFooter>
         </DialogContent>

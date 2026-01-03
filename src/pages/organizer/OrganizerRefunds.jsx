@@ -29,25 +29,43 @@ export function OrganizerRefunds() {
   const loadRefunds = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch refund requests without joins (RLS issues with Support Mode)
+      const { data: refundData, error: refundError } = await supabase
         .from('refund_requests')
-        .select(`
-          *,
-          ticket:tickets(id, ticket_code, attendee_name, attendee_email, total_price),
-          event:events(id, title, start_date, image_url),
-          user:profiles(full_name, email)
-        `)
+        .select('*')
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setRefunds(data || []);
+      if (refundError) throw refundError;
+
+      // Fetch related data separately to avoid RLS join issues
+      const enrichedRefunds = [];
+      for (const refund of (refundData || [])) {
+        let ticket = null, event = null, user = null;
+        
+        if (refund.ticket_id) {
+          const { data: t } = await supabase.from('tickets').select('id, ticket_code, attendee_name, attendee_email, total_price').eq('id', refund.ticket_id).maybeSingle();
+          ticket = t;
+        }
+        if (refund.event_id) {
+          const { data: e } = await supabase.from('events').select('id, title, start_date, image_url').eq('id', refund.event_id).maybeSingle();
+          event = e;
+        }
+        if (refund.user_id) {
+          const { data: u } = await supabase.from('profiles').select('full_name, email').eq('id', refund.user_id).maybeSingle();
+          user = u;
+        }
+        
+        enrichedRefunds.push({ ...refund, ticket, event, user });
+      }
+
+      setRefunds(enrichedRefunds);
 
       // Calculate stats
-      const pending = data?.filter(r => r.organizer_decision === 'pending').length || 0;
-      const approved = data?.filter(r => r.organizer_decision === 'approved').length || 0;
-      const rejected = data?.filter(r => r.organizer_decision === 'rejected').length || 0;
-      setStats({ pending, approved, rejected, total: data?.length || 0 });
+      const pending = enrichedRefunds?.filter(r => r.status === 'pending' && !r.refund_reference).length || 0;
+      const approved = enrichedRefunds?.filter(r => r.refund_reference).length || 0;
+      const rejected = enrichedRefunds?.filter(r => r.status === 'rejected').length || 0;
+      setStats({ pending, approved, rejected, total: enrichedRefunds?.length || 0 });
     } catch (error) {
       console.error('Error loading refunds:', error);
     } finally {
@@ -261,7 +279,7 @@ export function OrganizerRefunds() {
                           <h3 className="font-medium text-[#0F0F0F] truncate">{refund.event?.title}</h3>
                           <p className="text-sm text-[#0F0F0F]/60">{refund.ticket?.attendee_name} • {refund.ticket?.attendee_email}</p>
                         </div>
-                        {getStatusBadge(refund.organizer_decision)}
+                        {getStatusBadge(refund)}
                       </div>
                       
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">

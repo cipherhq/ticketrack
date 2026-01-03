@@ -459,6 +459,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (!formData.startTime) errors.push("Start time is required");
       if (!formData.endDate) errors.push("End date is required");
       if (!formData.endTime) errors.push("End time is required");
+      
+      // Validate end time is after start time for same-day events
+      if (formData.startDate && formData.endDate && formData.startTime && formData.endTime) {
+        if (formData.startDate === formData.endDate && formData.endTime <= formData.startTime) {
+          errors.push("End time must be after start time for same-day events");
+        }
+      }
     }
     
     if (activeTab === "venue") {
