@@ -293,7 +293,7 @@ Status,${payout.status}
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-[#2969FF] font-semibold text-lg">{formatCurrency(payout.netAmount)}</p>
+                        <p className="text-[#2969FF] font-semibold text-lg">{formatPrice(payout.netAmount, payout.currency)}</p>
                         <p className="text-xs text-[#0F0F0F]/40">Net amount</p>
                       </div>
                       <Badge className="bg-blue-100 text-blue-700">
@@ -352,7 +352,7 @@ Status,${payout.status}
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-[#2969FF] font-medium">{formatCurrency(payout.amount)}</p>
+                        <p className="text-[#2969FF] font-medium">{formatPrice(payout.amount, payout.currency)}</p>
                       </div>
                       <Badge
                         className={`${
