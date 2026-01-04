@@ -95,10 +95,14 @@ export function WebPaymentSuccess() {
         console.log('Completing Stripe order:', orderId)
         
         // Update order status to completed
-        await supabase.from('orders').update({ 
+        const { error: updateError } = await supabase.from('orders').update({ 
           status: 'completed',
           paid_at: new Date().toISOString()
         }).eq('id', orderId)
+        
+        if (updateError) {
+          console.error('Failed to update order status:', updateError)
+        }
         
         // Create tickets from order_items
         const ticketsToCreate = []
