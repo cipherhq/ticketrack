@@ -12,7 +12,7 @@ export function OrganizerHome() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ salesByCurrency: {},
+  const [stats, setStats] = useState({ salesByCurrency: {}, feesByCurrency: {},
     totalAttendees: 0,
     totalEvents: 0,
   });
@@ -54,21 +54,26 @@ export function OrganizerHome() {
   };
 
   const loadStats = async () => {
-    // Get total events with currency
+    // Get total events with currency and fee_handling
     const { data: events, error: eventsError } = await supabase
       .from('events')
-      .select('id, currency')
+      .select('id, currency, fee_handling')
       .eq('organizer_id', organizer.id);
 
     if (eventsError) throw eventsError;
 
     const eventIds = events?.map(e => e.id) || [];
     const eventCurrencyMap = {};
-    events?.forEach(e => { eventCurrencyMap[e.id] = e.currency || defaultCurrency; });
+    const eventFeeHandlingMap = {};
+    events?.forEach(e => { 
+      eventCurrencyMap[e.id] = e.currency || defaultCurrency;
+      eventFeeHandlingMap[e.id] = e.fee_handling || 'pass_to_attendee';
+    });
 
     // Get tickets sold for these events
     let totalTickets = 0;
     const salesByCurrency = {};
+    const feesByCurrency = {};
 
     if (eventIds.length > 0) {
       const { data: tickets, error: ticketsError } = await supabase
@@ -87,73 +92,33 @@ export function OrganizerHome() {
           salesByCurrency[currency] += parseFloat(t.total_price) || 0;
         });
       }
+
+      // Get actual platform fees from orders - only for events where organizer absorbs fees
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('event_id, platform_fee, currency')
+        .in('event_id', eventIds)
+        .eq('status', 'completed');
+
+      if (!ordersError && orders) {
+        orders.forEach(o => {
+          // Only count fee if organizer absorbs it
+          if (eventFeeHandlingMap[o.event_id] === 'absorb') {
+            const currency = o.currency || eventCurrencyMap[o.event_id] || defaultCurrency;
+            if (!feesByCurrency[currency]) feesByCurrency[currency] = 0;
+            feesByCurrency[currency] += parseFloat(o.platform_fee) || 0;
+          }
+        });
+      }
     }
 
     setStats({
       salesByCurrency,
+      feesByCurrency,
       totalAttendees: totalTickets,
       totalEvents: events?.length || 0,
     });
   };
-
-  const loadUpcomingEvents = async () => {
-    const { data: events, error } = await supabase
-      .from('events')
-      .select(`
-        id,
-        title,
-        currency,
-        start_date,
-        total_capacity,
-        ticket_types (
-          id,
-          quantity_available,
-          quantity_sold,
-          price
-        )
-      `)
-      .eq('organizer_id', organizer.id)
-      .gte('start_date', new Date().toISOString())
-      .order('start_date', { ascending: true })
-      .limit(5);
-
-    if (error) {
-      console.error('Error loading events:', error);
-      return;
-    }
-
-    const eventsWithStats = events?.map(event => {
-      const ticketsSold = event.ticket_types?.reduce((sum, t) => sum + (t.quantity_sold || 0), 0) || 0;
-      const totalTickets = event.ticket_types?.reduce((sum, t) => sum + (t.quantity_available || 0), 0) || event.total_capacity || 100;
-      const revenue = event.ticket_types?.reduce((sum, t) => sum + ((t.quantity_sold || 0) * (t.price || 0)), 0) || 0;
-
-      return {
-        id: event.id,
-        name: event.title,
-        date: new Date(event.start_date).toLocaleDateString('en-NG', { 
-          month: 'short', 
-          day: 'numeric', 
-          year: 'numeric' 
-        }),
-        ticketsSold,
-        totalTickets,
-        revenue,
-        currency: event.currency || defaultCurrency,
-      };
-    }) || [];
-
-    setUpcomingEvents(eventsWithStats);
-  };
-
-  const loadPromoterData = async () => {
-    // Get promoters for this organizer
-    const { data: promoters, error } = await supabase
-      .from('promoters')
-      .select('*')
-      .eq('organizer_id', organizer.id)
-      .eq('is_active', true);
-
-    if (error) {
       console.error('Error loading promoters:', error);
       return;
     }
@@ -246,7 +211,7 @@ export function OrganizerHome() {
                   <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-1">
                     {formatPrice(amount, currency)}
                   </h2>
-                  <p className="text-sm text-green-600">Net: {formatPrice(amount * 0.9, currency)}</p>
+                  <p className="text-sm text-green-600">Net: {formatPrice(amount - (stats.feesByCurrency?.[currency] || 0), currency)}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                   <DollarSign className="w-6 h-6 text-[#2969FF]" />

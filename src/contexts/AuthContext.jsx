@@ -168,10 +168,10 @@ export function AuthProvider({ children }) {
     const phoneResult = validatePhone(phone)
     if (!phoneResult.valid) throw new Error(phoneResult.error)
 
+    console.log("Sending OTP to:", phoneResult.value)
     try {
       const { error } = await supabase.auth.signInWithOtp({
         phone: phoneResult.value,
-            country_code: countryCode,
       })
 
       if (error) {
@@ -197,7 +197,6 @@ export function AuthProvider({ children }) {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         phone: phoneResult.value,
-            country_code: countryCode,
         token: otpResult.value,
         type: 'sms',
       })

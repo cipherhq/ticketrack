@@ -71,6 +71,12 @@ export function AdminOrganizers() {
   const [organizerEvents, setOrganizerEvents] = useState([]);
   const [organizerPayouts, setOrganizerPayouts] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [customFeeData, setCustomFeeData] = useState({
+    enabled: false,
+    percentage: "",
+    fixed: ""
+  });
+  const [savingFees, setSavingFees] = useState(false);
 
   useEffect(() => {
     loadOrganizers();
@@ -194,16 +200,69 @@ export function AdminOrganizers() {
 
   const openActionDialog = (organizer, action) => {
     setSelectedOrganizer(organizer);
+    setCustomFeeData({
+      enabled: organizer.custom_fee_enabled || false,
+      percentage: organizer.custom_service_fee_percentage || "",
+      fixed: organizer.custom_service_fee_fixed || ""
+    });
     setActionType(action);
     setActionDialogOpen(true);
   };
 
   const openDetailsDialog = async (organizer) => {
     setSelectedOrganizer(organizer);
+    setCustomFeeData({
+      enabled: organizer.custom_fee_enabled || false,
+      percentage: organizer.custom_service_fee_percentage || "",
+      fixed: organizer.custom_service_fee_fixed || ""
+    });
     setDetailsDialogOpen(true);
     await loadOrganizerDetails(organizer);
   };
 
+
+  const saveCustomFees = async () => {
+    if (!selectedOrganizer) return;
+    setSavingFees(true);
+    try {
+      const { error } = await supabase
+        .from("organizers")
+        .update({
+          custom_fee_enabled: customFeeData.enabled,
+          custom_service_fee_percentage: customFeeData.percentage ? parseFloat(customFeeData.percentage) : null,
+          custom_service_fee_fixed: customFeeData.fixed ? parseFloat(customFeeData.fixed) : null,
+          custom_fee_set_by: admin?.id,
+          custom_fee_set_at: new Date().toISOString()
+        })
+        .eq("id", selectedOrganizer.id);
+
+      if (error) throw error;
+
+      await logAdminAction(
+        customFeeData.enabled ? "custom_fees_enabled" : "custom_fees_disabled",
+        "organizer",
+        selectedOrganizer.id,
+        {
+          name: selectedOrganizer.business_name,
+          percentage: customFeeData.percentage,
+          fixed: customFeeData.fixed
+        }
+      );
+
+      setSelectedOrganizer(prev => ({
+        ...prev,
+        custom_fee_enabled: customFeeData.enabled,
+        custom_service_fee_percentage: customFeeData.percentage ? parseFloat(customFeeData.percentage) : null,
+        custom_service_fee_fixed: customFeeData.fixed ? parseFloat(customFeeData.fixed) : null
+      }));
+
+      loadOrganizers();
+    } catch (err) {
+      console.error("Error saving custom fees:", err);
+    } finally {
+      setSavingFees(false);
+    }
+  };
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -526,6 +585,7 @@ export function AdminOrganizers() {
                     <TabsTrigger value="info" className="rounded-lg">Contact Info</TabsTrigger>
                     <TabsTrigger value="events" className="rounded-lg">Events ({organizerEvents.length})</TabsTrigger>
                     <TabsTrigger value="payouts" className="rounded-lg">Payouts ({organizerPayouts.length})</TabsTrigger>
+                    <TabsTrigger value="pricing" className="rounded-lg">Custom Pricing</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="mt-4">

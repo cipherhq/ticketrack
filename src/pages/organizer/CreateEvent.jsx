@@ -1,4 +1,4 @@
-import { currencyOptions, formatPrice } from '@/config/currencies'
+import { currencyOptions, formatPrice, getCurrencyFromCountryCode, currencies } from '@/config/currencies'
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
@@ -53,6 +53,7 @@ export function CreateEvent() {
   const [urlManuallyEdited, setUrlManuallyEdited] = useState(false);
   const [urlStatus, setUrlStatus] = useState({ checking: false, available: null, message: "" });
   const [categories, setCategories] = useState([]);
+  const [savingCountry, setSavingCountry] = useState(false);
   const urlCheckTimeout = useRef(null);
 
   // Refs for file inputs
@@ -247,6 +248,22 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     loadCategories();
   }, []);
 
+
+  // Auto-set currency from organizer country
+  useEffect(() => {
+    const setCurrencyFromCountry = async () => {
+      // Skip if editing existing event or currency already set
+      if (isEditMode || formData.currency) return;
+      
+      if (organizer?.country_code) {
+        const currency = await getCurrencyFromCountryCode(supabase, organizer.country_code);
+        if (currency) {
+          setFormData(prev => ({ ...prev, currency }));
+        }
+      }
+    };
+    setCurrencyFromCountry();
+  }, [organizer?.country_code, isEditMode]);
 
   useEffect(() => {
     const loadEventData = async () => {
@@ -550,6 +567,31 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       }
     } catch (err) {
       setUrlStatus({ checking: false, available: null, message: "" });
+    }
+  };
+
+  // Handle country selection for organizers without country_code
+  const handleCountrySelect = async (countryCode) => {
+    setSavingCountry(true);
+    try {
+      // Update organizer with country_code
+      const { error: updateError } = await supabase
+        .from("organizers")
+        .update({ country_code: countryCode })
+        .eq("id", organizer.id);
+      
+      if (updateError) throw updateError;
+      
+      // Get currency for selected country
+      const currency = await getCurrencyFromCountryCode(supabase, countryCode);
+      if (currency) {
+        setFormData(prev => ({ ...prev, currency }));
+      }
+    } catch (err) {
+      console.error("Error saving country:", err);
+      setError("Failed to save country. Please try again.");
+    } finally {
+      setSavingCountry(false);
     }
   };
 
@@ -2245,27 +2287,51 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 )}
               </div>
 
-              {/* Currency Selection - Only show if NOT free event */}
               {!formData.isFree && (
               <div className="p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30">
                 <Label className="font-semibold text-[#0F0F0F] text-lg flex items-center gap-2 mb-3">
-                  <span className="text-xl">💰</span> Event Currency <span className="text-red-500">*</span>
+                  <span className="text-xl">💰</span> Event Currency
                 </Label>
-                <select
-                  value={formData.currency}
-                  onChange={(e) => handleInputChange('currency', e.target.value)}
-                  className={`w-full sm:w-auto px-4 py-3 rounded-xl border-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#2969FF] text-base font-medium ${
-                    !formData.currency ? 'border-amber-300' : 'border-[#2969FF]/30'
-                  }`}
-                >
-                  <option value="">-- Select Currency --</option>
-                  {currencyOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-                {!formData.currency && (
-                  <p className="text-sm text-amber-600 mt-2 flex items-center gap-1">
-                    <span>⚠️</span> Please select the currency for ticket prices
+                {formData.currency ? (
+                  <div className="flex items-center gap-3">
+                    <div className="px-4 py-3 rounded-xl border-2 border-[#2969FF]/30 bg-white text-base font-medium">
+                      {currencies[formData.currency]?.symbol} - {currencies[formData.currency]?.name}
+                    </div>
+                    <div className="group relative">
+                      <Info className="w-5 h-5 text-[#0F0F0F]/40 cursor-help" />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#0F0F0F] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        Currency is based on your account country. Contact support to change.
+                      </div>
+                    </div>
+                  </div>
+                ) : !organizer?.country_code ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-[#0F0F0F]/60">Select your country to set your event currency (this cannot be changed later):</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { code: "NG", name: "Nigeria", flag: "🇳🇬" },
+                        { code: "GH", name: "Ghana", flag: "🇬🇭" },
+                        { code: "US", name: "United States", flag: "🇺🇸" },
+                        { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
+                        { code: "CA", name: "Canada", flag: "🇨🇦" },
+                      ].map((country) => (
+                        <button
+                          key={country.code}
+                          type="button"
+                          onClick={() => handleCountrySelect(country.code)}
+                          disabled={savingCountry}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-[#0F0F0F]/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all disabled:opacity-50"
+                        >
+                          <span className="text-xl">{country.flag}</span>
+                          <span className="text-sm font-medium">{country.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {savingCountry && <p className="text-sm text-[#2969FF]">Saving...</p>}
+                  </div>
+                ) : (
+                  <p className="text-sm text-amber-600 flex items-center gap-1">
+                    <span>⚠️</span> Loading currency...
                   </p>
                 )}
               </div>

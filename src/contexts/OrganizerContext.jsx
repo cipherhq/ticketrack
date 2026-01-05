@@ -5,7 +5,7 @@ import { useImpersonation } from './ImpersonationContext';
 const OrganizerContext = createContext(null);
 
 export function OrganizerProvider({ children }) {
-  const [organizer, setOrganizer] = useState({ id: null, business_name: 'My Organization' });
+  const [organizer, setOrganizer] = useState({ id: null, business_name: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -38,8 +38,8 @@ export function OrganizerProvider({ children }) {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        // Demo mode - use placeholder organizer
-        setOrganizer({ id: null, business_name: 'My Organization' });
+        // Demo mode - no organizer
+        setOrganizer({ id: null, business_name: null });
         return;
       }
 
@@ -53,17 +53,25 @@ export function OrganizerProvider({ children }) {
       if (existingOrg) {
         setOrganizer(existingOrg);
       } else {
-        // Create new organizer
+        // Get profile data for new organizer
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, country_code')
+          .eq('id', user.id)
+          .single();
+
+        // Create new organizer with profile data
         const { data: newOrg, error } = await supabase
           .from('organizers')
-          .insert({ 
-            user_id: user.id, 
-            business_name: 'My Organization', 
-            is_active: true 
+          .insert({
+            user_id: user.id,
+            business_name: profile?.full_name || null,
+            country_code: profile?.country_code || null,
+            is_active: true,
           })
           .select()
           .single();
-        
+
         if (!error && newOrg) {
           setOrganizer(newOrg);
         }

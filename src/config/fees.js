@@ -76,3 +76,41 @@ export const clearFeesCache = () => {
   feesCache = null;
   cacheTimestamp = null;
 };
+
+// Get fees for a specific organizer (checks custom fees first, then falls back to country)
+export const getOrganizerFees = async (organizerId, currencyCode = 'NGN') => {
+  // Get country defaults first
+  const countryFees = await getFeesByCurrency(currencyCode);
+  
+  if (!organizerId) {
+    return countryFees;
+  }
+
+  try {
+    // Check if organizer has custom fees
+    const { data: organizer, error } = await supabase
+      .from('organizers')
+      .select('custom_fee_enabled, custom_service_fee_percentage, custom_service_fee_fixed')
+      .eq('id', organizerId)
+      .single();
+
+    if (error || !organizer || !organizer.custom_fee_enabled) {
+      return countryFees;
+    }
+
+    // Return custom fees, falling back to country defaults for unset values
+    return {
+      ...countryFees,
+      serviceFee: organizer.custom_service_fee_percentage != null 
+        ? organizer.custom_service_fee_percentage / 100 
+        : countryFees.serviceFee,
+      serviceFeeFi: organizer.custom_service_fee_fixed != null
+        ? organizer.custom_service_fee_fixed
+        : null,
+      isCustom: true
+    };
+  } catch (err) {
+    console.error('Error fetching organizer fees:', err);
+    return countryFees;
+  }
+};

@@ -1,4 +1,4 @@
-import { getFeesByCurrency, DEFAULT_FEES } from '@/config/fees'
+import { getFeesByCurrency, getOrganizerFees, DEFAULT_FEES } from '@/config/fees'
 import { getPaymentProvider, getProviderInfo, initStripeCheckout, initPayPalCheckout } from '@/config/payments'
 import { formatPrice } from '@/config/currencies'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
@@ -347,16 +347,17 @@ export function WebCheckout() {
     loadCustomFields();
   }, [event?.id]);
 
-  // Fetch service fee rate based on event currency
+  // Fetch service fee rate based on event currency and organizer custom fees
   useEffect(() => {
     async function loadFees() {
       if (event?.currency) {
-        const fees = await getFeesByCurrency(event.currency);
+        const organizerId = event?.organizer?.id;
+        const fees = await getOrganizerFees(organizerId, event.currency);
         setFeeRate(fees.serviceFee);
       }
     }
     loadFees();
-  }, [event?.currency]);
+  }, [event?.currency, event?.organizer?.id]);
 
 
   // Detect payment provider and available methods based on currency and features
