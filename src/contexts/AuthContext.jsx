@@ -170,13 +170,14 @@ export function AuthProvider({ children }) {
 
     console.log("Sending OTP to:", phoneResult.value)
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: phoneResult.value,
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: { phone: phoneResult.value, type: 'login' }
       })
-
-      if (error) {
-        if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
-        throw new Error('Failed to send OTP. Please try again.')
+      
+      if (error || !data?.success) {
+        const errMsg = data?.error || error?.message || 'Failed to send OTP'
+        if (errMsg.includes('Rate') || errMsg.includes('429')) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        throw new Error(errMsg)
       }
 
       setOtpSent(true)
@@ -195,22 +196,31 @@ export function AuthProvider({ children }) {
     if (!otpResult.valid) throw new Error(otpResult.error)
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: phoneResult.value,
-        token: otpResult.value,
-        type: 'sms',
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: { phone: phoneResult.value, otp: otpResult.value, type: 'login' }
       })
 
-      if (error) {
-        if (error.message?.includes('expired')) throw new Error(AUTH_ERRORS.OTP_EXPIRED)
+      if (error || !data?.success) {
+        const errMsg = data?.error || error?.message || 'Verification failed'
+        if (errMsg.includes('expired')) throw new Error(AUTH_ERRORS.OTP_EXPIRED)
         throw new Error(AUTH_ERRORS.OTP_INVALID)
+      }
+
+      // If user exists and we have an action link, use it to sign in
+      if (data.actionLink) {
+        // Extract token from action link and sign in
+        const url = new URL(data.actionLink)
+        const token = url.searchParams.get('token')
+        if (token) {
+          await supabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' })
+        }
       }
 
       setOtpSent(false)
       setPendingUser(null)
-      return { success: true }
+      return { success: true, isNewUser: data.isNewUser, user: data.user }
     } catch (error) {
-      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      if (error.message?.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
       throw error
     }
   }, [])
