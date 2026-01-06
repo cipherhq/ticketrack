@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { markWaitlistPurchased } from '@/services/waitlist'
-import { generateTicketPDFBase64 } from '@/utils/ticketGenerator'
+import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 
 
 // Credit promoter for referral sale
@@ -605,17 +605,15 @@ export function WebCheckout() {
 
       // Generate PDF tickets and send confirmation email
       try {
-        // Generate PDF for the first ticket (representative ticket)
-        const firstTicket = tickets[0]
-        const pdfData = await generateTicketPDFBase64(
-          {
-            ticket_code: firstTicket.ticket_code,
-            attendee_name: `${formData.firstName} ${formData.lastName}`,
-            attendee_email: formData.email,
-            ticket_type_name: ticketSummary[0]?.name || 'General'
-          },
-          event
-        )
+        // Generate PDF for ALL tickets (multi-page PDF)
+        const ticketsForPdf = tickets.map(t => ({
+          ticket_code: t.ticket_code,
+          attendee_name: `${formData.firstName} ${formData.lastName}`,
+          attendee_email: formData.email,
+          ticket_type_name: t.ticket_type_name || ticketSummary.find(ts => ts.id === t.ticket_type_id)?.name || "General"
+        }))
+        console.log("DEBUG PDF:", { ticketCount: ticketsForPdf.length, tickets: ticketsForPdf, hasSponsors: event.event_sponsors?.length || 0, hasOrganizerLogo: !!event.organizer?.logo_url })
+        const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, event)
         
         sendConfirmationEmail({
           type: "ticket_purchase",

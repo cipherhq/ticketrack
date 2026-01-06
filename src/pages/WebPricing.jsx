@@ -207,7 +207,7 @@ export function WebPricing() {
             </h1>
             
             <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-              No monthly fees. No hidden charges. Just simple pricing that helps you grow your events across Africa and beyond.
+              No monthly fees. No hidden charges. Just simple pricing that helps you grow your events worldwide.
             </p>
 
             {/* Country Selector */}
@@ -340,7 +340,7 @@ export function WebPricing() {
               Everything you need to succeed
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Powerful tools designed for African event organizers, built by people who understand your market.
+              Powerful tools designed for event organizers worldwide, built by people who understand your market.
             </p>
           </div>
 
@@ -516,13 +516,13 @@ export function WebPricing() {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                quote: "Ticketrack helped us sell out our concert in just 3 days. The multi-currency support is a game changer for reaching fans across Africa.",
+                quote: "Ticketrack helped us sell out our concert in just 3 days. The multi-currency support is a game changer for reaching fans worldwide.",
                 name: "Adaeze O.",
                 role: "Music Event Organizer",
                 location: "Lagos, Nigeria"
               },
               {
-                quote: "Finally, a ticketing platform that understands the African market. Mobile money integration and affordable fees make all the difference.",
+                quote: "Finally, a ticketing platform that understands the modern event industry. Mobile money integration and affordable fees make all the difference.",
                 name: "Kwame A.",
                 role: "Festival Director",
                 location: "Accra, Ghana"
@@ -612,7 +612,7 @@ export function WebPricing() {
             Ready to sell more tickets?
           </h2>
           <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-            Join thousands of successful event organizers across Africa. Start selling tickets in minutes.
+            Join thousands of successful event organizers worldwide. Start selling tickets in minutes.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link

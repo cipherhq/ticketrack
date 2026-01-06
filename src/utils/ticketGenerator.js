@@ -45,7 +45,7 @@ async function generateQRCode(data) {
       margin: 1,
       color: { dark: '#000000', light: '#ffffff' }
     })
-  } catch (e) {
+  } catch (e) { console.log("Logo error:", e.message);
     console.error('QR code generation failed:', e)
     return null
   }
@@ -96,10 +96,10 @@ export async function generateTicketPDF(ticket, event) {
       
       // Add semi-transparent overlay for readability
       pdf.setFillColor(0, 0, 0)
-      pdf.setGState(new pdf.GState({ opacity: 0.5 }))
+      pdf.setGState(new pdf.GState({ opacity: 0.7 }))
       pdf.rect(0, 0, width - 100, height, 'F')
       pdf.setGState(new pdf.GState({ opacity: 1 }))
-    } catch (e) {
+    } catch (e) { console.log("Logo error:", e.message);
       console.log('Event image not loaded, using solid background')
     }
   }
@@ -214,7 +214,7 @@ export async function generateTicketPDF(ticket, event) {
         const sponsorImg = await loadImageAsBase64(sponsors[i], 2000)
         pdf.addImage(sponsorImg, 'PNG', sponsorX, currentY + 2, 35, 14, undefined, 'FAST')
         sponsorX += 40
-      } catch (e) {
+      } catch (e) { console.log("Logo error:", e.message);
         sponsorX += 40
       }
     }
@@ -227,7 +227,7 @@ export async function generateTicketPDF(ticket, event) {
   pdf.text('Powered by', contentX, height - 8)
   try {
     pdf.addImage(TICKETRACK_LOGO_WHITE, 'PNG', contentX + 42, height - 18, 55, 12)
-  } catch (e) {
+  } catch (e) { console.log("Logo error:", e.message);
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(255, 255, 255)
     pdf.text('Ticketrack', contentX + 45, height - 8)
@@ -301,10 +301,10 @@ export async function generateTicketPDFBase64(ticket, event) {
       
       // Add semi-transparent overlay for readability
       pdf.setFillColor(0, 0, 0)
-      pdf.setGState(new pdf.GState({ opacity: 0.5 }))
+      pdf.setGState(new pdf.GState({ opacity: 0.7 }))
       pdf.rect(0, 0, width - 100, height, 'F')
       pdf.setGState(new pdf.GState({ opacity: 1 }))
-    } catch (e) {
+    } catch (e) { console.log("Logo error:", e.message);
       console.log('Event image not loaded, using solid background')
     }
   }
@@ -419,7 +419,7 @@ export async function generateTicketPDFBase64(ticket, event) {
         const sponsorImg = await loadImageAsBase64(sponsors[i], 2000)
         pdf.addImage(sponsorImg, 'PNG', sponsorX, currentY + 2, 35, 14, undefined, 'FAST')
         sponsorX += 40
-      } catch (e) {
+      } catch (e) { console.log("Logo error:", e.message);
         sponsorX += 40
       }
     }
@@ -432,7 +432,7 @@ export async function generateTicketPDFBase64(ticket, event) {
   pdf.text('Powered by', contentX, height - 8)
   try {
     pdf.addImage(TICKETRACK_LOGO_WHITE, 'PNG', contentX + 42, height - 18, 55, 12)
-  } catch (e) {
+  } catch (e) { console.log("Logo error:", e.message);
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(255, 255, 255)
     pdf.text('Ticketrack', contentX + 45, height - 8)
@@ -478,5 +478,273 @@ export async function generateTicketPDFBase64(ticket, event) {
   return {
     base64: pdfBase64,
     filename: `ticket-${ticketNum}.pdf`
+  }
+}
+
+// Generate multi-ticket PDF (one page per ticket) with organizer logo support
+export async function generateMultiTicketPDFBase64(tickets, event) {
+  if (!tickets || tickets.length === 0) {
+    throw new Error('No tickets provided')
+  }
+
+  const width = 432
+  const height = 162
+  
+  const pdf = new jsPDF({
+    orientation: 'landscape',
+    unit: 'pt',
+    format: [width, height]
+  })
+
+  // Pre-load images once for efficiency
+  let eventImg = null
+  let organizerLogo = null
+
+  // Load event background image
+  if (event.image_url) {
+    try {
+      eventImg = await loadImageAsBase64(event.image_url, 5000)
+    } catch (e) { console.log("Logo error:", e.message);
+      console.log('Event image not loaded')
+    }
+  }
+
+  // Load organizer logo
+  const organizerLogoUrl = event.organizer?.logo_url
+  if (organizerLogoUrl) {
+    try {
+      organizerLogo = await loadImageAsBase64(organizerLogoUrl, 3000)
+    } catch (e) { console.log("Logo error:", e.message);
+      console.log('Organizer logo not loaded')
+    }
+  }
+
+  // Pre-load sponsor images
+  const sponsors = (event.event_sponsors || []).map(s => s.logo_url).filter(Boolean)
+  const sponsorImages = []
+  for (const sponsorUrl of sponsors.slice(0, 5)) {
+    try {
+      const img = await loadImageAsBase64(sponsorUrl, 2000)
+      sponsorImages.push(img)
+    } catch (e) { console.log("Logo error:", e.message);
+      sponsorImages.push(null)
+    }
+  }
+
+  // Generate each ticket page
+  for (let i = 0; i < tickets.length; i++) {
+    const ticket = tickets[i]
+    
+    // Add new page for tickets after the first one
+    if (i > 0) {
+      pdf.addPage([width, height], 'landscape')
+    }
+
+    // Main ticket background - TICKETRACK BLUE
+    pdf.setFillColor(TICKETRACK_BLUE.r, TICKETRACK_BLUE.g, TICKETRACK_BLUE.b)
+    pdf.rect(0, 0, width, height, 'F')
+
+    // Add event background image if available
+    if (eventImg) {
+      try {
+        pdf.addImage(eventImg, 'JPEG', 0, 0, width - 100, height, undefined, 'FAST')
+        
+        // Add semi-transparent overlay for readability
+        pdf.setFillColor(0, 0, 0)
+        pdf.setGState(new pdf.GState({ opacity: 0.7 }))
+        pdf.rect(0, 0, width - 100, height, 'F')
+        pdf.setGState(new pdf.GState({ opacity: 1 }))
+      } catch (e) { console.log("Logo error:", e.message);
+        console.log('Error adding event image')
+      }
+    }
+
+    // Right stub background - DARKER TICKETRACK BLUE
+    pdf.setFillColor(TICKETRACK_BLUE_DARK.r, TICKETRACK_BLUE_DARK.g, TICKETRACK_BLUE_DARK.b)
+    pdf.rect(width - 100, 0, 100, height, 'F')
+
+    // Perforated line
+    pdf.setDrawColor(255, 255, 255)
+    pdf.setLineDashPattern([4, 4], 0)
+    pdf.setLineWidth(0.5)
+    pdf.line(width - 100, 0, width - 100, height)
+    pdf.setLineDashPattern([], 0)
+
+    const ticketNum = ticket.ticket_code || `TKT${Date.now().toString(36).toUpperCase()}`
+    
+    // Ticket number vertical
+    pdf.setFontSize(7)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(255, 255, 255)
+    pdf.text('Ticket:', 8, height - 15, { angle: 90 })
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(9)
+    pdf.text(ticketNum, 18, height - 15, { angle: 90 })
+
+    // ORGANIZER LOGO - Top right of main content area
+    if (organizerLogo) {
+      try {
+        // White background for logo
+        pdf.setFillColor(255, 255, 255)
+        pdf.roundedRect(width - 155, 8, 48, 24, 3, 3, 'F')
+        pdf.addImage(organizerLogo, 'PNG', width - 153, 10, 44, 20, undefined, 'FAST')
+      } catch (e) { console.log("Logo error:", e.message);
+        console.log('Error adding organizer logo')
+      }
+    }
+
+    // MAIN CONTENT
+    const contentX = 35
+    let currentY = 22
+
+    // Event Title
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(18)
+    pdf.setTextColor(255, 255, 255)
+    const title = event.title || 'Event Name'
+    const displayTitle = title.length > 26 ? title.substring(0, 26) + '...' : title
+    pdf.text(displayTitle, contentX, currentY)
+    currentY += 14
+
+    // Venue
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(9)
+    pdf.setTextColor(230, 230, 230)
+    const venue = `${event.venue_name || 'Venue'}, ${event.city || 'City'}`
+    const displayVenue = venue.length > 35 ? venue.substring(0, 35) + '...' : venue
+    pdf.text(displayVenue, contentX, currentY)
+    currentY += 14
+
+    // Date & Attendee columns
+    const col1X = contentX
+    const col2X = 170
+
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(7)
+    pdf.setTextColor(200, 200, 200)
+    pdf.text('DATE', col1X, currentY)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(10)
+    pdf.setTextColor(255, 255, 255)
+    pdf.text(formatDate(event.start_date), col1X, currentY + 10)
+
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(7)
+    pdf.setTextColor(200, 200, 200)
+    pdf.text('ATTENDEE', col2X, currentY)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(10)
+    pdf.setTextColor(255, 255, 255)
+    const attendeeName = ticket.attendee_name || 'Guest'
+    const displayName = attendeeName.length > 20 ? attendeeName.substring(0, 20) + '...' : attendeeName
+    pdf.text(displayName, col2X, currentY + 10)
+
+    currentY += 22
+
+    // Time
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(7)
+    pdf.setTextColor(200, 200, 200)
+    pdf.text('TIME', col1X, currentY)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(10)
+    pdf.setTextColor(255, 255, 255)
+    pdf.text(formatTime(event.start_date), col1X, currentY + 10)
+
+    // Ticket Type
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(7)
+    pdf.setTextColor(200, 200, 200)
+    pdf.text('TICKET TYPE', col2X, currentY)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(10)
+    pdf.setTextColor(255, 255, 255)
+    const ticketType = ticket.ticket_type?.name || ticket.ticket_type_name || 'General'
+    pdf.text(ticketType, col2X, currentY + 10)
+
+    currentY += 24
+
+    // SPONSORS SECTION
+    if (sponsorImages.some(img => img !== null)) {
+      pdf.setFillColor(255, 255, 255)
+      pdf.roundedRect(contentX, currentY, 240, 18, 2, 2, 'F')
+      
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(6)
+      pdf.setTextColor(0, 102, 255)
+      pdf.text('SPONSORS:', contentX + 4, currentY + 11)
+
+      let sponsorX = contentX + 42
+      for (const sponsorImg of sponsorImages) {
+        if (sponsorImg) {
+          try {
+            pdf.addImage(sponsorImg, 'PNG', sponsorX, currentY + 2, 35, 14, undefined, 'FAST')
+          } catch (e) { console.log("Logo error:", e.message);}
+        }
+        sponsorX += 40
+      }
+    }
+
+    // POWERED BY TICKETRACK
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(7)
+    pdf.setTextColor(200, 200, 200)
+    pdf.text('Powered by', contentX, height - 8)
+    try {
+      pdf.addImage(TICKETRACK_LOGO_WHITE, 'PNG', contentX + 42, height - 18, 55, 12)
+    } catch (e) { console.log("Logo error:", e.message);
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(255, 255, 255)
+      pdf.text('Ticketrack', contentX + 45, height - 8)
+    }
+
+    // RIGHT STUB
+    const stubCenterX = width - 50
+
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(7)
+    pdf.setTextColor(100, 130, 180)
+    pdf.text('ADMIT ONE', width - 97, height / 2, { angle: 90 })
+
+    // QR CODE
+    const qrData = await generateQRCode(ticketNum)
+    if (qrData) {
+      pdf.setFillColor(255, 255, 255)
+      pdf.roundedRect(width - 92, 15, 75, 75, 3, 3, 'F')
+      pdf.addImage(qrData, 'PNG', width - 88, 19, 67, 67)
+    }
+
+    // Ticket code below QR
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(6)
+    pdf.setTextColor(255, 255, 255)
+    pdf.text(ticketNum, stubCenterX, 100, { align: 'center' })
+
+    // Ticket type on stub
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(6)
+    pdf.setTextColor(180, 200, 230)
+    pdf.text(ticketType, stubCenterX, 115, { align: 'center' })
+
+    // Ticket number (e.g., "2 of 10")
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(5)
+    pdf.setTextColor(150, 170, 200)
+    pdf.text(`${i + 1} of ${tickets.length}`, stubCenterX, 125, { align: 'center' })
+
+    // SCAN TO CHECK-IN
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(5)
+    pdf.setTextColor(200, 200, 200)
+    pdf.text('SCAN TO CHECK-IN', stubCenterX, height - 10, { align: 'center' })
+  }
+
+  // Return as base64
+  const pdfBase64 = pdf.output('datauristring').split(',')[1]
+  const firstTicketCode = tickets[0]?.ticket_code || `TKT${Date.now().toString(36).toUpperCase()}`
+  
+  return {
+    base64: pdfBase64,
+    filename: `tickets-${firstTicketCode}.pdf`
   }
 }

@@ -435,7 +435,7 @@ export function WebLayout() {
                 <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-12 w-auto object-contain" />
               </div>
               <p className="text-white/60 text-sm">
-                The best platform for discovering and booking events across Africa.
+                The best platform for discovering and booking events worldwide.
               </p>
             </div>
 

@@ -119,6 +119,65 @@ export function OrganizerHome() {
       totalEvents: events?.length || 0,
     });
   };
+
+  const loadUpcomingEvents = async () => {
+    const { data: events, error } = await supabase
+      .from('events')
+      .select(`
+        id,
+        title,
+        currency,
+        start_date,
+        total_capacity,
+        ticket_types (
+          id,
+          quantity_available,
+          quantity_sold,
+          price
+        )
+      `)
+      .eq('organizer_id', organizer.id)
+      .gte('start_date', new Date().toISOString())
+      .order('start_date', { ascending: true })
+      .limit(5);
+
+    if (error) {
+      console.error('Error loading events:', error);
+      return;
+    }
+
+    const eventsWithStats = events?.map(event => {
+      const ticketsSold = event.ticket_types?.reduce((sum, t) => sum + (t.quantity_sold || 0), 0) || 0;
+      const totalTickets = event.ticket_types?.reduce((sum, t) => sum + (t.quantity_available || 0), 0) || event.total_capacity || 100;
+      const revenue = event.ticket_types?.reduce((sum, t) => sum + ((t.quantity_sold || 0) * (t.price || 0)), 0) || 0;
+
+      return {
+        id: event.id,
+        name: event.title,
+        date: new Date(event.start_date).toLocaleDateString('en-NG', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        }),
+        ticketsSold,
+        totalTickets,
+        revenue,
+        currency: event.currency || defaultCurrency,
+      };
+    }) || [];
+
+    setUpcomingEvents(eventsWithStats);
+  };
+
+  const loadPromoterData = async () => {
+    // Get promoters for this organizer
+    const { data: promoters, error } = await supabase
+      .from('promoters')
+      .select('*')
+      .eq('organizer_id', organizer.id)
+      .eq('is_active', true);
+
+    if (error) {
       console.error('Error loading promoters:', error);
       return;
     }

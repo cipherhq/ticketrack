@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { QRCodeSVG } from 'qrcode.react'
-import { generateTicketPDFBase64 } from '@/utils/ticketGenerator'
+import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 
 
 export function WebPaymentSuccess() {
@@ -80,7 +80,7 @@ export function WebPaymentSuccess() {
       // Fetch order with event and order items
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('*, events(*, organizer:organizers(id, email, business_name)), order_items(*, ticket_types(name, price))') 
+        .select('*, events(*, organizer:organizers(id, business_name, logo_url), event_sponsors(*)), order_items(*, ticket_types(name, price))') 
         .eq('id', orderId)
         .single()
 
@@ -154,17 +154,15 @@ export function WebPaymentSuccess() {
           // Generate PDF ticket
           let pdfAttachment = null
           try {
-            const firstTicket = ticketsToCreate[0]
-            if (firstTicket) {
-              const pdfData = await generateTicketPDFBase64(
-                {
-                  ticket_code: firstTicket.ticket_code,
-                  attendee_name: orderData.buyer_name,
-                  attendee_email: orderData.buyer_email,
-                  ticket_type_name: orderItems[0]?.ticket_types?.name || 'Ticket'
-                },
-                eventData
-              )
+            // Generate PDF for ALL tickets (multi-page PDF)
+            if (ticketsToCreate.length > 0) {
+              const ticketsForPdf = ticketsToCreate.map(t => ({
+                ticket_code: t.ticket_code,
+                attendee_name: orderData.buyer_name,
+                attendee_email: orderData.buyer_email,
+                ticket_type_name: t.ticket_type_name || orderItems.find(oi => oi.ticket_type_id === t.ticket_type_id)?.ticket_types?.name || 'Ticket'
+              }))
+              console.log("DEBUG PDF:", { ticketCount: ticketsForPdf.length, tickets: ticketsForPdf.map(t => t.ticket_code), hasSponsors: eventData?.event_sponsors?.length || 0 }); const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, eventData)
               pdfAttachment = [{
                 filename: pdfData.filename,
                 content: pdfData.base64,

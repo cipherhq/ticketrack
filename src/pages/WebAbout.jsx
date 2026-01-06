@@ -9,7 +9,7 @@ export function WebAbout() {
   const values = [
     { icon: Shield, title: 'Trust & Security', description: 'Your data and payments are protected with industry-leading security standards.' },
     { icon: Zap, title: 'Fast & Reliable', description: 'Lightning-fast ticket delivery and seamless event check-ins.' },
-    { icon: Users, title: 'Community First', description: 'Connecting event organizers with passionate attendees across Africa.' },
+    { icon: Users, title: 'Community First', description: 'Connecting event organizers with passionate attendees worldwide.' },
     { icon: Target, title: 'Innovation', description: 'Constantly improving our platform with cutting-edge technology.' },
   ]
 
@@ -49,7 +49,7 @@ export function WebAbout() {
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
           <p className="text-xl text-white/90">
-            To democratize event experiences across Africa by providing a seamless, secure, and innovative platform that empowers event organizers and delights attendees.
+            To democratize event experiences worldwide by providing a seamless, secure, and innovative platform that empowers event organizers and delights attendees.
           </p>
         </div>
       </div>
@@ -77,9 +77,9 @@ export function WebAbout() {
       <div className="max-w-4xl mx-auto mb-16">
         <h2 className="text-3xl font-bold text-[#0F0F0F] mb-6 text-center">Our Story</h2>
         <div className="space-y-4 text-[#0F0F0F]/70">
-          <p>Founded in 2020, Ticketrack was born from a simple observation: attending events in Africa was often complicated by fragmented ticketing systems, payment challenges, and lack of transparency.</p>
+          <p>Founded in 2020, Ticketrack was born from a simple observation: attending events was often complicated by fragmented ticketing systems, payment challenges, and lack of transparency.</p>
           <p>We set out to change that. By combining local payment solutions with international best practices, we created a platform that works for everyone - from small community gatherings to large-scale festivals.</p>
-          <p>Today, Ticketrack powers thousands of events across multiple African countries, helping organizers sell millions of tickets and creating memorable experiences for attendees.</p>
+          <p>Today, Ticketrack powers thousands of events across countries around the world, helping organizers sell millions of tickets and creating memorable experiences for attendees.</p>
         </div>
       </div>
 

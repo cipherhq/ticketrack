@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { formatPrice } from '@/config/currencies'
-import { generateTicketPDFBase64 } from '@/utils/ticketGenerator'
+import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { getRSVPSettings, checkRSVPLimit } from '@/services/settings'
 
 // Send confirmation email via Edge Function
@@ -287,16 +287,14 @@ export function WebFreeRSVP() {
 
       // Generate PDF and send confirmation email
       try {
-        const firstTicket = tickets[0]
-        const pdfData = await generateTicketPDFBase64(
-          {
-            ticket_code: firstTicket.ticket_code,
-            attendee_name: `${formData.firstName} ${formData.lastName}`,
-            attendee_email: formData.email,
-            ticket_type_name: 'Free Admission'
-          },
-          event
-        )
+        // Generate PDF for ALL tickets (multi-page PDF)
+        const ticketsForPdf = tickets.map(t => ({
+          ticket_code: t.ticket_code,
+          attendee_name: `${formData.firstName} ${formData.lastName}`,
+          attendee_email: formData.email,
+          ticket_type_name: 'Free Admission'
+        }))
+        const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, event)
         
         sendConfirmationEmail({
           type: "ticket_purchase",
@@ -488,16 +486,14 @@ export function WebFreeRSVP() {
 
       // Generate PDF and send confirmation email
       try {
-        const firstTicket = tickets[0]
-        const pdfData = await generateTicketPDFBase64(
-          {
-            ticket_code: firstTicket.ticket_code,
-            attendee_name: `${formData.firstName} ${formData.lastName}`,
-            attendee_email: formData.email,
-            ticket_type_name: 'Free Admission + Donation'
-          },
-          event
-        )
+        // Generate PDF for ALL tickets (multi-page PDF)
+        const ticketsForPdf = tickets.map(t => ({
+          ticket_code: t.ticket_code,
+          attendee_name: `${formData.firstName} ${formData.lastName}`,
+          attendee_email: formData.email,
+          ticket_type_name: 'Free Admission + Donation'
+        }))
+        const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, event)
         
         sendConfirmationEmail({
           type: "ticket_purchase",
@@ -595,16 +591,14 @@ export function WebFreeRSVP() {
 
       // Generate PDF and send confirmation email
       try {
-        const firstTicket = tickets[0]
-        const pdfData = await generateTicketPDFBase64(
-          {
-            ticket_code: firstTicket.ticket_code,
-            attendee_name: `${formData.firstName} ${formData.lastName}`,
-            attendee_email: formData.email,
-            ticket_type_name: 'Free Admission'
-          },
-          event
-        )
+        // Generate PDF for ALL tickets (multi-page PDF)
+        const ticketsForPdf = tickets.map(t => ({
+          ticket_code: t.ticket_code,
+          attendee_name: `${formData.firstName} ${formData.lastName}`,
+          attendee_email: formData.email,
+          ticket_type_name: 'Free Admission'
+        }))
+        const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, event)
         
         sendConfirmationEmail({
           type: "ticket_purchase",

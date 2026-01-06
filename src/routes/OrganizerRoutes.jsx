@@ -27,6 +27,8 @@ import { OrganizerOrders } from "@/pages/organizer/OrganizerOrders";
 import { OrganizerRefunds } from '@/pages/organizer/OrganizerRefunds';
 import { OrganizerTransfers } from '@/pages/organizer/OrganizerTransfers';
 import { OrganizerSupport } from '@/pages/organizer/OrganizerSupport';
+import { TeamManagement } from "@/pages/organizer/TeamManagement";
+import { ProjectManager } from "@/pages/organizer/ProjectManager";
 import { TaxDocuments } from '@/pages/organizer/TaxDocuments';
 import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
 import { Loader2 } from 'lucide-react';
@@ -80,6 +82,8 @@ export function OrganizerRoutes() {
           <Route path="/refunds" element={<OrganizerRefunds />} />
           <Route path="/transfers" element={<OrganizerTransfers />} />
           <Route path="/support" element={<OrganizerSupport />} />
+          <Route path="/team" element={<TeamManagement />} />
+          <Route path="/projects" element={<ProjectManager />} />
         </Routes>
       </OrganizerLayout>
     </OrganizerProvider>

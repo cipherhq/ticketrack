@@ -38,6 +38,8 @@ import { WebPrivacy } from './pages/WebPrivacy';
 import { WebTerms } from './pages/WebTerms';
 import { CreateEvent } from './pages/organizer/CreateEvent';
 import { OrganizerProvider } from './contexts/OrganizerContext';
+import { AcceptTeamInvitation } from "./pages/AcceptTeamInvitation";
+import { TeamDashboard } from "./pages/TeamDashboard";
 import { AttendeeProfile } from './pages/AttendeeProfile';
 import { OrganizerPublicProfile } from './pages/OrganizerPublicProfile';
 
@@ -87,6 +89,8 @@ function App() {
               <Route path="/signup" element={<WebAuth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/accept-invite" element={<AcceptTeamInvitation />} />
+              <Route path="/team-dashboard" element={<TeamDashboard />} />
 
               {/* Web Routes with Layout */}
               <Route element={<WebLayout />}>

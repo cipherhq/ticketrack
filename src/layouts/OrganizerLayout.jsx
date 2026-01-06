@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Users, Ticket, BarChart3,
   DollarSign, Tag, UserPlus, Mail, MessageCircle, MessageSquare,
   Settings, LogOut, Menu, X, ChevronDown, Bell, Shield,
-  QrCode, Building, CreditCard, RotateCcw, HelpCircle, Home, Receipt, ArrowRightLeft
+  QrCode, Building, CreditCard, RotateCcw, HelpCircle, Home, Receipt, ArrowRightLeft, ClipboardList, UsersRound
 , FileText } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,6 +59,16 @@ const menuItems = [
     title: 'Support',
     icon: HelpCircle,
     path: '/organizer/support',
+  },
+  {
+    title: "Team",
+    icon: UsersRound,
+    path: "/organizer/team",
+  },
+  {
+    title: "Projects",
+    icon: ClipboardList,
+    path: "/organizer/projects",
   },
   {
     title: 'Marketing',

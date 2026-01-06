@@ -470,7 +470,7 @@ export function WebHome() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
               <span className="text-lg">✨</span>
-              Africa's #1 Ticketing Platform
+              Your Gateway to Amazing Events
             </div>
             
             {/* Headline */}
@@ -482,7 +482,7 @@ export function WebHome() {
             
             {/* Subtitle */}
             <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-xl">
-              From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening across Africa.
+              From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening worldwide.
             </p>
             
             {/* New Search Bar */}

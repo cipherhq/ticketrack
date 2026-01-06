@@ -3,7 +3,7 @@
 
 export const brand = {
   name: 'Ticketrack',
-  tagline: "Africa's #1 Ticketing Platform",
+  tagline: "Your Gateway to Amazing Events",
   
   // Logo
   logo: '/ticketrackLogo.png',
