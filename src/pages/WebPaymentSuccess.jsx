@@ -2,7 +2,7 @@ import { formatPrice } from '@/config/currencies'
 import { supabase } from '@/lib/supabase'
 import { markWaitlistPurchased } from '@/services/waitlist'
 import { capturePayPalPayment } from '@/config/payments'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { CheckCircle, Download, Mail, Calendar, MapPin, Ticket, ArrowRight, Monitor, ExternalLink } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -24,13 +24,15 @@ export function WebPaymentSuccess() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const reference = location.state?.reference || searchParams.get('session_id')
+  const isProcessingRef = useRef(false)
 
   useEffect(() => {
     const orderId = searchParams.get('order_id')
     const sessionId = searchParams.get('session_id')
     const provider = searchParams.get('provider')
     
-    if (location.state?.order) return
+    if (location.state?.order || isProcessingRef.current) return
+    isProcessingRef.current = true
     
     if (orderId && provider === 'paypal') {
       handlePayPalReturn(orderId)
