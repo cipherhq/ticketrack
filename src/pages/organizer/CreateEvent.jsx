@@ -92,7 +92,7 @@ export function CreateEvent() {
     venueType: 'indoor',
     venueCapacity: '',
     maxTicketsPerOrder: 10,
-    seatingType: 'Standing',
+    seatingType: 'Seated',
     city: '',
     country: '',
     currency: '',
@@ -882,6 +882,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
     // Validate and identify which tabs have errors
     const errors = {};
+    if (!bannerPreview && !bannerImage) {
+      errors.details = "Event banner image is required";
+    }
     if (!formData.title || !formData.eventType || !formData.description) {
       errors.details = "Missing title, event type, or description";
     }
@@ -1339,7 +1342,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); window.scrollTo(0, 0); }}
                 className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
                   activeTab === tab.id
                     ? 'border-[#2969FF] text-[#2969FF]'
@@ -2628,53 +2631,6 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           {/* Media & Sponsors Tab */}
           {activeTab === 'media' && (
             <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold text-[#0F0F0F] mb-1">Photo Gallery</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mb-4">Upload 3–10 images for your event</p>
-                
-                <input
-                  ref={galleryInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleEventImagesChange}
-                  className="hidden"
-                />
-                
-                <div className="border-2 border-dashed border-[#0F0F0F]/10 rounded-xl p-8">
-                  {eventImages.length > 0 ? (
-                    <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-                      {eventImages.map((img, index) => (
-                        <div key={index} className="relative aspect-square">
-                          <img src={img.preview} alt="" className="w-full h-full object-cover rounded-lg" />
-                          <button
-                            onClick={() => removeEventImage(index)}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <ImageIcon className="w-10 h-10 text-[#0F0F0F]/30 mx-auto mb-2" />
-                      <p className="text-[#0F0F0F]/60 text-sm mb-3">Upload event photos (JPG, PNG)</p>
-                    </div>
-                  )}
-                  <div className="text-center">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="rounded-xl"
-                    >
-                      {eventImages.length > 0 ? 'Add More Photos' : 'Choose Photos'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <Label>Promo Video URL (Optional)</Label>
                 <Input
