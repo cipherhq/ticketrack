@@ -886,7 +886,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       errors.details = "Event banner image is required";
     }
     if (!formData.title || !formData.eventType || !formData.description) {
-      errors.details = "Missing title, event type, or description";
+      if (errors.details) { errors.details += ". Missing title, event type, or description"; } else { errors.details = "Missing title, event type, or description"; }
     }
     if (!formData.startDate || !formData.startTime) {
       errors.datetime = "Missing start date or time";
