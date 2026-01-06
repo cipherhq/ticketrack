@@ -904,6 +904,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       const firstErrorTab = Object.keys(errors)[0];
       setActiveTab(firstErrorTab);
       setError(Object.values(errors).join(". "));
+      window.scrollTo(0, 0);
       return;
     }
 
@@ -1484,7 +1485,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   ) : (
                     <div className="text-center py-6">
                       <ImageIcon className="w-12 h-12 text-[#0F0F0F]/30 mx-auto mb-3" />
-                      <p className="text-[#0F0F0F]/60 mb-1">Upload event banner image</p>
+                      <p className="text-[#0F0F0F]/60 mb-1">Upload event banner image <span class="text-red-500">*</span></p>
                       <p className="text-[#0F0F0F]/40 text-sm mb-4">Recommended: 1920x1080px (16:9), Max 5MB</p>
                       <Button
                         type="button"
