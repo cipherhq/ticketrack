@@ -21,7 +21,8 @@ export function WebAuth() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [step, setStep] = useState(isLogin ? 'credentials' : 'country-selection')
-  const [loginMethod, setLoginMethod] = useState("email") // "email" or "phone"
+  const [loginMethod, setLoginMethod] = useState("email")
+  const showPhoneLogin = false // TODO: Enable when SMS provider is configured // "email" or "phone"
   const [unverifiedEmail, setUnverifiedEmail] = useState('')
   const [signupEmail, setSignupEmail] = useState('')
   
@@ -546,7 +547,7 @@ export function WebAuth() {
 
 
               {/* Login Method Toggle - Only show for login */}
-              {isLogin && (
+              {isLogin && showPhoneLogin && (
                 <div className="flex rounded-xl bg-[#F4F6FA] p-1 mb-2">
                   <button
                     type="button"
