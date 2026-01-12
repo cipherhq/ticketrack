@@ -46,6 +46,12 @@ const navGroups = [
     icon: FileText
   },
   {
+    id: 'fees',
+    label: 'Fee Management',
+    path: '/finance/fees',
+    icon: DollarSign
+  },
+  {
     id: 'settings',
     label: 'Settings',
     path: '/finance/settings',

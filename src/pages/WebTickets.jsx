@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send, Copy } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,44 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { QRCodeSVG } from 'qrcode.react'
 import { downloadTicketPDF } from '@/utils/ticketGenerator'
+
+// Helper to truncate long references with copy functionality
+const TruncatedRef = ({ value, maxLength = 20 }) => {
+  const [copied, setCopied] = useState(false)
+  
+  if (!value || value === 'N/A') return <span>N/A</span>
+  
+  const isLong = value.length > maxLength
+  const displayValue = isLong 
+    ? `${value.slice(0, 12)}...${value.slice(-4)}` 
+    : value
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span 
+        className="cursor-help" 
+        title={value}
+      >
+        {displayValue}
+      </span>
+      {isLong && (
+        <button
+          onClick={handleCopy}
+          className="text-[#0F0F0F]/30 hover:text-[#2969FF] transition-colors p-0.5"
+          title="Copy full reference"
+        >
+          {copied ? '✓' : <Copy className="w-3 h-3" />}
+        </button>
+      )}
+    </span>
+  )
+}
 
 export function WebTickets() {
   const navigate = useNavigate()
@@ -166,10 +204,6 @@ export function WebTickets() {
     )
     window.location.href = `mailto:${ticket.attendee_email}?subject=${subject}&body=${body}`
   }
-
-  
-
-  
 
   // Load tickets user has transferred out
   const loadTransferredOut = async () => {
@@ -357,7 +391,7 @@ export function WebTickets() {
     }
   }
 
-// Share ticket
+  // Share ticket
   const shareTicket = async (ticket) => {
     const shareData = {
       title: `Ticket for ${ticket.event?.title}`,
@@ -377,8 +411,6 @@ export function WebTickets() {
       alert('Link copied to clipboard!')
     }
   }
-
-  
 
   // Check if ticket is eligible for refund
   const checkRefundEligibility = async (ticket) => {
@@ -537,7 +569,6 @@ export function WebTickets() {
         }
       } catch (emailErr) {
         console.error('Failed to send organizer notification:', emailErr);
-        // Don't fail the refund request if email fails
       }
 
       setRefundModal({ open: false, ticket: null });
@@ -551,8 +582,6 @@ export function WebTickets() {
       setRefundLoading(false);
     }
   };
-
-  
 
   // Load refund status for all tickets
   const loadRefundStatus = async () => {
@@ -607,12 +636,9 @@ export function WebTickets() {
 
   const TicketCard = ({ ticket }) => {
     const isPast = isEventPast(ticket.event?.end_date)
-    const qrValue = JSON.stringify({
-      ticketId: ticket.id,
-      qrCode: ticket.ticket_code,
-      eventId: ticket.event_id,
-      attendee: ticket.attendee_name
-    })
+    // QR code contains just the ticket code - matches PDF ticket
+    // This creates a cleaner, more scannable QR code
+    const qrValue = ticket.ticket_code
     
     return (
       <Card id={`ticket-${ticket.id}`} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
@@ -662,7 +688,9 @@ export function WebTickets() {
               </div>
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Transaction ID</p>
-                <p className="text-[#0F0F0F] font-mono text-xs">{ticket.payment_reference || "N/A"}</p>
+                <p className="text-[#0F0F0F] font-mono text-xs">
+                  <TruncatedRef value={ticket.payment_reference} />
+                </p>
               </div>
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Amount Paid</p>
@@ -691,7 +719,6 @@ export function WebTickets() {
             {/* Virtual Event - Join Button */}
             {ticket.event?.is_virtual && ticket.event?.streaming_url && (
               <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
-                
                 <a
                   href={ticket.event.streaming_url}
                   target="_blank"
@@ -711,7 +738,7 @@ export function WebTickets() {
                   id={`qr-${ticket.id}`}
                   value={qrValue}
                   size={100}
-                  level="H"
+                  level="M"
                   includeMargin={true}
                 />
               </div>
@@ -931,6 +958,7 @@ export function WebTickets() {
               pastTickets.map(ticket => <TicketCard key={ticket.id} ticket={ticket} />)
             )}
           </TabsContent>
+
           <TabsContent value="transferred" className="space-y-6">
             {transferredOutTickets.length === 0 ? (
               <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -977,7 +1005,9 @@ export function WebTickets() {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-[#0F0F0F]/60">Original Transaction:</span>
-                        <span className="font-mono text-xs text-[#0F0F0F]">{transfer.original_transaction_id || '-'}</span>
+                        <span className="font-mono text-xs text-[#0F0F0F]">
+                          <TruncatedRef value={transfer.original_transaction_id} />
+                        </span>
                       </div>
                       <div className="flex items-center justify-between text-sm border-t border-purple-200 pt-2 mt-2">
                         <span className="text-[#0F0F0F]/60">Transferred to:</span>
@@ -995,7 +1025,9 @@ export function WebTickets() {
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-[#0F0F0F]/60">Payment Ref:</span>
-                            <span className="font-mono text-xs text-[#0F0F0F]">{transfer.payment_reference || '-'}</span>
+                            <span className="font-mono text-xs text-[#0F0F0F]">
+                              <TruncatedRef value={transfer.payment_reference} />
+                            </span>
                           </div>
                         </>
                       )}

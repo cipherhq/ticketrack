@@ -128,7 +128,7 @@ export function CreateEvent() {
     // Custom Form Fields
     customFields: [],
     // Ticket Transfer Settings
-    allowTransfers: true,
+    allowTransfers: false,
     maxTransfers: 2,
     transferFee: 0,
     // Scheduled Publishing
@@ -331,7 +331,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               allowCustomDonation: event.allow_custom_donation !== false,
               slug: event.slug || "",
               agreedToTerms: true,
-              allowTransfers: event.allow_transfers !== false,
+              allowTransfers: event.allow_transfers === true,
               maxTransfers: event.max_transfers || 2,
               transferFee: event.transfer_fee || 0,
             });

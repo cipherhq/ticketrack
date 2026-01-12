@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, RefreshCw, CheckCircle, XCircle, Clock, DollarSign, AlertTriangle, CreditCard, Eye } from 'lucide-react';
+import { Search, Loader2, RefreshCw, CheckCircle, XCircle, Clock, DollarSign, AlertTriangle, CreditCard, Eye, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -31,8 +31,8 @@ export function AdminRefunds() {
           *,
           ticket:tickets(id, ticket_code, attendee_name, attendee_email, total_price),
           event:events(id, title, start_date, image_url, country_code),
-          order:orders(id, order_number, payment_reference, payment_provider),
-          user:profiles(full_name, email),
+          orders:orders(id, order_number, payment_reference, payment_provider, is_stripe_connect),
+          user:profiles!refund_requests_user_id_fkey(full_name, email),
           organizer:organizers(id, business_name)
         `)
         .order('created_at', { ascending: false });
@@ -42,12 +42,13 @@ export function AdminRefunds() {
 
       // Calculate stats
       const pending = data?.filter(r => r.status === 'pending' || r.organizer_decision === 'pending').length || 0;
-      const approved = data?.filter(r => r.status === 'approved' && !r.refund_reference).length || 0;
+      const approved = data?.filter(r => r.status === 'approved' && !r.refund_reference && !r.order?.is_stripe_connect).length || 0;
       const rejected = data?.filter(r => r.status === 'rejected').length || 0;
-      const processed = data?.filter(r => r.refund_reference).length || 0;
+      const processed = data?.filter(r => r.refund_reference || r.status === 'processed').length || 0;
       const escalated = data?.filter(r => r.escalated_to_admin && !r.refund_reference).length || 0;
-      const totalAmount = data?.filter(r => r.refund_reference).reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
-      setStats({ pending, approved, rejected, processed, escalated, total: data?.length || 0, totalAmount });
+      const connectProcessed = data?.filter(r => r.order?.is_stripe_connect && (r.refund_reference || r.status === 'processed')).length || 0;
+      const refundedByCurrency = data?.filter(r => r.refund_reference || r.status === 'processed').reduce((acc, r) => { const curr = r.currency || 'USD'; acc[curr] = (acc[curr] || 0) + (r.amount || 0); return acc; }, {}) || {};
+      setStats({ pending, approved, rejected, processed, escalated, connectProcessed, total: data?.length || 0, refundedByCurrency });
     } catch (error) {
       console.error('Error loading refunds:', error);
     } finally {
@@ -112,12 +113,19 @@ const processRefund = async () => {
   const formatDate = (date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 
   const getStatusBadge = (refund) => {
-    if (refund.refund_reference) return <Badge className="bg-green-100 text-green-700">Processed</Badge>;
+    if (refund.refund_reference || refund.status === 'processed') return <Badge className="bg-green-100 text-green-700">Processed</Badge>;
     if (refund.escalated_to_admin && refund.status !== 'approved') return <Badge className="bg-purple-100 text-purple-700">⚠️ Escalated</Badge>;
     if (refund.status === 'approved') return <Badge className="bg-blue-100 text-blue-700">Approved - Pending Payment</Badge>;
     if (refund.status === 'rejected') return <Badge className="bg-red-100 text-red-700">Rejected</Badge>;
     if (refund.organizer_decision === 'pending') return <Badge className="bg-yellow-100 text-yellow-700">Awaiting Organizer</Badge>;
     return <Badge className="bg-gray-100 text-gray-700">Pending</Badge>;
+  };
+
+  const getConnectBadge = (refund) => {
+    if (refund.orders?.is_stripe_connect) {
+      return <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1 w-fit"><Zap className="w-3 h-3" />Connect</Badge>;
+    }
+    return null;
   };
 
   const filteredRefunds = refunds.filter(r => {
@@ -126,6 +134,7 @@ const processRefund = async () => {
     if (statusFilter === 'processed' && !r.refund_reference) return false;
     if (statusFilter === 'rejected' && r.status !== 'rejected') return false;
     if (statusFilter === 'escalated' && !r.escalated_to_admin) return false;
+    if (statusFilter === 'connect' && !r.order?.is_stripe_connect) return false;
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       return r.ticket?.attendee_name?.toLowerCase().includes(s) || r.ticket?.attendee_email?.toLowerCase().includes(s) || r.event?.title?.toLowerCase().includes(s) || r.order?.order_number?.toLowerCase().includes(s);
@@ -152,7 +161,7 @@ const processRefund = async () => {
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Processed</p><p className="text-2xl font-bold text-green-600">{stats.processed}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Rejected</p><p className="text-2xl font-bold text-red-600">{stats.rejected}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl border-purple-300"><CardContent className="p-4"><p className="text-sm text-purple-600">Escalated</p><p className="text-2xl font-bold text-purple-600">{stats.escalated}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Total Refunded</p><p className="text-2xl font-bold text-[#2969FF]">{formatPrice(stats.totalAmount, 'NGN')}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Total Refunded</p><p className="text-2xl font-bold text-[#2969FF]">{Object.entries(stats.refundedByCurrency || {}).map(([curr, amt]) => formatPrice(amt, curr)).join(' + ') || '$0'}</p></CardContent></Card>
       </div>
 
       {/* Filters */}
@@ -168,6 +177,7 @@ const processRefund = async () => {
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="approved">Ready to Process</SelectItem>
             <SelectItem value="processed">Processed</SelectItem>
+            <SelectItem value="connect">Connect (Organizer Handled)</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="escalated">Escalated</SelectItem>
           </SelectContent>
@@ -196,22 +206,28 @@ const processRefund = async () => {
                           <h3 className="font-medium text-[#0F0F0F] truncate">{refund.event?.title}</h3>
                           <p className="text-sm text-[#0F0F0F]/60">{refund.ticket?.attendee_name} • {refund.ticket?.attendee_email}</p>
                         </div>
-                        {getStatusBadge(refund)}
+                        <div className="flex gap-2 flex-wrap">
+                          {getConnectBadge(refund)}
+                          {getStatusBadge(refund)}
+                        </div>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                        <span className="text-[#0F0F0F]/60">Order: <span className="font-mono">{refund.order?.order_number || 'N/A'}</span></span>
+                        <span className="text-[#0F0F0F]/60">Order: <span className="font-mono">{refund.orders?.order_number || 'N/A'}</span></span>
                         <span className="text-[#0F0F0F]/60">Amount: <span className="text-[#0F0F0F] font-medium">{formatPrice(refund.amount, refund.currency)}</span></span>
-                        <span className="text-[#0F0F0F]/60">Provider: <span className="capitalize">{refund.order?.payment_provider || 'N/A'}</span></span>
+                        <span className="text-[#0F0F0F]/60">Provider: <span className="capitalize">{refund.orders?.payment_provider || 'N/A'}</span></span>
                         <span className="text-[#0F0F0F]/60">{formatDate(refund.created_at)}</span>
                       </div>
                       {refund.reason && <p className="mt-2 text-sm text-[#0F0F0F]/70 bg-[#F4F6FA] p-2 rounded-lg line-clamp-1"><strong>Reason:</strong> {refund.reason}</p>}
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDetailModal({ open: true, refund })}><Eye className="w-4 h-4" /></Button>
-                      {refund.status === 'approved' && !refund.refund_reference && (
+                      {refund.status === 'approved' && !refund.refund_reference && !refund.orders?.is_stripe_connect && (
                         <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white rounded-xl" onClick={() => setProcessModal({ open: true, refund })}>
                           <CreditCard className="w-4 h-4 mr-1" /> Process
                         </Button>
+                      )}
+                      {refund.orders?.is_stripe_connect && !refund.refund_reference && refund.status !== 'processed' && refund.status !== 'rejected' && (
+                        <Badge className="bg-purple-50 text-purple-600 text-xs">Organizer Handles</Badge>
                       )}
                       {refund.escalated_to_admin && refund.status !== 'approved' && !refund.refund_reference && (
                         <Button size="sm" className="bg-purple-500 hover:bg-purple-600 text-white rounded-xl" onClick={() => overrideAndApprove(refund)}>
@@ -242,10 +258,10 @@ const processRefund = async () => {
                 <div className="flex justify-between font-bold"><span>Refund Amount</span><span className="text-green-600">{formatPrice(processModal.refund.amount, processModal.refund.currency)}</span></div>
               </div>
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
-                <p className="text-sm text-yellow-800"><strong>Payment Provider:</strong> {processModal.refund.order?.payment_provider || 'Unknown'}</p>
-                <p className="text-sm text-yellow-800"><strong>Reference:</strong> {processModal.refund.order?.payment_reference || 'N/A'}</p>
+                <p className="text-sm text-yellow-800"><strong>Payment Provider:</strong> {processModal.refund.orders?.payment_provider || 'Unknown'}</p>
+                <p className="text-sm text-yellow-800"><strong>Reference:</strong> {processModal.refund.orders?.payment_reference || 'N/A'}</p>
               </div>
-              <p className="text-sm text-[#0F0F0F]/60">This will initiate the refund via {processModal.refund.order?.payment_provider || 'the payment provider'}. The attendee will receive the funds within 5-10 business days.</p>
+              <p className="text-sm text-[#0F0F0F]/60">This will initiate the refund via {processModal.refund.orders?.payment_provider || 'the payment provider'}. The attendee will receive the funds within 5-10 business days.</p>
             </div>
           )}
           <DialogFooter>
@@ -273,7 +289,8 @@ const processRefund = async () => {
                 <div><p className="text-[#0F0F0F]/60">Refund Amount</p><p className="font-medium text-green-600">{formatPrice(detailModal.refund.amount, detailModal.refund.currency)}</p></div>
                 <div><p className="text-[#0F0F0F]/60">Status</p>{getStatusBadge(detailModal.refund)}</div>
                 <div><p className="text-[#0F0F0F]/60">Requested</p><p className="font-medium">{formatDate(detailModal.refund.created_at)}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Payment Provider</p><p className="font-medium capitalize">{detailModal.refund.order?.payment_provider || 'N/A'}</p></div>
+                <div><p className="text-[#0F0F0F]/60">Payment Provider</p><p className="font-medium capitalize">{detailModal.refund.orders?.payment_provider || 'N/A'}</p></div>
+                {detailModal.refund.orders?.is_stripe_connect && <div><p className="text-[#0F0F0F]/60">Type</p><Badge className="bg-purple-100 text-purple-700"><Zap className="w-3 h-3 inline mr-1" />Stripe Connect</Badge></div>}
                 {detailModal.refund.refund_reference && <div className="col-span-2"><p className="text-[#0F0F0F]/60">Refund Reference</p><p className="font-mono bg-green-50 p-2 rounded">{detailModal.refund.refund_reference}</p></div>}
               </div>
               {detailModal.refund.reason && <div><p className="text-[#0F0F0F]/60 text-sm">Reason</p><p className="bg-[#F4F6FA] p-3 rounded-xl text-sm">{detailModal.refund.reason}</p></div>}

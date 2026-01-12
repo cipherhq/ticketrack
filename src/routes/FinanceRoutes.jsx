@@ -13,8 +13,8 @@ import { RevenueByCountry } from '@/pages/finance/RevenueByCountry';
 import { RevenueByCategory } from '@/pages/finance/RevenueByCategory';
 import { FinanceReports } from '@/pages/finance/FinanceReports';
 import { FinanceSettings } from '@/pages/finance/FinanceSettings';
-import { Loader2 } from 'lucide-react';
-
+import { AdminFeeManagement } from "@/pages/admin/AdminFeeManagement";
+import { Loader2 } from "lucide-react";
 // Auth guard component
 function FinanceGuard({ children }) {
   const { financeUser, loading } = useFinance();
@@ -67,8 +67,8 @@ export function FinanceRoutes() {
         {/* Reports & Settings */}
         <Route path="reports" element={<FinanceReports />} />
         <Route path="settings" element={<FinanceSettings />} />
-      </Route>
-      
+        <Route path="fees" element={<AdminFeeManagement />} />
+      </Route>      
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/finance/dashboard" replace />} />
     </Routes>

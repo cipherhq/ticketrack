@@ -127,6 +127,9 @@ export function OrganizerOrders() {
         payment_method,
         payment_reference,
         payment_provider,
+        is_stripe_connect,
+        platform_fee_amount,
+        organizer_payout_amount,
         paid_at,
         created_at,
         promo_code_id
@@ -496,6 +499,7 @@ export function OrganizerOrders() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-mono font-medium text-[#0F0F0F]">{order.order_number}</span>
                         {getStatusBadge(order.status)}
+                        {order.is_stripe_connect && <Badge className="bg-purple-100 text-purple-700 ml-1"><CreditCard className="w-3 h-3 mr-1" />Connect</Badge>}
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
                         <span className="flex items-center gap-1">

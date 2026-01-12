@@ -41,6 +41,7 @@ import { OrganizerProvider } from './contexts/OrganizerContext';
 import { AcceptTeamInvitation } from "./pages/AcceptTeamInvitation";
 import { TeamDashboard } from "./pages/TeamDashboard";
 import { AttendeeProfile } from './pages/AttendeeProfile';
+import { AccountDeleted } from './pages/AccountDeleted';
 import { OrganizerPublicProfile } from './pages/OrganizerPublicProfile';
 
 // Auth Pages
@@ -89,6 +90,7 @@ function App() {
               <Route path="/signup" element={<WebAuth />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/account-deleted" element={<AccountDeleted />} />
               <Route path="/accept-invite" element={<AcceptTeamInvitation />} />
               <Route path="/team-dashboard" element={<TeamDashboard />} />
 

@@ -496,12 +496,9 @@ export function WebPaymentSuccess() {
               
               <div className="space-y-3">
                 {tickets?.map((ticket, index) => {
-                  const qrValue = JSON.stringify({
-                    ticketId: ticket.id || `temp-${index}`,
-                    qrCode: ticket.ticket_code,
-                    eventId: event.id,
-                    attendee: ticket.attendee_name
-                  })
+                  // QR code contains just the ticket code - matches PDF ticket
+                  // This creates a cleaner, more scannable QR code
+                  const qrValue = ticket.ticket_code
                   
                   return (
                     <div key={index} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
@@ -514,8 +511,8 @@ export function WebPaymentSuccess() {
                         <QRCodeSVG 
                           id={`success-qr-${index}`}
                           value={qrValue}
-                          size={64}
-                          level="H"
+                          size={80}
+                          level="M"
                         />
                       </div>
                     </div>

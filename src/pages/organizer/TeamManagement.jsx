@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOrganizer } from '@/contexts/OrganizerContext';
+import { sendTeamInvitationEmail } from '@/lib/emailService';import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ export function TeamManagement() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
-  const [inviteData, setInviteData] = useState({ email: '', name: '', role: 'staff' });
+  const [inviteData, setInviteData] = useState({ email: '', firstName: '', lastName: '', role: 'staff' });
   const [saving, setSaving] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [inviteLink, setInviteLink] = useState(null);
@@ -76,7 +76,7 @@ export function TeamManagement() {
         .insert({
           organizer_id: organizer.id,
           email: inviteData.email.toLowerCase(),
-          name: inviteData.name || inviteData.email.split('@')[0],
+          name: inviteData.firstName && inviteData.lastName ? `${inviteData.firstName} ${inviteData.lastName}` : inviteData.firstName || inviteData.email.split('@')[0],
           role: inviteData.role,
           status: 'pending',
           invited_by: organizer.user_id,
@@ -88,10 +88,21 @@ export function TeamManagement() {
 
       setMembers([...members, data]);
       setShowInvite(false);
-      setInviteData({ email: '', name: '', role: 'staff' });
-      const link = `${window.location.origin}/accept-invite?token=${data.invitation_token}`;      setInviteLink(link);      alert('Team member invited! Share this link with them: ' + link);
+      setInviteData({ email: '', firstName: '', lastName: '', role: 'staff' });
+      const link = `${window.location.origin}/accept-invite?token=${data.invitation_token}`;
+      setInviteLink(link);
+      
+      // Send invitation email
+      const roleLabels = { owner: "Owner", manager: "Manager", coordinator: "Coordinator", staff: "Staff" };
+      await sendTeamInvitationEmail(inviteData.email, {
+        firstName: inviteData.firstName || inviteData.email.split("@")[0],
+        organizerName: organizer.name || organizer.business_name,
+        roleName: roleLabels[inviteData.role] || "Team Member",
+        inviteLink: link
+      });
+      
+      alert("Invitation sent to " + inviteData.email + "!");
 
-      // TODO: Send invitation email
     } catch (error) {
       console.error('Error inviting member:', error);
       alert('Failed to invite team member');
@@ -284,14 +295,25 @@ export function TeamManagement() {
                   className="rounded-xl"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[#0F0F0F] mb-1">Name</label>
-                <Input
-                  placeholder="John Doe"
-                  value={inviteData.name}
-                  onChange={(e) => setInviteData({ ...inviteData, name: e.target.value })}
-                  className="rounded-xl"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-[#0F0F0F] mb-1">First Name</label>
+                  <Input
+                    placeholder="John"
+                    value={inviteData.firstName}
+                    onChange={(e) => setInviteData({ ...inviteData, firstName: e.target.value })}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0F0F0F] mb-1">Last Name</label>
+                  <Input
+                    placeholder="Doe"
+                    value={inviteData.lastName}
+                    onChange={(e) => setInviteData({ ...inviteData, lastName: e.target.value })}
+                    className="rounded-xl"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#0F0F0F] mb-1">Role</label>

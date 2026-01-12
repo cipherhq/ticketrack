@@ -95,6 +95,7 @@ const menuItems = [
       { title: 'Profile', path: '/organizer/profile' },
       { title: 'Bank Account', path: '/organizer/bank-account' },
       { title: 'KYC Verification', path: '/organizer/kyc' },
+      { title: 'Stripe Connect', path: '/organizer/stripe-connect' },
       { title: 'Tax Documents', path: '/organizer/tax-documents' },
     ],
   },

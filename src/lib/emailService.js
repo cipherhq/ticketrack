@@ -1,320 +1,809 @@
+/**
+ * Ticketrack Email Service
+ * 
+ * Complete email service with 55+ email types
+ * Security: JWT auth, rate limiting, permission matrix
+ */
+
 import { supabase } from './supabase';
 
-// Email templates
-const TEMPLATES = {
-  // SMS Credits
-  SMS_CREDITS_PURCHASED: {
-    subject: 'SMS Credits Purchase Confirmation - Ticketrack',
-    getHtml: (data) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #2969FF; padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Ticketrack</h1>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #0F0F0F;">SMS Credits Purchase Confirmed!</h2>
-          <p>Hi ${data.organizerName},</p>
-          <p>Your SMS credits purchase was successful. Here are the details:</p>
-          
-          <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <table style="width: 100%;">
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Package:</td>
-                <td style="padding: 8px 0; font-weight: bold; text-align: right;">${data.packageName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Credits:</td>
-                <td style="padding: 8px 0; font-weight: bold; text-align: right;">${data.credits}</td>
-              </tr>
-              ${data.bonusCredits > 0 ? `
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Bonus Credits:</td>
-                <td style="padding: 8px 0; font-weight: bold; color: green; text-align: right;">+${data.bonusCredits}</td>
-              </tr>
-              ` : ''}
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Total Credits:</td>
-                <td style="padding: 8px 0; font-weight: bold; text-align: right;">${data.credits + data.bonusCredits}</td>
-              </tr>
-              <tr style="border-top: 1px solid #eee;">
-                <td style="padding: 12px 0; color: #666;">Amount Paid:</td>
-                <td style="padding: 12px 0; font-weight: bold; font-size: 18px; text-align: right;">₦${data.amount.toLocaleString()}</td>
-              </tr>
-            </table>
-          </div>
-          
-          <p style="color: #666; font-size: 14px;">
-            Reference: ${data.reference}<br>
-            Date: ${new Date().toLocaleString()}
-          </p>
-          
-          <p>Your new balance: <strong>${data.newBalance} credits</strong></p>
-          
-          <a href="${data.dashboardUrl}" style="display: inline-block; background: #2969FF; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; margin-top: 20px;">Go to Dashboard</a>
-        </div>
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-          <p>© ${new Date().getFullYear()} Ticketrack. All rights reserved.</p>
-        </div>
-      </div>
-    `,
-  },
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
-  LOW_SMS_BALANCE: {
-    subject: 'Low SMS Credits Alert - Ticketrack',
-    getHtml: (data) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #2969FF; padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Ticketrack</h1>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #f59e0b;">⚠️ Low SMS Credits</h2>
-          <p>Hi ${data.organizerName},</p>
-          <p>Your SMS credit balance is running low.</p>
-          
-          <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
-            <p style="margin: 0; color: #856404; font-size: 24px; font-weight: bold;">${data.balance} credits remaining</p>
-          </div>
-          
-          <p>Top up now to continue sending SMS to your attendees.</p>
-          
-          <a href="${data.topUpUrl}" style="display: inline-block; background: #2969FF; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; margin-top: 20px;">Buy More Credits</a>
-        </div>
-      </div>
-    `,
-  },
+// ============================================================================
+// CORE EMAIL FUNCTION
+// ============================================================================
 
-  TICKET_PURCHASE: {
-    subject: 'Your Tickets for {{eventName}} - Ticketrack',
-    getHtml: (data) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #2969FF; padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Ticketrack</h1>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #0F0F0F;">🎉 Ticket Purchase Confirmed!</h2>
-          <p>Hi ${data.attendeeName},</p>
-          <p>Thank you for your purchase! Here are your ticket details:</p>
-          
-          <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <h3 style="margin-top: 0; color: #2969FF;">${data.eventName}</h3>
-            <p style="color: #666;">
-              📅 ${data.eventDate}<br>
-              📍 ${data.eventVenue}
-            </p>
-            
-            <table style="width: 100%; margin-top: 15px;">
-              ${data.tickets.map(t => `
-              <tr>
-                <td style="padding: 8px 0;">${t.name} x ${t.quantity}</td>
-                <td style="padding: 8px 0; text-align: right;">₦${t.subtotal.toLocaleString()}</td>
-              </tr>
-              `).join('')}
-              <tr style="border-top: 2px solid #eee;">
-                <td style="padding: 12px 0; font-weight: bold;">Total</td>
-                <td style="padding: 12px 0; font-weight: bold; text-align: right;">₦${data.total.toLocaleString()}</td>
-              </tr>
-            </table>
-          </div>
-          
-          <p style="color: #666; font-size: 14px;">Order Reference: ${data.reference}</p>
-          
-          <a href="${data.ticketsUrl}" style="display: inline-block; background: #2969FF; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; margin-top: 20px;">View My Tickets</a>
-          
-          <p style="margin-top: 30px; color: #666; font-size: 14px;">
-            Show your ticket QR code at the venue for entry.
-          </p>
-        </div>
-      </div>
-    `,
-  },
-
-  PAYOUT_PROCESSED: {
-    subject: 'Payout Processed - Ticketrack',
-    getHtml: (data) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #2969FF; padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Ticketrack</h1>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #10b981;">✅ Payout Processed!</h2>
-          <p>Hi ${data.organizerName},</p>
-          <p>Great news! Your payout has been processed.</p>
-          
-          <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <table style="width: 100%;">
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Amount:</td>
-                <td style="padding: 8px 0; font-weight: bold; font-size: 20px; text-align: right;">₦${data.amount.toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Bank:</td>
-                <td style="padding: 8px 0; text-align: right;">${data.bankName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Account:</td>
-                <td style="padding: 8px 0; text-align: right;">****${data.accountNumber.slice(-4)}</td>
-              </tr>
-            </table>
-          </div>
-          
-          <p style="color: #666;">The funds should reflect in your account within 24 hours.</p>
-          
-          <p style="color: #666; font-size: 14px;">Reference: ${data.reference}</p>
-        </div>
-      </div>
-    `,
-  },
-
-  KYC_STATUS_CHANGE: {
-    subject: 'KYC Verification Update - Ticketrack',
-    getHtml: (data) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #2969FF; padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Ticketrack</h1>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: ${data.status === 'approved' ? '#10b981' : data.status === 'rejected' ? '#ef4444' : '#f59e0b'};">
-            ${data.status === 'approved' ? '✅ KYC Approved!' : data.status === 'rejected' ? '❌ KYC Rejected' : '⏳ KYC Under Review'}
-          </h2>
-          <p>Hi ${data.organizerName},</p>
-          
-          ${data.status === 'approved' ? `
-            <p>Congratulations! Your KYC verification has been approved. You now have full access to all organizer features including payouts.</p>
-          ` : data.status === 'rejected' ? `
-            <p>Unfortunately, your KYC verification was not approved.</p>
-            <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin: 15px 0;">
-              <p style="margin: 0; color: #991b1b;"><strong>Reason:</strong> ${data.reason || 'Documents could not be verified'}</p>
-            </div>
-            <p>Please update your documents and resubmit.</p>
-          ` : `
-            <p>Your KYC documents are currently under review. We'll notify you once the review is complete.</p>
-          `}
-          
-          <a href="${data.dashboardUrl}" style="display: inline-block; background: #2969FF; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; margin-top: 20px;">Go to Dashboard</a>
-        </div>
-      </div>
-    `,
-  },
-
-  NEW_TICKET_SALE: {
-    subject: 'New Ticket Sale for {{eventName}}! - Ticketrack',
-    getHtml: (data) => `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #2969FF; padding: 20px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Ticketrack</h1>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #10b981;">💰 New Ticket Sale!</h2>
-          <p>Hi ${data.organizerName},</p>
-          <p>Great news! Someone just purchased tickets for your event.</p>
-          
-          <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">${data.eventName}</h3>
-            <p><strong>Buyer:</strong> ${data.buyerName}</p>
-            <p><strong>Tickets:</strong> ${data.ticketCount} x ${data.ticketType}</p>
-            <p style="font-size: 20px; font-weight: bold; color: #10b981;">₦${data.amount.toLocaleString()}</p>
-          </div>
-          
-          <a href="${data.dashboardUrl}" style="display: inline-block; background: #2969FF; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px;">View Sales</a>
-        </div>
-      </div>
-    `,
-  },
-};
-
-// Send email function (uses Supabase Edge Function or direct API)
-export async function sendEmail(to, templateKey, data) {
-  const template = TEMPLATES[templateKey];
-  if (!template) {
-    console.error('Unknown email template:', templateKey);
-    return { success: false, error: 'Unknown template' };
-  }
-
-  const subject = template.subject.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || '');
-  const html = template.getHtml(data);
-
+/**
+ * Send an email via the secured Edge Function
+ * 
+ * @param {string} type - Email template type
+ * @param {string|string[]} to - Recipient email(s)
+ * @param {object} data - Template data
+ * @param {object} options - Additional options
+ * @returns {Promise<{success: boolean, messageId?: string, error?: string}>}
+ */
+export async function sendEmail(type, to, data, options = {}) {
   try {
-    // Log email to audit table
-    await supabase.from('email_audit').insert({
-      recipient_email: to,
-      subject: subject,
-      template_key: templateKey,
-      template_data: data,
-      status: 'pending',
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token && { 'Authorization': `Bearer ${session.access_token}` }),
+      },
+      body: JSON.stringify({ type, to, data, ...options }),
     });
 
-    // TODO: Integrate with actual email provider (Resend, SendGrid, etc.)
-    // For now, just log
-    console.log('Email queued:', { to, subject, templateKey });
-
-    return { success: true };
+    const result = await response.json();
+    if (!response.ok) {
+      console.error('Email send failed:', result);
+      return { success: false, error: result.error || 'Failed to send email' };
+    }
+    return result;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Email service error:', error);
     return { success: false, error: error.message };
   }
 }
 
-// Convenience functions
-export async function sendSMSCreditsPurchaseReceipt(organizer, purchaseData) {
-  return sendEmail(organizer.email || organizer.business_email, 'SMS_CREDITS_PURCHASED', {
-    organizerName: organizer.business_name,
-    packageName: purchaseData.packageName,
-    credits: purchaseData.credits,
-    bonusCredits: purchaseData.bonusCredits || 0,
-    amount: purchaseData.amount,
-    reference: purchaseData.reference,
-    newBalance: purchaseData.newBalance,
-    dashboardUrl: `${window.location.origin}/organizer/sms-credits`,
-  });
-}
+// ============================================================================
+// AUTH & SECURITY EMAILS
+// ============================================================================
 
-export async function sendLowBalanceAlert(organizer, balance) {
-  return sendEmail(organizer.email || organizer.business_email, 'LOW_SMS_BALANCE', {
-    organizerName: organizer.business_name,
-    balance: balance,
-    topUpUrl: `${window.location.origin}/organizer/sms-credits`,
-  });
-}
+export const sendWelcomeEmail = (email, data) => 
+  sendEmail('welcome', email, { firstName: data.firstName });
 
-export async function sendTicketPurchaseConfirmation(attendee, orderData) {
-  return sendEmail(attendee.email, 'TICKET_PURCHASE', {
-    attendeeName: attendee.full_name || attendee.email.split('@')[0],
-    eventName: orderData.eventName,
-    eventDate: orderData.eventDate,
-    eventVenue: orderData.eventVenue,
-    tickets: orderData.tickets,
-    total: orderData.total,
-    reference: orderData.reference,
-    ticketsUrl: `${window.location.origin}/tickets`,
-  });
-}
+export const sendEmailVerification = (email, data) => 
+  sendEmail('email_verification', email, { firstName: data.firstName, verificationUrl: data.verificationUrl });
 
-export async function sendPayoutProcessedNotification(organizer, payoutData) {
-  return sendEmail(organizer.email || organizer.business_email, 'PAYOUT_PROCESSED', {
-    organizerName: organizer.business_name,
-    amount: payoutData.amount,
-    bankName: payoutData.bankName,
-    accountNumber: payoutData.accountNumber,
-    reference: payoutData.reference,
-  });
-}
+export const sendPasswordResetEmail = (email, data) => 
+  sendEmail('password_reset', email, { firstName: data.firstName, resetUrl: data.resetUrl });
 
-export async function sendKYCStatusNotification(organizer, status, reason = null) {
-  return sendEmail(organizer.email || organizer.business_email, 'KYC_STATUS_CHANGE', {
-    organizerName: organizer.business_name,
-    status: status,
-    reason: reason,
-    dashboardUrl: `${window.location.origin}/organizer/kyc`,
+export const sendPasswordChangedEmail = (email, data) => 
+  sendEmail('password_changed', email, {
+    userName: data.userName,
+    changedAt: data.changedAt || new Date().toISOString(),
+    ipAddress: data.ipAddress,
+    device: data.device,
   });
-}
 
-export async function sendNewTicketSaleNotification(organizer, saleData) {
-  return sendEmail(organizer.email || organizer.business_email, 'NEW_TICKET_SALE', {
-    organizerName: organizer.business_name,
-    eventName: saleData.eventName,
-    buyerName: saleData.buyerName,
-    ticketCount: saleData.ticketCount,
-    ticketType: saleData.ticketType,
-    amount: saleData.amount,
-    dashboardUrl: `${window.location.origin}/organizer/events`,
+export const sendNewDeviceLoginEmail = (email, data) => 
+  sendEmail('login_new_device', email, {
+    userName: data.userName,
+    loginAt: data.loginAt || new Date().toISOString(),
+    location: data.location,
+    ipAddress: data.ipAddress,
+    device: data.device,
+    browser: data.browser,
   });
-}
+
+export const sendProfileUpdatedEmail = (email, data) => 
+  sendEmail('profile_updated', email, {
+    userName: data.userName,
+    updatedAt: data.updatedAt || new Date().toISOString(),
+    changedFields: data.changedFields,
+  });
+
+export const sendSuspiciousActivityEmail = (email, data) => 
+  sendEmail('suspicious_activity', email, {
+    userName: data.userName,
+    activityDescription: data.activityDescription,
+    detectedAt: data.detectedAt || new Date().toISOString(),
+    ipAddress: data.ipAddress,
+    actionTaken: data.actionTaken,
+  });
+
+// ============================================================================
+// BANK ACCOUNT SECURITY EMAILS
+// ============================================================================
+
+export const sendBankAccountAddedEmail = (email, data, organizerId) => 
+  sendEmail('bank_account_added', email, {
+    organizerName: data.organizerName,
+    bankName: data.bankName,
+    accountName: data.accountName,
+    accountNumber: data.accountNumber,
+    addedAt: data.addedAt || new Date().toISOString(),
+    activeAfter: data.activeAfter,
+    confirmationRequired: data.confirmationRequired,
+    confirmationUrl: data.confirmationUrl,
+  }, { organizerId });
+
+export const sendBankAccountUpdatedEmail = (email, data, organizerId) => 
+  sendEmail('bank_account_updated', email, {
+    organizerName: data.organizerName,
+    bankName: data.bankName,
+    accountName: data.accountName,
+    accountNumber: data.accountNumber,
+    updatedAt: data.updatedAt || new Date().toISOString(),
+    activeAfter: data.activeAfter,
+  }, { organizerId });
+
+export const sendBankAccountRemovedEmail = (email, data, organizerId) => 
+  sendEmail('bank_account_removed', email, {
+    organizerName: data.organizerName,
+    bankName: data.bankName,
+    accountNumber: data.accountNumber,
+    removedAt: data.removedAt || new Date().toISOString(),
+  }, { organizerId });
+
+export const sendBankAccountVerifiedEmail = (email, data, organizerId) => 
+  sendEmail('bank_account_verified', email, {
+    organizerName: data.organizerName,
+    bankName: data.bankName,
+    accountName: data.accountName,
+    accountNumber: data.accountNumber,
+  }, { organizerId });
+
+export const sendBankChangeConfirmationEmail = (email, data, organizerId) => 
+  sendEmail('bank_change_confirmation', email, {
+    organizerName: data.organizerName,
+    changeType: data.changeType,
+    bankName: data.bankName,
+    accountNumber: data.accountNumber,
+    requestedAt: data.requestedAt || new Date().toISOString(),
+    confirmationUrl: data.confirmationUrl,
+    cancelUrl: data.cancelUrl,
+  }, { organizerId });
+
+// ============================================================================
+// TICKET EMAILS
+// ============================================================================
+
+export const sendTicketPurchaseEmail = (email, data, options = {}) => 
+  sendEmail('ticket_purchase', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    city: data.city,
+    ticketType: data.ticketType,
+    quantity: data.quantity,
+    orderNumber: data.orderNumber,
+    totalAmount: data.totalAmount,
+    currency: data.currency,
+    isFree: data.isFree,
+  }, options);
+
+export const sendTicketCancelledEmail = (email, data) => 
+  sendEmail('ticket_cancelled', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    ticketCode: data.ticketCode,
+    refundAmount: data.refundAmount,
+    currency: data.currency,
+  });
+
+export const sendTicketRefundedEmail = (email, data) => 
+  sendEmail('ticket_refunded', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    refundAmount: data.refundAmount,
+    orderNumber: data.orderNumber,
+    currency: data.currency,
+  });
+
+export const sendTicketTransferSentEmail = (email, data) => 
+  sendEmail('ticket_transfer_sent', email, {
+    senderName: data.senderName,
+    recipientName: data.recipientName,
+    recipientEmail: data.recipientEmail,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    ticketType: data.ticketType,
+    transferId: data.transferId,
+  });
+
+export const sendTicketTransferReceivedEmail = (email, data) => 
+  sendEmail('ticket_transfer_received', email, {
+    recipientName: data.recipientName,
+    senderName: data.senderName,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    city: data.city,
+    ticketType: data.ticketType,
+  });
+
+// ============================================================================
+// EVENT REMINDER EMAILS
+// ============================================================================
+
+export const sendEventReminderEmail = (email, data) => 
+  sendEmail('event_reminder', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    city: data.city,
+    timeUntil: data.timeUntil,
+  });
+
+export const sendEventReminder24hEmail = (email, data) => 
+  sendEmail('event_reminder_24h', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    ticketType: data.ticketType,
+    ticketCode: data.ticketCode,
+  });
+
+export const sendEventReminder1hEmail = (email, data) => 
+  sendEmail('event_reminder_1h', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    ticketCode: data.ticketCode,
+  });
+
+export const sendEventCancelledEmail = (email, data) => 
+  sendEmail('event_cancelled', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    reason: data.reason,
+    refundAmount: data.refundAmount,
+    currency: data.currency,
+  });
+
+export const sendEventUpdatedEmail = (email, data) => 
+  sendEmail('event_updated', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    city: data.city,
+    changes: data.changes,
+  });
+
+// ============================================================================
+// REFUND EMAILS
+// ============================================================================
+
+export const sendRefundRequestSubmittedEmail = (email, data) => 
+  sendEmail('refund_request_submitted', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    ticketType: data.ticketType,
+    amount: data.amount,
+    currency: data.currency,
+    requestId: data.requestId,
+  });
+
+export const sendRefundApprovedEmail = (email, data) => 
+  sendEmail('refund_approved', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    refundAmount: data.refundAmount,
+    currency: data.currency,
+    organizerNotes: data.organizerNotes,
+  });
+
+export const sendRefundRejectedEmail = (email, data) => 
+  sendEmail('refund_rejected', email, {
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    refundAmount: data.refundAmount,
+    currency: data.currency,
+    organizerNotes: data.organizerNotes,
+  });
+
+export const sendRefundProcessedEmail = (email, data) => 
+  sendEmail('refund_processed', email, {
+    attendeeName: data.attendeeName,
+    refundAmount: data.refundAmount,
+    currency: data.currency,
+    paymentMethod: data.paymentMethod,
+  });
+
+// ============================================================================
+// WAITLIST EMAILS
+// ============================================================================
+
+export const sendWaitlistJoinedEmail = (email, data) => 
+  sendEmail('waitlist_joined', email, {
+    name: data.name,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    quantity: data.quantity,
+    position: data.position,
+  }, { eventId: data.eventId });
+
+export const sendWaitlistAvailableEmail = (email, data) => 
+  sendEmail('waitlist_available', email, {
+    name: data.name,
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    quantity: data.quantity,
+    expiresAt: data.expiresAt,
+    purchaseToken: data.purchaseToken,
+  }, { eventId: data.eventId });
+
+// ============================================================================
+// SOCIAL EMAILS
+// ============================================================================
+
+export const sendNewFollowerEmail = (email, data, organizerId) => 
+  sendEmail('new_follower', email, {
+    organizerName: data.organizerName,
+    followerName: data.followerName,
+    totalFollowers: data.totalFollowers,
+  }, { organizerId });
+
+export const sendFollowingOrganizerEmail = (email, data) => 
+  sendEmail('following_organizer', email, {
+    userName: data.userName,
+    organizerName: data.organizerName,
+    organizerSlug: data.organizerSlug,
+  });
+
+// ============================================================================
+// ORGANIZER ONBOARDING EMAILS
+// ============================================================================
+
+export const sendOrganizerWelcomeEmail = (email, data, organizerId) => 
+  sendEmail('organizer_welcome', email, { businessName: data.businessName }, { organizerId });
+
+export const sendKYCVerifiedEmail = (email, data, organizerId) => 
+  sendEmail('kyc_verified', email, { organizerName: data.organizerName }, { organizerId });
+
+export const sendKYCActionRequiredEmail = (email, data, organizerId) => 
+  sendEmail('kyc_action_required', email, { organizerName: data.organizerName, message: data.message }, { organizerId });
+
+export const sendKYCRejectedEmail = (email, data, organizerId) => 
+  sendEmail('kyc_rejected', email, { organizerName: data.organizerName, reason: data.reason }, { organizerId });
+
+export const sendStripeConnectActivatedEmail = (email, data, organizerId) => 
+  sendEmail('stripe_connect_activated', email, {
+    organizerName: data.organizerName,
+    platformFeePercent: data.platformFeePercent,
+  }, { organizerId });
+
+// ============================================================================
+// ORGANIZER OPERATIONS EMAILS
+// ============================================================================
+
+export const sendNewTicketSaleEmail = (email, data, organizerId) => 
+  sendEmail('new_ticket_sale', email, {
+    eventTitle: data.eventTitle,
+    eventId: data.eventId,
+    ticketType: data.ticketType,
+    quantity: data.quantity,
+    buyerName: data.buyerName,
+    amount: data.amount,
+    currency: data.currency,
+    isFree: data.isFree,
+    totalSold: data.totalSold,
+    totalCapacity: data.totalCapacity,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendDailySalesSummaryEmail = (email, data, organizerId) => 
+  sendEmail('daily_sales_summary', email, {
+    date: data.date,
+    totalRevenue: data.totalRevenue,
+    ticketsSold: data.ticketsSold,
+    ordersCount: data.ordersCount,
+    currency: data.currency,
+  }, { organizerId });
+
+export const sendLowTicketAlertEmail = (email, data, organizerId) => 
+  sendEmail('low_ticket_alert', email, {
+    eventTitle: data.eventTitle,
+    eventId: data.eventId,
+    ticketType: data.ticketType,
+    remaining: data.remaining,
+    sold: data.sold,
+    total: data.total,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendEventPublishedEmail = (email, data, organizerId) => 
+  sendEmail('event_published', email, {
+    eventTitle: data.eventTitle,
+    eventId: data.eventId,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    eventUrl: data.eventUrl,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendEventCancelledOrganizerEmail = (email, data, organizerId) => 
+  sendEmail('event_cancelled_organizer', email, {
+    eventTitle: data.eventTitle,
+    ticketsSold: data.ticketsSold,
+    refundTotal: data.refundTotal,
+    currency: data.currency,
+  }, { organizerId });
+
+export const sendEventReminderOrganizerEmail = (email, data, organizerId) => 
+  sendEmail('event_reminder_organizer', email, {
+    eventTitle: data.eventTitle,
+    eventId: data.eventId,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    ticketsSold: data.ticketsSold,
+    revenue: data.revenue,
+    currency: data.currency,
+    timeUntil: data.timeUntil,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendRefundRequestEmail = (email, data, organizerId) => 
+  sendEmail('refund_request', email, {
+    eventTitle: data.eventTitle,
+    attendeeName: data.attendeeName,
+    ticketType: data.ticketType,
+    amount: data.amount,
+    currency: data.currency,
+    reason: data.reason,
+    refundId: data.refundId,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendPostEventSummaryEmail = (email, data, organizerId) => 
+  sendEmail('post_event_summary', email, {
+    eventTitle: data.eventTitle,
+    eventId: data.eventId,
+    totalRevenue: data.totalRevenue,
+    ticketsSold: data.ticketsSold,
+    checkedIn: data.checkedIn,
+    checkInRate: data.checkInRate,
+    payoutAmount: data.payoutAmount,
+    currency: data.currency,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendPayoutProcessedEmail = (email, data, organizerId) => 
+  sendEmail('payout_processed', email, {
+    amount: data.amount,
+    currency: data.currency,
+    bankName: data.bankName,
+    accountNumber: data.accountNumber,
+    reference: data.reference,
+  }, { organizerId });
+
+export const sendSMSCreditsPurchasedEmail = (email, data, organizerId) => 
+  sendEmail('sms_units_purchased', email, {
+    units: data.units,
+    amount: data.amount,
+    currency: data.currency,
+    newBalance: data.newBalance,
+  }, { organizerId });
+
+export const sendWhatsAppCreditsPurchasedEmail = (email, data, organizerId) => 
+  sendEmail('whatsapp_credits_purchased', email, {
+    units: data.units,
+    amount: data.amount,
+    currency: data.currency,
+    newBalance: data.newBalance,
+  }, { organizerId });
+
+export const sendLowSMSBalanceEmail = (email, data, organizerId) => 
+  sendEmail('low_sms_balance', email, {
+    organizerName: data.organizerName,
+    balance: data.balance,
+  }, { organizerId });
+
+export const sendEventDraftReminderEmail = (email, data, organizerId) => 
+  sendEmail('event_draft_reminder', email, {
+    organizerName: data.organizerName,
+    eventTitle: data.eventTitle,
+    eventId: data.eventId,
+  }, { organizerId, eventId: data.eventId });
+
+// ============================================================================
+// TEAM EMAILS
+// ============================================================================
+
+export const sendTeamInvitationEmail = (email, data, organizerId) => 
+  sendEmail('team_invitation', email, {
+    firstName: data.firstName || email.split('@')[0],
+    organizerName: data.organizerName,
+    roleName: data.roleName,
+    inviteLink: data.inviteLink,
+  }, { organizerId });
+
+export const sendTeamMemberRemovedEmail = (email, data, organizerId) => 
+  sendEmail('team_member_removed', email, {
+    memberName: data.memberName,
+    organizerName: data.organizerName,
+  }, { organizerId });
+
+// ============================================================================
+// PROMOTER EMAILS
+// ============================================================================
+
+export const sendPromoterInviteEmail = (email, data, organizerId) => 
+  sendEmail('promoter_invite', email, {
+    organizerName: data.organizerName,
+    eventTitle: data.eventTitle,
+    commissionValue: data.commissionValue,
+    commissionType: data.commissionType,
+    promoCode: data.promoCode,
+    isNewUser: data.isNewUser,
+    currency: data.currency,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendPromoterAcceptedEmail = (email, data, organizerId) => 
+  sendEmail('promoter_accepted', email, {
+    promoterName: data.promoterName,
+    eventTitle: data.eventTitle,
+    promoCode: data.promoCode,
+    commissionValue: data.commissionValue,
+    commissionType: data.commissionType,
+    currency: data.currency,
+  }, { organizerId });
+
+export const sendPromoterCommissionEmail = (email, data) => 
+  sendEmail('promoter_commission', email, {
+    eventTitle: data.eventTitle,
+    promoCode: data.promoCode,
+    saleAmount: data.saleAmount,
+    amount: data.amount,
+    currency: data.currency,
+    pendingTotal: data.pendingTotal,
+  });
+
+export const sendPromoterPayoutEmail = (email, data) => 
+  sendEmail('promoter_payout', email, {
+    amount: data.amount,
+    currency: data.currency,
+    bankName: data.bankName,
+    accountNumber: data.accountNumber,
+  });
+
+export const sendPromoCodeUsedEmail = (email, data, organizerId) => 
+  sendEmail('promo_code_used', email, {
+    eventTitle: data.eventTitle,
+    promoCode: data.promoCode,
+    totalUses: data.totalUses,
+  }, { organizerId });
+
+export const sendPromoCodeCreatedEmail = (email, data, organizerId) => 
+  sendEmail('promo_code_created', email, {
+    organizerName: data.organizerName,
+    promoCode: data.promoCode,
+    discountValue: data.discountValue,
+    discountType: data.discountType,
+    eventTitle: data.eventTitle,
+    maxUses: data.maxUses,
+    expiresAt: data.expiresAt,
+    currency: data.currency,
+  }, { organizerId });
+
+// ============================================================================
+// AFFILIATE EMAILS
+// ============================================================================
+
+export const sendAffiliateCommissionEmail = (email, data) => 
+  sendEmail('affiliate_commission_earned', email, {
+    affiliateName: data.affiliateName,
+    purchaseAmount: data.purchaseAmount,
+    amount: data.amount,
+    currency: data.currency,
+    referralCode: data.referralCode,
+    pendingTotal: data.pendingTotal,
+  });
+
+export const sendAffiliatePayoutEmail = (email, data) => 
+  sendEmail('affiliate_payout_processed', email, {
+    affiliateName: data.affiliateName,
+    amount: data.amount,
+    currency: data.currency,
+    bankName: data.bankName,
+    accountNumber: data.accountNumber,
+    reference: data.reference,
+  });
+
+// ============================================================================
+// SUPPORT EMAILS
+// ============================================================================
+
+export const sendSupportTicketCreatedEmail = (email, data) => 
+  sendEmail('support_ticket_created', email, {
+    userName: data.userName,
+    ticketId: data.ticketId,
+    category: data.category,
+    subject: data.subject,
+  });
+
+export const sendSupportTicketReplyEmail = (email, data) => 
+  sendEmail('support_ticket_reply', email, {
+    userName: data.userName,
+    ticketId: data.ticketId,
+    subject: data.subject,
+    reply: data.reply,
+  });
+
+export const sendSupportTicketResolvedEmail = (email, data) => 
+  sendEmail('support_ticket_resolved', email, {
+    userName: data.userName,
+    ticketId: data.ticketId,
+    subject: data.subject,
+  });
+
+// ============================================================================
+// POST-EVENT EMAILS
+// ============================================================================
+
+export const sendPostEventThankYouEmail = (emails, data, organizerId) => 
+  sendEmail('post_event_thank_you', emails, {
+    attendeeName: data.attendeeName || 'there',
+    eventTitle: data.eventTitle,
+    organizerName: data.organizerName,
+    organizerSlug: data.organizerSlug,
+    message: data.message,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendPostEventFeedbackEmail = (emails, data, organizerId) => 
+  sendEmail('post_event_feedback', emails, {
+    attendeeName: data.attendeeName || 'there',
+    eventTitle: data.eventTitle,
+    feedbackUrl: data.feedbackUrl,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendPostEventNextEventEmail = (emails, data, organizerId) => 
+  sendEmail('post_event_next_event', emails, {
+    attendeeName: data.attendeeName || 'there',
+    previousEventTitle: data.previousEventTitle,
+    nextEventTitle: data.nextEventTitle,
+    nextEventDate: data.nextEventDate,
+    nextEventVenue: data.nextEventVenue,
+    nextEventSlug: data.nextEventSlug,
+  }, { organizerId, eventId: data.eventId });
+
+// ============================================================================
+// BULK CAMPAIGN EMAILS
+// ============================================================================
+
+export const sendBulkCampaignEmail = (emails, data, organizerId) => 
+  sendEmail('bulk_campaign', emails, {
+    subject: data.subject,
+    title: data.title,
+    body: data.body,
+    ctaText: data.ctaText,
+    ctaUrl: data.ctaUrl,
+    preheader: data.preheader,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendAdminBroadcastEmail = (emails, data) => 
+  sendEmail('admin_broadcast', emails, {
+    subject: data.subject,
+    title: data.title,
+    body: data.body,
+    ctaText: data.ctaText,
+    ctaUrl: data.ctaUrl,
+    preheader: data.preheader,
+  });
+
+// ============================================================================
+// ADMIN EMAILS
+// ============================================================================
+
+export const sendAdminNewOrganizerEmail = (email, data) => 
+  sendEmail('admin_new_organizer', email, {
+    businessName: data.businessName,
+    email: data.email,
+    createdAt: data.createdAt,
+    organizerId: data.organizerId,
+  });
+
+export const sendAdminNewEventEmail = (email, data) => 
+  sendEmail('admin_new_event', email, {
+    eventTitle: data.eventTitle,
+    organizerName: data.organizerName,
+    eventDate: data.eventDate,
+    eventId: data.eventId,
+  });
+
+export const sendAdminFlaggedContentEmail = (email, data) => 
+  sendEmail('admin_flagged_content', email, {
+    contentType: data.contentType,
+    reason: data.reason,
+    reportedBy: data.reportedBy,
+    flagId: data.flagId,
+  });
+
+export const sendAdminDailyStatsEmail = (email, data) => 
+  sendEmail('admin_daily_stats', email, {
+    date: data.date,
+    totalRevenue: data.totalRevenue,
+    ticketsSold: data.ticketsSold,
+    newUsers: data.newUsers,
+    newOrganizers: data.newOrganizers,
+    platformFees: data.platformFees,
+    currency: data.currency,
+  });
+
+// ============================================================================
+// DEFAULT EXPORT
+// ============================================================================
+
+export default {
+  sendEmail,
+  // Auth & Security
+  sendWelcomeEmail,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  sendPasswordChangedEmail,
+  sendNewDeviceLoginEmail,
+  sendProfileUpdatedEmail,
+  sendSuspiciousActivityEmail,
+  // Bank Security
+  sendBankAccountAddedEmail,
+  sendBankAccountUpdatedEmail,
+  sendBankAccountRemovedEmail,
+  sendBankAccountVerifiedEmail,
+  sendBankChangeConfirmationEmail,
+  // Tickets
+  sendTicketPurchaseEmail,
+  sendTicketCancelledEmail,
+  sendTicketRefundedEmail,
+  sendTicketTransferSentEmail,
+  sendTicketTransferReceivedEmail,
+  // Event Reminders
+  sendEventReminderEmail,
+  sendEventReminder24hEmail,
+  sendEventReminder1hEmail,
+  sendEventCancelledEmail,
+  sendEventUpdatedEmail,
+  // Refunds
+  sendRefundRequestSubmittedEmail,
+  sendRefundApprovedEmail,
+  sendRefundRejectedEmail,
+  sendRefundProcessedEmail,
+  // Waitlist
+  sendWaitlistJoinedEmail,
+  sendWaitlistAvailableEmail,
+  // Social
+  sendNewFollowerEmail,
+  sendFollowingOrganizerEmail,
+  // Organizer Onboarding
+  sendOrganizerWelcomeEmail,
+  sendKYCVerifiedEmail,
+  sendKYCActionRequiredEmail,
+  sendKYCRejectedEmail,
+  sendStripeConnectActivatedEmail,
+  // Organizer Operations
+  sendNewTicketSaleEmail,
+  sendDailySalesSummaryEmail,
+  sendLowTicketAlertEmail,
+  sendEventPublishedEmail,
+  sendEventCancelledOrganizerEmail,
+  sendEventReminderOrganizerEmail,
+  sendRefundRequestEmail,
+  sendPostEventSummaryEmail,
+  sendPayoutProcessedEmail,
+  sendSMSCreditsPurchasedEmail,
+  sendWhatsAppCreditsPurchasedEmail,
+  sendLowSMSBalanceEmail,
+  sendEventDraftReminderEmail,
+  // Team
+  sendTeamInvitationEmail,
+  sendTeamMemberRemovedEmail,
+  // Promoter
+  sendPromoterInviteEmail,
+  sendPromoterAcceptedEmail,
+  sendPromoterCommissionEmail,
+  sendPromoterPayoutEmail,
+  sendPromoCodeUsedEmail,
+  sendPromoCodeCreatedEmail,
+  // Affiliate
+  sendAffiliateCommissionEmail,
+  sendAffiliatePayoutEmail,
+  // Support
+  sendSupportTicketCreatedEmail,
+  sendSupportTicketReplyEmail,
+  sendSupportTicketResolvedEmail,
+  // Post-Event
+  sendPostEventThankYouEmail,
+  sendPostEventFeedbackEmail,
+  sendPostEventNextEventEmail,
+  // Bulk
+  sendBulkCampaignEmail,
+  sendAdminBroadcastEmail,
+  // Admin
+  sendAdminNewOrganizerEmail,
+  sendAdminNewEventEmail,
+  sendAdminFlaggedContentEmail,
+  sendAdminDailyStatsEmail,
+};

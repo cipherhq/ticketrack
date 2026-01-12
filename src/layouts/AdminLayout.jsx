@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRightLeft, Image,
+import { AlertTriangle, FileText, ArrowRightLeft, Image,
   LayoutDashboard,
   Shield,
   Calendar,
@@ -30,6 +30,7 @@ import { supabase } from '@/lib/supabase';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: Shield, label: 'KYC Verification', path: '/admin/kyc' },
+  { icon: FileText, label: 'KYC Review', path: '/admin/kyc-review' },
   { icon: Calendar, label: 'Events', path: '/admin/events' },
   { icon: FolderOpen, label: 'Categories', path: '/admin/categories' }, // NEW: Categories link
   { icon: Building, label: 'Organizers', path: '/admin/organizers' },
@@ -51,6 +52,7 @@ const navItems = [
   { icon: Users, label: 'Roles & Permissions', path: '/admin/roles' },
   { icon: Clock, label: 'Waitlist', path: '/admin/waitlist' },
   { icon: ArrowRightLeft, label: 'Transfers', path: '/admin/transfers' },
+  { icon: DollarSign, label: 'Fee Management', path: '/admin/fees' },
   { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ];
 

@@ -1,19 +1,83 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle, DollarSign, Gift, Copy, ExternalLink, Share2, Banknote, TrendingUp } from 'lucide-react'
+import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle, DollarSign, Gift, Copy, ExternalLink, Share2, Banknote, TrendingUp, Lock, Trash2, Eye, EyeOff, AlertTriangle, CreditCard, Building, Users, Star, Receipt, X, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { TaxDocuments } from '@/components/TaxDocuments';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+const getCurrencySymbol = (countryCode) => {
+  const symbols = { NG: "₦", GH: "₵", US: "$", GB: "£", CA: "C$", KE: "KSh", ZA: "R" };
+  return symbols[countryCode] || "$";
+};
+
+const getMinWithdrawal = (countryCode) => {
+  const mins = { NG: 5000, GH: 50, US: 10, GB: 8, CA: 15, KE: 1000, ZA: 150 };
+  return mins[countryCode] || 10;
+};
+
+import { formatCurrency } from '@/lib/utils'
+
+// Interest categories
+const INTEREST_CATEGORIES = [
+  { id: 'music', label: 'Music & Concerts', icon: '🎵' },
+  { id: 'sports', label: 'Sports', icon: '⚽' },
+  { id: 'arts', label: 'Arts & Theatre', icon: '🎭' },
+  { id: 'comedy', label: 'Comedy', icon: '😂' },
+  { id: 'food', label: 'Food & Drink', icon: '🍕' },
+  { id: 'tech', label: 'Tech & Business', icon: '💻' },
+  { id: 'fitness', label: 'Fitness & Wellness', icon: '🏋️' },
+  { id: 'nightlife', label: 'Nightlife & Parties', icon: '🎉' },
+  { id: 'family', label: 'Family & Kids', icon: '👨‍👩‍👧' },
+  { id: 'education', label: 'Education & Workshops', icon: '📚' },
+  { id: 'charity', label: 'Charity & Causes', icon: '❤️' },
+  { id: 'networking', label: 'Networking', icon: '🤝' },
+]
+
+// Month names for birthday
+const MONTHS = [
+  { value: 1, label: 'January' },
+  { value: 2, label: 'February' },
+  { value: 3, label: 'March' },
+  { value: 4, label: 'April' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'June' },
+  { value: 7, label: 'July' },
+  { value: 8, label: 'August' },
+  { value: 9, label: 'September' },
+  { value: 10, label: 'October' },
+  { value: 11, label: 'November' },
+  { value: 12, label: 'December' },
+]
+
+// Helper: Check if event date has passed
+const isEventPast = (eventDate) => {
+  if (!eventDate) return false
+  return new Date(eventDate) < new Date()
+}
 
 export function AttendeeProfile() {
   const navigate = useNavigate()
@@ -29,10 +93,39 @@ export function AttendeeProfile() {
   const [editForm, setEditForm] = useState({})
   const [stats, setStats] = useState({ eventsAttended: 0, ticketsPurchased: 0, following: 0 })
   const [activeTab, setActiveTab] = useState(location.state?.tab || "profile")
-  const [notificationSettings, setNotificationSettings] = useState({ email: true, sms: false })
+
+  // Following state
+  const [followedOrganizers, setFollowedOrganizers] = useState([])
+  
+  // Payment methods state
+  const [paymentMethods, setPaymentMethods] = useState([])
+  const [deletingPaymentMethod, setDeletingPaymentMethod] = useState(null)
+
+  // Order history state
+  const [orders, setOrders] = useState([])
+
+  // Watch for navigation state changes
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab)
+    }
+  }, [location.key])
+
   const [earnings, setEarnings] = useState({ balance: 0, total: 0, pending: 0, referralCode: '', referralCount: 0, affiliateStatus: null })
   const [earningsHistory, setEarningsHistory] = useState([])
   const [copied, setCopied] = useState(false)
+
+  // Password change state
+  const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
+
+  // Delete account state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -41,6 +134,10 @@ export function AttendeeProfile() {
     }
     loadProfileData()
     loadEarnings()
+    loadSavedEvents()
+    loadFollowedOrganizers()
+    loadPaymentMethods()
+    loadOrders()
   }, [user, navigate])
 
   const loadProfileData = async () => {
@@ -60,8 +157,13 @@ export function AttendeeProfile() {
           last_name: profileData.last_name || '',
           email: profileData.email || '',
           phone: profileData.phone || '',
+          city: profileData.city || '',
+          country: profileData.country || '',
+          birth_month: profileData.birth_month || '',
+          birth_day: profileData.birth_day || '',
+          interests: profileData.interests || [],
+          billing_address: profileData.billing_address || {},
         })
-        setNotificationSettings({ email: profileData.email_notifications ?? true, sms: profileData.sms_notifications ?? false })
       }
 
       // Load tickets with event details
@@ -78,13 +180,18 @@ export function AttendeeProfile() {
       setTickets(ticketsData || [])
 
       // Calculate stats
-      const activeTickets = ticketsData?.filter(t => t.status === 'valid') || []
       const uniqueEvents = new Set(ticketsData?.map(t => t.event_id) || [])
+      
+      // Get following count
+      const { count: followingCount } = await supabase
+        .from('organizer_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
       
       setStats({
         eventsAttended: uniqueEvents.size,
         ticketsPurchased: ticketsData?.length || 0,
-        following: 0
+        following: followingCount || 0
       })
 
     } catch (error) {
@@ -94,19 +201,140 @@ export function AttendeeProfile() {
     }
   }
 
+  // Load followed organizers
+  const loadFollowedOrganizers = async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase
+        .from('organizer_follows')
+        .select(`
+          id,
+          created_at,
+          organizer:organizers (
+            id,
+            business_name,
+            logo_url,
+            is_verified
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setFollowedOrganizers(data || [])
+    } catch (error) {
+      console.error('Error loading followed organizers:', error)
+    }
+  }
+
+  // Unfollow organizer
+  const unfollowOrganizer = async (followId) => {
+    try {
+      const { error } = await supabase
+        .from('organizer_follows')
+        .delete()
+        .eq('id', followId)
+
+      if (error) throw error
+      
+      setFollowedOrganizers(prev => prev.filter(f => f.id !== followId))
+      setStats(prev => ({ ...prev, following: prev.following - 1 }))
+    } catch (error) {
+      console.error('Error unfollowing organizer:', error)
+    }
+  }
+
+  // Load payment methods
+  const loadPaymentMethods = async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase
+        .from('saved_payment_methods')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('is_default', { ascending: false })
+
+      if (error) throw error
+      setPaymentMethods(data || [])
+    } catch (error) {
+      console.error('Error loading payment methods:', error)
+    }
+  }
+
+  // Delete payment method
+  const deletePaymentMethod = async (methodId) => {
+    setDeletingPaymentMethod(methodId)
+    try {
+      const { error } = await supabase
+        .from('saved_payment_methods')
+        .delete()
+        .eq('id', methodId)
+
+      if (error) throw error
+      setPaymentMethods(prev => prev.filter(m => m.id !== methodId))
+    } catch (error) {
+      console.error('Error deleting payment method:', error)
+    } finally {
+      setDeletingPaymentMethod(null)
+    }
+  }
+
+  // Set default payment method
+  const setDefaultPaymentMethod = async (methodId) => {
+    try {
+      // Remove default from all
+      await supabase
+        .from('saved_payment_methods')
+        .update({ is_default: false })
+        .eq('user_id', user.id)
+
+      // Set new default
+      await supabase
+        .from('saved_payment_methods')
+        .update({ is_default: true })
+        .eq('id', methodId)
+
+      // Update local state
+      setPaymentMethods(prev => prev.map(m => ({
+        ...m,
+        is_default: m.id === methodId
+      })))
+    } catch (error) {
+      console.error('Error setting default payment method:', error)
+    }
+  }
+
+  // Load order history
+  const loadOrders = async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          event:events(id, title, slug, image_url)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (error) throw error
+      setOrders(data || [])
+    } catch (error) {
+      console.error('Error loading orders:', error)
+    }
+  }
 
   // Load affiliate earnings data
   const loadEarnings = async () => {
     if (!user) return
     try {
-      // Get profile with referral info
       const { data: profileData } = await supabase
         .from('profiles')
         .select('referral_code, affiliate_balance, total_referral_earnings, referral_count, affiliate_status')
         .eq('id', user.id)
         .single()
 
-      // Get pending earnings (not yet available)
       const { data: pendingData } = await supabase
         .from('referral_earnings')
         .select('commission_amount')
@@ -115,7 +343,6 @@ export function AttendeeProfile() {
 
       const pendingTotal = pendingData?.reduce((sum, e) => sum + parseFloat(e.commission_amount || 0), 0) || 0
 
-      // Get recent earnings history
       const { data: historyData } = await supabase
         .from('referral_earnings')
         .select(`
@@ -137,6 +364,52 @@ export function AttendeeProfile() {
       setEarningsHistory(historyData || [])
     } catch (error) {
       console.error('Error loading earnings:', error)
+    }
+  }
+
+  // Load saved events
+  const loadSavedEvents = async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase
+        .from('saved_events')
+        .select(`
+          id,
+          created_at,
+          event:events (
+            id,
+            title,
+            slug,
+            start_date,
+            venue_name,
+            city,
+            image_url,
+            is_free,
+            currency
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setSavedEvents(data || [])
+    } catch (error) {
+      console.error('Error loading saved events:', error)
+    }
+  }
+
+  // Remove saved event
+  const removeSavedEvent = async (savedEventId) => {
+    try {
+      const { error } = await supabase
+        .from('saved_events')
+        .delete()
+        .eq('id', savedEventId)
+
+      if (error) throw error
+      setSavedEvents(prev => prev.filter(e => e.id !== savedEventId))
+    } catch (error) {
+      console.error('Error removing saved event:', error)
     }
   }
 
@@ -166,8 +439,6 @@ export function AttendeeProfile() {
     }
   }
 
-  // Handle becoming an affiliate (opt-in)
-
   // Handle becoming an affiliate
   const handleBecomeAffiliate = async () => {
     if (!user) return
@@ -189,6 +460,18 @@ export function AttendeeProfile() {
     }
   }
 
+  // Toggle interest selection
+  const toggleInterest = (interestId) => {
+    setEditForm(prev => {
+      const currentInterests = prev.interests || []
+      if (currentInterests.includes(interestId)) {
+        return { ...prev, interests: currentInterests.filter(i => i !== interestId) }
+      } else {
+        return { ...prev, interests: [...currentInterests, interestId] }
+      }
+    })
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
@@ -199,6 +482,12 @@ export function AttendeeProfile() {
           last_name: editForm.last_name,
           full_name: `${editForm.first_name} ${editForm.last_name}`,
           phone: editForm.phone,
+          city: editForm.city,
+          country: editForm.country,
+          birth_month: editForm.birth_month || null,
+          birth_day: editForm.birth_day || null,
+          interests: editForm.interests || [],
+          billing_address: editForm.billing_address || {},
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
@@ -210,7 +499,13 @@ export function AttendeeProfile() {
         first_name: editForm.first_name,
         last_name: editForm.last_name,
         full_name: `${editForm.first_name} ${editForm.last_name}`,
-        phone: editForm.phone
+        phone: editForm.phone,
+        city: editForm.city,
+        country: editForm.country,
+        birth_month: editForm.birth_month,
+        birth_day: editForm.birth_day,
+        interests: editForm.interests,
+        billing_address: editForm.billing_address,
       }))
       setIsEditing(false)
     } catch (error) {
@@ -225,17 +520,74 @@ export function AttendeeProfile() {
     navigate('/')
   }
 
-  const handleNotificationToggle = async (type) => {
-    const newValue = !notificationSettings[type]
-    setNotificationSettings(prev => ({ ...prev, [type]: newValue }))
+  // Handle password change
+  const handleChangePassword = async () => {
+    setPasswordError('')
+    setPasswordSuccess('')
+
+    if (!passwordForm.current || !passwordForm.new || !passwordForm.confirm) {
+      setPasswordError('Please fill in all fields')
+      return
+    }
+
+    if (passwordForm.new.length < 6) {
+      setPasswordError('New password must be at least 6 characters')
+      return
+    }
+
+    if (passwordForm.new !== passwordForm.confirm) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+
+    setChangingPassword(true)
     try {
-      await supabase
-        .from("profiles")
-        .update({ [`${type}_notifications`]: newValue })
-        .eq("id", user.id)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: passwordForm.current
+      })
+
+      if (signInError) {
+        setPasswordError('Current password is incorrect')
+        setChangingPassword(false)
+        return
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordForm.new
+      })
+
+      if (updateError) throw updateError
+
+      setPasswordSuccess('Password changed successfully!')
+      setPasswordForm({ current: '', new: '', confirm: '' })
+      setTimeout(() => setPasswordSuccess(''), 3000)
     } catch (error) {
-      console.error("Error updating notification settings:", error)
-      setNotificationSettings(prev => ({ ...prev, [type]: !newValue }))
+      console.error('Error changing password:', error)
+      setPasswordError(error.message || 'Failed to change password')
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return
+
+    setDeleting(true)
+    try {
+      const { error } = await supabase.rpc('delete_user_account', { user_id: user.id })
+      
+      if (error) throw error
+
+      await signOut()
+      navigate('/account-deleted')
+    } catch (error) {
+      console.error('Error deleting account:', error)
+      alert('Failed to delete account. Please contact support.')
+    } finally {
+      setDeleting(false)
+      setShowDeleteDialog(false)
     }
   }
 
@@ -258,6 +610,22 @@ export function AttendeeProfile() {
     return 'Recently'
   }
 
+  const getBirthdayDisplay = () => {
+    if (profile?.birth_month && profile?.birth_day) {
+      const month = MONTHS.find(m => m.value === profile.birth_month)?.label || ''
+      return `${month} ${profile.birth_day}`
+    }
+    return 'Not set'
+  }
+
+  const getCardIcon = (brand) => {
+    const brandLower = (brand || '').toLowerCase()
+    if (brandLower.includes('visa')) return '💳'
+    if (brandLower.includes('master')) return '💳'
+    if (brandLower.includes('amex')) return '💳'
+    return '💳'
+  }
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex items-center justify-center">
@@ -266,8 +634,17 @@ export function AttendeeProfile() {
     )
   }
 
-  const activeTickets = tickets.filter(t => t.status === 'valid')
-  const pastTickets = tickets.filter(t => t.status !== 'valid')
+  // Sort tickets: upcoming events first, then past events
+  const sortedTickets = [...tickets].sort((a, b) => {
+    const aUpcoming = !isEventPast(a.event?.start_date)
+    const bUpcoming = !isEventPast(b.event?.start_date)
+    if (aUpcoming && !bUpcoming) return -1
+    if (!aUpcoming && bUpcoming) return 1
+    if (aUpcoming) {
+      return new Date(a.event?.start_date || 0) - new Date(b.event?.start_date || 0)
+    }
+    return new Date(b.event?.start_date || 0) - new Date(a.event?.start_date || 0)
+  })
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -290,6 +667,12 @@ export function AttendeeProfile() {
                   {profile?.full_name || profile?.first_name || 'User'}
                 </h2>
                 <p className="text-[#0F0F0F]/60 text-sm">Member since {getMemberSince()}</p>
+                {profile?.city && (
+                  <p className="text-[#0F0F0F]/50 text-sm flex items-center justify-center gap-1 mt-1">
+                    <MapPin className="w-3 h-3" />
+                    {profile.city}{profile.country ? `, ${profile.country}` : ''}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-2 mb-6">
@@ -301,7 +684,10 @@ export function AttendeeProfile() {
                   <div className="text-xl font-bold text-[#0F0F0F]">{stats.ticketsPurchased}</div>
                   <div className="text-xs text-[#0F0F0F]/60">Tickets</div>
                 </div>
-                <div className="text-center p-3 bg-[#F4F6FA] rounded-xl">
+                <div 
+                  className="text-center p-3 bg-[#F4F6FA] rounded-xl cursor-pointer hover:bg-[#2969FF]/10 transition-colors"
+                  onClick={() => setActiveTab('following')}
+                >
                   <div className="text-xl font-bold text-[#0F0F0F]">{stats.following}</div>
                   <div className="text-xs text-[#0F0F0F]/60">Following</div>
                 </div>
@@ -313,7 +699,9 @@ export function AttendeeProfile() {
                 {[
                   { icon: User, label: "Profile", tab: "profile" },
                   { icon: Ticket, label: "My Tickets", tab: "tickets" },
+                  { icon: Receipt, label: "Order History", tab: "orders" },
                   { icon: Heart, label: "Saved Events", tab: "saved" },
+                  { icon: Users, label: "Following", tab: "following" },
                   { icon: Settings, label: "Settings", tab: "settings" }
                 ].map((item, index) => {
                   const Icon = item.icon
@@ -336,7 +724,7 @@ export function AttendeeProfile() {
 
               <button 
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors mt-2"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sign Out</span>
@@ -348,10 +736,12 @@ export function AttendeeProfile() {
         {/* Main Content */}
         <main className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-white border border-[#0F0F0F]/10 rounded-xl p-1">
+            <TabsList className="bg-white border border-[#0F0F0F]/10 rounded-xl p-1 flex-wrap h-auto">
               <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Profile</TabsTrigger>
               <TabsTrigger value="tickets" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Tickets</TabsTrigger>
+              <TabsTrigger value="orders" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Orders</TabsTrigger>
               <TabsTrigger value="saved" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Saved</TabsTrigger>
+              <TabsTrigger value="following" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Following</TabsTrigger>
               <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Settings</TabsTrigger>
               <TabsTrigger value="earnings" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">
                 <DollarSign className="w-4 h-4 mr-1" />Earnings
@@ -378,7 +768,8 @@ export function AttendeeProfile() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {isEditing ? (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                      {/* Name */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>First Name</Label>
@@ -389,14 +780,119 @@ export function AttendeeProfile() {
                           <Input value={editForm.last_name} onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" />
                         </div>
                       </div>
+
+                      {/* Email */}
                       <div className="space-y-2">
                         <Label>Email</Label>
                         <Input value={editForm.email} disabled className="rounded-xl border-[#0F0F0F]/10 bg-[#F4F6FA]" />
                         <p className="text-xs text-[#0F0F0F]/60">Email cannot be changed</p>
                       </div>
+
+                      {/* Phone */}
                       <div className="space-y-2">
                         <Label>Phone</Label>
                         <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" />
+                      </div>
+
+                      {/* Location */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>City</Label>
+                          <Input value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" placeholder="e.g. Lagos" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Country</Label>
+                          <Input value={editForm.country} onChange={(e) => setEditForm({ ...editForm, country: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" placeholder="e.g. Nigeria" />
+                        </div>
+                      </div>
+
+                      {/* Birthday */}
+                      <div className="space-y-2">
+                        <Label>Birthday (for birthday wishes 🎂)</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <Select value={String(editForm.birth_month || '')} onValueChange={(val) => setEditForm({ ...editForm, birth_month: parseInt(val) })}>
+                            <SelectTrigger className="rounded-xl border-[#0F0F0F]/10">
+                              <SelectValue placeholder="Month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MONTHS.map(month => (
+                                <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select value={String(editForm.birth_day || '')} onValueChange={(val) => setEditForm({ ...editForm, birth_day: parseInt(val) })}>
+                            <SelectTrigger className="rounded-xl border-[#0F0F0F]/10">
+                              <SelectValue placeholder="Day" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                <SelectItem key={day} value={String(day)}>{day}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Interests */}
+                      <div className="space-y-2">
+                        <Label>Interests (helps us recommend events)</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {INTEREST_CATEGORIES.map(interest => (
+                            <button
+                              key={interest.id}
+                              type="button"
+                              onClick={() => toggleInterest(interest.id)}
+                              className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                                editForm.interests?.includes(interest.id)
+                                  ? 'bg-[#2969FF] text-white'
+                                  : 'bg-[#F4F6FA] text-[#0F0F0F]/70 hover:bg-[#0F0F0F]/10'
+                              }`}
+                            >
+                              {interest.icon} {interest.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Billing Address */}
+                      <div className="space-y-2">
+                        <Label>Billing Address (optional)</Label>
+                        <div className="space-y-3 p-4 bg-[#F4F6FA] rounded-xl">
+                          <Input 
+                            placeholder="Street Address" 
+                            value={editForm.billing_address?.street || ''} 
+                            onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, street: e.target.value } })} 
+                            className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                          />
+                          <div className="grid grid-cols-2 gap-3">
+                            <Input 
+                              placeholder="City" 
+                              value={editForm.billing_address?.city || ''} 
+                              onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, city: e.target.value } })} 
+                              className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                            />
+                            <Input 
+                              placeholder="State/Province" 
+                              value={editForm.billing_address?.state || ''} 
+                              onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, state: e.target.value } })} 
+                              className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Input 
+                              placeholder="Postal Code" 
+                              value={editForm.billing_address?.postal_code || ''} 
+                              onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, postal_code: e.target.value } })} 
+                              className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                            />
+                            <Input 
+                              placeholder="Country" 
+                              value={editForm.billing_address?.country || ''} 
+                              onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, country: e.target.value } })} 
+                              className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -417,7 +913,58 @@ export function AttendeeProfile() {
                         </div>
                       </div>
                       <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
+                        <MapPin className="w-5 h-5 text-[#0F0F0F]/60" />
+                        <div>
+                          <p className="text-xs text-[#0F0F0F]/60">Location</p>
+                          <p className="text-[#0F0F0F]">{profile?.city ? `${profile.city}${profile.country ? `, ${profile.country}` : ''}` : 'Not set'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
                         <Calendar className="w-5 h-5 text-[#0F0F0F]/60" />
+                        <div>
+                          <p className="text-xs text-[#0F0F0F]/60">Birthday</p>
+                          <p className="text-[#0F0F0F]">{getBirthdayDisplay()}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Interests Display */}
+                      {profile?.interests && profile.interests.length > 0 && (
+                        <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                          <p className="text-xs text-[#0F0F0F]/60 mb-2">Interests</p>
+                          <div className="flex flex-wrap gap-2">
+                            {profile.interests.map(interestId => {
+                              const interest = INTEREST_CATEGORIES.find(c => c.id === interestId)
+                              return interest ? (
+                                <Badge key={interestId} variant="outline" className="bg-white">
+                                  {interest.icon} {interest.label}
+                                </Badge>
+                              ) : null
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Billing Address Display */}
+                      {profile?.billing_address && Object.keys(profile.billing_address).some(k => profile.billing_address[k]) && (
+                        <div className="flex items-start gap-4 p-4 bg-[#F4F6FA] rounded-xl">
+                          <Building className="w-5 h-5 text-[#0F0F0F]/60 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-[#0F0F0F]/60">Billing Address</p>
+                            <p className="text-[#0F0F0F]">
+                              {[
+                                profile.billing_address.street,
+                                profile.billing_address.city,
+                                profile.billing_address.state,
+                                profile.billing_address.postal_code,
+                                profile.billing_address.country
+                              ].filter(Boolean).join(', ')}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
+                        <Star className="w-5 h-5 text-[#0F0F0F]/60" />
                         <div>
                           <p className="text-xs text-[#0F0F0F]/60">Member Since</p>
                           <p className="text-[#0F0F0F]">{getMemberSince()}</p>
@@ -446,42 +993,45 @@ export function AttendeeProfile() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {tickets.slice(0, 5).map((ticket) => (
-                    <Card key={ticket.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
-                      <div className="flex">
-                        <div className="w-32 h-32 bg-[#F4F6FA] flex-shrink-0">
-                          <img 
-                            src={ticket.event?.image_url} 
-                            alt={ticket.event?.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.target.style.display = 'none' }}
-                          />
-                        </div>
-                        <CardContent className="flex-1 p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-semibold text-[#0F0F0F] mb-1">{ticket.event?.title}</h3>
-                              <p className="text-sm text-[#0F0F0F]/60 mb-2">
-                                {formatDate(ticket.event?.start_date)} • {ticket.event?.venue_name}
-                              </p>
-                              <Badge className={ticket.status === 'valid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
-                                {ticket.status === 'valid' ? 'Active' : 'Used'}
-                              </Badge>
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="rounded-xl"
-                              onClick={() => navigate(`/tickets`)}
-                            >
-                              View
-                            </Button>
+                  {sortedTickets.slice(0, 10).map((ticket) => {
+                    const isPast = isEventPast(ticket.event?.start_date)
+                    return (
+                      <Card key={ticket.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+                        <div className="flex">
+                          <div className="w-32 h-32 bg-[#F4F6FA] flex-shrink-0">
+                            <img 
+                              src={ticket.event?.image_url} 
+                              alt={ticket.event?.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { e.target.style.display = 'none' }}
+                            />
                           </div>
-                        </CardContent>
-                      </div>
-                    </Card>
-                  ))}
-                  {tickets.length > 5 && (
+                          <CardContent className="flex-1 p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold text-[#0F0F0F] mb-1">{ticket.event?.title}</h3>
+                                <p className="text-sm text-[#0F0F0F]/60 mb-2">
+                                  {formatDate(ticket.event?.start_date)} • {ticket.event?.venue_name}
+                                </p>
+                                <Badge className={!isPast ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                                  {!isPast ? 'Active' : 'Past'}
+                                </Badge>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="rounded-xl"
+                                onClick={() => navigate(`/tickets`)}
+                              >
+                                View
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </div>
+                      </Card>
+                    )
+                  })}
+                  {tickets.length > 10 && (
                     <Button variant="outline" className="w-full rounded-xl" onClick={() => navigate('/tickets')}>
                       View All Tickets ({tickets.length})
                     </Button>
@@ -490,57 +1040,422 @@ export function AttendeeProfile() {
               )}
             </TabsContent>
 
+            {/* Orders Tab */}
+            <TabsContent value="orders">
+              {orders.length === 0 ? (
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <div className="w-20 h-20 bg-[#F4F6FA] rounded-full flex items-center justify-center mb-4">
+                      <Receipt className="w-10 h-10 text-[#0F0F0F]/40" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No orders yet</h3>
+                    <p className="text-[#0F0F0F]/60 mb-6">Your purchase history will appear here</p>
+                    <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
+                      Browse Events
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <Card key={order.id} className="border-[#0F0F0F]/10 rounded-2xl">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex gap-4">
+                            <div className="w-16 h-16 bg-[#F4F6FA] rounded-xl overflow-hidden flex-shrink-0">
+                              {order.event?.image_url && (
+                                <img 
+                                  src={order.event.image_url} 
+                                  alt={order.event.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-[#0F0F0F]">{order.event?.title || 'Event'}</h3>
+                              <p className="text-sm text-[#0F0F0F]/60">
+                                Order #{order.reference_id?.slice(-8) || order.id.slice(-8)}
+                              </p>
+                              <p className="text-xs text-[#0F0F0F]/50 mt-1">
+                                {formatDate(order.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-[#0F0F0F]">
+                              {getCurrencySymbol(order.currency)}{parseFloat(order.total_amount || 0).toLocaleString()}
+                            </p>
+                            <Badge className={
+                              order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                              order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              order.status === 'refunded' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-600'
+                            }>
+                              {order.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
             {/* Saved Tab */}
             <TabsContent value="saved">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <div className="w-20 h-20 bg-[#F4F6FA] rounded-full flex items-center justify-center mb-4">
-                    <Heart className="w-10 h-10 text-[#0F0F0F]/40" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No saved events</h3>
-                  <p className="text-[#0F0F0F]/60 mb-6">Save events you're interested in</p>
-                  <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
-                    Browse Events
-                  </Button>
-                </CardContent>
-              </Card>
+              {savedEvents.length === 0 ? (
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <div className="w-20 h-20 bg-[#F4F6FA] rounded-full flex items-center justify-center mb-4">
+                      <Heart className="w-10 h-10 text-[#0F0F0F]/40" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No saved events</h3>
+                    <p className="text-[#0F0F0F]/60 mb-6">Save events you're interested in</p>
+                    <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
+                      Browse Events
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {savedEvents.map((saved) => {
+                    const event = saved.event
+                    if (!event) return null
+                    const isPast = new Date(event.start_date) < new Date()
+                    return (
+                      <Card key={saved.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+                        <div className="flex">
+                          <div className="w-32 h-32 bg-[#F4F6FA] flex-shrink-0 cursor-pointer" onClick={() => navigate(`/events/${event.slug || event.id}`)}>
+                            <img 
+                              src={event.image_url} 
+                              alt={event.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { e.target.style.display = 'none' }}
+                            />
+                          </div>
+                          <CardContent className="flex-1 p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="cursor-pointer" onClick={() => navigate(`/events/${event.slug || event.id}`)}>
+                                <h3 className="font-semibold text-[#0F0F0F] mb-1 hover:text-[#2969FF]">{event.title}</h3>
+                                <p className="text-sm text-[#0F0F0F]/60 mb-2">
+                                  {formatDate(event.start_date)} • {event.venue_name || event.city}
+                                </p>
+                                <div className="flex gap-2">
+                                  <Badge className={!isPast ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                                    {!isPast ? 'Upcoming' : 'Past'}
+                                  </Badge>
+                                  {event.is_free && (
+                                    <Badge className="bg-blue-100 text-blue-700">Free</Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="rounded-xl"
+                                  onClick={() => navigate(`/events/${event.slug || event.id}`)}
+                                >
+                                  View
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon"
+                                  className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600"
+                                  onClick={() => removeSavedEvent(saved.id)}
+                                >
+                                  <Heart className="w-4 h-4 fill-red-500" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </div>
+                      </Card>
+                    )
+                  })}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Following Tab */}
+            <TabsContent value="following">
+              {followedOrganizers.length === 0 ? (
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <div className="w-20 h-20 bg-[#F4F6FA] rounded-full flex items-center justify-center mb-4">
+                      <Users className="w-10 h-10 text-[#0F0F0F]/40" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Not following anyone</h3>
+                    <p className="text-[#0F0F0F]/60 mb-6">Follow organizers to get updates on their events</p>
+                    <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
+                      Discover Organizers
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {followedOrganizers.map((follow) => {
+                    const organizer = follow.organizer
+                    if (!organizer) return null
+                    return (
+                      <Card key={follow.id} className="border-[#0F0F0F]/10 rounded-2xl">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div 
+                              className="flex items-center gap-4 cursor-pointer"
+                              onClick={() => navigate(`/o/${organizer.id}`)}
+                            >
+                              <Avatar className="w-14 h-14">
+                                <AvatarImage src={organizer.logo_url} />
+                                <AvatarFallback className="bg-[#2969FF]/10 text-[#2969FF]">
+                                  {organizer.business_name?.[0] || 'O'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-semibold text-[#0F0F0F] hover:text-[#2969FF]">
+                                    {organizer.business_name}
+                                  </h3>
+                                  {organizer.is_verified && (
+                                    <CheckCircle className="w-4 h-4 text-[#2969FF]" />
+                                  )}
+                                </div>
+                                <p className="text-sm text-[#0F0F0F]/60">
+                                  Following since {formatDate(follow.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="rounded-xl"
+                              onClick={() => unfollowOrganizer(follow.id)}
+                            >
+                              Unfollow
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              )}
             </TabsContent>
 
             {/* Settings Tab */}
             <TabsContent value="settings">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-[#0F0F0F]">Account Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
-                    <div>
-                      <p className="font-medium text-[#0F0F0F]">Email Notifications</p>
-                      <p className="text-sm text-[#0F0F0F]/60">Receive updates about your tickets</p>
+              <div className="space-y-6">
+                {/* Saved Payment Methods */}
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                      <CreditCard className="w-5 h-5" />
+                      Saved Payment Methods
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {paymentMethods.length === 0 ? (
+                      <div className="text-center py-6 text-[#0F0F0F]/50">
+                        <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                        <p>No saved payment methods</p>
+                        <p className="text-sm">Cards will be saved when you make a purchase</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {paymentMethods.map((method) => (
+                          <div key={method.id} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">{getCardIcon(method.brand)}</span>
+                              <div>
+                                <p className="font-medium text-[#0F0F0F]">
+                                  {method.brand} •••• {method.last_four}
+                                </p>
+                                <p className="text-sm text-[#0F0F0F]/60">
+                                  Expires {method.exp_month}/{method.exp_year}
+                                </p>
+                              </div>
+                              {method.is_default && (
+                                <Badge className="bg-[#2969FF]/10 text-[#2969FF]">Default</Badge>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              {!method.is_default && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="rounded-xl"
+                                  onClick={() => setDefaultPaymentMethod(method.id)}
+                                >
+                                  Set Default
+                                </Button>
+                              )}
+                              <Button 
+                                variant="outline" 
+                                size="icon"
+                                className="rounded-xl text-red-500 hover:bg-red-50"
+                                onClick={() => deletePaymentMethod(method.id)}
+                                disabled={deletingPaymentMethod === method.id}
+                              >
+                                {deletingPaymentMethod === method.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <X className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-[#0F0F0F]/50">
+                      🔒 Your card details are securely stored with our payment providers. We never see your full card number.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Change Password Card */}
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                      <Lock className="w-5 h-5" />
+                      Change Password
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {passwordError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                        {passwordError}
+                      </div>
+                    )}
+                    {passwordSuccess && (
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        {passwordSuccess}
+                      </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <Label>Current Password</Label>
+                      <div className="relative">
+                        <Input 
+                          type={showPasswords.current ? "text" : "password"}
+                          value={passwordForm.current}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
+                          className="rounded-xl border-[#0F0F0F]/10 pr-10"
+                          placeholder="Enter current password"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                        >
+                          {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
-                    <Checkbox 
-                      checked={notificationSettings.email} 
-                      onCheckedChange={() => handleNotificationToggle('email')}
-                      className="h-6 w-6 data-[state=checked]:bg-[#2969FF]"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
-                    <div>
-                      <p className="font-medium text-[#0F0F0F]">SMS Notifications</p>
-                      <p className="text-sm text-[#0F0F0F]/60">Get reminders via SMS</p>
+                    
+                    <div className="space-y-2">
+                      <Label>New Password</Label>
+                      <div className="relative">
+                        <Input 
+                          type={showPasswords.new ? "text" : "password"}
+                          value={passwordForm.new}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, new: e.target.value })}
+                          className="rounded-xl border-[#0F0F0F]/10 pr-10"
+                          placeholder="Enter new password"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                        >
+                          {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
-                    <Checkbox 
-                      checked={notificationSettings.sms} 
-                      onCheckedChange={() => handleNotificationToggle('sms')}
-                      className="h-6 w-6 data-[state=checked]:bg-[#2969FF]"
-                    />
-                  </div>
-                  <Separator />
-                  <Button variant="outline" className="w-full rounded-xl text-red-500 border-red-200 hover:bg-red-50" onClick={handleSignOut}>
-                    <LogOut className="w-4 h-4 mr-2" />Sign Out
-                  </Button>
-                </CardContent>
-              </Card>
+                    
+                    <div className="space-y-2">
+                      <Label>Confirm New Password</Label>
+                      <div className="relative">
+                        <Input 
+                          type={showPasswords.confirm ? "text" : "password"}
+                          value={passwordForm.confirm}
+                          onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
+                          className="rounded-xl border-[#0F0F0F]/10 pr-10"
+                          placeholder="Confirm new password"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                        >
+                          {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button 
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl"
+                    >
+                      {changingPassword ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Changing...
+                        </>
+                      ) : (
+                        'Change Password'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Delete Account Card */}
+                <Card className="border-red-200 rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-600">
+                      <Trash2 className="w-5 h-5" />
+                      Delete Account
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-red-50 rounded-xl">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-red-700">
+                          <p className="font-medium mb-1">Warning: This action cannot be undone</p>
+                          <p>Deleting your account will permanently remove all your data including tickets, saved events, and earnings history.</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="w-full rounded-xl text-red-500 border-red-200 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete My Account
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Sign Out */}
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardContent className="p-4">
+                    <Button 
+                      variant="outline" 
+                      className="w-full rounded-xl text-[#0F0F0F]/70 hover:bg-[#F4F6FA]" 
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Earnings Tab */}
@@ -571,14 +1486,13 @@ export function AttendeeProfile() {
                 </Card>
               ) : (
               <div className="space-y-6">
-                {/* Earnings Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-[#0F0F0F]/60">Available Balance</p>
-                          <h3 className="text-2xl font-bold text-green-600">₦{earnings.balance.toLocaleString()}</h3>
+                          <h3 className="text-2xl font-bold text-green-600">{getCurrencySymbol(profile?.country_code)}{earnings.balance.toLocaleString()}</h3>
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                           <Banknote className="w-6 h-6 text-green-600" />
@@ -592,7 +1506,7 @@ export function AttendeeProfile() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-[#0F0F0F]/60">Pending</p>
-                          <h3 className="text-2xl font-bold text-[#0F0F0F]">₦{earnings.pending.toLocaleString()}</h3>
+                          <h3 className="text-2xl font-bold text-[#0F0F0F]">{getCurrencySymbol(profile?.country_code)}{earnings.pending.toLocaleString()}</h3>
                           <p className="text-xs text-[#0F0F0F]/50">Available after event</p>
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
@@ -607,7 +1521,7 @@ export function AttendeeProfile() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-[#0F0F0F]/60">Total Earned</p>
-                          <h3 className="text-2xl font-bold text-[#0F0F0F]">₦{earnings.total.toLocaleString()}</h3>
+                          <h3 className="text-2xl font-bold text-[#0F0F0F]">{getCurrencySymbol(profile?.country_code)}{earnings.total.toLocaleString()}</h3>
                           <p className="text-xs text-[#0F0F0F]/50">{earnings.referralCount} referrals</p>
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
@@ -618,7 +1532,6 @@ export function AttendeeProfile() {
                   </Card>
                 </div>
 
-                {/* Referral Link Card */}
                 <Card className="border-[#0F0F0F]/10 rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -662,7 +1575,6 @@ export function AttendeeProfile() {
                   </CardContent>
                 </Card>
 
-                {/* Earnings History */}
                 <Card className="border-[#0F0F0F]/10 rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -670,12 +1582,12 @@ export function AttendeeProfile() {
                         <DollarSign className="w-5 h-5 text-[#2969FF]" />
                         Earnings History
                       </span>
-                      {earnings.balance >= 5000 && (
+                      {earnings.balance >= getMinWithdrawal(profile?.country_code) && (
                         <Button 
                           onClick={() => navigate('/affiliate/withdraw')}
                           className="rounded-xl bg-green-600 hover:bg-green-700"
                         >
-                          Withdraw ₦{earnings.balance.toLocaleString()}
+                          Withdraw {getCurrencySymbol(profile?.country_code)}{earnings.balance.toLocaleString()}
                         </Button>
                       )}
                     </CardTitle>
@@ -699,7 +1611,7 @@ export function AttendeeProfile() {
                             </div>
                             <div className="text-right">
                               <p className="font-semibold text-green-600">
-                                +₦{parseFloat(item.commission_amount).toLocaleString()}
+                                +{getCurrencySymbol(profile?.country_code)}{parseFloat(item.commission_amount).toLocaleString()}
                               </p>
                               <Badge className={`text-xs ${
                                 item.status === 'available' ? 'bg-green-100 text-green-700' :
@@ -715,9 +1627,9 @@ export function AttendeeProfile() {
                       </div>
                     )}
 
-                    {earnings.balance > 0 && earnings.balance < 5000 && (
+                    {earnings.balance > 0 && earnings.balance < getMinWithdrawal(profile?.country_code) && (
                       <div className="mt-4 p-3 bg-yellow-50 rounded-xl text-sm text-yellow-800">
-                        <p>Minimum withdrawal is ₦5,000. You need ₦{(5000 - earnings.balance).toLocaleString()} more to withdraw.</p>
+                        <p>Minimum withdrawal is {getCurrencySymbol(profile?.country_code)}{getMinWithdrawal(profile?.country_code).toLocaleString()}. You need {getCurrencySymbol(profile?.country_code)}{(getMinWithdrawal(profile?.country_code) - earnings.balance).toLocaleString()} more to withdraw.</p>
                       </div>
                     )}
                   </CardContent>
@@ -728,6 +1640,53 @@ export function AttendeeProfile() {
           </Tabs>
         </main>
       </div>
+
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Account
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>This action is permanent and cannot be undone. All your data will be deleted:</p>
+              <ul className="list-disc list-inside text-sm space-y-1 text-[#0F0F0F]/70">
+                <li>Your profile information</li>
+                <li>All ticket history</li>
+                <li>Saved events</li>
+                <li>Affiliate earnings (unpaid balance will be forfeited)</li>
+              </ul>
+              <div className="pt-2">
+                <Label className="text-[#0F0F0F]">Type DELETE to confirm</Label>
+                <Input 
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                  className="mt-2 rounded-xl"
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <Button
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmText !== 'DELETE' || deleting}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Account'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

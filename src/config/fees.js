@@ -15,7 +15,14 @@ export const getCountryFees = async () => {
 
   const { data, error } = await supabase
     .from('countries')
-    .select('code, default_currency, platform_fee_percentage, service_fee_percentage, payment_processing_fee_percentage, payout_fee, min_payout_amount')
+    .select(`
+      code, default_currency, 
+      service_fee_percentage, service_fee_fixed_per_ticket, service_fee_cap,
+      processing_fee_fixed_per_order,
+      stripe_processing_fee_pct, stripe_processing_fee_fixed,
+      paystack_processing_fee_pct, paystack_processing_fee_fixed,
+      payout_fee, min_payout_amount
+    `)
     .eq('is_active', true);
 
   if (error) {
@@ -29,11 +36,19 @@ export const getCountryFees = async () => {
     if (country.default_currency) {
       feesByCurrency[country.default_currency] = {
         countryCode: country.code,
-        platformFee: (country.platform_fee_percentage || 10) / 100,
-        serviceFee: (country.service_fee_percentage || 5) / 100,
-        processingFee: (country.payment_processing_fee_percentage || 1.5) / 100,
-        payoutFee: country.payout_fee || 50,
-        minPayout: country.min_payout_amount || 5000
+        // Service fees (Ticketrack revenue)
+        serviceFeePercent: parseFloat(country.service_fee_percentage || 5) / 100,
+        serviceFeeFixedPerTicket: parseFloat(country.service_fee_fixed_per_ticket || 0),
+        serviceFeeCap: country.service_fee_cap ? parseFloat(country.service_fee_cap) : null,
+        // Processing fees (pass-through)
+        processingFeeFixedPerOrder: parseFloat(country.processing_fee_fixed_per_order || 0),
+        stripeProcessingPercent: parseFloat(country.stripe_processing_fee_pct || 2.9) / 100,
+        stripeProcessingFixed: parseFloat(country.stripe_processing_fee_fixed || 0.30),
+        paystackProcessingPercent: parseFloat(country.paystack_processing_fee_pct || 1.5) / 100,
+        paystackProcessingFixed: parseFloat(country.paystack_processing_fee_fixed || 100),
+        // Payout settings
+        payoutFee: parseFloat(country.payout_fee || 0),
+        minPayout: parseFloat(country.min_payout_amount || 0)
       };
     }
   });
@@ -54,9 +69,14 @@ export const getFeesByCurrency = async (currencyCode = 'NGN') => {
 export const getDefaultFees = () => ({
   NGN: {
     countryCode: 'NG',
-    platformFee: 0.10,
-    serviceFee: 0.05,
-    processingFee: 0.015,
+    serviceFeePercent: 0.05,
+    serviceFeeFixedPerTicket: 200,
+    serviceFeeCap: null,
+    processingFeeFixedPerOrder: 100,
+    stripeProcessingPercent: 0.029,
+    stripeProcessingFixed: 0.30,
+    paystackProcessingPercent: 0.015,
+    paystackProcessingFixed: 100,
     payoutFee: 50,
     minPayout: 5000
   }
@@ -64,11 +84,14 @@ export const getDefaultFees = () => ({
 
 // Synchronous default for initial render (before async fetch)
 export const DEFAULT_FEES = {
-  platformFee: 0.10,
-  serviceFee: 0.05,
-  processingFee: 0.015,
-  payoutFee: 50,
-  minPayout: 5000
+  serviceFeePercent: 0.05,
+  serviceFeeFixedPerTicket: 0,
+  serviceFeeCap: null,
+  processingFeeFixedPerOrder: 0,
+  stripeProcessingPercent: 0.029,
+  stripeProcessingFixed: 0.30,
+  paystackProcessingPercent: 0.015,
+  paystackProcessingFixed: 100
 };
 
 // Clear cache (call when admin updates fees)
@@ -90,7 +113,7 @@ export const getOrganizerFees = async (organizerId, currencyCode = 'NGN') => {
     // Check if organizer has custom fees
     const { data: organizer, error } = await supabase
       .from('organizers')
-      .select('custom_fee_enabled, custom_service_fee_percentage, custom_service_fee_fixed')
+      .select('custom_fee_enabled, custom_service_fee_percentage, custom_service_fee_fixed, custom_service_fee_cap')
       .eq('id', organizerId)
       .single();
 
@@ -101,16 +124,59 @@ export const getOrganizerFees = async (organizerId, currencyCode = 'NGN') => {
     // Return custom fees, falling back to country defaults for unset values
     return {
       ...countryFees,
-      serviceFee: organizer.custom_service_fee_percentage != null 
-        ? organizer.custom_service_fee_percentage / 100 
-        : countryFees.serviceFee,
-      serviceFeeFi: organizer.custom_service_fee_fixed != null
-        ? organizer.custom_service_fee_fixed
-        : null,
+      serviceFeePercent: organizer.custom_service_fee_percentage != null 
+        ? parseFloat(organizer.custom_service_fee_percentage) / 100 
+        : countryFees.serviceFeePercent,
+      serviceFeeFixedPerTicket: organizer.custom_service_fee_fixed != null
+        ? parseFloat(organizer.custom_service_fee_fixed)
+        : countryFees.serviceFeeFixedPerTicket,
+      serviceFeeCap: organizer.custom_service_fee_cap != null
+        ? parseFloat(organizer.custom_service_fee_cap)
+        : countryFees.serviceFeeCap,
       isCustom: true
     };
   } catch (err) {
     console.error('Error fetching organizer fees:', err);
     return countryFees;
   }
+};
+
+/**
+ * Calculate total fees for an order
+ * @param {number} ticketSubtotal - Total ticket price (before fees)
+ * @param {number} ticketCount - Number of tickets
+ * @param {object} fees - Fee config from getOrganizerFees
+ * @param {string} paymentProvider - 'stripe' or 'paystack'
+ * @returns {object} { serviceFee, processingFee, totalFee, displayFee }
+ */
+export const calculateFees = (ticketSubtotal, ticketCount, fees, paymentProvider = 'paystack') => {
+  // 1. Calculate service fee (% of subtotal + fixed per ticket)
+  let serviceFee = (ticketSubtotal * fees.serviceFeePercent) + (fees.serviceFeeFixedPerTicket * ticketCount);
+  
+  // 2. Apply cap if exists
+  if (fees.serviceFeeCap && serviceFee > fees.serviceFeeCap) {
+    serviceFee = fees.serviceFeeCap;
+  }
+  
+  // 3. Calculate processing fee based on provider
+  let processingFee = 0;
+  const totalBeforeProcessing = ticketSubtotal + serviceFee;
+  
+  if (paymentProvider === 'stripe') {
+    processingFee = (totalBeforeProcessing * fees.stripeProcessingPercent) + fees.stripeProcessingFixed;
+  } else {
+    // Paystack
+    processingFee = (totalBeforeProcessing * fees.paystackProcessingPercent) + fees.paystackProcessingFixed;
+  }
+  
+  // 4. Add per-order processing fixed fee
+  processingFee += fees.processingFeeFixedPerOrder;
+  
+  return {
+    serviceFee: Math.round(serviceFee * 100) / 100,
+    processingFee: Math.round(processingFee * 100) / 100,
+    totalFee: Math.round((serviceFee + processingFee) * 100) / 100,
+    // For display to buyer (combined as "Service Fee")
+    displayFee: Math.round((serviceFee + processingFee) * 100) / 100
+  };
 };

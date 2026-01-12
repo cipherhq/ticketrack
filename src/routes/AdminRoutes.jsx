@@ -3,6 +3,7 @@ import { AdminLayout } from '@/layouts/AdminLayout';
 import { AdminProvider } from '@/contexts/AdminContext';
 import { AdminDashboard } from '@/pages/admin/AdminDashboard';
 import { AdminKYC } from '@/pages/admin/AdminKYC';
+import { AdminKYCReview } from '@/pages/admin/AdminKYCReview';
 import { AdminEvents } from '@/pages/admin/AdminEvents';
 import { AdminOrganizers } from '@/pages/admin/AdminOrganizers';
 import { AdminAttendees } from '@/pages/admin/AdminAttendees';
@@ -27,8 +28,9 @@ import AdminWhatsAppPackages from '@/pages/admin/AdminWhatsAppPackages';
 import AdminAdverts from '../pages/admin/AdminAdverts';
 import { AdminRoles } from '@/pages/admin/AdminRoles';
 import { AdminSettings } from '@/pages/admin/AdminSettings';
-import { AdminRefundSettings } from '@/pages/admin/AdminRefundSettings';
-import { AdminWaitlist } from '@/pages/admin/AdminWaitlist';
+import { AdminFeeManagement } from "@/pages/admin/AdminFeeManagement";
+import { AdminRefundSettings } from "@/pages/admin/AdminRefundSettings";
+import { AdminWaitlist } from "@/pages/admin/AdminWaitlist";
 import { AdminTransfers } from '@/pages/admin/AdminTransfers';
 import { AdminCategories } from '@/pages/admin/AdminCategories'; // NEW: Categories management
 import { Loader2 } from 'lucide-react';
@@ -90,6 +92,7 @@ export function AdminRoutes() {
           <Routes>
             <Route path="/" element={<AdminDashboard />} />
             <Route path="/kyc" element={<AdminKYC />} />
+            <Route path="/kyc-review" element={<AdminKYCReview />} />
             <Route path="/events" element={<AdminEvents />} />
             <Route path="/organizers" element={<AdminOrganizers />} />
             <Route path="/attendees" element={<AdminAttendees />} />
@@ -118,6 +121,7 @@ export function AdminRoutes() {
             <Route path="/transfers" element={<AdminTransfers />} />
             <Route path="/categories" element={<AdminCategories />} />  {/* NEW: Categories route */}
             <Route path="/settings" element={<AdminSettings />} />
+            <Route path="/fees" element={<AdminFeeManagement />} />
             <Route path="/refund-settings" element={<AdminRefundSettings />} />
           </Routes>
         </AdminLayout>

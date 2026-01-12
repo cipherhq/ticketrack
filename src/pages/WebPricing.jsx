@@ -129,7 +129,7 @@ export function WebPricing() {
         
         // Get the two public-facing fees
         const percentage = parseFloat(country.service_fee_percentage || 0);
-        const flatFee = parseFloat(country.service_fee_fixed || 0);
+        const flatFee = parseFloat(country.service_fee_fixed_per_ticket || 0);
         
         pricing[country.code] = {
           country: country.name,
@@ -141,6 +141,7 @@ export function WebPricing() {
           flatFee: flatFee.toString(),
           flatFeeValue: flatFee,
           paymentProvider: country.payment_provider,
+          cap: country.service_fee_cap ? parseFloat(country.service_fee_cap) : null,
           savings: 'Best Value'
         };
       });
@@ -259,7 +260,11 @@ export function WebPricing() {
                     </>
                   )}
                 </div>
-                <p className="text-gray-500 mb-6">per ticket sold</p>
+                <p className="text-gray-500 mb-2">per ticket sold</p>
+                {pricing.cap && (
+                  <p className="text-sm text-gray-400 mb-6">Capped at {pricing.currency}{pricing.cap} per order</p>
+                )}
+                {!pricing.cap && <div className="mb-6"></div>}
                 
                 <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 rounded-full px-4 py-2 mb-6">
                   <Zap className="w-4 h-4" />

@@ -32,6 +32,7 @@ export function WebEventDetails() {
   
   const [selectedTickets, setSelectedTickets] = useState(location.state?.selectedTickets || {})
   const [isFavorite, setIsFavorite] = useState(false)
+  const [savingFavorite, setSavingFavorite] = useState(false)
   const [childEvents, setChildEvents] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
   const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
@@ -71,6 +72,71 @@ export function WebEventDetails() {
       loadEvent()
     }
   }, [id])
+
+  // Check if user has saved this event
+  useEffect(() => {
+    async function checkIfSaved() {
+      if (!user || !event) return
+      
+      try {
+        const { data, error } = await supabase
+          .from('saved_events')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('event_id', event.id)
+          .single()
+        
+        if (data && !error) {
+          setIsFavorite(true)
+        }
+      } catch (err) {
+        // Not saved - that's fine
+      }
+    }
+    
+    checkIfSaved()
+  }, [user, event])
+
+  // Toggle save/unsave event
+  const toggleFavorite = async () => {
+    if (!user) {
+      // Redirect to login if not logged in
+      navigate('/login', { state: { from: location.pathname } })
+      return
+    }
+    
+    if (!event) return
+    
+    setSavingFavorite(true)
+    try {
+      if (isFavorite) {
+        // Unsave the event
+        const { error } = await supabase
+          .from('saved_events')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('event_id', event.id)
+        
+        if (error) throw error
+        setIsFavorite(false)
+      } else {
+        // Save the event
+        const { error } = await supabase
+          .from('saved_events')
+          .insert({
+            user_id: user.id,
+            event_id: event.id
+          })
+        
+        if (error) throw error
+        setIsFavorite(true)
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err)
+    } finally {
+      setSavingFavorite(false)
+    }
+  }
 
   // Check if access has been granted for private events
   useEffect(() => {
@@ -404,10 +470,15 @@ export function WebEventDetails() {
               <Button 
                 variant="outline" 
                 size="icon" 
-                onClick={() => setIsFavorite(!isFavorite)} 
-                className={`rounded-xl ${isFavorite ? 'text-red-500 border-red-500' : ''}`}
+                onClick={toggleFavorite}
+                disabled={savingFavorite}
+                className={`rounded-xl ${isFavorite ? 'text-red-500 border-red-500 bg-red-50' : ''}`}
               >
-                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500' : ''}`} />
+                {savingFavorite ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500' : ''}`} />
+                )}
               </Button>
               <Button 
                 variant="outline" 
@@ -417,6 +488,38 @@ export function WebEventDetails() {
               >
                 <Share2 className="w-5 h-5" />
               </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Organizer */}
+          <div>
+            <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Organized By</h2>
+            <div 
+              className="flex items-center gap-4 cursor-pointer hover:bg-[#F4F6FA] p-4 rounded-xl -ml-4 transition-colors"
+              onClick={() => navigate(`/o/${event.organizer?.id}`)}
+            >
+              <div className="w-16 h-16 rounded-full bg-[#2969FF]/10 flex items-center justify-center overflow-hidden">
+                {event.organizer?.logo_url ? (
+                  <img 
+                    src={event.organizer.logo_url} 
+                    alt={event.organizer.business_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Users className="w-8 h-8 text-[#2969FF]" />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-[#0F0F0F]">{event.organizer?.business_name}</h3>
+                  {event.organizer?.is_verified && (
+                    <CheckCircle className="w-4 h-4 text-[#2969FF]" />
+                  )}
+                </div>
+                <p className="text-[#0F0F0F]/60">{event.organizer?.total_events || 0} events hosted</p>
+              </div>
             </div>
           </div>
 
@@ -751,35 +854,6 @@ export function WebEventDetails() {
 
           <Separator />
 
-          {/* Organizer */}
-          <div>
-            <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Organized By</h2>
-            <div 
-              className="flex items-center gap-4 cursor-pointer hover:bg-[#F4F6FA] p-4 rounded-xl -ml-4 transition-colors"
-              onClick={() => navigate(`/o/${event.organizer?.id}`)}
-            >
-              <div className="w-16 h-16 rounded-full bg-[#2969FF]/10 flex items-center justify-center overflow-hidden">
-                {event.organizer?.logo_url ? (
-                  <img 
-                    src={event.organizer.logo_url} 
-                    alt={event.organizer.business_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Users className="w-8 h-8 text-[#2969FF]" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-[#0F0F0F]">{event.organizer?.business_name}</h3>
-                  {event.organizer?.is_verified && (
-                    <CheckCircle className="w-4 h-4 text-[#2969FF]" />
-                  )}
-                </div>
-                <p className="text-[#0F0F0F]/60">{event.organizer?.total_events || 0} events hosted</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Ticket Sidebar */}
@@ -852,7 +926,7 @@ export function WebEventDetails() {
                                       : 'border-[#0F0F0F]/20 text-[#0F0F0F]/60'
                                   }`}
                                 >
-                                  {isLowStock ? '🔥 Few left' : `${remaining} left`}
+                                  {isLowStock ? <><AlertCircle className="w-3 h-3 inline mr-1" />Few left</> : `${remaining} left`}
                                 </Badge>
                               );
                             })()}

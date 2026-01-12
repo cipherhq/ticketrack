@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Loader2, RotateCcw, CheckCircle, XCircle, AlertCircle, Search, Filter, Eye, MessageSquare } from 'lucide-react';
+import { Loader2, RotateCcw, CheckCircle, XCircle, AlertCircle, Search, Filter, Eye, MessageSquare, CreditCard, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
@@ -22,6 +22,11 @@ export function OrganizerRefunds() {
   const [actionModal, setActionModal] = useState({ open: false, refund: null, action: null });
   const [actionNotes, setActionNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // Connect refund modal
+  const [connectRefundModal, setConnectRefundModal] = useState({ open: false, refund: null });
+  const [connectRefundNotes, setConnectRefundNotes] = useState('');
+  const [processingConnectRefund, setProcessingConnectRefund] = useState(false);
 
   useEffect(() => {
     if (organizer?.id) loadRefunds();
@@ -30,7 +35,7 @@ export function OrganizerRefunds() {
   const loadRefunds = async () => {
     setLoading(true);
     try {
-      // Fetch refund requests without joins (RLS issues with Support Mode)
+      // Fetch refund requests
       const { data: refundData, error: refundError } = await supabase
         .from('refund_requests')
         .select('*')
@@ -39,13 +44,13 @@ export function OrganizerRefunds() {
 
       if (refundError) throw refundError;
 
-      // Fetch related data separately to avoid RLS join issues
+      // Fetch related data separately
       const enrichedRefunds = [];
       for (const refund of (refundData || [])) {
-        let ticket = null, event = null, user = null;
+        let ticket = null, event = null, user = null, order = null;
         
         if (refund.ticket_id) {
-          const { data: t } = await supabase.from('tickets').select('id, ticket_code, attendee_name, attendee_email, total_price').eq('id', refund.ticket_id).maybeSingle();
+          const { data: t } = await supabase.from('tickets').select('id, ticket_code, attendee_name, attendee_email, total_price, order_id').eq('id', refund.ticket_id).maybeSingle();
           ticket = t;
         }
         if (refund.event_id) {
@@ -56,16 +61,31 @@ export function OrganizerRefunds() {
           const { data: u } = await supabase.from('profiles').select('full_name, email').eq('id', refund.user_id).maybeSingle();
           user = u;
         }
+        // Fetch order to check if it's a Connect order
+        if (refund.order_id) {
+          const { data: o } = await supabase.from('orders').select('id, is_stripe_connect, stripe_account_id, payment_reference').eq('id', refund.order_id).maybeSingle();
+          order = o;
+        } else if (ticket?.order_id) {
+          const { data: o } = await supabase.from('orders').select('id, is_stripe_connect, stripe_account_id, payment_reference').eq('id', ticket.order_id).maybeSingle();
+          order = o;
+        }
         
-        enrichedRefunds.push({ ...refund, ticket, event, user });
+        enrichedRefunds.push({ 
+          ...refund, 
+          ticket, 
+          event, 
+          user, 
+          order,
+          isStripeConnect: order?.is_stripe_connect || refund.is_stripe_connect || false
+        });
       }
 
       setRefunds(enrichedRefunds);
 
       // Calculate stats
-      const pending = enrichedRefunds?.filter(r => r.status === 'pending' && !r.refund_reference).length || 0;
-      const approved = enrichedRefunds?.filter(r => r.refund_reference).length || 0;
-      const rejected = enrichedRefunds?.filter(r => r.status === 'rejected').length || 0;
+      const pending = enrichedRefunds?.filter(r => r.status === 'pending' || (r.organizer_decision === 'pending' && !r.refund_reference && !r.stripe_refund_id)).length || 0;
+      const approved = enrichedRefunds?.filter(r => r.refund_reference || r.stripe_refund_id || r.status === 'completed').length || 0;
+      const rejected = enrichedRefunds?.filter(r => r.status === 'rejected' || r.organizer_decision === 'rejected').length || 0;
       setStats({ pending, approved, rejected, total: enrichedRefunds?.length || 0 });
     } catch (error) {
       console.error('Error loading refunds:', error);
@@ -74,6 +94,7 @@ export function OrganizerRefunds() {
     }
   };
 
+  // Standard approve/reject action (for non-Connect orders)
   const handleAction = async (action) => {
     setActionLoading(true);
     try {
@@ -127,22 +148,114 @@ export function OrganizerRefunds() {
     }
   };
 
+  // Process Connect refund directly
+  const handleConnectRefund = async () => {
+    setProcessingConnectRefund(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-stripe-connect-refund', {
+        body: {
+          refundRequestId: connectRefundModal.refund.id,
+          organizerId: organizer.id,
+          notes: connectRefundNotes.trim() || null,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      // Success
+      setConnectRefundModal({ open: false, refund: null });
+      setConnectRefundNotes('');
+      loadRefunds();
+      
+      alert(`Refund processed successfully! Refund ID: ${data.refundId}`);
+    } catch (error) {
+      console.error('Error processing Connect refund:', error);
+      alert(`Failed to process refund: ${error.message}`);
+    } finally {
+      setProcessingConnectRefund(false);
+    }
+  };
+
+  // Reject Connect refund (just update status, no Stripe action)
+  const handleRejectConnectRefund = async () => {
+    setProcessingConnectRefund(true);
+    try {
+      const { error } = await supabase
+        .from('refund_requests')
+        .update({
+          organizer_decision: 'rejected',
+          organizer_notes: connectRefundNotes.trim() || null,
+          organizer_decided_at: new Date().toISOString(),
+          organizer_decided_by: organizer.user_id,
+          status: 'rejected'
+        })
+        .eq('id', connectRefundModal.refund.id);
+
+      if (error) throw error;
+
+      // Send rejection email
+      try {
+        const refund = connectRefundModal.refund;
+        await supabase.functions.invoke('send-email', {
+          body: {
+            type: 'refund_rejected',
+            to: refund.ticket?.attendee_email,
+            data: {
+              attendeeName: refund.ticket?.attendee_name,
+              eventTitle: refund.event?.title,
+              refundAmount: refund.amount,
+              organizerNotes: connectRefundNotes.trim() || null,
+            }
+          }
+        });
+      } catch (emailErr) {
+        console.error('Failed to send email:', emailErr);
+      }
+
+      setConnectRefundModal({ open: false, refund: null });
+      setConnectRefundNotes('');
+      loadRefunds();
+    } catch (error) {
+      console.error('Error rejecting refund:', error);
+      alert('Failed to reject refund request');
+    } finally {
+      setProcessingConnectRefund(false);
+    }
+  };
+
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
     });
   };
 
-  const getStatusBadge = (decision) => {
-    switch (decision) {
-      case 'approved': return <Badge className="bg-green-100 text-green-700">Approved</Badge>;
+  const getStatusBadge = (refund) => {
+    if (refund.stripe_refund_id || refund.status === 'completed') {
+      return <Badge className="bg-green-100 text-green-700">Refunded</Badge>;
+    }
+    if (refund.refund_reference) {
+      return <Badge className="bg-green-100 text-green-700">Processed</Badge>;
+    }
+    switch (refund.organizer_decision || refund.status) {
+      case 'approved': return <Badge className="bg-blue-100 text-blue-700">Approved</Badge>;
       case 'rejected': return <Badge className="bg-red-100 text-red-700">Rejected</Badge>;
       default: return <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>;
     }
   };
 
+  const isPending = (refund) => {
+    return !refund.stripe_refund_id && 
+           !refund.refund_reference && 
+           refund.status !== 'completed' && 
+           refund.status !== 'rejected' &&
+           refund.organizer_decision !== 'rejected';
+  };
+
   const filteredRefunds = refunds.filter(r => {
-    if (filter !== 'all' && r.organizer_decision !== filter) return false;
+    if (filter === 'pending' && !isPending(r)) return false;
+    if (filter === 'approved' && !r.stripe_refund_id && !r.refund_reference && r.organizer_decision !== 'approved') return false;
+    if (filter === 'rejected' && r.organizer_decision !== 'rejected' && r.status !== 'rejected') return false;
     if (search) {
       const s = search.toLowerCase();
       return (
@@ -161,7 +274,6 @@ export function OrganizerRefunds() {
     paginatedItems: paginatedRefunds, handlePageChange, setCurrentPage 
   } = usePagination(filteredRefunds, 20);
   
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [filter, search]);
@@ -204,7 +316,7 @@ export function OrganizerRefunds() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Approved</p>
+                <p className="text-sm text-[#0F0F0F]/60">Processed</p>
                 <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500/30" />
@@ -254,7 +366,7 @@ export function OrganizerRefunds() {
           <SelectContent>
             <SelectItem value="all">All Requests</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="approved">Processed</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
@@ -291,12 +403,19 @@ export function OrganizerRefunds() {
                           <h3 className="font-medium text-[#0F0F0F] truncate">{refund.event?.title}</h3>
                           <p className="text-sm text-[#0F0F0F]/60">{refund.ticket?.attendee_name} • {refund.ticket?.attendee_email}</p>
                         </div>
-                        {getStatusBadge(refund)}
+                        <div className="flex items-center gap-2">
+                          {refund.isStripeConnect && (
+                            <Badge className="bg-purple-100 text-purple-700">
+                              <CreditCard className="w-3 h-3 mr-1" />Connect
+                            </Badge>
+                          )}
+                          {getStatusBadge(refund)}
+                        </div>
                       </div>
                       
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                         <span className="text-[#0F0F0F]/60">Requested: {formatDate(refund.created_at)}</span>
-                        <span className="text-[#0F0F0F]/60">Amount: <span className="text-[#0F0F0F] font-medium">{formatPrice(refund.amount, refund.currency)}</span></span>
+                        <span className="text-[#0F0F0F]/60">Amount: <span className="text-[#0F0F0F] font-medium">{formatPrice(refund.amount || refund.refund_amount, refund.currency)}</span></span>
                       </div>
 
                       {/* Reason */}
@@ -308,33 +427,57 @@ export function OrganizerRefunds() {
                     </div>
 
                     {/* Actions */}
-                    {refund.organizer_decision === 'pending' && (
+                    {isPending(refund) && (
                       <div className="flex gap-2 flex-shrink-0">
-                        <Button
-                          size="sm"
-                          className="bg-green-500 hover:bg-green-600 text-white rounded-xl"
-                          onClick={() => setActionModal({ open: true, refund, action: 'approved' })}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" /> Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-red-300 text-red-600 hover:bg-red-50 rounded-xl"
-                          onClick={() => setActionModal({ open: true, refund, action: 'rejected' })}
-                        >
-                          <XCircle className="w-4 h-4 mr-1" /> Reject
-                        </Button>
+                        {refund.isStripeConnect ? (
+                          // Connect organizer: Process refund directly
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+                              onClick={() => setConnectRefundModal({ open: true, refund, action: 'process' })}
+                            >
+                              <Zap className="w-4 h-4 mr-1" /> Process Refund
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-300 text-red-600 hover:bg-red-50 rounded-xl"
+                              onClick={() => setConnectRefundModal({ open: true, refund, action: 'reject' })}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" /> Reject
+                            </Button>
+                          </>
+                        ) : (
+                          // Non-Connect: Standard approve/reject flow
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-green-500 hover:bg-green-600 text-white rounded-xl"
+                              onClick={() => setActionModal({ open: true, refund, action: 'approved' })}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-300 text-red-600 hover:bg-red-50 rounded-xl"
+                              onClick={() => setActionModal({ open: true, refund, action: 'rejected' })}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" /> Reject
+                            </Button>
+                          </>
+                        )}
                       </div>
                     )}
 
-                    {refund.organizer_decision !== 'pending' && refund.organizer_notes && (
+                    {!isPending(refund) && (refund.organizer_notes || refund.admin_notes) && (
                       <div className="flex-shrink-0">
                         <Button
                           size="sm"
                           variant="ghost"
                           className="rounded-xl text-[#0F0F0F]/60"
-                          onClick={() => alert('Notes: ' + refund.organizer_notes)}
+                          onClick={() => alert('Notes: ' + (refund.organizer_notes || refund.admin_notes))}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" /> View Notes
                         </Button>
@@ -359,7 +502,7 @@ export function OrganizerRefunds() {
         </CardContent>
       </Card>
 
-      {/* Action Modal */}
+      {/* Standard Action Modal (Non-Connect) */}
       <Dialog open={actionModal.open} onOpenChange={(o) => { if(!o) { setActionModal({ open: false, refund: null, action: null }); setActionNotes(''); }}}>
         <DialogContent className="rounded-2xl max-w-md">
           <DialogHeader>
@@ -378,7 +521,7 @@ export function OrganizerRefunds() {
                 <p className="font-medium">{actionModal.refund.ticket?.attendee_name}</p>
                 <p className="text-sm text-[#0F0F0F]/60">{actionModal.refund.event?.title}</p>
                 <p className="text-sm font-medium text-[#2969FF] mt-1">
-                  Refund: {formatPrice(actionModal.refund.amount, actionModal.refund.currency)}
+                  Refund: {formatPrice(actionModal.refund.amount || actionModal.refund.refund_amount, actionModal.refund.currency)}
                 </p>
               </div>
 
@@ -400,7 +543,7 @@ export function OrganizerRefunds() {
               {actionModal.action === 'approved' && (
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
                   <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> Approving this request will mark it for processing. The actual refund will be processed by the platform admin.
+                    <strong>Note:</strong> Approving this request will mark it for processing. The actual refund will be processed by the finance team.
                   </p>
                 </div>
               )}
@@ -418,9 +561,84 @@ export function OrganizerRefunds() {
                 ? "bg-green-500 hover:bg-green-600 text-white rounded-xl"
                 : "bg-red-500 hover:bg-red-600 text-white rounded-xl"}
             >
-              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                actionModal.action === 'approved' ? 'Confirm Approval' : 'Confirm Rejection'
+              {actionLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {actionModal.action === 'approved' ? 'Approve' : 'Reject'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Connect Refund Modal */}
+      <Dialog open={connectRefundModal.open} onOpenChange={(o) => { if(!o) { setConnectRefundModal({ open: false, refund: null }); setConnectRefundNotes(''); }}}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {connectRefundModal.action === 'process' ? (
+                <><Zap className="w-5 h-5 text-purple-500" /> Process Refund</>
+              ) : (
+                <><XCircle className="w-5 h-5 text-red-500" /> Reject Refund</>
               )}
+            </DialogTitle>
+            <DialogDescription>
+              {connectRefundModal.action === 'process' 
+                ? "This will immediately refund the customer from your Stripe Connect balance."
+                : "This will reject the refund request without processing a refund."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {connectRefundModal.refund && (
+            <div className="space-y-4">
+              <div className="p-3 bg-[#F4F6FA] rounded-xl">
+                <p className="font-medium">{connectRefundModal.refund.ticket?.attendee_name}</p>
+                <p className="text-sm text-[#0F0F0F]/60">{connectRefundModal.refund.event?.title}</p>
+                <p className="text-sm font-medium text-purple-600 mt-1">
+                  Refund: {formatPrice(connectRefundModal.refund.amount || connectRefundModal.refund.refund_amount, connectRefundModal.refund.currency)}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-[#0F0F0F]">
+                  Notes {connectRefundModal.action === 'reject' ? '(recommended)' : '(optional)'}
+                </label>
+                <Textarea
+                  value={connectRefundNotes}
+                  onChange={(e) => setConnectRefundNotes(e.target.value)}
+                  placeholder={connectRefundModal.action === 'process' 
+                    ? "Any notes for the attendee..." 
+                    : "Please explain why this refund was rejected..."}
+                  className="mt-1 rounded-xl resize-none"
+                  rows={3}
+                />
+              </div>
+
+              {connectRefundModal.action === 'process' && (
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl">
+                  <p className="text-sm text-purple-800">
+                    <strong>⚡ Stripe Connect:</strong> This refund will be processed immediately from your Stripe balance. The platform fee will also be refunded. This action cannot be undone.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => { setConnectRefundModal({ open: false, refund: null }); setConnectRefundNotes(''); }} 
+              className="rounded-xl"
+              disabled={processingConnectRefund}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={connectRefundModal.action === 'process' ? handleConnectRefund : handleRejectConnectRefund}
+              disabled={processingConnectRefund}
+              className={connectRefundModal.action === 'process'
+                ? "bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+                : "bg-red-500 hover:bg-red-600 text-white rounded-xl"}
+            >
+              {processingConnectRefund && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {connectRefundModal.action === 'process' ? 'Process Refund' : 'Reject'}
             </Button>
           </DialogFooter>
         </DialogContent>

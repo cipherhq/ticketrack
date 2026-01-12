@@ -1,10 +1,10 @@
-import { getFeesByCurrency, getOrganizerFees, DEFAULT_FEES } from '@/config/fees'
+import { getOrganizerFees, DEFAULT_FEES, calculateFees } from '@/config/fees'
 import { getPaymentProvider, getProviderInfo, initStripeCheckout, initPayPalCheckout } from '@/config/payments'
 import { formatPrice } from '@/config/currencies'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, Clock, Tag, X } from 'lucide-react'
+import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, Clock, Tag, X, User, UserCheck, Mail, Phone } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -274,6 +274,7 @@ export function WebCheckout() {
     firstName: '',
     lastName: ''
   })
+  const [buyingForSelf, setBuyingForSelf] = useState(true)
   const [customFields, setCustomFields] = useState([])
   const [customFieldResponses, setCustomFieldResponses] = useState({})
   
@@ -288,7 +289,7 @@ export function WebCheckout() {
   const [timeLeft, setTimeLeft] = useState(300)
   const [timerExpired, setTimerExpired] = useState(false)
   const [error, setError] = useState(null)
-  const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
+  const [fees, setFees] = useState(DEFAULT_FEES)
   const [paymentProvider, setPaymentProvider] = useState('paystack')
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState([{ id: 'card', icon: 'CreditCard', label: 'Card' }])
 
@@ -352,8 +353,8 @@ export function WebCheckout() {
     async function loadFees() {
       if (event?.currency) {
         const organizerId = event?.organizer?.id;
-        const fees = await getOrganizerFees(organizerId, event.currency);
-        setFeeRate(fees.serviceFee);
+        const loadedFees = await getOrganizerFees(organizerId, event.currency);
+        setFees(loadedFees);
       }
     }
     loadFees();
@@ -431,7 +432,9 @@ export function WebCheckout() {
 
   if (!event) return null
 
-  const serviceFee = Math.round(totalAmount * feeRate)
+  const ticketCount = Object.values(selectedTickets).reduce((sum, qty) => sum + (qty || 0), 0)
+  const feeProvider = ["NGN", "GHS"].includes(event?.currency) ? "paystack" : "stripe"
+  const { displayFee: serviceFee } = calculateFees(totalAmount, ticketCount, fees, feeProvider)
   const discountAmount = promoApplied?.discountAmount || 0
   const finalTotal = totalAmount + serviceFee - discountAmount
 
@@ -1084,25 +1087,95 @@ const formatDate = (dateString) => {
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardHeader><CardTitle className="text-[#0F0F0F]">Contact Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input id="firstName" placeholder="John" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
+              {/* Toggle: Buying for self or someone else */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBuyingForSelf(true)}
+                  className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                    buyingForSelf 
+                      ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]' 
+                      : 'border-[#0F0F0F]/10 text-[#0F0F0F]/60 hover:border-[#0F0F0F]/20'
+                  }`}
+                >
+                  <UserCheck className="w-5 h-5" />
+                  <span className="font-medium">Tickets are for me</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBuyingForSelf(false)}
+                  className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                    !buyingForSelf 
+                      ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]' 
+                      : 'border-[#0F0F0F]/10 text-[#0F0F0F]/60 hover:border-[#0F0F0F]/20'
+                  }`}
+                >
+                  <User className="w-5 h-5" />
+                  <span className="font-medium">Buying for someone else</span>
+                </button>
+              </div>
+
+              {buyingForSelf ? (
+                /* Read-only profile display for fast checkout */
+                <div className="space-y-3 p-4 bg-[#F4F6FA] rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-semibold">
+                      {formData.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#0F0F0F]">
+                        {formData.firstName && formData.lastName 
+                          ? `${formData.firstName} ${formData.lastName}` 
+                          : 'Complete your profile'}
+                      </p>
+                      <p className="text-sm text-[#0F0F0F]/60">Ticket holder</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 text-sm">
+                      <Mail className="w-4 h-4 text-[#0F0F0F]/40" />
+                      <span className="text-[#0F0F0F]">{formData.email || 'No email set'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <Phone className="w-4 h-4 text-[#0F0F0F]/40" />
+                      <span className="text-[#0F0F0F]">{formData.phone || 'No phone set'}</span>
+                    </div>
+                  </div>
+                  {(!formData.firstName || !formData.lastName || !formData.email) && (
+                    <p className="text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">
+                      ⚠️ Please complete your profile to continue checkout
+                    </p>
+                  )}
+                  <p className="text-xs text-[#0F0F0F]/50">Tickets will be sent to your email address</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input id="lastName" placeholder="Doe" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
+              ) : (
+                /* Editable form for buying for someone else */
+                <div className="space-y-4">
+                  <div className="p-3 bg-blue-50 rounded-xl text-sm text-blue-700">
+                    💡 Enter the ticket recipient's details below. They will receive the tickets.
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name *</Label>
+                      <Input id="firstName" placeholder="John" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name *</Label>
+                      <Input id="lastName" placeholder="Doe" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input id="email" type="email" placeholder="their@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
+                    <p className="text-sm text-[#0F0F0F]/60">Tickets will be sent to this email</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <PhoneInput value={formData.phone} onChange={(phone) => setFormData({ ...formData, phone })} />
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input id="email" type="email" placeholder="your@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
-                <p className="text-sm text-[#0F0F0F]/60">Tickets will be sent to this email</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <PhoneInput value={formData.phone} onChange={(phone) => setFormData({ ...formData, phone })} />
-              </div>
+              )}
             </CardContent>
           </Card>
 

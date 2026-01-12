@@ -1,764 +1,312 @@
-// Ticketrack Email Service - Supabase Edge Function
-// Handles all platform email notifications via Resend
+// Ticketrack Email Service - Secured Edge Function v2
+// Full implementation with 55+ email templates
+// Security: JWT auth, CORS whitelist, rate limiting, permission matrix
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const FROM_EMAIL = 'Ticketrack <tickets@ticketrack.com>'
-const BRAND_COLOR = '#2969FF'
-const BRAND_NAME = 'Ticketrack'
-
-// Supabase client for logging communications
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 
-// Email Types
-type EmailType = 
-  | 'welcome' | 'email_verification' | 'password_reset' | 'ticket_purchase'
-  | 'ticket_cancelled' | 'ticket_refunded' | 'event_reminder' | 'event_cancelled'
-  | 'event_updated' | 'ticket_transfer' | 'organizer_welcome' | 'new_ticket_sale'
-  | 'daily_sales_summary' | 'event_published' | 'event_cancelled_organizer'
-  | 'payout_processed' | 'sms_units_purchased' | 'low_ticket_alert'
-  | 'event_reminder_organizer' | 'refund_request' | 'post_event_summary'
-  | 'promoter_commission' | 'promoter_payout' | 'promo_code_used' | 'promoter_invite' | 'promoter_accepted'
-  | 'admin_new_organizer' | 'admin_new_event' | 'admin_flagged_content' | 'admin_daily_stats'
-  | 'waitlist_joined' | 'waitlist_available' | 'refund_approved' | 'refund_rejected'
-  | 'event_reminder_24h' | 'event_reminder_1h'
+const FROM_EMAIL = 'Ticketrack <tickets@ticketrack.com>'
+const SECURITY_EMAIL = 'Ticketrack Security <security@ticketrack.com>'
+const BRAND_COLOR = '#2969FF'
+const BRAND_NAME = 'Ticketrack'
+const APP_URL = 'https://ticketrack.com'
 
-interface EmailRequest {
-  type: EmailType
-  to: string
-  data: Record<string, any>
-  attachments?: Array<{ filename: string; content: string; type: string }>
-  // Optional tracking fields for communication_logs
-  userId?: string
-  eventId?: string
-  ticketId?: string
-  orderId?: string
-  waitlistId?: string
-  skipLogging?: boolean  // Set true to skip logging (for internal/test emails)
+const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173']
+const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000, security: 100 }
+
+type AuthLevel = 'SYSTEM_ONLY' | 'USER_AUTH' | 'ORGANIZER_AUTH' | 'ADMIN_AUTH' | 'FINANCE_AUTH'
+
+const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; fromEmail?: string }> = {
+  // System-only emails
+  welcome: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  email_verification: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  password_reset: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  ticket_purchase: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  ticket_cancelled: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  ticket_refunded: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  event_cancelled: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  event_updated: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  ticket_transfer_sent: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  ticket_transfer_received: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  event_reminder: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  event_reminder_24h: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  event_reminder_1h: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  waitlist_joined: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  waitlist_available: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  refund_request_submitted: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  refund_approved: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  refund_rejected: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  refund_processed: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  payout_processed: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  stripe_connect_activated: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  stripe_connect_payout_initiated: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  kyc_verified: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  kyc_action_required: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  kyc_rejected: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  promoter_commission: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  promoter_payout: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  affiliate_commission_earned: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  affiliate_payout_processed: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  daily_sales_summary: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  admin_daily_stats: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  // Security emails (system-only, red header)
+  password_changed: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  login_new_device: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  profile_updated: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  bank_account_added: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  bank_account_updated: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  bank_account_removed: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  bank_account_verified: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  bank_change_confirmation: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  suspicious_activity: { auth: 'SYSTEM_ONLY', rateKey: 'security', fromEmail: SECURITY_EMAIL },
+  // User auth emails
+  support_ticket_created: { auth: 'USER_AUTH', rateKey: 'standard' },
+  new_follower: { auth: 'USER_AUTH', rateKey: 'standard' },
+  following_organizer: { auth: 'USER_AUTH', rateKey: 'standard' },
+  // Organizer auth emails
+  organizer_welcome: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  new_ticket_sale: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  low_ticket_alert: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  event_published: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  event_cancelled_organizer: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  event_reminder_organizer: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  refund_request: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  post_event_summary: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  sms_units_purchased: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  whatsapp_credits_purchased: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  low_sms_balance: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  team_invitation: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  team_member_removed: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  promoter_invite: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  promoter_accepted: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  promo_code_used: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  promo_code_created: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  post_event_thank_you: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
+  post_event_feedback: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
+  post_event_next_event: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
+  bulk_campaign: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
+  event_draft_reminder: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  // Admin auth emails
+  admin_new_organizer: { auth: 'ADMIN_AUTH', rateKey: 'standard' },
+  admin_new_event: { auth: 'ADMIN_AUTH', rateKey: 'standard' },
+  admin_flagged_content: { auth: 'ADMIN_AUTH', rateKey: 'standard' },
+  support_ticket_reply: { auth: 'ADMIN_AUTH', rateKey: 'standard' },
+  support_ticket_resolved: { auth: 'ADMIN_AUTH', rateKey: 'standard' },
+  admin_broadcast: { auth: 'ADMIN_AUTH', rateKey: 'admin_broadcast' },
 }
 
+// Helpers
 function formatCurrency(amount: number, currency = 'NGN'): string {
-  return new Intl.NumberFormat('en-NG', { style: 'currency', currency }).format(amount)
+  const symbols: Record<string, string> = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: '₵', KES: 'KSh', ZAR: 'R' }
+  return (symbols[currency] || currency + ' ') + new Intl.NumberFormat('en-US').format(amount)
+}
+function formatDate(d: string): string { return new Date(d).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }
+function formatTime(d: string): string { return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) }
+function formatDateTime(d: string): string { return new Date(d).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) }
+function maskBank(n: string): string { return n?.length > 4 ? '****' + n.slice(-4) : '****' }
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  return { 'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0], 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Content-Type': 'application/json' }
 }
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+// Auth
+async function getAuthContext(req: Request) {
+  const authHeader = req.headers.get('Authorization')
+  if (authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY)) return { userId: null, isAdmin: true, isFinance: true, organizerIds: [] as string[], isServiceRole: true }
+  if (!authHeader?.startsWith('Bearer ')) return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } })
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+  const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const [{ data: profile }, { data: orgs }, { data: fin }] = await Promise.all([
+    svc.from('profiles').select('is_admin').eq('id', user.id).single(),
+    svc.from('organizers').select('id').eq('user_id', user.id),
+    svc.from('finance_users').select('id').eq('user_id', user.id).eq('is_active', true).single()
+  ])
+  return { userId: user.id, isAdmin: profile?.is_admin === true, isFinance: !!fin, organizerIds: orgs?.map(o => o.id) || [], isServiceRole: false }
 }
 
-function formatTime(dateString: string): string {
-  return new Date(dateString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+async function checkAuth(type: string, auth: any, req: any) {
+  const perm = EMAIL_PERMISSIONS[type]
+  if (!perm) return { ok: false, err: `Unknown email type: ${type}` }
+  if (perm.auth === 'SYSTEM_ONLY' && !auth.isServiceRole) return { ok: false, err: 'System only' }
+  if (perm.auth === 'USER_AUTH' && !auth.userId && !auth.isServiceRole) return { ok: false, err: 'Auth required' }
+  if (perm.auth === 'ORGANIZER_AUTH' && !auth.isServiceRole && !auth.isAdmin) {
+    if (!auth.userId) return { ok: false, err: 'Auth required' }
+    if (req.organizerId && !auth.organizerIds.includes(req.organizerId)) return { ok: false, err: 'Not your organizer' }
+    if (!auth.organizerIds.length) return { ok: false, err: 'Organizer account required' }
+  }
+  if (perm.auth === 'ADMIN_AUTH' && !auth.isAdmin && !auth.isServiceRole) return { ok: false, err: 'Admin required' }
+  return { ok: true }
 }
 
+async function checkRateLimit(supabase: any, userId: string | null, type: string, count: number) {
+  if (!userId) return { ok: true }
+  const perm = EMAIL_PERMISSIONS[type]
+  const rateKey = perm?.rateKey || 'standard'
+  const limit = RATE_LIMITS[rateKey as keyof typeof RATE_LIMITS] || 50
+  const windowMs = rateKey === 'standard' || rateKey === 'security' ? 3600000 : 86400000
+  const { data } = await supabase.from('email_rate_limits').select('count').eq('user_id', userId).eq('rate_key', rateKey).gte('window_start', new Date(Date.now() - windowMs).toISOString()).single()
+  const current = data?.count || 0
+  if (current + count > limit) return { ok: false, err: `Rate limit: ${limit} per ${rateKey === 'standard' ? 'hour' : 'day'}` }
+  const ws = new Date(); ws.setMinutes(0, 0, 0)
+  await supabase.from('email_rate_limits').upsert({ user_id: userId, rate_key: rateKey, window_start: ws.toISOString(), count: current + count, updated_at: new Date().toISOString() }, { onConflict: 'user_id,rate_key,window_start' })
+  return { ok: true }
+}
+
+// Templates
 function baseTemplate(content: string, preheader = ''): string {
-  const LOGO_URL = 'https://ticketrack.com/ticketrackLogo.png'
-  const SOCIAL_TWITTER = 'https://twitter.com/ticketrack'
-  const SOCIAL_INSTAGRAM = 'https://instagram.com/ticketrack'
-  const SOCIAL_FACEBOOK = 'https://facebook.com/ticketrack'
-  
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>${BRAND_NAME}</title>
-  <!--[if mso]>
-  <noscript>
-    <xml>
-      <o:OfficeDocumentSettings>
-        <o:PixelsPerInch>96</o:PixelsPerInch>
-      </o:OfficeDocumentSettings>
-    </xml>
-  </noscript>
-  <![endif]-->
-  <style>
-    /* Reset */
-    body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    
-    /* Base */
-    body {
-      margin: 0 !important;
-      padding: 0 !important;
-      background-color: #f4f6fa;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    }
-    
-    /* Container */
-    .email-wrapper { width: 100%; background-color: #f4f6fa; padding: 40px 0; }
-    .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
-    
-    /* Header */
-    .header { 
-      background: linear-gradient(135deg, ${BRAND_COLOR} 0%, #1a4fd8 100%);
-      padding: 32px 24px;
-      text-align: center;
-    }
-    .logo { max-width: 180px; height: auto; margin-bottom: 8px; }
-    .header-tagline { color: rgba(255,255,255,0.9); font-size: 14px; margin: 0; }
-    
-    /* Content */
-    .content { padding: 40px 32px; }
-    .content h2 { color: #0f0f0f; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; }
-    .content p { color: #4a4a4a; font-size: 16px; line-height: 1.7; margin: 0 0 16px 0; }
-    .content ul { color: #4a4a4a; font-size: 16px; line-height: 1.8; padding-left: 24px; }
-    .content li { margin-bottom: 8px; }
-    
-    /* Button */
-    .button-wrapper { text-align: center; margin: 32px 0; }
-    .button {
-      display: inline-block;
-      background: linear-gradient(135deg, ${BRAND_COLOR} 0%, #1a4fd8 100%);
-      color: #ffffff !important;
-      padding: 16px 40px;
-      text-decoration: none;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 16px;
-      box-shadow: 0 4px 14px rgba(41, 105, 255, 0.4);
-      transition: all 0.2s;
-    }
-    .button:hover { box-shadow: 0 6px 20px rgba(41, 105, 255, 0.5); }
-    
-    /* Card */
-    .ticket-card {
-      background: linear-gradient(135deg, #f8f9fc 0%, #f4f6fa 100%);
-      border-radius: 16px;
-      padding: 20px;
-      margin: 24px 0;
-      border: 1px solid #e8eaf0;
-    }
-    .ticket-card h3 { color: ${BRAND_COLOR}; margin: 0 0 16px 0; font-size: 18px; }
-    .info-row { 
-      display: table;
-      width: 100%; 
-      justify-content: space-between; 
-      align-items: center;
-      padding: 12px 0; 
-      border-bottom: 1px solid #e8eaf0; 
-    }
-    .info-row:last-child { border-bottom: none; }
-    .info-label { color: #6b7280; font-size: 14px; }
-    .info-value { color: #0f0f0f; font-weight: 600; font-size: 14px; text-align: right; }
-    
-    /* Alert Boxes */
-    .highlight {
-      background: linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%);
-      padding: 20px;
-      border-radius: 12px;
-      margin: 24px 0;
-      border-left: 4px solid #f59e0b;
-    }
-    .highlight strong { color: #92400e; }
-    .highlight p { color: #92400e; margin: 8px 0 0 0; font-size: 14px; }
-    
-    .success {
-      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-      padding: 20px;
-      border-radius: 12px;
-      margin: 24px 0;
-      border-left: 4px solid #10b981;
-    }
-    .success strong { color: #065f46; }
-    .success p { color: #065f46; margin: 8px 0 0 0; font-size: 14px; }
-    
-    .warning {
-      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-      padding: 20px;
-      border-radius: 12px;
-      margin: 24px 0;
-      border-left: 4px solid #ef4444;
-    }
-    .warning strong { color: #991b1b; }
-    .warning p { color: #991b1b; margin: 8px 0 0 0; font-size: 14px; }
-    
-    /* Divider */
-    .divider { height: 1px; background: #e8eaf0; margin: 32px 0; }
-    
-    /* Footer */
-    .footer {
-      background: #f8f9fc;
-      padding: 32px;
-      text-align: center;
-      border-top: 1px solid #e8eaf0;
-    }
-    .footer-logo { max-width: 120px; margin-bottom: 16px; opacity: 0.8; }
-    .social-links { margin: 20px 0; }
-    .social-link {
-      display: inline-block;
-      width: 36px;
-      height: 36px;
-      background: #e8eaf0;
-      border-radius: 50%;
-      margin: 0 6px;
-      line-height: 36px;
-      text-decoration: none;
-    }
-    .footer-text { color: #6b7280; font-size: 12px; line-height: 1.6; margin: 0; }
-    .footer-links { margin-top: 16px; }
-    .footer-links a { color: #6b7280; text-decoration: none; font-size: 12px; margin: 0 12px; }
-    .footer-links a:hover { color: ${BRAND_COLOR}; }
-    
-    /* Position Badge */
-    .position-badge {
-      text-align: center;
-      padding: 24px 0;
-    }
-    .position-number {
-      font-size: 56px;
-      font-weight: 800;
-      color: ${BRAND_COLOR};
-      line-height: 1;
-    }
-    .position-label {
-      color: #6b7280;
-      font-size: 14px;
-      margin-top: 8px;
-    }
-    
-    /* Preheader */
-    .preheader {
-      display: none !important;
-      visibility: hidden;
-      mso-hide: all;
-      font-size: 1px;
-      line-height: 1px;
-      max-height: 0;
-      max-width: 0;
-      opacity: 0;
-      overflow: hidden;
-    }
-    
-    /* Responsive */
-    @media only screen and (max-width: 600px) {
-      .email-container { margin: 0 16px; border-radius: 12px; }
-      .content { padding: 24px 20px; }
-      .button { padding: 14px 32px; font-size: 15px; }
-      .ticket-card { padding: 20px; }
-    }
-  </style>
-</head>
-<body>
-  <div class="preheader">${preheader}</div>
-  <div class="email-wrapper">
-    <table role="presentation" class="email-container" width="100%" cellspacing="0" cellpadding="0">
-      <!-- Header -->
-      <tr>
-        <td class="header">
-          <img src="${LOGO_URL}" alt="${BRAND_NAME}" class="logo" onerror="this.style.display='none'">
-          <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">${BRAND_NAME}</h1>
-          <p class="header-tagline">Your Gateway to Amazing Events</p>
-        </td>
-      </tr>
-      
-      <!-- Content -->
-      <tr>
-        <td class="content">
-          ${content}
-        </td>
-      </tr>
-      
-      <!-- Footer -->
-      <tr>
-        <td class="footer">
-          <div class="social-links">
-            <a href="${SOCIAL_TWITTER}" class="social-link" style="color:#1da1f2;">𝕏</a>
-            <a href="${SOCIAL_INSTAGRAM}" class="social-link" style="color:#e4405f;">📷</a>
-            <a href="${SOCIAL_FACEBOOK}" class="social-link" style="color:#1877f2;">f</a>
-          </div>
-          <p class="footer-text">
-            © ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.<br>
-            Africa's premier event discovery and ticketing platform.
-          </p>
-          <div class="footer-links">
-            <a href="https://ticketrack.com/help">Help Center</a>
-            <a href="https://ticketrack.com/privacy">Privacy</a>
-            <a href="https://ticketrack.com/terms">Terms</a>
-          </div>
-        </td>
-      </tr>
-    </table>
-  </div>
-</body>
-</html>`
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>body{margin:0;padding:0;background:#f4f6fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}.wrap{width:100%;background:#f4f6fa;padding:40px 0}.container{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)}.header{background:linear-gradient(135deg,${BRAND_COLOR} 0%,#1a4fd8 100%);padding:32px 24px;text-align:center}.header h1{color:#fff;margin:0;font-size:28px;font-weight:800}.header p{color:rgba(255,255,255,.9);font-size:14px;margin:8px 0 0}.content{padding:40px 32px}.content h2{color:#0f0f0f;font-size:24px;font-weight:700;margin:0 0 16px}.content p{color:#4a4a4a;font-size:16px;line-height:1.7;margin:0 0 16px}.btn-wrap{text-align:center;margin:32px 0}.btn{display:inline-block;background:linear-gradient(135deg,${BRAND_COLOR} 0%,#1a4fd8 100%);color:#fff!important;padding:16px 40px;text-decoration:none;border-radius:12px;font-weight:600}.card{background:#f8f9fc;border-radius:16px;padding:20px;margin:24px 0;border:1px solid #e8eaf0}.card h3{color:${BRAND_COLOR};margin:0 0 16px;font-size:18px}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e8eaf0}.row:last-child{border-bottom:none}.row .label{color:#6b7280;font-size:14px}.row .value{color:#0f0f0f;font-weight:600;font-size:14px}.highlight{background:#fef9e7;padding:20px;border-radius:12px;margin:24px 0;border-left:4px solid #f59e0b}.success{background:#ecfdf5;padding:20px;border-radius:12px;margin:24px 0;border-left:4px solid #10b981}.warning{background:#fef2f2;padding:20px;border-radius:12px;margin:24px 0;border-left:4px solid #ef4444}.footer{background:#f8f9fc;padding:32px;text-align:center;border-top:1px solid #e8eaf0}.footer p{color:#6b7280;font-size:12px;margin:0}</style></head><body><div style="display:none">${preheader}</div><div class="wrap"><table class="container" width="100%" cellspacing="0" cellpadding="0"><tr><td class="header"><h1>${BRAND_NAME}</h1><p>Your Gateway to Amazing Events</p></td></tr><tr><td class="content">${content}</td></tr><tr><td class="footer"><p>&copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.</p></td></tr></table></div></body></html>`
 }
 
-const templates: Record<EmailType, (data: Record<string, any>) => { subject: string; html: string }> = {
-  welcome: (data) => ({
-    subject: `Welcome to ${BRAND_NAME}! 🎉`,
-    html: baseTemplate(`<h2>Welcome, ${data.firstName}! 👋</h2><p>We're thrilled to have you join ${BRAND_NAME} - Africa's premier event discovery and ticketing platform.</p><ul><li>🔍 Discover amazing events near you</li><li>🎫 Book tickets in seconds</li><li>❤️ Save events you're interested in</li><li>📱 Access your tickets anytime, anywhere</li></ul><a href="${data.appUrl}/events" class="button">Explore Events</a>`)
-  }),
-
-  email_verification: (data) => ({
-    subject: `Verify your ${BRAND_NAME} email`,
-    html: baseTemplate(`<h2>Verify Your Email</h2><p>Hi ${data.firstName},</p><p>Please verify your email address to complete your ${BRAND_NAME} registration.</p><a href="${data.verificationUrl}" class="button">Verify Email</a><p style="font-size:12px;color:#666;">This link expires in 24 hours.</p>`)
-  }),
-
-  password_reset: (data) => ({
-    subject: `Reset your ${BRAND_NAME} password`,
-    html: baseTemplate(`<h2>Password Reset Request</h2><p>Hi ${data.firstName},</p><p>Click below to reset your password:</p><a href="${data.resetUrl}" class="button">Reset Password</a><p style="font-size:12px;color:#666;">This link expires in 1 hour.</p>`)
-  }),
-
-  ticket_purchase: (data) => {
-    const eventDateObj = new Date(data.eventDate)
-    const endDateObj = new Date(eventDateObj.getTime() + 3 * 60 * 60 * 1000)
-    const calendarStart = eventDateObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-    const calendarEnd = endDateObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(data.eventTitle)}&dates=${calendarStart}/${calendarEnd}&location=${encodeURIComponent((data.venueName || '') + (data.city ? ', ' + data.city : ''))}`
-    const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent((data.venueName || '') + (data.city ? ', ' + data.city : ''))}`
-    const eventUrl = data.eventUrl || `${data.appUrl}/events`
-    const shareText = encodeURIComponent(`I'm going to ${data.eventTitle}!`)
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(eventUrl)}`
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(eventUrl)}`
-    const whatsappUrl = `https://wa.me/?text=${shareText}%20${encodeURIComponent(eventUrl)}`
-    return {
-      subject: `🎉 You're going to ${data.eventTitle}!`,
-      html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ticketrack</title></head><body style="margin:0;padding:0;background-color:#1a1a2e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#1a1a2e;"><tr><td style="padding:40px 20px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin:0 auto;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.3);"><tr><td style="background:linear-gradient(135deg,#0052CC 0%,#003d99 100%);padding:36px 40px;text-align:center;"><h1 style="color:#ffffff;font-size:32px;font-weight:800;margin:0 0 6px 0;letter-spacing:-0.5px;">Ticketrack</h1><p style="color:rgba(255,255,255,0.85);font-size:14px;margin:0;font-weight:500;">Your Gateway to Amazing Events</p></td></tr><tr><td style="padding:32px 40px 0 40px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td style="background:linear-gradient(135deg,#059669 0%,#047857 100%);border-radius:12px;padding:18px 20px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="vertical-align:middle;padding-right:14px;"><div style="width:36px;height:36px;background-color:rgba(255,255,255,0.2);border-radius:50%;text-align:center;line-height:36px;"><span style="color:white;font-size:20px;">✓</span></div></td><td style="vertical-align:middle;"><p style="margin:0;color:#ffffff;font-weight:700;font-size:17px;">Booking Confirmed!</p><p style="margin:4px 0 0 0;color:rgba(255,255,255,0.9);font-size:13px;">Your tickets are ready and attached below</p></td></tr></table></td></tr></table></td></tr><tr><td style="padding:28px 40px 0 40px;"><h2 style="color:#0f172a;font-size:26px;font-weight:800;margin:0 0 10px 0;">You're going to ${data.eventTitle}! 🎉</h2><p style="color:#475569;font-size:15px;margin:0;line-height:1.6;">Hi ${data.attendeeName}, your ticket purchase was successful. We can't wait to see you there!</p></td></tr><tr><td style="padding:24px 40px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#0f172a;border-radius:16px;overflow:hidden;">${data.eventImage ? `<tr><td><img src="${data.eventImage}" alt="Event" width="100%" style="display:block;height:150px;object-fit:cover;opacity:0.9;" /></td></tr>` : ''}<tr><td style="padding:24px;"><h3 style="color:#60a5fa;font-size:22px;font-weight:700;margin:0 0 20px 0;">${data.eventTitle}</h3><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:18px;"><tr><td width="50%" style="vertical-align:top;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="vertical-align:top;padding-right:12px;"><div style="width:42px;height:42px;background-color:#1e3a5f;border-radius:10px;text-align:center;line-height:42px;">📅</div></td><td style="vertical-align:top;"><p style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Date</p><p style="margin:5px 0 0 0;color:#f1f5f9;font-size:14px;font-weight:600;">${formatDate(data.eventDate)}</p></td></tr></table></td><td width="50%" style="vertical-align:top;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="vertical-align:top;padding-right:12px;"><div style="width:42px;height:42px;background-color:#1e3a5f;border-radius:10px;text-align:center;line-height:42px;">⏰</div></td><td style="vertical-align:top;"><p style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Time</p><p style="margin:5px 0 0 0;color:#f1f5f9;font-size:14px;font-weight:600;">${formatTime(data.eventDate)}</p></td></tr></table></td></tr></table><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:18px;"><tr><td><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="vertical-align:top;padding-right:12px;"><div style="width:42px;height:42px;background-color:#1e3a5f;border-radius:10px;text-align:center;line-height:42px;">📍</div></td><td style="vertical-align:top;"><p style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Venue</p><p style="margin:5px 0 0 0;color:#f1f5f9;font-size:14px;font-weight:600;">${data.venueName || 'TBA'}</p>${data.city ? `<p style="margin:3px 0 0 0;color:#94a3b8;font-size:13px;">${data.city}${data.country ? ', ' + data.country : ''}</p>` : ''}<a href="${mapsUrl}" style="color:#60a5fa;font-size:13px;text-decoration:none;display:inline-block;margin-top:8px;font-weight:600;">🗺️ Get Directions →</a></td></tr></table></td></tr></table><hr style="border:none;border-top:1px solid #334155;margin:20px 0;" /><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td width="50%" style="vertical-align:top;"><p style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">🎟️ Ticket</p><p style="margin:5px 0 0 0;color:#f1f5f9;font-size:15px;font-weight:700;">${data.ticketType} × ${data.quantity}</p></td><td width="50%" style="vertical-align:top;"><p style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">🧾 Order</p><p style="margin:5px 0 0 0;color:#f1f5f9;font-size:15px;font-weight:700;">${data.orderNumber}</p></td></tr></table><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:18px;"><tr><td style="padding:16px;background:#1e293b;border-radius:10px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td><p style="margin:0;color:#94a3b8;font-size:14px;font-weight:500;">Total Paid</p></td><td style="text-align:right;"><p style="margin:0;color:#34d399;font-size:22px;font-weight:800;">${data.isFree ? 'FREE' : formatCurrency(data.totalAmount, data.currency)}</p></td></tr></table></td></tr></table></td></tr></table></td></tr><tr><td style="padding:0 40px 24px 40px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td style="text-align:center;"><a href="${data.appUrl}/tickets" style="display:inline-block;background:linear-gradient(135deg,#0052CC 0%,#003d99 100%);color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:16px 48px;border-radius:12px;">View My Tickets</a></td></tr><tr><td style="text-align:center;padding-top:14px;"><a href="${calendarUrl}" style="display:inline-block;background:#f1f5f9;color:#0f172a;font-size:14px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:10px;">📅 Add to Calendar</a></td></tr></table></td></tr>${data.organizerName ? `<tr><td style="padding:0 40px 24px 40px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f8fafc;border-radius:14px;border:1px solid #e2e8f0;"><tr><td style="padding:20px 24px;"><p style="margin:0 0 14px 0;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;">Organized by</p><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="vertical-align:middle;padding-right:14px;"><img src="${data.organizerLogo || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(data.organizerName) + '&background=0052CC&color=fff&size=52&rounded=true&bold=true'}" alt="Organizer" width="52" height="52" style="border-radius:50%;" /></td><td style="vertical-align:middle;"><p style="margin:0;color:#0f172a;font-size:16px;font-weight:700;">${data.organizerName}</p>${data.organizerEmail ? '<p style="margin:4px 0 0 0;color:#64748b;font-size:13px;">' + data.organizerEmail + '</p>' : ''}</td></tr></table></td></tr></table></td></tr>` : ''}<tr><td style="padding:0 40px 24px 40px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#fef3c7;border-radius:14px;border:1px solid #fcd34d;"><tr><td style="padding:18px 20px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td style="vertical-align:top;padding-right:14px;"><span style="font-size:22px;">💡</span></td><td style="vertical-align:top;"><p style="margin:0;color:#78350f;font-size:14px;font-weight:700;">Pro Tip</p><p style="margin:5px 0 0 0;color:#92400e;font-size:13px;line-height:1.6;">Save or screenshot your ticket before the event. Your tickets are also attached to this email as a PDF.</p></td></tr></table></td></tr></table></td></tr><tr><td style="padding:0 40px 32px 40px;text-align:center;"><p style="margin:0 0 16px 0;color:#64748b;font-size:14px;font-weight:600;">Share this event with friends</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;"><tr><td style="padding:0 6px;"><a href="${twitterUrl}" style="display:inline-block;width:44px;height:44px;background:#0f172a;border-radius:50%;text-align:center;line-height:44px;text-decoration:none;"><span style="color:white;font-size:16px;font-weight:bold;">𝕏</span></a></td><td style="padding:0 6px;"><a href="${facebookUrl}" style="display:inline-block;width:44px;height:44px;background:#1877F2;border-radius:50%;text-align:center;line-height:44px;text-decoration:none;"><span style="color:white;font-size:18px;font-weight:bold;">f</span></a></td><td style="padding:0 6px;"><a href="${whatsappUrl}" style="display:inline-block;width:44px;height:44px;background:#25D366;border-radius:50%;text-align:center;line-height:44px;text-decoration:none;"><span style="color:white;font-size:18px;">💬</span></a></td></tr></table></td></tr><tr><td style="background:#0f172a;padding:36px 40px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td style="text-align:center;"><p style="margin:0 0 6px 0;color:#ffffff;font-size:20px;font-weight:800;">Ticketrack</p><p style="margin:0 0 20px 0;color:#94a3b8;font-size:13px;">Your gateway to amazing events worldwide.</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto 20px auto;"><tr><td style="padding:0 10px;"><a href="https://twitter.com/ticketrack" style="color:#94a3b8;text-decoration:none;font-size:13px;">Twitter</a></td><td style="padding:0 10px;color:#475569;">•</td><td style="padding:0 10px;"><a href="https://instagram.com/ticketrack" style="color:#94a3b8;text-decoration:none;font-size:13px;">Instagram</a></td><td style="padding:0 10px;color:#475569;">•</td><td style="padding:0 10px;"><a href="https://facebook.com/ticketrack" style="color:#94a3b8;text-decoration:none;font-size:13px;">Facebook</a></td></tr></table><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;"><tr><td style="padding:0 14px;"><a href="https://ticketrack.com/help" style="color:#60a5fa;text-decoration:none;font-size:13px;font-weight:600;">Help Center</a></td><td style="padding:0 14px;"><a href="https://ticketrack.com/privacy" style="color:#60a5fa;text-decoration:none;font-size:13px;font-weight:600;">Privacy</a></td><td style="padding:0 14px;"><a href="https://ticketrack.com/terms" style="color:#60a5fa;text-decoration:none;font-size:13px;font-weight:600;">Terms</a></td></tr></table><p style="margin:28px 0 0 0;color:#64748b;font-size:12px;">© 2026 Ticketrack. All rights reserved.</p><p style="margin:6px 0 0 0;color:#475569;font-size:11px;">You received this email because you purchased tickets on Ticketrack.</p></td></tr></table></td></tr></table></td></tr></table></body></html>`
-    }
-  },
-
-  ticket_cancelled: (data) => ({
-    subject: `Ticket Cancelled - ${data.eventTitle}`,
-    html: baseTemplate(`<h2>Ticket Cancellation Confirmed</h2><p>Hi ${data.attendeeName},</p><p>Your ticket for <strong>${data.eventTitle}</strong> has been cancelled.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Ticket Code</span><span class="info-value">${data.ticketCode}</span></div></div>${data.refundAmount ? `<div class="success"><strong>💰 Refund of ${formatCurrency(data.refundAmount)} is being processed.</strong></div>` : ''}<a href="${data.appUrl}/events" class="button">Browse Events</a>`)
-  }),
-
-  ticket_refunded: (data) => ({
-    subject: `Refund Processed - ${data.eventTitle}`,
-    html: baseTemplate(`<div class="success"><strong>💰 Refund Processed!</strong></div><h2>Your Refund is Complete</h2><p>Hi ${data.attendeeName},</p><p>Your refund for <strong>${data.eventTitle}</strong> has been processed.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Amount</span><span class="info-value">${formatCurrency(data.refundAmount)}</span></div><div class="info-row"><span class="info-label">Order</span><span class="info-value">${data.orderNumber}</span></div></div><p style="font-size:14px;color:#666;">Allow 5-10 business days for funds to appear.</p>`)
-  }),
-
-  event_reminder: (data) => ({
-    subject: `⏰ Reminder: ${data.eventTitle} is ${data.timeUntil}!`,
-    html: baseTemplate(`<h2>Your Event is Coming Up! 🎉</h2><p>Hi ${data.attendeeName},</p><p><strong>${data.eventTitle}</strong> is happening ${data.timeUntil}!</p><div class="ticket-card"><div class="info-row"><span class="info-label">📅 Date</span><span class="info-value">${formatDate(data.eventDate)}</span></div><div class="info-row"><span class="info-label">⏰ Time</span><span class="info-value">${formatTime(data.eventDate)}</span></div><div class="info-row"><span class="info-label">📍 Venue</span><span class="info-value">${data.venueName}, ${data.city}</span></div></div><a href="${data.appUrl}/tickets" class="button">View Your Ticket</a>`)
-  }),
-
-  event_cancelled: (data) => ({
-    subject: `❌ Event Cancelled: ${data.eventTitle}`,
-    html: baseTemplate(`<div class="warning"><strong>⚠️ Event Cancelled</strong></div><h2>We're Sorry</h2><p>Hi ${data.attendeeName},</p><p><strong>${data.eventTitle}</strong> has been cancelled.</p>${data.reason ? `<p><strong>Reason:</strong> ${data.reason}</p>` : ''}<div class="success"><strong>💰 Full refund of ${formatCurrency(data.refundAmount)} will be processed automatically.</strong></div><a href="${data.appUrl}/events" class="button">Find Similar Events</a>`)
-  }),
-
-  event_updated: (data) => ({
-    subject: `📢 Update: ${data.eventTitle}`,
-    html: baseTemplate(`<h2>Event Update</h2><p>Hi ${data.attendeeName},</p><p>Changes to <strong>${data.eventTitle}</strong>:</p><div class="highlight"><strong>What's Changed:</strong><ul>${data.changes.map((c: string) => `<li>${c}</li>`).join('')}</ul></div><div class="ticket-card"><div class="info-row"><span class="info-label">📅 Date</span><span class="info-value">${formatDate(data.eventDate)}</span></div><div class="info-row"><span class="info-label">📍 Venue</span><span class="info-value">${data.venueName}, ${data.city}</span></div></div><p>Your ticket remains valid!</p><a href="${data.appUrl}/tickets" class="button">View Your Ticket</a>`)
-  }),
-
-  ticket_transfer: (data) => ({
-    subject: `🎫 Ticket Transferred: ${data.eventTitle}`,
-    html: baseTemplate(`<h2>Ticket Transfer ${data.direction === 'sent' ? 'Sent' : 'Received'}</h2><p>Hi ${data.userName},</p>${data.direction === 'sent' ? `<p>Transferred to <strong>${data.recipientName}</strong>.</p>` : `<p><strong>${data.senderName}</strong> sent you a ticket!</p>`}<div class="ticket-card"><h3 style="margin-top:0;color:${BRAND_COLOR};">${data.eventTitle}</h3><div class="info-row"><span class="info-label">📅 Date</span><span class="info-value">${formatDate(data.eventDate)}</span></div><div class="info-row"><span class="info-label">🎫 Type</span><span class="info-value">${data.ticketType}</span></div></div>${data.direction === 'received' ? `<a href="${data.appUrl}/tickets" class="button">View Your Ticket</a>` : ''}`)
-  }),
-
-  organizer_welcome: (data) => ({
-    subject: `Welcome to ${BRAND_NAME} Organizers! 🎪`,
-    html: baseTemplate(`<h2>Welcome, ${data.businessName}! 🎉</h2><p>Your organizer account is active!</p><ul><li>🎪 Create and manage events</li><li>🎫 Sell tickets with multiple tiers</li><li>📊 Track sales in real-time</li><li>💰 Receive fast payouts</li></ul><a href="${data.appUrl}/organizer" class="button">Go to Dashboard</a>`)
-  }),
-
-  new_ticket_sale: (data) => ({
-    subject: `🎉 New Sale: ${data.ticketType} for ${data.eventTitle}`,
-    html: baseTemplate(`<div class="success"><strong>💰 New ticket sale!</strong></div><h2>You Made a Sale!</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Ticket</span><span class="info-value">${data.ticketType} × ${data.quantity}</span></div><div class="info-row"><span class="info-label">Buyer</span><span class="info-value">${data.buyerName}</span></div><div class="info-row"><span class="info-label">Email</span><span class="info-value">${data.buyerEmail}</span></div>${data.buyerPhone ? `<div class="info-row"><span class="info-label">Phone</span><span class="info-value">${data.buyerPhone}</span></div>` : ''}<div class="info-row" style="border-bottom:none;"><span class="info-label">Amount</span><span class="info-value" style="color:${BRAND_COLOR};font-size:18px;">${data.isFree ? 'FREE' : formatCurrency(data.amount)}</span></div></div><p><strong>Total sold:</strong> ${data.totalSold} / ${data.totalCapacity}</p><a href="${data.appUrl}/organizer/events/${data.eventId}" class="button">View Dashboard</a>`)
-  }),
-
-  daily_sales_summary: (data) => ({
-    subject: `📊 Daily Sales Summary - ${data.date}`,
-    html: baseTemplate(`<h2>Daily Sales Summary</h2><p>Performance on ${data.date}:</p><div class="ticket-card"><div class="info-row"><span class="info-label">Total Sales</span><span class="info-value" style="color:${BRAND_COLOR};font-size:24px;">${formatCurrency(data.totalRevenue)}</span></div><div class="info-row"><span class="info-label">Tickets Sold</span><span class="info-value">${data.ticketsSold}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Orders</span><span class="info-value">${data.ordersCount}</span></div></div><a href="${data.appUrl}/organizer/analytics" class="button">View Analytics</a>`)
-  }),
-
-  event_published: (data) => ({
-    subject: `✅ Event Published: ${data.eventTitle}`,
-    html: baseTemplate(`<div class="success"><strong>🎉 Your event is live!</strong></div><h2>${data.eventTitle}</h2><p>Your event is now visible to attendees.</p><div class="ticket-card"><div class="info-row"><span class="info-label">📅 Date</span><span class="info-value">${formatDate(data.eventDate)}</span></div><div class="info-row"><span class="info-label">📍 Venue</span><span class="info-value">${data.venueName}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">🔗 Link</span><span class="info-value"><a href="${data.eventUrl}">${data.eventUrl}</a></span></div></div><a href="${data.appUrl}/organizer/events/${data.eventId}" class="button">Manage Event</a>`)
-  }),
-
-  event_cancelled_organizer: (data) => ({
-    subject: `Event Cancelled: ${data.eventTitle}`,
-    html: baseTemplate(`<h2>Event Cancellation Confirmed</h2><p><strong>${data.eventTitle}</strong> has been cancelled.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Tickets Sold</span><span class="info-value">${data.ticketsSold}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Refunds</span><span class="info-value">${formatCurrency(data.refundTotal)}</span></div></div><p>All attendees notified. Refunds processing automatically.</p>`)
-  }),
-
-  payout_processed: (data) => ({
-    subject: `💰 Payout Processed - ${formatCurrency(data.amount)}`,
-    html: baseTemplate(`<div class="success"><strong>💰 Money on the way!</strong></div><h2>Payout Processed</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Amount</span><span class="info-value" style="color:${BRAND_COLOR};font-size:24px;">${formatCurrency(data.amount)}</span></div><div class="info-row"><span class="info-label">Bank</span><span class="info-value">${data.bankName}</span></div><div class="info-row"><span class="info-label">Account</span><span class="info-value">****${data.accountLast4}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Reference</span><span class="info-value">${data.reference}</span></div></div><p>Funds arrive within 24-48 hours.</p><a href="${data.appUrl}/organizer/payouts" class="button">View Payouts</a>`)
-  }),
-
-  sms_units_purchased: (data) => ({
-    subject: `✅ SMS Units Purchased - ${data.units} units`,
-    html: baseTemplate(`<div class="success"><strong>✅ Purchase Successful!</strong></div><h2>SMS Units Added</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Units</span><span class="info-value">${data.units}</span></div><div class="info-row"><span class="info-label">Amount</span><span class="info-value">${formatCurrency(data.amount)}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Balance</span><span class="info-value" style="color:${BRAND_COLOR};">${data.newBalance} units</span></div></div><a href="${data.appUrl}/organizer/settings/sms" class="button">Manage SMS</a>`)
-  }),
-
-  low_ticket_alert: (data) => ({
-    subject: `⚠️ Low Tickets: ${data.eventTitle}`,
-    html: baseTemplate(`<div class="highlight"><strong>⚠️ Running Low!</strong></div><h2>${data.eventTitle}</h2><p>Almost sold out!</p><div class="ticket-card"><div class="info-row"><span class="info-label">${data.ticketType}</span><span class="info-value" style="color:#dc3545;">${data.remaining} remaining</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Sold</span><span class="info-value">${data.sold} / ${data.total}</span></div></div><a href="${data.appUrl}/organizer/events/${data.eventId}/tickets" class="button">Manage Tickets</a>`)
-  }),
-
-  event_reminder_organizer: (data) => ({
-    subject: `📅 Your event is ${data.timeUntil}: ${data.eventTitle}`,
-    html: baseTemplate(`<h2>Your Event is ${data.timeUntil}!</h2><p>Prepare for <strong>${data.eventTitle}</strong>!</p><div class="ticket-card"><div class="info-row"><span class="info-label">📅 Date</span><span class="info-value">${formatDate(data.eventDate)}</span></div><div class="info-row"><span class="info-label">📍 Venue</span><span class="info-value">${data.venueName}</span></div><div class="info-row"><span class="info-label">🎫 Sold</span><span class="info-value">${data.ticketsSold}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">💰 Revenue</span><span class="info-value">${formatCurrency(data.revenue)}</span></div></div><h3>Checklist:</h3><ul><li>✅ Download attendee list</li><li>✅ Set up check-in devices</li><li>✅ Brief team on scanner app</li></ul><a href="${data.appUrl}/organizer/events/${data.eventId}/check-in" class="button">Open Check-In</a>`)
-  }),
-
-  refund_approved: (data) => ({
-    subject: `✅ Refund Approved: ${data.eventTitle}`,
-    html: baseTemplate(`<div class="success"><strong>✅ Refund Approved!</strong></div><h2>Your Refund Has Been Approved</h2><p>Hi ${data.attendeeName},</p><p>Good news! Your refund request for <strong>${data.eventTitle}</strong> has been approved.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Refund Amount</span><span class="info-value" style="color:#16a34a;font-weight:bold;">${formatCurrency(data.refundAmount)}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Processing Time</span><span class="info-value">5-7 business days</span></div></div>${data.organizerNotes ? `<p><strong>Note from organizer:</strong> ${data.organizerNotes}</p>` : ''}<p style="font-size:14px;color:#666;">The refund will be credited to your original payment method.</p><a href="${data.appUrl}/tickets" class="button">View My Tickets</a>`)
-  }),
-
-  refund_rejected: (data) => ({
-    subject: `❌ Refund Request Update: ${data.eventTitle}`,
-    html: baseTemplate(`<h2>Refund Request Update</h2><p>Hi ${data.attendeeName},</p><p>We regret to inform you that your refund request for <strong>${data.eventTitle}</strong> could not be approved at this time.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Requested Amount</span><span class="info-value">${formatCurrency(data.refundAmount)}</span></div></div>${data.organizerNotes ? `<div class="warning"><strong>Reason:</strong> ${data.organizerNotes}</div>` : ''}<p>If you believe this decision was made in error, you can escalate this to our support team.</p><a href="${data.appUrl}/support" class="button">Contact Support</a>`)
-  }),
-
-  refund_request: (data) => ({
-    subject: `🔔 Refund Request: ${data.eventTitle}`,
-    html: baseTemplate(`<h2>New Refund Request</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Attendee</span><span class="info-value">${data.attendeeName}</span></div><div class="info-row"><span class="info-label">Ticket</span><span class="info-value">${data.ticketType}</span></div><div class="info-row"><span class="info-label">Amount</span><span class="info-value">${formatCurrency(data.amount)}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Reason</span><span class="info-value">${data.reason || 'Not specified'}</span></div></div><a href="${data.appUrl}/organizer/refunds/${data.refundId}" class="button">Review Request</a>`)
-  }),
-
-  post_event_summary: (data) => ({
-    subject: `📊 Event Summary: ${data.eventTitle}`,
-    html: baseTemplate(`<h2>Event Wrap-Up</h2><p><strong>${data.eventTitle}</strong> performance:</p><div class="ticket-card"><div class="info-row"><span class="info-label">Revenue</span><span class="info-value" style="color:${BRAND_COLOR};font-size:24px;">${formatCurrency(data.totalRevenue)}</span></div><div class="info-row"><span class="info-label">Tickets</span><span class="info-value">${data.ticketsSold}</span></div><div class="info-row"><span class="info-label">Checked In</span><span class="info-value">${data.checkedIn} (${data.checkInRate}%)</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Payout</span><span class="info-value">${formatCurrency(data.payoutAmount)}</span></div></div><p>Payout processing within 2-3 business days.</p><a href="${data.appUrl}/organizer/events/${data.eventId}/analytics" class="button">View Report</a>`)
-  }),
-
-  promoter_commission: (data) => ({
-    subject: `💰 Commission Earned: ${formatCurrency(data.amount)}`,
-    html: baseTemplate(`<div class="success"><strong>💰 Commission earned!</strong></div><h2>Commission Earned</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Promo Code</span><span class="info-value">${data.promoCode}</span></div><div class="info-row"><span class="info-label">Sale</span><span class="info-value">${formatCurrency(data.saleAmount)}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Commission</span><span class="info-value" style="color:${BRAND_COLOR};font-size:18px;">${formatCurrency(data.amount)}</span></div></div><p><strong>Pending:</strong> ${formatCurrency(data.pendingTotal)}</p><a href="${data.appUrl}/promoter/earnings" class="button">View Earnings</a>`)
-  }),
-
-  promoter_payout: (data) => ({
-    subject: `💰 Payout Processed - ${formatCurrency(data.amount)}`,
-    html: baseTemplate(`<div class="success"><strong>💰 Payout on the way!</strong></div><h2>Promoter Payout</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Amount</span><span class="info-value" style="color:${BRAND_COLOR};font-size:24px;">${formatCurrency(data.amount)}</span></div><div class="info-row"><span class="info-label">Bank</span><span class="info-value">${data.bankName}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Account</span><span class="info-value">****${data.accountLast4}</span></div></div><a href="${data.appUrl}/promoter/payouts" class="button">View Payouts</a>`)
-  }),
-
-  promo_code_used: (data) => ({
-    subject: `🎫 Your promo code was used!`,
-    html: baseTemplate(`<h2>Promo Code Used!</h2><p>Someone used your code:</p><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Code</span><span class="info-value">${data.promoCode}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Total Uses</span><span class="info-value">${data.totalUses}</span></div></div><a href="${data.appUrl}/promoter" class="button">View Dashboard</a>`)
-  }),
-
-
-  promoter_invite: (data) => ({
-    subject: `🎉 You've been invited to promote ${data.eventTitle || 'events'} on Ticketrack!`,
-    html: baseTemplate(`<h2>You're Invited to Promote!</h2><p><strong>${data.organizerName}</strong> has invited you to become a promoter on Ticketrack.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Organizer</span><span class="info-value">${data.organizerName}</span></div><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle || 'All Events'}</span></div><div class="info-row"><span class="info-label">Commission</span><span class="info-value">${data.commissionValue}${data.commissionType === 'percentage' ? '%' : ' NGN'} per ticket</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Your Promo Code</span><span class="info-value" style="color:#2969FF;font-weight:bold;">${data.promoCode}</span></div></div><p>Share your unique link and earn commission on every ticket sold!</p><a href="${data.appUrl}/promoter/accept?code=${data.promoCode}" class="button">${data.isNewUser ? 'Sign Up to Accept' : 'Accept Invitation'}</a><p style="color:#666;font-size:14px;margin-top:24px;">${data.isNewUser ? 'You will need to create a Ticketrack account to start promoting.' : 'Click above to view your promoter dashboard.'}</p>`)
-  }),
-
-  promoter_accepted: (data) => ({
-    subject: `✅ ${data.promoterName} accepted your promoter invitation!`,
-    html: baseTemplate(`<div class="success"><strong>✅ Invitation Accepted!</strong></div><h2>New Promoter Joined</h2><p><strong>${data.promoterName}</strong> has accepted your invitation to promote ${data.eventTitle || 'your events'}.</p><div class="ticket-card"><div class="info-row"><span class="info-label">Promoter</span><span class="info-value">${data.promoterName}</span></div><div class="info-row"><span class="info-label">Email</span><span class="info-value">${data.promoterEmail}</span></div><div class="info-row"><span class="info-label">Promo Code</span><span class="info-value" style="color:#2969FF;font-weight:bold;">${data.promoCode}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Commission Rate</span><span class="info-value">${data.commissionValue}${data.commissionType === 'percentage' ? '%' : ' NGN'}</span></div></div><a href="${data.appUrl}/organizer/promoters" class="button">View Promoters</a>`)
-  }),
-
-  admin_new_organizer: (data) => ({
-    subject: `🆕 New Organizer: ${data.businessName}`,
-    html: baseTemplate(`<h2>New Organizer Signup</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Business</span><span class="info-value">${data.businessName}</span></div><div class="info-row"><span class="info-label">Email</span><span class="info-value">${data.email}</span></div><div class="info-row"><span class="info-label">Phone</span><span class="info-value">${data.phone || 'N/A'}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Signed Up</span><span class="info-value">${formatDate(data.createdAt)}</span></div></div><a href="${data.appUrl}/admin/organizers/${data.organizerId}" class="button">View Details</a>`)
-  }),
-
-  admin_new_event: (data) => ({
-    subject: `🎪 New Event: ${data.eventTitle}`,
-    html: baseTemplate(`<h2>New Event Created</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Event</span><span class="info-value">${data.eventTitle}</span></div><div class="info-row"><span class="info-label">Organizer</span><span class="info-value">${data.organizerName}</span></div><div class="info-row"><span class="info-label">Date</span><span class="info-value">${formatDate(data.eventDate)}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Venue</span><span class="info-value">${data.venueName}, ${data.city}</span></div></div><a href="${data.appUrl}/admin/events/${data.eventId}" class="button">Review Event</a>`)
-  }),
-
-  admin_flagged_content: (data) => ({
-    subject: `🚨 Flagged Content: ${data.contentType}`,
-    html: baseTemplate(`<div class="warning"><strong>🚨 Review Required</strong></div><h2>Flagged Content</h2><div class="ticket-card"><div class="info-row"><span class="info-label">Type</span><span class="info-value">${data.contentType}</span></div><div class="info-row"><span class="info-label">Reason</span><span class="info-value">${data.reason}</span></div><div class="info-row"><span class="info-label">Reported By</span><span class="info-value">${data.reportedBy || 'System'}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Time</span><span class="info-value">${formatDate(data.flaggedAt)}</span></div></div><a href="${data.appUrl}/admin/moderation/${data.flagId}" class="button">Review Now</a>`)
-  }),
-
-
-  waitlist_joined: (data) => ({
-    subject: `🎫 You're #${data.position} on the waitlist for ${data.eventTitle}`,
-    html: baseTemplate(`
-      <h2>You're on the Waitlist! 🎉</h2>
-      <p>Hi ${data.name},</p>
-      <p>Great news! You've been added to the waitlist for <strong>${data.eventTitle}</strong>.</p>
-      
-      <div class="ticket-card">
-        <div class="position-badge">
-          <div class="position-number">#${data.position}</div>
-          <div class="position-label">Your position in queue</div>
-        </div>
-        <div class="divider" style="margin:16px 0;"></div>
-        <div class="info-row">
-          <span class="info-label">📅 Event Date</span>
-          <span class="info-value">${formatDate(data.eventDate)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">📍 Venue</span>
-          <span class="info-value">${data.venueName}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">🎫 Tickets Requested</span>
-          <span class="info-value">${data.quantity}</span>
-        </div>
-      </div>
-      
-      <div class="highlight">
-        <strong>📬 What happens next?</strong>
-        <p>We'll email you immediately when tickets become available. You'll have <strong>24 hours</strong> to complete your purchase before the offer moves to the next person.</p>
-      </div>
-      
-      <div class="button-wrapper">
-        <a href="${data.appUrl}/e/${data.eventSlug}" class="button">View Event Details</a>
-      </div>
-    `, `You're #${data.position} on the waitlist for ${data.eventTitle}`)
-  }),
-
-  waitlist_available: (data) => ({
-    subject: `🎉 Tickets Available! Your turn for ${data.eventTitle}`,
-    html: baseTemplate(`
-      <div class="success">
-        <strong>🎉 Great news!</strong>
-        <p>Tickets are now available for you to purchase!</p>
-      </div>
-      
-      <h2>It's Your Turn!</h2>
-      <p>Hi ${data.name},</p>
-      <p>You've been waiting patiently, and now tickets for <strong>${data.eventTitle}</strong> are available just for you!</p>
-      
-      <div class="ticket-card">
-        <div class="info-row">
-          <span class="info-label">📅 Event Date</span>
-          <span class="info-value">${formatDate(data.eventDate)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">📍 Venue</span>
-          <span class="info-value">${data.venueName}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">🎫 Tickets Reserved</span>
-          <span class="info-value">${data.quantity}</span>
-        </div>
-      </div>
-      
-      <div class="warning">
-        <strong>⏰ Act Fast!</strong>
-        <p>This exclusive offer expires on <strong>${formatDate(data.expiresAt)}</strong> at <strong>${formatTime(data.expiresAt)}</strong>. After that, your spot goes to the next person in line.</p>
-      </div>
-      
-      <div class="button-wrapper">
-        <a href="${data.appUrl}/waitlist/purchase?token=${data.purchaseToken}" class="button">🎫 Buy Tickets Now</a>
-      </div>
-      
-      <p style="font-size:13px;color:#6b7280;text-align:center;margin-top:24px;">
-        If you no longer need tickets, simply ignore this email and the next person in queue will get the opportunity.
-      </p>
-    `, `Tickets available for ${data.eventTitle}! You have 24 hours to purchase.`)
-  }),
-
-
-  event_reminder_24h: (data) => ({
-    subject: `📅 Tomorrow: ${data.eventTitle} - Don't Forget!`,
-    html: baseTemplate(`
-      <h2>Your Event is Tomorrow! 🎉</h2>
-      <p>Hi ${data.attendeeName},</p>
-      <p>Just a friendly reminder that <strong>${data.eventTitle}</strong> is happening <strong>tomorrow</strong>!</p>
-      
-      <div class="ticket-card">
-        <h3 style="margin-top:0;color:${BRAND_COLOR};">${data.eventTitle}</h3>
-        <div class="info-row">
-          <span class="info-label">📅 Date</span>
-          <span class="info-value">${formatDate(data.eventDate)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">⏰ Time</span>
-          <span class="info-value">${formatTime(data.eventDate)}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">📍 Venue</span>
-          <span class="info-value">${data.venueName}${data.city ? ', ' + data.city : ''}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">🎫 Ticket</span>
-          <span class="info-value">${data.ticketType}</span>
-        </div>
-        <div class="info-row" style="border-bottom:none;">
-          <span class="info-label">🔢 Code</span>
-          <span class="info-value" style="font-family:monospace;">${data.ticketCode}</span>
-        </div>
-      </div>
-      
-      <div class="highlight">
-        <strong>📝 Quick Checklist:</strong>
-        <ul style="margin:8px 0 0 0;padding-left:20px;">
-          <li>Save/screenshot your ticket QR code</li>
-          <li>Check the venue location</li>
-          <li>Plan your travel time</li>
-        </ul>
-      </div>
-      
-      ${data.venueAddress ? `
-      <div class="button-wrapper">
-        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.venueAddress)}" class="button" style="background:#34a853;">📍 Get Directions</a>
-      </div>
-      ` : ''}
-      
-      <div class="button-wrapper">
-        <a href="${data.appUrl}/tickets" class="button">View Your Ticket</a>
-      </div>
-      
-      <p style="text-align:center;color:#6b7280;font-size:14px;">See you there! 🎊</p>
-    `, `Reminder: ${data.eventTitle} is tomorrow!`)
-  }),
-
-  event_reminder_1h: (data) => ({
-    subject: `⏰ Starting Soon: ${data.eventTitle} in 1 Hour!`,
-    html: baseTemplate(`
-      <div class="warning" style="background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);border-left-color:#f59e0b;">
-        <strong>⏰ Starting in 1 Hour!</strong>
-      </div>
-      
-      <h2>It's Almost Time! 🚀</h2>
-      <p>Hi ${data.attendeeName},</p>
-      <p><strong>${data.eventTitle}</strong> starts in about <strong>1 hour</strong>!</p>
-      
-      <div class="ticket-card">
-        <div class="info-row">
-          <span class="info-label">📍 Venue</span>
-          <span class="info-value">${data.venueName}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">⏰ Starts At</span>
-          <span class="info-value" style="color:${BRAND_COLOR};font-weight:bold;">${formatTime(data.eventDate)}</span>
-        </div>
-        <div class="info-row" style="border-bottom:none;">
-          <span class="info-label">🎫 Your Code</span>
-          <span class="info-value" style="font-family:monospace;font-size:16px;">${data.ticketCode}</span>
-        </div>
-      </div>
-      
-      <div class="success">
-        <strong>📱 Show your QR code at the entrance</strong>
-        <p>Have your ticket ready on your phone for quick check-in!</p>
-      </div>
-      
-      ${data.venueAddress ? `
-      <div class="button-wrapper">
-        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.venueAddress)}" class="button" style="background:#34a853;">📍 Navigate to Venue</a>
-      </div>
-      ` : ''}
-      
-      <div class="button-wrapper">
-        <a href="${data.appUrl}/tickets" class="button">Open My Ticket</a>
-      </div>
-      
-      <p style="text-align:center;color:#6b7280;font-size:14px;">Have an amazing time! 🎉</p>
-    `, `${data.eventTitle} starts in 1 hour!`)
-  }),
-
-  admin_daily_stats: (data) => ({
-    subject: `📊 Daily Platform Stats - ${data.date}`,
-    html: baseTemplate(`<h2>Daily Platform Summary</h2><p>Performance on ${data.date}:</p><div class="ticket-card"><div class="info-row"><span class="info-label">Revenue</span><span class="info-value" style="color:${BRAND_COLOR};font-size:24px;">${formatCurrency(data.totalRevenue)}</span></div><div class="info-row"><span class="info-label">Tickets</span><span class="info-value">${data.ticketsSold}</span></div><div class="info-row"><span class="info-label">New Users</span><span class="info-value">${data.newUsers}</span></div><div class="info-row"><span class="info-label">New Organizers</span><span class="info-value">${data.newOrganizers}</span></div><div class="info-row"><span class="info-label">New Events</span><span class="info-value">${data.newEvents}</span></div><div class="info-row" style="border-bottom:none;"><span class="info-label">Platform Fees</span><span class="info-value">${formatCurrency(data.platformFees)}</span></div></div><a href="${data.appUrl}/admin/analytics" class="button">View Dashboard</a>`)
-  }),
+function securityTemplate(content: string, preheader = ''): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>body{margin:0;padding:0;background:#f4f6fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}.wrap{width:100%;background:#f4f6fa;padding:40px 0}.container{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)}.header{background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);padding:32px 24px;text-align:center}.header h1{color:#fff;margin:0;font-size:24px;font-weight:800}.header p{color:rgba(255,255,255,.9);font-size:14px;margin:8px 0 0}.content{padding:40px 32px}.content h2{color:#0f0f0f;font-size:24px;font-weight:700;margin:0 0 16px}.content p{color:#4a4a4a;font-size:16px;line-height:1.7;margin:0 0 16px}.btn-wrap{text-align:center;margin:32px 0}.btn{display:inline-block;background:#dc2626;color:#fff!important;padding:16px 40px;text-decoration:none;border-radius:12px;font-weight:600}.btn-secondary{display:inline-block;background:#f3f4f6;color:#0f0f0f!important;padding:16px 40px;text-decoration:none;border-radius:12px;font-weight:600;margin-left:12px}.box{background:#f8f9fc;border-radius:12px;padding:20px;margin:24px 0;border:1px solid #e8eaf0}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e8eaf0}.row:last-child{border-bottom:none}.warning{background:#fef2f2;padding:20px;border-radius:12px;margin:24px 0;border:2px solid #ef4444}.footer{background:#f8f9fc;padding:32px;text-align:center;border-top:1px solid #e8eaf0}.footer p{color:#6b7280;font-size:12px;margin:0}</style></head><body><div style="display:none">${preheader}</div><div class="wrap"><table class="container" width="100%" cellspacing="0" cellpadding="0"><tr><td class="header"><h1>🔒 ${BRAND_NAME} Security</h1><p>Account Security Alert</p></td></tr><tr><td class="content">${content}</td></tr><tr><td class="footer"><p>If you didn't make this change, <a href="${APP_URL}/support" style="color:#dc2626;font-weight:600">contact support immediately</a>.</p></td></tr></table></div></body></html>`
 }
 
-async function sendEmail(request: EmailRequest): Promise<{ success: boolean; messageId?: string; error?: string; logId?: string }> {
+// All 55+ email templates
+const templates: Record<string, (d: any) => { subject: string; html: string }> = {
+  // AUTH
+  welcome: d => ({ subject: `Welcome to ${BRAND_NAME}!`, html: baseTemplate(`<h2>Welcome, ${d.firstName}!</h2><p>We're thrilled to have you join ${BRAND_NAME}.</p><div class="btn-wrap"><a href="${APP_URL}/events" class="btn">Explore Events</a></div>`) }),
+  email_verification: d => ({ subject: `Verify your ${BRAND_NAME} email`, html: baseTemplate(`<h2>Verify Your Email</h2><p>Hi ${d.firstName},</p><p>Click below to verify:</p><div class="btn-wrap"><a href="${d.verificationUrl}" class="btn">Verify Email</a></div>`) }),
+  password_reset: d => ({ subject: `Reset your ${BRAND_NAME} password`, html: baseTemplate(`<h2>Password Reset</h2><p>Hi ${d.firstName},</p><div class="btn-wrap"><a href="${d.resetUrl}" class="btn">Reset Password</a></div><p style="font-size:12px;color:#666">Link expires in 1 hour.</p>`) }),
+  password_changed: d => ({ subject: `⚠️ Your ${BRAND_NAME} password was changed`, html: securityTemplate(`<h2>Password Changed</h2><p>Hi ${d.userName},</p><p>Your password was changed.</p><div class="box"><div class="row"><span>Time</span><span>${formatDateTime(d.changedAt || new Date().toISOString())}</span></div><div class="row"><span>IP</span><span>${d.ipAddress || 'Unknown'}</span></div><div class="row"><span>Device</span><span>${d.device || 'Unknown'}</span></div></div><div class="warning"><strong>Didn't change your password?</strong><p style="margin:8px 0 0">Reset immediately and contact support.</p></div><div class="btn-wrap"><a href="${APP_URL}/forgot-password" class="btn">Reset Password</a></div>`, 'Your password was changed') }),
+  login_new_device: d => ({ subject: `⚠️ New login to ${BRAND_NAME}`, html: securityTemplate(`<h2>New Device Login</h2><p>Hi ${d.userName},</p><p>New login detected:</p><div class="box"><div class="row"><span>Time</span><span>${formatDateTime(d.loginAt || new Date().toISOString())}</span></div><div class="row"><span>Location</span><span>${d.location || 'Unknown'}</span></div><div class="row"><span>IP</span><span>${d.ipAddress || 'Unknown'}</span></div><div class="row"><span>Device</span><span>${d.device || 'Unknown'}</span></div></div><div class="warning"><strong>Wasn't you?</strong><p style="margin:8px 0 0">Secure your account now.</p></div><div class="btn-wrap"><a href="${APP_URL}/forgot-password" class="btn">Secure Account</a></div>`, 'New device login detected') }),
+  profile_updated: d => ({ subject: `Your ${BRAND_NAME} profile was updated`, html: securityTemplate(`<h2>Profile Updated</h2><p>Hi ${d.userName},</p><p>Your profile was updated.</p><div class="box"><div class="row"><span>Time</span><span>${formatDateTime(d.updatedAt || new Date().toISOString())}</span></div>${d.changedFields?.map((f: string) => `<div class="row"><span>Changed</span><span>${f}</span></div>`).join('') || ''}</div>`, 'Profile updated') }),
+  suspicious_activity: d => ({ subject: `🚨 Suspicious activity on ${BRAND_NAME}`, html: securityTemplate(`<h2>⚠️ Suspicious Activity</h2><p>Hi ${d.userName},</p><p>Unusual activity detected.</p><div class="warning"><strong>Activity:</strong><p style="margin:8px 0 0">${d.activityDescription || 'Multiple failed attempts.'}</p></div><div class="btn-wrap"><a href="${APP_URL}/forgot-password" class="btn">Secure Account</a></div>`, 'URGENT: Suspicious activity') }),
+  // BANK SECURITY
+  bank_account_added: d => ({ subject: `🔒 New bank added to ${BRAND_NAME}`, html: securityTemplate(`<h2>New Bank Account</h2><p>Hi ${d.organizerName},</p><p>A bank account was added:</p><div class="box"><div class="row"><span>Bank</span><span>${d.bankName}</span></div><div class="row"><span>Account Name</span><span>${d.accountName}</span></div><div class="row"><span>Number</span><span>${maskBank(d.accountNumber)}</span></div></div><div class="highlight"><strong>🕐 48-Hour Security Hold</strong><p style="margin:8px 0 0">This bank can't receive payouts for 48 hours.</p><p><strong>Active after:</strong> ${formatDateTime(d.activeAfter)}</p></div>${d.confirmationRequired ? `<div class="btn-wrap"><a href="${d.confirmationUrl}" class="btn">Confirm Bank Account</a></div>` : ''}`, 'New bank account added') }),
+  bank_account_updated: d => ({ subject: `🔒 Bank changed on ${BRAND_NAME}`, html: securityTemplate(`<h2>Bank Account Updated</h2><p>Hi ${d.organizerName},</p><div class="box"><div class="row"><span>Bank</span><span>${d.bankName}</span></div><div class="row"><span>Number</span><span>${maskBank(d.accountNumber)}</span></div></div><div class="highlight"><strong>🕐 48-Hour Hold</strong><p style="margin:8px 0 0">Payouts paused for 48h. <strong>Active after:</strong> ${formatDateTime(d.activeAfter)}</p></div><div class="warning"><strong>Didn't make this change?</strong> Contact support immediately.</div>`, 'Bank details changed') }),
+  bank_account_removed: d => ({ subject: `🔒 Bank removed from ${BRAND_NAME}`, html: securityTemplate(`<h2>Bank Account Removed</h2><p>Hi ${d.organizerName},</p><div class="box"><div class="row"><span>Bank</span><span>${d.bankName}</span></div><div class="row"><span>Number</span><span>${maskBank(d.accountNumber)}</span></div></div>`, 'Bank account removed') }),
+  bank_account_verified: d => ({ subject: `✅ Bank verified on ${BRAND_NAME}`, html: baseTemplate(`<div class="success"><strong>Bank Account Verified!</strong></div><h2>Ready for Payouts</h2><p>Hi ${d.organizerName},</p><p>Your bank is now active.</p><div class="card"><div class="row"><span class="label">Bank</span><span class="value">${d.bankName}</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:#10b981">Active</span></div></div>`) }),
+  bank_change_confirmation: d => ({ subject: `⚠️ Confirm bank change - ${BRAND_NAME}`, html: securityTemplate(`<h2>Confirm Bank Change</h2><p>Hi ${d.organizerName},</p><p>Confirm this change:</p><div class="box"><div class="row"><span>Action</span><span>${d.changeType}</span></div><div class="row"><span>Bank</span><span>${d.bankName}</span></div></div><div class="btn-wrap"><a href="${d.confirmationUrl}" class="btn">Confirm</a><a href="${d.cancelUrl}" class="btn-secondary">Cancel</a></div>`, 'Confirm bank change') }),
+  // TICKETS
+  ticket_purchase: d => ({ subject: `Tickets for ${d.eventTitle} - Confirmed!`, html: baseTemplate(`<div class="success"><strong>Booking Confirmed!</strong></div><h2>You're going to ${d.eventTitle}!</h2><p>Hi ${d.attendeeName},</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Time</span><span class="value">${formatTime(d.eventDate)}</span></div><div class="row"><span class="label">Venue</span><span class="value">${d.venueName || 'TBA'}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType} x ${d.quantity}</span></div><div class="row"><span class="label">Order</span><span class="value">${d.orderNumber}</span></div><div class="row"><span class="label">Total</span><span class="value">${d.isFree ? 'FREE' : formatCurrency(d.totalAmount, d.currency)}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/tickets" class="btn">View Tickets</a></div>`, `Tickets for ${d.eventTitle} confirmed!`) }),
+  ticket_cancelled: d => ({ subject: `Ticket Cancelled - ${d.eventTitle}`, html: baseTemplate(`<h2>Ticket Cancelled</h2><p>Hi ${d.attendeeName},</p><p>Your ticket for <strong>${d.eventTitle}</strong> was cancelled.</p>${d.refundAmount ? `<div class="success"><strong>Refund of ${formatCurrency(d.refundAmount, d.currency)} processing.</strong></div>` : ''}`) }),
+  ticket_refunded: d => ({ subject: `Refund Processed - ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>Refund Complete!</strong></div><h2>Your Refund</h2><p>Hi ${d.attendeeName},</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(d.refundAmount, d.currency)}</span></div><div class="row"><span class="label">Order</span><span class="value">${d.orderNumber}</span></div></div><p style="font-size:14px;color:#666">5-10 business days to arrive.</p>`) }),
+  ticket_transfer_sent: d => ({ subject: `Ticket Transferred - ${d.eventTitle}`, html: baseTemplate(`<h2>Ticket Transfer Sent</h2><p>Hi ${d.senderName},</p><p>You transferred a ticket to <strong>${d.recipientName}</strong>.</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType}</span></div><div class="row"><span class="label">To</span><span class="value">${d.recipientName} (${d.recipientEmail})</span></div></div>`) }),
+  ticket_transfer_received: d => ({ subject: `🎉 You received a ticket for ${d.eventTitle}!`, html: baseTemplate(`<div class="success"><strong>You received a ticket!</strong></div><h2>Ticket Received</h2><p>Hi ${d.recipientName},</p><p><strong>${d.senderName}</strong> sent you a ticket!</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Time</span><span class="value">${formatTime(d.eventDate)}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/tickets" class="btn">View Ticket</a></div>`, `${d.senderName} sent you a ticket!`) }),
+  event_reminder: d => ({ subject: `Reminder: ${d.eventTitle} is ${d.timeUntil}!`, html: baseTemplate(`<h2>Event Coming Up!</h2><p>Hi ${d.attendeeName},</p><p><strong>${d.eventTitle}</strong> is ${d.timeUntil}!</p><div class="card"><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Time</span><span class="value">${formatTime(d.eventDate)}</span></div><div class="row"><span class="label">Venue</span><span class="value">${d.venueName}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/tickets" class="btn">View Ticket</a></div>`) }),
+  event_reminder_24h: d => ({ subject: `Tomorrow: ${d.eventTitle}!`, html: baseTemplate(`<h2>Your Event is Tomorrow!</h2><p>Hi ${d.attendeeName},</p><p><strong>${d.eventTitle}</strong> is <strong>tomorrow</strong>!</p><div class="card"><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Time</span><span class="value">${formatTime(d.eventDate)}</span></div><div class="row"><span class="label">Code</span><span class="value" style="font-family:monospace">${d.ticketCode}</span></div></div><div class="highlight"><strong>Checklist:</strong><ul style="margin:8px 0 0;padding-left:20px"><li>Save your QR code</li><li>Check venue location</li><li>Plan your travel</li></ul></div><div class="btn-wrap"><a href="${APP_URL}/tickets" class="btn">View Ticket</a></div>`, `${d.eventTitle} is tomorrow!`) }),
+  event_reminder_1h: d => ({ subject: `Starting Soon: ${d.eventTitle} in 1 Hour!`, html: baseTemplate(`<div class="highlight"><strong>Starting in 1 Hour!</strong></div><h2>Almost Time!</h2><p>Hi ${d.attendeeName},</p><div class="card"><div class="row"><span class="label">Venue</span><span class="value">${d.venueName}</span></div><div class="row"><span class="label">Starts</span><span class="value" style="color:${BRAND_COLOR};font-weight:bold">${formatTime(d.eventDate)}</span></div><div class="row"><span class="label">Code</span><span class="value" style="font-family:monospace;font-size:16px">${d.ticketCode}</span></div></div><div class="success"><strong>Show QR at entrance!</strong></div><div class="btn-wrap"><a href="${APP_URL}/tickets" class="btn">Open Ticket</a></div>`, `${d.eventTitle} starts in 1 hour!`) }),
+  event_cancelled: d => ({ subject: `Event Cancelled: ${d.eventTitle}`, html: baseTemplate(`<div class="warning"><strong>Event Cancelled</strong></div><h2>We're Sorry</h2><p>Hi ${d.attendeeName},</p><p><strong>${d.eventTitle}</strong> has been cancelled.</p>${d.reason ? `<p><strong>Reason:</strong> ${d.reason}</p>` : ''}<div class="success"><strong>Full refund of ${formatCurrency(d.refundAmount, d.currency)} will be processed.</strong></div>`) }),
+  event_updated: d => ({ subject: `Update: ${d.eventTitle}`, html: baseTemplate(`<h2>Event Update</h2><p>Hi ${d.attendeeName},</p><p>Changes to <strong>${d.eventTitle}</strong>:</p><div class="highlight"><strong>What Changed:</strong><ul>${d.changes?.map((c: string) => `<li>${c}</li>`).join('') || '<li>Details updated</li>'}</ul></div><p>Your ticket remains valid!</p>`) }),
+  refund_request_submitted: d => ({ subject: `Refund Request Received - ${d.eventTitle}`, html: baseTemplate(`<h2>Refund Request Received</h2><p>Hi ${d.attendeeName},</p><p>We received your refund request for <strong>${d.eventTitle}</strong>.</p><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType}</span></div><div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:#f59e0b">Pending Review</span></div></div><p style="font-size:14px;color:#666">Typical: 3-5 business days.</p>`) }),
+  refund_approved: d => ({ subject: `Refund Approved: ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>Refund Approved!</strong></div><h2>Your Refund</h2><p>Hi ${d.attendeeName},</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:#16a34a;font-weight:bold">${formatCurrency(d.refundAmount, d.currency)}</span></div><div class="row"><span class="label">Processing</span><span class="value">5-7 business days</span></div></div>${d.organizerNotes ? `<p><strong>Note:</strong> ${d.organizerNotes}</p>` : ''}`) }),
+  refund_rejected: d => ({ subject: `Refund Update: ${d.eventTitle}`, html: baseTemplate(`<h2>Refund Update</h2><p>Hi ${d.attendeeName},</p><p>Your refund for <strong>${d.eventTitle}</strong> could not be approved.</p>${d.organizerNotes ? `<div class="warning"><strong>Reason:</strong> ${d.organizerNotes}</div>` : ''}<div class="btn-wrap"><a href="${APP_URL}/support" class="btn">Contact Support</a></div>`) }),
+  refund_processed: d => ({ subject: `Refund Processed - ${formatCurrency(d.refundAmount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Refund Complete!</strong></div><h2>Processed</h2><p>Hi ${d.attendeeName},</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:#10b981;font-size:20px;font-weight:bold">${formatCurrency(d.refundAmount, d.currency)}</span></div><div class="row"><span class="label">Arrival</span><span class="value">5-10 business days</span></div></div>`) }),
+  // WAITLIST
+  waitlist_joined: d => ({ subject: `You're #${d.position} on waitlist for ${d.eventTitle}`, html: baseTemplate(`<h2>You're on the Waitlist!</h2><p>Hi ${d.name},</p><div class="card"><div style="text-align:center;padding:24px 0"><div style="font-size:56px;font-weight:800;color:${BRAND_COLOR}">#${d.position}</div><div style="color:#6b7280;font-size:14px">Your position</div></div><div class="row"><span class="label">Event</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.quantity}</span></div></div><div class="highlight"><strong>What's next?</strong><p style="margin:8px 0 0;font-size:14px">We'll email when tickets are available. You'll have <strong>24 hours</strong> to purchase.</p></div>`, `You're #${d.position} on the waitlist`) }),
+  waitlist_available: d => ({ subject: `🎉 Tickets Available for ${d.eventTitle}!`, html: baseTemplate(`<div class="success"><strong>Tickets Available!</strong></div><h2>It's Your Turn!</h2><p>Hi ${d.name},</p><div class="card"><div class="row"><span class="label">Event</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.quantity}</span></div></div><div class="warning"><strong>Act Fast!</strong><p style="margin:8px 0 0;font-size:14px">Expires: <strong>${formatDateTime(d.expiresAt)}</strong></p></div><div class="btn-wrap"><a href="${APP_URL}/waitlist/purchase?token=${d.purchaseToken}" class="btn">Buy Now</a></div>`, `Tickets for ${d.eventTitle}!`) }),
+  // SOCIAL
+  new_follower: d => ({ subject: `${d.followerName} is following you!`, html: baseTemplate(`<h2>New Follower!</h2><p>Hi ${d.organizerName},</p><p><strong>${d.followerName}</strong> is now following you.</p><div class="card"><div class="row"><span class="label">Follower</span><span class="value">${d.followerName}</span></div><div class="row"><span class="label">Total</span><span class="value" style="color:${BRAND_COLOR};font-weight:bold">${d.totalFollowers}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/followers" class="btn">View Followers</a></div>`) }),
+  following_organizer: d => ({ subject: `You're following ${d.organizerName}`, html: baseTemplate(`<h2>Following!</h2><p>Hi ${d.userName},</p><p>You're now following <strong>${d.organizerName}</strong>. We'll notify you about new events!</p><div class="btn-wrap"><a href="${APP_URL}/organizer/${d.organizerSlug}" class="btn">View Events</a></div>`) }),
+  // ORGANIZER
+  organizer_welcome: d => ({ subject: `Welcome to ${BRAND_NAME} Organizers!`, html: baseTemplate(`<h2>Welcome, ${d.businessName}!</h2><p>Your organizer account is active!</p><ul><li>Create events</li><li>Sell tickets</li><li>Track sales</li><li>Fast payouts</li></ul><div class="btn-wrap"><a href="${APP_URL}/organizer" class="btn">Go to Dashboard</a></div>`) }),
+  kyc_verified: d => ({ subject: `✅ Identity Verified!`, html: baseTemplate(`<div class="success"><strong>Verified!</strong></div><h2>You're Verified</h2><p>Hi ${d.organizerName},</p><div class="card"><div class="row"><span class="label">Create Events</span><span class="value" style="color:#10b981">✓ Enabled</span></div><div class="row"><span class="label">Receive Payouts</span><span class="value" style="color:#10b981">✓ Enabled</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer" class="btn">Dashboard</a></div>`) }),
+  kyc_action_required: d => ({ subject: `Action Required - Verification`, html: baseTemplate(`<div class="highlight"><strong>Action Required</strong></div><h2>Verification Needed</h2><p>Hi ${d.organizerName},</p><p>${d.message || 'We need additional info.'}</p><div class="btn-wrap"><a href="${APP_URL}/organizer/kyc" class="btn">Complete</a></div>`) }),
+  kyc_rejected: d => ({ subject: `Verification Update`, html: baseTemplate(`<div class="warning"><strong>Could Not Complete</strong></div><h2>Verification Update</h2><p>Hi ${d.organizerName},</p><p>${d.reason || 'Please try again with valid documents.'}</p><div class="btn-wrap"><a href="${APP_URL}/organizer/kyc" class="btn">Try Again</a></div>`) }),
+  stripe_connect_activated: d => ({ subject: `Stripe Connect Activated!`, html: baseTemplate(`<div class="success"><strong>Stripe Connect Active</strong></div><h2>Direct Payouts Ready</h2><p>Hi ${d.organizerName},</p><div class="card"><div class="row"><span class="label">Payout Speed</span><span class="value">2-3 days</span></div><div class="row"><span class="label">Platform Fee</span><span class="value">${d.platformFeePercent || '5'}%</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/stripe-connect" class="btn">Dashboard</a></div>`) }),
+  new_ticket_sale: d => ({ subject: `💰 New Sale: ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>New sale!</strong></div><h2>You Made a Sale!</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType} x ${d.quantity}</span></div><div class="row"><span class="label">Buyer</span><span class="value">${d.buyerName}</span></div><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:18px">${d.isFree ? 'FREE' : formatCurrency(d.amount, d.currency)}</span></div></div><p><strong>Sold:</strong> ${d.totalSold} / ${d.totalCapacity}</p><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}" class="btn">Dashboard</a></div>`) }),
+  daily_sales_summary: d => ({ subject: `Daily Sales - ${d.date}`, html: baseTemplate(`<h2>Daily Summary</h2><p>Performance on ${d.date}:</p><div class="card"><div class="row"><span class="label">Revenue</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.totalRevenue, d.currency)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Orders</span><span class="value">${d.ordersCount}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/analytics" class="btn">Analytics</a></div>`) }),
+  low_ticket_alert: d => ({ subject: `⚠️ Low Tickets: ${d.eventTitle}`, html: baseTemplate(`<div class="highlight"><strong>Running Low!</strong></div><h2>${d.eventTitle}</h2><div class="card"><div class="row"><span class="label">${d.ticketType}</span><span class="value" style="color:#dc3545">${d.remaining} left</span></div><div class="row"><span class="label">Sold</span><span class="value">${d.sold}/${d.total}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/tickets" class="btn">Manage</a></div>`) }),
+  event_published: d => ({ subject: `✅ Published: ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>Live!</strong></div><h2>${d.eventTitle}</h2><p>Your event is visible.</p><div class="card"><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Link</span><span class="value"><a href="${d.eventUrl}">${d.eventUrl}</a></span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}" class="btn">Manage</a></div>`) }),
+  event_cancelled_organizer: d => ({ subject: `Cancelled: ${d.eventTitle}`, html: baseTemplate(`<h2>Cancellation Confirmed</h2><p><strong>${d.eventTitle}</strong> cancelled.</p><div class="card"><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Refunds</span><span class="value">${formatCurrency(d.refundTotal, d.currency)}</span></div></div><p>Attendees notified. Refunds processing.</p>`) }),
+  event_reminder_organizer: d => ({ subject: `Your event is ${d.timeUntil}: ${d.eventTitle}`, html: baseTemplate(`<h2>Event ${d.timeUntil}!</h2><p>Get ready for <strong>${d.eventTitle}</strong>!</p><div class="card"><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Revenue</span><span class="value">${formatCurrency(d.revenue, d.currency)}</span></div></div><h3>Checklist:</h3><ul><li>Download attendee list</li><li>Set up check-in</li><li>Brief team</li></ul><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/check-in" class="btn">Check-In</a></div>`) }),
+  refund_request: d => ({ subject: `Refund Request: ${d.eventTitle}`, html: baseTemplate(`<h2>New Refund Request</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Attendee</span><span class="value">${d.attendeeName}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType}</span></div><div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Reason</span><span class="value">${d.reason || 'Not specified'}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/refunds/${d.refundId}" class="btn">Review</a></div>`) }),
+  post_event_summary: d => ({ subject: `Summary: ${d.eventTitle}`, html: baseTemplate(`<h2>Event Wrap-Up</h2><p><strong>${d.eventTitle}</strong></p><div class="card"><div class="row"><span class="label">Revenue</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.totalRevenue, d.currency)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Checked In</span><span class="value">${d.checkedIn} (${d.checkInRate}%)</span></div><div class="row"><span class="label">Payout</span><span class="value">${formatCurrency(d.payoutAmount, d.currency)}</span></div></div><p>Payout in 2-3 business days.</p><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/analytics" class="btn">Full Report</a></div>`) }),
+  payout_processed: d => ({ subject: `💰 Payout - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Money on the way!</strong></div><h2>Payout Processed</h2><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Bank</span><span class="value">${d.bankName}</span></div><div class="row"><span class="label">Account</span><span class="value">${maskBank(d.accountNumber)}</span></div><div class="row"><span class="label">Ref</span><span class="value">${d.reference}</span></div></div><p>Arrives in 24-48 hours.</p>`) }),
+  stripe_connect_payout_initiated: d => ({ subject: `Payout Initiated - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Payout Started</strong></div><h2>Processing</h2><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Expected</span><span class="value">2-3 business days</span></div></div>`) }),
+  sms_units_purchased: d => ({ subject: `SMS Credits - ${d.units} units`, html: baseTemplate(`<div class="success"><strong>Purchased!</strong></div><h2>SMS Credits Added</h2><div class="card"><div class="row"><span class="label">Units</span><span class="value">${d.units}</span></div><div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Balance</span><span class="value" style="color:${BRAND_COLOR}">${d.newBalance}</span></div></div>`) }),
+  whatsapp_credits_purchased: d => ({ subject: `WhatsApp Credits - ${d.units} units`, html: baseTemplate(`<div class="success"><strong>Purchased!</strong></div><h2>WhatsApp Credits</h2><div class="card"><div class="row"><span class="label">Units</span><span class="value">${d.units}</span></div><div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Balance</span><span class="value" style="color:${BRAND_COLOR}">${d.newBalance}</span></div></div>`) }),
+  low_sms_balance: d => ({ subject: `⚠️ Low SMS Credits`, html: baseTemplate(`<div class="highlight"><strong>Low Balance</strong></div><h2>SMS Running Low</h2><p>Hi ${d.organizerName},</p><div class="card"><div class="row"><span class="label">Balance</span><span class="value" style="color:#dc3545">${d.balance} credits</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/sms-credits" class="btn">Buy More</a></div>`) }),
+  event_draft_reminder: d => ({ subject: `Complete: "${d.eventTitle}"`, html: baseTemplate(`<h2>Your Event is Waiting</h2><p>Hi ${d.organizerName},</p><p>You started <strong>${d.eventTitle}</strong> but haven't published yet.</p><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/edit" class="btn">Continue</a></div>`) }),
+  // TEAM
+  team_invitation: d => ({ subject: `Join ${d.organizerName} on Ticketrack`, html: baseTemplate(`<h2>You're Invited!</h2><p>Hi ${d.firstName},</p><p><strong>${d.organizerName}</strong> invited you as <strong>${d.roleName}</strong>.</p><div class="card"><div class="row"><span class="label">Organization</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Role</span><span class="value">${d.roleName}</span></div></div><div class="btn-wrap"><a href="${d.inviteLink}" class="btn">Accept</a></div><p style="font-size:12px;color:#666">Expires in 7 days.</p>`) }),
+  team_member_removed: d => ({ subject: `Removed from ${d.organizerName}`, html: baseTemplate(`<h2>Access Removed</h2><p>Hi ${d.memberName},</p><p>Your access to <strong>${d.organizerName}</strong> has been removed.</p>`) }),
+  // PROMOTER
+  promoter_invite: d => ({ subject: `Promote ${d.eventTitle || 'events'} on Ticketrack!`, html: baseTemplate(`<h2>Become a Promoter!</h2><p><strong>${d.organizerName}</strong> invites you to promote.</p><div class="card"><div class="row"><span class="label">Organizer</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle || 'All Events'}</span></div><div class="row"><span class="label">Commission</span><span class="value">${d.commissionValue}${d.commissionType === 'percentage' ? '%' : ' ' + (d.currency || 'NGN')}</span></div><div class="row"><span class="label">Your Code</span><span class="value" style="color:${BRAND_COLOR};font-weight:bold">${d.promoCode}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/promoter/accept?code=${d.promoCode}" class="btn">${d.isNewUser ? 'Sign Up' : 'Accept'}</a></div>`) }),
+  promoter_accepted: d => ({ subject: `${d.promoterName} joined!`, html: baseTemplate(`<div class="success"><strong>Accepted!</strong></div><h2>New Promoter</h2><p><strong>${d.promoterName}</strong> accepted.</p><div class="card"><div class="row"><span class="label">Promoter</span><span class="value">${d.promoterName}</span></div><div class="row"><span class="label">Code</span><span class="value" style="color:${BRAND_COLOR};font-weight:bold">${d.promoCode}</span></div><div class="row"><span class="label">Commission</span><span class="value">${d.commissionValue}${d.commissionType === 'percentage' ? '%' : ''}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/promoters" class="btn">View</a></div>`) }),
+  promoter_commission: d => ({ subject: `💰 Commission: ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Earned!</strong></div><h2>Commission</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Sale</span><span class="value">${formatCurrency(d.saleAmount, d.currency)}</span></div><div class="row"><span class="label">Your Cut</span><span class="value" style="color:${BRAND_COLOR};font-size:18px">${formatCurrency(d.amount, d.currency)}</span></div></div><p><strong>Pending:</strong> ${formatCurrency(d.pendingTotal, d.currency)}</p>`) }),
+  promoter_payout: d => ({ subject: `💰 Promoter Payout - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Payout!</strong></div><h2>Promoter Payout</h2><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Bank</span><span class="value">${d.bankName}</span></div><div class="row"><span class="label">Account</span><span class="value">${maskBank(d.accountNumber)}</span></div></div>`) }),
+  promo_code_used: d => ({ subject: `Code used!`, html: baseTemplate(`<h2>Code Used!</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Code</span><span class="value">${d.promoCode}</span></div><div class="row"><span class="label">Total Uses</span><span class="value">${d.totalUses}</span></div></div>`) }),
+  promo_code_created: d => ({ subject: `Promo Code: ${d.promoCode}`, html: baseTemplate(`<div class="success"><strong>Created!</strong></div><h2>New Promo Code</h2><p>Hi ${d.organizerName},</p><div class="card"><div style="text-align:center;padding:20px"><div style="font-size:32px;font-weight:800;color:${BRAND_COLOR};letter-spacing:2px">${d.promoCode}</div></div><div class="row"><span class="label">Discount</span><span class="value">${d.discountValue}${d.discountType === 'percentage' ? '%' : ' ' + (d.currency || 'NGN')} off</span></div><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle || 'All'}</span></div>${d.maxUses ? `<div class="row"><span class="label">Max Uses</span><span class="value">${d.maxUses}</span></div>` : ''}${d.expiresAt ? `<div class="row"><span class="label">Expires</span><span class="value">${formatDate(d.expiresAt)}</span></div>` : ''}</div><div class="btn-wrap"><a href="${APP_URL}/organizer/promo-codes" class="btn">Manage</a></div>`) }),
+  // AFFILIATE
+  affiliate_commission_earned: d => ({ subject: `💰 Referral: ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Earned!</strong></div><h2>Referral Commission</h2><p>Hi ${d.affiliateName},</p><p>Someone you referred purchased!</p><div class="card"><div class="row"><span class="label">Purchase</span><span class="value">${formatCurrency(d.purchaseAmount, d.currency)}</span></div><div class="row"><span class="label">Your Cut</span><span class="value" style="color:${BRAND_COLOR};font-size:18px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Code</span><span class="value">${d.referralCode}</span></div></div><p><strong>Pending:</strong> ${formatCurrency(d.pendingTotal, d.currency)}</p>`) }),
+  affiliate_payout_processed: d => ({ subject: `💰 Affiliate Payout - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Payout!</strong></div><h2>Affiliate Payout</h2><p>Hi ${d.affiliateName},</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Bank</span><span class="value">${d.bankName}</span></div><div class="row"><span class="label">Account</span><span class="value">${maskBank(d.accountNumber)}</span></div><div class="row"><span class="label">Ref</span><span class="value">${d.reference}</span></div></div>`) }),
+  // SUPPORT
+  support_ticket_created: d => ({ subject: `Ticket #${d.ticketId} - Received`, html: baseTemplate(`<h2>Request Received</h2><p>Hi ${d.userName},</p><div class="card"><div class="row"><span class="label">ID</span><span class="value">#${d.ticketId}</span></div><div class="row"><span class="label">Category</span><span class="value">${d.category}</span></div><div class="row"><span class="label">Subject</span><span class="value">${d.subject}</span></div></div><p>We'll get back shortly.</p><div class="btn-wrap"><a href="${APP_URL}/support" class="btn">View</a></div>`) }),
+  support_ticket_reply: d => ({ subject: `Reply: Ticket #${d.ticketId}`, html: baseTemplate(`<h2>New Reply</h2><p>Hi ${d.userName},</p><div class="card"><div class="row"><span class="label">ID</span><span class="value">#${d.ticketId}</span></div><div class="row"><span class="label">Subject</span><span class="value">${d.subject}</span></div></div><div style="background:#f8f9fc;padding:20px;border-radius:12px;margin:24px 0"><p style="margin:0;white-space:pre-wrap">${d.reply}</p></div><div class="btn-wrap"><a href="${APP_URL}/support" class="btn">View</a></div>`) }),
+  support_ticket_resolved: d => ({ subject: `Resolved: Ticket #${d.ticketId}`, html: baseTemplate(`<div class="success"><strong>Resolved</strong></div><h2>Ticket Resolved</h2><p>Hi ${d.userName},</p><div class="card"><div class="row"><span class="label">ID</span><span class="value">#${d.ticketId}</span></div><div class="row"><span class="label">Subject</span><span class="value">${d.subject}</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:#10b981">Resolved</span></div></div>`) }),
+  // POST-EVENT
+  post_event_thank_you: d => ({ subject: `Thanks for attending ${d.eventTitle}!`, html: baseTemplate(`<h2>Thank You!</h2><p>Hi ${d.attendeeName},</p><p>Thanks for being part of <strong>${d.eventTitle}</strong>!</p>${d.message ? `<div style="background:#f8f9fc;padding:20px;border-radius:12px;margin:24px 0"><p style="margin:0">${d.message}</p></div>` : ''}<div class="btn-wrap"><a href="${APP_URL}/organizer/${d.organizerSlug}" class="btn">Follow ${d.organizerName}</a></div>`) }),
+  post_event_feedback: d => ({ subject: `How was ${d.eventTitle}?`, html: baseTemplate(`<h2>Share Feedback</h2><p>Hi ${d.attendeeName},</p><p>How was <strong>${d.eventTitle}</strong>?</p><div class="btn-wrap"><a href="${d.feedbackUrl}" class="btn">Give Feedback</a></div>`) }),
+  post_event_next_event: d => ({ subject: `Next: ${d.nextEventTitle}`, html: baseTemplate(`<h2>Don't Miss This!</h2><p>Hi ${d.attendeeName},</p><p>Since you loved <strong>${d.previousEventTitle}</strong>:</p><div class="card"><h3>${d.nextEventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.nextEventDate)}</span></div><div class="row"><span class="label">Venue</span><span class="value">${d.nextEventVenue}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/e/${d.nextEventSlug}" class="btn">Get Tickets</a></div>`) }),
+  // BULK
+  bulk_campaign: d => ({ subject: d.subject, html: baseTemplate(`<h2>${d.title || d.subject}</h2><div style="white-space:pre-wrap">${d.body}</div>${d.ctaText && d.ctaUrl ? `<div class="btn-wrap"><a href="${d.ctaUrl}" class="btn">${d.ctaText}</a></div>` : ''}`, d.preheader || '') }),
+  admin_broadcast: d => ({ subject: `[${BRAND_NAME}] ${d.subject}`, html: baseTemplate(`<h2>${d.title || d.subject}</h2><div style="white-space:pre-wrap">${d.body}</div>${d.ctaText && d.ctaUrl ? `<div class="btn-wrap"><a href="${d.ctaUrl}" class="btn">${d.ctaText}</a></div>` : ''}`, d.preheader || '') }),
+  // ADMIN
+  admin_new_organizer: d => ({ subject: `New Organizer: ${d.businessName}`, html: baseTemplate(`<h2>New Organizer</h2><div class="card"><div class="row"><span class="label">Business</span><span class="value">${d.businessName}</span></div><div class="row"><span class="label">Email</span><span class="value">${d.email}</span></div><div class="row"><span class="label">Signed Up</span><span class="value">${formatDate(d.createdAt)}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/admin/organizers/${d.organizerId}" class="btn">View</a></div>`) }),
+  admin_new_event: d => ({ subject: `New Event: ${d.eventTitle}`, html: baseTemplate(`<h2>New Event</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Organizer</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/admin/events/${d.eventId}" class="btn">Review</a></div>`) }),
+  admin_flagged_content: d => ({ subject: `Flagged: ${d.contentType}`, html: baseTemplate(`<div class="warning"><strong>Review Required</strong></div><h2>Flagged Content</h2><div class="card"><div class="row"><span class="label">Type</span><span class="value">${d.contentType}</span></div><div class="row"><span class="label">Reason</span><span class="value">${d.reason}</span></div><div class="row"><span class="label">Reporter</span><span class="value">${d.reportedBy || 'System'}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/admin/moderation/${d.flagId}" class="btn">Review</a></div>`) }),
+  admin_daily_stats: d => ({ subject: `Daily Stats - ${d.date}`, html: baseTemplate(`<h2>Daily Summary</h2><p>${d.date}:</p><div class="card"><div class="row"><span class="label">Revenue</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.totalRevenue, d.currency)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">New Users</span><span class="value">${d.newUsers}</span></div><div class="row"><span class="label">New Organizers</span><span class="value">${d.newOrganizers}</span></div><div class="row"><span class="label">Platform Fees</span><span class="value">${formatCurrency(d.platformFees, d.currency)}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/admin/analytics" class="btn">Dashboard</a></div>`) }),
+}
+
+// Send email
+async function sendEmail(supabase: any, req: any) {
   if (!RESEND_API_KEY) return { success: false, error: 'RESEND_API_KEY not configured' }
-  
-  const template = templates[request.type]
-  if (!template) return { success: false, error: `Unknown email type: ${request.type}` }
-
-  const { subject, html } = template(request.data)
-
-  // Create communication log entry (status: queued)
+  const template = templates[req.type]
+  if (!template) return { success: false, error: `Unknown type: ${req.type}` }
+  const { subject, html } = template(req.data)
+  const to = Array.isArray(req.to) ? req.to : [req.to]
+  const perm = EMAIL_PERMISSIONS[req.type]
+  const from = perm?.fromEmail || FROM_EMAIL
   let logId: string | undefined
-  if (!request.skipLogging) {
+  if (!req.skipLogging) {
     try {
-      const { data: logEntry, error: logError } = await supabase
-        .from('communication_logs')
-        .insert({
-          channel: 'email',
-          template_key: request.type,
-          recipient_email: request.to,
-          recipient_user_id: request.userId || null,
-          event_id: request.eventId || null,
-          ticket_id: request.ticketId || null,
-          order_id: request.orderId || null,
-          waitlist_id: request.waitlistId || null,
-          subject: subject,
-          status: 'queued',
-          provider: 'resend',
-          metadata: { templateData: request.data }
-        })
-        .select('id')
-        .single()
-      
-      if (logEntry) logId = logEntry.id
-      if (logError) console.error('Failed to create communication log:', logError)
-    } catch (err) {
-      console.error('Communication log error:', err)
-    }
+      const { data } = await supabase.from('communication_logs').insert({ channel: 'email', template_key: req.type, recipient_email: to[0], recipient_user_id: req.userId || null, event_id: req.eventId || null, subject, status: 'queued', provider: 'resend', metadata: { recipientCount: to.length } }).select('id').single()
+      logId = data?.id
+    } catch (e) { console.error('Log error:', e) }
   }
-
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM_EMAIL, to: request.to, subject, html, attachments: request.attachments }),
-    })
-
-    const result = await response.json()
-    
-    if (!response.ok) {
-      console.error('Resend API error:', result)
-      
-      // Update log with failure
-      if (logId) {
-        await supabase
-          .from('communication_logs')
-          .update({ 
-            status: 'failed', 
-            error_message: result.message || 'Failed to send email',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', logId)
-      }
-      
-      return { success: false, error: result.message || 'Failed to send email', logId }
+    const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from, to, subject, html, attachments: req.attachments }) })
+    const result = await res.json()
+    if (!res.ok) {
+      if (logId) await supabase.from('communication_logs').update({ status: 'failed', error_message: result.message }).eq('id', logId)
+      return { success: false, error: result.message || 'Failed', logId }
     }
-    
-    // Update log with success
-    if (logId) {
-      await supabase
-        .from('communication_logs')
-        .update({ 
-          status: 'sent', 
-          provider_message_id: result.id,
-          sent_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', logId)
-    }
-    
+    if (logId) await supabase.from('communication_logs').update({ status: 'sent', provider_message_id: result.id, sent_at: new Date().toISOString() }).eq('id', logId)
     return { success: true, messageId: result.id, logId }
-  } catch (error) {
-    console.error('Email send error:', error)
-    
-    // Update log with failure
-    if (logId) {
-      await supabase
-        .from('communication_logs')
-        .update({ 
-          status: 'failed', 
-          error_message: error.message,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', logId)
-    }
-    
-    return { success: false, error: error.message, logId }
+  } catch (e: any) {
+    if (logId) await supabase.from('communication_logs').update({ status: 'failed', error_message: e.message }).eq('id', logId)
+    return { success: false, error: e.message, logId }
   }
 }
 
+// Handler
 Deno.serve(async (req) => {
-  const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' }
-
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-
+  const origin = req.headers.get('Origin')
+  const cors = getCorsHeaders(origin)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  if (req.method !== 'POST') return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers: cors })
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) return new Response(JSON.stringify({ success: false, error: 'Unauthorized origin' }), { status: 403, headers: cors })
   try {
-    const request: EmailRequest = await req.json()
-    if (!request.type || !request.to || !request.data) {
-      return new Response(JSON.stringify({ success: false, error: 'Missing required fields: type, to, data' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    }
-
-    const result = await sendEmail(request)
-    return new Response(JSON.stringify(result), { status: result.success ? 200 : 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-  } catch (error) {
-    console.error('Handler error:', error)
-    return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    const body = await req.json()
+    if (!body.type || !body.to || !body.data) return new Response(JSON.stringify({ success: false, error: 'Missing fields' }), { status: 400, headers: cors })
+    const auth = await getAuthContext(req)
+    const authCheck = await checkAuth(body.type, auth, body)
+    if (!authCheck.ok) return new Response(JSON.stringify({ success: false, error: authCheck.err }), { status: 403, headers: cors })
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const to = Array.isArray(body.to) ? body.to : [body.to]
+    const rateCheck = await checkRateLimit(supabase, auth.userId, body.type, to.length)
+    if (!rateCheck.ok) return new Response(JSON.stringify({ success: false, error: rateCheck.err }), { status: 429, headers: cors })
+    const result = await sendEmail(supabase, body)
+    return new Response(JSON.stringify(result), { status: result.success ? 200 : 500, headers: cors })
+  } catch (e: any) {
+    console.error('Handler error:', e)
+    return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: cors })
   }
 })

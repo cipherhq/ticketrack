@@ -22,6 +22,7 @@ import {
   Linkedin,
   Ticket,
   TrendingUp,
+  CreditCard,
   LogIn,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -415,6 +416,7 @@ export function AdminOrganizers() {
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Events</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Revenue</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">KYC</th>
+                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Connect</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
                   <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
                 </tr>
@@ -452,6 +454,17 @@ export function AdminOrganizers() {
                     </td>
                     <td className="py-4 px-4">
                       {getKYCBadge(org.kyc_status, org.kyc_level)}
+                    </td>
+                    <td className="py-4 px-4">
+                      {org.stripe_connect_status === 'active' ? (
+                        <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1 w-fit">
+                          <CreditCard className="w-3 h-3" />Connected
+                        </Badge>
+                      ) : org.stripe_connect_status === 'pending' ? (
+                        <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>
+                      ) : (
+                        <span className="text-[#0F0F0F]/30">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       {org.is_active !== false ? (
@@ -509,7 +522,7 @@ export function AdminOrganizers() {
                 ))}
                 {filteredOrganizers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-[#0F0F0F]/60">
+                    <td colSpan={8} className="py-8 text-center text-[#0F0F0F]/60">
                       No organizers found
                     </td>
                   </tr>
