@@ -79,6 +79,7 @@ export function AdminSupportTickets() {
       }
 
       const { data, error } = await query
+      console.log("Support tickets query result:", { data, error })
 
       if (error) throw error
       setTickets(data || [])
@@ -309,7 +310,7 @@ export function AdminSupportTickets() {
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="font-medium">
-                          {reply.user_type === 'admin' ? '🎧 ' : reply.user_type === 'organizer' ? '🏢 ' : '👤 '}
+                          {reply.user_type === 'admin' ? '🎧 ' : reply.user_type === 'organizer' ? '🏢 ' : reply.user_type === 'promoter' ? '📣 ' : '👤 '}
                           {reply.user_name}
                         </span>
                         {reply.is_internal && (
@@ -583,7 +584,7 @@ export function AdminSupportTickets() {
                         </Badge>
                         <Badge className={priority.color}>{priority.label}</Badge>
                         <Badge variant="outline" className="text-xs">
-                          {ticket.user_type === 'organizer' ? '🏢 Organizer' : '👤 Attendee'}
+                          {ticket.user_type === 'organizer' ? '🏢 Organizer' : ticket.user_type === 'promoter' ? '📣 Promoter' : '👤 Attendee'}
                         </Badge>
                       </div>
                       <h3 className="font-medium text-[#0F0F0F] mb-1">{ticket.subject}</h3>

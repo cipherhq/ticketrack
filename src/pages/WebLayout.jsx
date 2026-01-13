@@ -54,10 +54,10 @@ export function WebLayout() {
 
         // Check if user is a promoter (has any promoter assignments)
         const { count: promoterCount } = await supabase
-          .from('promoter_assignments')
+          .from('promoters')
           .select('id', { count: 'exact', head: true })
-          .eq('promoter_id', user.id)
-          .eq('status', 'accepted')
+          .eq('user_id', user.id)
+          
         setIsPromoter(promoterCount > 0)
 
       } else {

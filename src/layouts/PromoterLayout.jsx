@@ -9,7 +9,7 @@ import {
   X,
   History,
   LogOut,
-  Bell, FileText,
+  Bell, FileText, HelpCircle,
 } from 'lucide-react';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +21,7 @@ const navItems = [
   { icon: History, label: 'Payment History', path: '/promoter/payment-history' },
   { icon: FileText, label: 'Tax Documents', path: '/promoter/tax-documents' },
   { icon: UserCircle, label: 'Profile', path: '/promoter/profile' },
+  { icon: HelpCircle, label: 'Support', path: '/promoter/support' },
 ];
 
 export function PromoterLayout() {
