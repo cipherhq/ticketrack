@@ -206,14 +206,23 @@ export function AuthProvider({ children }) {
         throw new Error(AUTH_ERRORS.OTP_INVALID)
       }
 
-      // If user exists and we have an action link, use it to sign in
-      if (data.actionLink) {
-        // Extract token from action link and sign in
-        const url = new URL(data.actionLink)
-        const token = url.searchParams.get('token')
-        if (token) {
-          await supabase.auth.verifyOtp({ token_hash: token, type: 'magiclink' })
+      // If user exists and we have a token_hash, use it to sign in
+      if (data.token_hash && data.email) {
+        const { error: signInError } = await supabase.auth.verifyOtp({ 
+          token_hash: data.token_hash, 
+          type: 'magiclink' 
+        })
+        if (signInError) {
+          console.error('Sign in error:', signInError)
+          // Fallback - user verified but session failed
+          throw new Error('Phone verified but login failed. Please try email login.')
         }
+      } else if (data.requiresEmailLogin) {
+        // User exists but we could not create session
+        throw new Error('Phone verified. Please login with your email.')
+      } else if (data.isNewUser) {
+        // New user - needs to register
+        return { success: true, isNewUser: true, phone: data.phone }
       }
 
       setOtpSent(false)

@@ -178,6 +178,60 @@ const helpContent = {
           'Check back often to discover new events in your area'
         ]
       },
+      {
+        id: 'payment-methods',
+        title: 'Available Payment Methods',
+        icon: CreditCard,
+        steps: [
+          'At checkout, you will see payment options based on your location.',
+          'Nigeria: Pay with Card, Bank Transfer, or USSD via Paystack.',
+          'Ghana/Kenya: Pay with Card or Mobile Money via Paystack.',
+          'US/UK/EU: Pay with Card via Stripe or PayPal.',
+          'Select your preferred method and complete payment.',
+          'You will receive confirmation via email immediately.'
+        ],
+        screenshot: '/help/payment-methods.png',
+        tips: [
+          'Card payments are instant',
+          'Bank transfers may take a few minutes to confirm',
+          'PayPal requires a PayPal account or guest checkout'
+        ],
+        important: 'Payment options vary by event. The organizers country determines available methods.'
+      },
+      {
+        id: 'follow-organizers',
+        title: 'How to Follow Organizers',
+        icon: UserPlus,
+        steps: [
+          'Visit an event page or organizer profile.',
+          'Click the "Follow" button next to the organizer name.',
+          'You will receive notifications when they create new events.',
+          'View all organizers you follow in your Profile → Following tab.',
+          'Click "Unfollow" anytime to stop receiving updates.'
+        ],
+        screenshot: '/help/follow-organizers.png',
+        tips: [
+          'Follow your favorite event creators to never miss their events',
+          'You can manage all your follows from your profile'
+        ]
+      },
+      {
+        id: 'multi-currency-checkout',
+        title: 'Understanding Multi-Currency Pricing',
+        icon: CreditCard,
+        steps: [
+          'Event prices are displayed in the organizers chosen currency.',
+          'Supported currencies: NGN, GHS, KES, ZAR, USD, GBP, EUR.',
+          'Your bank may apply conversion fees for international purchases.',
+          'The price you see at checkout is the final price in that currency.',
+          'Check with your bank about international transaction fees.'
+        ],
+        screenshot: '/help/multi-currency.png',
+        tips: [
+          'Prices are always shown in the the event currency',
+          'Use a card with no foreign transaction fees for international events'
+        ]
+      },
     ]
   },
   organizers: {
@@ -354,6 +408,86 @@ const helpContent = {
           'Use the audit trail for any disputes or issues',
           'Export data for record keeping'
         ]
+      },
+      {
+        id: 'stripe-connect-setup',
+        title: 'How to Set Up Direct Payouts (Stripe Connect)',
+        icon: Wallet,
+        steps: [
+          'Go to Organizer Dashboard → Payouts.',
+          'Click "Connect with Stripe" button.',
+          'You will be redirected to Stripe to create or link your account.',
+          'Fill in your business details (name, address, bank account).',
+          'Complete identity verification if prompted.',
+          'Once approved, your Stripe account is connected.',
+          'Future event earnings will be paid directly to your bank account.'
+        ],
+        screenshot: '/help/stripe-connect.png',
+        tips: [
+          'Have your bank account details ready before starting',
+          'Use a business email for your Stripe account',
+          'Verification usually takes 1-2 business days'
+        ],
+        important: 'Stripe Connect is available for organizers in supported countries (US, UK, EU, and more). Nigerian organizers use Paystack payouts.'
+      },
+      {
+        id: 'kyc-verification',
+        title: 'How to Complete KYC Verification',
+        icon: Shield,
+        steps: [
+          'Go to Organizer Dashboard → Settings or Payouts.',
+          'Look for "Verify Identity" or "Complete KYC" section.',
+          'Click to start the verification process.',
+          'Provide required documents: Government ID, Proof of Address.',
+          'Take a selfie for identity matching (if required).',
+          'Submit and wait for review (usually 1-3 business days).',
+          'You will receive an email once verified.'
+        ],
+        screenshot: '/help/kyc-verification.png',
+        tips: [
+          'Ensure documents are clear and not expired',
+          'Use good lighting for selfie verification',
+          'Business accounts may need additional documents'
+        ],
+        important: 'KYC verification is required to receive payouts above certain thresholds and helps protect against fraud.'
+      },
+      {
+        id: 'view-payouts',
+        title: 'How to View and Track Payouts',
+        icon: Wallet,
+        steps: [
+          'Go to Organizer Dashboard → Payouts.',
+          'View your current balance and pending payouts.',
+          'See payout history with dates and amounts.',
+          'Click on any payout to see which events/orders it includes.',
+          'Track payout status: Pending, Processing, Completed, Failed.'
+        ],
+        screenshot: '/help/view-payouts.png',
+        tips: [
+          'Payouts are processed after events complete',
+          'Keep your bank details up to date',
+          'Contact support if a payout fails'
+        ]
+      },
+      {
+        id: 'multi-currency',
+        title: 'How Multi-Currency Pricing Works',
+        icon: CreditCard,
+        steps: [
+          'When creating an event, select your event country/currency.',
+          'Set ticket prices in your local currency (NGN, GHS, KES, USD, GBP, EUR, ZAR).',
+          'Attendees see prices in the the event currency.',
+          'Payment is processed in the event currency.',
+          'You receive payouts in your connected bank account currency.',
+          'Conversion rates are handled automatically by payment providers.'
+        ],
+        screenshot: '/help/multi-currency.png',
+        tips: [
+          'Choose the currency your target audience uses',
+          'International events can use USD, GBP, or EUR',
+          'African events typically use local currencies (NGN, GHS, KES, ZAR)'
+        ],
+        important: 'Currency is set per event and cannot be changed after tickets are sold.'
       },
     ]
   },
@@ -754,7 +888,7 @@ export function HelpCenter() {
             </div>
             <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Still Need Help?</h3>
             <p className="text-[#0F0F0F]/60 mb-6">
-              Can't find what you're looking for? Our support team is here to help.
+              Cannot find what you are looking for? Our support team is here to help.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 

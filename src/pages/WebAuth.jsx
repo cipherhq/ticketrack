@@ -22,7 +22,7 @@ export function WebAuth() {
   const [success, setSuccess] = useState('')
   const [step, setStep] = useState(isLogin ? 'credentials' : 'country-selection')
   const [loginMethod, setLoginMethod] = useState("email")
-  const showPhoneLogin = false // TODO: Enable when SMS provider is configured // "email" or "phone"
+  const showPhoneLogin = true // Twilio Verify enabled // "email" or "phone"
   const [unverifiedEmail, setUnverifiedEmail] = useState('')
   const [signupEmail, setSignupEmail] = useState('')
   
@@ -125,7 +125,20 @@ export function WebAuth() {
     try {
       if (step === 'otp') {
         const phone = loginMethod === "phone" ? formData.phone : pendingUser?.user_metadata?.phone
-        await verifyOTP(phone, formData.otp)
+        const result = await verifyOTP(phone, formData.otp)
+        console.log('verifyOTP result:', result)
+        
+        // Check if this is a new user who needs to register
+        if (result.isNewUser) {
+          setError('No account found with this phone number. Please sign up first.')
+          setStep('credentials')
+          return
+        }
+        
+        // Wait a moment for auth state to update
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Navigate to profile/destination
         navigate(from, { replace: true, state: location.state })
         return
       }

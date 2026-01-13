@@ -36,6 +36,10 @@ import { WebSupport } from './pages/WebSupport';
 import { WebPricing } from './pages/WebPricing';
 import { WebPrivacy } from './pages/WebPrivacy';
 import { WebTerms } from './pages/WebTerms';
+import { WebTrustSafety } from './pages/WebTrustSafety';
+import { WebRefundPolicy } from './pages/WebRefundPolicy';
+import { WebCareers } from './pages/WebCareers';
+import { WebResources } from './pages/WebResources';
 import { CreateEvent } from './pages/organizer/CreateEvent';
 import { OrganizerProvider } from './contexts/OrganizerContext';
 import { AcceptTeamInvitation } from "./pages/AcceptTeamInvitation";
@@ -115,6 +119,10 @@ function App() {
                 <Route path="/pricing" element={<WebPricing />} />
                 <Route path="/privacy" element={<WebPrivacy />} />
                 <Route path="/terms" element={<WebTerms />} />
+                <Route path="/trust-safety" element={<WebTrustSafety />} />
+                <Route path="/refund-policy" element={<WebRefundPolicy />} />
+                <Route path="/careers" element={<WebCareers />} />
+                <Route path="/resources" element={<WebResources />} />
                 <Route path="/profile" element={<AttendeeProfile />} />
                 <Route path="/o/:id" element={<OrganizerPublicProfile />} />
               </Route>

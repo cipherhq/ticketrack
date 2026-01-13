@@ -17,6 +17,46 @@ function formatPhoneNumber(phone: string): string {
   return cleaned;
 }
 
+// Verify via Twilio Verify API
+async function verifyTwilioCode(
+  to: string,
+  code: string,
+  accountSid: string,
+  authToken: string,
+  verifyServiceSid: string
+): Promise<{ success: boolean; status?: string; error?: string }> {
+  try {
+    const formattedTo = '+' + formatPhoneNumber(to);
+    const credentials = btoa(`${accountSid}:${authToken}`);
+
+    const response = await fetch(
+      `https://verify.twilio.com/v2/Services/${verifyServiceSid}/VerificationCheck`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          To: formattedTo,
+          Code: code,
+        }),
+      }
+    );
+
+    const data = await response.json();
+    console.log('Twilio Verify Check response:', JSON.stringify(data));
+
+    if (response.ok && data.status === 'approved') {
+      return { success: true, status: data.status };
+    }
+    return { success: false, error: data.message || 'Invalid code', status: data.status };
+  } catch (error) {
+    console.error('Twilio Verify Check error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -38,7 +78,7 @@ serve(async (req) => {
 
     const formattedPhone = formatPhoneNumber(phone);
 
-    // Find valid OTP
+    // Find the OTP record to determine provider
     const { data: otpRecord, error: fetchError } = await supabase
       .from('phone_otps')
       .select('*')
@@ -66,17 +106,49 @@ serve(async (req) => {
       );
     }
 
-    // Verify OTP
-    if (otpRecord.otp_hash !== otp) {
-      await supabase
-        .from('phone_otps')
-        .update({ attempts: otpRecord.attempts + 1 })
-        .eq('id', otpRecord.id);
+    let verified = false;
 
-      return new Response(
-        JSON.stringify({ error: 'Invalid OTP. Please try again.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // If sent via Twilio Verify, verify through their API
+    if (otpRecord.otp_hash === 'TWILIO_VERIFY' || otpRecord.provider === 'twilio_verify') {
+      const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const twilioToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const twilioVerifySid = Deno.env.get('TWILIO_VERIFY_SERVICE_SID');
+
+      if (!twilioSid || !twilioToken || !twilioVerifySid) {
+        return new Response(
+          JSON.stringify({ error: 'Verification service not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const result = await verifyTwilioCode(formattedPhone, otp, twilioSid, twilioToken, twilioVerifySid);
+      verified = result.success;
+
+      if (!verified) {
+        await supabase
+          .from('phone_otps')
+          .update({ attempts: otpRecord.attempts + 1 })
+          .eq('id', otpRecord.id);
+
+        return new Response(
+          JSON.stringify({ error: 'Invalid verification code. Please try again.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      // For Termii/other providers, verify against stored OTP
+      if (otpRecord.otp_hash !== otp) {
+        await supabase
+          .from('phone_otps')
+          .update({ attempts: otpRecord.attempts + 1 })
+          .eq('id', otpRecord.id);
+
+        return new Response(
+          JSON.stringify({ error: 'Invalid OTP. Please try again.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      verified = true;
     }
 
     // Mark OTP as verified
@@ -85,80 +157,75 @@ serve(async (req) => {
       .update({ verified: true, verified_at: new Date().toISOString() })
       .eq('id', otpRecord.id);
 
-    // For login - find user and generate session
-    if (type === 'login') {
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, phone')
-        .eq('phone', formattedPhone)
-        .single();
+    // Find existing user by phone
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, phone')
+      .eq('phone', formattedPhone)
+      .single();
 
-      if (existingUser) {
-        // Generate magic link for session
-        const { data: authData } = await supabase.auth.admin.getUserById(existingUser.id);
-        
-        if (authData?.user?.email) {
-          const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-            type: 'magiclink',
-            email: authData.user.email,
-          });
-
-          if (!linkError && linkData) {
-            return new Response(
-              JSON.stringify({ 
-                success: true, 
-                verified: true,
-                user: {
-                  id: existingUser.id,
-                  phone: formattedPhone,
-                  email: authData.user.email,
-                  full_name: existingUser.full_name,
-                },
-                actionLink: linkData.properties?.action_link,
-              }),
-              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
+    if (existingProfile) {
+      // User exists - get their auth record and create session
+      const { data: authData } = await supabase.auth.admin.getUserById(existingProfile.id);
+      
+      if (authData?.user?.email) {
+        // Generate a magic link and extract the token for direct sign-in
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+          type: 'magiclink',
+          email: authData.user.email,
+          options: {
+            redirectTo: `${Deno.env.get('SITE_URL') || 'https://ticketrack.com'}/profile`
           }
+        });
+
+        if (!linkError && linkData?.properties?.hashed_token) {
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              verified: true,
+              user: {
+                id: existingProfile.id,
+                phone: formattedPhone,
+                email: authData.user.email,
+                full_name: existingProfile.full_name,
+              },
+              // Return token info for client-side session creation
+              token_hash: linkData.properties.hashed_token,
+              email: authData.user.email,
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
-
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            verified: true,
-            user: {
-              id: existingUser.id,
-              phone: formattedPhone,
-              full_name: existingUser.full_name,
-            },
-            requiresEmailLogin: true,
-            message: 'Phone verified. Please login with email to continue.',
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            verified: true,
-            isNewUser: true,
-            phone: formattedPhone,
-            message: 'Phone verified. Please complete registration.',
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
       }
-    }
 
-    // For signup verification
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        verified: true,
-        phone: formattedPhone,
-        message: 'Phone verified successfully',
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      // Fallback - return user info without session
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          verified: true,
+          user: {
+            id: existingProfile.id,
+            phone: formattedPhone,
+            full_name: existingProfile.full_name,
+          },
+          requiresEmailLogin: true,
+          message: 'Phone verified. Please login with email to continue.',
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      // New user - phone verified but needs to complete registration
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          verified: true,
+          isNewUser: true,
+          phone: formattedPhone,
+          message: 'Phone verified. Please complete registration.',
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
   } catch (error) {
     console.error('Verify OTP Error:', error);

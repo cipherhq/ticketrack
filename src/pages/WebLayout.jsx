@@ -478,6 +478,16 @@ export function WebLayout() {
                     Privacy Policy
                   </button>
                 </li>
+                <li>
+                  <button onClick={() => navigate('/refund-policy')} className="hover:text-white transition-colors">
+                    Refund Policy
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/trust-safety')} className="hover:text-white transition-colors">
+                    Trust & Safety
+                  </button>
+                </li>
               </ul>
             </div>
 
