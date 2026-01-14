@@ -211,13 +211,25 @@ CREATE INDEX IF NOT EXISTS idx_equipment_maintenance_due ON venue_equipment(next
 -- RLS POLICIES
 -- =====================================================
 
--- Venues: Only organizers can manage their venues
+-- Enable RLS on tables
 ALTER TABLE venues ENABLE ROW LEVEL SECURITY;
+ALTER TABLE iot_sensors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sensor_readings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE smart_checkins ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist (to allow re-running the script)
+DROP POLICY IF EXISTS "Organizers can manage their venues" ON venues;
+DROP POLICY IF EXISTS "Venue owners can manage sensors" ON iot_sensors;
+DROP POLICY IF EXISTS "Authenticated users can read sensor data" ON sensor_readings;
+DROP POLICY IF EXISTS "Sensors can insert readings" ON sensor_readings;
+DROP POLICY IF EXISTS "Users can view their check-ins" ON smart_checkins;
+DROP POLICY IF EXISTS "Organizers can view event check-ins" ON smart_checkins;
+
+-- Venues: Only organizers can manage their venues
 CREATE POLICY "Organizers can manage their venues" ON venues
   FOR ALL USING (organizer_id = (SELECT id FROM organizers WHERE user_id = auth.uid()));
 
 -- Sensors: Venue owners can manage sensors
-ALTER TABLE iot_sensors ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Venue owners can manage sensors" ON iot_sensors
   FOR ALL USING (venue_id IN (
     SELECT id FROM venues WHERE organizer_id = (
@@ -226,12 +238,10 @@ CREATE POLICY "Venue owners can manage sensors" ON iot_sensors
   ));
 
 -- Readings: Public read for analytics, restricted write
-ALTER TABLE sensor_readings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Authenticated users can read sensor data" ON sensor_readings FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Sensors can insert readings" ON sensor_readings FOR INSERT WITH CHECK (true);
 
 -- Check-ins: Users can see their own check-ins, organizers can see event check-ins
-ALTER TABLE smart_checkins ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their check-ins" ON smart_checkins FOR SELECT USING (attendee_id = auth.uid());
 CREATE POLICY "Organizers can view event check-ins" ON smart_checkins FOR SELECT USING (
   event_id IN (

@@ -214,8 +214,20 @@ CREATE INDEX IF NOT EXISTS idx_section_pricing_ticket_type ON section_pricing(ti
 -- RLS POLICIES
 -- =====================================================
 
--- Venue layouts: Only venue owners can manage their layouts
+-- Enable RLS on tables
 ALTER TABLE venue_layouts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE layout_sections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE layout_furniture ENABLE ROW LEVEL SECURITY;
+ALTER TABLE section_capacity ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist (to allow re-running the script)
+DROP POLICY IF EXISTS "Venue owners can manage layouts" ON venue_layouts;
+DROP POLICY IF EXISTS "Venue owners can manage sections" ON layout_sections;
+DROP POLICY IF EXISTS "Venue owners can manage furniture" ON layout_furniture;
+DROP POLICY IF EXISTS "Authenticated users can read capacity" ON section_capacity;
+DROP POLICY IF EXISTS "Venue owners can update capacity" ON section_capacity;
+
+-- Venue layouts: Only venue owners can manage their layouts
 CREATE POLICY "Venue owners can manage layouts" ON venue_layouts
   FOR ALL USING (venue_id IN (
     SELECT id FROM venues WHERE organizer_id = (
@@ -224,7 +236,6 @@ CREATE POLICY "Venue owners can manage layouts" ON venue_layouts
   ));
 
 -- Layout sections: Venue owners can manage sections
-ALTER TABLE layout_sections ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Venue owners can manage sections" ON layout_sections
   FOR ALL USING (layout_id IN (
     SELECT id FROM venue_layouts WHERE venue_id IN (
@@ -235,7 +246,6 @@ CREATE POLICY "Venue owners can manage sections" ON layout_sections
   ));
 
 -- Furniture: Venue owners can manage furniture placement
-ALTER TABLE layout_furniture ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Venue owners can manage furniture" ON layout_furniture
   FOR ALL USING (layout_id IN (
     SELECT id FROM venue_layouts WHERE venue_id IN (
@@ -246,7 +256,6 @@ CREATE POLICY "Venue owners can manage furniture" ON layout_furniture
   ));
 
 -- Section capacity: Public read for real-time data, restricted write
-ALTER TABLE section_capacity ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Authenticated users can read capacity" ON section_capacity FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Venue owners can update capacity" ON section_capacity FOR ALL USING (
   layout_id IN (
