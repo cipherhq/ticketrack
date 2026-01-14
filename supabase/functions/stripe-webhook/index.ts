@@ -114,6 +114,66 @@ serve(async (req) => {
           .update({ status: "expired" })
           .eq("id", orderId);
       }
+    } else if (event.type === "payout.paid") {
+      // Handle payout completion - send notification to organizer
+      const payout = event.data.object;
+
+      console.log(`Payout ${payout.id} completed for account ${payout.destination}`);
+
+      // Find the payout record in our database
+      const { data: payoutRecord } = await supabase
+        .from("stripe_connect_payouts")
+        .select(`
+          *,
+          organizers (
+            id,
+            business_name,
+            user_id
+          ),
+          events (
+            title
+          )
+        `)
+        .eq("stripe_payout_id", payout.id)
+        .single();
+
+      if (payoutRecord) {
+        // Update payout status
+        await supabase
+          .from("stripe_connect_payouts")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString()
+          })
+          .eq("id", payoutRecord.id);
+
+        // Send payout received notification
+        const organizer = payoutRecord.organizers;
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", organizer.user_id)
+          .single();
+
+        if (profile?.email) {
+          await supabase.functions.invoke("send-email", {
+            body: {
+              type: "stripe_connect_payout_completed",
+              to: profile.email,
+              data: {
+                organizerName: organizer.business_name,
+                eventTitle: payoutRecord.events?.title || "Event",
+                amount: (payout.amount / 100).toFixed(2),
+                currency: payout.currency.toUpperCase(),
+                arrivalDate: new Date().toLocaleDateString(),
+                payoutId: payout.id,
+              },
+            },
+          });
+        }
+
+        console.log(`Payout completion notification sent for ${payout.id}`);
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {

@@ -19,28 +19,48 @@ serve(async (req) => {
 
     console.log("Starting auto-payout process...");
 
-    const { data: delaySetting } = await supabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "stripe_connect_payout_delay_days")
-      .single();
+    // Send pre-payout reminders (24 hours before eligibility)
+    await sendPrePayoutReminders(supabase);
 
-    const payoutDelayDays = parseInt(delaySetting?.value || "3");
-    console.log(`Payout delay: ${payoutDelayDays} days`);
+    // Intelligent payout scheduling based on event type
+    const getPayoutDelayDays = async (eventType: string, eventSize: number): Promise<number> => {
+      // Base delays by event type
+      const baseDelays: { [key: string]: number } = {
+        'concert': 7,      // Large events need more time for refunds
+        'conference': 5,   // Medium events
+        'workshop': 1,     // Small events can payout faster
+        'webinar': 0,      // Digital events can payout immediately
+        'sports': 3,       // Sports events
+        'theater': 2,      // Theater/shows
+        'party': 1,        // Parties/social events
+        'other': 3         // Default fallback
+      };
 
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - payoutDelayDays);
-    const cutoffDateStr = cutoffDate.toISOString();
+      const baseDelay = baseDelays[eventType?.toLowerCase()] || baseDelays['other'];
+
+      // Adjust based on event size (attendee count)
+      let sizeAdjustment = 0;
+      if (eventSize > 1000) sizeAdjustment = 2;
+      else if (eventSize > 500) sizeAdjustment = 1;
+      else if (eventSize < 50) sizeAdjustment = -1; // Small events can payout faster
+
+      const finalDelay = Math.max(0, baseDelay + sizeAdjustment); // Never go below 0
+
+      console.log(`Event type: ${eventType}, size: ${eventSize}, delay: ${finalDelay} days`);
+      return finalDelay;
+    };
 
     console.log(`Looking for events ended before: ${cutoffDateStr}`);
 
-    const { data: eligibleEvents, error: eventsError } = await supabase
+    // Get all potentially eligible events first
+    const { data: allEvents, error: eventsError } = await supabase
       .from("events")
       .select(`
         id,
         title,
         start_date,
         end_date,
+        event_type,
         organizer_id,
         organizers!inner (
           id,
@@ -56,10 +76,32 @@ serve(async (req) => {
           stripe_identity_status
         )
       `)
-      .lt("end_date", cutoffDateStr)
       .not("organizers.stripe_connect_id", "is", null)
       .eq("organizers.stripe_connect_status", "active")
       .eq("organizers.stripe_connect_payouts_enabled", true);
+
+    if (eventsError) {
+      console.error("Error fetching events:", eventsError);
+      throw new Error("Failed to fetch events");
+    }
+
+    // Filter events based on intelligent delay calculation
+    const eligibleEvents = [];
+    for (const event of allEvents || []) {
+      // Get attendee count for size calculation
+      const { count: attendeeCount } = await supabase
+        .from("event_attendees")
+        .select("*", { count: "exact", head: true })
+        .eq("event_id", event.id);
+
+      const delayDays = await getPayoutDelayDays(event.event_type, attendeeCount || 0);
+      const eventCutoffDate = new Date();
+      eventCutoffDate.setDate(eventCutoffDate.getDate() - delayDays);
+
+      if (new Date(event.end_date) < eventCutoffDate) {
+        eligibleEvents.push(event);
+      }
+    }
 
     if (eventsError) {
       console.error("Error fetching events:", eventsError);
@@ -95,13 +137,21 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const { data: minPayoutSetting } = await supabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "stripe_connect_minimum_payout")
-      .single();
-
-    const minimumPayout = parseFloat(minPayoutSetting?.value || "10");
+    // Currency-specific minimum payout thresholds
+    const getMinimumPayout = (currency: string): number => {
+      const minimums: { [key: string]: number } = {
+        'USD': 10,
+        'EUR': 10,
+        'GBP': 8,
+        'NGN': 5000,
+        'GHS': 50,
+        'KES': 1000,
+        'ZAR': 150,
+        'CAD': 12,
+        'AUD': 15
+      };
+      return minimums[currency.toUpperCase()] || 10; // Default to $10 USD equivalent
+    };
 
     const results = [];
     const kycBlockedOrganizers = [];
@@ -194,11 +244,12 @@ serve(async (req) => {
         for (const available of balance.available) {
           const amount = available.amount / 100;
           const currency = available.currency.toUpperCase();
+          const minPayoutForCurrency = getMinimumPayout(currency);
 
-          console.log(`${organizer.business_name}: ${currency} ${amount} available`);
+          console.log(`${organizer.business_name}: ${currency} ${amount} available (min: ${minPayoutForCurrency})`);
 
-          if (amount < minimumPayout) {
-            console.log(`Below minimum threshold (${minimumPayout}), skipping`);
+          if (amount < minPayoutForCurrency) {
+            console.log(`Below minimum threshold (${minPayoutForCurrency} ${currency}), skipping`);
             continue;
           }
 
@@ -263,6 +314,8 @@ serve(async (req) => {
                     eventTitle: event.title,
                     amount: amount.toFixed(2),
                     currency: currency,
+                    estimatedArrival: "3-5 business days",
+                    payoutId: payout.id,
                   },
                 },
               });
@@ -359,4 +412,116 @@ async function checkKYCStatus(supabase: any, organizer: any): Promise<boolean> {
   }
 
   return false;
+}
+
+// Send pre-payout reminders to organizers 24 hours before payout eligibility
+async function sendPrePayoutReminders(supabase: any) {
+  console.log("Checking for pre-payout reminders...");
+
+  try {
+    // Get events that will be eligible for payout in 24 hours
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString();
+
+    const { data: upcomingEvents, error } = await supabase
+      .from("events")
+      .select(`
+        id,
+        title,
+        end_date,
+        event_type,
+        organizer_id,
+        organizers!inner (
+          id,
+          business_name,
+          user_id,
+          stripe_connect_id,
+          stripe_connect_status,
+          stripe_connect_payouts_enabled,
+          country_code
+        )
+      `)
+      .not("organizers.stripe_connect_id", "is", null)
+      .eq("organizers.stripe_connect_status", "active")
+      .eq("organizers.stripe_connect_payouts_enabled", true)
+      .lt("end_date", tomorrowStr);
+
+    if (error) {
+      console.error("Error fetching upcoming events:", error);
+      return;
+    }
+
+    console.log(`Found ${upcomingEvents?.length || 0} events for pre-payout reminders`);
+
+    for (const event of upcomingEvents || []) {
+      // Get attendee count for intelligent delay calculation
+      const { count: attendeeCount } = await supabase
+        .from("event_attendees")
+        .select("*", { count: "exact", head: true })
+        .eq("event_id", event.id);
+
+      const delayDays = await getPayoutDelayDays(event.event_type, attendeeCount || 0);
+      const payoutDate = new Date(event.end_date);
+      payoutDate.setDate(payoutDate.getDate() + delayDays);
+
+      // Only send reminder if payout is tomorrow
+      const payoutTomorrow = new Date();
+      payoutTomorrow.setDate(payoutTomorrow.getDate() + 1);
+      payoutTomorrow.setHours(0, 0, 0, 0);
+      payoutDate.setHours(0, 0, 0, 0);
+
+      if (payoutDate.getTime() === payoutTomorrow.getTime()) {
+        // Check if we've already sent a reminder for this event
+        const { data: existingReminder } = await supabase
+          .from("admin_audit_logs")
+          .select("id")
+          .eq("entity_type", "event")
+          .eq("entity_id", event.id)
+          .eq("action", "pre_payout_reminder_sent")
+          .limit(1);
+
+        if (!existingReminder) {
+          const organizer = event.organizers;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("email")
+            .eq("id", organizer.user_id)
+            .single();
+
+          if (profile?.email) {
+            await supabase.functions.invoke("send-email", {
+              body: {
+                type: "pre_payout_reminder",
+                to: profile.email,
+                data: {
+                  organizerName: organizer.business_name,
+                  eventTitle: event.title,
+                  payoutDate: payoutDate.toLocaleDateString(),
+                  daysUntilPayout: 1,
+                  appUrl: "https://ticketrack.com/organizer/finance",
+                },
+              },
+            });
+
+            // Log the reminder
+            await supabase.from("admin_audit_logs").insert({
+              action: "pre_payout_reminder_sent",
+              entity_type: "event",
+              entity_id: event.id,
+              details: {
+                organizer_id: organizer.id,
+                event_title: event.title,
+                payout_date: payoutDate.toISOString(),
+              },
+            });
+
+            console.log(`Pre-payout reminder sent for ${event.title}`);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error sending pre-payout reminders:", error);
+  }
 }

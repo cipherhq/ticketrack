@@ -1,10 +1,14 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { getOrganizerFees, calculateFees, DEFAULT_FEES } from '@/config/fees'
+import { getPaymentProvider } from '@/config/payments'
 
 const CartContext = createContext({})
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([])
   const [isOpen, setIsOpen] = useState(false)
+  const [fees, setFees] = useState(DEFAULT_FEES)
+  const [loadingFees, setLoadingFees] = useState(false)
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -22,6 +26,35 @@ export function CartProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('ticketrack_cart', JSON.stringify(items))
   }, [items])
+
+  // Load fees when cart contents change
+  useEffect(() => {
+    loadCartFees()
+  }, [items])
+
+  const loadCartFees = async () => {
+    if (items.length === 0) {
+      setFees(DEFAULT_FEES)
+      return
+    }
+
+    setLoadingFees(true)
+    try {
+      // Get fees based on the first event in cart (assuming single event per cart)
+      const firstItem = items[0]
+      if (firstItem.eventCurrency && firstItem.organizerId) {
+        const eventFees = await getOrganizerFees(firstItem.organizerId, firstItem.eventCurrency)
+        setFees(eventFees)
+      } else {
+        setFees(DEFAULT_FEES)
+      }
+    } catch (error) {
+      console.error('Error loading cart fees:', error)
+      setFees(DEFAULT_FEES)
+    } finally {
+      setLoadingFees(false)
+    }
+  }
 
   const addItem = (item) => {
     setItems(prev => {
@@ -59,11 +92,19 @@ export function CartProvider({ children }) {
   }
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
-  
+
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  
-  const serviceFee = subtotal * 0.03 // 3% service fee
-  
+
+  // Calculate fees using the same logic as checkout
+  const paymentProvider = items.length > 0 && items[0].eventCurrency
+    ? getPaymentProvider(items[0].eventCurrency)
+    : 'paystack'
+
+  const feeCalculation = calculateFees(subtotal, itemCount, fees, paymentProvider)
+  const serviceFee = feeCalculation.displayFee // Combined service + processing fee
+  const processingFee = feeCalculation.processingFee
+  const platformFee = feeCalculation.serviceFee
+
   const total = subtotal + serviceFee
 
   const value = {
@@ -71,13 +112,18 @@ export function CartProvider({ children }) {
     itemCount,
     subtotal,
     serviceFee,
+    processingFee,
+    platformFee,
     total,
+    fees,
+    loadingFees,
     isOpen,
     setIsOpen,
     addItem,
     removeItem,
     updateQuantity,
-    clearCart
+    clearCart,
+    reloadFees: loadCartFees
   }
 
   return (
