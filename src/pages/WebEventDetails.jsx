@@ -6,7 +6,7 @@ import { useNavigate, useParams, useLocation, useSearchParams } from 'react-rout
 import { useAuth } from '@/contexts/AuthContext'
 import { WaitlistDialog } from '@/components/WaitlistDialog'
 import { getWaitlistPosition } from '@/services/waitlist'
-import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail, UserPlus, UserCheck } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +38,8 @@ export function WebEventDetails() {
   const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
   const [accessGranted, setAccessGranted] = useState(false)
   const [recommendedEvents, setRecommendedEvents] = useState([])
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
 
   useEffect(() => {
     async function loadEvent() {
@@ -97,6 +99,28 @@ export function WebEventDetails() {
     checkIfSaved()
   }, [user, event])
 
+  // Check if user is following the organizer
+  useEffect(() => {
+    async function checkIfFollowing() {
+      if (!user || !event?.organizer?.id) return
+      
+      try {
+        const { data } = await supabase
+          .from('followers')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('organizer_id', event.organizer.id)
+          .single()
+        
+        setIsFollowing(!!data)
+      } catch (err) {
+        // Not following - that's fine
+      }
+    }
+    
+    checkIfFollowing()
+  }, [user, event?.organizer?.id])
+
   // Toggle save/unsave event
   const toggleFavorite = async () => {
     if (!user) {
@@ -135,6 +159,41 @@ export function WebEventDetails() {
       console.error('Error toggling favorite:', err)
     } finally {
       setSavingFavorite(false)
+    }
+  }
+
+  // Toggle follow/unfollow organizer
+  const toggleFollow = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: location.pathname } })
+      return
+    }
+    
+    if (!event?.organizer?.id) return
+    
+    setFollowLoading(true)
+    try {
+      if (isFollowing) {
+        await supabase
+          .from('followers')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('organizer_id', event.organizer.id)
+        setIsFollowing(false)
+      } else {
+        await supabase
+          .from('followers')
+          .insert({
+            user_id: user.id,
+            organizer_id: event.organizer.id,
+            notifications_enabled: true
+          })
+        setIsFollowing(true)
+      }
+    } catch (err) {
+      console.error('Error toggling follow:', err)
+    } finally {
+      setFollowLoading(false)
     }
   }
 
@@ -525,18 +584,47 @@ export function WebEventDetails() {
                       <p className="text-sm text-[#0F0F0F]/60">{event.organizer?.total_events || 0} events hosted</p>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg text-[#2969FF] border-[#2969FF]/30 hover:bg-[#2969FF]/5 flex-shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.location.href = `mailto:${event.organizer?.business_email || event.organizer?.email}`;
-                    }}
-                  >
-                    <Mail className="w-4 h-4 mr-1" />
-                    Contact
-                  </Button>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button
+                      variant={isFollowing ? "default" : "outline"}
+                      size="sm"
+                      className={isFollowing 
+                        ? "rounded-lg bg-[#2969FF] hover:bg-[#1a4fd8] text-white" 
+                        : "rounded-lg text-[#2969FF] border-[#2969FF]/30 hover:bg-[#2969FF]/5"
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFollow();
+                      }}
+                      disabled={followLoading}
+                    >
+                      {followLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : isFollowing ? (
+                        <>
+                          <UserCheck className="w-4 h-4 mr-1" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-1" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-lg text-[#2969FF] border-[#2969FF]/30 hover:bg-[#2969FF]/5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.href = `mailto:${event.organizer?.business_email || event.organizer?.email}`;
+                      }}
+                    >
+                      <Mail className="w-4 h-4 mr-1" />
+                      Contact
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
