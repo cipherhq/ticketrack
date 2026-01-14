@@ -600,7 +600,7 @@ export function WebAuth() {
                     onChange={handleInputChange}
                     className="pl-10 rounded-xl border-[#0F0F0F]/10"
                     required
-                    autoComplete="email"
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -647,7 +647,7 @@ export function WebAuth() {
                     onChange={handleInputChange}
                     className="pl-10 pr-10 rounded-xl border-[#0F0F0F]/10"
                     required
-                    autoComplete={isLogin ? "current-password" : "new-password"}
+                    autoComplete="off"
                   />
                   <button
                     type="button"
