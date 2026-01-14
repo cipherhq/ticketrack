@@ -539,7 +539,7 @@ export function WebAuth() {
                         onChange={handleInputChange}
                         className="pl-10 rounded-xl border-[#0F0F0F]/10"
                         required
-                        autoComplete="given-name"
+                        autoComplete="off-given-name"
                       />
                     </div>
                   </div>
@@ -552,7 +552,7 @@ export function WebAuth() {
                       onChange={handleInputChange}
                       className="rounded-xl border-[#0F0F0F]/10"
                       required
-                      autoComplete="family-name"
+                      autoComplete="off-family-name"
                     />
                   </div>
                 </div>
@@ -600,7 +600,7 @@ export function WebAuth() {
                     onChange={handleInputChange}
                     className="pl-10 rounded-xl border-[#0F0F0F]/10"
                     required
-                    autoComplete="off"
+                    autoComplete="nope"
                   />
                 </div>
               </div>
@@ -647,7 +647,7 @@ export function WebAuth() {
                     onChange={handleInputChange}
                     className="pl-10 pr-10 rounded-xl border-[#0F0F0F]/10"
                     required
-                    autoComplete="off"
+                    autoComplete="nope"
                   />
                   <button
                     type="button"
@@ -693,7 +693,7 @@ export function WebAuth() {
                       onChange={handleInputChange}
                       className="pl-10 rounded-xl border-[#0F0F0F]/10"
                       required
-                      autoComplete="new-password"
+                      autoComplete="new-password-off"
                     />
                   </div>
                   {formData.confirmPassword && formData.password !== formData.confirmPassword && (
