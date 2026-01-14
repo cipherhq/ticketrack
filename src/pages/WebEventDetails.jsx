@@ -497,31 +497,49 @@ export function WebEventDetails() {
           {/* Organizer */}
           <div>
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Organized By</h2>
-            <div 
-              className="flex items-center gap-4 cursor-pointer hover:bg-[#F4F6FA] p-4 rounded-xl -ml-4 transition-colors"
-              onClick={() => navigate(`/o/${event.organizer?.id}`)}
-            >
-              <div className="w-16 h-16 rounded-full bg-[#2969FF]/10 flex items-center justify-center overflow-hidden">
-                {event.organizer?.logo_url ? (
-                  <img 
-                    src={event.organizer.logo_url} 
-                    alt={event.organizer.business_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Users className="w-8 h-8 text-[#2969FF]" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-[#0F0F0F]">{event.organizer?.business_name}</h3>
-                  {event.organizer?.is_verified && (
-                    <CheckCircle className="w-4 h-4 text-[#2969FF]" />
-                  )}
+            <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
+                    onClick={() => navigate(`/o/${event.organizer?.id}`)}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-[#2969FF]/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {event.organizer?.logo_url ? (
+                        <img 
+                          src={event.organizer.logo_url} 
+                          alt={event.organizer.business_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Users className="w-6 h-6 text-[#2969FF]" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-[#0F0F0F] truncate">{event.organizer?.business_name}</h3>
+                        {event.organizer?.is_verified && (
+                          <CheckCircle className="w-4 h-4 text-[#2969FF] flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-sm text-[#0F0F0F]/60">{event.organizer?.total_events || 0} events hosted</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg text-[#2969FF] border-[#2969FF]/30 hover:bg-[#2969FF]/5 flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.location.href = `mailto:${event.organizer?.business_email || event.organizer?.email}`;
+                    }}
+                  >
+                    <Mail className="w-4 h-4 mr-1" />
+                    Contact
+                  </Button>
                 </div>
-                <p className="text-[#0F0F0F]/60">{event.organizer?.total_events || 0} events hosted</p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           <Separator />
@@ -778,13 +796,13 @@ export function WebEventDetails() {
           {/* Location */}
           <div>
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Location</h2>
-            <Card className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+            <Card className="border-[#0F0F0F]/10 rounded-xl overflow-hidden">
               {event.google_map_link ? (
-                <div className="aspect-video">
+                <div className="h-40">
                   <iframe
                     src={event.google_map_link.includes('embed') 
                       ? event.google_map_link 
-                      : `https://maps.google.com/maps?q=${encodeURIComponent(event.venue_address + ', ' + event.city)}&output=embed`}
+                      : `https://maps.google.com/maps?q=${encodeURIComponent((event.venue_address || '') + ', ' + (event.city || ''))}&output=embed`}
                     className="w-full h-full border-0"
                     allowFullScreen
                     loading="lazy"
@@ -792,7 +810,7 @@ export function WebEventDetails() {
                   />
                 </div>
               ) : event.venue_lat && event.venue_lng ? (
-                <div className="aspect-video">
+                <div className="h-40">
                   <iframe
                     src={`https://maps.google.com/maps?q=${event.venue_lat},${event.venue_lng}&output=embed`}
                     className="w-full h-full border-0"
@@ -801,30 +819,25 @@ export function WebEventDetails() {
                   />
                 </div>
               ) : (
-                <div className="aspect-video bg-[#F4F6FA] flex items-center justify-center">
-                  <MapPin className="w-12 h-12 text-[#0F0F0F]/20" />
+                <div className="h-24 bg-[#F4F6FA] flex items-center justify-center">
+                  <MapPin className="w-8 h-8 text-[#0F0F0F]/20" />
                 </div>
               )}
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    {event.venue_name && <h3 className="font-semibold text-[#0F0F0F] mb-2">{event.venue_name}</h3>}
-                    <p className="text-[#0F0F0F]/60">{event.venue_address}, {event.city}</p>
-                    {event.venue_type && (
-                      <p className="text-sm text-[#0F0F0F]/40 mt-1 capitalize">{event.venue_type} venue • {event.seating_type || 'General'} seating</p>
-                    )}
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    {event.venue_name && <h3 className="font-semibold text-[#0F0F0F]">{event.venue_name}</h3>}
+                    <p className="text-sm text-[#0F0F0F]/60">{[event.venue_address, event.city].filter(Boolean).join(', ') || 'Address TBA'}</p>
                   </div>
-                  {event.google_map_link && (
-                    <a 
-                      href={event.google_map_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[#2969FF] hover:underline text-sm"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      Directions
-                    </a>
-                  )}
+                  <a 
+                    href={event.google_map_link || `https://maps.google.com/maps?q=${encodeURIComponent((event.venue_address || '') + ', ' + (event.city || ''))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[#2969FF] hover:underline text-sm flex-shrink-0"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Directions
+                  </a>
                 </div>
               </CardContent>
             </Card>
