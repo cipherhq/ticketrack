@@ -292,6 +292,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop existing trigger if it exists (to allow re-running the script)
+DROP TRIGGER IF EXISTS trigger_update_section_capacity ON venue_capacity;
+
 -- Trigger to update section capacity when venue_capacity changes
 CREATE TRIGGER trigger_update_section_capacity
   AFTER INSERT OR UPDATE ON venue_capacity
