@@ -73,7 +73,7 @@ export function WebCart() {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl p-6 sticky top-24">
+              <div className="bg-white rounded-2xl p-6 sticky top-16 md:top-20 lg:top-24">
                 <h2 className="text-xl font-semibold text-[#0F0F0F] mb-6">Order Summary</h2>
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-[#0F0F0F]/60">

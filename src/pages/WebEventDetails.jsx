@@ -960,7 +960,7 @@ export function WebEventDetails() {
 
         {/* Ticket Sidebar */}
         <div className="lg:col-span-1">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-24">
+          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
             <CardContent className="p-6 space-y-6">
               <div>
                 <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">
