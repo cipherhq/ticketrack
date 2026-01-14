@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Search, Chair, Table, Mic, Monitor, Coffee, Users, Star } from 'lucide-react'
+import { Search, Armchair, Table, Mic, Monitor, Coffee, Users, Star } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { supabase } from '@/lib/supabase'
 
 const categoryIcons = {
-  chair: Chair,
+  chair: Armchair,
   table: Table,
   stage: Mic,
   screen: Monitor,
@@ -163,7 +163,7 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Chair className="w-5 h-5" />
+          <Armchair className="w-5 h-5" />
           Furniture Library
         </CardTitle>
       </CardHeader>
@@ -212,8 +212,8 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
                 if (chair) onItemSelect && onItemSelect(chair)
               }}
             >
-              <Chair className="w-4 h-4 mr-2" />
-              Chair
+              <Armchair className="w-4 h-4 mr-2" />
+              Armchair
             </Button>
             <Button
               variant="outline"
