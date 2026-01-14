@@ -508,6 +508,16 @@ export const sendTeamMemberRemovedEmail = (email, data, organizerId) =>
     organizerName: data.organizerName,
   }, { organizerId });
 
+export const sendTaskAssignedEmail = (email, data, organizerId) => 
+  sendEmail('task_assigned', email, {
+    assigneeName: data.assigneeName,
+    assignerName: data.assignerName,
+    taskTitle: data.taskTitle,
+    description: data.description,
+    eventTitle: data.eventTitle,
+    priority: data.priority,
+    dueDate: data.dueDate,
+  }, { organizerId, eventId: data.eventId });
 // ============================================================================
 // PROMOTER EMAILS
 // ============================================================================
@@ -780,6 +790,7 @@ export default {
   // Team
   sendTeamInvitationEmail,
   sendTeamMemberRemovedEmail,
+  sendTaskAssignedEmail,
   // Promoter
   sendPromoterInviteEmail,
   sendPromoterAcceptedEmail,

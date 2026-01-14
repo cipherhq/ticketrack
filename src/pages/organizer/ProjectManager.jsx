@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrganizer } from '@/contexts/OrganizerContext';
+import { sendTaskAssignedEmail } from '@/lib/emailService';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -318,7 +319,7 @@ export function ProjectManager() {
       const [eventsRes, tasksRes, teamRes, templatesRes, commentsRes, subtasksRes] = await Promise.all([
         supabase.from('events').select('id, title, start_date, end_date, status, currency').eq('organizer_id', organizer.id).order('start_date', { ascending: true }),
         supabase.from('event_tasks').select('*, assigned_member:organizer_team_members(id, name, email)').eq('organizer_id', organizer.id).order('sort_order', { ascending: true }),
-        supabase.from('organizer_team_members').select('id, name, email, role').eq('organizer_id', organizer.id).eq('status', 'active'),
+        supabase.from('organizer_team_members').select('id, name, email, role').eq('organizer_id', organizer.id).in('status', ['active', 'pending']),
         supabase.from('task_templates').select('*').or(`is_global.eq.true,organizer_id.eq.${organizer.id}`).order('sort_order', { ascending: true }),
         supabase.from('task_comments').select('*, author:profiles(full_name, avatar_url)').eq('organizer_id', organizer.id).order('created_at', { ascending: false }),
         supabase.from('task_subtasks').select('*').eq('organizer_id', organizer.id).order('sort_order', { ascending: true }),
@@ -453,7 +454,7 @@ export function ProjectManager() {
         priority: taskForm.priority,
         status: taskForm.status,
         due_date: taskForm.due_date || null,
-        assigned_to: taskForm.assigned_to || null,
+        assigned_to: taskForm.assigned_to && taskForm.assigned_to !== 'unassigned' ? taskForm.assigned_to : null,
         estimated_hours: taskForm.estimated_hours ? parseFloat(taskForm.estimated_hours) : null,
         labels: taskForm.labels,
         updated_at: new Date().toISOString(),
@@ -463,6 +464,28 @@ export function ProjectManager() {
         const { error } = await supabase.from('event_tasks').update(taskData).eq('id', editingTask.id);
         if (error) throw error;
         setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, ...taskData } : t));
+        
+        // Send email if assignee changed to a new person
+        if (taskForm.assigned_to && taskForm.assigned_to !== editingTask.assigned_to) {
+          const assignee = teamMembers.find(m => m.id === taskForm.assigned_to);
+          const event = events.find(e => e.id === editingTask.event_id);
+          if (assignee?.email) {
+            try {
+              await sendTaskAssignedEmail(assignee.email, {
+                assigneeName: assignee.name || assignee.email,
+                assignerName: organizer.name || organizer.business_name,
+                taskTitle: taskForm.title,
+                description: taskForm.description,
+                eventTitle: event?.title || 'Event',
+                priority: PRIORITIES[taskForm.priority]?.label || taskForm.priority,
+                dueDate: taskForm.due_date ? format(new Date(taskForm.due_date), 'MMM d, yyyy') : null,
+                eventId: editingTask.event_id,
+              }, organizer.id);
+            } catch (emailErr) {
+              console.log('Task reassignment email failed:', emailErr);
+            }
+          }
+        }
       } else {
         const eventId = showAddTask;
         const { data, error } = await supabase.from('event_tasks').insert({
@@ -473,6 +496,25 @@ export function ProjectManager() {
         }).select('*, assigned_member:organizer_team_members(id, name, email)').single();
         if (error) throw error;
         setTasks([...tasks, data]);
+        
+        // Send email if task is assigned
+        if (data.assigned_to && data.assigned_member?.email) {
+          const event = events.find(e => e.id === eventId);
+          try {
+            await sendTaskAssignedEmail(data.assigned_member.email, {
+              assigneeName: data.assigned_member.name || data.assigned_member.email,
+              assignerName: organizer.name || organizer.business_name,
+              taskTitle: data.title,
+              description: data.description,
+              eventTitle: event?.title || 'Event',
+              priority: PRIORITIES[data.priority]?.label || data.priority,
+              dueDate: data.due_date ? format(new Date(data.due_date), 'MMM d, yyyy') : null,
+              eventId: eventId,
+            }, organizer.id);
+          } catch (emailErr) {
+            console.log('Task assignment email failed:', emailErr);
+          }
+        }
       }
       closeTaskModal();
     } catch (error) {
@@ -747,7 +789,7 @@ export function ProjectManager() {
             <SelectTrigger className="w-44 rounded-xl"><SelectValue placeholder="All Assignees" /></SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="all">All Assignees</SelectItem>
-              <SelectItem value="">Unassigned</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
               {teamMembers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -853,7 +895,7 @@ export function ProjectManager() {
                 <div><Label>Assign To</Label>
                   <Select value={taskForm.assigned_to} onValueChange={(v) => setTaskForm({ ...taskForm, assigned_to: v })}>
                     <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                    <SelectContent className="rounded-xl"><SelectItem value="">Unassigned</SelectItem>{teamMembers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+                    <SelectContent className="rounded-xl"><SelectItem value="unassigned">Unassigned</SelectItem>{teamMembers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               )}

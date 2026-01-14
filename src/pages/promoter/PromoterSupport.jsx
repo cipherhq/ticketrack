@@ -78,6 +78,7 @@ export default function PromoterSupport() {
     }
 
     setSubmitting(true)
+    console.log("Creating ticket with user:", user?.id, "promoter:", promoter)
     try {
       const { data, error } = await supabase
         .from('support_tickets')
@@ -102,7 +103,7 @@ export default function PromoterSupport() {
       setView('list')
       loadTickets()
     } catch (err) {
-      console.error('Error creating ticket:', err)
+      console.error('Error creating ticket:', err.message, err.code, err.details)
       alert('Failed to create ticket. Please try again.')
     } finally {
       setSubmitting(false)
@@ -113,6 +114,7 @@ export default function PromoterSupport() {
     if (!replyMessage.trim() || !selectedTicket) return
 
     setSubmitting(true)
+    console.log("Creating ticket with user:", user?.id, "promoter:", promoter)
     try {
       const { error } = await supabase
         .from('support_ticket_replies')

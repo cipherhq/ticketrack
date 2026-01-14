@@ -87,6 +87,9 @@ export function TeamManagement() {
       if (error) throw error;
 
       setMembers([...members, data]);
+      const emailToSend = inviteData.email;
+      const firstNameToSend = inviteData.firstName || inviteData.email.split("@")[0];
+      const roleToSend = inviteData.role;
       setShowInvite(false);
       setInviteData({ email: '', firstName: '', lastName: '', role: 'staff' });
       const link = `${window.location.origin}/accept-invite?token=${data.invitation_token}`;
@@ -94,14 +97,14 @@ export function TeamManagement() {
       
       // Send invitation email
       const roleLabels = { owner: "Owner", manager: "Manager", coordinator: "Coordinator", staff: "Staff" };
-      await sendTeamInvitationEmail(inviteData.email, {
-        firstName: inviteData.firstName || inviteData.email.split("@")[0],
+      await sendTeamInvitationEmail(emailToSend, {
+        firstName: firstNameToSend,
         organizerName: organizer.name || organizer.business_name,
-        roleName: roleLabels[inviteData.role] || "Team Member",
+        roleName: roleLabels[roleToSend] || "Team Member",
         inviteLink: link
-      });
+      }, organizer.id);
       
-      alert("Invitation sent to " + inviteData.email + "!");
+      alert("Invitation sent to " + emailToSend + "!");
 
     } catch (error) {
       console.error('Error inviting member:', error);

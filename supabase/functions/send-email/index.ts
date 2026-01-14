@@ -16,7 +16,7 @@ const BRAND_COLOR = '#2969FF'
 const BRAND_NAME = 'Ticketrack'
 const APP_URL = 'https://ticketrack.com'
 
-const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173']
+const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173']
 const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000, security: 100 }
 
 type AuthLevel = 'SYSTEM_ONLY' | 'USER_AUTH' | 'ORGANIZER_AUTH' | 'ADMIN_AUTH' | 'FINANCE_AUTH'
@@ -81,6 +81,7 @@ const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; from
   whatsapp_credits_purchased: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   low_sms_balance: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   team_invitation: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  task_assigned: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   team_member_removed: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   promoter_invite: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   promoter_accepted: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
@@ -226,6 +227,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   event_draft_reminder: d => ({ subject: `Complete: "${d.eventTitle}"`, html: baseTemplate(`<h2>Your Event is Waiting</h2><p>Hi ${d.organizerName},</p><p>You started <strong>${d.eventTitle}</strong> but haven't published yet.</p><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/edit" class="btn">Continue</a></div>`) }),
   // TEAM
   team_invitation: d => ({ subject: `Join ${d.organizerName} on Ticketrack`, html: baseTemplate(`<h2>You're Invited!</h2><p>Hi ${d.firstName},</p><p><strong>${d.organizerName}</strong> invited you as <strong>${d.roleName}</strong>.</p><div class="card"><div class="row"><span class="label">Organization</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Role</span><span class="value">${d.roleName}</span></div></div><div class="btn-wrap"><a href="${d.inviteLink}" class="btn">Accept</a></div><p style="font-size:12px;color:#666">Expires in 7 days.</p>`) }),
+  task_assigned: d => ({ subject: `Task Assigned: ${d.taskTitle}`, html: baseTemplate(`<h2>You've Been Assigned a Task</h2><p>Hi ${d.assigneeName},</p><p><strong>${d.assignerName}</strong> assigned you a task for <strong>${d.eventTitle}</strong>.</p><div class="card"><h3>${d.taskTitle}</h3>${d.description ? `<p style="color:#666;font-size:14px">${d.description}</p>` : ''}<div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Priority</span><span class="value">${d.priority}</span></div>${d.dueDate ? `<div class="row"><span class="label">Due Date</span><span class="value">${d.dueDate}</span></div>` : ''}</div><div class="btn-wrap"><a href="${APP_URL}/organizer/projects" class="btn">View Task</a></div>`) }),
   team_member_removed: d => ({ subject: `Removed from ${d.organizerName}`, html: baseTemplate(`<h2>Access Removed</h2><p>Hi ${d.memberName},</p><p>Your access to <strong>${d.organizerName}</strong> has been removed.</p>`) }),
   // PROMOTER
   promoter_invite: d => ({ subject: `Promote ${d.eventTitle || 'events'} on Ticketrack!`, html: baseTemplate(`<h2>Become a Promoter!</h2><p><strong>${d.organizerName}</strong> invites you to promote.</p><div class="card"><div class="row"><span class="label">Organizer</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle || 'All Events'}</span></div><div class="row"><span class="label">Commission</span><span class="value">${d.commissionValue}${d.commissionType === 'percentage' ? '%' : ' ' + (d.currency || 'NGN')}</span></div><div class="row"><span class="label">Your Code</span><span class="value" style="color:${BRAND_COLOR};font-weight:bold">${d.promoCode}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/promoter/accept?code=${d.promoCode}" class="btn">${d.isNewUser ? 'Sign Up' : 'Accept'}</a></div>`) }),

@@ -1,1117 +1,838 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import {
-  Mail,
-  Plus,
-  Search,
-  Send,
-  Clock,
-  CheckCircle,
-  Eye,
-  Edit2,
-  Trash2,
-  Users,
-  Calendar,
-  BarChart3,
-  Loader2,
-  RefreshCw,
-  Copy,
-  MoreVertical,
-  AlertCircle,
-  FileText,
-  XCircle,
-  Sparkles,
-  Wand2,
+  Mail, Send, Clock, CheckCircle, Users, Calendar, Loader2,
+  Sparkles, ChevronRight, ChevronLeft, Eye, Trash2, RefreshCw,
+  FileText, UserCheck, Heart, AlertCircle
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
-import { Badge } from '../../components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '../../components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../../components/ui/dropdown-menu';
-import { useOrganizer } from '../../contexts/OrganizerContext';
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { format } from 'date-fns';
 
-// Email templates
-const emailTemplates = [
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const TEMPLATES = [
   {
     id: 'reminder',
     name: 'Event Reminder',
-    subject: 'Reminder: {{event_name}} is coming up!',
-    body: `Hi {{attendee_name}},
-
-This is a friendly reminder that {{event_name}} is happening on {{event_date}} at {{event_venue}}.
-
-Don't forget to bring your ticket (attached to your confirmation email) or show your QR code at the entrance.
-
-We can't wait to see you there!
-
-Best regards,
-{{organizer_name}}`
+    icon: Clock,
+    subject: 'Reminder: {{event_name}} is tomorrow!',
+    body: `<p>Hi {{attendee_name}},</p>
+<p>This is a friendly reminder that <strong>{{event_name}}</strong> is happening tomorrow!</p>
+<p>📅 <strong>Date:</strong> {{event_date}} at {{event_time}}<br/>
+📍 <strong>Venue:</strong> {{event_venue}}, {{event_city}}</p>
+<p>Don't forget to bring your ticket or show your QR code at entry.</p>
+<p>See you there!</p>
+<p>Best regards,<br/>{{organizer_name}}</p>`
   },
   {
     id: 'thankyou',
     name: 'Thank You',
+    icon: Heart,
     subject: 'Thank you for attending {{event_name}}!',
-    body: `Hi {{attendee_name}},
-
-Thank you for attending {{event_name}}! We hope you had an amazing time.
-
-We'd love to hear your feedback. Your opinion helps us improve future events.
-
-Stay tuned for more exciting events coming soon!
-
-Best regards,
-{{organizer_name}}`
+    body: `<p>Hi {{attendee_name}},</p>
+<p>Thank you for attending <strong>{{event_name}}</strong>! We hope you had an amazing time.</p>
+<p>Your support means the world to us. We'd love to hear your feedback to help us improve future events.</p>
+<p>Stay tuned for more exciting events coming soon!</p>
+<p>Best regards,<br/>{{organizer_name}}</p>`
   },
   {
     id: 'announcement',
-    name: 'New Event Announcement',
-    subject: 'You\'re Invited: {{event_name}}',
-    body: `Hi {{attendee_name}},
-
-We're excited to announce our upcoming event: {{event_name}}!
-
-📅 Date: {{event_date}}
-📍 Venue: {{event_venue}}
-
-Early bird tickets are available now. Don't miss out!
-
-Get your tickets: {{event_link}}
-
-Best regards,
-{{organizer_name}}`
+    name: 'New Event',
+    icon: Calendar,
+    subject: "You're Invited: {{event_name}}",
+    body: `<p>Hi {{attendee_name}},</p>
+<p>We're excited to announce our upcoming event: <strong>{{event_name}}</strong>!</p>
+<p>📅 <strong>Date:</strong> {{event_date}} at {{event_time}}<br/>
+📍 <strong>Venue:</strong> {{event_venue}}, {{event_city}}</p>
+<p>Early bird tickets are available now. Don't miss out!</p>
+<p><a href="{{event_link}}">Get Your Tickets →</a></p>
+<p>Best regards,<br/>{{organizer_name}}</p>`
+  },
+  {
+    id: 'update',
+    name: 'Important Update',
+    icon: AlertCircle,
+    subject: 'Important Update: {{event_name}}',
+    body: `<p>Hi {{attendee_name}},</p>
+<p>We have an important update regarding <strong>{{event_name}}</strong>.</p>
+<p>[Your update message here]</p>
+<p>If you have any questions, please don't hesitate to reach out.</p>
+<p>Best regards,<br/>{{organizer_name}}</p>`
   },
   {
     id: 'custom',
-    name: 'Custom Message',
+    name: 'Custom Email',
+    icon: FileText,
     subject: '',
     body: ''
   }
 ];
 
-// AI Compose prompts
-const aiPromptSuggestions = [
-  "Write a friendly reminder for attendees about the upcoming event",
-  "Create a thank you email for people who attended my event",
-  "Announce a new event with excitement and urgency",
-  "Send a last-minute update about venue change",
-  "Invite past attendees to a new similar event",
-  "Request feedback after the event ended",
+const RECIPIENT_TYPES = [
+  { id: 'event_attendees', label: 'Event Attendees', icon: UserCheck, description: 'People who bought tickets for a specific event' },
+  { id: 'followers', label: 'Followers', icon: Heart, description: 'People following your organizer profile' },
+  { id: 'team', label: 'Team Members', icon: Users, description: 'Your team members' },
 ];
 
-export function EmailCampaigns() {
+const VARIABLES = [
+  { key: '{{attendee_name}}', label: 'Recipient Name' },
+  { key: '{{event_name}}', label: 'Event Name' },
+  { key: '{{event_date}}', label: 'Event Date' },
+  { key: '{{event_time}}', label: 'Event Time' },
+  { key: '{{event_venue}}', label: 'Venue Name' },
+  { key: '{{event_city}}', label: 'City' },
+  { key: '{{event_link}}', label: 'Event Link' },
+  { key: '{{ticket_type}}', label: 'Ticket Type' },
+  { key: '{{organizer_name}}', label: 'Your Business Name' },
+  { key: '{{organizer_email}}', label: 'Your Email' },
+];
+
+const QUILL_MODULES = {
+  toolbar: [
+    ['bold', 'italic', 'underline'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    ['link'],
+    ['clean']
+  ],
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export function OrganizerCommunications() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { organizer } = useOrganizer();
   
-  const [loading, setLoading] = useState(true);
+  // View state
+  const [view, setView] = useState('list'); // list, create
+  const [step, setStep] = useState(1); // 1: Recipients, 2: Compose, 3: Review
+  
+  // Data
   const [campaigns, setCampaigns] = useState([]);
   const [events, setEvents] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  
-  // Dialog states
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isAIComposeOpen, setIsAIComposeOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState(null);
-  const [previewCampaign, setPreviewCampaign] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState('');
+  const [recipientCount, setRecipientCount] = useState(0);
   
-  // AI Compose states
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiError, setAiError] = useState('');
-  
-  // Pre-selected attendees from ManageAttendees page
-  const preSelectedAttendeeIds = location.state?.attendeeIds || [];
-  
-  const [formData, setFormData] = useState({
-    name: '',
+  // Form
+  const [form, setForm] = useState({
+    recipientType: '',
+    eventId: '',
+    template: '',
     subject: '',
     body: '',
-    recipientType: preSelectedAttendeeIds.length > 0 ? 'selected' : 'followers',
-    eventId: '',
-    selectedTemplate: 'custom',
-    scheduledFor: '',
+    scheduleFor: '',
   });
+  
+  // AI
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
-  const [recipientCount, setRecipientCount] = useState(0);
+  // ============================================================================
+  // DATA LOADING
+  // ============================================================================
 
   useEffect(() => {
-    if (organizer?.id) {
-      loadData();
-    }
+    if (organizer?.id) loadData();
   }, [organizer?.id]);
 
   useEffect(() => {
-    if (organizer?.id && formData.recipientType) {
+    if (organizer?.id && form.recipientType) {
       calculateRecipients();
     }
-  }, [formData.recipientType, formData.eventId, organizer?.id]);
+  }, [form.recipientType, form.eventId, organizer?.id]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      await Promise.all([loadCampaigns(), loadEvents()]);
-    } catch (error) {
-      console.error('Error loading data:', error);
+      const [campaignsRes, eventsRes] = await Promise.all([
+        supabase
+          .from('email_campaigns')
+          .select('*')
+          .eq('organizer_id', organizer.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('events')
+          .select('id, title, start_date, venue_name, city')
+          .eq('organizer_id', organizer.id)
+          .order('start_date', { ascending: false }),
+      ]);
+      
+      setCampaigns(campaignsRes.data || []);
+      setEvents(eventsRes.data || []);
+    } catch (err) {
+      console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadCampaigns = async () => {
-    const { data, error } = await supabase
-      .from('email_campaigns')
-      .select(`
-        *,
-        events (
-          id,
-          title
-        )
-      `)
-      .eq('organizer_id', organizer.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error loading campaigns:', error);
-      return;
-    }
-
-    setCampaigns(data || []);
-  };
-
-  const loadEvents = async () => {
-    const { data, error } = await supabase
-      .from('events')
-      .select('id, title, start_date, venue_name, city')
-      .eq('organizer_id', organizer.id)
-      .order('start_date', { ascending: false });
-
-    if (error) {
-      console.error('Error loading events:', error);
-      return;
-    }
-
-    setEvents(data || []);
-  };
-
   const calculateRecipients = async () => {
     let count = 0;
-
-    if (formData.recipientType === 'selected' && preSelectedAttendeeIds.length > 0) {
-      count = preSelectedAttendeeIds.length;
-    } else if (formData.recipientType === 'followers') {
-      const { count: followerCount } = await supabase
+    
+    if (form.recipientType === 'event_attendees' && form.eventId) {
+      const { count: c } = await supabase
+        .from('tickets')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', form.eventId)
+        .eq('payment_status', 'completed');
+      count = c || 0;
+    } else if (form.recipientType === 'followers') {
+      const { count: c } = await supabase
         .from('followers')
         .select('id', { count: 'exact', head: true })
         .eq('organizer_id', organizer.id);
-      count = followerCount || 0;
-    } else if (formData.recipientType === 'event_attendees' && formData.eventId) {
-      const { count: attendeeCount } = await supabase
-        .from('tickets')
+      count = c || 0;
+    } else if (form.recipientType === 'team') {
+      const { count: c } = await supabase
+        .from('organizer_team_members')
         .select('id', { count: 'exact', head: true })
-        .eq('event_id', formData.eventId)
-        .eq('payment_status', 'completed');
-      count = attendeeCount || 0;
-    } else if (formData.recipientType === 'all_attendees') {
-      const { data: orgEvents } = await supabase
-        .from('events')
-        .select('id')
-        .eq('organizer_id', organizer.id);
-
-      if (orgEvents?.length > 0) {
-        const eventIds = orgEvents.map(e => e.id);
-        const { count: attendeeCount } = await supabase
-          .from('tickets')
-          .select('id', { count: 'exact', head: true })
-          .in('event_id', eventIds)
-          .eq('payment_status', 'completed');
-        count = attendeeCount || 0;
-      }
+        .eq('organizer_id', organizer.id)
+        .in('status', ['active', 'pending']);
+      count = c || 0;
     }
-
+    
     setRecipientCount(count);
   };
 
-  const applyTemplate = (templateId) => {
-    const template = emailTemplates.find(t => t.id === templateId);
+  // ============================================================================
+  // ACTIONS
+  // ============================================================================
+
+  const selectTemplate = (templateId) => {
+    const template = TEMPLATES.find(t => t.id === templateId);
     if (template) {
-      setFormData({
-        ...formData,
-        selectedTemplate: templateId,
+      setForm(f => ({
+        ...f,
+        template: templateId,
         subject: template.subject,
         body: template.body,
-      });
+      }));
     }
   };
-
-  // AI Compose function
 
   const generateWithAI = async () => {
-    if (!aiPrompt.trim()) {
-      setAiError("Please describe what you want to write");
-      return;
-    }
-    setAiGenerating(true);
-    setAiError("");
-    const selectedEvent = events.find(e => e.id === formData.eventId);
-    const systemPrompt = `You are an expert email copywriter. Write a professional email.
-Organizer: ${organizer?.business_name || "Event Organizer"}
-${selectedEvent ? `Event: ${selectedEvent.title}` : ""}
-Use placeholders: {{attendee_name}}, {{event_name}}, {{event_date}}, {{event_venue}}
-Request: ${aiPrompt}
-Respond ONLY with JSON: {"subject": "...", "body": "..."}`;
+    if (!aiPrompt.trim()) return;
+    
+    setAiLoading(true);
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: systemPrompt }],
-          temperature: 0.7,
-          max_tokens: 1024
-        })
+      const { data, error } = await supabase.functions.invoke('ai-compose', {
+        body: {
+          prompt: aiPrompt,
+          context: {
+            organizerName: organizer.business_name || organizer.name,
+            eventName: events.find(e => e.id === form.eventId)?.title,
+          }
+        }
       });
-      if (!response.ok) throw new Error("API failed");
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || "";
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        setFormData({ ...formData, subject: parsed.subject || "", body: parsed.body || "", selectedTemplate: "custom" });
-        setIsAIComposeOpen(false);
-        setAiPrompt("");
-      } else { throw new Error("Invalid response"); }
-    } catch (error) {
-      console.error("AI error:", error);
-      setAiError("Failed to generate. Please try again.");
+      
+      if (error) throw error;
+      
+      if (data?.subject) setForm(f => ({ ...f, subject: data.subject }));
+      if (data?.body) setForm(f => ({ ...f, body: data.body }));
+      setAiPrompt('');
+    } catch (err) {
+      console.error('AI compose error:', err);
+      alert('Failed to generate content. Please try again.');
     } finally {
-      setAiGenerating(false);
+      setAiLoading(false);
     }
-  };
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      subject: '',
-      body: '',
-      recipientType: 'followers',
-      eventId: '',
-      selectedTemplate: 'custom',
-      scheduledFor: '',
-    });
-    setEditingCampaign(null);
-    setError('');
   };
 
-  const openEditDialog = (campaign) => {
-    setEditingCampaign(campaign);
-    setFormData({
-      name: campaign.name,
-      subject: campaign.subject,
-      body: campaign.body,
-      recipientType: campaign.recipient_type,
-      eventId: campaign.event_id || '',
-      selectedTemplate: 'custom',
-      scheduledFor: campaign.scheduled_for?.slice(0, 16) || '',
-    });
-    setIsCreateDialogOpen(true);
-  };
-
-  const saveCampaign = async (sendNow = false) => {
-    if (!formData.name.trim()) {
-      setError('Campaign name is required');
-      return;
-    }
-    if (!formData.subject.trim()) {
-      setError('Email subject is required');
-      return;
-    }
-    if (!formData.body.trim()) {
-      setError('Email body is required');
+  const sendCampaign = async (sendNow = true) => {
+    if (!form.subject.trim() || !form.body.trim()) {
+      alert('Please fill in subject and message');
       return;
     }
     if (recipientCount === 0) {
-      setError('No recipients found for this campaign');
+      alert('No recipients selected');
       return;
     }
 
-    setSaving(true);
-    setError('');
-
-    try {
-      const campaignData = {
-        organizer_id: organizer.id,
-        name: formData.name.trim(),
-        subject: formData.subject.trim(),
-        body: formData.body.trim(),
-        recipient_type: formData.recipientType,
-        event_id: formData.eventId || null,
-        status: sendNow ? 'sending' : (formData.scheduledFor ? 'scheduled' : 'draft'),
-        scheduled_for: formData.scheduledFor || null,
-        total_recipients: recipientCount,
-      };
-
-      let campaignId;
-
-      if (editingCampaign) {
-        const { error: updateError } = await supabase
-          .from('email_campaigns')
-          .update(campaignData)
-          .eq('id', editingCampaign.id);
-
-        if (updateError) throw updateError;
-        campaignId = editingCampaign.id;
-      } else {
-        const { data: newCampaign, error: insertError } = await supabase
-          .from('email_campaigns')
-          .insert(campaignData)
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        campaignId = newCampaign.id;
-      }
-
-      if (sendNow) {
-        await simulateSendCampaign(campaignId);
-      }
-
-      await loadCampaigns();
-      setIsCreateDialogOpen(false);
-      resetForm();
-    } catch (error) {
-      console.error('Error saving campaign:', error);
-      setError('Failed to save campaign. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const simulateSendCampaign = async (campaignId) => {
-    await supabase
-      .from('email_campaigns')
-      .update({
-        status: 'sent',
-        sent_at: new Date().toISOString(),
-        total_sent: recipientCount,
-      })
-      .eq('id', campaignId);
-
-    alert('Campaign sent successfully! (In production, emails will be sent via email service)');
-  };
-
-  const sendCampaign = async (campaignId) => {
-    if (!confirm('Are you sure you want to send this campaign now?')) return;
-
     setSending(true);
     try {
-      await simulateSendCampaign(campaignId);
-      await loadCampaigns();
-    } catch (error) {
-      console.error('Error sending campaign:', error);
-      alert('Failed to send campaign');
+      // 1. Create campaign record
+      const { data: campaign, error: campaignError } = await supabase
+        .from('email_campaigns')
+        .insert({
+          organizer_id: organizer.id,
+          name: form.subject.substring(0, 50),
+          subject: form.subject,
+          body: form.body,
+          recipient_type: form.recipientType,
+          event_id: form.eventId || null,
+          status: sendNow ? 'sending' : 'scheduled',
+          scheduled_for: form.scheduleFor || null,
+          total_recipients: recipientCount,
+        })
+        .select()
+        .single();
+
+      if (campaignError) throw campaignError;
+
+      // 2. If sending now, fetch recipients and send emails
+      if (sendNow) {
+        const recipients = await fetchRecipients();
+        
+        if (recipients.length > 0) {
+          const event = events.find(e => e.id === form.eventId);
+          
+          // Send via edge function
+          const { error: sendError } = await supabase.functions.invoke('send-bulk-email', {
+            body: {
+              campaignId: campaign.id,
+              recipients: recipients,
+              subject: form.subject,
+              body: form.body,
+              variables: {
+                event_name: event?.title || '',
+                event_date: event?.start_date ? format(new Date(event.start_date), 'MMMM d, yyyy') : '',
+                event_time: event?.start_time || '',
+                event_venue: event?.venue_name || '',
+                event_city: event?.city || '',
+                event_link: event ? `${window.location.origin}/events/${event.id}` : '',
+                organizer_name: organizer.business_name || organizer.name,
+                organizer_email: organizer.email || '',
+              },
+              organizerId: organizer.id,
+            }
+          });
+
+          if (sendError) throw sendError;
+        }
+
+        // Update status
+        await supabase
+          .from('email_campaigns')
+          .update({ status: 'sent', sent_at: new Date().toISOString(), total_sent: recipients.length })
+          .eq('id', campaign.id);
+      }
+
+      await loadData();
+      resetForm();
+      setView('list');
+      alert(sendNow ? `Campaign sent to ${recipientCount} recipients!` : 'Campaign scheduled successfully!');
+    } catch (err) {
+      console.error('Send error:', err);
+      alert('Failed to send campaign: ' + err.message);
     } finally {
       setSending(false);
     }
   };
 
-  const deleteCampaign = async (campaignId) => {
-    if (!confirm('Are you sure you want to delete this campaign?')) return;
+  const fetchRecipients = async () => {
+    let recipients = [];
 
-    try {
-      const { error } = await supabase
-        .from('email_campaigns')
-        .delete()
-        .eq('id', campaignId);
-
-      if (error) throw error;
-      await loadCampaigns();
-    } catch (error) {
-      console.error('Error deleting campaign:', error);
-      alert('Failed to delete campaign');
+    if (form.recipientType === 'event_attendees' && form.eventId) {
+      const { data } = await supabase
+        .from('tickets')
+        .select('attendee_email, attendee_name, ticket_types(name)')
+        .eq('event_id', form.eventId)
+        .eq('payment_status', 'completed');
+      
+      recipients = (data || []).map(t => ({
+        email: t.attendee_email,
+        name: t.attendee_name,
+        ticket_type: t.ticket_types?.name || 'General',
+      }));
+    } else if (form.recipientType === 'followers') {
+      const { data } = await supabase
+        .from('followers')
+        .select('profiles(email, full_name)')
+        .eq('organizer_id', organizer.id);
+      
+      recipients = (data || []).map(f => ({
+        email: f.profiles?.email,
+        name: f.profiles?.full_name || 'there',
+      })).filter(r => r.email);
+    } else if (form.recipientType === 'team') {
+      const { data } = await supabase
+        .from('organizer_team_members')
+        .select('email, name')
+        .eq('organizer_id', organizer.id)
+        .in('status', ['active', 'pending']);
+      
+      recipients = (data || []).map(m => ({
+        email: m.email,
+        name: m.name || 'Team Member',
+      }));
     }
+
+    return recipients;
   };
 
-  const duplicateCampaign = async (campaign) => {
-    try {
-      const { error } = await supabase
-        .from('email_campaigns')
-        .insert({
-          organizer_id: organizer.id,
-          name: `${campaign.name} (Copy)`,
-          subject: campaign.subject,
-          body: campaign.body,
-          recipient_type: campaign.recipient_type,
-          event_id: campaign.event_id,
-          status: 'draft',
-          total_recipients: 0,
-        });
-
-      if (error) throw error;
-      await loadCampaigns();
-    } catch (error) {
-      console.error('Error duplicating campaign:', error);
-      alert('Failed to duplicate campaign');
-    }
+  const deleteCampaign = async (id) => {
+    if (!confirm('Delete this campaign?')) return;
+    await supabase.from('email_campaigns').delete().eq('id', id);
+    loadData();
   };
 
-  const filteredCampaigns = campaigns.filter((c) => {
-    const matchesSearch = 
-      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.subject?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const stats = {
-    total: campaigns.length,
-    sent: campaigns.filter(c => c.status === 'sent').length,
-    totalSent: campaigns.reduce((sum, c) => sum + (c.total_sent || 0), 0),
-    totalOpened: campaigns.reduce((sum, c) => sum + (c.total_opened || 0), 0),
-    totalClicked: campaigns.reduce((sum, c) => sum + (c.total_clicked || 0), 0),
+  const resetForm = () => {
+    setForm({ recipientType: '', eventId: '', template: '', subject: '', body: '', scheduleFor: '' });
+    setStep(1);
+    setRecipientCount(0);
   };
 
-  const avgOpenRate = stats.totalSent > 0 ? (stats.totalOpened / stats.totalSent) * 100 : 0;
-  const avgClickRate = stats.totalSent > 0 ? (stats.totalClicked / stats.totalSent) * 100 : 0;
+  // ============================================================================
+  // PREVIEW
+  // ============================================================================
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'sent':
-        return <Badge className="bg-green-100 text-green-700"><CheckCircle className="w-3 h-3 mr-1" />Sent</Badge>;
-      case 'sending':
-        return <Badge className="bg-blue-100 text-blue-700"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Sending</Badge>;
-      case 'scheduled':
-        return <Badge className="bg-purple-100 text-purple-700"><Clock className="w-3 h-3 mr-1" />Scheduled</Badge>;
-      case 'draft':
-        return <Badge className="bg-gray-100 text-gray-700"><FileText className="w-3 h-3 mr-1" />Draft</Badge>;
-      case 'failed':
-        return <Badge className="bg-red-100 text-red-700"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
-      default:
-        return null;
-    }
-  };
+  const previewHtml = useMemo(() => {
+    let html = form.body;
+    const event = events.find(e => e.id === form.eventId);
+    
+    const replacements = {
+      '{{attendee_name}}': 'John Doe',
+      '{{event_name}}': event?.title || 'Event Name',
+      '{{event_date}}': event?.start_date ? format(new Date(event.start_date), 'MMMM d, yyyy') : 'January 1, 2026',
+      '{{event_time}}': event?.start_time || '7:00 PM',
+      '{{event_venue}}': event?.venue_name || 'Venue Name',
+      '{{event_city}}': event?.city || 'City',
+      '{{event_link}}': '#',
+      '{{ticket_type}}': 'General Admission',
+      '{{organizer_name}}': organizer?.business_name || organizer?.name || 'Organizer',
+      '{{organizer_email}}': organizer?.email || 'email@example.com',
+    };
 
-  const formatDateTime = (dateString) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleString('en-NG', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
+    Object.entries(replacements).forEach(([key, value]) => {
+      html = html.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
     });
-  };
 
-  if (loading) {
+    return html;
+  }, [form.body, form.eventId, events, organizer]);
+
+  // ============================================================================
+  // RENDER: CAMPAIGN LIST
+  // ============================================================================
+
+  if (view === 'list') {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Communications</h1>
+            <p className="text-[#0F0F0F]/60">Send emails to your attendees, followers, and team</p>
+          </div>
+          <Button onClick={() => setView('create')} className="bg-[#2969FF] text-white rounded-xl">
+            <Mail className="w-4 h-4 mr-2" />
+            New Campaign
+          </Button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">{campaigns.length}</p>
+                <p className="text-xs text-[#0F0F0F]/60">Total Campaigns</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                <Send className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">{campaigns.reduce((sum, c) => sum + (c.total_sent || 0), 0)}</p>
+                <p className="text-xs text-[#0F0F0F]/60">Emails Sent</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">{campaigns.filter(c => c.status === 'scheduled').length}</p>
+                <p className="text-xs text-[#0F0F0F]/60">Scheduled</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Campaign List */}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
+          </div>
+        ) : campaigns.length === 0 ? (
+          <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <CardContent className="py-12 text-center">
+              <Mail className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
+              <p className="text-[#0F0F0F]/60 mb-4">No campaigns yet</p>
+              <Button onClick={() => setView('create')} className="bg-[#2969FF] text-white rounded-xl">
+                Create Your First Campaign
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {campaigns.map(campaign => (
+              <Card key={campaign.id} className="rounded-2xl border-[#0F0F0F]/10 hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium truncate">{campaign.subject || campaign.name}</h3>
+                        <Badge variant="secondary" className={
+                          campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
+                          campaign.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                          campaign.status === 'sending' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }>
+                          {campaign.status === 'sent' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {campaign.status === 'scheduled' && <Clock className="w-3 h-3 mr-1" />}
+                          {campaign.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5" />
+                          {campaign.total_sent || campaign.total_recipients || 0} recipients
+                        </span>
+                        <span>
+                          {format(new Date(campaign.created_at), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => deleteCampaign(campaign.id)} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
 
+  // ============================================================================
+  // RENDER: CREATE CAMPAIGN
+  // ============================================================================
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Email Campaigns</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Create and manage email campaigns for your audience</p>
+          <h1 className="text-2xl font-semibold">New Campaign</h1>
+          <p className="text-[#0F0F0F]/60">
+            Step {step} of 3: {step === 1 ? 'Select Recipients' : step === 2 ? 'Compose Message' : 'Review & Send'}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={loadData}
-            className="rounded-xl border-[#0F0F0F]/10"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-          <Button
-            onClick={() => {
-              resetForm();
-              setIsCreateDialogOpen(true);
-            }}
-            className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Campaign
-          </Button>
-        </div>
+        <Button variant="outline" onClick={() => { resetForm(); setView('list'); }} className="rounded-xl">
+          Cancel
+        </Button>
       </div>
 
-      {/* Pre-selected attendees notice */}
-      {preSelectedAttendeeIds.length > 0 && (
-        <Card className="border-[#2969FF]/20 bg-[#2969FF]/5 rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-[#2969FF]" />
-              <p className="text-[#0F0F0F]">
-                <span className="font-medium">{preSelectedAttendeeIds.length} attendees</span> selected from Manage Attendees page
-              </p>
-              <Button
-                size="sm"
-                onClick={() => {
-                  resetForm();
-                  setFormData(prev => ({ ...prev, recipientType: 'selected' }));
-                  setIsCreateDialogOpen(true);
-                }}
-                className="ml-auto bg-[#2969FF] text-white rounded-xl"
-              >
-                Create Email for Selected
-              </Button>
+      {/* Progress */}
+      <div className="flex items-center gap-2">
+        {[1, 2, 3].map(s => (
+          <div key={s} className="flex items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              s === step ? 'bg-[#2969FF] text-white' : 
+              s < step ? 'bg-green-500 text-white' : 'bg-[#F4F6FA] text-[#0F0F0F]/40'
+            }`}>
+              {s < step ? <CheckCircle className="w-4 h-4" /> : s}
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Campaigns</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.total}</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-[#2969FF]" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Emails Sent</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalSent.toLocaleString()}</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                <Send className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Avg. Open Rate</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{avgOpenRate.toFixed(1)}%</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                <Eye className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Avg. Click Rate</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{avgClickRate.toFixed(1)}%</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            {s < 3 && <div className={`w-16 h-1 mx-2 rounded ${s < step ? 'bg-green-500' : 'bg-[#F4F6FA]'}`} />}
+          </div>
+        ))}
       </div>
 
-      {/* Search & Filter */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-              <Input
-                placeholder="Search campaigns..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="md:w-40 h-12 rounded-xl border-[#0F0F0F]/10">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="sent">Sent</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Campaigns List */}
-      {filteredCampaigns.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-12 text-center">
-            <Mail className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60 mb-4">
-              {campaigns.length === 0 ? 'No campaigns yet' : 'No campaigns match your filters'}
-            </p>
-            {campaigns.length === 0 && (
-              <Button 
-                onClick={() => {
-                  resetForm();
-                  setIsCreateDialogOpen(true);
-                }} 
-                className="bg-[#2969FF] text-white rounded-xl"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Campaign
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filteredCampaigns.map((campaign) => (
-            <Card key={campaign.id} className="border-[#0F0F0F]/10 rounded-2xl hover:shadow-md transition-shadow">
-              <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="font-medium text-[#0F0F0F] truncate">{campaign.name}</h3>
-                      {getStatusBadge(campaign.status)}
-                      {campaign.events && (
-                        <Badge variant="outline" className="text-xs">
-                          {campaign.events.title}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-[#0F0F0F]/60 mb-2 truncate">{campaign.subject}</p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {campaign.total_recipients > 0 ? `${campaign.total_recipients} recipients` : 'No recipients'}
-                      </span>
-                      {campaign.status === 'sent' && (
-                        <>
-                          <span className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            {campaign.total_recipients > 0 
-                              ? `${Math.round(((campaign.total_opened || 0) / campaign.total_recipients) * 100)}% opened`
-                              : '0% opened'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <BarChart3 className="w-4 h-4" />
-                            {campaign.total_recipients > 0 
-                              ? `${Math.round(((campaign.total_clicked || 0) / campaign.total_recipients) * 100)}% clicked`
-                              : '0% clicked'}
-                          </span>
-                        </>
-                      )}
-                      {campaign.status === 'scheduled' && campaign.scheduled_for && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {formatDateTime(campaign.scheduled_for)}
-                        </span>
-                      )}
-                      {campaign.status === 'sent' && campaign.sent_at && (
-                        <span className="flex items-center gap-1 text-green-600">
-                          <CheckCircle className="w-4 h-4" />
-                          Sent {formatDateTime(campaign.sent_at)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setPreviewCampaign(campaign);
-                        setIsPreviewOpen(true);
-                      }}
-                      className="rounded-xl border-[#0F0F0F]/10"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Preview
-                    </Button>
-                    {campaign.status === 'draft' && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => sendCampaign(campaign.id)}
-                        disabled={sending}
-                        className="bg-[#2969FF] text-white rounded-xl"
-                      >
-                        <Send className="w-4 h-4 mr-1" />
-                        Send
-                      </Button>
-                    )}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-xl">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-xl">
-                        {campaign.status === 'draft' && (
-                          <DropdownMenuItem onClick={() => openEditDialog(campaign)}>
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => duplicateCampaign(campaign)}>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => deleteCampaign(campaign.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Create/Edit Campaign Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-        if (!open) resetForm();
-        setIsCreateDialogOpen(open);
-      }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingCampaign ? 'Edit Campaign' : 'Create Email Campaign'}</DialogTitle>
-            <DialogDescription>
-              Compose and send emails to your followers and attendees
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
-                <AlertCircle className="w-4 h-4" />
-                {error}
-              </div>
-            )}
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Campaign Name *</Label>
-                <Input
-                  placeholder="e.g., Event Reminder"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="rounded-xl h-12"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email Template</Label>
-                <Select
-                  value={formData.selectedTemplate}
-                  onValueChange={applyTemplate}
-                >
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {emailTemplates.map(template => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Recipients *</Label>
-                <Select
-                  value={formData.recipientType}
-                  onValueChange={(value) => setFormData({ ...formData, recipientType: value, eventId: '' })}
-                >
-                  <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {preSelectedAttendeeIds.length > 0 && (
-                      <SelectItem value="selected">Selected Attendees ({preSelectedAttendeeIds.length})</SelectItem>
-                    )}
-                    <SelectItem value="followers">All Followers</SelectItem>
-                    <SelectItem value="all_attendees">All Past Attendees</SelectItem>
-                    <SelectItem value="event_attendees">Specific Event Attendees</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.recipientType === 'event_attendees' && (
-                <div className="space-y-2">
-                  <Label>Select Event</Label>
-                  <Select
-                    value={formData.eventId}
-                    onValueChange={(value) => setFormData({ ...formData, eventId: value })}
-                  >
-                    <SelectTrigger className="rounded-xl h-12">
-                      <SelectValue placeholder="Choose an event" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {events.map((event) => (
-                        <SelectItem key={event.id} value={event.id}>
-                          {event.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-
-            {recipientCount > 0 && (
-              <div className="p-3 bg-[#2969FF]/5 rounded-xl flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#2969FF]" />
-                <span className="text-sm text-[#0F0F0F]">
-                  This campaign will be sent to <strong>{recipientCount}</strong> recipients
-                </span>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Email Subject *</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsAIComposeOpen(true)}
-                  className="rounded-lg border-purple-200 text-purple-600 hover:bg-purple-50"
-                >
-                  <Sparkles className="w-4 h-4 mr-1" />
-                  AI Compose
-                </Button>
-              </div>
-              <Input
-                placeholder="Enter email subject line"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                className="rounded-xl h-12"
-              />
-              <p className="text-xs text-[#0F0F0F]/40">
-                Variables: {'{{attendee_name}}'}, {'{{event_name}}'}, {'{{event_date}}'}, {'{{event_venue}}'}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Message *</Label>
-              <Textarea
-                placeholder="Write your email message here..."
-                value={formData.body}
-                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                className="rounded-xl min-h-[200px]"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Schedule (Optional)</Label>
-              <Input
-                type="datetime-local"
-                value={formData.scheduledFor}
-                onChange={(e) => setFormData({ ...formData, scheduledFor: e.target.value })}
-                className="rounded-xl h-12"
-              />
-              <p className="text-xs text-[#0F0F0F]/40">
-                Leave empty to save as draft or send immediately
-              </p>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsCreateDialogOpen(false);
-                  resetForm();
-                }}
-                className="rounded-xl h-12"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => saveCampaign(false)}
-                disabled={saving}
-                className="flex-1 rounded-xl h-12"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save as Draft'}
-              </Button>
-              <Button
-                onClick={() => saveCampaign(true)}
-                disabled={saving || recipientCount === 0}
-                className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12"
-              >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Send Now
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* AI Compose Dialog */}
-      <Dialog open={isAIComposeOpen} onOpenChange={setIsAIComposeOpen}>
-        <DialogContent className="max-w-lg rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
-              AI Compose
-            </DialogTitle>
-            <DialogDescription>
-              Describe what you want to write and AI will generate the email for you
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {aiError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
-                <AlertCircle className="w-4 h-4" />
-                {aiError}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>What do you want to write?</Label>
-              <Textarea
-                placeholder="e.g., Write a friendly reminder email for attendees about the upcoming concert this weekend"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                className="rounded-xl min-h-[100px]"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs text-[#0F0F0F]/60 font-medium">Suggestions:</p>
-              <div className="flex flex-wrap gap-2">
-                {aiPromptSuggestions.map((suggestion, index) => (
+      {/* Step 1: Recipients */}
+      {step === 1 && (
+        <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <CardContent className="p-6 space-y-6">
+            <div>
+              <Label className="text-base font-medium mb-3 block">Who do you want to email?</Label>
+              <div className="grid gap-3">
+                {RECIPIENT_TYPES.map(type => (
                   <button
-                    key={index}
-                    type="button"
-                    onClick={() => setAiPrompt(suggestion)}
-                    className="text-xs px-3 py-1.5 bg-[#F4F6FA] hover:bg-[#2969FF]/10 text-[#0F0F0F]/70 rounded-full transition-colors"
+                    key={type.id}
+                    onClick={() => setForm(f => ({ ...f, recipientType: type.id, eventId: '' }))}
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      form.recipientType === type.id 
+                        ? 'border-[#2969FF] bg-[#2969FF]/5' 
+                        : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                    }`}
                   >
-                    {suggestion}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        form.recipientType === type.id ? 'bg-[#2969FF] text-white' : 'bg-[#F4F6FA]'
+                      }`}>
+                        <type.icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{type.label}</p>
+                        <p className="text-sm text-[#0F0F0F]/60">{type.description}</p>
+                      </div>
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsAIComposeOpen(false);
-                  setAiPrompt('');
-                  setAiError('');
-                }}
-                className="flex-1 rounded-xl h-12"
+            {form.recipientType === 'event_attendees' && (
+              <div>
+                <Label>Select Event</Label>
+                <Select value={form.eventId} onValueChange={v => setForm(f => ({ ...f, eventId: v }))}>
+                  <SelectTrigger className="rounded-xl mt-1">
+                    <SelectValue placeholder="Choose an event" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {events.map(event => (
+                      <SelectItem key={event.id} value={event.id}>
+                        {event.title} ({format(new Date(event.start_date), 'MMM d')})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {recipientCount > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl text-green-700">
+                <CheckCircle className="w-5 h-5" />
+                <span>This campaign will be sent to <strong>{recipientCount}</strong> recipients</span>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => setStep(2)} 
+                disabled={!form.recipientType || (form.recipientType === 'event_attendees' && !form.eventId) || recipientCount === 0}
+                className="bg-[#2969FF] text-white rounded-xl"
               >
-                Cancel
-              </Button>
-              <Button
-                onClick={generateWithAI}
-                disabled={aiGenerating || !aiPrompt.trim()}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl h-12"
-              >
-                {aiGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate Email
-                  </>
-                )}
+                Continue <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Preview Dialog */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Email Preview</DialogTitle>
-          </DialogHeader>
-          {previewCampaign && (
-            <div className="space-y-4">
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Subject:</p>
-                <p className="font-medium text-[#0F0F0F]">{previewCampaign.subject}</p>
+      {/* Step 2: Compose */}
+      {step === 2 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Editor */}
+          <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <CardContent className="p-6 space-y-4">
+              {/* Template Selection */}
+              <div>
+                <Label className="mb-2 block">Start with a template</Label>
+                <div className="flex flex-wrap gap-2">
+                  {TEMPLATES.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => selectTemplate(t.id)}
+                      className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all ${
+                        form.template === t.id 
+                          ? 'bg-[#2969FF] text-white' 
+                          : 'bg-[#F4F6FA] hover:bg-[#E8EBF0]'
+                      }`}
+                    >
+                      <t.icon className="w-3.5 h-3.5" />
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl">
-                <pre className="whitespace-pre-wrap font-sans text-[#0F0F0F]">
-                  {previewCampaign.body}
-                </pre>
+
+              {/* AI Compose */}
+              <div className="p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl">
+                <Label className="mb-2 block text-sm font-medium flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  AI Compose
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    placeholder="Describe what you want to say..."
+                    className="rounded-lg"
+                  />
+                  <Button 
+                    onClick={generateWithAI} 
+                    disabled={aiLoading || !aiPrompt.trim()}
+                    className="rounded-lg bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsPreviewOpen(false)}
-                  className="rounded-xl"
+
+              {/* Subject */}
+              <div>
+                <Label>Subject Line</Label>
+                <Input
+                  value={form.subject}
+                  onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+                  placeholder="Enter email subject..."
+                  className="rounded-xl mt-1"
+                />
+              </div>
+
+              {/* Body */}
+              <div>
+                <Label>Message</Label>
+                <div className="mt-1 rounded-xl overflow-hidden border border-[#0F0F0F]/10">
+                  <ReactQuill
+                    theme="snow"
+                    value={form.body}
+                    onChange={v => setForm(f => ({ ...f, body: v }))}
+                    modules={QUILL_MODULES}
+                    placeholder="Write your message..."
+                    style={{ minHeight: '200px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Variables */}
+              <div>
+                <Label className="mb-2 block text-sm">Insert Variable</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {VARIABLES.map(v => (
+                    <button
+                      key={v.key}
+                      onClick={() => setForm(f => ({ ...f, body: f.body + v.key }))}
+                      className="px-2 py-1 bg-[#F4F6FA] hover:bg-[#E8EBF0] rounded text-xs font-mono"
+                      title={v.label}
+                    >
+                      {v.key}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                </Button>
+                <Button 
+                  onClick={() => setStep(3)} 
+                  disabled={!form.subject.trim() || !form.body.trim()}
+                  className="bg-[#2969FF] text-white rounded-xl"
                 >
-                  Close
+                  Continue <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Preview */}
+          <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Eye className="w-4 h-4 text-[#0F0F0F]/60" />
+                <Label>Preview</Label>
+              </div>
+              <div className="border border-[#0F0F0F]/10 rounded-xl overflow-hidden">
+                <div className="bg-[#F4F6FA] p-3 border-b border-[#0F0F0F]/10">
+                  <p className="text-sm"><strong>Subject:</strong> {form.subject || '(No subject)'}</p>
+                </div>
+                <div 
+                  className="p-4 prose prose-sm max-w-none min-h-[300px]"
+                  dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="text-gray-400">Your message will appear here...</p>' }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Step 3: Review & Send */}
+      {step === 3 && (
+        <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <CardContent className="p-6 space-y-6">
+            <div className="text-center py-4">
+              <div className="w-16 h-16 rounded-full bg-[#2969FF]/10 flex items-center justify-center mx-auto mb-4">
+                <Send className="w-8 h-8 text-[#2969FF]" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Ready to Send</h2>
+              <p className="text-[#0F0F0F]/60">
+                Your campaign will be sent to <strong>{recipientCount}</strong> recipients
+              </p>
+            </div>
+
+            {/* Summary */}
+            <div className="bg-[#F4F6FA] rounded-xl p-4 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-[#0F0F0F]/60">Recipients</span>
+                <span className="font-medium">{RECIPIENT_TYPES.find(t => t.id === form.recipientType)?.label} ({recipientCount})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#0F0F0F]/60">Subject</span>
+                <span className="font-medium truncate max-w-[200px]">{form.subject}</span>
+              </div>
+            </div>
+
+            {/* Schedule Option */}
+            <div>
+              <Label>Schedule for later (optional)</Label>
+              <Input
+                type="datetime-local"
+                value={form.scheduleFor}
+                onChange={e => setForm(f => ({ ...f, scheduleFor: e.target.value }))}
+                className="rounded-xl mt-1"
+              />
+              <p className="text-xs text-[#0F0F0F]/40 mt-1">Leave empty to send immediately</p>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl">
+                <ChevronLeft className="w-4 h-4 mr-1" /> Back
+              </Button>
+              <div className="flex gap-2">
+                {form.scheduleFor && (
+                  <Button 
+                    onClick={() => sendCampaign(false)} 
+                    disabled={sending}
+                    variant="outline"
+                    className="rounded-xl"
+                  >
+                    {sending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Clock className="w-4 h-4 mr-2" />}
+                    Schedule
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => sendCampaign(true)} 
+                  disabled={sending}
+                  className="bg-[#2969FF] text-white rounded-xl"
+                >
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  Send Now
                 </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
-export { EmailCampaigns as OrganizerCommunications };
+
+export default OrganizerCommunications;

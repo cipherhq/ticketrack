@@ -240,7 +240,8 @@ export function PromoterManagement() {
           promoCode: promoCode,
           isNewUser: !existingUser,
           appUrl: window.location.origin
-        }
+        },
+        organizerId: organizer.id
       });
 
       alert(`Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}`);

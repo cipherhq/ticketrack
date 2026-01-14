@@ -292,16 +292,6 @@ export function OrganizerFollowers() {
               </div>
             </Button>
             <Button
-              className="bg-[#25D366] hover:bg-[#25D366]/90 text-white rounded-xl h-auto py-4"
-              onClick={() => navigate('/organizer/whatsapp')}
-            >
-              <MessageSquare className="w-5 h-5 mr-3" />
-              <div className="text-left">
-                <p className="font-medium">WhatsApp Broadcast</p>
-                <p className="text-xs opacity-80">Send WhatsApp messages</p>
-              </div>
-            </Button>
-            <Button
               variant="outline"
               className="rounded-xl h-auto py-4 border-[#0F0F0F]/10"
               onClick={() => navigate('/organizer/sms')}

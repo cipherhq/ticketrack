@@ -77,10 +77,10 @@ const menuItems = [
       { title: 'Promo Codes', path: '/organizer/promo-codes' },
       { title: 'Promoters', path: '/organizer/promoters' },
       { title: 'Communications', path: '/organizer/communications' },
-      { title: 'WhatsApp', path: '/organizer/whatsapp' },
+      // { title: 'WhatsApp', path: '/organizer/whatsapp' },
       { title: 'Send SMS', path: '/organizer/sms' },
       { title: 'SMS Credits', path: '/organizer/sms-credits' },
-      { title: 'WhatsApp Credits', path: '/organizer/whatsapp-credits' },
+      // { title: 'WhatsApp Credits', path: '/organizer/whatsapp-credits' },
     ],
   },
   {

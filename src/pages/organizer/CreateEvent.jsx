@@ -495,9 +495,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     }
     
     if (activeTab === "ticketing") {
-      if (!formData.currency) errors.push("Currency is required");
+      if (!formData.isFree && !formData.currency) errors.push("Currency is required");
       const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0);
-      if (validTickets.length === 0 && !formData.isFreeEvent) errors.push("At least one ticket type is required");
+      if (validTickets.length === 0 && !formData.isFree) errors.push("At least one ticket type is required");
       
       // Check for invalid tickets (name but no valid quantity/price)
       tickets.forEach((t, idx) => {
@@ -505,7 +505,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           if (!t.quantity || parseInt(t.quantity) <= 0) {
             errors.push("Ticket \"" + t.name + "\" must have quantity greater than 0");
           }
-          if (!formData.isFreeEvent && (!t.price || parseFloat(t.price) <= 0)) {
+          if (!formData.isFree && (!t.price || parseFloat(t.price) <= 0)) {
             errors.push("Ticket \"" + t.name + "\" must have a price greater than 0");
           }
         }
@@ -872,8 +872,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       return;
     }
 
-    const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0 && (formData.isFreeEvent || parseFloat(t.price) > 0));
-    if (validTickets.length === 0) {
+    const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0 && (formData.isFree || parseFloat(t.price) > 0));
+    if (!formData.isFree && validTickets.length === 0) {
       setError('Please add at least one ticket type');
       setActiveTab('ticketing');
       return;
@@ -894,7 +894,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     if (!formData.venueAddress) {
       errors.venue = "Missing venue address";
     }
-    if (!formData.currency) {
+    if (!formData.isFree && !formData.currency) {
       errors.ticketing = "Please select a currency for your event";
     }
     

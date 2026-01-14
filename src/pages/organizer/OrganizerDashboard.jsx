@@ -32,7 +32,7 @@ const navItems = [
   { icon: Percent, label: 'Promo Codes', path: '/organizer/promo-codes' },
   { icon: TrendingUp, label: 'Promoters', path: '/organizer/promoters' },
   { icon: Mail, label: 'Email Campaigns', path: '/organizer/email-campaigns' },
-  { icon: MessageSquare, label: 'WhatsApp', path: '/organizer/whatsapp' },
+  // { icon: MessageSquare, label: 'WhatsApp', path: '/organizer/whatsapp' },
   { icon: Bell, label: 'SMS Campaigns', path: '/organizer/sms' },
   { icon: Shield, label: 'KYC', path: '/organizer/kyc' },
   { icon: UserCircle, label: 'Profile', path: '/organizer/profile' },
