@@ -21,6 +21,11 @@ const menuItems = [
     path: '/organizer/events',
   },
   {
+    title: 'Venues',
+    icon: Building,
+    path: '/organizer/venues',
+  },
+  {
     title: 'Orders',
     icon: Receipt,
     path: '/organizer/orders',
