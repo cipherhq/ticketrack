@@ -115,7 +115,7 @@ export function WebFreeRSVP() {
   // Settings from DB
   const [settings, setSettings] = useState({
     maxTicketsPerOrder: 10,
-    requirePhone: true,
+    requirePhone: false,
     freeEventOrderStatus: 'completed',
     donationFailedStillRsvp: true
   })
@@ -790,16 +790,7 @@ export function WebFreeRSVP() {
                 />
                 <p className="text-sm text-[#0F0F0F]/60">Confirmation will be sent to this email</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">
-                  Phone Number {settings.requirePhone ? '*' : '(Optional)'}
-                </Label>
-                <PhoneInput 
-                  value={formData.phone} 
-                  onChange={(phone) => setFormData({ ...formData, phone })} 
-                  required={settings.requirePhone}
-                />
-              </div>
+
             </CardContent>
           </Card>
 

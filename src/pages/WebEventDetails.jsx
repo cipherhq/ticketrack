@@ -297,16 +297,17 @@ export function WebEventDetails() {
 
   // Handle checkout/RSVP routing
   const handleCheckout = () => {
-    if (!user) {
-      navigate("/login", { state: { from: location.pathname, selectedTickets } })
-      return
-    }
-    
-    // Free event - go to free RSVP page
+    // Free event - go directly to free RSVP page (handles auth there)
     if (isFreeEvent) {
       navigate('/free-rsvp', { 
         state: { event } 
       })
+      return
+    }
+    
+    // Paid events require login first
+    if (!user) {
+      navigate("/login", { state: { from: location.pathname, selectedTickets } })
       return
     }
     
@@ -875,14 +876,29 @@ export function WebEventDetails() {
                       <p className="text-[#0F0F0F]/60 mt-2">This event is free to attend!</p>
                     </div>
                     
-                    {/* Donation hint if available */}
+                    {/* Donation Options */}
+                    {/* Donation Options */}
                     {event.accepts_donations && event.donation_amounts?.length > 0 && (
-                      <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                        <p className="text-sm text-green-700 text-center">
-                          💝 Optional donations available on the next page
+                      <div className="space-y-3 pt-2 border-t border-green-200">
+                        <p className="text-sm font-medium text-[#0F0F0F] flex items-center gap-2">
+                          <span>💝</span> Support This Event (Optional)
                         </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {event.donation_amounts.map((amount, idx) => (
+                            <button
+                              key={idx}
+                              className="px-4 py-3 rounded-xl border-2 border-green-300 bg-green-50 hover:bg-green-100 text-green-700 font-semibold transition-colors"
+                            >
+                              {formatPrice(amount, event.currency)}
+                            </button>
+                          ))}
+                        </div>
+                        {event.allow_custom_donation && (
+                          <p className="text-xs text-[#0F0F0F]/50 text-center">Custom amount available on next page</p>
+                        )}
                       </div>
                     )}
+
                   </div>
                 ) : (
                   <div className="space-y-4">

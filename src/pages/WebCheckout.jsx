@@ -1170,10 +1170,7 @@ const formatDate = (dateString) => {
                     <Input id="email" type="email" placeholder="their@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
                     <p className="text-sm text-[#0F0F0F]/60">Tickets will be sent to this email</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <PhoneInput value={formData.phone} onChange={(phone) => setFormData({ ...formData, phone })} />
-                  </div>
+
                 </div>
               )}
             </CardContent>
