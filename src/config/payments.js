@@ -120,6 +120,28 @@ export const getPaymentMethodsForProvider = async (provider) => {
 // Legacy export for backward compatibility
 export const PAYMENT_METHODS = DEFAULT_PAYMENT_METHODS;
 
+// IoT Venue Management Configuration
+export const IOT_CONFIG = {
+  sensorTypes: {
+    occupancy: 'people counting',
+    temperature: 'environmental',
+    air_quality: 'environmental',
+    noise: 'environmental',
+    motion: 'security',
+    beacon: 'checkin'
+  },
+  dataRetention: {
+    sensorData: 30, // days
+    checkinLogs: 365, // days
+    analytics: 730 // days
+  },
+  realTime: {
+    updateInterval: 5000, // 5 seconds
+    batchSize: 100,
+    maxConnections: 1000
+  }
+};
+
 // Get available payment methods for a currency (async database-driven)
 export const getPaymentMethods = async (currency) => {
   const provider = getPaymentProvider(currency);
