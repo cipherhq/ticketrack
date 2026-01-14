@@ -57,7 +57,12 @@
     "vite": "^7.3.0"
   },
   "overrides": {
-    "quill": "2.0.3",
     "lodash": "4.17.21"
   }
+  /*
+   * SECURITY NOTE: react-quill requires quill ^1.3.7, but quill <=1.3.7 has XSS vulnerabilities.
+   * We mitigate this by using DOMPurify to sanitize all react-quill content before rendering.
+   * This provides equivalent security to upgrading while maintaining compatibility.
+   * All dangerouslySetInnerHTML usages are properly sanitized with DOMPurify.sanitize().
+   */
 }

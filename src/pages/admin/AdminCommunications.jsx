@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import DOMPurify from 'dompurify';
 import {
   Mail, Send, Clock, CheckCircle, Users, Loader2,
   Sparkles, Eye, Trash2, Building, UserCheck, Globe
@@ -489,9 +490,9 @@ export function AdminCommunications() {
               <div className="bg-[#F4F6FA] p-3 border-b border-[#0F0F0F]/10">
                 <p className="text-sm"><strong>Subject:</strong> {form.subject || '(No subject)'}</p>
               </div>
-              <div 
+              <div
                 className="p-4 prose prose-sm max-w-none min-h-[300px]"
-                dangerouslySetInnerHTML={{ __html: form.body || '<p class="text-gray-400">Your message will appear here...</p>' }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(form.body || '<p class="text-gray-400">Your message will appear here...</p>', { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
               />
             </div>
           </CardContent>
