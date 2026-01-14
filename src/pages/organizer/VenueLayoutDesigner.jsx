@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Slider } from '@/components/ui/slider'
 import { FurnitureLibrary, FurnitureDragOverlay } from '@/components/FurnitureLibrary'
 import { SectionManager } from '@/components/SectionManager'
 import { supabase } from '@/lib/supabase'
