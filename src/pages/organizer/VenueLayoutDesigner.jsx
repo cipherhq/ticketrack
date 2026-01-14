@@ -875,6 +875,7 @@ export function VenueLayoutDesigner() {
           </CardContent>
         </Card>
       </div>
+      </TabsContent>
 
       {/* Furniture Tab */}
       <TabsContent value="furniture" className="space-y-6">
