@@ -55,22 +55,45 @@ export function VenueLayoutDesigner() {
 
   // Initialize canvas
   useEffect(() => {
-    if (canvasRef.current && !canvas) {
+    if (canvasRef.current) {
       initializeCanvas()
     }
-  }, [canvasRef])
+  }, [canvasRef.current])
+
+  // Redraw canvas when state changes
+  useEffect(() => {
+    if (canvas && canvasRef.current) {
+      redrawCanvas()
+    }
+  }, [sections, furniture, showGrid, zoom, selectedItem, isDrawing, currentSection])
 
   // Load layout data
   useEffect(() => {
     if (venueId) {
       loadFurnitureTypes()
-      if (layoutId) {
+      if (layoutId && layoutId !== 'create') {
         loadLayout(layoutId)
       } else {
         createNewLayout()
       }
+    } else {
+      // No venue ID, just create empty layout
+      createNewLayout()
     }
   }, [venueId, layoutId])
+
+  const redrawCanvas = () => {
+    if (!canvas || !canvasRef.current) return
+    const ctx = canvasRef.current.getContext('2d')
+    if (!ctx) return
+
+    const canvasState = {
+      ...canvas,
+      ctx,
+      scale: zoom
+    }
+    drawCanvas(canvasState)
+  }
 
   const initializeCanvas = useCallback(() => {
     const canvasElement = canvasRef.current
@@ -845,74 +868,147 @@ export function VenueLayoutDesigner() {
 
         {/* Canvas */}
         <Card className="lg:col-span-3">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Layout Canvas</CardTitle>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              {selectedTool === 'section' && (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  🖱️ Click to draw section points, then "Finish Section"
+                </Badge>
+              )}
+              {selectedTool === 'furniture' && selectedFurnitureType && (
+                <Badge variant="outline" className="bg-green-50 text-green-700">
+                  🪑 Click on canvas to place: {selectedFurnitureType.name}
+                </Badge>
+              )}
+              {selectedTool === 'select' && (
+                <Badge variant="outline" className="bg-gray-50">
+                  👆 Click items to select
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="border rounded-lg overflow-hidden bg-white">
+            {/* Instructions Panel */}
+            {sections.length === 0 && furniture.length === 0 && (
+              <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">🎨 How to Design Your Layout</h4>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li><strong>Draw Sections:</strong> Click "Section" tool → click canvas to draw corners → click "Finish Section"</li>
+                  <li><strong>Add Furniture:</strong> Go to "Furniture" tab → click an item → click on canvas to place it</li>
+                  <li><strong>Configure:</strong> Go to "Sections" tab to set capacity & pricing for each section</li>
+                  <li><strong>Save:</strong> Click "Save Layout" when done</li>
+                </ol>
+              </div>
+            )}
+            
+            <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 relative">
               <canvas
                 ref={canvasRef}
-                className={`w-full h-auto ${selectedTool === 'furniture' ? 'cursor-copy' : 'cursor-crosshair'}`}
-                style={{ maxHeight: '600px' }}
+                className={`w-full h-auto bg-white ${
+                  selectedTool === 'furniture' ? 'cursor-copy' : 
+                  selectedTool === 'section' ? 'cursor-crosshair' : 
+                  'cursor-pointer'
+                }`}
+                style={{ maxHeight: '600px', minHeight: '400px' }}
                 onClick={handleCanvasClick}
                 onDrop={handleCanvasDrop}
                 onDragOver={handleCanvasDragOver}
               />
-            </div>
-
-            {selectedItem && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium text-blue-900">Selected Item</h4>
-                <p className="text-sm text-blue-700">
-                  {selectedItem.type === 'section' ? 'Section' : 'Furniture'}: {selectedItem.name}
-                </p>
-                {selectedItem.type === 'section' && (
-                  <div className="mt-2 space-y-2">
-                    <Input
-                      value={selectedItem.name}
-                      onChange={(e) => {
-                        const updatedSections = sections.map(s =>
-                          s.id === selectedItem.id ? { ...s, name: e.target.value } : s
-                        )
-                        setSections(updatedSections)
-                      }}
-                      placeholder="Section name"
-                    />
-                    <Select
-                      value={selectedItem.section_type}
-                      onValueChange={(value) => {
-                        const updatedSections = sections.map(s =>
-                          s.id === selectedItem.id ? { ...s, section_type: value } : s
-                        )
-                        setSections(updatedSections)
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="seating">Seating</SelectItem>
-                        <SelectItem value="standing">Standing</SelectItem>
-                        <SelectItem value="vip">VIP</SelectItem>
-                        <SelectItem value="stage">Stage</SelectItem>
-                        <SelectItem value="bar">Bar</SelectItem>
-                      </SelectContent>
-                    </Select>
+              
+              {/* Canvas overlay for empty state */}
+              {sections.length === 0 && furniture.length === 0 && !isDrawing && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center text-gray-400">
+                    <div className="text-6xl mb-4">🏟️</div>
+                    <p className="text-lg font-medium">Your venue layout canvas</p>
+                    <p className="text-sm">Start by drawing sections or adding furniture</p>
                   </div>
-                )}
+                </div>
+              )}
+            </div>
+            
+            {/* Status bar */}
+            <div className="mt-3 flex items-center justify-between text-xs text-gray-500 bg-gray-50 rounded px-3 py-2">
+              <div className="flex items-center gap-4">
+                <span>Sections: <strong>{sections.length}</strong></span>
+                <span>Furniture: <strong>{furniture.length}</strong></span>
+                <span>Size: <strong>{layoutWidth}m × {layoutHeight}m</strong></span>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${showGrid ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                <span>Grid {showGrid ? 'On' : 'Off'}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
+        
+        {/* Selected Item Panel */}
+        {selectedItem && (
+          <Card className="mt-4 border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <h4 className="font-medium text-blue-900 mb-2">Selected: {selectedItem.name}</h4>
+              <p className="text-sm text-blue-700 mb-3">
+                Type: {selectedItem.type === 'section' ? 'Section' : 'Furniture'}
+              </p>
+              {selectedItem.type === 'section' && (
+                <div className="space-y-2">
+                  <Input
+                    value={selectedItem.name}
+                    onChange={(e) => {
+                      const updatedSections = sections.map(s =>
+                        s.id === selectedItem.id ? { ...s, name: e.target.value } : s
+                      )
+                      setSections(updatedSections)
+                    }}
+                    placeholder="Section name"
+                  />
+                  <Select
+                    value={selectedItem.section_type}
+                    onValueChange={(value) => {
+                      const updatedSections = sections.map(s =>
+                        s.id === selectedItem.id ? { ...s, section_type: value } : s
+                      )
+                      setSections(updatedSections)
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="seating">Seating</SelectItem>
+                      <SelectItem value="standing">Standing</SelectItem>
+                      <SelectItem value="vip">VIP</SelectItem>
+                      <SelectItem value="stage">Stage</SelectItem>
+                      <SelectItem value="bar">Bar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
       </TabsContent>
 
       {/* Furniture Tab */}
       <TabsContent value="furniture" className="space-y-6">
+        <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+          <CardContent className="p-4">
+            <h4 className="font-semibold text-green-900 mb-2">🪑 How to Add Furniture</h4>
+            <ol className="text-sm text-green-800 space-y-1 list-decimal list-inside">
+              <li><strong>Select an item</strong> from the library below</li>
+              <li><strong>Go back to Design tab</strong> - the item will be ready to place</li>
+              <li><strong>Click on the canvas</strong> to place the furniture</li>
+            </ol>
+          </CardContent>
+        </Card>
         <FurnitureLibrary
           onItemSelect={(item) => {
             setSelectedFurnitureType(item)
             setSelectedTool('furniture')
+            // Show a toast or feedback that item is selected
+            alert(`Selected: ${item.name}. Now go to Design tab and click on the canvas to place it.`)
           }}
           onItemDragStart={setDraggedFurniture}
         />
