@@ -115,7 +115,7 @@ export function OrganizerRefunds() {
       try {
         const refund = actionModal.refund;
         const session = await supabase.auth.getSession();
-        await fetch('https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-email', {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json', 

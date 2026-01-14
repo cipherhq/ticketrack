@@ -16,7 +16,7 @@ const BRAND_COLOR = '#2969FF'
 const BRAND_NAME = 'Ticketrack'
 const APP_URL = 'https://ticketrack.com'
 
-const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173']
+const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:3000']
 const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000, security: 100 }
 
 type AuthLevel = 'SYSTEM_ONLY' | 'USER_AUTH' | 'ORGANIZER_AUTH' | 'ADMIN_AUTH' | 'FINANCE_AUTH'
@@ -117,18 +117,53 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 // Auth
 async function getAuthContext(req: Request) {
   const authHeader = req.headers.get('Authorization')
-  if (authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY)) return { userId: null, isAdmin: true, isFinance: true, organizerIds: [] as string[], isServiceRole: true }
-  if (!authHeader?.startsWith('Bearer ')) return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } })
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
-  const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  const [{ data: profile }, { data: orgs }, { data: fin }] = await Promise.all([
-    svc.from('profiles').select('is_admin').eq('id', user.id).single(),
-    svc.from('organizers').select('id').eq('user_id', user.id),
-    svc.from('finance_users').select('id').eq('user_id', user.id).eq('is_active', true).single()
-  ])
-  return { userId: user.id, isAdmin: profile?.is_admin === true, isFinance: !!fin, organizerIds: orgs?.map(o => o.id) || [], isServiceRole: false }
+  if (!authHeader) return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+
+  // Check for service role key
+  if (authHeader.includes(SUPABASE_SERVICE_ROLE_KEY)) {
+    return { userId: null, isAdmin: true, isFinance: true, organizerIds: [] as string[], isServiceRole: true }
+  }
+
+  // Check for valid Bearer token
+  if (!authHeader.startsWith('Bearer ')) {
+    return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+  }
+
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } }
+    })
+    const { data: { user }, error } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      console.error('Auth error:', error?.message)
+      return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+    }
+
+    // Get user roles and permissions
+    const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const [{ data: profile, error: profileError }, { data: orgs, error: orgsError }, { data: fin, error: finError }] = await Promise.all([
+      svc.from('profiles').select('is_admin').eq('id', user.id).single(),
+      svc.from('organizers').select('id').eq('user_id', user.id),
+      svc.from('finance_users').select('id').eq('user_id', user.id).eq('is_active', true).single()
+    ])
+
+    // Handle potential errors gracefully
+    if (profileError && profileError.code !== 'PGRST116') console.error('Profile fetch error:', profileError)
+    if (orgsError) console.error('Organizers fetch error:', orgsError)
+    if (finError && finError.code !== 'PGRST116') console.error('Finance user fetch error:', finError)
+
+    return {
+      userId: user.id,
+      isAdmin: profile?.is_admin === true,
+      isFinance: !!fin,
+      organizerIds: orgs?.map(o => o.id) || [],
+      isServiceRole: false
+    }
+  } catch (error) {
+    console.error('Auth context error:', error)
+    return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+  }
 }
 
 async function checkAuth(type: string, auth: any, req: any) {
@@ -293,18 +328,54 @@ Deno.serve(async (req) => {
   const origin = req.headers.get('Origin')
   const cors = getCorsHeaders(origin)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
-  if (req.method !== 'POST') return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers: cors })
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) return new Response(JSON.stringify({ success: false, error: 'Unauthorized origin' }), { status: 403, headers: cors })
+
   try {
+    if (req.method === 'GET') {
+      // Preview endpoint for testing email templates
+      const url = new URL(req.url)
+      const type = url.searchParams.get('type')
+      const preview = url.searchParams.get('preview') === 'true'
+
+      if (!type) return new Response(JSON.stringify({ success: false, error: 'Missing type parameter' }), { status: 400, headers: cors })
+
+      const auth = await getAuthContext(req)
+      if (!auth.isAdmin && !auth.isServiceRole) {
+        return new Response(JSON.stringify({ success: false, error: 'Admin access required' }), { status: 403, headers: cors })
+      }
+
+      const template = templates[type]
+      if (!template) return new Response(JSON.stringify({ success: false, error: 'Unknown template type' }), { status: 400, headers: cors })
+
+      // Generate preview with sample data
+      const sampleData = getSampleData(type)
+      const { subject, html } = template(sampleData)
+
+      if (preview) {
+        return new Response(html, { headers: { 'Content-Type': 'text/html', ...cors } })
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        template: { subject, html: html.substring(0, 500) + '...' },
+        sampleData
+      }), { headers: cors })
+    }
+
+    if (req.method !== 'POST') return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers: cors })
+    if (origin && !ALLOWED_ORIGINS.includes(origin)) return new Response(JSON.stringify({ success: false, error: 'Unauthorized origin' }), { status: 403, headers: cors })
+
     const body = await req.json()
     if (!body.type || !body.to || !body.data) return new Response(JSON.stringify({ success: false, error: 'Missing fields' }), { status: 400, headers: cors })
+
     const auth = await getAuthContext(req)
     const authCheck = await checkAuth(body.type, auth, body)
     if (!authCheck.ok) return new Response(JSON.stringify({ success: false, error: authCheck.err }), { status: 403, headers: cors })
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const to = Array.isArray(body.to) ? body.to : [body.to]
     const rateCheck = await checkRateLimit(supabase, auth.userId, body.type, to.length)
     if (!rateCheck.ok) return new Response(JSON.stringify({ success: false, error: rateCheck.err }), { status: 429, headers: cors })
+
     const result = await sendEmail(supabase, body)
     return new Response(JSON.stringify(result), { status: result.success ? 200 : 500, headers: cors })
   } catch (e: any) {
@@ -312,3 +383,36 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: cors })
   }
 })
+
+// Sample data for email previews
+function getSampleData(type: string): any {
+  const baseData = {
+    firstName: 'John',
+    userName: 'john.doe',
+    organizerName: 'Tech Events Inc.',
+    businessName: 'Tech Events Inc.',
+    eventTitle: 'React Conference 2025',
+    eventDate: '2025-03-15T10:00:00Z',
+    ticketType: 'VIP Ticket',
+    quantity: 2,
+    amount: 150,
+    currency: 'USD',
+    orderNumber: 'ORD-123456',
+    ticketCode: 'TKT-ABC123'
+  }
+
+  const typeSpecificData: Record<string, any> = {
+    welcome: baseData,
+    email_verification: { ...baseData, verificationUrl: `${APP_URL}/verify?token=sample` },
+    password_reset: { ...baseData, resetUrl: `${APP_URL}/reset-password?token=sample` },
+    ticket_purchase: {
+      ...baseData,
+      attendeeName: 'John Doe',
+      venueName: 'Convention Center',
+      totalAmount: 300,
+      isFree: false
+    }
+  }
+
+  return typeSpecificData[type] || baseData
+}
