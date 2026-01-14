@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { supabase } from '@/lib/supabase'
 
 const categoryIcons = {
@@ -20,7 +19,9 @@ const categoryIcons = {
   bar: Coffee,
   area: Users,
   entrance: Star,
-  exit: Star
+  exit: Star,
+  checkin: Users,
+  dj: Mic
 }
 
 const categoryColors = {
@@ -31,11 +32,34 @@ const categoryColors = {
   bar: '#8B4513',
   area: '#90EE90',
   entrance: '#FF0000',
-  exit: '#FF0000'
+  exit: '#FF0000',
+  checkin: '#2196F3',
+  dj: '#9C27B0'
 }
 
+// Default furniture types when database table doesn't exist
+const DEFAULT_FURNITURE_TYPES = [
+  { id: 'chair-1', name: 'Standard Chair', category: 'chair', description: 'Basic seating chair', default_width: 0.5, default_height: 0.5, default_capacity: 1, is_active: true },
+  { id: 'chair-2', name: 'VIP Chair', category: 'chair', description: 'Premium leather chair', default_width: 0.6, default_height: 0.6, default_capacity: 1, is_active: true },
+  { id: 'chair-3', name: 'Folding Chair', category: 'chair', description: 'Compact folding chair', default_width: 0.45, default_height: 0.45, default_capacity: 1, is_active: true },
+  { id: 'table-1', name: 'Round Table', category: 'table', description: 'Round dining table', default_width: 1.5, default_height: 1.5, default_capacity: 8, is_active: true },
+  { id: 'table-2', name: 'Rectangular Table', category: 'table', description: 'Long rectangular table', default_width: 2.0, default_height: 0.8, default_capacity: 6, is_active: true },
+  { id: 'table-3', name: 'Cocktail Table', category: 'table', description: 'High cocktail/bar table', default_width: 0.6, default_height: 0.6, default_capacity: 4, is_active: true },
+  { id: 'stage-1', name: 'Main Stage', category: 'stage', description: 'Large performance stage', default_width: 8.0, default_height: 5.0, default_capacity: 0, is_active: true },
+  { id: 'stage-2', name: 'Small Stage', category: 'stage', description: 'Small platform stage', default_width: 4.0, default_height: 3.0, default_capacity: 0, is_active: true },
+  { id: 'bar-1', name: 'Bar Counter', category: 'bar', description: 'Full bar counter', default_width: 4.0, default_height: 1.0, default_capacity: 0, is_active: true },
+  { id: 'bar-2', name: 'Mobile Bar', category: 'bar', description: 'Portable bar station', default_width: 2.0, default_height: 0.8, default_capacity: 0, is_active: true },
+  { id: 'dj-1', name: 'DJ Booth', category: 'dj', description: 'DJ performance area', default_width: 3.0, default_height: 2.0, default_capacity: 2, is_active: true },
+  { id: 'checkin-1', name: 'Check-in Desk', category: 'checkin', description: 'Registration/check-in counter', default_width: 3.0, default_height: 1.0, default_capacity: 0, is_active: true },
+  { id: 'screen-1', name: 'LED Screen', category: 'screen', description: 'Large LED display', default_width: 4.0, default_height: 2.5, default_capacity: 0, is_active: true },
+  { id: 'entrance-1', name: 'Main Entrance', category: 'entrance', description: 'Main entry point', default_width: 2.0, default_height: 1.0, default_capacity: 0, is_active: true },
+  { id: 'exit-1', name: 'Emergency Exit', category: 'exit', description: 'Emergency exit door', default_width: 1.5, default_height: 0.5, default_capacity: 0, is_active: true },
+  { id: 'area-1', name: 'Dance Floor', category: 'area', description: 'Open dance area', default_width: 6.0, default_height: 6.0, default_capacity: 50, is_active: true },
+  { id: 'area-2', name: 'Lounge Area', category: 'area', description: 'Relaxation zone', default_width: 4.0, default_height: 3.0, default_capacity: 15, is_active: true },
+]
+
 export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
-  const [furnitureTypes, setFurnitureTypes] = useState([])
+  const [furnitureTypes, setFurnitureTypes] = useState(DEFAULT_FURNITURE_TYPES)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [draggedItem, setDraggedItem] = useState(null)
@@ -52,10 +76,20 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
         .eq('is_active', true)
         .order('category', { ascending: true })
 
-      if (error) throw error
-      setFurnitureTypes(data || [])
+      if (error) {
+        // If table doesn't exist, use default furniture types
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.log('Using default furniture types - database table not found')
+          setFurnitureTypes(DEFAULT_FURNITURE_TYPES)
+          return
+        }
+        throw error
+      }
+      setFurnitureTypes(data && data.length > 0 ? data : DEFAULT_FURNITURE_TYPES)
     } catch (error) {
       console.error('Failed to load furniture types:', error)
+      // Use defaults on any error
+      setFurnitureTypes(DEFAULT_FURNITURE_TYPES)
     }
   }
 
@@ -180,25 +214,24 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
         </div>
 
         {/* Category Filter */}
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className="grid w-full grid-cols-4">
-            {categories.slice(0, 4).map(category => (
-              <TabsTrigger key={category} value={category} className="text-xs">
-                {category === 'all' ? 'All' : category.charAt(0).toUpperCase() + category.slice(1)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {categories.slice(4).map(category => (
-            <TabsTrigger key={category} value={category} className="hidden">
-              {category}
-            </TabsTrigger>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {categories.map(category => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                selectedCategory === category
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {category === 'all' ? 'All' : category.charAt(0).toUpperCase() + category.slice(1)}
+            </button>
           ))}
+        </div>
 
-          <TabsContent value={selectedCategory} className="mt-4">
-            {renderFurnitureGrid(filteredFurniture)}
-          </TabsContent>
-        </Tabs>
+        {/* Furniture Grid */}
+        {renderFurnitureGrid(filteredFurniture)}
 
         {/* Quick Add Buttons */}
         <div className="pt-4 border-t border-gray-200">

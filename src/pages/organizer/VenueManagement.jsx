@@ -39,12 +39,17 @@ export function VenueManagement() {
   })
 
   useEffect(() => {
-    if (organizer) {
+    if (organizer?.id) {
       loadVenues()
     }
-  }, [organizer])
+  }, [organizer?.id])
 
   const loadVenues = async () => {
+    if (!organizer?.id) {
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -63,16 +68,30 @@ export function VenueManagement() {
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        // If table doesn't exist, show empty state with helpful message
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.log('Venues table not found - database setup required')
+          setVenues([])
+          return
+        }
+        throw error
+      }
       setVenues(data || [])
     } catch (error) {
       console.error('Failed to load venues:', error)
+      setVenues([])
     } finally {
       setLoading(false)
     }
   }
 
   const createVenue = async () => {
+    if (!organizer?.id) {
+      alert('Please log in as an organizer to create venues')
+      return
+    }
+
     try {
       const venueData = {
         organizer_id: organizer.id,
@@ -89,7 +108,14 @@ export function VenueManagement() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        // Check if table doesn't exist
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          alert('The venue database tables need to be set up first. Please run the SQL schema from database/iot_venue_schema.sql')
+          return
+        }
+        throw error
+      }
 
       setVenues(prev => [data, ...prev])
       setVenueForm({
@@ -102,7 +128,7 @@ export function VenueManagement() {
       setShowCreateVenue(false)
 
       // Navigate to create first layout for this venue
-      navigate(`/organizer/venues/${data.id}/layouts`)
+      navigate(`/organizer/venues/${data.id}/layouts/create`)
     } catch (error) {
       console.error('Failed to create venue:', error)
       alert('Failed to create venue: ' + error.message)

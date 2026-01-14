@@ -89,7 +89,10 @@ export function OrganizerRoutes() {
           <Route path="/team" element={<TeamManagement />} />
           <Route path="/projects" element={<ProjectManager />} />
           <Route path="/venues" element={<VenueManagement />} />
-          <Route path="/venues/:venueId/layouts/:layoutId?" element={<VenueLayoutDesigner />} />
+          <Route path="/venues/:venueId/layouts" element={<VenueLayoutDesigner />} />
+          <Route path="/venues/:venueId/layouts/create" element={<VenueLayoutDesigner />} />
+          <Route path="/venues/:venueId/layouts/:layoutId" element={<VenueLayoutDesigner />} />
+          <Route path="/venues/:venueId/layouts/:layoutId/edit" element={<VenueLayoutDesigner />} />
         </Routes>
       </OrganizerLayout>
     </OrganizerProvider>

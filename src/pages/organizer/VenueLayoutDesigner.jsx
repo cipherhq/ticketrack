@@ -445,6 +445,18 @@ export function VenueLayoutDesigner() {
     return inside
   }
 
+  // Default furniture types when database table doesn't exist
+  const DEFAULT_FURNITURE_TYPES = [
+    { id: 'chair-1', name: 'Standard Chair', category: 'chair', description: 'Basic seating chair', default_width: 0.5, default_height: 0.5, default_capacity: 1, is_active: true },
+    { id: 'chair-2', name: 'VIP Chair', category: 'chair', description: 'Premium leather chair', default_width: 0.6, default_height: 0.6, default_capacity: 1, is_active: true },
+    { id: 'table-1', name: 'Round Table', category: 'table', description: 'Round dining table', default_width: 1.5, default_height: 1.5, default_capacity: 8, is_active: true },
+    { id: 'table-2', name: 'Rectangular Table', category: 'table', description: 'Long rectangular table', default_width: 2.0, default_height: 0.8, default_capacity: 6, is_active: true },
+    { id: 'stage-1', name: 'Main Stage', category: 'stage', description: 'Large performance stage', default_width: 8.0, default_height: 5.0, default_capacity: 0, is_active: true },
+    { id: 'bar-1', name: 'Bar Counter', category: 'bar', description: 'Full bar counter', default_width: 4.0, default_height: 1.0, default_capacity: 0, is_active: true },
+    { id: 'dj-1', name: 'DJ Booth', category: 'dj', description: 'DJ performance area', default_width: 3.0, default_height: 2.0, default_capacity: 2, is_active: true },
+    { id: 'checkin-1', name: 'Check-in Desk', category: 'checkin', description: 'Registration counter', default_width: 3.0, default_height: 1.0, default_capacity: 0, is_active: true },
+  ]
+
   // Data loading functions
   const loadFurnitureTypes = async () => {
     try {
@@ -454,10 +466,18 @@ export function VenueLayoutDesigner() {
         .eq('is_active', true)
         .order('category', { ascending: true })
 
-      if (error) throw error
-      setFurnitureTypes(data || [])
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.log('Using default furniture types')
+          setFurnitureTypes(DEFAULT_FURNITURE_TYPES)
+          return
+        }
+        throw error
+      }
+      setFurnitureTypes(data && data.length > 0 ? data : DEFAULT_FURNITURE_TYPES)
     } catch (error) {
       console.error('Failed to load furniture types:', error)
+      setFurnitureTypes(DEFAULT_FURNITURE_TYPES)
     }
   }
 
@@ -472,7 +492,15 @@ export function VenueLayoutDesigner() {
         .eq('id', id)
         .single()
 
-      if (layoutError) throw layoutError
+      if (layoutError) {
+        if (layoutError.code === '42P01' || layoutError.message?.includes('does not exist')) {
+          console.log('Layout tables not found, creating new layout')
+          createNewLayout()
+          return
+        }
+        throw layoutError
+      }
+      
       setLayout(layoutData)
       setLayoutName(layoutData.name)
       setLayoutWidth(layoutData.total_width)
@@ -485,8 +513,9 @@ export function VenueLayoutDesigner() {
         .eq('layout_id', id)
         .order('sort_order', { ascending: true })
 
-      if (sectionsError) throw sectionsError
-      setSections(sectionsData || [])
+      if (!sectionsError) {
+        setSections(sectionsData || [])
+      }
 
       // Load furniture
       const { data: furnitureData, error: furnitureError } = await supabase
@@ -494,11 +523,13 @@ export function VenueLayoutDesigner() {
         .select('*')
         .eq('layout_id', id)
 
-      if (furnitureError) throw furnitureError
-      setFurniture(furnitureData || [])
+      if (!furnitureError) {
+        setFurniture(furnitureData || [])
+      }
 
     } catch (error) {
       console.error('Failed to load layout:', error)
+      createNewLayout() // Fallback to new layout on error
     } finally {
       setLoading(false)
     }
