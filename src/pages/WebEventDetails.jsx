@@ -6,7 +6,7 @@ import { useNavigate, useParams, useLocation, useSearchParams } from 'react-rout
 import { useAuth } from '@/contexts/AuthContext'
 import { WaitlistDialog } from '@/components/WaitlistDialog'
 import { getWaitlistPosition } from '@/services/waitlist'
-import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
