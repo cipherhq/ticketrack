@@ -461,7 +461,7 @@ export function WebEventDetails() {
                   ) : (
                     <>
                       <MapPin className="w-5 h-5" />
-                      <span>{event.venue_name}, {event.city}</span>
+                      <span>{[event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}</span>
                     </>
                   )}
                 </div>
