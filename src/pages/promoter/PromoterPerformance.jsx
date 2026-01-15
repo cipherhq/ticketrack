@@ -5,13 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrency, formatMultiCurrencyCompact } from '@/config/currencies';
 
 export function PromoterPerformance() {
   const { promoter } = usePromoter();
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ clicks: 0, uniqueVisitors: 0, ticketsSold: 0, revenue: 0, commission: 0, conversionRate: 0 });
+  const [stats, setStats] = useState({ clicks: 0, uniqueVisitors: 0, ticketsSold: 0, revenueByCurrency: {}, commissionByCurrency: {}, conversionRate: 0 });
   const [eventPerformance, setEventPerformance] = useState([]);
 
   useEffect(() => { if (promoter) loadPerformanceData(); }, [promoter, selectedPeriod]);
@@ -26,10 +26,17 @@ export function PromoterPerformance() {
       const { data: salesData } = await supabase.from('promoter_sales').select('*, events(title, currency)').eq('promoter_id', promoter.id).gte('created_at', startDate.toISOString());
 
       const ticketsSold = salesData?.reduce((sum, s) => sum + (s.ticket_count || 0), 0) || 0;
-      const revenue = salesData?.reduce((sum, s) => sum + parseFloat(s.sale_amount || 0), 0) || 0;
-      const commission = salesData?.reduce((sum, s) => sum + parseFloat(s.commission_amount || 0), 0) || 0;
+      
+      // Aggregate by currency
+      const revenueByCurrency = {};
+      const commissionByCurrency = {};
+      salesData?.forEach(s => {
+        const currency = s.events?.currency || 'NGN';
+        revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + parseFloat(s.sale_amount || 0);
+        commissionByCurrency[currency] = (commissionByCurrency[currency] || 0) + parseFloat(s.commission_amount || 0);
+      });
 
-      setStats({ clicks: clickCount || 0, uniqueVisitors: Math.floor((clickCount || 0) * 0.7), ticketsSold, revenue, commission, conversionRate: clickCount > 0 ? ((salesData?.length || 0) / clickCount * 100).toFixed(2) : 0 });
+      setStats({ clicks: clickCount || 0, uniqueVisitors: Math.floor((clickCount || 0) * 0.7), ticketsSold, revenueByCurrency, commissionByCurrency, conversionRate: clickCount > 0 ? ((salesData?.length || 0) / clickCount * 100).toFixed(2) : 0 });
 
       const eventMap = {};
       salesData?.forEach(sale => {
@@ -62,8 +69,8 @@ export function PromoterPerformance() {
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><MousePointerClick className="w-4 h-4 text-blue-600" /><span className="text-xs text-[#0F0F0F]/60">Total Clicks</span></div><p className="text-2xl text-[#0F0F0F]">{stats.clicks.toLocaleString()}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4 text-purple-600" /><span className="text-xs text-[#0F0F0F]/60">Unique Visitors</span></div><p className="text-2xl text-[#0F0F0F]">{stats.uniqueVisitors.toLocaleString()}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ShoppingCart className="w-4 h-4 text-green-600" /><span className="text-xs text-[#0F0F0F]/60">Tickets Sold</span></div><p className="text-2xl text-green-600">{stats.ticketsSold}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-indigo-600" /><span className="text-xs text-[#0F0F0F]/60">Revenue</span></div><p className="text-xl text-[#0F0F0F]">₦{(stats.revenue / 1000000).toFixed(1)}M</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-[#2969FF]" /><span className="text-xs text-[#0F0F0F]/60">Commission</span></div><p className="text-xl text-[#2969FF]">₦{(stats.commission / 1000).toFixed(0)}K</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-indigo-600" /><span className="text-xs text-[#0F0F0F]/60">Revenue</span></div><p className="text-lg text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.revenueByCurrency)}</p></CardContent></Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-[#2969FF]" /><span className="text-xs text-[#0F0F0F]/60">Commission</span></div><p className="text-lg text-[#2969FF]">{formatMultiCurrencyCompact(stats.commissionByCurrency)}</p></CardContent></Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-orange-600" /><span className="text-xs text-[#0F0F0F]/60">Conversion</span></div><p className="text-2xl text-orange-600">{stats.conversionRate}%</p></CardContent></Card>
       </div>
 

@@ -50,27 +50,8 @@ import {
 } from '../../components/ui/dropdown-menu';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
-
-
-// Send email via Edge Function
-const sendEmail = async (emailData) => {
-  try {
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify(emailData)
-    });
-    const result = await response.json();
-    if (!result.success) console.error("Email send failed:", result.error);
-    return result;
-  } catch (err) {
-    console.error("Email send error:", err);
-    return { success: false, error: err.message };
-  }
-};
+import { formatPrice } from '@/config/currencies';
+import { sendPromoterInviteEmail } from '@/lib/emailService';
 
 
 
@@ -133,7 +114,7 @@ export function PromoterManagement() {
   const loadEvents = async () => {
     const { data, error: loadError } = await supabase
       .from('events')
-      .select('id, title')
+      .select('id, title, currency')
       .eq('organizer_id', organizer.id)
       .eq('status', 'published')
       .order('start_date', { ascending: false });
@@ -227,24 +208,30 @@ export function PromoterManagement() {
 
       if (insertError) throw insertError;
 
-      // Send invitation email to the promoter
+      // Send invitation email to the promoter using proper email service
       const selectedEvent = events.find(e => e.id === inviteForm.eventId);
-      await sendEmail({
-        type: 'promoter_invite',
-        to: inviteForm.email.toLowerCase().trim(),
-        data: {
+      const emailResult = await sendPromoterInviteEmail(
+        inviteForm.email.toLowerCase().trim(),
+        {
           organizerName: organizer.business_name || organizer.name,
           eventTitle: selectedEvent?.title || 'All Events',
           commissionType: inviteForm.commissionType,
           commissionValue: inviteForm.commissionValue,
           promoCode: promoCode,
           isNewUser: !existingUser,
-          appUrl: window.location.origin
+          appUrl: window.location.origin,
+          currency: selectedEvent?.currency || 'NGN',
+          eventId: selectedEvent?.id
         },
-        organizerId: organizer.id
-      });
+        organizer.id
+      );
 
-      alert(`Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}`);
+      if (emailResult?.success) {
+        alert(`✅ Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}`);
+      } else {
+        console.error('Email failed:', emailResult?.error);
+        alert(`⚠️ Promoter added but email may not have been sent.\n\nPromo Code: ${promoCode}\n\nError: ${emailResult?.error || 'Unknown'}\n\nPlease share the code manually or try resending.`);
+      }
 
       await loadPromoters();
       setIsInviteOpen(false);
@@ -306,6 +293,37 @@ export function PromoterManagement() {
     } catch (err) {
       console.error('Error deleting promoter:', err);
       alert('Failed to remove promoter');
+    }
+  };
+
+  const resendInvitation = async (promoter) => {
+    try {
+      const selectedEvent = promoter.event_id ? events.find(e => e.id === promoter.event_id) : null;
+      const emailResult = await sendPromoterInviteEmail(
+        promoter.email,
+        {
+          organizerName: organizer.business_name || organizer.name,
+          eventTitle: selectedEvent?.title || 'All Events',
+          commissionType: promoter.commission_type,
+          commissionValue: promoter.commission_value || promoter.commission_rate,
+          promoCode: promoter.short_code || promoter.referral_code,
+          isNewUser: !promoter.user_id,
+          appUrl: window.location.origin,
+          currency: selectedEvent?.currency || events[0]?.currency || 'NGN',
+          eventId: selectedEvent?.id
+        },
+        organizer.id
+      );
+
+      if (emailResult?.success) {
+        alert(`✅ Invitation resent to ${promoter.email}!`);
+      } else {
+        console.error('Email failed:', emailResult?.error);
+        alert(`❌ Failed to send email. Error: ${emailResult?.error || 'Unknown error'}\n\nPlease share the promo code manually: ${promoter.short_code || promoter.referral_code}`);
+      }
+    } catch (err) {
+      console.error('Error resending invitation:', err);
+      alert('Failed to resend invitation. Please try again.');
     }
   };
 
@@ -380,10 +398,16 @@ export function PromoterManagement() {
     unpaidCommission: promoters.reduce((sum, p) => sum + ((p.total_commission || 0) - (p.paid_commission || 0)), 0),
   };
 
-  const formatCurrency = (amount) => {
-    if (amount >= 1000000) return `₦${(amount / 1000000).toFixed(1)}M`;
-    if (amount >= 1000) return `₦${(amount / 1000).toFixed(0)}K`;
-    return `₦${(amount || 0).toLocaleString()}`;
+  // Get organizer's default currency from their events or use NGN
+  const getOrganizerCurrency = () => {
+    // Try to get currency from first event, fallback to NGN
+    const firstEvent = events?.[0];
+    return firstEvent?.currency || 'NGN';
+  };
+
+  const formatCurrency = (amount, currency = null) => {
+    const curr = currency || getOrganizerCurrency();
+    return formatPrice(amount || 0, curr);
   };
 
   const getStatusBadge = (status) => {
@@ -593,10 +617,16 @@ export function PromoterManagement() {
                             Copy Promo Code
                           </DropdownMenuItem>
                           {promoter.status === 'pending' && (
-                            <DropdownMenuItem onClick={() => activatePromoter(promoter.id)}>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Approve & Activate
-                            </DropdownMenuItem>
+                            <>
+                              <DropdownMenuItem onClick={() => resendInvitation(promoter)}>
+                                <Send className="w-4 h-4 mr-2" />
+                                Resend Invitation
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => activatePromoter(promoter.id)}>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Approve & Activate
+                              </DropdownMenuItem>
+                            </>
                           )}
                           {promoter.status === 'active' && (
                             <DropdownMenuItem onClick={() => deactivatePromoter(promoter.id)}>
@@ -661,7 +691,7 @@ export function PromoterManagement() {
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
                     <SelectItem value="percentage">Percentage (%)</SelectItem>
-                    <SelectItem value="fixed">Fixed Amount (₦)</SelectItem>
+                    <SelectItem value="fixed">Fixed Amount</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -727,11 +757,8 @@ export function PromoterManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label>Payment Amount</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60">₦</span>
-                  <Input type="number" placeholder="0" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} className="rounded-xl h-12 pl-8" />
-                </div>
+                <Label>Payment Amount ({getOrganizerCurrency()})</Label>
+                <Input type="number" placeholder="0" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} className="rounded-xl h-12" />
               </div>
 
               <div className="flex gap-3 pt-4">

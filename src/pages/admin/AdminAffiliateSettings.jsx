@@ -1,33 +1,46 @@
 import { useState, useEffect } from 'react';
 import { 
   Save, Loader2, DollarSign, Users, TrendingUp, 
-  AlertCircle, CheckCircle, Settings, Percent, Calendar, Clock
+  AlertCircle, CheckCircle, Settings, Percent, Calendar, Clock, Globe
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
+import { formatPrice } from '@/config/currencies';
 
 export function AdminAffiliateSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState({
     totalAffiliates: 0,
-    totalEarnings: 0,
-    pendingPayouts: 0,
-    totalPaid: 0,
+    totalEarnings: {},  // { NGN: 0, USD: 0, GBP: 0, GHS: 0, CAD: 0 }
+    pendingPayouts: {}, // { NGN: 0, USD: 0, GBP: 0, GHS: 0, CAD: 0 }
+    totalPaid: {},      // { NGN: 0, USD: 0, GBP: 0, GHS: 0, CAD: 0 }
   });
   const [settings, setSettings] = useState({
     is_enabled: true,
     commission_percent: 40,
-    min_payout: 5000,
+    min_payout_ngn: 5000,
     min_payout_usd: 10,
     min_payout_gbp: 8,
+    min_payout_ghs: 50,
+    min_payout_cad: 15,
     cookie_days: 7,
     payout_delay_days: 7,
   });
+
+  // Supported currencies
+  const CURRENCIES = [
+    { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+    { code: 'USD', symbol: '$', name: 'US Dollar' },
+    { code: 'GBP', symbol: '£', name: 'British Pound' },
+    { code: 'GHS', symbol: 'GH₵', name: 'Ghanaian Cedi' },
+    { code: 'CAD', symbol: 'CA$', name: 'Canadian Dollar' },
+  ];
 
   useEffect(() => {
     loadData();
@@ -46,9 +59,11 @@ export function AdminAffiliateSettings() {
         setSettings({
           is_enabled: settingsData.is_enabled ?? true,
           commission_percent: settingsData.commission_percent || 40,
-          min_payout: settingsData.min_payout || 5000,
+          min_payout_ngn: settingsData.min_payout_ngn || settingsData.min_payout || 5000,
           min_payout_usd: settingsData.min_payout_usd || 10,
           min_payout_gbp: settingsData.min_payout_gbp || 8,
+          min_payout_ghs: settingsData.min_payout_ghs || 50,
+          min_payout_cad: settingsData.min_payout_cad || 15,
           cookie_days: settingsData.cookie_days || 7,
           payout_delay_days: settingsData.payout_delay_days || 7,
         });
@@ -60,15 +75,48 @@ export function AdminAffiliateSettings() {
         .select('id')
         .gt('referral_count', 0);
 
+      // Load earnings with currency info
       const { data: earnings } = await supabase
         .from('referral_earnings')
-        .select('commission_amount, status');
+        .select('commission_amount, status, currency, event:event_id(currency)');
 
-      const totalEarnings = earnings?.reduce((sum, e) => sum + parseFloat(e.commission_amount || 0), 0) || 0;
-      const pendingPayouts = earnings?.filter(e => e.status === 'available')
-        .reduce((sum, e) => sum + parseFloat(e.commission_amount || 0), 0) || 0;
-      const totalPaid = earnings?.filter(e => e.status === 'paid')
-        .reduce((sum, e) => sum + parseFloat(e.commission_amount || 0), 0) || 0;
+      // Aggregate by currency
+      const totalEarnings = {};
+      const pendingPayouts = {};
+      const totalPaid = {};
+
+      CURRENCIES.forEach(c => {
+        totalEarnings[c.code] = 0;
+        pendingPayouts[c.code] = 0;
+        totalPaid[c.code] = 0;
+      });
+
+      earnings?.forEach(e => {
+        const currency = e.currency || e.event?.currency || 'NGN';
+        const amount = parseFloat(e.commission_amount || 0);
+        
+        if (totalEarnings[currency] !== undefined) {
+          totalEarnings[currency] += amount;
+        } else {
+          totalEarnings['NGN'] += amount; // Fallback
+        }
+        
+        if (e.status === 'available') {
+          if (pendingPayouts[currency] !== undefined) {
+            pendingPayouts[currency] += amount;
+          } else {
+            pendingPayouts['NGN'] += amount;
+          }
+        }
+        
+        if (e.status === 'paid') {
+          if (totalPaid[currency] !== undefined) {
+            totalPaid[currency] += amount;
+          } else {
+            totalPaid['NGN'] += amount;
+          }
+        }
+      });
 
       setStats({
         totalAffiliates: affiliates?.length || 0,
@@ -83,28 +131,63 @@ export function AdminAffiliateSettings() {
     }
   };
 
+  // Helper to format multi-currency stats
+  const formatMultiCurrency = (amounts) => {
+    const nonZero = Object.entries(amounts || {})
+      .filter(([_, val]) => val > 0)
+      .map(([currency, val]) => formatPrice(val, currency));
+    
+    if (nonZero.length === 0) return formatPrice(0, 'NGN');
+    if (nonZero.length <= 2) return nonZero.join(' · ');
+    return `${nonZero.slice(0, 2).join(' · ')} +${nonZero.length - 2}`;
+  };
+
+  // Get total across all currencies (for display count)
+  const getTotalCount = (amounts) => {
+    return Object.values(amounts || {}).reduce((sum, val) => sum + val, 0);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
+      // Get the settings ID first
+      const { data: existingSettings } = await supabase
         .from('affiliate_settings')
-        .update({
-          is_enabled: settings.is_enabled,
-          commission_percent: settings.commission_percent,
-          min_payout: settings.min_payout,
-          min_payout_usd: settings.min_payout_usd,
-          min_payout_gbp: settings.min_payout_gbp,
-          cookie_days: settings.cookie_days,
-          payout_delay_days: settings.payout_delay_days,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', (await supabase.from('affiliate_settings').select('id').single()).data.id);
+        .select('id')
+        .single();
+
+      const updateData = {
+        is_enabled: settings.is_enabled,
+        commission_percent: settings.commission_percent,
+        min_payout: settings.min_payout_ngn, // Keep for backward compatibility
+        min_payout_ngn: settings.min_payout_ngn,
+        min_payout_usd: settings.min_payout_usd,
+        min_payout_gbp: settings.min_payout_gbp,
+        min_payout_ghs: settings.min_payout_ghs,
+        min_payout_cad: settings.min_payout_cad,
+        cookie_days: settings.cookie_days,
+        payout_delay_days: settings.payout_delay_days,
+        updated_at: new Date().toISOString(),
+      };
+
+      let error;
+      if (existingSettings?.id) {
+        ({ error } = await supabase
+          .from('affiliate_settings')
+          .update(updateData)
+          .eq('id', existingSettings.id));
+      } else {
+        // Insert if no settings exist
+        ({ error } = await supabase
+          .from('affiliate_settings')
+          .insert(updateData));
+      }
 
       if (error) throw error;
       alert('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to save settings');
+      alert('Failed to save settings: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -155,7 +238,10 @@ export function AdminAffiliateSettings() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Commissions</p>
-                <h3 className="text-2xl font-semibold">₦{stats.totalEarnings.toLocaleString()}</h3>
+                <h3 className="text-lg font-semibold">{formatMultiCurrency(stats.totalEarnings)}</h3>
+                {Object.keys(stats.totalEarnings || {}).filter(k => stats.totalEarnings[k] > 0).length > 2 && (
+                  <Badge variant="outline" className="mt-1 text-xs">Multi-currency</Badge>
+                )}
               </div>
             </div>
           </CardContent>
@@ -169,7 +255,10 @@ export function AdminAffiliateSettings() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
-                <h3 className="text-2xl font-semibold">₦{stats.pendingPayouts.toLocaleString()}</h3>
+                <h3 className="text-lg font-semibold">{formatMultiCurrency(stats.pendingPayouts)}</h3>
+                {Object.keys(stats.pendingPayouts || {}).filter(k => stats.pendingPayouts[k] > 0).length > 2 && (
+                  <Badge variant="outline" className="mt-1 text-xs">Multi-currency</Badge>
+                )}
               </div>
             </div>
           </CardContent>
@@ -183,7 +272,10 @@ export function AdminAffiliateSettings() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Paid</p>
-                <h3 className="text-2xl font-semibold">₦{stats.totalPaid.toLocaleString()}</h3>
+                <h3 className="text-lg font-semibold">{formatMultiCurrency(stats.totalPaid)}</h3>
+                {Object.keys(stats.totalPaid || {}).filter(k => stats.totalPaid[k] > 0).length > 2 && (
+                  <Badge variant="outline" className="mt-1 text-xs">Multi-currency</Badge>
+                )}
               </div>
             </div>
           </CardContent>
@@ -274,36 +366,77 @@ export function AdminAffiliateSettings() {
 
           {/* Minimum Payouts by Currency */}
           <div>
-            <Label className="mb-3 block">Minimum Payout Thresholds</Label>
-            <div className="grid md:grid-cols-3 gap-4">
+            <Label className="mb-3 block flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              Minimum Payout Thresholds by Currency
+            </Label>
+            <p className="text-xs text-[#0F0F0F]/50 mb-3">
+              Set the minimum balance required before an affiliate can request a payout in each currency
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm text-[#0F0F0F]/60">NGN (₦)</Label>
+                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                  <span className="font-semibold">₦</span> NGN
+                </Label>
                 <Input
                   type="number"
                   min="100"
-                  value={settings.min_payout}
-                  onChange={(e) => setSettings({ ...settings, min_payout: parseFloat(e.target.value) || 0 })}
+                  value={settings.min_payout_ngn}
+                  onChange={(e) => setSettings({ ...settings, min_payout_ngn: parseFloat(e.target.value) || 0 })}
                   className="rounded-xl"
+                  placeholder="5000"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm text-[#0F0F0F]/60">USD ($)</Label>
+                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                  <span className="font-semibold">$</span> USD
+                </Label>
                 <Input
                   type="number"
                   min="1"
                   value={settings.min_payout_usd}
                   onChange={(e) => setSettings({ ...settings, min_payout_usd: parseFloat(e.target.value) || 0 })}
                   className="rounded-xl"
+                  placeholder="10"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm text-[#0F0F0F]/60">GBP (£)</Label>
+                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                  <span className="font-semibold">£</span> GBP
+                </Label>
                 <Input
                   type="number"
                   min="1"
                   value={settings.min_payout_gbp}
                   onChange={(e) => setSettings({ ...settings, min_payout_gbp: parseFloat(e.target.value) || 0 })}
                   className="rounded-xl"
+                  placeholder="8"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                  <span className="font-semibold">GH₵</span> GHS
+                </Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={settings.min_payout_ghs}
+                  onChange={(e) => setSettings({ ...settings, min_payout_ghs: parseFloat(e.target.value) || 0 })}
+                  className="rounded-xl"
+                  placeholder="50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                  <span className="font-semibold">CA$</span> CAD
+                </Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={settings.min_payout_cad}
+                  onChange={(e) => setSettings({ ...settings, min_payout_cad: parseFloat(e.target.value) || 0 })}
+                  className="rounded-xl"
+                  placeholder="15"
                 />
               </div>
             </div>

@@ -37,7 +37,7 @@ export function AffiliatePayouts() {
       const { data: earnings, error } = await supabase.from('referral_earnings').select(`
         id, commission_amount, status, currency, created_at, event_id,
         profiles!referral_earnings_user_id_fkey ( id, first_name, last_name, email, referral_code ),
-        event:event_id (id, title, end_date)
+        event:event_id (id, title, end_date, currency)
       `).order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -49,6 +49,8 @@ export function AffiliatePayouts() {
       completedEarnings.forEach(earning => {
         const affiliateId = earning.profiles?.id;
         if (!affiliateId) return;
+        const currency = earning.currency || earning.event?.currency || 'NGN';
+        
         if (!affiliateMap[affiliateId]) {
           affiliateMap[affiliateId] = { 
             affiliate: earning.profiles, 
@@ -56,7 +58,7 @@ export function AffiliatePayouts() {
             totalEarned: 0, 
             totalPending: 0, 
             totalPaid: 0, 
-            currency: earning.currency || 'NGN' 
+            currency: currency 
           };
         }
         affiliateMap[affiliateId].earnings.push(earning);
@@ -230,7 +232,7 @@ export function AffiliatePayouts() {
                 <div>
                   <p className="text-[#0F0F0F]/60">Amount</p>
                   <p className="font-bold text-[#0F0F0F]">
-                    {formatPrice(paymentDialog.affiliate?.totalPending, paymentDialog.affiliate?.currency || 'NGN')}
+                    {formatPrice(paymentDialog.affiliate?.totalPending, paymentDialog.affiliate?.currency)}
                   </p>
                 </div>
               </div>

@@ -33,6 +33,8 @@ import { AdminRefundSettings } from "@/pages/admin/AdminRefundSettings";
 import { AdminWaitlist } from "@/pages/admin/AdminWaitlist";
 import { AdminTransfers } from '@/pages/admin/AdminTransfers';
 import { AdminCategories } from '@/pages/admin/AdminCategories'; // NEW: Categories management
+import { AdminCountryFeatures } from '@/pages/admin/AdminCountryFeatures'; // NEW: Country feature management
+import { AdminUserTypes } from '@/pages/admin/AdminUserTypes'; // NEW: User type management
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
@@ -120,6 +122,8 @@ export function AdminRoutes() {
             <Route path="/waitlist" element={<AdminWaitlist />} />
             <Route path="/transfers" element={<AdminTransfers />} />
             <Route path="/categories" element={<AdminCategories />} />  {/* NEW: Categories route */}
+            <Route path="/country-features" element={<AdminCountryFeatures />} />  {/* NEW: Country features */}
+            <Route path="/user-types" element={<AdminUserTypes />} />  {/* NEW: User type management */}
             <Route path="/settings" element={<AdminSettings />} />
             <Route path="/fees" element={<AdminFeeManagement />} />
             <Route path="/refund-settings" element={<AdminRefundSettings />} />

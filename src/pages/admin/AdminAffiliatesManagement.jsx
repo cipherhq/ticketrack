@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
   Search, Loader2, RefreshCw, Users, DollarSign, TrendingUp, 
-  Eye, Download, CheckCircle, Clock, Banknote
+  Eye, Download, CheckCircle, Clock, Banknote, Ban, UserX,
+  UserCheck, AlertTriangle, MoreVertical
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -23,14 +32,22 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
+import { useAdmin } from '@/contexts/AdminContext';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 export function AdminAffiliatesManagement() {
+  const { logAdminAction } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [affiliates, setAffiliates] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedAffiliate, setSelectedAffiliate] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [actionType, setActionType] = useState(null);
+  const [actionReason, setActionReason] = useState('');
+  const [processing, setProcessing] = useState(false);
   const [earnings, setEarnings] = useState([]);
   const [stats, setStats] = useState({
     totalAffiliates: 0,
@@ -55,22 +72,52 @@ export function AdminAffiliatesManagement() {
 
       if (error) throw error;
 
-      // Get earnings summary per user
+      // Get earnings summary per user with currency information
       const { data: earningsData } = await supabase
         .from('referral_earnings')
-        .select('user_id, commission_amount, status');
+        .select(`
+          user_id, commission_amount, status, currency,
+          event:event_id (currency)
+        `);
 
-      // Aggregate earnings by user
+      // Aggregate earnings by user (multi-currency)
       const earningsByUser = {};
       earningsData?.forEach(e => {
-        if (!earningsByUser[e.user_id]) {
-          earningsByUser[e.user_id] = { pending: 0, available: 0, paid: 0, total: 0 };
-        }
+        const userId = e.user_id;
+        const currency = e.currency || e.event?.currency || 'NGN';
         const amount = parseFloat(e.commission_amount) || 0;
-        earningsByUser[e.user_id].total += amount;
-        if (e.status === 'pending') earningsByUser[e.user_id].pending += amount;
-        if (e.status === 'available') earningsByUser[e.user_id].available += amount;
-        if (e.status === 'paid') earningsByUser[e.user_id].paid += amount;
+
+        if (!earningsByUser[userId]) {
+          earningsByUser[userId] = { 
+            pending: 0, available: 0, paid: 0, total: 0,
+            primaryCurrency: currency,
+            currencyBreakdown: {}
+          };
+        }
+
+        // Track by currency
+        if (!earningsByUser[userId].currencyBreakdown[currency]) {
+          earningsByUser[userId].currencyBreakdown[currency] = { 
+            pending: 0, available: 0, paid: 0, total: 0 
+          };
+        }
+
+        // Add to totals (converted to primary currency for legacy compatibility)
+        earningsByUser[userId].total += amount;
+        earningsByUser[userId].currencyBreakdown[currency].total += amount;
+
+        if (e.status === 'pending') {
+          earningsByUser[userId].pending += amount;
+          earningsByUser[userId].currencyBreakdown[currency].pending += amount;
+        }
+        if (e.status === 'available') {
+          earningsByUser[userId].available += amount;
+          earningsByUser[userId].currencyBreakdown[currency].available += amount;
+        }
+        if (e.status === 'paid') {
+          earningsByUser[userId].paid += amount;
+          earningsByUser[userId].currencyBreakdown[currency].paid += amount;
+        }
       });
 
       // Merge with profiles
@@ -81,8 +128,21 @@ export function AdminAffiliatesManagement() {
 
       setAffiliates(affiliatesWithEarnings);
 
-      // Calculate stats
+      // Calculate stats (multi-currency aware)
       const active = affiliatesWithEarnings.filter(a => a.referral_count > 0).length;
+      
+      // Group stats by currency
+      const statsByCurrency = {};
+      affiliatesWithEarnings.forEach(a => {
+        const primaryCurrency = a.earnings?.primaryCurrency || 'NGN';
+        if (!statsByCurrency[primaryCurrency]) {
+          statsByCurrency[primaryCurrency] = { totalEarnings: 0, pendingPayouts: 0 };
+        }
+        statsByCurrency[primaryCurrency].totalEarnings += a.total_referral_earnings || 0;
+        statsByCurrency[primaryCurrency].pendingPayouts += a.affiliate_balance || 0;
+      });
+
+      // Legacy totals (NGN equivalent for compatibility)
       const totalEarnings = affiliatesWithEarnings.reduce((sum, a) => sum + (a.total_referral_earnings || 0), 0);
       const pendingPayouts = affiliatesWithEarnings.reduce((sum, a) => sum + (a.affiliate_balance || 0), 0);
 
@@ -91,6 +151,8 @@ export function AdminAffiliatesManagement() {
         activeAffiliates: active,
         totalEarnings,
         pendingPayouts,
+        statsByCurrency,
+        primaryCurrency: Object.keys(statsByCurrency)[0] || 'NGN' // Most common currency
       });
     } catch (error) {
       console.error('Error loading affiliates:', error);
@@ -108,7 +170,7 @@ export function AdminAffiliatesManagement() {
       .from('referral_earnings')
       .select(`
         *,
-        event:event_id (title),
+        event:event_id (title, currency),
         order:order_id (order_number)
       `)
       .eq('user_id', affiliate.id)
@@ -116,6 +178,120 @@ export function AdminAffiliatesManagement() {
       .limit(20);
 
     setEarnings(data || []);
+  };
+
+  // Admin management functions
+  const openActionDialog = (affiliate, action) => {
+    setSelectedAffiliate(affiliate);
+    setActionType(action);
+    setActionReason('');
+    setActionDialogOpen(true);
+  };
+
+  const handleAction = async () => {
+    if (!selectedAffiliate) return;
+    setProcessing(true);
+
+    try {
+      if (actionType === 'suspend') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            affiliate_status: 'suspended',
+            affiliate_suspension_reason: actionReason,
+            affiliate_suspended_at: new Date().toISOString()
+          })
+          .eq('id', selectedAffiliate.id);
+
+        if (error) throw error;
+        
+        await logAdminAction('affiliate_suspended', 'profile', selectedAffiliate.id, { 
+          email: selectedAffiliate.email,
+          reason: actionReason
+        });
+        
+        alert('Affiliate suspended successfully');
+
+      } else if (actionType === 'activate') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            affiliate_status: 'active',
+            affiliate_suspension_reason: null,
+            affiliate_suspended_at: null
+          })
+          .eq('id', selectedAffiliate.id);
+
+        if (error) throw error;
+        
+        await logAdminAction('affiliate_activated', 'profile', selectedAffiliate.id, { 
+          email: selectedAffiliate.email
+        });
+        
+        alert('Affiliate activated successfully');
+
+      } else if (actionType === 'ban') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            affiliate_status: 'banned',
+            affiliate_suspension_reason: actionReason,
+            affiliate_suspended_at: new Date().toISOString()
+          })
+          .eq('id', selectedAffiliate.id);
+
+        if (error) throw error;
+        
+        await logAdminAction('affiliate_banned', 'profile', selectedAffiliate.id, { 
+          email: selectedAffiliate.email,
+          reason: actionReason
+        });
+        
+        alert('Affiliate banned successfully');
+
+      } else if (actionType === 'reset_earnings') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            affiliate_balance: 0,
+            total_referral_earnings: 0,
+            referral_count: 0
+          })
+          .eq('id', selectedAffiliate.id);
+
+        if (error) throw error;
+        
+        await logAdminAction('affiliate_earnings_reset', 'profile', selectedAffiliate.id, { 
+          email: selectedAffiliate.email,
+          reason: actionReason
+        });
+        
+        alert('Affiliate earnings reset successfully');
+      }
+
+      setActionDialogOpen(false);
+      loadAffiliates();
+    } catch (error) {
+      console.error('Action error:', error);
+      alert('Failed to perform action: ' + error.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-700">Active</Badge>;
+      case 'suspended':
+        return <Badge className="bg-orange-100 text-orange-700">Suspended</Badge>;
+      case 'banned':
+        return <Badge className="bg-red-100 text-red-700">Banned</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-600">Unknown</Badge>;
+    }
   };
 
   const filteredAffiliates = affiliates.filter(a => {
@@ -218,7 +394,10 @@ export function AdminAffiliatesManagement() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Commissions</p>
-                <h3 className="text-2xl font-semibold">{formatPrice(stats.totalEarnings, 'NGN')}</h3>
+                <h3 className="text-2xl font-semibold">{formatPrice(stats.totalEarnings, stats.primaryCurrency || 'NGN')}</h3>
+                {stats.statsByCurrency && Object.keys(stats.statsByCurrency).length > 1 && (
+                  <p className="text-xs text-[#0F0F0F]/50">Multi-currency</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -232,7 +411,10 @@ export function AdminAffiliatesManagement() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
-                <h3 className="text-2xl font-semibold">{formatPrice(stats.pendingPayouts, 'NGN')}</h3>
+                <h3 className="text-2xl font-semibold">{formatPrice(stats.pendingPayouts, stats.primaryCurrency || 'NGN')}</h3>
+                {stats.statsByCurrency && Object.keys(stats.statsByCurrency).length > 1 && (
+                  <p className="text-xs text-[#0F0F0F]/50">Multi-currency</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -310,30 +492,90 @@ export function AdminAffiliatesManagement() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <span className="font-medium text-green-600">
-                          {formatPrice(affiliate.total_referral_earnings || 0, 'NGN')}
+                          {formatPrice(affiliate.total_referral_earnings || 0, affiliate.earnings?.primaryCurrency || 'NGN')}
                         </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className={`font-medium ${affiliate.affiliate_balance > 0 ? 'text-orange-600' : 'text-[#0F0F0F]/40'}`}>
-                          {formatPrice(affiliate.affiliate_balance || 0, 'NGN')}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {affiliate.referral_count > 0 ? (
-                          <Badge className="bg-green-100 text-green-700">Active</Badge>
-                        ) : (
-                          <Badge className="bg-gray-100 text-gray-600">Inactive</Badge>
+                        {affiliate.earnings?.currencyBreakdown && Object.keys(affiliate.earnings.currencyBreakdown).length > 1 && (
+                          <div className="text-xs text-[#0F0F0F]/50 mt-1">
+                            Multi-currency
+                          </div>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => viewDetails(affiliate)}
-                          className="rounded-lg"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <span className={`font-medium ${affiliate.affiliate_balance > 0 ? 'text-orange-600' : 'text-[#0F0F0F]/40'}`}>
+                          {formatPrice(affiliate.affiliate_balance || 0, affiliate.earnings?.primaryCurrency || 'NGN')}
+                        </span>
+                        {affiliate.earnings?.currencyBreakdown && Object.keys(affiliate.earnings.currencyBreakdown).length > 1 && (
+                          <div className="text-xs text-[#0F0F0F]/50 mt-1">
+                            Multi-currency
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {getStatusBadge(affiliate.affiliate_status || (affiliate.referral_count > 0 ? 'active' : 'inactive'))}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-xl">
+                              <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl">
+                            <DropdownMenuItem onClick={() => viewDetails(affiliate)}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            
+                            {/* Status-based actions */}
+                            {affiliate.affiliate_status !== 'banned' && (
+                              <>
+                                {(affiliate.affiliate_status === 'suspended' || affiliate.affiliate_status === 'inactive') ? (
+                                  <DropdownMenuItem 
+                                    onClick={() => openActionDialog(affiliate, 'activate')}
+                                    className="text-green-600"
+                                  >
+                                    <UserCheck className="w-4 h-4 mr-2" />
+                                    Activate
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem 
+                                    onClick={() => openActionDialog(affiliate, 'suspend')}
+                                    className="text-orange-600"
+                                  >
+                                    <Ban className="w-4 h-4 mr-2" />
+                                    Suspend
+                                  </DropdownMenuItem>
+                                )}
+                              </>
+                            )}
+                            
+                            {/* Ban action (for non-banned users) */}
+                            {affiliate.affiliate_status !== 'banned' && (
+                              <DropdownMenuItem 
+                                onClick={() => openActionDialog(affiliate, 'ban')}
+                                className="text-red-600"
+                              >
+                                <UserX className="w-4 h-4 mr-2" />
+                                Ban User
+                              </DropdownMenuItem>
+                            )}
+                            
+                            {/* Reset earnings (for active users with earnings) */}
+                            {affiliate.total_referral_earnings > 0 && affiliate.affiliate_status !== 'banned' && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => openActionDialog(affiliate, 'reset_earnings')}
+                                  className="text-orange-600"
+                                >
+                                  <AlertTriangle className="w-4 h-4 mr-2" />
+                                  Reset Earnings
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -370,18 +612,46 @@ export function AdminAffiliatesManagement() {
                   <p className="text-xs text-[#0F0F0F]/60">Referrals</p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-xl text-center">
-                  <p className="text-lg font-semibold text-green-600">{formatPrice(selectedAffiliate.total_referral_earnings || 0, 'NGN')}</p>
+                  <p className="text-lg font-semibold text-green-600">
+                    {formatPrice(selectedAffiliate.total_referral_earnings || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}
+                  </p>
                   <p className="text-xs text-[#0F0F0F]/60">Total Earned</p>
                 </div>
                 <div className="p-3 bg-orange-50 rounded-xl text-center">
-                  <p className="text-lg font-semibold text-orange-600">{formatPrice(selectedAffiliate.affiliate_balance || 0, 'NGN')}</p>
+                  <p className="text-lg font-semibold text-orange-600">
+                    {formatPrice(selectedAffiliate.affiliate_balance || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}
+                  </p>
                   <p className="text-xs text-[#0F0F0F]/60">Balance</p>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-xl text-center">
-                  <p className="text-lg font-semibold text-purple-600">{formatPrice(selectedAffiliate.earnings?.paid || 0, 'NGN')}</p>
+                  <p className="text-lg font-semibold text-purple-600">
+                    {formatPrice(selectedAffiliate.earnings?.paid || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}
+                  </p>
                   <p className="text-xs text-[#0F0F0F]/60">Paid Out</p>
                 </div>
               </div>
+
+              {/* Currency Breakdown */}
+              {selectedAffiliate.earnings?.currencyBreakdown && Object.keys(selectedAffiliate.earnings.currencyBreakdown).length > 1 && (
+                <div className="mb-4">
+                  <h4 className="font-medium mb-2 text-sm">Currency Breakdown</h4>
+                  <div className="space-y-2">
+                    {Object.entries(selectedAffiliate.earnings.currencyBreakdown).map(([currency, amounts]) => (
+                      <div key={currency} className="flex items-center justify-between p-2 bg-[#F4F6FA] rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{currency}</Badge>
+                        </div>
+                        <div className="text-right text-xs">
+                          <div className="font-medium">{formatPrice(amounts.total, currency)}</div>
+                          <div className="text-[#0F0F0F]/50">
+                            Pending: {formatPrice(amounts.pending + amounts.available, currency)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h4 className="font-medium mb-2">Recent Earnings</h4>
@@ -396,7 +666,7 @@ export function AdminAffiliatesManagement() {
                           <p className="text-xs text-[#0F0F0F]/60">{new Date(e.created_at).toLocaleDateString()}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-green-600">{formatPrice(e.commission_amount, e.currency || 'NGN')}</p>
+                          <p className="font-medium text-green-600">{formatPrice(e.commission_amount, e.currency || e.event?.currency || 'NGN')}</p>
                           <Badge className={`text-xs ${
                             e.status === 'available' ? 'bg-green-100 text-green-700' :
                             e.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
@@ -414,6 +684,99 @@ export function AdminAffiliatesManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Action Confirmation Dialog */}
+      <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {actionType === 'suspend' && <Ban className="w-5 h-5 text-orange-600" />}
+              {actionType === 'activate' && <UserCheck className="w-5 h-5 text-green-600" />}
+              {actionType === 'ban' && <UserX className="w-5 h-5 text-red-600" />}
+              {actionType === 'reset_earnings' && <AlertTriangle className="w-5 h-5 text-orange-600" />}
+              
+              {actionType === 'suspend' && 'Suspend Affiliate'}
+              {actionType === 'activate' && 'Activate Affiliate'}
+              {actionType === 'ban' && 'Ban Affiliate'}
+              {actionType === 'reset_earnings' && 'Reset Earnings'}
+            </DialogTitle>
+            <DialogDescription>
+              {actionType === 'suspend' && `Are you sure you want to suspend ${selectedAffiliate?.full_name || selectedAffiliate?.email}? They will not be able to earn new commissions.`}
+              {actionType === 'activate' && `Are you sure you want to activate ${selectedAffiliate?.full_name || selectedAffiliate?.email}? They will be able to earn commissions again.`}
+              {actionType === 'ban' && `Are you sure you want to permanently ban ${selectedAffiliate?.full_name || selectedAffiliate?.email}? This action will prevent all future affiliate activities.`}
+              {actionType === 'reset_earnings' && `Are you sure you want to reset all earnings for ${selectedAffiliate?.full_name || selectedAffiliate?.email}? This will set their balance and total earnings to zero.`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedAffiliate && (
+              <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">{selectedAffiliate.full_name || 'Unknown'}</span>
+                  {getStatusBadge(selectedAffiliate.affiliate_status || 'active')}
+                </div>
+                <div className="text-sm text-[#0F0F0F]/60">
+                  <div>Email: {selectedAffiliate.email}</div>
+                  <div>Total Earnings: {formatPrice(selectedAffiliate.total_referral_earnings || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}</div>
+                  <div>Balance: {formatPrice(selectedAffiliate.affiliate_balance || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}</div>
+                  <div>Referrals: {selectedAffiliate.referral_count || 0}</div>
+                </div>
+              </div>
+            )}
+            
+            {(actionType === 'suspend' || actionType === 'ban' || actionType === 'reset_earnings') && (
+              <div className="space-y-2">
+                <Label>Reason {actionType === 'reset_earnings' ? '(optional)' : '(required)'}</Label>
+                <Textarea
+                  placeholder={
+                    actionType === 'suspend' ? "Why are you suspending this affiliate?" :
+                    actionType === 'ban' ? "Why are you banning this affiliate?" :
+                    "Why are you resetting their earnings?"
+                  }
+                  value={actionReason}
+                  onChange={(e) => setActionReason(e.target.value)}
+                  className="rounded-xl"
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setActionDialogOpen(false)}
+              className="rounded-xl"
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAction}
+              disabled={processing || ((actionType === 'suspend' || actionType === 'ban') && !actionReason.trim())}
+              className={`rounded-xl ${
+                actionType === 'ban' ? 'bg-red-600 hover:bg-red-700' :
+                actionType === 'suspend' || actionType === 'reset_earnings' ? 'bg-orange-600 hover:bg-orange-700' :
+                'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {actionType === 'suspend' && 'Suspend'}
+                  {actionType === 'activate' && 'Activate'}
+                  {actionType === 'ban' && 'Ban User'}
+                  {actionType === 'reset_earnings' && 'Reset Earnings'}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

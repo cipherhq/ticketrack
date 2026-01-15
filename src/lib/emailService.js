@@ -531,6 +531,7 @@ export const sendPromoterInviteEmail = (email, data, organizerId) =>
     promoCode: data.promoCode,
     isNewUser: data.isNewUser,
     currency: data.currency,
+    appUrl: data.appUrl,
   }, { organizerId, eventId: data.eventId });
 
 export const sendPromoterAcceptedEmail = (email, data, organizerId) => 
