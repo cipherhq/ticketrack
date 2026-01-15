@@ -377,6 +377,11 @@ export function WebFreeRSVP() {
       const currency = event?.currency || 'NGN'
       const paymentProvider = getPaymentProvider(currency)
 
+      // Calculate platform fee for donation (5% default for donations)
+      const donationPlatformFeePercent = 0.05 // 5% platform fee on donations
+      const calculatedPlatformFee = Math.round(actualDonation * donationPlatformFeePercent * 100) / 100
+      const netDonation = actualDonation - calculatedPlatformFee
+
       // Create pending order with donation
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -385,8 +390,8 @@ export function WebFreeRSVP() {
           event_id: event.id,
           order_number: `DON${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
-          subtotal: 0,
-          platform_fee: 0,
+          subtotal: actualDonation,
+          platform_fee: calculatedPlatformFee,
           tax_amount: 0,
           discount_amount: 0,
           total_amount: actualDonation,
