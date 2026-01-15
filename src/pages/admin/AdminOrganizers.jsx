@@ -55,6 +55,7 @@ import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { Link } from 'react-router-dom';
+import { Pagination, usePagination } from '@/components/ui/pagination';
 
 export function AdminOrganizers() {
   const navigate = useNavigate();
@@ -304,6 +305,16 @@ export function AdminOrganizers() {
     suspended: organizers.filter(o => o.is_active === false).length,
   };
 
+  // Pagination
+  const {
+    currentPage,
+    totalPages,
+    totalItems,
+    itemsPerPage,
+    paginatedItems: paginatedOrganizers,
+    handlePageChange,
+  } = usePagination(filteredOrganizers, 20);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -422,7 +433,7 @@ export function AdminOrganizers() {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrganizers.map((org) => (
+                {paginatedOrganizers.map((org) => (
                   <tr key={org.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
@@ -530,6 +541,14 @@ export function AdminOrganizers() {
               </tbody>
             </table>
           </div>
+          
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </CardContent>
       </Card>
 

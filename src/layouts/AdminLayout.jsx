@@ -46,13 +46,20 @@ const navGroups = [
     ]
   },
   {
+    id: 'users',
+    label: 'Users',
+    items: [
+      { icon: Users, label: 'All Users', path: '/admin/users' },
+      { icon: Building, label: 'Organizers', path: '/admin/organizers' },
+      { icon: UserCheck, label: 'Attendees', path: '/admin/attendees' },
+    ]
+  },
+  {
     id: 'management',
-    label: 'Management',
+    label: 'Events & Content',
     items: [
       { icon: Calendar, label: 'Events', path: '/admin/events' },
       { icon: FolderOpen, label: 'Categories', path: '/admin/categories' },
-      { icon: Building, label: 'Organizers', path: '/admin/organizers' },
-      { icon: UserCheck, label: 'Attendees', path: '/admin/attendees' },
     ]
   },
   {
