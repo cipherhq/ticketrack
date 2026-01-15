@@ -92,8 +92,9 @@ export function WebTickets() {
         .from('tickets')
         .select(`
           *,
-          event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, streaming_platform),
-          ticket_type:ticket_types(name, price)
+          event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, streaming_platform, is_free, event_sponsors(id, name, logo_url, website_url, sort_order)),
+          ticket_type:ticket_types(name, price),
+          order:orders(id, order_number, total_amount, is_donation, currency)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -701,6 +702,17 @@ export function WebTickets() {
                 <p className="text-xs text-[#0F0F0F]/60">Payment Method</p>
                 <p className="text-[#0F0F0F] capitalize">{ticket.payment_method || "N/A"}</p>
               </div>
+              {/* Show donation amount for free events with donations */}
+              {ticket.event?.is_free && ticket.order?.is_donation && ticket.order?.total_amount > 0 && (
+                <div className="col-span-2">
+                  <p className="text-xs text-[#0F0F0F]/60">Your Donation</p>
+                  <p className="text-green-600 font-semibold flex items-center gap-1">
+                    <span className="text-lg">💚</span>
+                    {formatPrice(ticket.order.total_amount, ticket.order.currency || ticket.currency)}
+                    <span className="text-xs font-normal text-[#0F0F0F]/50 ml-1">Thank you!</span>
+                  </p>
+                </div>
+              )}
               <div className="col-span-2">
                 <p className="text-xs text-[#0F0F0F]/60">{ticket.event?.is_virtual ? 'Event Type' : 'Venue'}</p>
                 {ticket.event?.is_virtual ? (
@@ -747,6 +759,36 @@ export function WebTickets() {
               <p className="text-xs text-[#0F0F0F]/40 text-center mt-1">Scan at venue</p>
             </div>
           </div>
+
+          {/* Event Sponsors */}
+          {ticket.event?.event_sponsors && ticket.event.event_sponsors.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10">
+              <p className="text-xs text-[#0F0F0F]/60 mb-2">Event Sponsors</p>
+              <div className="flex flex-wrap gap-3 items-center">
+                {ticket.event.event_sponsors
+                  .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                  .slice(0, 6)
+                  .map((sponsor) => (
+                    <a
+                      key={sponsor.id}
+                      href={sponsor.website_url || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-white rounded-lg p-2 border border-[#0F0F0F]/10 hover:shadow-sm transition-shadow"
+                      title={sponsor.name}
+                    >
+                      <img 
+                        src={sponsor.logo_url} 
+                        alt={sponsor.name}
+                        className="h-8 w-auto max-w-[80px] object-contain"
+                        onError={(e) => { e.target.style.display = 'none' }}
+                      />
+                    </a>
+                  ))
+                }
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           {ticket.status === 'active' && !isPast && (

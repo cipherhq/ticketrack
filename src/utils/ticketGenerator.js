@@ -74,6 +74,21 @@ function formatTime(dateString) {
   })
 }
 
+// Get donation amount from ticket
+function getDonationAmount(ticket) {
+  if (ticket.order?.is_donation && ticket.order?.total_amount > 0) {
+    return ticket.order.total_amount
+  }
+  return ticket.donation_amount || 0
+}
+
+// Format currency with symbol
+function formatCurrencySymbol(amount, currency) {
+  const symbols = { NGN: '₦', GBP: '£', USD: '$', GHS: '₵', CAD: 'C$' }
+  const symbol = symbols[currency] || currency + ' '
+  return `${symbol}${amount.toLocaleString()}`
+}
+
 export async function generateTicketPDF(ticket, event) {
   const width = 432
   const height = 162
@@ -195,7 +210,24 @@ export async function generateTicketPDF(ticket, event) {
   const ticketType = ticket.ticket_type?.name || ticket.ticket_type_name || 'General'
   pdf.text(ticketType, col2X, currentY + 10)
 
-  currentY += 24
+  currentY += 22
+
+  // DONATION AMOUNT (for free events with donations)
+  const donationAmount = getDonationAmount(ticket)
+  if (donationAmount > 0) {
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(7)
+    pdf.setTextColor(200, 200, 200)
+    pdf.text('YOUR DONATION', col1X, currentY)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(10)
+    pdf.setTextColor(100, 255, 150) // Green color for donation
+    const currency = ticket.order?.currency || ticket.currency || event.currency || 'NGN'
+    pdf.text(formatCurrencySymbol(donationAmount, currency), col1X, currentY + 10)
+    currentY += 20
+  } else {
+    currentY += 2
+  }
 
   // SPONSORS SECTION
   const sponsors = (event.event_sponsors || []).map(s => s.logo_url).filter(Boolean)
@@ -400,7 +432,24 @@ export async function generateTicketPDFBase64(ticket, event) {
   const ticketType = ticket.ticket_type?.name || ticket.ticket_type_name || 'General'
   pdf.text(ticketType, col2X, currentY + 10)
 
-  currentY += 24
+  currentY += 22
+
+  // DONATION AMOUNT (for free events with donations)
+  const donationAmountBase64 = getDonationAmount(ticket)
+  if (donationAmountBase64 > 0) {
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(7)
+    pdf.setTextColor(200, 200, 200)
+    pdf.text('YOUR DONATION', col1X, currentY)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setFontSize(10)
+    pdf.setTextColor(100, 255, 150) // Green color for donation
+    const currencyBase64 = ticket.order?.currency || ticket.currency || event.currency || 'NGN'
+    pdf.text(formatCurrencySymbol(donationAmountBase64, currencyBase64), col1X, currentY + 10)
+    currentY += 20
+  } else {
+    currentY += 2
+  }
 
   // SPONSORS SECTION
   const sponsors = (event.event_sponsors || []).map(s => s.logo_url).filter(Boolean)
@@ -662,7 +711,24 @@ export async function generateMultiTicketPDFBase64(tickets, event) {
     const ticketType = ticket.ticket_type?.name || ticket.ticket_type_name || 'General'
     pdf.text(ticketType, col2X, currentY + 10)
 
-    currentY += 24
+    currentY += 22
+
+    // DONATION AMOUNT (for free events with donations)
+    const donationAmountMulti = getDonationAmount(ticket)
+    if (donationAmountMulti > 0) {
+      pdf.setFont('helvetica', 'normal')
+      pdf.setFontSize(7)
+      pdf.setTextColor(200, 200, 200)
+      pdf.text('YOUR DONATION', col1X, currentY)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setFontSize(10)
+      pdf.setTextColor(100, 255, 150) // Green color for donation
+      const currencyMulti = ticket.order?.currency || ticket.currency || event.currency || 'NGN'
+      pdf.text(formatCurrencySymbol(donationAmountMulti, currencyMulti), col1X, currentY + 10)
+      currentY += 20
+    } else {
+      currentY += 2
+    }
 
     // SPONSORS SECTION
     if (sponsorImages.some(img => img !== null)) {
