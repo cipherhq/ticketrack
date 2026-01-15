@@ -127,28 +127,45 @@ END;
 $func$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- View for donation analytics
-CREATE OR REPLACE VIEW donation_analytics AS
-SELECT 
-  e.id AS event_id,
-  e.title AS event_title,
-  e.organizer_id,
-  o.business_name AS organizer_name,
-  e.currency,
-  COUNT(ord.id) AS donation_count,
-  SUM(ord.total_amount) AS total_donations,
-  SUM(ord.platform_fee) AS total_platform_fees,
-  SUM(ord.total_amount - ord.platform_fee) AS net_donations,
-  COUNT(CASE WHEN ord.payout_status = 'completed' THEN 1 END) AS paid_out_count,
-  SUM(CASE WHEN ord.payout_status = 'completed' THEN ord.total_amount - ord.platform_fee ELSE 0 END) AS paid_out_amount,
-  SUM(CASE WHEN ord.payout_status = 'pending' THEN ord.total_amount - ord.platform_fee ELSE 0 END) AS pending_payout_amount
-FROM events e
-JOIN organizers o ON e.organizer_id = o.id
-LEFT JOIN orders ord ON ord.event_id = e.id AND ord.is_donation = TRUE AND ord.status = 'completed'
-WHERE e.is_free = TRUE OR e.entry_type = 'free'
-GROUP BY e.id, e.title, e.organizer_id, o.business_name, e.currency;
-
--- Grant access to the view
-GRANT SELECT ON donation_analytics TO authenticated;
+-- Note: This view depends on the is_donation column being added above
+-- Create the view only if the column exists
+DO $$
+BEGIN
+  -- Check if is_donation column exists before creating view
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'is_donation') THEN
+    -- Drop and recreate view
+    DROP VIEW IF EXISTS donation_analytics;
+    
+    EXECUTE '
+    CREATE VIEW donation_analytics AS
+    SELECT 
+      e.id AS event_id,
+      e.title AS event_title,
+      e.organizer_id,
+      o.business_name AS organizer_name,
+      e.currency,
+      COUNT(ord.id) AS donation_count,
+      COALESCE(SUM(ord.total_amount), 0) AS total_donations,
+      COALESCE(SUM(ord.platform_fee), 0) AS total_platform_fees,
+      COALESCE(SUM(ord.total_amount - ord.platform_fee), 0) AS net_donations,
+      COUNT(CASE WHEN ord.payout_status = ''completed'' THEN 1 END) AS paid_out_count,
+      COALESCE(SUM(CASE WHEN ord.payout_status = ''completed'' THEN ord.total_amount - ord.platform_fee ELSE 0 END), 0) AS paid_out_amount,
+      COALESCE(SUM(CASE WHEN ord.payout_status = ''pending'' THEN ord.total_amount - ord.platform_fee ELSE 0 END), 0) AS pending_payout_amount
+    FROM events e
+    JOIN organizers o ON e.organizer_id = o.id
+    LEFT JOIN orders ord ON ord.event_id = e.id AND ord.is_donation = TRUE AND ord.status = ''completed''
+    WHERE e.is_free = TRUE
+    GROUP BY e.id, e.title, e.organizer_id, o.business_name, e.currency
+    ';
+    
+    -- Grant access to the view
+    GRANT SELECT ON donation_analytics TO authenticated;
+    
+    RAISE NOTICE 'donation_analytics view created successfully';
+  ELSE
+    RAISE NOTICE 'is_donation column not found - view will be created on next run';
+  END IF;
+END $$;
 
 COMMENT ON TABLE paystack_payouts IS 'Tracks all Paystack transfer payouts to organizers (Nigeria, Ghana)';
 COMMENT ON COLUMN orders.is_donation IS 'True if this order is a donation for a free event';
