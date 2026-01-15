@@ -383,7 +383,6 @@ export function WebFreeRSVP() {
         .insert({
           user_id: user.id,
           event_id: event.id,
-          organizer_id: event.organizer_id,
           order_number: `DON${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
           subtotal: 0,
