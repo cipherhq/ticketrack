@@ -25,13 +25,17 @@ Go to your Supabase Dashboard → SQL Editor and run these files **in order**:
 ### 2a. Donation Payouts (REQUIRED)
 Copy and paste the contents of: `database/donation_payout_schema.sql`
 
-### 2b. Venue Layout System (OPTIONAL - run if you want venue designer)
+### 2b. Donation Fee Configuration (REQUIRED)
+Copy and paste the contents of: `database/add_donation_fee_column.sql`
+This adds the configurable donation fee percentage (Admin → Fee Management)
+
+### 2c. Venue Layout System (OPTIONAL - run if you want venue designer)
 Run in this order:
 1. `database/venue_layout_tables.sql`
 2. `database/venue_layout_policies.sql`
 3. `database/venue_layout_functions.sql`
 
-### 2c. IoT Venue System (OPTIONAL - advanced feature)
+### 2d. IoT Venue System (OPTIONAL - advanced feature)
 Run: `database/iot_venue_schema.sql`
 
 ---

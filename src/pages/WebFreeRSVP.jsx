@@ -14,6 +14,7 @@ import { formatPrice } from '@/config/currencies'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { getRSVPSettings, checkRSVPLimit } from '@/services/settings'
 import { getPaymentProvider } from '@/config/payments'
+import { getDonationFeePercent } from '@/config/fees'
 
 // Send confirmation email via Edge Function
 const sendConfirmationEmail = async (emailData) => {
@@ -377,9 +378,9 @@ export function WebFreeRSVP() {
       const currency = event?.currency || 'NGN'
       const paymentProvider = getPaymentProvider(currency)
 
-      // Calculate platform fee for donation (5% default for donations)
-      const donationPlatformFeePercent = 0.05 // 5% platform fee on donations
-      const calculatedPlatformFee = Math.round(actualDonation * donationPlatformFeePercent * 100) / 100
+      // Fetch configurable donation fee from database (admin can change this)
+      const donationFeePercent = await getDonationFeePercent(currency)
+      const calculatedPlatformFee = Math.round(actualDonation * donationFeePercent * 100) / 100
       const netDonation = actualDonation - calculatedPlatformFee
 
       // Create pending order with donation
