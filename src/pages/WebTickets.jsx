@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send, Copy } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send, Copy, Wallet } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { QRCodeSVG } from 'qrcode.react'
 import { downloadTicketPDF } from '@/utils/ticketGenerator'
+import { WalletButtons } from '@/components/WalletButtons'
 
 // Helper to truncate long references with copy functionality
 const TruncatedRef = ({ value, maxLength = 20 }) => {
@@ -781,6 +782,9 @@ export function WebTickets() {
               >
                 <Share2 className="w-3 h-3" />Share
               </Button>
+              
+              {/* Wallet Buttons - Add to Apple/Google Wallet */}
+              <WalletButtons ticket={ticket} event={ticket.event} size="sm" />
               {ticket.transfer_count === 0 && (
               <Button 
                 size="sm" 

@@ -4,13 +4,14 @@ import { markWaitlistPurchased } from '@/services/waitlist'
 import { capturePayPalPayment } from '@/config/payments'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { CheckCircle, Download, Mail, Calendar, MapPin, Ticket, ArrowRight, Monitor, ExternalLink } from 'lucide-react'
+import { CheckCircle, Download, Mail, Calendar, MapPin, Ticket, ArrowRight, Monitor, ExternalLink, Wallet } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { QRCodeSVG } from 'qrcode.react'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
+import { WalletButtons } from '@/components/WalletButtons'
 
 
 export function WebPaymentSuccess() {
@@ -602,6 +603,21 @@ export function WebPaymentSuccess() {
                 </Button>
               </div>
             </div>
+            
+            {/* Add to Wallet */}
+            {tickets && tickets.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10">
+                <p className="text-sm text-[#0F0F0F]/60 mb-3 text-center flex items-center justify-center gap-2">
+                  <Wallet className="w-4 h-4" />
+                  Save to Digital Wallet
+                </p>
+                <WalletButtons 
+                  ticket={tickets[0]} 
+                  event={event} 
+                  className="justify-center"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
