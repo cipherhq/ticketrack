@@ -8,6 +8,7 @@ import {
 , FileText } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
+import { NotificationBadge, useOrganizerNotifications } from '@/components/NotificationBadge';
 
 const menuItems = [
   {
@@ -29,6 +30,7 @@ const menuItems = [
     title: 'Orders',
     icon: Receipt,
     path: '/organizer/orders',
+    notificationKey: 'orders',
   },
   {
     title: 'Attendees',
@@ -54,16 +56,19 @@ const menuItems = [
     title: 'Refunds',
     icon: RotateCcw,
     path: '/organizer/refunds',
+    notificationKey: 'refunds',
   },
   {
     title: 'Transfers',
     icon: ArrowRightLeft,
     path: '/organizer/transfers',
+    notificationKey: 'transfers',
   },
   {
     title: 'Support',
     icon: HelpCircle,
     path: '/organizer/support',
+    notificationKey: 'support',
   },
   {
     title: "Team",
@@ -74,6 +79,7 @@ const menuItems = [
     title: "Projects",
     icon: ClipboardList,
     path: "/organizer/projects",
+    notificationKey: 'projects',
   },
   {
     title: 'Marketing',
@@ -92,6 +98,7 @@ const menuItems = [
     title: 'Followers',
     icon: UserPlus,
     path: '/organizer/followers',
+    notificationKey: 'followers',
   },
   {
     title: 'Settings',
@@ -113,6 +120,7 @@ export function OrganizerLayout({ children }) {
   const { signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState([]);
+  const { counts } = useOrganizerNotifications(organizer?.id);
 
   const toggleSubmenu = (title) => {
     setExpandedMenus(prev =>
@@ -134,6 +142,8 @@ export function OrganizerLayout({ children }) {
     navigate('/');
   };
 
+  const getTotalNotifications = () => counts.total;
+
   return (
     <div className="min-h-screen bg-[#F4F6FA]">
       {/* Mobile Header */}
@@ -149,6 +159,9 @@ export function OrganizerLayout({ children }) {
         </Link>
         <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative">
           <Bell className="w-6 h-6 text-[#0F0F0F]" />
+          {getTotalNotifications() > 0 && (
+            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
+          )}
         </button>
       </header>
 
@@ -254,14 +267,23 @@ export function OrganizerLayout({ children }) {
                     <Link
                       to={item.path}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors ${
                         isActive(item.path)
                           ? 'bg-[#2969FF] text-white'
                           : 'text-[#0F0F0F]/70 hover:bg-[#F4F6FA]'
                       }`}
                     >
-                      <item.icon className="w-5 h-5" />
-                      {item.title}
+                      <span className="flex items-center gap-3">
+                        <item.icon className="w-5 h-5" />
+                        {item.title}
+                      </span>
+                      {item.notificationKey && counts[item.notificationKey] > 0 && (
+                        <NotificationBadge 
+                          count={counts[item.notificationKey]} 
+                          size="sm"
+                          className={isActive(item.path) ? 'bg-white text-[#2969FF]' : ''}
+                        />
+                      )}
                     </Link>
                   )}
                 </li>
@@ -301,8 +323,18 @@ export function OrganizerLayout({ children }) {
             <h2 className="font-medium text-[#0F0F0F]">Welcome back!</h2>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative">
+            <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative group" title="Notifications">
               <Bell className="w-5 h-5 text-[#0F0F0F]/60" />
+              {getTotalNotifications() > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              )}
+              {/* Tooltip */}
+              {getTotalNotifications() > 0 && (
+                <div className="absolute right-0 top-full mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg 
+                                opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 whitespace-nowrap">
+                  {getTotalNotifications()} pending items
+                </div>
+              )}
             </button>
             <Link
               to="/organizer/profile"
