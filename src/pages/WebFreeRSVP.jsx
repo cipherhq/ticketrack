@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { formatPrice } from '@/config/currencies'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { getRSVPSettings, checkRSVPLimit } from '@/services/settings'
+import { getPaymentProvider } from '@/config/payments'
 
 // Send confirmation email via Edge Function
 const sendConfirmationEmail = async (emailData) => {
@@ -372,25 +373,31 @@ export function WebFreeRSVP() {
         return
       }
 
+      // Determine payment provider based on currency
+      const currency = event?.currency || 'NGN'
+      const paymentProvider = getPaymentProvider(currency)
+
       // Create pending order with donation
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: user.id,
           event_id: event.id,
-          order_number: `RSVP${Date.now().toString(36).toUpperCase()}`,
+          order_number: `DON${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
           subtotal: 0,
           platform_fee: 0,
           tax_amount: 0,
           discount_amount: 0,
           total_amount: actualDonation,
-          currency: event?.currency || 'NGN',
+          currency: currency,
           payment_method: 'card',
-          payment_provider: 'paystack',
+          payment_provider: paymentProvider,
           buyer_email: formData.email,
           buyer_phone: formData.phone || null,
-          buyer_name: `${formData.firstName} ${formData.lastName}`
+          buyer_name: `${formData.firstName} ${formData.lastName}`,
+          is_donation: true,
+          payout_status: 'pending'
         })
         .select()
         .single()
@@ -399,43 +406,77 @@ export function WebFreeRSVP() {
 
       const paymentRef = `DON-${order.id.slice(0, 8).toUpperCase()}-${Date.now()}`
 
-      // Initialize Paystack for donation
-      if (window.PaystackPop) {
-        const handler = window.PaystackPop.setup({
-          key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-          email: formData.email,
-          amount: actualDonation * 100,
-          currency: event?.currency || 'NGN',
-          ref: paymentRef,
-          metadata: {
-            order_id: order.id,
-            event_id: event.id,
-            event_name: event.title,
-            type: 'donation',
-            custom_fields: [
-              { display_name: "Donor Name", variable_name: "donor_name", value: `${formData.firstName} ${formData.lastName}` },
-              { display_name: "Type", variable_name: "type", value: "Event Donation" }
-            ]
-          },
-          callback: function(response) {
-            finalizeDonationRSVP(order, response.reference)
-          },
-          onClose: function() {
-            // If donation failed but setting allows, still complete RSVP
-            if (settings.donationFailedStillRsvp) {
-              handleFreeRSVPFallback(order)
-            } else {
-              // Cancel the order
-              supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
-              setError('Payment was cancelled. Please try again.')
-              setLoading(false)
+      // Use appropriate payment provider based on currency
+      if (paymentProvider === 'stripe') {
+        // Use Stripe Checkout for GBP, USD, CAD donations
+        try {
+          const { data: checkoutData, error: stripeError } = await supabase.functions.invoke('create-stripe-checkout', {
+            body: {
+              orderId: order.id,
+              successUrl: `${window.location.origin}/payment-success?order_id=${order.id}&reference=${paymentRef}`,
+              cancelUrl: `${window.location.origin}/event/${event.slug}`,
+              isDonation: true,
+              donationAmount: actualDonation
             }
+          })
+
+          if (stripeError) throw stripeError
+
+          if (checkoutData?.url) {
+            window.location.href = checkoutData.url
+          } else {
+            throw new Error('Failed to create Stripe checkout session')
           }
-        })
-        handler.openIframe()
+        } catch (stripeErr) {
+          console.error('Stripe checkout error:', stripeErr)
+          // Fallback to free RSVP if Stripe fails
+          if (settings.donationFailedStillRsvp) {
+            handleFreeRSVPFallback(order)
+          } else {
+            setError('Payment system error. Please try again.')
+            setLoading(false)
+          }
+        }
       } else {
-        setError('Payment system not loaded. Please refresh the page.')
-        setLoading(false)
+        // Use Paystack for NGN, GHS donations
+        if (window.PaystackPop) {
+          const handler = window.PaystackPop.setup({
+            key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+            email: formData.email,
+            amount: actualDonation * 100,
+            currency: currency,
+            ref: paymentRef,
+            metadata: {
+              order_id: order.id,
+              event_id: event.id,
+              event_name: event.title,
+              type: 'donation',
+              is_donation: true,
+              custom_fields: [
+                { display_name: "Donor Name", variable_name: "donor_name", value: `${formData.firstName} ${formData.lastName}` },
+                { display_name: "Type", variable_name: "type", value: "Event Donation" }
+              ]
+            },
+            callback: function(response) {
+              finalizeDonationRSVP(order, response.reference)
+            },
+            onClose: function() {
+              // If donation failed but setting allows, still complete RSVP
+              if (settings.donationFailedStillRsvp) {
+                handleFreeRSVPFallback(order)
+              } else {
+                // Cancel the order
+                supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
+                setError('Payment was cancelled. Please try again.')
+                setLoading(false)
+              }
+            }
+          })
+          handler.openIframe()
+        } else {
+          setError('Payment system not loaded. Please refresh the page.')
+          setLoading(false)
+        }
       }
 
     } catch (err) {
@@ -897,7 +938,7 @@ export function WebFreeRSVP() {
 
         {/* Order Summary Sidebar */}
         <div className="lg:col-span-1">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-24">
+          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
             <CardHeader>
               <CardTitle className="text-[#0F0F0F]">Registration Summary</CardTitle>
             </CardHeader>

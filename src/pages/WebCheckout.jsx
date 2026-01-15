@@ -1246,7 +1246,7 @@ const formatDate = (dateString) => {
         </div>
 
         <div className="lg:col-span-1">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-24">
+          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
             <CardHeader><CardTitle className="text-[#0F0F0F]">Order Summary</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-4">

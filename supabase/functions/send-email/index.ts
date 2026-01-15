@@ -16,7 +16,7 @@ const BRAND_COLOR = '#2969FF'
 const BRAND_NAME = 'Ticketrack'
 const APP_URL = 'https://ticketrack.com'
 
-const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173']
+const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:3000']
 const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000, security: 100 }
 
 type AuthLevel = 'SYSTEM_ONLY' | 'USER_AUTH' | 'ORGANIZER_AUTH' | 'ADMIN_AUTH' | 'FINANCE_AUTH'
@@ -117,18 +117,53 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 // Auth
 async function getAuthContext(req: Request) {
   const authHeader = req.headers.get('Authorization')
-  if (authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY)) return { userId: null, isAdmin: true, isFinance: true, organizerIds: [] as string[], isServiceRole: true }
-  if (!authHeader?.startsWith('Bearer ')) return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } })
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
-  const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  const [{ data: profile }, { data: orgs }, { data: fin }] = await Promise.all([
-    svc.from('profiles').select('is_admin').eq('id', user.id).single(),
-    svc.from('organizers').select('id').eq('user_id', user.id),
-    svc.from('finance_users').select('id').eq('user_id', user.id).eq('is_active', true).single()
-  ])
-  return { userId: user.id, isAdmin: profile?.is_admin === true, isFinance: !!fin, organizerIds: orgs?.map(o => o.id) || [], isServiceRole: false }
+  if (!authHeader) return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+
+  // Check for service role key
+  if (authHeader.includes(SUPABASE_SERVICE_ROLE_KEY)) {
+    return { userId: null, isAdmin: true, isFinance: true, organizerIds: [] as string[], isServiceRole: true }
+  }
+
+  // Check for valid Bearer token
+  if (!authHeader.startsWith('Bearer ')) {
+    return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+  }
+
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } }
+    })
+    const { data: { user }, error } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      console.error('Auth error:', error?.message)
+      return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+    }
+
+    // Get user roles and permissions
+    const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const [{ data: profile, error: profileError }, { data: orgs, error: orgsError }, { data: fin, error: finError }] = await Promise.all([
+      svc.from('profiles').select('is_admin').eq('id', user.id).single(),
+      svc.from('organizers').select('id').eq('user_id', user.id),
+      svc.from('finance_users').select('id').eq('user_id', user.id).eq('is_active', true).single()
+    ])
+
+    // Handle potential errors gracefully
+    if (profileError && profileError.code !== 'PGRST116') console.error('Profile fetch error:', profileError)
+    if (orgsError) console.error('Organizers fetch error:', orgsError)
+    if (finError && finError.code !== 'PGRST116') console.error('Finance user fetch error:', finError)
+
+    return {
+      userId: user.id,
+      isAdmin: profile?.is_admin === true,
+      isFinance: !!fin,
+      organizerIds: orgs?.map(o => o.id) || [],
+      isServiceRole: false
+    }
+  } catch (error) {
+    console.error('Auth context error:', error)
+    return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
+  }
 }
 
 async function checkAuth(type: string, auth: any, req: any) {
@@ -255,6 +290,12 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   admin_new_event: d => ({ subject: `New Event: ${d.eventTitle}`, html: baseTemplate(`<h2>New Event</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Organizer</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/admin/events/${d.eventId}" class="btn">Review</a></div>`) }),
   admin_flagged_content: d => ({ subject: `Flagged: ${d.contentType}`, html: baseTemplate(`<div class="warning"><strong>Review Required</strong></div><h2>Flagged Content</h2><div class="card"><div class="row"><span class="label">Type</span><span class="value">${d.contentType}</span></div><div class="row"><span class="label">Reason</span><span class="value">${d.reason}</span></div><div class="row"><span class="label">Reporter</span><span class="value">${d.reportedBy || 'System'}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/admin/moderation/${d.flagId}" class="btn">Review</a></div>`) }),
   admin_daily_stats: d => ({ subject: `Daily Stats - ${d.date}`, html: baseTemplate(`<h2>Daily Summary</h2><p>${d.date}:</p><div class="card"><div class="row"><span class="label">Revenue</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.totalRevenue, d.currency)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">New Users</span><span class="value">${d.newUsers}</span></div><div class="row"><span class="label">New Organizers</span><span class="value">${d.newOrganizers}</span></div><div class="row"><span class="label">Platform Fees</span><span class="value">${formatCurrency(d.platformFees, d.currency)}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/admin/analytics" class="btn">Dashboard</a></div>`) }),
+  // PAYSTACK PAYOUTS
+  paystack_payout_initiated: d => ({ subject: `💰 Payout Initiated - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Payout Started</strong></div><h2>Transfer Processing</h2><p>Hi ${d.organizerName},</p><p>Your ${d.isDonation ? 'donation ' : ''}payout is being processed.</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Bank</span><span class="value">${d.bankName}</span></div><div class="row"><span class="label">Account</span><span class="value">****${d.accountEnding}</span></div><div class="row"><span class="label">Reference</span><span class="value" style="font-family:monospace">${d.reference}</span></div></div><p style="font-size:14px;color:#666">Funds typically arrive within 24 hours.</p><div class="btn-wrap"><a href="${APP_URL}/organizer/finance" class="btn">View Finance</a></div>`) }),
+  paystack_payout_completed: d => ({ subject: `✅ Payout Complete - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Payout Received!</strong></div><h2>Funds Transferred</h2><p>Hi ${d.organizerName},</p><p>Your ${d.isDonation ? 'donation ' : ''}payout has been successfully transferred.</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:#10b981;font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Reference</span><span class="value" style="font-family:monospace">${d.reference}</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:#10b981">Completed</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/finance" class="btn">View Finance</a></div>`) }),
+  payout_blocked_kyc: d => ({ subject: `⚠️ Payout Pending - KYC Required`, html: baseTemplate(`<div class="highlight"><strong>Action Required</strong></div><h2>Complete Verification</h2><p>Hi ${d.organizerName},</p><p>${d.message || 'You have pending payouts but KYC verification is required.'}</p><div class="warning"><strong>What to do:</strong><p style="margin:8px 0 0">Complete your identity verification to receive payouts.</p></div><div class="btn-wrap"><a href="${d.appUrl || APP_URL + '/organizer/kyc-verification'}" class="btn">Verify Now</a></div>`) }),
+  stripe_connect_payout_completed: d => ({ subject: `✅ Stripe Payout Complete - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Payout Received!</strong></div><h2>Funds Transferred</h2><p>Hi ${d.organizerName},</p><p>Your payout has been successfully deposited.</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:#10b981;font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Reference</span><span class="value" style="font-family:monospace">${d.payoutId || d.reference}</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:#10b981">Completed</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/stripe-connect" class="btn">View Stripe Dashboard</a></div>`) }),
+  pre_payout_reminder: d => ({ subject: `📅 Payout Coming Tomorrow - ${d.eventTitle}`, html: baseTemplate(`<h2>Payout Reminder</h2><p>Hi ${d.organizerName},</p><p>Your payout for <strong>${d.eventTitle}</strong> will be processed tomorrow!</p><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Payout Date</span><span class="value">${d.payoutDate}</span></div></div><div class="highlight"><strong>Make sure:</strong><ul style="margin:8px 0 0;padding-left:20px"><li>Bank details are correct</li><li>KYC is verified</li></ul></div><div class="btn-wrap"><a href="${d.appUrl || APP_URL + '/organizer/finance'}" class="btn">Check Finance</a></div>`) }),
 }
 
 // Send email
@@ -293,18 +334,54 @@ Deno.serve(async (req) => {
   const origin = req.headers.get('Origin')
   const cors = getCorsHeaders(origin)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
-  if (req.method !== 'POST') return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers: cors })
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) return new Response(JSON.stringify({ success: false, error: 'Unauthorized origin' }), { status: 403, headers: cors })
+
   try {
+    if (req.method === 'GET') {
+      // Preview endpoint for testing email templates
+      const url = new URL(req.url)
+      const type = url.searchParams.get('type')
+      const preview = url.searchParams.get('preview') === 'true'
+
+      if (!type) return new Response(JSON.stringify({ success: false, error: 'Missing type parameter' }), { status: 400, headers: cors })
+
+      const auth = await getAuthContext(req)
+      if (!auth.isAdmin && !auth.isServiceRole) {
+        return new Response(JSON.stringify({ success: false, error: 'Admin access required' }), { status: 403, headers: cors })
+      }
+
+      const template = templates[type]
+      if (!template) return new Response(JSON.stringify({ success: false, error: 'Unknown template type' }), { status: 400, headers: cors })
+
+      // Generate preview with sample data
+      const sampleData = getSampleData(type)
+      const { subject, html } = template(sampleData)
+
+      if (preview) {
+        return new Response(html, { headers: { 'Content-Type': 'text/html', ...cors } })
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        template: { subject, html: html.substring(0, 500) + '...' },
+        sampleData
+      }), { headers: cors })
+    }
+
+    if (req.method !== 'POST') return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers: cors })
+    if (origin && !ALLOWED_ORIGINS.includes(origin)) return new Response(JSON.stringify({ success: false, error: 'Unauthorized origin' }), { status: 403, headers: cors })
+
     const body = await req.json()
     if (!body.type || !body.to || !body.data) return new Response(JSON.stringify({ success: false, error: 'Missing fields' }), { status: 400, headers: cors })
+
     const auth = await getAuthContext(req)
     const authCheck = await checkAuth(body.type, auth, body)
     if (!authCheck.ok) return new Response(JSON.stringify({ success: false, error: authCheck.err }), { status: 403, headers: cors })
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     const to = Array.isArray(body.to) ? body.to : [body.to]
     const rateCheck = await checkRateLimit(supabase, auth.userId, body.type, to.length)
     if (!rateCheck.ok) return new Response(JSON.stringify({ success: false, error: rateCheck.err }), { status: 429, headers: cors })
+
     const result = await sendEmail(supabase, body)
     return new Response(JSON.stringify(result), { status: result.success ? 200 : 500, headers: cors })
   } catch (e: any) {
@@ -312,3 +389,36 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: cors })
   }
 })
+
+// Sample data for email previews
+function getSampleData(type: string): any {
+  const baseData = {
+    firstName: 'John',
+    userName: 'john.doe',
+    organizerName: 'Tech Events Inc.',
+    businessName: 'Tech Events Inc.',
+    eventTitle: 'React Conference 2025',
+    eventDate: '2025-03-15T10:00:00Z',
+    ticketType: 'VIP Ticket',
+    quantity: 2,
+    amount: 150,
+    currency: 'USD',
+    orderNumber: 'ORD-123456',
+    ticketCode: 'TKT-ABC123'
+  }
+
+  const typeSpecificData: Record<string, any> = {
+    welcome: baseData,
+    email_verification: { ...baseData, verificationUrl: `${APP_URL}/verify?token=sample` },
+    password_reset: { ...baseData, resetUrl: `${APP_URL}/reset-password?token=sample` },
+    ticket_purchase: {
+      ...baseData,
+      attendeeName: 'John Doe',
+      venueName: 'Convention Center',
+      totalAmount: 300,
+      isFree: false
+    }
+  }
+
+  return typeSpecificData[type] || baseData
+}

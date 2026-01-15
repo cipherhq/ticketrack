@@ -25,13 +25,13 @@ export const currencies = {
     locale: 'en-US',
     paymentProvider: 'stripe',
   },
-  KES: {
-    code: 'KES',
-    symbol: 'KSh',
-    name: 'Kenyan Shilling',
-    country: 'Kenya',
-    locale: 'en-KE',
-    paymentProvider: 'paystack',
+  CAD: {
+    code: 'CAD',
+    symbol: 'C$',
+    name: 'Canadian Dollar',
+    country: 'Canada',
+    locale: 'en-CA',
+    paymentProvider: 'stripe',
   },
   GHS: {
     code: 'GHS',
@@ -39,14 +39,6 @@ export const currencies = {
     name: 'Ghanaian Cedi',
     country: 'Ghana',
     locale: 'en-GH',
-    paymentProvider: 'paystack',
-  },
-  ZAR: {
-    code: 'ZAR',
-    symbol: 'R',
-    name: 'South African Rand',
-    country: 'South Africa',
-    locale: 'en-ZA',
     paymentProvider: 'paystack',
   },
 };

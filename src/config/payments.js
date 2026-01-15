@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
+// Payment method options per provider (fallback defaults)
+
 // Currency to payment provider mapping
 const CURRENCY_PROVIDER_MAP = {
   // Paystack currencies (Africa)
@@ -53,8 +55,8 @@ export const initStripeCheckout = async (orderId, successUrl, cancelUrl) => {
   return data;
 };
 
-// Payment method options per provider
-export const PAYMENT_METHODS = {
+// Payment method options per provider (fallback defaults)
+const DEFAULT_PAYMENT_METHODS = {
   paystack: [
     { id: 'card', label: 'Card', icon: 'CreditCard' },
     { id: 'bank', label: 'Bank Transfer', icon: 'Building2' },
@@ -69,8 +71,85 @@ export const PAYMENT_METHODS = {
   ],
 };
 
-// Get available payment methods for a currency
-export const getPaymentMethods = (currency) => {
+// Cache for payment methods
+let paymentMethodsCache = null;
+let methodsCacheTimestamp = null;
+const METHODS_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+// Get payment methods for a provider (database-driven with fallback)
+export const getPaymentMethodsForProvider = async (provider) => {
+  const now = Date.now();
+
+  // Check cache first
+  if (paymentMethodsCache && methodsCacheTimestamp &&
+      (now - methodsCacheTimestamp < METHODS_CACHE_DURATION)) {
+    return paymentMethodsCache[provider] || DEFAULT_PAYMENT_METHODS[provider] || [];
+  }
+
+  try {
+    // Fetch from database
+    const { data, error } = await supabase
+      .from('payment_methods')
+      .select('*')
+      .eq('provider', provider)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+
+    if (error) throw error;
+
+    // Transform database data
+    const methods = data?.map(method => ({
+      id: method.method_key,
+      label: method.display_name,
+      icon: method.icon_name,
+      description: method.description
+    })) || [];
+
+    // Update cache
+    paymentMethodsCache = paymentMethodsCache || {};
+    paymentMethodsCache[provider] = methods.length > 0 ? methods : DEFAULT_PAYMENT_METHODS[provider] || [];
+    methodsCacheTimestamp = now;
+
+    return paymentMethodsCache[provider];
+  } catch (error) {
+    console.error('Error fetching payment methods:', error);
+    return DEFAULT_PAYMENT_METHODS[provider] || [];
+  }
+};
+
+// Legacy export for backward compatibility
+export const PAYMENT_METHODS = DEFAULT_PAYMENT_METHODS;
+
+// IoT Venue Management Configuration
+export const IOT_CONFIG = {
+  sensorTypes: {
+    occupancy: 'people counting',
+    temperature: 'environmental',
+    air_quality: 'environmental',
+    noise: 'environmental',
+    motion: 'security',
+    beacon: 'checkin'
+  },
+  dataRetention: {
+    sensorData: 30, // days
+    checkinLogs: 365, // days
+    analytics: 730 // days
+  },
+  realTime: {
+    updateInterval: 5000, // 5 seconds
+    batchSize: 100,
+    maxConnections: 1000
+  }
+};
+
+// Get available payment methods for a currency (async database-driven)
+export const getPaymentMethods = async (currency) => {
+  const provider = getPaymentProvider(currency);
+  return await getPaymentMethodsForProvider(provider);
+};
+
+// Legacy synchronous version (returns defaults)
+export const getPaymentMethodsSync = (currency) => {
   const provider = getPaymentProvider(currency);
   return PAYMENT_METHODS[provider] || PAYMENT_METHODS.paystack;
 };

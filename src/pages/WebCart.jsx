@@ -1,25 +1,24 @@
 import { formatPrice } from '@/config/currencies'
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react'
+import { Trash2, Plus, Minus, ShoppingCart, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useCart } from '@/contexts/CartContext'
 
 export function WebCart() {
   const navigate = useNavigate()
-  const [cartItems, setCartItems] = useState([])
+  const {
+    items: cartItems,
+    itemCount,
+    subtotal,
+    serviceFee,
+    processingFee,
+    platformFee,
+    total,
+    loadingFees,
+    updateQuantity,
+    removeItem
+  } = useCart()
 
-  const updateQuantity = (id, change) => {
-    setCartItems(items => items.map(item => item.id === id ? { ...item, quantity: Math.max(1, item.quantity + change) } : item))
-  }
-
-  const removeItem = (id) => {
-    setCartItems(items => items.filter(item => item.id !== id))
-  }
-
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const serviceFee = subtotal * 0.03
-  const total = subtotal + serviceFee
-  
   // Get currency from first cart item (all items should be same currency for checkout to work)
   const cartCurrency = cartItems.length > 0 ? cartItems[0].currency : null
 
@@ -74,13 +73,38 @@ export function WebCart() {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl p-6 sticky top-24">
+              <div className="bg-white rounded-2xl p-6 sticky top-16 md:top-20 lg:top-24">
                 <h2 className="text-xl font-semibold text-[#0F0F0F] mb-6">Order Summary</h2>
                 <div className="space-y-4 mb-6">
-                  <div className="flex justify-between text-[#0F0F0F]/60"><span>Subtotal</span><span>{formatPrice(subtotal, cartCurrency)}</span></div>
-                  <div className="flex justify-between text-[#0F0F0F]/60"><span>Service Fee (3%)</span><span>{formatPrice(serviceFee, cartCurrency)}</span></div>
+                  <div className="flex justify-between text-[#0F0F0F]/60">
+                    <span>Subtotal</span>
+                    <span>{formatPrice(subtotal, cartCurrency)}</span>
+                  </div>
+
+                  <div className="flex justify-between text-[#0F0F0F]/60">
+                    <div className="flex flex-col">
+                      <span className="text-sm">Platform Fee</span>
+                      <span className="text-xs text-[#0F0F0F]/40">Event hosting & platform features</span>
+                    </div>
+                    <span>{formatPrice(platformFee, cartCurrency)}</span>
+                  </div>
+
+                  <div className="flex justify-between text-[#0F0F0F]/60">
+                    <div className="flex flex-col">
+                      <span className="text-sm">Processing Fee</span>
+                      <span className="text-xs text-[#0F0F0F]/40">Payment provider fees</span>
+                    </div>
+                    <span>{formatPrice(processingFee, cartCurrency)}</span>
+                  </div>
+
                   <div className="border-t border-[#0F0F0F]/10 pt-4">
-                    <div className="flex justify-between font-semibold text-[#0F0F0F]"><span>Total</span><span>{formatPrice(total, cartCurrency)}</span></div>
+                    <div className="flex justify-between font-semibold text-[#0F0F0F]">
+                      <span>Total</span>
+                      <span>{formatPrice(total, cartCurrency)}</span>
+                    </div>
+                    {loadingFees && (
+                      <p className="text-xs text-[#0F0F0F]/40 mt-1">Calculating fees...</p>
+                    )}
                   </div>
                 </div>
                 <Button onClick={() => navigate('/checkout')} className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12">Proceed to Checkout</Button>

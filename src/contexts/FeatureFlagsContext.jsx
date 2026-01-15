@@ -26,34 +26,65 @@ export function FeatureFlagsProvider({ children, currency = null, countryCode = 
   const loadData = async () => {
     try {
       // Load countries (currency -> country mapping)
-      const { data: countryData } = await supabase
+      const { data: countryData, error: countryError } = await supabase
         .from('countries')
         .select('code, default_currency')
         .eq('is_active', true);
 
-      const currencyMap = {};
-      countryData?.forEach(c => {
-        if (c.default_currency) {
-          currencyMap[c.default_currency] = c.code;
-        }
-      });
-      setCountries(currencyMap);
+      if (!countryError && countryData) {
+        const currencyMap = {};
+        countryData.forEach(c => {
+          if (c.default_currency) {
+            currencyMap[c.default_currency] = c.code;
+          }
+        });
+        setCountries(currencyMap);
+      } else {
+        // Provide default currency -> country mapping if table doesn't exist
+        setCountries({
+          'USD': 'US',
+          'NGN': 'NG',
+          'GBP': 'GB',
+          'EUR': 'EU',
+          'GHS': 'GH',
+          'KES': 'KE',
+          'ZAR': 'ZA',
+          'CAD': 'CA',
+          'AUD': 'AU'
+        });
+      }
 
       // Load all features
-      const { data: featureData } = await supabase
+      const { data: featureData, error: featureError } = await supabase
         .from('country_features')
         .select('country_code, feature_name, is_enabled');
 
-      const featureMap = {};
-      featureData?.forEach(f => {
-        if (!featureMap[f.country_code]) {
-          featureMap[f.country_code] = {};
-        }
-        featureMap[f.country_code][f.feature_name] = f.is_enabled;
-      });
-      setFeatures(featureMap);
+      if (!featureError && featureData) {
+        const featureMap = {};
+        featureData.forEach(f => {
+          if (!featureMap[f.country_code]) {
+            featureMap[f.country_code] = {};
+          }
+          featureMap[f.country_code][f.feature_name] = f.is_enabled;
+        });
+        setFeatures(featureMap);
+      } else {
+        // All features enabled by default if table doesn't exist
+        setFeatures({});
+      }
     } catch (error) {
       console.error('Error loading feature flags:', error);
+      // Set defaults on error
+      setCountries({
+        'USD': 'US',
+        'NGN': 'NG',
+        'GBP': 'GB',
+        'EUR': 'EU',
+        'GHS': 'GH',
+        'KES': 'KE',
+        'ZAR': 'ZA'
+      });
+      setFeatures({});
     } finally {
       setLoading(false);
     }

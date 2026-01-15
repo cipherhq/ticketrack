@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { 
+  errorResponse, 
+  logError, 
+  safeLog,
+  ERROR_CODES 
+} from "../_shared/errorHandler.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,8 +52,14 @@ serve(async (req) => {
         gatewayConfig.webhook_secret_encrypted
       );
     } catch (err) {
-      console.error("Webhook signature verification failed:", err);
-      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
+      logError("stripe_webhook_auth", err);
+      return errorResponse(
+        ERROR_CODES.AUTH_INVALID,
+        400,
+        err,
+        "Invalid webhook signature",
+        corsHeaders
+      );
     }
 
     // Handle the event
@@ -114,16 +126,79 @@ serve(async (req) => {
           .update({ status: "expired" })
           .eq("id", orderId);
       }
+    } else if (event.type === "payout.paid") {
+      // Handle payout completion - send notification to organizer
+      const payout = event.data.object;
+
+      console.log(`Payout ${payout.id} completed for account ${payout.destination}`);
+
+      // Find the payout record in our database
+      const { data: payoutRecord } = await supabase
+        .from("stripe_connect_payouts")
+        .select(`
+          *,
+          organizers (
+            id,
+            business_name,
+            user_id
+          ),
+          events (
+            title
+          )
+        `)
+        .eq("stripe_payout_id", payout.id)
+        .single();
+
+      if (payoutRecord) {
+        // Update payout status
+        await supabase
+          .from("stripe_connect_payouts")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString()
+          })
+          .eq("id", payoutRecord.id);
+
+        // Send payout received notification
+        const organizer = payoutRecord.organizers;
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", organizer.user_id)
+          .single();
+
+        if (profile?.email) {
+          await supabase.functions.invoke("send-email", {
+            body: {
+              type: "stripe_connect_payout_completed",
+              to: profile.email,
+              data: {
+                organizerName: organizer.business_name,
+                eventTitle: payoutRecord.events?.title || "Event",
+                amount: (payout.amount / 100).toFixed(2),
+                currency: payout.currency.toUpperCase(),
+                arrivalDate: new Date().toLocaleDateString(),
+                payoutId: payout.id,
+              },
+            },
+          });
+        }
+
+        safeLog.info(`Payout completion notification sent for ${payout.id}`);
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Webhook error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    logError("stripe_webhook", error);
+    return errorResponse(
+      ERROR_CODES.INTERNAL_ERROR,
+      400,
+      error,
+      undefined,
+      corsHeaders
     );
   }
 });
