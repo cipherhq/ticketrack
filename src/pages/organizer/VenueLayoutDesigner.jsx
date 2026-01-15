@@ -1,1033 +1,586 @@
 /**
- * Venue Layout Designer
- * Visual drag-and-drop interface for creating event layouts
+ * Venue Layout Designer - Simple Drag & Drop Interface
+ * Designed to be as easy as possible - like a drawing app!
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Save, Undo, Redo, ZoomIn, ZoomOut, Grid, Move, RotateCw,
-  Square, Circle, Plus, Trash2, Settings, Eye, EyeOff,
-  Palette, Ruler, Download, Upload, Copy, Scissors, Library
+  Save, Trash2, RotateCw, Plus, Minus, Undo, Grid,
+  Square, Circle, Armchair, Table, Mic, Coffee, Users,
+  Monitor, DoorOpen, Music, ClipboardCheck, Star, X,
+  Move, ZoomIn, ZoomOut, Copy, ChevronLeft
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { FurnitureLibrary, FurnitureDragOverlay } from '@/components/FurnitureLibrary'
-import { SectionManager } from '@/components/SectionManager'
+import { useOrganizer } from '@/contexts/OrganizerContext'
 import { supabase } from '@/lib/supabase'
+
+// Simple furniture/item library with icons and colors
+const ITEMS_LIBRARY = [
+  // Seating
+  { id: 'chair', name: 'Chair', icon: Armchair, color: '#8B4513', category: 'seating', width: 40, height: 40 },
+  { id: 'vip-chair', name: 'VIP Chair', icon: Star, color: '#FFD700', category: 'seating', width: 50, height: 50 },
+  { id: 'sofa', name: 'Sofa', icon: Users, color: '#9C27B0', category: 'seating', width: 100, height: 50 },
+  
+  // Tables
+  { id: 'round-table', name: 'Round Table', icon: Circle, color: '#654321', category: 'tables', width: 80, height: 80 },
+  { id: 'rect-table', name: 'Long Table', icon: Square, color: '#654321', category: 'tables', width: 120, height: 60 },
+  { id: 'cocktail', name: 'Cocktail Table', icon: Coffee, color: '#8B4513', category: 'tables', width: 50, height: 50 },
+  
+  // Stage & Entertainment
+  { id: 'stage', name: 'Stage', icon: Mic, color: '#2C2C2C', category: 'stage', width: 200, height: 100 },
+  { id: 'dj-booth', name: 'DJ Booth', icon: Music, color: '#9C27B0', category: 'stage', width: 120, height: 80 },
+  { id: 'screen', name: 'LED Screen', icon: Monitor, color: '#000000', category: 'stage', width: 150, height: 30 },
+  
+  // Services
+  { id: 'bar', name: 'Bar Counter', icon: Coffee, color: '#795548', category: 'services', width: 150, height: 50 },
+  { id: 'checkin', name: 'Check-in Desk', icon: ClipboardCheck, color: '#2196F3', category: 'services', width: 120, height: 50 },
+  { id: 'entrance', name: 'Entrance', icon: DoorOpen, color: '#4CAF50', category: 'services', width: 80, height: 30 },
+  { id: 'exit', name: 'Exit', icon: DoorOpen, color: '#F44336', category: 'services', width: 80, height: 30 },
+  
+  // Areas (larger zones)
+  { id: 'dance-floor', name: 'Dance Floor', icon: Users, color: '#E91E63', category: 'areas', width: 200, height: 200 },
+  { id: 'vip-area', name: 'VIP Area', icon: Star, color: '#FFD700', category: 'areas', width: 150, height: 150 },
+  { id: 'standing', name: 'Standing Area', icon: Users, color: '#4CAF50', category: 'areas', width: 150, height: 100 },
+]
+
+const CATEGORIES = [
+  { id: 'all', name: '🎯 All' },
+  { id: 'seating', name: '🪑 Seating' },
+  { id: 'tables', name: '🍽️ Tables' },
+  { id: 'stage', name: '🎤 Stage' },
+  { id: 'services', name: '🚪 Services' },
+  { id: 'areas', name: '📍 Areas' },
+]
 
 export function VenueLayoutDesigner() {
   const { venueId, layoutId } = useParams()
   const navigate = useNavigate()
-
-  // Canvas state
+  const { organizer } = useOrganizer()
   const canvasRef = useRef(null)
-  const [canvas, setCanvas] = useState(null)
-  const [zoom, setZoom] = useState(1)
-  const [gridSize, setGridSize] = useState(20)
-  const [showGrid, setShowGrid] = useState(true)
-  const [snapToGrid, setSnapToGrid] = useState(true)
-
+  
   // Layout state
-  const [layout, setLayout] = useState(null)
-  const [sections, setSections] = useState([])
-  const [furniture, setFurniture] = useState([])
-  const [furnitureTypes, setFurnitureTypes] = useState([])
-  const [selectedTool, setSelectedTool] = useState('select')
+  const [layoutName, setLayoutName] = useState('My Venue Layout')
+  const [placedItems, setPlacedItems] = useState([])
   const [selectedItem, setSelectedItem] = useState(null)
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [currentSection, setCurrentSection] = useState(null)
-
+  const [draggedLibraryItem, setDraggedLibraryItem] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  
   // UI state
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [layoutName, setLayoutName] = useState('')
-  const [layoutWidth, setLayoutWidth] = useState(20)
-  const [layoutHeight, setLayoutHeight] = useState(15)
-  const [draggedFurniture, setDraggedFurniture] = useState(null)
-  const [selectedFurnitureType, setSelectedFurnitureType] = useState(null)
+  const [showGrid, setShowGrid] = useState(true)
+  const [zoom, setZoom] = useState(1)
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [history, setHistory] = useState([])
+  
+  // Canvas dimensions
+  const CANVAS_WIDTH = 800
+  const CANVAS_HEIGHT = 600
 
-  // Initialize canvas
-  useEffect(() => {
-    if (canvasRef.current) {
-      initializeCanvas()
-    }
-  }, [canvasRef.current])
+  // Filter items by category
+  const filteredItems = selectedCategory === 'all' 
+    ? ITEMS_LIBRARY 
+    : ITEMS_LIBRARY.filter(item => item.category === selectedCategory)
 
-  // Redraw canvas when state changes
-  useEffect(() => {
-    if (canvas && canvasRef.current) {
-      redrawCanvas()
-    }
-  }, [sections, furniture, showGrid, zoom, selectedItem, isDrawing, currentSection])
-
-  // Load layout data
-  useEffect(() => {
-    if (venueId) {
-      loadFurnitureTypes()
-      if (layoutId && layoutId !== 'create') {
-        loadLayout(layoutId)
-      } else {
-        createNewLayout()
-      }
-    } else {
-      // No venue ID, just create empty layout
-      createNewLayout()
-    }
-  }, [venueId, layoutId])
-
-  const redrawCanvas = () => {
-    if (!canvas || !canvasRef.current) return
-    const ctx = canvasRef.current.getContext('2d')
-    if (!ctx) return
-
-    const canvasState = {
-      ...canvas,
-      ctx,
-      scale: zoom
-    }
-    drawCanvas(canvasState)
+  // Save to history for undo
+  const saveHistory = () => {
+    setHistory(prev => [...prev.slice(-20), JSON.stringify(placedItems)])
   }
 
-  const initializeCanvas = useCallback(() => {
-    const canvasElement = canvasRef.current
-    const ctx = canvasElement.getContext('2d')
-
-    // Set canvas size
-    canvasElement.width = 1200
-    canvasElement.height = 800
-
-    // Set up canvas state
-    const canvasState = {
-      ctx,
-      width: canvasElement.width,
-      height: canvasElement.height,
-      offsetX: 0,
-      offsetY: 0,
-      scale: zoom,
-      items: [],
-      sections: [],
-      selectedItem: null,
-      isDragging: false,
-      dragStart: null
-    }
-
-    setCanvas(canvasState)
-    drawCanvas(canvasState)
-  }, [zoom])
-
-  const drawCanvas = (canvasState) => {
-    const { ctx, width, height, offsetX, offsetY, scale } = canvasState
-
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height)
-
-    // Draw grid if enabled
-    if (showGrid) {
-      drawGrid(ctx, width, height, gridSize * scale, offsetX, offsetY)
-    }
-
-    // Draw sections
-    sections.forEach(section => drawSection(ctx, section, scale, offsetX, offsetY))
-
-    // Draw furniture
-    furniture.forEach(item => drawFurnitureItem(ctx, item, scale, offsetX, offsetY))
-
-    // Draw current drawing if active
-    if (isDrawing && currentSection) {
-      drawSectionOutline(ctx, currentSection, scale, offsetX, offsetY)
+  // Undo last action
+  const undo = () => {
+    if (history.length > 0) {
+      const lastState = history[history.length - 1]
+      setPlacedItems(JSON.parse(lastState))
+      setHistory(prev => prev.slice(0, -1))
+      setSelectedItem(null)
     }
   }
 
-  const drawGrid = (ctx, width, height, gridSize, offsetX, offsetY) => {
-    ctx.strokeStyle = '#e0e0e0'
-    ctx.lineWidth = 1
-
-    const startX = offsetX % gridSize
-    const startY = offsetY % gridSize
-
-    for (let x = startX; x < width; x += gridSize) {
-      ctx.beginPath()
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, height)
-      ctx.stroke()
-    }
-
-    for (let y = startY; y < height; y += gridSize) {
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      ctx.lineTo(width, y)
-      ctx.stroke()
-    }
-  }
-
-  const drawSection = (ctx, section, scale, offsetX, offsetY) => {
-    if (!section.coordinates || section.coordinates.length < 3) return
-
-    ctx.fillStyle = section.display_color || '#CCCCCC'
-    ctx.strokeStyle = '#000000'
-    ctx.lineWidth = 2
-
-    ctx.beginPath()
-    section.coordinates.forEach((point, index) => {
-      const x = (point.x * scale) + offsetX
-      const y = (point.y * scale) + offsetY
-      if (index === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
-      }
-    })
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
-
-    // Draw section label
-    const centerX = section.coordinates.reduce((sum, p) => sum + p.x, 0) / section.coordinates.length
-    const centerY = section.coordinates.reduce((sum, p) => sum + p.y, 0) / section.coordinates.length
-
-    ctx.fillStyle = '#000000'
-    ctx.font = '14px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(section.name, (centerX * scale) + offsetX, (centerY * scale) + offsetY)
-  }
-
-  const drawSectionOutline = (ctx, section, scale, offsetX, offsetY) => {
-    if (!section.coordinates || section.coordinates.length === 0) return
-
-    ctx.strokeStyle = '#007bff'
-    ctx.lineWidth = 2
-    ctx.setLineDash([5, 5])
-
-    ctx.beginPath()
-    section.coordinates.forEach((point, index) => {
-      const x = (point.x * scale) + offsetX
-      const y = (point.y * scale) + offsetY
-      if (index === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
-      }
-    })
-
-    if (section.coordinates.length > 2) {
-      ctx.closePath()
-    }
-    ctx.stroke()
-    ctx.setLineDash([])
-  }
-
-  const drawFurnitureItem = (ctx, item, scale, offsetX, offsetY) => {
-    const furnitureType = furnitureTypes.find(type => type.id === item.furniture_type_id)
-    if (!furnitureType) return
-
-    const x = (item.x_position * scale) + offsetX
-    const y = (item.y_position * scale) + offsetY
-    const width = ((item.width || furnitureType.default_width) * scale)
-    const height = ((item.height || furnitureType.default_height) * scale)
-
-    // Draw based on category
-    switch (furnitureType.category) {
-      case 'chair':
-        drawChair(ctx, x, y, width, height, item.rotation || 0)
-        break
-      case 'table':
-        drawTable(ctx, x, y, width, height, item.rotation || 0)
-        break
-      case 'stage':
-        drawStage(ctx, x, y, width, height, item.rotation || 0)
-        break
-      case 'bar':
-        drawBar(ctx, x, y, width, height, item.rotation || 0)
-        break
-      default:
-        drawRectangle(ctx, x, y, width, height, '#666666', item.rotation || 0)
-    }
-
-    // Highlight if selected
-    if (selectedItem && selectedItem.id === item.id) {
-      ctx.strokeStyle = '#007bff'
-      ctx.lineWidth = 2
-      ctx.strokeRect(x - 2, y - 2, width + 4, height + 4)
-    }
-  }
-
-  const drawChair = (ctx, x, y, width, height, rotation) => {
-    ctx.save()
-    ctx.translate(x + width/2, y + height/2)
-    ctx.rotate((rotation * Math.PI) / 180)
-
-    // Chair seat
-    ctx.fillStyle = '#8B4513'
-    ctx.fillRect(-width/2, -height/2, width, height)
-
-    // Chair back
-    ctx.fillRect(-width/2, -height/2 - height/3, width/3, height/3)
-
-    ctx.restore()
-  }
-
-  const drawTable = (ctx, x, y, width, height, rotation) => {
-    ctx.save()
-    ctx.translate(x + width/2, y + height/2)
-    ctx.rotate((rotation * Math.PI) / 180)
-
-    // Table surface
-    ctx.fillStyle = '#654321'
-    ctx.fillRect(-width/2, -height/2, width, height)
-
-    // Table legs
-    ctx.fillStyle = '#8B4513'
-    const legSize = Math.min(width, height) * 0.1
-    ctx.fillRect(-width/2 + legSize, -height/2 + legSize, legSize, legSize)
-    ctx.fillRect(width/2 - legSize*2, -height/2 + legSize, legSize, legSize)
-    ctx.fillRect(-width/2 + legSize, height/2 - legSize*2, legSize, legSize)
-    ctx.fillRect(width/2 - legSize*2, height/2 - legSize*2, legSize, legSize)
-
-    ctx.restore()
-  }
-
-  const drawStage = (ctx, x, y, width, height, rotation) => {
-    ctx.save()
-    ctx.translate(x + width/2, y + height/2)
-    ctx.rotate((rotation * Math.PI) / 180)
-
-    // Stage platform
-    ctx.fillStyle = '#2C2C2C'
-    ctx.fillRect(-width/2, -height/2, width, height)
-
-    // Stage border
-    ctx.strokeStyle = '#FFD700'
-    ctx.lineWidth = 3
-    ctx.strokeRect(-width/2, -height/2, width, height)
-
-    ctx.restore()
-  }
-
-  const drawBar = (ctx, x, y, width, height, rotation) => {
-    ctx.save()
-    ctx.translate(x + width/2, y + height/2)
-    ctx.rotate((rotation * Math.PI) / 180)
-
-    // Bar counter
-    ctx.fillStyle = '#8B4513'
-    ctx.fillRect(-width/2, -height/2, width, height)
-
-    // Bar surface
-    ctx.fillStyle = '#654321'
-    ctx.fillRect(-width/2, -height/2 + height/3, width, height/3)
-
-    ctx.restore()
-  }
-
-  const drawRectangle = (ctx, x, y, width, height, color, rotation) => {
-    ctx.save()
-    ctx.translate(x + width/2, y + height/2)
-    ctx.rotate((rotation * Math.PI) / 180)
-
-    ctx.fillStyle = color
-    ctx.fillRect(-width/2, -height/2, width, height)
-
-    ctx.restore()
-  }
-
-  // Canvas event handlers
-  const handleCanvasClick = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect()
-    const x = (e.clientX - rect.left - canvas.offsetX) / canvas.scale
-    const y = (e.clientY - rect.top - canvas.offsetY) / canvas.scale
-
-    if (selectedTool === 'section') {
-      handleSectionDrawing(x, y)
-    } else if (selectedTool === 'furniture' && selectedFurnitureType) {
-      handleFurniturePlacement(x, y, selectedFurnitureType)
-    } else {
-      handleItemSelection(x, y)
-    }
-  }
-
-  // Handle drag and drop from furniture library
+  // Handle dropping item from library onto canvas
   const handleCanvasDrop = (e) => {
     e.preventDefault()
     const rect = canvasRef.current.getBoundingClientRect()
-    const x = (e.clientX - rect.left - canvas.offsetX) / canvas.scale
-    const y = (e.clientY - rect.top - canvas.offsetY) / canvas.scale
+    const x = (e.clientX - rect.left) / zoom
+    const y = (e.clientY - rect.top) / zoom
 
-    try {
-      const furnitureData = JSON.parse(e.dataTransfer.getData('application/json'))
-      handleFurniturePlacement(x, y, furnitureData)
-    } catch (error) {
-      console.error('Failed to parse dropped furniture data:', error)
-    }
-
-    setDraggedFurniture(null)
-  }
-
-  const handleCanvasDragOver = (e) => {
-    e.preventDefault()
-  }
-
-  const handleSectionDrawing = (x, y) => {
-    if (!isDrawing) {
-      // Start new section
-      setCurrentSection({
-        name: `Section ${sections.length + 1}`,
-        coordinates: [{ x, y }],
-        display_color: '#CCCCCC',
-        section_type: 'seating'
-      })
-      setIsDrawing(true)
-    } else {
-      // Add point to current section
-      setCurrentSection(prev => ({
-        ...prev,
-        coordinates: [...prev.coordinates, { x, y }]
-      }))
-    }
-  }
-
-  const handleFurniturePlacement = (x, y, furnitureType) => {
-    if (!furnitureType) return
-
-    // Snap to grid if enabled
-    let finalX = x
-    let finalY = y
-
-    if (snapToGrid) {
-      finalX = Math.round(x / gridSize) * gridSize
-      finalY = Math.round(y / gridSize) * gridSize
-    }
-
-    const newFurniture = {
-      id: `furniture-${Date.now()}`,
-      furniture_type_id: furnitureType.id,
-      name: furnitureType.name,
-      x_position: finalX,
-      y_position: finalY,
-      width: furnitureType.default_width,
-      height: furnitureType.default_height,
-      capacity: furnitureType.default_capacity,
-      rotation: 0,
-      properties: furnitureType.properties || {}
-    }
-
-    setFurniture(prev => [...prev, newFurniture])
-    setSelectedItem(newFurniture)
-    setSelectedTool('select')
-    setSelectedFurnitureType(null)
-  }
-
-  const handleItemSelection = (x, y) => {
-    // Find clicked item
-    const clickedItem = findItemAtPosition(x, y)
-    setSelectedItem(clickedItem)
-  }
-
-  const findItemAtPosition = (x, y) => {
-    // Check furniture first
-    for (const item of furniture) {
-      const furnitureType = furnitureTypes.find(type => type.id === item.furniture_type_id)
-      if (!furnitureType) continue
-
-      const itemX = item.x_position
-      const itemY = item.y_position
-      const width = item.width || furnitureType.default_width
-      const height = item.height || furnitureType.default_height
-
-      if (x >= itemX && x <= itemX + width && y >= itemY && y <= itemY + height) {
-        return { type: 'furniture', ...item }
+    if (draggedLibraryItem) {
+      saveHistory()
+      const newItem = {
+        id: `item-${Date.now()}`,
+        type: draggedLibraryItem.id,
+        name: draggedLibraryItem.name,
+        x: x - draggedLibraryItem.width / 2,
+        y: y - draggedLibraryItem.height / 2,
+        width: draggedLibraryItem.width,
+        height: draggedLibraryItem.height,
+        color: draggedLibraryItem.color,
+        rotation: 0,
+        icon: draggedLibraryItem.icon,
       }
-    }
-
-    // Check sections
-    for (const section of sections) {
-      if (isPointInPolygon({ x, y }, section.coordinates)) {
-        return { type: 'section', ...section }
-      }
-    }
-
-    return null
-  }
-
-  const isPointInPolygon = (point, polygon) => {
-    if (!polygon || polygon.length < 3) return false
-
-    let inside = false
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      if (((polygon[i].y > point.y) !== (polygon[j].y > point.y)) &&
-          (point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x)) {
-        inside = !inside
-      }
-    }
-    return inside
-  }
-
-  // Default furniture types when database table doesn't exist
-  const DEFAULT_FURNITURE_TYPES = [
-    { id: 'chair-1', name: 'Standard Chair', category: 'chair', description: 'Basic seating chair', default_width: 0.5, default_height: 0.5, default_capacity: 1, is_active: true },
-    { id: 'chair-2', name: 'VIP Chair', category: 'chair', description: 'Premium leather chair', default_width: 0.6, default_height: 0.6, default_capacity: 1, is_active: true },
-    { id: 'table-1', name: 'Round Table', category: 'table', description: 'Round dining table', default_width: 1.5, default_height: 1.5, default_capacity: 8, is_active: true },
-    { id: 'table-2', name: 'Rectangular Table', category: 'table', description: 'Long rectangular table', default_width: 2.0, default_height: 0.8, default_capacity: 6, is_active: true },
-    { id: 'stage-1', name: 'Main Stage', category: 'stage', description: 'Large performance stage', default_width: 8.0, default_height: 5.0, default_capacity: 0, is_active: true },
-    { id: 'bar-1', name: 'Bar Counter', category: 'bar', description: 'Full bar counter', default_width: 4.0, default_height: 1.0, default_capacity: 0, is_active: true },
-    { id: 'dj-1', name: 'DJ Booth', category: 'dj', description: 'DJ performance area', default_width: 3.0, default_height: 2.0, default_capacity: 2, is_active: true },
-    { id: 'checkin-1', name: 'Check-in Desk', category: 'checkin', description: 'Registration counter', default_width: 3.0, default_height: 1.0, default_capacity: 0, is_active: true },
-  ]
-
-  // Data loading functions
-  const loadFurnitureTypes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('furniture_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('category', { ascending: true })
-
-      if (error) {
-        if (error.code === '42P01' || error.message?.includes('does not exist')) {
-          console.log('Using default furniture types')
-          setFurnitureTypes(DEFAULT_FURNITURE_TYPES)
-          return
-        }
-        throw error
-      }
-      setFurnitureTypes(data && data.length > 0 ? data : DEFAULT_FURNITURE_TYPES)
-    } catch (error) {
-      console.error('Failed to load furniture types:', error)
-      setFurnitureTypes(DEFAULT_FURNITURE_TYPES)
+      setPlacedItems(prev => [...prev, newItem])
+      setSelectedItem(newItem)
+      setDraggedLibraryItem(null)
     }
   }
 
-  const loadLayout = async (id) => {
-    try {
-      setLoading(true)
-
-      // Load layout
-      const { data: layoutData, error: layoutError } = await supabase
-        .from('venue_layouts')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (layoutError) {
-        if (layoutError.code === '42P01' || layoutError.message?.includes('does not exist')) {
-          console.log('Layout tables not found, creating new layout')
-          createNewLayout()
-          return
-        }
-        throw layoutError
-      }
-      
-      setLayout(layoutData)
-      setLayoutName(layoutData.name)
-      setLayoutWidth(layoutData.total_width)
-      setLayoutHeight(layoutData.total_height)
-
-      // Load sections
-      const { data: sectionsData, error: sectionsError } = await supabase
-        .from('layout_sections')
-        .select('*')
-        .eq('layout_id', id)
-        .order('sort_order', { ascending: true })
-
-      if (!sectionsError) {
-        setSections(sectionsData || [])
-      }
-
-      // Load furniture
-      const { data: furnitureData, error: furnitureError } = await supabase
-        .from('layout_furniture')
-        .select('*')
-        .eq('layout_id', id)
-
-      if (!furnitureError) {
-        setFurniture(furnitureData || [])
-      }
-
-    } catch (error) {
-      console.error('Failed to load layout:', error)
-      createNewLayout() // Fallback to new layout on error
-    } finally {
-      setLoading(false)
-    }
+  // Handle clicking on canvas item
+  const handleItemClick = (e, item) => {
+    e.stopPropagation()
+    setSelectedItem(item)
   }
 
-  const createNewLayout = () => {
-    setLayout({
-      id: 'new',
-      name: 'New Layout',
-      total_width: layoutWidth,
-      total_height: layoutHeight,
-      venue_id: venueId
+  // Handle starting to drag a placed item
+  const handleItemMouseDown = (e, item) => {
+    e.stopPropagation()
+    const rect = canvasRef.current.getBoundingClientRect()
+    setSelectedItem(item)
+    setIsDragging(true)
+    setDragOffset({
+      x: e.clientX - rect.left - item.x * zoom,
+      y: e.clientY - rect.top - item.y * zoom
     })
-    setLayoutName('New Layout')
-    setSections([])
-    setFurniture([])
-    setLoading(false)
+    saveHistory()
   }
 
-  const saveLayout = async () => {
-    try {
-      setSaving(true)
+  // Handle dragging a placed item
+  const handleCanvasMouseMove = (e) => {
+    if (isDragging && selectedItem) {
+      const rect = canvasRef.current.getBoundingClientRect()
+      const newX = (e.clientX - rect.left - dragOffset.x) / zoom
+      const newY = (e.clientY - rect.top - dragOffset.y) / zoom
+      
+      // Keep within canvas bounds
+      const boundedX = Math.max(0, Math.min(CANVAS_WIDTH - selectedItem.width, newX))
+      const boundedY = Math.max(0, Math.min(CANVAS_HEIGHT - selectedItem.height, newY))
+      
+      // Snap to grid if enabled
+      const finalX = showGrid ? Math.round(boundedX / 20) * 20 : boundedX
+      const finalY = showGrid ? Math.round(boundedY / 20) * 20 : boundedY
+      
+      setPlacedItems(prev => prev.map(item => 
+        item.id === selectedItem.id 
+          ? { ...item, x: finalX, y: finalY }
+          : item
+      ))
+      setSelectedItem(prev => ({ ...prev, x: finalX, y: finalY }))
+    }
+  }
 
+  // Handle releasing drag
+  const handleCanvasMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  // Handle clicking on empty canvas
+  const handleCanvasClick = () => {
+    setSelectedItem(null)
+  }
+
+  // Delete selected item
+  const deleteSelected = () => {
+    if (selectedItem) {
+      saveHistory()
+      setPlacedItems(prev => prev.filter(item => item.id !== selectedItem.id))
+      setSelectedItem(null)
+    }
+  }
+
+  // Rotate selected item
+  const rotateSelected = () => {
+    if (selectedItem) {
+      saveHistory()
+      const newRotation = (selectedItem.rotation + 90) % 360
+      setPlacedItems(prev => prev.map(item => 
+        item.id === selectedItem.id 
+          ? { ...item, rotation: newRotation }
+          : item
+      ))
+      setSelectedItem(prev => ({ ...prev, rotation: newRotation }))
+    }
+  }
+
+  // Duplicate selected item
+  const duplicateSelected = () => {
+    if (selectedItem) {
+      saveHistory()
+      const newItem = {
+        ...selectedItem,
+        id: `item-${Date.now()}`,
+        x: selectedItem.x + 20,
+        y: selectedItem.y + 20,
+      }
+      setPlacedItems(prev => [...prev, newItem])
+      setSelectedItem(newItem)
+    }
+  }
+
+  // Resize selected item
+  const resizeSelected = (delta) => {
+    if (selectedItem) {
+      saveHistory()
+      const scale = delta > 0 ? 1.2 : 0.8
+      const newWidth = Math.max(30, Math.min(400, selectedItem.width * scale))
+      const newHeight = Math.max(30, Math.min(400, selectedItem.height * scale))
+      setPlacedItems(prev => prev.map(item => 
+        item.id === selectedItem.id 
+          ? { ...item, width: newWidth, height: newHeight }
+          : item
+      ))
+      setSelectedItem(prev => ({ ...prev, width: newWidth, height: newHeight }))
+    }
+  }
+
+  // Save layout
+  const saveLayout = async () => {
+    if (!organizer?.id) {
+      alert('Please log in to save your layout')
+      return
+    }
+
+    setSaving(true)
+    try {
       const layoutData = {
-        venue_id: venueId,
+        venue_id: venueId || null,
         name: layoutName,
-        total_width: layoutWidth,
-        total_height: layoutHeight,
-        version: layout ? layout.version + 1 : 1,
-        is_active: true
+        total_width: CANVAS_WIDTH,
+        total_height: CANVAS_HEIGHT,
+        is_active: true,
+        metadata: {
+          items: placedItems,
+          version: 1,
+          created_by: organizer.id,
+        }
       }
 
-      let layoutId
-      if (layout && layout.id !== 'new') {
-        // Update existing
-        const { error } = await supabase
+      if (layoutId && layoutId !== 'create') {
+        await supabase
           .from('venue_layouts')
           .update(layoutData)
-          .eq('id', layout.id)
-
-        if (error) throw error
-        layoutId = layout.id
+          .eq('id', layoutId)
       } else {
-        // Create new
-        const { data, error } = await supabase
+        await supabase
           .from('venue_layouts')
           .insert(layoutData)
-          .select()
-          .single()
-
-        if (error) throw error
-        layoutId = data.id
       }
 
-      // Save sections
-      await saveSections(layoutId)
-
-      // Save furniture
-      await saveFurniture(layoutId)
-
-      // Navigate to the saved layout
-      navigate(`/organizer/venues/${venueId}/layouts/${layoutId}`)
-
+      alert('Layout saved successfully! ✅')
     } catch (error) {
       console.error('Failed to save layout:', error)
-      alert('Failed to save layout: ' + error.message)
+      alert('Failed to save layout. The database tables may not be set up yet.')
     } finally {
       setSaving(false)
     }
   }
 
-  const saveSections = async (layoutId) => {
-    // Delete existing sections
-    await supabase
-      .from('layout_sections')
-      .delete()
-      .eq('layout_id', layoutId)
-
-    // Insert new sections
-    if (sections.length > 0) {
-      const { error } = await supabase
-        .from('layout_sections')
-        .insert(sections.map(section => ({
-          layout_id: layoutId,
-          ...section
-        })))
-
-      if (error) throw error
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedItem && document.activeElement.tagName !== 'INPUT') {
+          deleteSelected()
+        }
+      }
+      if (e.key === 'r' && selectedItem) {
+        rotateSelected()
+      }
+      if (e.key === 'd' && e.ctrlKey && selectedItem) {
+        e.preventDefault()
+        duplicateSelected()
+      }
+      if (e.key === 'z' && e.ctrlKey) {
+        e.preventDefault()
+        undo()
+      }
     }
-  }
 
-  const saveFurniture = async (layoutId) => {
-    // Delete existing furniture
-    await supabase
-      .from('layout_furniture')
-      .delete()
-      .eq('layout_id', layoutId)
-
-    // Insert new furniture
-    if (furniture.length > 0) {
-      const { error } = await supabase
-        .from('layout_furniture')
-        .insert(furniture.map(item => ({
-          layout_id: layoutId,
-          ...item
-        })))
-
-      if (error) throw error
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2969FF]"></div>
-      </div>
-    )
-  }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedItem, history])
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-[#0F0F0F]">
-            {layoutId ? 'Edit Layout' : 'Create Layout'}
-          </h1>
-          <p className="text-[#0F0F0F]/60 mt-1">
-            Design your venue layout with sections and furniture
-          </p>
+    <div className="h-screen flex flex-col bg-gray-100">
+      {/* Top Toolbar */}
+      <div className="bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Back
+          </Button>
+          <div className="h-6 w-px bg-gray-200" />
+          <Input
+            value={layoutName}
+            onChange={(e) => setLayoutName(e.target.value)}
+            className="w-64 font-semibold"
+            placeholder="Layout Name"
+          />
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={saveLayout} disabled={saving}>
+        
+        <div className="flex items-center gap-2">
+          {/* Undo */}
+          <Button variant="outline" size="sm" onClick={undo} disabled={history.length === 0}>
+            <Undo className="w-4 h-4" />
+          </Button>
+          
+          {/* Grid toggle */}
+          <Button 
+            variant={showGrid ? 'default' : 'outline'} 
+            size="sm" 
+            onClick={() => setShowGrid(!showGrid)}
+          >
+            <Grid className="w-4 h-4" />
+          </Button>
+
+          {/* Zoom */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1">
+            <Button variant="ghost" size="sm" onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}>
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <span className="text-sm w-12 text-center">{Math.round(zoom * 100)}%</span>
+            <Button variant="ghost" size="sm" onClick={() => setZoom(Math.min(2, zoom + 0.1))}>
+              <ZoomIn className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="h-6 w-px bg-gray-200" />
+          
+          {/* Save */}
+          <Button onClick={saveLayout} disabled={saving} className="bg-green-600 hover:bg-green-700">
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Saving...' : 'Save Layout'}
           </Button>
         </div>
       </div>
 
-      {/* Layout Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Layout Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="layoutName">Layout Name</Label>
-              <Input
-                id="layoutName"
-                value={layoutName}
-                onChange={(e) => setLayoutName(e.target.value)}
-                placeholder="Enter layout name"
-              />
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - Item Library */}
+        <div className="w-72 bg-white border-r overflow-y-auto">
+          <div className="p-4">
+            <h3 className="font-bold text-lg mb-3">🧩 Drag & Drop Items</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Drag items to the canvas to place them
+            </p>
+
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-1 mb-4">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                    selectedCategory === cat.id
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
             </div>
-            <div>
-              <Label htmlFor="layoutWidth">Width (meters)</Label>
-              <Input
-                id="layoutWidth"
-                type="number"
-                value={layoutWidth}
-                onChange={(e) => setLayoutWidth(Number(e.target.value))}
-                min="1"
-                max="100"
-              />
-            </div>
-            <div>
-              <Label htmlFor="layoutHeight">Height (meters)</Label>
-              <Input
-                id="layoutHeight"
-                type="number"
-                value={layoutHeight}
-                onChange={(e) => setLayoutHeight(Number(e.target.value))}
-                min="1"
-                max="100"
-              />
+
+            {/* Items Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              {filteredItems.map(item => {
+                const IconComponent = item.icon
+                return (
+                  <div
+                    key={item.id}
+                    draggable
+                    onDragStart={() => setDraggedLibraryItem(item)}
+                    onDragEnd={() => setDraggedLibraryItem(null)}
+                    className="flex flex-col items-center p-3 bg-gray-50 rounded-lg cursor-grab 
+                              active:cursor-grabbing hover:bg-gray-100 hover:shadow-md transition-all
+                              border-2 border-transparent hover:border-blue-300"
+                  >
+                    <div 
+                      className="w-12 h-12 rounded-lg flex items-center justify-center mb-2"
+                      style={{ backgroundColor: item.color }}
+                    >
+                      <IconComponent className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-center">{item.name}</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Tabs defaultValue="design" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="design">Design</TabsTrigger>
-          <TabsTrigger value="furniture">Furniture</TabsTrigger>
-          <TabsTrigger value="sections">Sections</TabsTrigger>
-        </TabsList>
-
-        {/* Design Tab */}
-        <TabsContent value="design" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Tools Panel */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Tools</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Drawing Tools */}
-                <div>
-                  <Label className="text-sm font-medium">Drawing Tools</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <Button
-                      variant={selectedTool === 'select' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedTool('select')}
-                    >
-                      <Move className="w-4 h-4 mr-1" />
-                      Select
-                    </Button>
-                    <Button
-                      variant={selectedTool === 'section' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedTool('section')}
-                    >
-                      <Square className="w-4 h-4 mr-1" />
-                      Section
-                    </Button>
-                  </div>
-                </div>
-
-            {/* View Controls */}
-            <div>
-              <Label className="text-sm font-medium">View</Label>
-              <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Zoom</span>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setZoom(Math.max(0.1, zoom - 0.1))}
-                    >
-                      <ZoomOut className="w-3 h-3" />
-                    </Button>
-                    <span className="text-sm w-12 text-center">{Math.round(zoom * 100)}%</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setZoom(Math.min(3, zoom + 0.1))}
-                    >
-                      <ZoomIn className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Grid</span>
-                  <Button
-                    variant={showGrid ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowGrid(!showGrid)}
+        {/* Main Canvas Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Canvas */}
+          <div 
+            className="flex-1 overflow-auto p-8 flex items-center justify-center"
+            style={{ backgroundColor: '#f0f0f0' }}
+          >
+            <div
+              ref={canvasRef}
+              className="relative bg-white rounded-lg shadow-xl"
+              style={{
+                width: CANVAS_WIDTH * zoom,
+                height: CANVAS_HEIGHT * zoom,
+                backgroundImage: showGrid 
+                  ? `linear-gradient(to right, #e5e5e5 1px, transparent 1px),
+                     linear-gradient(to bottom, #e5e5e5 1px, transparent 1px)`
+                  : 'none',
+                backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
+              }}
+              onDrop={handleCanvasDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onMouseMove={handleCanvasMouseMove}
+              onMouseUp={handleCanvasMouseUp}
+              onMouseLeave={handleCanvasMouseUp}
+              onClick={handleCanvasClick}
+            >
+              {/* Placed Items */}
+              {placedItems.map(item => {
+                const IconComponent = item.icon
+                const isSelected = selectedItem?.id === item.id
+                
+                return (
+                  <div
+                    key={item.id}
+                    className={`absolute flex items-center justify-center cursor-move
+                                transition-shadow ${isSelected ? 'ring-4 ring-blue-500 ring-offset-2' : 'hover:ring-2 hover:ring-blue-300'}`}
+                    style={{
+                      left: item.x * zoom,
+                      top: item.y * zoom,
+                      width: item.width * zoom,
+                      height: item.height * zoom,
+                      backgroundColor: item.color,
+                      borderRadius: item.type.includes('round') || item.type.includes('dance') ? '50%' : '8px',
+                      transform: `rotate(${item.rotation}deg)`,
+                      transformOrigin: 'center center',
+                    }}
+                    onClick={(e) => handleItemClick(e, item)}
+                    onMouseDown={(e) => handleItemMouseDown(e, item)}
                   >
-                    <Grid className="w-3 h-3 mr-1" />
-                    {showGrid ? 'On' : 'Off'}
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Snap</span>
-                  <Button
-                    variant={snapToGrid ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSnapToGrid(!snapToGrid)}
-                  >
-                    <Grid className="w-3 h-3 mr-1" />
-                    {snapToGrid ? 'On' : 'Off'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Section Management */}
-            <div>
-              <Label className="text-sm font-medium">Sections ({sections.length})</Label>
-              <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
-                {sections.map((section, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-4 h-4 rounded"
-                        style={{ backgroundColor: section.display_color }}
-                      />
-                      <span className="text-sm">{section.name}</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSections(sections.filter((_, i) => i !== index))}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <IconComponent 
+                      className="text-white pointer-events-none" 
+                      style={{ 
+                        width: Math.min(item.width * zoom * 0.5, 40),
+                        height: Math.min(item.height * zoom * 0.5, 40)
+                      }} 
+                    />
+                    
+                    {/* Item label */}
+                    {zoom >= 0.8 && (
+                      <div 
+                        className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/70 text-white 
+                                   text-xs px-2 py-0.5 rounded whitespace-nowrap"
+                        style={{ transform: `rotate(-${item.rotation}deg) translateX(-50%)` }}
+                      >
+                        {item.name}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-              {isDrawing && (
-                <Button
-                  className="w-full mt-2"
-                  variant="outline"
-                  onClick={() => {
-                    if (currentSection && currentSection.coordinates.length >= 3) {
-                      setSections([...sections, currentSection])
-                    }
-                    setCurrentSection(null)
-                    setIsDrawing(false)
-                  }}
-                >
-                  Finish Section
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                )
+              })}
 
-        {/* Canvas */}
-        <Card className="lg:col-span-3">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Layout Canvas</CardTitle>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              {selectedTool === 'section' && (
-                <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                  🖱️ Click to draw section points, then "Finish Section"
-                </Badge>
-              )}
-              {selectedTool === 'furniture' && selectedFurnitureType && (
-                <Badge variant="outline" className="bg-green-50 text-green-700">
-                  🪑 Click on canvas to place: {selectedFurnitureType.name}
-                </Badge>
-              )}
-              {selectedTool === 'select' && (
-                <Badge variant="outline" className="bg-gray-50">
-                  👆 Click items to select
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Instructions Panel */}
-            {sections.length === 0 && furniture.length === 0 && (
-              <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                <h4 className="font-semibold text-blue-900 mb-2">🎨 How to Design Your Layout</h4>
-                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                  <li><strong>Draw Sections:</strong> Click "Section" tool → click canvas to draw corners → click "Finish Section"</li>
-                  <li><strong>Add Furniture:</strong> Go to "Furniture" tab → click an item → click on canvas to place it</li>
-                  <li><strong>Configure:</strong> Go to "Sections" tab to set capacity & pricing for each section</li>
-                  <li><strong>Save:</strong> Click "Save Layout" when done</li>
-                </ol>
-              </div>
-            )}
-            
-            <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 relative">
-              <canvas
-                ref={canvasRef}
-                className={`w-full h-auto bg-white ${
-                  selectedTool === 'furniture' ? 'cursor-copy' : 
-                  selectedTool === 'section' ? 'cursor-crosshair' : 
-                  'cursor-pointer'
-                }`}
-                style={{ maxHeight: '600px', minHeight: '400px' }}
-                onClick={handleCanvasClick}
-                onDrop={handleCanvasDrop}
-                onDragOver={handleCanvasDragOver}
-              />
-              
-              {/* Canvas overlay for empty state */}
-              {sections.length === 0 && furniture.length === 0 && !isDrawing && (
+              {/* Empty state */}
+              {placedItems.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center text-gray-400">
-                    <div className="text-6xl mb-4">🏟️</div>
-                    <p className="text-lg font-medium">Your venue layout canvas</p>
-                    <p className="text-sm">Start by drawing sections or adding furniture</p>
+                    <div className="text-8xl mb-4">👆</div>
+                    <p className="text-xl font-medium">Drag items here!</p>
+                    <p className="text-sm">Pick an item from the left and drop it here</p>
                   </div>
                 </div>
               )}
             </div>
-            
-            {/* Status bar */}
-            <div className="mt-3 flex items-center justify-between text-xs text-gray-500 bg-gray-50 rounded px-3 py-2">
+          </div>
+
+          {/* Bottom Action Bar - Shows when item is selected */}
+          {selectedItem && (
+            <div className="bg-white border-t px-6 py-4 flex items-center justify-between shadow-lg">
               <div className="flex items-center gap-4">
-                <span>Sections: <strong>{sections.length}</strong></span>
-                <span>Furniture: <strong>{furniture.length}</strong></span>
-                <span>Size: <strong>{layoutWidth}m × {layoutHeight}m</strong></span>
+                <Badge variant="outline" className="text-base px-3 py-1">
+                  Selected: <strong className="ml-1">{selectedItem.name}</strong>
+                </Badge>
               </div>
+              
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${showGrid ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                <span>Grid {showGrid ? 'On' : 'Off'}</span>
+                {/* Resize */}
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1">
+                  <Button variant="ghost" size="sm" onClick={() => resizeSelected(-1)}>
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm px-2">Size</span>
+                  <Button variant="ghost" size="sm" onClick={() => resizeSelected(1)}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Rotate */}
+                <Button variant="outline" size="sm" onClick={rotateSelected}>
+                  <RotateCw className="w-4 h-4 mr-1" />
+                  Rotate
+                </Button>
+
+                {/* Duplicate */}
+                <Button variant="outline" size="sm" onClick={duplicateSelected}>
+                  <Copy className="w-4 h-4 mr-1" />
+                  Copy
+                </Button>
+
+                {/* Delete */}
+                <Button variant="destructive" size="sm" onClick={deleteSelected}>
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        
-        {/* Selected Item Panel */}
-        {selectedItem && (
-          <Card className="mt-4 border-blue-200 bg-blue-50">
-            <CardContent className="p-4">
-              <h4 className="font-medium text-blue-900 mb-2">Selected: {selectedItem.name}</h4>
-              <p className="text-sm text-blue-700 mb-3">
-                Type: {selectedItem.type === 'section' ? 'Section' : 'Furniture'}
+          )}
+        </div>
+
+        {/* Right Sidebar - Quick Tips */}
+        <div className="w-56 bg-white border-l p-4">
+          <h3 className="font-bold text-lg mb-4">💡 Quick Tips</h3>
+          
+          <div className="space-y-4 text-sm">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <p className="font-medium text-blue-900">🖱️ Drag & Drop</p>
+              <p className="text-blue-700">Drag items from left panel to canvas</p>
+            </div>
+            
+            <div className="p-3 bg-green-50 rounded-lg">
+              <p className="font-medium text-green-900">✋ Move Items</p>
+              <p className="text-green-700">Click and drag items on canvas</p>
+            </div>
+            
+            <div className="p-3 bg-purple-50 rounded-lg">
+              <p className="font-medium text-purple-900">🔄 Rotate</p>
+              <p className="text-purple-700">Select item, press R or click Rotate</p>
+            </div>
+            
+            <div className="p-3 bg-red-50 rounded-lg">
+              <p className="font-medium text-red-900">🗑️ Delete</p>
+              <p className="text-red-700">Select item, press Delete key</p>
+            </div>
+            
+            <div className="p-3 bg-yellow-50 rounded-lg">
+              <p className="font-medium text-yellow-900">⌨️ Shortcuts</p>
+              <p className="text-yellow-700">
+                <span className="font-mono bg-yellow-100 px-1 rounded">Ctrl+Z</span> Undo<br/>
+                <span className="font-mono bg-yellow-100 px-1 rounded">Ctrl+D</span> Duplicate<br/>
+                <span className="font-mono bg-yellow-100 px-1 rounded">R</span> Rotate<br/>
+                <span className="font-mono bg-yellow-100 px-1 rounded">Del</span> Delete
               </p>
-              {selectedItem.type === 'section' && (
-                <div className="space-y-2">
-                  <Input
-                    value={selectedItem.name}
-                    onChange={(e) => {
-                      const updatedSections = sections.map(s =>
-                        s.id === selectedItem.id ? { ...s, name: e.target.value } : s
-                      )
-                      setSections(updatedSections)
-                    }}
-                    placeholder="Section name"
-                  />
-                  <Select
-                    value={selectedItem.section_type}
-                    onValueChange={(value) => {
-                      const updatedSections = sections.map(s =>
-                        s.id === selectedItem.id ? { ...s, section_type: value } : s
-                      )
-                      setSections(updatedSections)
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="seating">Seating</SelectItem>
-                      <SelectItem value="standing">Standing</SelectItem>
-                      <SelectItem value="vip">VIP</SelectItem>
-                      <SelectItem value="stage">Stage</SelectItem>
-                      <SelectItem value="bar">Bar</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </div>
+
+          {/* Item count */}
+          <div className="mt-6 p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">
+              <strong>{placedItems.length}</strong> items placed
+            </p>
+          </div>
+        </div>
       </div>
-      </TabsContent>
-
-      {/* Furniture Tab */}
-      <TabsContent value="furniture" className="space-y-6">
-        <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-          <CardContent className="p-4">
-            <h4 className="font-semibold text-green-900 mb-2">🪑 How to Add Furniture</h4>
-            <ol className="text-sm text-green-800 space-y-1 list-decimal list-inside">
-              <li><strong>Select an item</strong> from the library below</li>
-              <li><strong>Go back to Design tab</strong> - the item will be ready to place</li>
-              <li><strong>Click on the canvas</strong> to place the furniture</li>
-            </ol>
-          </CardContent>
-        </Card>
-        <FurnitureLibrary
-          onItemSelect={(item) => {
-            setSelectedFurnitureType(item)
-            setSelectedTool('furniture')
-            // Show a toast or feedback that item is selected
-            alert(`Selected: ${item.name}. Now go to Design tab and click on the canvas to place it.`)
-          }}
-          onItemDragStart={setDraggedFurniture}
-        />
-      </TabsContent>
-
-      {/* Sections Tab */}
-      <TabsContent value="sections" className="space-y-6">
-        <SectionManager
-          sections={sections}
-          onSectionsChange={setSections}
-          eventId={null} // Will be set when used with events
-        />
-      </TabsContent>
-    </Tabs>
-
-    {/* Drag Overlay */}
-    {draggedFurniture && (
-      <FurnitureDragOverlay item={draggedFurniture} />
-    )}
     </div>
   )
 }
