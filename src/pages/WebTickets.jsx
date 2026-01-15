@@ -258,22 +258,8 @@ export function WebTickets() {
       .eq('id', ticket.event_id)
       .single()
     
-    // Get global transfer fee from admin settings
-    const { data: settings } = await supabase
-      .from('platform_settings')
-      .select('value')
-      .eq('key', 'transfer_fee')
-      .single()
-    
-    const currency = event?.currency || 'NGN'
-    const feesByCountry = settings?.value || {}
-    const fee = feesByCountry[currency] || 0
-    
-    setTransferFee(fee)
-    setTransferCurrency(currency)
-    
     if (!event?.allow_transfers) {
-      alert('Transfers are disabled for this event')
+      alert('Ticket transfers are disabled for this event')
       return
     }
     
@@ -281,6 +267,16 @@ export function WebTickets() {
       alert('Maximum transfer limit reached for this ticket')
       return
     }
+    
+    // Get transfer fee from fee configuration
+    const currency = event?.currency || 'NGN'
+    const { calculateTransferFee, getFeesByCurrency } = await import('@/config/fees')
+    const fees = await getFeesByCurrency(currency)
+    const ticketPrice = ticket.total_price || 0
+    const feeCalculation = calculateTransferFee(ticketPrice, fees)
+    
+    setTransferFee(feeCalculation.transferFee)
+    setTransferCurrency(currency)
     
     setTransferModal({ open: true, ticket })
   }
@@ -834,7 +830,7 @@ export function WebTickets() {
                 className="rounded-xl border-purple-300 text-purple-600 hover:bg-purple-50 flex items-center gap-2 text-xs"
                 onClick={() => openTransferModal(ticket)}
               >
-                <Send className="w-3 h-3" />Transfer
+                <Send className="w-3 h-3" />Ticket Transfer
               </Button>
               )}
               {!ticketRefundStatus[ticket.id] ? (
@@ -1180,7 +1176,7 @@ export function WebTickets() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Send className="w-5 h-5 text-purple-600" />
-              Transfer Ticket
+              Ticket Transfer
             </DialogTitle>
           </DialogHeader>
           

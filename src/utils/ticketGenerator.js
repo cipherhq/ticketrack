@@ -158,7 +158,13 @@ export async function generateTicketPDF(ticket, event) {
   pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
   pdf.setTextColor(230, 230, 230)
-  const venue = `${event.venue_name || 'Venue'}, ${event.city || 'City'}`
+  // Show full address if available, otherwise fallback to venue name + city
+  let venue
+  if (event.venue_address) {
+    venue = `${event.venue_name ? event.venue_name + ', ' : ''}${event.venue_address}`
+  } else {
+    venue = `${event.venue_name || 'Venue'}${event.city ? ', ' + event.city : ''}`
+  }
   const displayVenue = venue.length > 35 ? venue.substring(0, 35) + '...' : venue
   pdf.text(displayVenue, contentX, currentY)
   currentY += 14
@@ -380,7 +386,13 @@ export async function generateTicketPDFBase64(ticket, event) {
   pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
   pdf.setTextColor(230, 230, 230)
-  const venue = `${event.venue_name || 'Venue'}, ${event.city || 'City'}`
+  // Show full address if available, otherwise fallback to venue name + city
+  let venue
+  if (event.venue_address) {
+    venue = `${event.venue_name ? event.venue_name + ', ' : ''}${event.venue_address}`
+  } else {
+    venue = `${event.venue_name || 'Venue'}${event.city ? ', ' + event.city : ''}`
+  }
   const displayVenue = venue.length > 35 ? venue.substring(0, 35) + '...' : venue
   pdf.text(displayVenue, contentX, currentY)
   currentY += 14

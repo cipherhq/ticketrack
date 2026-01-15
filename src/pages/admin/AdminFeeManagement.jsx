@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/tabs';
 import { 
   DollarSign, Percent, Globe, Building2, Edit2, Save, 
-  Loader2, Calculator, AlertCircle, CheckCircle, RefreshCw
+  Loader2, Calculator, AlertCircle, CheckCircle, RefreshCw, ArrowRightLeft
 } from 'lucide-react';
 
 const CURRENCY_SYMBOLS = {
@@ -87,6 +87,7 @@ export function AdminFeeManagement() {
       service_fee_fixed_per_ticket: country.service_fee_fixed_per_ticket || 0,
       service_fee_cap: country.service_fee_cap || '',
       donation_fee_percentage: country.donation_fee_percentage || 5,
+      transfer_fee_percentage: country.transfer_fee_percentage || 10,
       processing_fee_fixed_per_order: country.processing_fee_fixed_per_order || 0,
       stripe_processing_fee_pct: country.stripe_processing_fee_pct || 2.9,
       stripe_processing_fee_fixed: country.stripe_processing_fee_fixed || 0.30,
@@ -109,6 +110,7 @@ export function AdminFeeManagement() {
           service_fee_fixed_per_ticket: parseFloat(editingCountry.service_fee_fixed_per_ticket) || 0,
           service_fee_cap: editingCountry.service_fee_cap ? parseFloat(editingCountry.service_fee_cap) : null,
           donation_fee_percentage: parseFloat(editingCountry.donation_fee_percentage) || 5,
+          transfer_fee_percentage: parseFloat(editingCountry.transfer_fee_percentage) || 10,
           processing_fee_fixed_per_order: parseFloat(editingCountry.processing_fee_fixed_per_order) || 0,
           stripe_processing_fee_pct: parseFloat(editingCountry.stripe_processing_fee_pct) || 2.9,
           stripe_processing_fee_fixed: parseFloat(editingCountry.stripe_processing_fee_fixed) || 0.30,
@@ -457,6 +459,28 @@ export function AdminFeeManagement() {
                       onChange={(e) => setEditingCountry({...editingCountry, donation_fee_percentage: e.target.value})}
                       className="rounded-xl mt-1" />
                     <p className="text-xs text-[#0F0F0F]/50 mt-1">Percentage of donation amount</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center gap-2">
+                  <ArrowRightLeft className="w-4 h-4 text-blue-600" />
+                  Ticket Transfer Fees
+                </h3>
+                <p className="text-sm text-[#0F0F0F]/60">
+                  Fee charged when attendees transfer their tickets to other people. This helps prevent ticket scalping.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Transfer Fee (%)</Label>
+                    <Input type="number" step="0.1" min="0" max="50" value={editingCountry.transfer_fee_percentage}
+                      onChange={(e) => setEditingCountry({...editingCountry, transfer_fee_percentage: e.target.value})}
+                      className="rounded-xl mt-1" />
+                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Percentage of original ticket price</p>
                   </div>
                 </div>
               </div>

@@ -18,7 +18,7 @@ export const getCountryFees = async () => {
     .select(`
       code, default_currency, 
       service_fee_percentage, service_fee_fixed_per_ticket, service_fee_cap,
-      donation_fee_percentage,
+      donation_fee_percentage, transfer_fee_percentage,
       processing_fee_fixed_per_order,
       stripe_processing_fee_pct, stripe_processing_fee_fixed,
       paystack_processing_fee_pct, paystack_processing_fee_fixed,
@@ -43,6 +43,8 @@ export const getCountryFees = async () => {
         serviceFeeCap: country.service_fee_cap ? parseFloat(country.service_fee_cap) : null,
         // Donation fees (for free events)
         donationFeePercent: parseFloat(country.donation_fee_percentage || 5) / 100,
+        // Transfer fees (for ticket transfers)
+        transferFeePercent: parseFloat(country.transfer_fee_percentage || 10) / 100,
         // Processing fees (pass-through)
         processingFeeFixedPerOrder: parseFloat(country.processing_fee_fixed_per_order || 0),
         stripeProcessingPercent: parseFloat(country.stripe_processing_fee_pct || 2.9) / 100,
@@ -76,6 +78,7 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 200,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 100,
     stripeProcessingPercent: 0.029,
     stripeProcessingFixed: 0.30,
@@ -92,6 +95,7 @@ export const DEFAULT_FEES = {
   serviceFeeFixedPerTicket: 0,
   serviceFeeCap: null,
   donationFeePercent: 0.05,
+  transferFeePercent: 0.10,
   processingFeeFixedPerOrder: 0,
   stripeProcessingPercent: 0.029,
   stripeProcessingFixed: 0.30,
@@ -212,4 +216,32 @@ export const calculateDonationFee = (donationAmount, fees) => {
 export const getDonationFeePercent = async (currencyCode = 'NGN') => {
   const fees = await getFeesByCurrency(currencyCode);
   return fees?.donationFeePercent ?? 0.05;
+};
+
+/**
+ * Calculate platform fee for ticket transfers
+ * @param {number} ticketPrice - The original ticket price
+ * @param {object} fees - Fee config from getFeesByCurrency
+ * @returns {object} { transferFee, netAmount, feePercent }
+ */
+export const calculateTransferFee = (ticketPrice, fees) => {
+  const feePercent = fees?.transferFeePercent ?? 0.10; // Default 10%
+  const transferFee = Math.round(ticketPrice * feePercent * 100) / 100;
+  const netAmount = Math.round((ticketPrice - transferFee) * 100) / 100;
+  
+  return {
+    transferFee,
+    netAmount,
+    feePercent: Math.round(feePercent * 100) // Return as percentage (e.g., 10)
+  };
+};
+
+/**
+ * Get transfer fee percentage for a currency
+ * @param {string} currencyCode - Currency code (e.g., 'NGN')
+ * @returns {Promise<number>} Fee percentage as decimal (e.g., 0.10 for 10%)
+ */
+export const getTransferFeePercent = async (currencyCode = 'NGN') => {
+  const fees = await getFeesByCurrency(currencyCode);
+  return fees?.transferFeePercent ?? 0.10;
 };
