@@ -136,17 +136,31 @@ export function VenueManagement() {
   }
 
   const deleteVenue = async (venueId) => {
-    if (!confirm('Are you sure you want to delete this venue? This will also delete all associated layouts.')) {
+    if (!window.confirm('Are you sure you want to delete this venue? This will also delete all associated layouts.')) {
       return
     }
 
     try {
+      // First delete associated layouts
+      await supabase
+        .from('venue_layouts')
+        .delete()
+        .eq('venue_id', venueId)
+
+      // Then delete the venue
       const { error } = await supabase
         .from('venues')
         .delete()
         .eq('id', venueId)
 
-      if (error) throw error
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          // Table doesn't exist, just remove from local state
+          setVenues(prev => prev.filter(v => v.id !== venueId))
+          return
+        }
+        throw error
+      }
 
       setVenues(prev => prev.filter(v => v.id !== venueId))
     } catch (error) {
