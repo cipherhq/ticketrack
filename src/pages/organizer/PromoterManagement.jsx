@@ -210,26 +210,36 @@ export function PromoterManagement() {
 
       // Send invitation email to the promoter using proper email service
       const selectedEvent = events.find(e => e.id === inviteForm.eventId);
+      const emailData = {
+        organizerName: organizer.business_name || organizer.name,
+        eventTitle: selectedEvent?.title || 'All Events',
+        commissionType: inviteForm.commissionType,
+        commissionValue: inviteForm.commissionValue,
+        promoCode: promoCode,
+        isNewUser: !existingUser,
+        appUrl: window.location.origin,
+        currency: selectedEvent?.currency || 'NGN',
+        eventId: selectedEvent?.id
+      };
+      
+      console.log('📧 Sending promoter invite email:', {
+        to: inviteForm.email.toLowerCase().trim(),
+        data: emailData,
+        organizerId: organizer.id
+      });
+      
       const emailResult = await sendPromoterInviteEmail(
         inviteForm.email.toLowerCase().trim(),
-        {
-          organizerName: organizer.business_name || organizer.name,
-          eventTitle: selectedEvent?.title || 'All Events',
-          commissionType: inviteForm.commissionType,
-          commissionValue: inviteForm.commissionValue,
-          promoCode: promoCode,
-          isNewUser: !existingUser,
-          appUrl: window.location.origin,
-          currency: selectedEvent?.currency || 'NGN',
-          eventId: selectedEvent?.id
-        },
+        emailData,
         organizer.id
       );
+      
+      console.log('📧 Email result:', emailResult);
 
       if (emailResult?.success) {
         alert(`✅ Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}`);
       } else {
-        console.error('Email failed:', emailResult?.error);
+        console.error('Email failed:', emailResult);
         alert(`⚠️ Promoter added but email may not have been sent.\n\nPromo Code: ${promoCode}\n\nError: ${emailResult?.error || 'Unknown'}\n\nPlease share the code manually or try resending.`);
       }
 
