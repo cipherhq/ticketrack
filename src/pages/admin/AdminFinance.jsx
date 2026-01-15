@@ -15,8 +15,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrency, currencies } from '@/config/currencies';
 import { useAdmin } from '@/contexts/AdminContext';
+
+// Country code to currency mapping
+const COUNTRY_CURRENCIES = {
+  'NG': 'NGN',
+  'GB': 'GBP',
+  'US': 'USD',
+  'KE': 'KES',
+  'GH': 'GHS',
+  'ZA': 'ZAR',
+};
+
+// Country names for display
+const COUNTRY_NAMES = {
+  'NG': 'Nigeria',
+  'GB': 'United Kingdom',
+  'US': 'United States',
+  'KE': 'Kenya',
+  'GH': 'Ghana',
+  'ZA': 'South Africa',
+};
 
 // Sidebar navigation structure
 const financeNavItems = [
@@ -74,18 +94,23 @@ export function AdminFinance() {
   const [affiliatePayouts, setAffiliatePayouts] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
   const [platformStats, setPlatformStats] = useState({ 
-    totalRevenue: 0, totalPaidOut: 0, pendingPayouts: 0, 
-    revenueByMonth: [], revenueByCountry: [], revenueByCategory: [] 
+    revenueByCurrency: {},  // { NGN: 5000, GBP: 200, USD: 300 }
+    paidOutByCurrency: {},
+    pendingByCurrency: {},
+    revenueByMonth: [],     // [{ month: 'Jan', byCurrency: { NGN: 1000, GBP: 50 } }]
+    revenueByCountry: [],   // [{ country: 'NG', countryName: 'Nigeria', currency: 'NGN', revenue: 5000 }]
+    revenueByCategory: []   // [{ category: 'Music', byCurrency: { NGN: 3000, GBP: 100 } }]
   });
   const [expandedEvents, setExpandedEvents] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
+  const [currencyFilter, setCurrencyFilter] = useState('all'); // 'all' or specific currency code
   const [paymentDialog, setPaymentDialog] = useState({ open: false, type: null, recipient: null, event: null });
   const [transactionRef, setTransactionRef] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => { loadData(); }, [activeSection, statusFilter]);
+  useEffect(() => { loadData(); }, [activeSection, statusFilter, currencyFilter]);
 
   const toggleGroup = (groupId) => {
     setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
@@ -115,6 +140,11 @@ export function AdminFinance() {
     let filteredEvents = events || [];
     if (statusFilter === 'pending') filteredEvents = filteredEvents.filter(e => e.payout_status !== 'paid');
     else if (statusFilter === 'paid') filteredEvents = filteredEvents.filter(e => e.payout_status === 'paid');
+    
+    // Apply currency filter
+    if (currencyFilter !== 'all') {
+      filteredEvents = filteredEvents.filter(e => e.currency === currencyFilter);
+    }
 
     const eventsWithPayouts = await Promise.all(filteredEvents.map(async (event) => {
       const { data: promoterSales } = await supabase.from('promoter_sales').select(`
@@ -154,20 +184,34 @@ export function AdminFinance() {
     const { data: earnings, error } = await supabase.from('referral_earnings').select(`
       id, commission_amount, status, currency, created_at, event_id,
       profiles!referral_earnings_user_id_fkey ( id, first_name, last_name, email, referral_code ),
-      event:event_id (id, title, end_date)
+      event:event_id (id, title, end_date, currency)
     `).order('created_at', { ascending: false });
 
     if (error) throw error;
 
     const now = new Date();
-    const completedEarnings = earnings?.filter(e => e.event?.end_date && new Date(e.event.end_date) < now) || [];
+    let completedEarnings = earnings?.filter(e => e.event?.end_date && new Date(e.event.end_date) < now) || [];
+    
+    // Apply currency filter
+    if (currencyFilter !== 'all') {
+      completedEarnings = completedEarnings.filter(e => (e.currency || e.event?.currency) === currencyFilter);
+    }
 
     const affiliateMap = {};
     completedEarnings.forEach(earning => {
       const affiliateId = earning.profiles?.id;
       if (!affiliateId) return;
+      const earnCurrency = earning.currency || earning.event?.currency || 'NGN';
+      
       if (!affiliateMap[affiliateId]) {
-        affiliateMap[affiliateId] = { affiliate: earning.profiles, earnings: [], totalEarned: 0, totalPending: 0, totalPaid: 0, currency: earning.currency || 'NGN' };
+        affiliateMap[affiliateId] = { 
+          affiliate: earning.profiles, 
+          earnings: [], 
+          totalEarned: 0, 
+          totalPending: 0, 
+          totalPaid: 0, 
+          currency: earnCurrency 
+        };
       }
       affiliateMap[affiliateId].earnings.push(earning);
       affiliateMap[affiliateId].totalEarned += parseFloat(earning.commission_amount || 0);
@@ -192,50 +236,110 @@ export function AdminFinance() {
       supabase.from('referral_earnings').select('*, profiles!referral_earnings_user_id_fkey(first_name, last_name, email)').eq('status', 'paid').order('paid_at', { ascending: false }).limit(100)
     ]);
 
-    const history = [
+    let history = [
       ...(organizerPayouts.data || []).map(p => ({ ...p, type: 'organizer', recipientName: p.organizers?.business_name, recipientEmail: p.organizers?.email, paidAt: p.processed_at })),
       ...(promoterPayouts.data || []).map(p => ({ ...p, type: 'promoter', recipientName: p.promoters?.full_name, recipientEmail: p.promoters?.email, paidAt: p.completed_at || p.created_at })),
       ...(affiliateEarnings.data || []).map(p => ({ ...p, type: 'affiliate', recipientName: `${p.profiles?.first_name || ''} ${p.profiles?.last_name || ''}`.trim(), recipientEmail: p.profiles?.email, amount: p.commission_amount, paidAt: p.paid_at }))
     ].sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt));
 
+    // Apply currency filter
+    if (currencyFilter !== 'all') {
+      history = history.filter(p => p.currency === currencyFilter);
+    }
+
     setPayoutHistory(history);
   };
 
   const loadPlatformRevenue = async () => {
-    const { data: orders } = await supabase.from('orders').select('platform_fee, created_at, currency, events(category, country_code)').eq('status', 'completed');
-    const totalRevenue = orders?.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0) || 0;
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('platform_fee, created_at, currency, events(category, country_code)')
+      .eq('status', 'completed');
+    
+    // Calculate revenue by currency
+    const revenueByCurrency = {};
+    orders?.forEach(o => {
+      const currency = o.currency || 'NGN';
+      revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + parseFloat(o.platform_fee || 0);
+    });
 
-    const { data: payouts } = await supabase.from('payouts').select('net_amount').eq('status', 'completed');
-    const totalPaidOut = payouts?.reduce((sum, p) => sum + parseFloat(p.net_amount || 0), 0) || 0;
+    // Calculate paid out by currency
+    const { data: payouts } = await supabase.from('payouts').select('net_amount, currency').eq('status', 'completed');
+    const paidOutByCurrency = {};
+    payouts?.forEach(p => {
+      const currency = p.currency || 'NGN';
+      paidOutByCurrency[currency] = (paidOutByCurrency[currency] || 0) + parseFloat(p.net_amount || 0);
+    });
 
-    const { data: pendingPayouts } = await supabase.from('payouts').select('net_amount').in('status', ['pending', 'processing']);
-    const pendingAmount = pendingPayouts?.reduce((sum, p) => sum + parseFloat(p.net_amount || 0), 0) || 0;
+    // Calculate pending by currency
+    const { data: pendingPayouts } = await supabase.from('payouts').select('net_amount, currency').in('status', ['pending', 'processing']);
+    const pendingByCurrency = {};
+    pendingPayouts?.forEach(p => {
+      const currency = p.currency || 'NGN';
+      pendingByCurrency[currency] = (pendingByCurrency[currency] || 0) + parseFloat(p.net_amount || 0);
+    });
 
+    // Revenue by month (grouped by currency)
     const revenueByMonth = [];
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-      const monthOrders = orders?.filter(o => { const d = new Date(o.created_at); return d >= monthStart && d <= monthEnd; }) || [];
-      revenueByMonth.push({ month: monthStart.toLocaleString('default', { month: 'short' }), revenue: monthOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0) });
+      const monthOrders = orders?.filter(o => { 
+        const d = new Date(o.created_at); 
+        return d >= monthStart && d <= monthEnd; 
+      }) || [];
+      
+      const byCurrency = {};
+      monthOrders.forEach(o => {
+        const currency = o.currency || 'NGN';
+        byCurrency[currency] = (byCurrency[currency] || 0) + parseFloat(o.platform_fee || 0);
+      });
+      
+      revenueByMonth.push({ 
+        month: monthStart.toLocaleString('default', { month: 'short' }), 
+        byCurrency,
+        total: monthOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0)
+      });
     }
 
+    // Revenue by country (each country in its LOCAL currency)
     const countryMap = {};
     orders?.forEach(o => {
-      const country = o.events?.country_code || 'Unknown';
-      countryMap[country] = (countryMap[country] || 0) + parseFloat(o.platform_fee || 0);
+      const countryCode = o.events?.country_code || 'Unknown';
+      const currency = COUNTRY_CURRENCIES[countryCode] || o.currency || 'NGN';
+      
+      if (!countryMap[countryCode]) {
+        countryMap[countryCode] = {
+          country: countryCode,
+          countryName: COUNTRY_NAMES[countryCode] || countryCode,
+          currency: currency,
+          revenue: 0
+        };
+      }
+      countryMap[countryCode].revenue += parseFloat(o.platform_fee || 0);
     });
-    const revenueByCountry = Object.entries(countryMap).map(([country, revenue]) => ({ country, revenue })).sort((a, b) => b.revenue - a.revenue);
+    const revenueByCountry = Object.values(countryMap).sort((a, b) => b.revenue - a.revenue);
 
+    // Revenue by category (grouped by currency)
     const categoryMap = {};
     orders?.forEach(o => {
       const category = o.events?.category || 'Other';
-      categoryMap[category] = (categoryMap[category] || 0) + parseFloat(o.platform_fee || 0);
+      const currency = o.currency || 'NGN';
+      
+      if (!categoryMap[category]) {
+        categoryMap[category] = { category, byCurrency: {} };
+      }
+      categoryMap[category].byCurrency[currency] = (categoryMap[category].byCurrency[currency] || 0) + parseFloat(o.platform_fee || 0);
     });
-    const revenueByCategory = Object.entries(categoryMap).map(([category, revenue]) => ({ category, revenue })).sort((a, b) => b.revenue - a.revenue);
+    const revenueByCategory = Object.values(categoryMap).sort((a, b) => {
+      const totalA = Object.values(a.byCurrency).reduce((s, v) => s + v, 0);
+      const totalB = Object.values(b.byCurrency).reduce((s, v) => s + v, 0);
+      return totalB - totalA;
+    });
 
-    setPlatformStats({ totalRevenue, totalPaidOut, pendingPayouts: pendingAmount, revenueByMonth, revenueByCountry, revenueByCategory });
+    setPlatformStats({ revenueByCurrency, paidOutByCurrency, pendingByCurrency, revenueByMonth, revenueByCountry, revenueByCategory });
   };
 
   const toggleEventExpanded = (eventId) => { setExpandedEvents(prev => ({ ...prev, [eventId]: !prev[eventId] })); };
@@ -255,7 +359,7 @@ export function AdminFinance() {
           processed_at: new Date().toISOString(), notes: paymentNotes
         });
         await supabase.from('events').update({ payout_status: 'paid' }).eq('id', event.id);
-        await logAdminAction('organizer_payout', 'event', event.id, { amount: event.organizerNet });
+        await logAdminAction('organizer_payout', 'event', event.id, { amount: event.organizerNet, currency: event.currency });
 
       } else if (type === 'promoter') {
         await supabase.from('promoter_payouts').insert({
@@ -266,12 +370,12 @@ export function AdminFinance() {
           status: 'completed', completed_at: new Date().toISOString(), transaction_reference: transactionRef, admin_notes: paymentNotes
         });
         await supabase.from('promoter_sales').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('event_id', event.id).eq('promoter_id', recipient.promoter.id);
-        await logAdminAction('promoter_payout', 'promoter', recipient.promoter.id, { amount: recipient.totalCommission });
+        await logAdminAction('promoter_payout', 'promoter', recipient.promoter.id, { amount: recipient.totalCommission, currency: event.currency });
 
       } else if (type === 'affiliate') {
         const earningIds = recipient.earnings.filter(e => e.status === 'available' || e.status === 'pending').map(e => e.id);
         await supabase.from('referral_earnings').update({ status: 'paid', paid_at: new Date().toISOString(), transaction_reference: transactionRef }).in('id', earningIds);
-        await logAdminAction('affiliate_payout', 'profile', recipient.affiliate.id, { amount: recipient.totalPending });
+        await logAdminAction('affiliate_payout', 'profile', recipient.affiliate.id, { amount: recipient.totalPending, currency: recipient.currency });
       }
 
       setPaymentDialog({ open: false, type: null, recipient: null, event: null });
@@ -318,13 +422,25 @@ export function AdminFinance() {
     }
   };
 
+  // Get currency badge color
+  const getCurrencyColor = (currency) => {
+    const colors = {
+      'NGN': 'bg-green-100 text-green-800',
+      'GBP': 'bg-purple-100 text-purple-800',
+      'USD': 'bg-blue-100 text-blue-800',
+      'KES': 'bg-orange-100 text-orange-800',
+      'GHS': 'bg-yellow-100 text-yellow-800',
+      'ZAR': 'bg-red-100 text-red-800',
+    };
+    return colors[currency] || 'bg-gray-100 text-gray-800';
+  };
+
   const filteredEvents = completedEvents.filter(event => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return event.title?.toLowerCase().includes(query) || event.organizers?.business_name?.toLowerCase().includes(query);
   });
 
-  // Get current section title
   const getCurrentTitle = () => {
     for (const group of financeNavItems) {
       const found = group.subItems.find(item => item.id === activeSection);
@@ -332,6 +448,24 @@ export function AdminFinance() {
     }
     return 'Finance';
   };
+
+  // Currency filter dropdown
+  const renderCurrencyFilter = () => (
+    <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
+      <SelectTrigger className="w-full md:w-40 rounded-xl">
+        <Globe className="w-4 h-4 mr-2" />
+        <SelectValue placeholder="Currency" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Currencies</SelectItem>
+        {Object.entries(currencies).map(([code, curr]) => (
+          <SelectItem key={code} value={code}>
+            {curr.symbol} {code}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 
   // ============ RENDER CONTENT SECTIONS ============
 
@@ -352,6 +486,7 @@ export function AdminFinance() {
             <SelectItem value="paid">Paid</SelectItem>
           </SelectContent>
         </Select>
+        {renderCurrencyFilter()}
       </div>
 
       {loading ? (
@@ -381,6 +516,7 @@ export function AdminFinance() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
+                  <Badge className={getCurrencyColor(event.currency)}>{event.currency}</Badge>
                   <div className="text-right">
                     <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(event.totalSales, event.currency)}</p>
                     <p className="text-sm text-[#0F0F0F]/60">Total Sales</p>
@@ -504,6 +640,7 @@ export function AdminFinance() {
             <SelectItem value="paid">Fully Paid</SelectItem>
           </SelectContent>
         </Select>
+        {renderCurrencyFilter()}
       </div>
 
       {loading ? (
@@ -528,7 +665,10 @@ export function AdminFinance() {
                     <div>
                       <p className="font-semibold text-[#0F0F0F]">{affiliate.affiliate?.first_name} {affiliate.affiliate?.last_name}</p>
                       <p className="text-sm text-[#0F0F0F]/60">{affiliate.affiliate?.email}</p>
-                      <p className="text-xs text-[#2969FF]">Code: {affiliate.affiliate?.referral_code}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-[#2969FF]">Code: {affiliate.affiliate?.referral_code}</p>
+                        <Badge className={getCurrencyColor(affiliate.currency)}>{affiliate.currency}</Badge>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-6 flex-wrap">
@@ -561,6 +701,10 @@ export function AdminFinance() {
 
   const renderPayoutHistory = () => (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        {renderCurrencyFilter()}
+      </div>
+      
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : payoutHistory.length === 0 ? (
@@ -584,8 +728,9 @@ export function AdminFinance() {
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
+                    <Badge className={getCurrencyColor(payout.currency)}>{payout.currency || 'NGN'}</Badge>
                     <div className="text-right">
-                      <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.amount || payout.net_amount, payout.currency || 'NGN')}</p>
+                      <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.amount || payout.net_amount, payout.currency)}</p>
                       <p className="text-xs text-[#0F0F0F]/40">{payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}</p>
                     </div>
                     <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>
@@ -600,63 +745,111 @@ export function AdminFinance() {
   );
 
   const renderRevenueOverview = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Revenue Summary Cards - By Currency */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Platform Revenue</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(platformStats.totalRevenue, 'NGN')}</p>
               </div>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(platformStats.revenueByCurrency || {}).length === 0 ? (
+                <p className="text-[#0F0F0F]/40 text-sm">No revenue yet</p>
+              ) : (
+                Object.entries(platformStats.revenueByCurrency).map(([currency, amount]) => (
+                  <div key={currency} className="flex items-center justify-between">
+                    <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
+                    <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
+        
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Paid Out</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(platformStats.totalPaidOut, 'NGN')}</p>
               </div>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(platformStats.paidOutByCurrency || {}).length === 0 ? (
+                <p className="text-[#0F0F0F]/40 text-sm">No payouts yet</p>
+              ) : (
+                Object.entries(platformStats.paidOutByCurrency).map(([currency, amount]) => (
+                  <div key={currency} className="flex items-center justify-between">
+                    <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
+                    <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
+        
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(platformStats.pendingPayouts, 'NGN')}</p>
               </div>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(platformStats.pendingByCurrency || {}).length === 0 ? (
+                <p className="text-[#0F0F0F]/40 text-sm">No pending payouts</p>
+              ) : (
+                Object.entries(platformStats.pendingByCurrency).map(([currency, amount]) => (
+                  <div key={currency} className="flex items-center justify-between">
+                    <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
+                    <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Monthly Revenue Chart */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
-        <CardHeader><CardTitle>Monthly Revenue (Last 6 Months)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Monthly Revenue (Last 6 Months)</CardTitle>
+          <CardDescription>Platform fees collected by month</CardDescription>
+        </CardHeader>
         <CardContent>
-          <div className="flex items-end justify-between h-48 gap-4">
+          <div className="flex items-end justify-between h-56 gap-4">
             {platformStats.revenueByMonth.map((month, idx) => {
-              const maxRevenue = Math.max(...platformStats.revenueByMonth.map(m => m.revenue), 1);
-              const height = (month.revenue / maxRevenue) * 100;
+              const maxTotal = Math.max(...platformStats.revenueByMonth.map(m => m.total), 1);
+              const height = (month.total / maxTotal) * 100;
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full bg-[#F4F6FA] rounded-t-lg relative" style={{ height: '160px' }}>
-                    <div className="absolute bottom-0 w-full bg-[#2969FF] rounded-t-lg transition-all" style={{ height: `${Math.max(height, 5)}%` }} />
+                  <div className="w-full bg-[#F4F6FA] rounded-t-lg relative" style={{ height: '180px' }}>
+                    <div className="absolute bottom-0 w-full bg-gradient-to-t from-[#2969FF] to-[#2969FF]/70 rounded-t-lg transition-all" 
+                         style={{ height: `${Math.max(height, 5)}%` }} />
                   </div>
-                  <p className="text-xs text-[#0F0F0F]/60">{month.month}</p>
-                  <p className="text-xs font-medium text-[#0F0F0F]">{formatPrice(month.revenue, 'NGN')}</p>
+                  <p className="text-xs font-medium text-[#0F0F0F]">{month.month}</p>
+                  <div className="text-center">
+                    {Object.entries(month.byCurrency || {}).slice(0, 2).map(([curr, amt]) => (
+                      <p key={curr} className="text-xs text-[#0F0F0F]/60">{formatPrice(amt, curr)}</p>
+                    ))}
+                    {Object.keys(month.byCurrency || {}).length > 2 && (
+                      <p className="text-xs text-[#0F0F0F]/40">+{Object.keys(month.byCurrency).length - 2} more</p>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -674,6 +867,7 @@ export function AdminFinance() {
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Globe className="w-5 h-5" />Revenue by Country</CardTitle>
+            <CardDescription>Each country shown in its local currency</CardDescription>
           </CardHeader>
           <CardContent>
             {platformStats.revenueByCountry.length === 0 ? (
@@ -681,14 +875,23 @@ export function AdminFinance() {
             ) : (
               <div className="space-y-3">
                 {platformStats.revenueByCountry.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#2969FF]/10 flex items-center justify-center font-semibold text-[#2969FF]">
-                        {item.country?.slice(0, 2) || '??'}
+                  <div key={idx} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl hover:bg-[#F4F6FA]/70 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center font-bold text-lg shadow-sm">
+                        {item.country === 'NG' && '🇳🇬'}
+                        {item.country === 'GB' && '🇬🇧'}
+                        {item.country === 'US' && '🇺🇸'}
+                        {item.country === 'KE' && '🇰🇪'}
+                        {item.country === 'GH' && '🇬🇭'}
+                        {item.country === 'ZA' && '🇿🇦'}
+                        {!['NG', 'GB', 'US', 'KE', 'GH', 'ZA'].includes(item.country) && '🌍'}
                       </div>
-                      <p className="font-medium text-[#0F0F0F]">{item.country || 'Unknown'}</p>
+                      <div>
+                        <p className="font-semibold text-[#0F0F0F]">{item.countryName}</p>
+                        <Badge className={getCurrencyColor(item.currency)}>{item.currency}</Badge>
+                      </div>
                     </div>
-                    <p className="font-bold text-[#0F0F0F]">{formatPrice(item.revenue, 'NGN')}</p>
+                    <p className="text-xl font-bold text-[#0F0F0F]">{formatPrice(item.revenue, item.currency)}</p>
                   </div>
                 ))}
               </div>
@@ -707,16 +910,29 @@ export function AdminFinance() {
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><PieChart className="w-5 h-5" />Revenue by Category</CardTitle>
+            <CardDescription>Breakdown by event category with currency details</CardDescription>
           </CardHeader>
           <CardContent>
             {platformStats.revenueByCategory.length === 0 ? (
               <p className="text-center text-[#0F0F0F]/60 py-8">No data available</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {platformStats.revenueByCategory.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
-                    <p className="font-medium text-[#0F0F0F]">{item.category}</p>
-                    <p className="font-bold text-[#0F0F0F]">{formatPrice(item.revenue, 'NGN')}</p>
+                  <div key={idx} className="p-4 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="font-semibold text-[#0F0F0F] text-lg">{item.category}</p>
+                      <p className="text-sm text-[#0F0F0F]/60">
+                        {Object.keys(item.byCurrency).length} {Object.keys(item.byCurrency).length === 1 ? 'currency' : 'currencies'}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                      {Object.entries(item.byCurrency).map(([currency, amount]) => (
+                        <div key={currency} className="bg-white rounded-lg p-2 text-center shadow-sm">
+                          <Badge className={`${getCurrencyColor(currency)} mb-1`}>{currency}</Badge>
+                          <p className="font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -756,7 +972,6 @@ export function AdminFinance() {
     </div>
   );
 
-  // Render active section content
   const renderContent = () => {
     switch (activeSection) {
       case 'event-payouts': return renderEventPayouts();
@@ -787,7 +1002,6 @@ export function AdminFinance() {
         <nav className="p-2">
           {financeNavItems.map((group) => (
             <div key={group.id} className="mb-1">
-              {/* Group Header */}
               <button
                 onClick={() => toggleGroup(group.id)}
                 className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-[#0F0F0F] hover:bg-[#F4F6FA] rounded-lg transition-colors"
@@ -799,7 +1013,6 @@ export function AdminFinance() {
                 <ChevronRight className={`w-4 h-4 text-[#0F0F0F]/40 transition-transform ${expandedGroups[group.id] ? 'rotate-90' : ''}`} />
               </button>
               
-              {/* Sub Items */}
               {expandedGroups[group.id] && (
                 <div className="ml-4 mt-1 space-y-1">
                   {group.subItems.map((item) => (
@@ -826,7 +1039,6 @@ export function AdminFinance() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-6">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-[#0F0F0F]">{getCurrentTitle()}</h1>
@@ -837,7 +1049,6 @@ export function AdminFinance() {
             </Button>
           </div>
 
-          {/* Content */}
           {renderContent()}
         </div>
       </div>
@@ -865,7 +1076,7 @@ export function AdminFinance() {
                   <p className="font-bold text-[#0F0F0F]">
                     {paymentDialog.type === 'organizer' && formatPrice(paymentDialog.event?.organizerNet, paymentDialog.event?.currency)}
                     {paymentDialog.type === 'promoter' && formatPrice(paymentDialog.recipient?.totalCommission, paymentDialog.event?.currency)}
-                    {paymentDialog.type === 'affiliate' && formatPrice(paymentDialog.recipient?.totalPending, paymentDialog.recipient?.currency || 'NGN')}
+                    {paymentDialog.type === 'affiliate' && formatPrice(paymentDialog.recipient?.totalPending, paymentDialog.recipient?.currency)}
                   </p>
                 </div>
               </div>
