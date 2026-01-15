@@ -17,8 +17,8 @@ import { supabase } from '@/lib/supabase'
 // Apple Wallet pass template (for server-side generation)
 export const APPLE_PASS_TEMPLATE = {
   formatVersion: 1,
-  passTypeIdentifier: 'pass.com.ticketrack.event',
-  teamIdentifier: 'TEAM_ID', // Replace with actual Apple Team ID
+  passTypeIdentifier: 'pass.com.ticketrack.tickets',
+  teamIdentifier: '2968MARM74',
   organizationName: 'Ticketrack',
   description: 'Event Ticket',
   logoText: 'Ticketrack',

@@ -22,6 +22,9 @@ serve(async (req) => {
     // Send pre-payout reminders (24 hours before eligibility)
     await sendPrePayoutReminders(supabase);
 
+    // Process Paystack donation payouts (NGN, GHS)
+    await processPaystackDonationPayouts(supabase);
+
     // Intelligent payout scheduling based on event type
     const getPayoutDelayDays = async (eventType: string, eventSize: number): Promise<number> => {
       // Base delays by event type
@@ -523,5 +526,120 @@ async function sendPrePayoutReminders(supabase: any) {
     }
   } catch (error) {
     console.error("Error sending pre-payout reminders:", error);
+  }
+}
+
+// Process Paystack donation payouts for NGN and GHS organizers
+async function processPaystackDonationPayouts(supabase: any) {
+  console.log("Processing Paystack donation payouts...");
+
+  try {
+    // Get organizers with pending donation payouts (Paystack countries: NG, GH)
+    const { data: pendingDonations, error } = await supabase
+      .from("orders")
+      .select(`
+        event_id,
+        currency,
+        events!inner (
+          id,
+          title,
+          end_date,
+          organizer_id,
+          organizers!inner (
+            id,
+            business_name,
+            country_code,
+            bank_account_number,
+            bank_code,
+            kyc_verified,
+            kyc_status,
+            paystack_recipient_code,
+            user_id
+          )
+        )
+      `)
+      .eq("is_donation", true)
+      .eq("status", "completed")
+      .eq("payout_status", "pending")
+      .in("currency", ["NGN", "GHS"])
+      .not("total_amount", "eq", 0);
+
+    if (error) {
+      console.error("Error fetching pending donations:", error);
+      return;
+    }
+
+    if (!pendingDonations || pendingDonations.length === 0) {
+      console.log("No pending Paystack donation payouts");
+      return;
+    }
+
+    // Group by organizer
+    const organizerDonations = new Map<string, any[]>();
+    for (const donation of pendingDonations) {
+      const organizerId = donation.events.organizer_id;
+      if (!organizerDonations.has(organizerId)) {
+        organizerDonations.set(organizerId, []);
+      }
+      organizerDonations.get(organizerId)!.push(donation);
+    }
+
+    console.log(`Found ${organizerDonations.size} organizers with pending donation payouts`);
+
+    // Process each organizer's donations
+    for (const [organizerId, donations] of organizerDonations) {
+      const organizer = donations[0].events.organizers;
+
+      // Check if organizer has bank details
+      if (!organizer.bank_account_number || !organizer.bank_code) {
+        console.log(`Skipping ${organizer.business_name} - no bank details`);
+        continue;
+      }
+
+      // Check KYC status
+      const isKYCVerified = organizer.kyc_verified || organizer.kyc_status === "approved";
+      if (!isKYCVerified) {
+        console.log(`Skipping ${organizer.business_name} - KYC not verified`);
+
+        // Send KYC reminder
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", organizer.user_id)
+          .single();
+
+        if (profile?.email) {
+          await supabase.functions.invoke("send-email", {
+            body: {
+              type: "payout_blocked_kyc",
+              to: profile.email,
+              data: {
+                organizerName: organizer.business_name,
+                message: "You have pending donation payouts. Please complete KYC verification to receive your funds.",
+                appUrl: "https://ticketrack.com/organizer/kyc-verification",
+              },
+            },
+          });
+        }
+        continue;
+      }
+
+      // Trigger Paystack payout for this organizer
+      try {
+        await supabase.functions.invoke("trigger-paystack-payout", {
+          body: {
+            organizerId: organizerId,
+            isDonationPayout: true,
+            triggeredBy: "auto",
+          },
+        });
+
+        console.log(`Paystack donation payout triggered for ${organizer.business_name}`);
+      } catch (payoutErr) {
+        console.error(`Paystack payout error for ${organizer.business_name}:`, payoutErr);
+      }
+    }
+  } catch (error) {
+    console.error("Error processing Paystack donation payouts:", error);
   }
 }

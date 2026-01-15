@@ -18,11 +18,12 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrency, currencies } from '@/config/currencies';
 import { useAdmin } from '@/contexts/AdminContext';
 
-// Country code to currency mapping (4 active countries)
+// Country code to currency mapping (5 active countries)
 const COUNTRY_CURRENCIES = {
   'NG': 'NGN',
   'GB': 'GBP',
   'US': 'USD',
+  'CA': 'CAD',
   'GH': 'GHS',
 };
 
@@ -31,6 +32,7 @@ const COUNTRY_NAMES = {
   'NG': 'Nigeria',
   'GB': 'United Kingdom',
   'US': 'United States',
+  'CA': 'Canada',
   'GH': 'Ghana',
 };
 
@@ -418,12 +420,13 @@ export function AdminFinance() {
     }
   };
 
-  // Get currency badge color (4 active currencies)
+  // Get currency badge color (5 active currencies)
   const getCurrencyColor = (currency) => {
     const colors = {
       'NGN': 'bg-green-100 text-green-800',
       'GBP': 'bg-purple-100 text-purple-800',
       'USD': 'bg-blue-100 text-blue-800',
+      'CAD': 'bg-red-100 text-red-800',
       'GHS': 'bg-yellow-100 text-yellow-800',
     };
     return colors[currency] || 'bg-gray-100 text-gray-800';
@@ -875,8 +878,9 @@ export function AdminFinance() {
                         {item.country === 'NG' && '🇳🇬'}
                         {item.country === 'GB' && '🇬🇧'}
                         {item.country === 'US' && '🇺🇸'}
+                        {item.country === 'CA' && '🇨🇦'}
                         {item.country === 'GH' && '🇬🇭'}
-                        {!['NG', 'GB', 'US', 'GH'].includes(item.country) && '🌍'}
+                        {!['NG', 'GB', 'US', 'CA', 'GH'].includes(item.country) && '🌍'}
                       </div>
                       <div>
                         <p className="font-semibold text-[#0F0F0F]">{item.countryName}</p>

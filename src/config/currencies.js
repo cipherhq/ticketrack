@@ -25,6 +25,14 @@ export const currencies = {
     locale: 'en-US',
     paymentProvider: 'stripe',
   },
+  CAD: {
+    code: 'CAD',
+    symbol: 'C$',
+    name: 'Canadian Dollar',
+    country: 'Canada',
+    locale: 'en-CA',
+    paymentProvider: 'stripe',
+  },
   GHS: {
     code: 'GHS',
     symbol: 'GH₵',
