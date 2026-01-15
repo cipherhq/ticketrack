@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, Users, Calendar, TrendingUp, Plus, Eye, Download, Link2, ShoppingCart, Loader2, Zap, X } from 'lucide-react';
+import { DollarSign, Users, Calendar, TrendingUp, Plus, Eye, Download, Link2, ShoppingCart, Loader2, Zap, X, Heart, Ticket } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { useOrganizer } from '../../contexts/OrganizerContext';
@@ -15,6 +15,12 @@ export function OrganizerHome() {
   const [stats, setStats] = useState({ salesByCurrency: {}, feesByCurrency: {},
     totalAttendees: 0,
     totalEvents: 0,
+  });
+  const [freeEventStats, setFreeEventStats] = useState({
+    totalRSVPs: 0,
+    totalDonations: 0,
+    donationsByCurrency: {},
+    freeEvents: 0,
   });
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [promoterStats, setPromoterStats] = useState({
@@ -50,6 +56,7 @@ export function OrganizerHome() {
         loadStats(),
         loadUpcomingEvents(),
         loadPromoterData(),
+        loadFreeEventStats(),
       ]);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -161,6 +168,67 @@ export function OrganizerHome() {
     });
   };
 
+  const loadFreeEventStats = async () => {
+    try {
+      // Get free events for this organizer
+      const { data: freeEvents, error: eventsError } = await supabase
+        .from('events')
+        .select('id, currency')
+        .eq('organizer_id', organizer.id)
+        .eq('is_free', true);
+
+      if (eventsError) throw eventsError;
+
+      const freeEventIds = freeEvents?.map(e => e.id) || [];
+      const eventCurrencyMap = {};
+      freeEvents?.forEach(e => {
+        eventCurrencyMap[e.id] = e.currency || defaultCurrency;
+      });
+
+      let totalRSVPs = 0;
+      let totalDonations = 0;
+      const donationsByCurrency = {};
+
+      if (freeEventIds.length > 0) {
+        // Get RSVPs (tickets for free events)
+        const { data: rsvps, error: rsvpError } = await supabase
+          .from('tickets')
+          .select('id, quantity, event_id')
+          .in('event_id', freeEventIds);
+
+        if (!rsvpError && rsvps) {
+          totalRSVPs = rsvps.reduce((sum, t) => sum + (t.quantity || 1), 0);
+        }
+
+        // Get donations (orders with is_donation = true)
+        const { data: donations, error: donationsError } = await supabase
+          .from('orders')
+          .select('id, total_amount, currency, event_id')
+          .in('event_id', freeEventIds)
+          .eq('is_donation', true)
+          .eq('status', 'completed');
+
+        if (!donationsError && donations) {
+          totalDonations = donations.length;
+          donations.forEach(d => {
+            const currency = d.currency || eventCurrencyMap[d.event_id] || defaultCurrency;
+            if (!donationsByCurrency[currency]) donationsByCurrency[currency] = 0;
+            donationsByCurrency[currency] += parseFloat(d.total_amount) || 0;
+          });
+        }
+      }
+
+      setFreeEventStats({
+        totalRSVPs,
+        totalDonations,
+        donationsByCurrency,
+        freeEvents: freeEvents?.length || 0,
+      });
+    } catch (error) {
+      console.error('Error loading free event stats:', error);
+    }
+  };
+
   const loadUpcomingEvents = async () => {
     const { data: events, error } = await supabase
       .from('events')
@@ -170,6 +238,7 @@ export function OrganizerHome() {
         currency,
         start_date,
         total_capacity,
+        is_free,
         ticket_types (
           id,
           quantity_available,
@@ -187,10 +256,44 @@ export function OrganizerHome() {
       return;
     }
 
+    // Get RSVP counts for free events
+    const freeEventIds = events?.filter(e => e.is_free).map(e => e.id) || [];
+    let rsvpCounts = {};
+    let donationAmounts = {};
+
+    if (freeEventIds.length > 0) {
+      // Get RSVP counts
+      const { data: rsvps } = await supabase
+        .from('tickets')
+        .select('event_id, quantity')
+        .in('event_id', freeEventIds);
+      
+      rsvps?.forEach(r => {
+        rsvpCounts[r.event_id] = (rsvpCounts[r.event_id] || 0) + (r.quantity || 1);
+      });
+
+      // Get donation amounts
+      const { data: donations } = await supabase
+        .from('orders')
+        .select('event_id, total_amount')
+        .in('event_id', freeEventIds)
+        .eq('is_donation', true)
+        .eq('status', 'completed');
+      
+      donations?.forEach(d => {
+        donationAmounts[d.event_id] = (donationAmounts[d.event_id] || 0) + parseFloat(d.total_amount || 0);
+      });
+    }
+
     const eventsWithStats = events?.map(event => {
-      const ticketsSold = event.ticket_types?.reduce((sum, t) => sum + (t.quantity_sold || 0), 0) || 0;
+      const isFree = event.is_free;
+      const ticketsSold = isFree 
+        ? (rsvpCounts[event.id] || 0)
+        : (event.ticket_types?.reduce((sum, t) => sum + (t.quantity_sold || 0), 0) || 0);
       const totalTickets = event.ticket_types?.reduce((sum, t) => sum + (t.quantity_available || 0), 0) || event.total_capacity || 100;
-      const revenue = event.ticket_types?.reduce((sum, t) => sum + ((t.quantity_sold || 0) * (t.price || 0)), 0) || 0;
+      const revenue = isFree
+        ? (donationAmounts[event.id] || 0)
+        : (event.ticket_types?.reduce((sum, t) => sum + ((t.quantity_sold || 0) * (t.price || 0)), 0) || 0);
 
       return {
         id: event.id,
@@ -204,6 +307,7 @@ export function OrganizerHome() {
         totalTickets,
         revenue,
         currency: event.currency || defaultCurrency,
+        isFree,
       };
     }) || [];
 
@@ -403,6 +507,55 @@ export function OrganizerHome() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Free Events Stats */}
+      {freeEventStats.freeEvents > 0 && (
+        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50">
+          <CardHeader>
+            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-green-600" />
+              Free Events Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-xl bg-white/80 border border-green-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-[#0F0F0F]/60">Free Events</span>
+                </div>
+                <p className="text-2xl font-semibold text-[#0F0F0F]">{freeEventStats.freeEvents}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/80 border border-green-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm text-[#0F0F0F]/60">Total RSVPs</span>
+                </div>
+                <p className="text-2xl font-semibold text-[#0F0F0F]">{freeEventStats.totalRSVPs.toLocaleString()}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/80 border border-green-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart className="w-4 h-4 text-pink-600" />
+                  <span className="text-sm text-[#0F0F0F]/60">Donations</span>
+                </div>
+                <p className="text-2xl font-semibold text-[#0F0F0F]">{freeEventStats.totalDonations}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/80 border border-green-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm text-[#0F0F0F]/60">Donation Amount</span>
+                </div>
+                <p className="text-xl font-semibold text-emerald-600">
+                  {Object.keys(freeEventStats.donationsByCurrency).length > 0 
+                    ? formatMultiCurrencyCompact(freeEventStats.donationsByCurrency)
+                    : formatPrice(0, defaultCurrency)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Actions */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardHeader>
@@ -466,10 +619,19 @@ export function OrganizerHome() {
                 <div
                   key={event.id}
                   onClick={() => navigate(`/organizer/events/${event.id}/edit`)}
-                  className="p-4 rounded-xl bg-[#F4F6FA] flex items-center justify-between cursor-pointer hover:bg-[#F4F6FA]/80 transition-colors"
+                  className={`p-4 rounded-xl flex items-center justify-between cursor-pointer transition-colors ${
+                    event.isFree 
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100' 
+                      : 'bg-[#F4F6FA] hover:bg-[#F4F6FA]/80'
+                  }`}
                 >
                   <div className="flex-1">
-                    <h4 className="font-medium text-[#0F0F0F] mb-2">{event.name}</h4>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-medium text-[#0F0F0F]">{event.name}</h4>
+                      {event.isFree && (
+                        <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Free</span>
+                      )}
+                    </div>
                     <div className="flex items-center space-x-6 text-sm text-[#0F0F0F]/60">
                       <div className="flex items-center space-x-2">
                         <Calendar className="w-4 h-4" />
@@ -478,21 +640,37 @@ export function OrganizerHome() {
                       <div className="flex items-center space-x-2">
                         <Users className="w-4 h-4" />
                         <span>
-                          {event.ticketsSold}/{event.totalTickets} sold
+                          {event.ticketsSold}/{event.totalTickets} {event.isFree ? 'RSVPs' : 'sold'}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[#2969FF] font-medium mb-1">{formatPrice(event.revenue, event.currency)}</p>
-                    <div className="w-24 h-2 bg-white rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#2969FF]"
-                        style={{
-                          width: `${Math.min((event.ticketsSold / event.totalTickets) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
+                    {event.isFree ? (
+                      event.revenue > 0 ? (
+                        <>
+                          <p className="text-emerald-600 font-medium mb-1 flex items-center justify-end gap-1">
+                            <Heart className="w-3 h-3" />
+                            {formatPrice(event.revenue, event.currency)}
+                          </p>
+                          <p className="text-xs text-[#0F0F0F]/50">in donations</p>
+                        </>
+                      ) : (
+                        <p className="text-[#0F0F0F]/40 text-sm">No donations yet</p>
+                      )
+                    ) : (
+                      <>
+                        <p className="text-[#2969FF] font-medium mb-1">{formatPrice(event.revenue, event.currency)}</p>
+                        <div className="w-24 h-2 bg-white rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#2969FF]"
+                            style={{
+                              width: `${Math.min((event.ticketsSold / event.totalTickets) * 100, 100)}%`,
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
