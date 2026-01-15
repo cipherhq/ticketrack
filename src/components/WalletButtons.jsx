@@ -50,12 +50,11 @@ export function WalletButtons({ ticket, event, size = 'default', className = '' 
         result = generateCalendarFile(ticket, event)
       }
 
-      if (result.fallback || platform === 'calendar') {
-        // If wallet not available, use calendar as fallback
-        if (result.fallback && platform !== 'calendar') {
-          generateCalendarFile(ticket, event)
-        }
+      if (platform === 'calendar') {
         setSuccess('calendar')
+      } else if (result.fallback) {
+        // Wallet not configured - show a helpful message but don't auto-fallback to calendar
+        setError(result.message || `${platform === 'apple' ? 'Apple' : 'Google'} Wallet coming soon! Use "Add to Calendar" for now.`)
       } else if (result.success) {
         setSuccess(platform)
       } else {
@@ -63,14 +62,14 @@ export function WalletButtons({ ticket, event, size = 'default', className = '' 
       }
     } catch (err) {
       console.error('Wallet error:', err)
-      setError(err.message || 'Something went wrong')
-      // Fallback to calendar
-      generateCalendarFile(ticket, event)
-      setSuccess('calendar')
+      setError(err.message || 'Something went wrong. Try "Add to Calendar" instead.')
     } finally {
       setLoading(null)
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000)
+      // Clear success/error message after 5 seconds
+      setTimeout(() => {
+        setSuccess(null)
+        setError(null)
+      }, 5000)
     }
   }
 
@@ -142,11 +141,13 @@ export function WalletButtons({ ticket, event, size = 'default', className = '' 
         {isSmall ? 'Calendar' : 'Add to Calendar'}
       </Button>
 
-      {/* Error message */}
+      {/* Error/Info message */}
       {error && (
-        <div className="w-full flex items-center gap-2 text-sm text-red-600 mt-1">
-          <AlertCircle className="w-4 h-4" />
-          {error}
+        <div className={`w-full flex items-center gap-2 text-sm mt-1 ${
+          error.includes('coming soon') ? 'text-amber-600' : 'text-red-600'
+        }`}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span className="text-xs">{error}</span>
         </div>
       )}
 
@@ -155,6 +156,18 @@ export function WalletButtons({ ticket, event, size = 'default', className = '' 
         <div className="w-full flex items-center gap-2 text-sm text-green-600 mt-1">
           <Check className="w-4 h-4" />
           Event added to your calendar!
+        </div>
+      )}
+      {success === 'apple' && (
+        <div className="w-full flex items-center gap-2 text-sm text-green-600 mt-1">
+          <Check className="w-4 h-4" />
+          Added to Apple Wallet!
+        </div>
+      )}
+      {success === 'google' && (
+        <div className="w-full flex items-center gap-2 text-sm text-green-600 mt-1">
+          <Check className="w-4 h-4" />
+          Added to Google Wallet!
         </div>
       )}
     </div>

@@ -179,7 +179,7 @@ export function AcceptInvitation() {
                     <span className="text-[#0F0F0F]/60">Commission</span>
                     <span className="font-semibold">
                       {promoterData.commission_value || promoterData.commission_rate}
-                      {promoterData.commission_type === 'percentage' ? '%' : ' NGN'}
+                      {promoterData.commission_type === 'percentage' ? '%' : ' per sale'}
                     </span>
                   </div>
                 </div>

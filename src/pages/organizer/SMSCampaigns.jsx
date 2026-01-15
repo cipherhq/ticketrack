@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Send, Users, Plus, CreditCard, AlertCircle, Loader2, CheckCircle, XCircle, RefreshCw, History } from 'lucide-react';
+import { Bell, Send, Users, Plus, CreditCard, AlertCircle, Loader2, CheckCircle, XCircle, RefreshCw, History, Eye, Shield, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -53,6 +53,8 @@ export function SMSCampaigns() {
     deliveryRate: 0,
     totalCampaigns: 0,
   });
+  const [showLogs, setShowLogs] = useState(false);
+  const [smsLogs, setSmsLogs] = useState([]);
 
   useEffect(() => {
     if (organizer?.id) {
@@ -68,6 +70,7 @@ export function SMSCampaigns() {
         loadEvents(),
         loadCampaigns(),
         loadAudienceCounts(),
+        loadSmsLogs(),
       ]);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -150,6 +153,23 @@ export function SMSCampaigns() {
       });
     } catch (error) {
       console.error('Error loading audience counts:', error);
+    }
+  };
+
+  const loadSmsLogs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sms_logs')
+        .select('*')
+        .eq('organizer_id', organizer.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (!error && data) {
+        setSmsLogs(data);
+      }
+    } catch (error) {
+      console.error('Error loading SMS logs:', error);
     }
   };
 
@@ -253,6 +273,10 @@ export function SMSCampaigns() {
             <CreditCard className="w-4 h-4 mr-2" />
             Buy Credits
           </Button>
+          <Button variant="outline" className="rounded-xl" onClick={() => setShowLogs(!showLogs)}>
+            <Eye className="w-4 h-4 mr-2" />
+            {showLogs ? 'Hide' : 'View'} Logs
+          </Button>
           <Button onClick={() => setShowCompose(!showCompose)} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
             <Plus className="w-4 h-4 mr-2" />
             New SMS Campaign
@@ -337,17 +361,35 @@ export function SMSCampaigns() {
             </div>
 
             <div className="space-y-2">
-              <Label>Audience</Label>
+              <Label>Target Audience</Label>
               <Select value={audience} onValueChange={setAudience}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="all_contacts">All Contacts ({audienceCounts.all_contacts.toLocaleString()})</SelectItem>
-                  <SelectItem value="event_attendees">Event Attendees ({audienceCounts.event_attendees.toLocaleString()})</SelectItem>
-                  <SelectItem value="followers">Followers Only ({audienceCounts.followers.toLocaleString()})</SelectItem>
+                  <SelectItem value="all_contacts">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      All Contacts ({audienceCounts.all_contacts.toLocaleString()})
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="event_attendees">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      Event Attendees ({audienceCounts.event_attendees.toLocaleString()})
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="followers">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Followers Only ({audienceCounts.followers.toLocaleString()})
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-[#0F0F0F]/50">
+                📱 Phone numbers are protected - only delivery counts are visible
+              </p>
             </div>
 
             {audience === 'event_attendees' && (
@@ -367,29 +409,77 @@ export function SMSCampaigns() {
             )}
 
             <div className="space-y-2">
-              <Label>Message</Label>
-              <Textarea placeholder="Type your SMS message here..." value={message} onChange={(e) => setMessage(e.target.value)} className="rounded-xl min-h-[120px]" maxLength={480} />
+              <Label>Message Content</Label>
+              <Textarea 
+                placeholder="Type your SMS message here... 
+Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at the venue. See you there! - Ticketrack" 
+                value={message} 
+                onChange={(e) => setMessage(e.target.value)} 
+                className="rounded-xl min-h-[120px]" 
+                maxLength={480} 
+              />
               <div className="flex justify-between text-sm text-[#0F0F0F]/60">
                 <span>{messageLength}/480 characters</span>
-                <span>{smsSegments} SMS ({smsSegments > 1 ? 'Long message' : 'Standard'})</span>
+                <span className={smsSegments > 1 ? 'text-orange-600 font-medium' : ''}>
+                  {smsSegments} SMS {smsSegments > 1 ? '(Long message - costs more)' : '(Standard)'}
+                </span>
+              </div>
+              <div className="text-xs text-[#0F0F0F]/50 space-y-1">
+                <p>💡 <strong>Tips for Nigerian SMS:</strong></p>
+                <p>• Keep messages under 160 characters to save costs</p>
+                <p>• Include your business name for trust</p>
+                <p>• Add "Reply STOP to opt out" for compliance</p>
               </div>
             </div>
 
             <div className="p-4 bg-[#F4F6FA] rounded-xl">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-3">
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Estimated Cost</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Based on selected audience</p>
+                  <p className="font-medium text-[#0F0F0F]">Campaign Cost</p>
+                  <p className="text-sm text-[#0F0F0F]/60">Nigerian SMS via Termii</p>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-semibold text-[#0F0F0F]">{creditsNeeded.toLocaleString()} credits</p>
                   <p className="text-sm text-[#0F0F0F]/60">{recipientCount.toLocaleString()} recipients × {smsSegments} SMS</p>
                 </div>
               </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="p-2 bg-white rounded-lg">
+                  <p className="text-[#0F0F0F]/60">Recipients</p>
+                  <p className="font-semibold">{recipientCount.toLocaleString()}</p>
+                </div>
+                <div className="p-2 bg-white rounded-lg">
+                  <p className="text-[#0F0F0F]/60">SMS Segments</p>
+                  <p className="font-semibold">{smsSegments}</p>
+                </div>
+                <div className="p-2 bg-white rounded-lg">
+                  <p className="text-[#0F0F0F]/60">Current Balance</p>
+                  <p className="font-semibold text-blue-600">{smsCredits.toLocaleString()}</p>
+                </div>
+                <div className="p-2 bg-white rounded-lg">
+                  <p className="text-[#0F0F0F]/60">After Campaign</p>
+                  <p className={`font-semibold ${hasEnoughCredits ? 'text-green-600' : 'text-red-600'}`}>
+                    {hasEnoughCredits ? (smsCredits - creditsNeeded).toLocaleString() : 'Insufficient'}
+                  </p>
+                </div>
+              </div>
+              
               {!hasEnoughCredits && creditsNeeded > 0 && (
-                <div className="mt-3 p-2 bg-red-50 rounded-lg flex items-center gap-2 text-red-700 text-sm">
-                  <XCircle className="w-4 h-4" />
-                  Insufficient credits. You need {(creditsNeeded - smsCredits).toLocaleString()} more.
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-700 text-sm font-medium mb-1">
+                    <XCircle className="w-4 h-4" />
+                    Insufficient Credits
+                  </div>
+                  <p className="text-red-600 text-sm">
+                    You need {(creditsNeeded - smsCredits).toLocaleString()} more credits. 
+                    <button 
+                      onClick={() => navigate('/organizer/sms/credits')} 
+                      className="underline ml-1 hover:text-red-800"
+                    >
+                      Buy credits now
+                    </button>
+                  </p>
                 </div>
               )}
             </div>
@@ -456,6 +546,70 @@ export function SMSCampaigns() {
           )}
         </CardContent>
       </Card>
+
+      {/* SMS Delivery Logs */}
+      {showLogs && (
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-[#0F0F0F] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-green-600" />
+                SMS Delivery Logs
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setShowLogs(false)} className="rounded-xl">
+                <XCircle className="w-4 h-4" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+              <div className="flex items-center gap-2 text-green-800">
+                <Shield className="w-4 h-4" />
+                <span className="text-sm font-medium">Privacy Protected</span>
+              </div>
+              <p className="text-xs text-green-700 mt-1">
+                Phone numbers are masked for privacy. Only the last 4 digits are visible.
+              </p>
+            </div>
+            
+            {smsLogs.length === 0 ? (
+              <div className="text-center py-8">
+                <Phone className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+                <p className="text-[#0F0F0F]/60">No SMS logs yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {smsLogs.map((log, index) => (
+                  <div key={index} className="p-3 rounded-xl bg-[#F4F6FA] border border-[#0F0F0F]/5">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm text-[#0F0F0F]/80">
+                          {log.masked_phone || '+234•••••••••'}
+                        </span>
+                        <span className="text-sm text-[#0F0F0F]/60">{log.recipient_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {log.status === 'delivered' ? (
+                          <Badge className="bg-green-100 text-green-700 text-xs">Delivered</Badge>
+                        ) : (
+                          <Badge className="bg-red-100 text-red-700 text-xs">Failed</Badge>
+                        )}
+                        <span className="text-xs text-[#0F0F0F]/40 capitalize">{log.provider}</span>
+                      </div>
+                    </div>
+                    {log.error_message && (
+                      <p className="text-xs text-red-600 mt-1">{log.error_message}</p>
+                    )}
+                    <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                      {new Date(log.created_at).toLocaleString('en-NG')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
         <DialogContent className="rounded-2xl">

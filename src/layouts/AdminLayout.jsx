@@ -21,7 +21,7 @@ import { AlertTriangle, FileText, ArrowRightLeft,
   Settings,
   Clock,
   Home,
-  FolderOpen, Receipt, ChevronDown,
+  FolderOpen, Receipt, ChevronDown, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -91,6 +91,8 @@ const navGroups = [
     id: 'system',
     label: 'System',
     items: [
+      { icon: Globe, label: 'Country Features', path: '/admin/country-features' },
+      { icon: Shield, label: 'User Access Control', path: '/admin/user-types' },
       { icon: Users, label: 'Roles & Permissions', path: '/admin/roles' },
       { icon: Clock, label: 'Waitlist', path: '/admin/waitlist', notificationKey: 'waitlist' },
       { icon: Settings, label: 'Settings', path: '/admin/settings' },

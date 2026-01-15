@@ -1,7 +1,7 @@
 import { formatPrice } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle, Heart, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -91,12 +91,61 @@ export function EventManagement() {
         }, {});
       }
 
+      // For free events, get RSVP counts directly from tickets table
+      const eventIds = eventsData?.map(e => e.id) || [];
+      let rsvpCounts = {};
+      let donationAmounts = {};
+      
+      if (eventIds.length > 0) {
+        // Get ticket counts directly from tickets table
+        const { data: tickets } = await supabase
+          .from('tickets')
+          .select('event_id, quantity')
+          .in('event_id', eventIds);
+        
+        tickets?.forEach(t => {
+          rsvpCounts[t.event_id] = (rsvpCounts[t.event_id] || 0) + (t.quantity || 1);
+        });
+
+        // Get donation amounts for free events
+        const freeEventIds = eventsData?.filter(e => e.is_free).map(e => e.id) || [];
+        if (freeEventIds.length > 0) {
+          const { data: donations } = await supabase
+            .from('orders')
+            .select('event_id, total_amount')
+            .in('event_id', freeEventIds)
+            .eq('is_donation', true)
+            .eq('status', 'completed');
+          
+          donations?.forEach(d => {
+            donationAmounts[d.event_id] = (donationAmounts[d.event_id] || 0) + parseFloat(d.total_amount || 0);
+          });
+        }
+      }
+
       const eventsWithStats = (eventsData || []).map(event => {
         const ticketTypes = event.ticket_types || [];
-        const totalTickets = ticketTypes.reduce((sum, t) => sum + (t.quantity_available || 0), 0);
-        const soldTickets = ticketTypes.reduce((sum, t) => sum + (t.quantity_sold || 0), 0);
-        const revenue = ticketTypes.reduce((sum, t) => sum + ((t.quantity_sold || 0) * (t.price || 0)), 0);
-        return { ...event, totalTickets, soldTickets, revenue, childEventCount: childCounts[event.id] || 0 };
+        const totalTickets = ticketTypes.reduce((sum, t) => sum + (t.quantity_available || 0), 0) || event.total_capacity || 100;
+        
+        // For free events, use direct ticket count; for paid events, use quantity_sold
+        const soldTickets = event.is_free 
+          ? (rsvpCounts[event.id] || 0)
+          : ticketTypes.reduce((sum, t) => sum + (t.quantity_sold || 0), 0);
+        
+        // For free events, show donation amount; for paid events, show ticket revenue
+        const revenue = event.is_free
+          ? (donationAmounts[event.id] || 0)
+          : ticketTypes.reduce((sum, t) => sum + ((t.quantity_sold || 0) * (t.price || 0)), 0);
+        
+        return { 
+          ...event, 
+          totalTickets, 
+          soldTickets, 
+          revenue, 
+          childEventCount: childCounts[event.id] || 0,
+          isFree: event.is_free,
+          donationAmount: donationAmounts[event.id] || 0
+        };
       });
 
       setEvents(eventsWithStats);
@@ -153,7 +202,7 @@ export function EventManagement() {
     return status === 'upcoming' || status === 'live' || status === 'draft' || status === 'scheduled';
   };
 
-  const canDeleteEvent = (event) => event.soldTickets === 0;
+  const canDeleteEvent = (event) => event.soldTickets === 0; // soldTickets now includes RSVPs for free events
 
   const canIssueTickets = (event) => {
     const status = getEventStatus(event);
@@ -405,7 +454,11 @@ export function EventManagement() {
                 const isDeletable = canDeleteEvent(event);
                 const canIssue = canIssueTickets(event);
                 return (
-                  <div key={event.id} className="p-4 rounded-xl bg-[#F4F6FA] hover:bg-[#F4F6FA]/80 transition-colors">
+                  <div key={event.id} className={`p-4 rounded-xl transition-colors ${
+                    event.isFree 
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100' 
+                      : 'bg-[#F4F6FA] hover:bg-[#F4F6FA]/80'
+                  }`}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex gap-4 flex-1">
                         {event.image_url && <img src={event.image_url} alt={event.title} className="w-20 h-20 rounded-lg object-cover hidden sm:block" />}
@@ -413,7 +466,13 @@ export function EventManagement() {
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h4 className="font-medium text-[#0F0F0F] truncate">{event.title}</h4>
                             {getStatusBadge(event)}
-                            {event.soldTickets > 0 && <Badge className="bg-amber-100 text-amber-700 flex items-center gap-1"><Lock className="w-3 h-3" />{event.soldTickets} sold</Badge>}
+                            {event.isFree && <Badge className="bg-green-100 text-green-700">Free</Badge>}
+                            {event.soldTickets > 0 && (
+                              <Badge className={`flex items-center gap-1 ${event.isFree ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                                {event.isFree ? <Users className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                                {event.soldTickets} {event.isFree ? 'RSVPs' : 'sold'}
+                              </Badge>
+                            )}
                             {event.is_recurring && <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1"><RefreshCw className="w-3 h-3" />Series ({event.childEventCount + 1} events)</Badge>}
                           </div>
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
@@ -421,8 +480,21 @@ export function EventManagement() {
                             {event.venue_name && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{event.venue_name}</span>}
                           </div>
                           <div className="flex items-center gap-4 mt-2 text-sm">
-                            <span className="text-[#0F0F0F]/60"><span className="font-medium text-[#0F0F0F]">{event.soldTickets}</span>/{event.totalTickets} sold</span>
-                            <span className="text-[#2969FF] font-medium">{formatPrice(event.revenue, event.currency)}</span>
+                            <span className="text-[#0F0F0F]/60">
+                              <span className="font-medium text-[#0F0F0F]">{event.soldTickets}</span>/{event.totalTickets} {event.isFree ? 'RSVPs' : 'sold'}
+                            </span>
+                            {event.isFree ? (
+                              event.donationAmount > 0 ? (
+                                <span className="text-emerald-600 font-medium flex items-center gap-1">
+                                  <Heart className="w-3 h-3" />
+                                  {formatPrice(event.donationAmount, event.currency)} donations
+                                </span>
+                              ) : (
+                                <span className="text-[#0F0F0F]/40">No donations yet</span>
+                              )
+                            ) : (
+                              <span className="text-[#2969FF] font-medium">{formatPrice(event.revenue, event.currency)}</span>
+                            )}
                           </div>
                         </div>
                       </div>

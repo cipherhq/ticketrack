@@ -24,12 +24,30 @@ function maskPhone(phone: string): string {
 
 function formatPhoneNumber(phone: string): string {
   if (!phone) return '';
-  let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  let cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
+  
+  // Handle Nigerian numbers specifically
   if (cleaned.startsWith('0')) {
-    cleaned = '234' + cleaned.substring(1);  // Default to Nigeria
+    cleaned = '234' + cleaned.substring(1);  // Convert 0xxx to 234xxx
+  } else if (cleaned.startsWith('+234')) {
+    cleaned = cleaned.substring(1);  // Remove + prefix
+  } else if (cleaned.startsWith('234') && cleaned.length === 13) {
+    // Already in correct format
   } else if (cleaned.startsWith('+')) {
     cleaned = cleaned.substring(1);
+  } else if (cleaned.length === 10 && cleaned.match(/^[789]/)) {
+    // Nigerian mobile number without prefix
+    cleaned = '234' + cleaned;
   }
+  
+  // Validate Nigerian mobile numbers
+  if (cleaned.startsWith('234') && cleaned.length === 13) {
+    const localPart = cleaned.substring(3);
+    if (!localPart.match(/^[789]/)) {
+      console.warn('Invalid Nigerian mobile number format:', phone);
+    }
+  }
+  
   return cleaned;
 }
 
@@ -52,27 +70,54 @@ async function sendTermiiSMS(
   senderId: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
+    const formattedPhone = formatPhoneNumber(to);
+    
+    // Enhanced payload for better delivery in Nigeria
+    const payload = {
+      api_key: apiKey,
+      to: formattedPhone,
+      from: senderId || 'Ticketrack',
+      sms: message,
+      type: 'plain',
+      channel: 'dnd', // Use DND channel for better delivery rates in Nigeria
+    };
+
+    console.log('Sending SMS via Termii:', { to: formattedPhone, from: payload.from, length: message.length });
+
     const response = await fetch(`${TERMII_API_URL}/sms/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: apiKey,
-        to: formatPhoneNumber(to),
-        from: senderId,
-        sms: message,
-        type: 'plain',
-        channel: 'generic',
-      }),
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload),
     });
+    
     const data = await response.json();
     console.log('Termii response:', data);
-    if (data.code === 'ok' || response.ok) {
-      return { success: true, messageId: data.message_id };
+    
+    // Termii success indicators
+    if (data.code === 'ok' || (response.ok && data.message_id)) {
+      return { 
+        success: true, 
+        messageId: data.message_id || data.smsId 
+      };
     }
-    return { success: false, error: data.message || 'Failed to send SMS' };
+    
+    // Enhanced error handling for common Termii errors
+    let errorMessage = data.message || 'Failed to send SMS';
+    if (data.code === 'InvalidPhoneNumber') {
+      errorMessage = 'Invalid phone number format';
+    } else if (data.code === 'InsufficientBalance') {
+      errorMessage = 'Insufficient Termii balance';
+    } else if (data.code === 'InvalidSenderId') {
+      errorMessage = 'Invalid sender ID';
+    }
+    
+    return { success: false, error: errorMessage };
   } catch (error) {
     console.error('Termii error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: `Network error: ${error.message}` };
   }
 }
 

@@ -39,6 +39,9 @@ export function AdminOrders() {
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
+    revenueByCurrency: {}, // { NGN: 1000, GBP: 500, etc. }
+    platformFees: 0,
+    platformFeesByCurrency: {},
     completedOrders: 0,
     pendingOrders: 0,
     refundedOrders: 0,
@@ -145,17 +148,34 @@ export function AdminOrders() {
 
     setOrders(ordersWithTickets);
 
-    // Calculate stats
+    // Calculate stats with multi-currency support
     const completed = ordersWithTickets.filter(o => o.status === 'completed');
     const pending = ordersWithTickets.filter(o => o.status === 'pending');
     const refunded = ordersWithTickets.filter(o => o.status === 'refunded');
-    const totalRevenue = completed.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
-    const platformFees = completed.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
+    
+    // Calculate revenue by currency
+    const revenueByCurrency = {};
+    const platformFeesByCurrency = {};
+    
+    completed.forEach(order => {
+      const currency = order.currency || 'NGN';
+      const amount = parseFloat(order.total_amount) || 0;
+      const fee = parseFloat(order.platform_fee) || 0;
+      
+      revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + amount;
+      platformFeesByCurrency[currency] = (platformFeesByCurrency[currency] || 0) + fee;
+    });
+
+    // For backward compatibility, keep total (sum all)
+    const totalRevenue = Object.values(revenueByCurrency).reduce((sum, val) => sum + val, 0);
+    const platformFees = Object.values(platformFeesByCurrency).reduce((sum, val) => sum + val, 0);
 
     setStats({
       totalOrders: ordersWithTickets.length,
       totalRevenue,
+      revenueByCurrency,
       platformFees,
+      platformFeesByCurrency,
       completedOrders: completed.length,
       pendingOrders: pending.length,
       refundedOrders: refunded.length,
@@ -367,7 +387,17 @@ export function AdminOrders() {
               </div>
               <div>
                 <p className="text-[#0F0F0F]/60 text-sm">Total Revenue</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">₦{stats.totalRevenue.toLocaleString()}</h3>
+                {Object.keys(stats.revenueByCurrency || {}).length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(stats.revenueByCurrency).map(([currency, amount]) => (
+                      <span key={currency} className="text-lg font-semibold text-[#0F0F0F]">
+                        {formatPrice(amount, currency)}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <h3 className="text-2xl font-semibold text-[#0F0F0F]">{formatPrice(stats.totalRevenue, 'NGN')}</h3>
+                )}
               </div>
             </div>
           </CardContent>
@@ -380,7 +410,17 @@ export function AdminOrders() {
               </div>
               <div>
                 <p className="text-[#0F0F0F]/60 text-sm">Platform Fees</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">₦{(stats.platformFees || 0).toLocaleString()}</h3>
+                {Object.keys(stats.platformFeesByCurrency || {}).length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(stats.platformFeesByCurrency).map(([currency, amount]) => (
+                      <span key={currency} className="text-lg font-semibold text-[#0F0F0F]">
+                        {formatPrice(amount, currency)}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <h3 className="text-2xl font-semibold text-[#0F0F0F]">{formatPrice(stats.platformFees || 0, 'NGN')}</h3>
+                )}
               </div>
             </div>
           </CardContent>
