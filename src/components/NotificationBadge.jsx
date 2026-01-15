@@ -50,62 +50,125 @@ export function useOrganizerNotifications(organizerId) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!organizerId) return
+    if (!organizerId) {
+      setLoading(false)
+      return
+    }
 
     const fetchCounts = async () => {
       try {
-        // Fetch pending orders (last 24 hours)
-        const { count: ordersCount } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true })
+        let ordersCount = 0
+        let refundsCount = 0
+        let followersCount = 0
+        let supportCount = 0
+        let projectsCount = 0
+        let transfersCount = 0
+
+        // Get organizer's events first for orders/transfers queries
+        const { data: orgEvents } = await supabase
+          .from('events')
+          .select('id')
           .eq('organizer_id', organizerId)
-          .eq('status', 'pending')
+        
+        const eventIds = orgEvents?.map(e => e.id) || []
+
+        // Fetch pending orders for organizer's events
+        if (eventIds.length > 0) {
+          const { count } = await supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .in('event_id', eventIds)
+            .eq('status', 'pending')
+          ordersCount = count || 0
+        }
 
         // Fetch pending refund requests
-        const { count: refundsCount } = await supabase
-          .from('refund_requests')
-          .select('*', { count: 'exact', head: true })
-          .eq('organizer_id', organizerId)
-          .eq('status', 'pending')
+        try {
+          const { count } = await supabase
+            .from('refund_requests')
+            .select('*', { count: 'exact', head: true })
+            .eq('organizer_id', organizerId)
+            .eq('status', 'pending')
+          refundsCount = count || 0
+        } catch (e) { /* table may not exist */ }
 
         // Fetch new followers (last 7 days)
-        const weekAgo = new Date()
-        weekAgo.setDate(weekAgo.getDate() - 7)
-        const { count: followersCount } = await supabase
-          .from('organizer_followers')
-          .select('*', { count: 'exact', head: true })
-          .eq('organizer_id', organizerId)
-          .gte('created_at', weekAgo.toISOString())
+        try {
+          const weekAgo = new Date()
+          weekAgo.setDate(weekAgo.getDate() - 7)
+          const { count } = await supabase
+            .from('organizer_followers')
+            .select('*', { count: 'exact', head: true })
+            .eq('organizer_id', organizerId)
+            .gte('created_at', weekAgo.toISOString())
+          followersCount = count || 0
+        } catch (e) { /* table may not exist */ }
 
-        // Fetch open support tickets
-        const { count: supportCount } = await supabase
-          .from('support_tickets')
-          .select('*', { count: 'exact', head: true })
-          .eq('organizer_id', organizerId)
-          .in('status', ['open', 'pending'])
+        // Fetch open support tickets (check user_id if organizer_id doesn't exist)
+        try {
+          // First try with organizer_id
+          let { count, error } = await supabase
+            .from('support_tickets')
+            .select('*', { count: 'exact', head: true })
+            .eq('organizer_id', organizerId)
+            .in('status', ['open', 'pending'])
+          
+          if (error) {
+            // Fallback: try via events
+            if (eventIds.length > 0) {
+              const result = await supabase
+                .from('support_tickets')
+                .select('*', { count: 'exact', head: true })
+                .in('event_id', eventIds)
+                .in('status', ['open', 'pending'])
+              count = result.count || 0
+            }
+          }
+          supportCount = count || 0
+        } catch (e) { /* table may not exist */ }
 
-        // Fetch pending project tasks
-        const { count: projectsCount } = await supabase
-          .from('project_tasks')
-          .select('*', { count: 'exact', head: true })
-          .eq('organizer_id', organizerId)
-          .eq('status', 'pending')
+        // Fetch pending project tasks (using event_tasks table)
+        try {
+          if (eventIds.length > 0) {
+            const { count } = await supabase
+              .from('event_tasks')
+              .select('*', { count: 'exact', head: true })
+              .in('event_id', eventIds)
+              .eq('status', 'pending')
+            projectsCount = count || 0
+          }
+        } catch (e) { /* table may not exist */ }
 
-        // Fetch pending transfers
-        const { count: transfersCount } = await supabase
-          .from('ticket_transfers')
-          .select('*', { count: 'exact', head: true })
-          .eq('organizer_id', organizerId)
-          .eq('status', 'pending')
+        // Fetch pending ticket transfers for organizer's events
+        try {
+          if (eventIds.length > 0) {
+            // Get tickets for organizer's events that have pending transfers
+            const { data: tickets } = await supabase
+              .from('tickets')
+              .select('id')
+              .in('event_id', eventIds)
+            
+            const ticketIds = tickets?.map(t => t.id) || []
+            
+            if (ticketIds.length > 0) {
+              const { count } = await supabase
+                .from('ticket_transfers')
+                .select('*', { count: 'exact', head: true })
+                .in('ticket_id', ticketIds)
+                .eq('status', 'pending')
+              transfersCount = count || 0
+            }
+          }
+        } catch (e) { /* table may not exist */ }
 
         const newCounts = {
-          orders: ordersCount || 0,
-          refunds: refundsCount || 0,
-          followers: followersCount || 0,
-          support: supportCount || 0,
-          projects: projectsCount || 0,
-          transfers: transfersCount || 0,
-          total: (ordersCount || 0) + (refundsCount || 0) + (supportCount || 0) + (projectsCount || 0) + (transfersCount || 0)
+          orders: ordersCount,
+          refunds: refundsCount,
+          followers: followersCount,
+          support: supportCount,
+          projects: projectsCount,
+          transfers: transfersCount,
+          total: ordersCount + refundsCount + supportCount + projectsCount + transfersCount
         }
         setCounts(newCounts)
       } catch (error) {
@@ -118,8 +181,8 @@ export function useOrganizerNotifications(organizerId) {
 
     fetchCounts()
     
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchCounts, 30000)
+    // Refresh every 60 seconds (reduced from 30 to avoid too many queries)
+    const interval = setInterval(fetchCounts, 60000)
     return () => clearInterval(interval)
   }, [organizerId])
 
@@ -142,56 +205,72 @@ export function useAdminNotifications() {
 
   useEffect(() => {
     const fetchCounts = async () => {
+      let kycCount = 0
+      let refundsCount = 0
+      let supportCount = 0
+      let flaggedCount = 0
+      let waitlistCount = 0
+
       try {
-        // Fetch pending KYC requests
-        const { count: kycCount } = await supabase
+        // Fetch pending KYC requests (also check for 'in_review' status)
+        const { count, error } = await supabase
           .from('organizers')
           .select('*', { count: 'exact', head: true })
-          .eq('kyc_status', 'pending')
+          .in('kyc_status', ['pending', 'in_review'])
+        if (!error) kycCount = count || 0
+      } catch (e) { /* table may not exist */ }
 
+      try {
         // Fetch pending refunds
-        const { count: refundsCount } = await supabase
+        const { count, error } = await supabase
           .from('refund_requests')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending')
+        if (!error) refundsCount = count || 0
+      } catch (e) { /* table may not exist */ }
 
+      try {
         // Fetch open support tickets
-        const { count: supportCount } = await supabase
+        const { count, error } = await supabase
           .from('support_tickets')
           .select('*', { count: 'exact', head: true })
           .in('status', ['open', 'pending'])
+        if (!error) supportCount = count || 0
+      } catch (e) { /* table may not exist */ }
 
+      try {
         // Fetch flagged referrals
-        const { count: flaggedCount } = await supabase
+        const { count, error } = await supabase
           .from('affiliate_referrals')
           .select('*', { count: 'exact', head: true })
           .eq('is_flagged', true)
           .eq('status', 'pending')
+        if (!error) flaggedCount = count || 0
+      } catch (e) { /* table may not exist */ }
 
+      try {
         // Fetch waitlist count
-        const { count: waitlistCount } = await supabase
+        const { count, error } = await supabase
           .from('waitlist')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending')
+        if (!error) waitlistCount = count || 0
+      } catch (e) { /* table may not exist */ }
 
-        const newCounts = {
-          kycPending: kycCount || 0,
-          refundsPending: refundsCount || 0,
-          supportOpen: supportCount || 0,
-          flaggedReferrals: flaggedCount || 0,
-          waitlist: waitlistCount || 0,
-          total: (kycCount || 0) + (refundsCount || 0) + (supportCount || 0) + (flaggedCount || 0)
-        }
-        setCounts(newCounts)
-      } catch (error) {
-        console.log('Admin notification counts not available:', error.message)
-      } finally {
-        setLoading(false)
+      const newCounts = {
+        kycPending: kycCount,
+        refundsPending: refundsCount,
+        supportOpen: supportCount,
+        flaggedReferrals: flaggedCount,
+        waitlist: waitlistCount,
+        total: kycCount + refundsCount + supportCount + flaggedCount + waitlistCount
       }
+      setCounts(newCounts)
+      setLoading(false)
     }
 
     fetchCounts()
-    const interval = setInterval(fetchCounts, 30000)
+    const interval = setInterval(fetchCounts, 60000) // Refresh every 60 seconds
     return () => clearInterval(interval)
   }, [])
 
@@ -212,41 +291,49 @@ export function useFinanceNotifications() {
 
   useEffect(() => {
     const fetchCounts = async () => {
+      let payoutsCount = 0
+      let promoterCount = 0
+      let affiliateCount = 0
+
       try {
         // Fetch pending event payouts
-        const { count: payoutsCount } = await supabase
+        const { count, error } = await supabase
           .from('payouts')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending')
+          .in('status', ['pending', 'scheduled'])
+        if (!error) payoutsCount = count || 0
+      } catch (e) { /* table may not exist */ }
 
+      try {
         // Fetch pending promoter payouts
-        const { count: promoterCount } = await supabase
+        const { count, error } = await supabase
           .from('promoter_payouts')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending')
+        if (!error) promoterCount = count || 0
+      } catch (e) { /* table may not exist */ }
 
+      try {
         // Fetch pending affiliate payouts
-        const { count: affiliateCount } = await supabase
+        const { count, error } = await supabase
           .from('affiliate_payouts')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending')
+        if (!error) affiliateCount = count || 0
+      } catch (e) { /* table may not exist */ }
 
-        const newCounts = {
-          pendingPayouts: payoutsCount || 0,
-          promoterPayouts: promoterCount || 0,
-          affiliatePayouts: affiliateCount || 0,
-          total: (payoutsCount || 0) + (promoterCount || 0) + (affiliateCount || 0)
-        }
-        setCounts(newCounts)
-      } catch (error) {
-        console.log('Finance notification counts not available:', error.message)
-      } finally {
-        setLoading(false)
+      const newCounts = {
+        pendingPayouts: payoutsCount,
+        promoterPayouts: promoterCount,
+        affiliatePayouts: affiliateCount,
+        total: payoutsCount + promoterCount + affiliateCount
       }
+      setCounts(newCounts)
+      setLoading(false)
     }
 
     fetchCounts()
-    const interval = setInterval(fetchCounts, 30000)
+    const interval = setInterval(fetchCounts, 60000) // Refresh every 60 seconds
     return () => clearInterval(interval)
   }, [])
 
