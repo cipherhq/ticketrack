@@ -14,6 +14,12 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  errorResponse, 
+  logError, 
+  safeLog,
+  ERROR_CODES 
+} from "../_shared/errorHandler.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -114,16 +120,13 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Wallet pass error:', error)
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        message: 'Wallet pass generation is not yet configured. Please use the PDF ticket or Add to Calendar option.'
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
-      }
+    logError('wallet_pass_generation', error)
+    return errorResponse(
+      ERROR_CODES.INTERNAL_ERROR,
+      400,
+      error,
+      'Wallet pass generation is not yet configured. Please use the PDF ticket or Add to Calendar option.',
+      corsHeaders
     )
   }
 })
@@ -135,7 +138,7 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
 
   // Check if Apple Wallet is configured
   if (!APPLE_PASS_TYPE_ID || !APPLE_TEAM_ID || !APPLE_CERTIFICATE) {
-    console.log('Apple Wallet not configured - returning fallback message')
+    safeLog.info('Apple Wallet not configured - returning fallback message')
     return new Response(
       JSON.stringify({ 
         error: 'Apple Wallet not configured',
@@ -272,7 +275,7 @@ async function generateGooglePass(ticket: any, event: any): Promise<Response> {
 
   // Check if Google Wallet is configured
   if (!GOOGLE_SERVICE_ACCOUNT || !GOOGLE_ISSUER_ID) {
-    console.log('Google Wallet not configured - returning fallback message')
+    safeLog.info('Google Wallet not configured - returning fallback message')
     return new Response(
       JSON.stringify({ 
         error: 'Google Wallet not configured',

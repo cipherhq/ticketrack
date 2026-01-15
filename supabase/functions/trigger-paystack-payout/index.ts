@@ -9,6 +9,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { 
+  errorResponse, 
+  logError, 
+  ERROR_CODES 
+} from "../_shared/errorHandler.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -350,17 +355,14 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Paystack payout error:", error);
+    logError("paystack_payout", error, { eventId, organizerId });
 
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || "Payout failed",
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      }
+    return errorResponse(
+      ERROR_CODES.PAYOUT_FAILED,
+      400,
+      error,
+      undefined,
+      corsHeaders
     );
   }
 });

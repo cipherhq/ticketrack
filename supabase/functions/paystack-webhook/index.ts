@@ -10,6 +10,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { createHmac } from "https://deno.land/std@0.168.0/crypto/mod.ts";
+import { 
+  errorResponse, 
+  logError, 
+  safeLog,
+  ERROR_CODES 
+} from "../_shared/errorHandler.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,15 +59,18 @@ serve(async (req) => {
     // In development, allow unsigned webhooks
     const isDev = Deno.env.get("ENVIRONMENT") === "development";
     if (!isValidSignature && !isDev) {
-      console.error("Invalid Paystack webhook signature");
-      return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      logError("paystack_webhook_auth", new Error("Invalid signature"));
+      return errorResponse(
+        ERROR_CODES.AUTH_INVALID,
+        401,
+        undefined,
+        "Invalid webhook signature",
+        corsHeaders
       );
     }
 
     const event = JSON.parse(body);
-    console.log(`Paystack webhook received: ${event.event}`);
+    safeLog.info(`Paystack webhook received: ${event.event}`);
 
     switch (event.event) {
       case "charge.success": {
@@ -90,7 +99,7 @@ serve(async (req) => {
       }
 
       default:
-        console.log(`Unhandled Paystack event: ${event.event}`);
+        safeLog.debug(`Unhandled Paystack event: ${event.event}`);
     }
 
     return new Response(
@@ -99,10 +108,13 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Paystack webhook error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    logError("paystack_webhook", error);
+    return errorResponse(
+      ERROR_CODES.INTERNAL_ERROR,
+      500,
+      error,
+      undefined,
+      corsHeaders
     );
   }
 });
@@ -110,7 +122,7 @@ serve(async (req) => {
 async function handleChargeSuccess(supabase: any, data: any) {
   const { reference, amount, metadata } = data;
   
-  console.log(`Processing charge.success for reference: ${reference}`);
+  safeLog.info(`Processing charge.success for reference: ${reference}`);
 
   // Find the order by payment reference
   const { data: order, error: orderError } = await supabase
@@ -120,13 +132,13 @@ async function handleChargeSuccess(supabase: any, data: any) {
     .single();
 
   if (orderError || !order) {
-    console.error("Order not found for reference:", reference);
+    safeLog.warn("Order not found for reference:", reference);
     return;
   }
 
   // Skip if already completed
   if (order.status === "completed") {
-    console.log("Order already completed:", order.id);
+    safeLog.debug("Order already completed:", order.id);
     return;
   }
 
@@ -154,13 +166,13 @@ async function handleChargeSuccess(supabase: any, data: any) {
     },
   });
 
-  console.log(`Order ${order.id} marked as completed`);
+  safeLog.info(`Order ${order.id} marked as completed`);
 }
 
 async function handleTransferSuccess(supabase: any, data: any) {
   const { reference, transfer_code, amount, recipient } = data;
   
-  console.log(`Processing transfer.success for reference: ${reference}`);
+  safeLog.info(`Processing transfer.success for reference: ${reference}`);
 
   // Update payout status
   const { data: payout, error } = await supabase
@@ -175,7 +187,7 @@ async function handleTransferSuccess(supabase: any, data: any) {
     .single();
 
   if (error) {
-    console.error("Failed to update payout status:", error);
+    logError("payout_update_failed", error, { reference });
     return;
   }
 
@@ -227,13 +239,13 @@ async function handleTransferSuccess(supabase: any, data: any) {
     },
   });
 
-  console.log(`Payout ${reference} completed successfully`);
+  safeLog.info(`Payout ${reference} completed successfully`);
 }
 
 async function handleTransferFailed(supabase: any, data: any) {
   const { reference, reason } = data;
   
-  console.log(`Processing transfer.failed for reference: ${reference}`);
+  safeLog.info(`Processing transfer.failed for reference: ${reference}`);
 
   // Update payout status
   await supabase
@@ -266,13 +278,13 @@ async function handleTransferFailed(supabase: any, data: any) {
     },
   });
 
-  console.log(`Payout ${reference} failed: ${reason}`);
+  safeLog.warn(`Payout ${reference} failed: ${reason}`);
 }
 
 async function handleTransferReversed(supabase: any, data: any) {
   const { reference, reason } = data;
   
-  console.log(`Processing transfer.reversed for reference: ${reference}`);
+  safeLog.info(`Processing transfer.reversed for reference: ${reference}`);
 
   // Update payout status
   await supabase
@@ -305,13 +317,13 @@ async function handleTransferReversed(supabase: any, data: any) {
     },
   });
 
-  console.log(`Payout ${reference} reversed: ${reason}`);
+  safeLog.warn(`Payout ${reference} reversed: ${reason}`);
 }
 
 async function handleRefundProcessed(supabase: any, data: any) {
   const { reference, amount, transaction_reference } = data;
   
-  console.log(`Processing refund for transaction: ${transaction_reference}`);
+  safeLog.info(`Processing refund for transaction: ${transaction_reference}`);
 
   // Find the refund request
   const { data: refund } = await supabase
@@ -331,6 +343,6 @@ async function handleRefundProcessed(supabase: any, data: any) {
       })
       .eq("id", refund.id);
 
-    console.log(`Refund ${refund.id} marked as completed`);
+    safeLog.info(`Refund ${refund.id} marked as completed`);
   }
 }
