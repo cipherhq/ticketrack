@@ -25,28 +25,12 @@ export const currencies = {
     locale: 'en-US',
     paymentProvider: 'stripe',
   },
-  KES: {
-    code: 'KES',
-    symbol: 'KSh',
-    name: 'Kenyan Shilling',
-    country: 'Kenya',
-    locale: 'en-KE',
-    paymentProvider: 'paystack',
-  },
   GHS: {
     code: 'GHS',
     symbol: 'GH₵',
     name: 'Ghanaian Cedi',
     country: 'Ghana',
     locale: 'en-GH',
-    paymentProvider: 'paystack',
-  },
-  ZAR: {
-    code: 'ZAR',
-    symbol: 'R',
-    name: 'South African Rand',
-    country: 'South Africa',
-    locale: 'en-ZA',
     paymentProvider: 'paystack',
   },
 };
