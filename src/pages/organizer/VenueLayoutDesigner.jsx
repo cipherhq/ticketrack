@@ -675,13 +675,57 @@ const renderRealisticObject = (obj, scale = 1) => {
 // OPTIMIZED CANVAS OBJECT COMPONENT
 // =============================================================================
 
-const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart }) => {
+const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart, onResizeStart }) => {
   const handleMouseDown = (e) => {
     e.stopPropagation()
     onSelect(obj.id, e.shiftKey)
     if (!obj.locked) {
       onDragStart(obj.id, e)
     }
+  }
+
+  const handleResizeHandleMouseDown = (e, handle) => {
+    e.stopPropagation()
+    e.preventDefault()
+    onSelect(obj.id, false)
+    if (!obj.locked && onResizeStart) {
+      onResizeStart(obj.id, handle, e)
+    }
+  }
+
+  const RESIZE_HANDLE_SIZE = 8
+  const HANDLE_OFFSET = -4
+
+  // Render resize handles
+  const renderResizeHandles = () => {
+    if (!isSelected || obj.locked) return null
+
+    const handles = [
+      { pos: 'nw', x: HANDLE_OFFSET, y: HANDLE_OFFSET, cursor: 'nw-resize' },
+      { pos: 'ne', x: obj.width + HANDLE_OFFSET, y: HANDLE_OFFSET, cursor: 'ne-resize' },
+      { pos: 'sw', x: HANDLE_OFFSET, y: obj.height + HANDLE_OFFSET, cursor: 'sw-resize' },
+      { pos: 'se', x: obj.width + HANDLE_OFFSET, y: obj.height + HANDLE_OFFSET, cursor: 'se-resize' },
+      { pos: 'n', x: obj.width / 2 + HANDLE_OFFSET, y: HANDLE_OFFSET, cursor: 'n-resize' },
+      { pos: 's', x: obj.width / 2 + HANDLE_OFFSET, y: obj.height + HANDLE_OFFSET, cursor: 's-resize' },
+      { pos: 'w', x: HANDLE_OFFSET, y: obj.height / 2 + HANDLE_OFFSET, cursor: 'w-resize' },
+      { pos: 'e', x: obj.width + HANDLE_OFFSET, y: obj.height / 2 + HANDLE_OFFSET, cursor: 'e-resize' }
+    ]
+
+    return handles.map(handle => (
+      <rect
+        key={handle.pos}
+        x={handle.x}
+        y={handle.y}
+        width={RESIZE_HANDLE_SIZE}
+        height={RESIZE_HANDLE_SIZE}
+        fill="#2969FF"
+        stroke="#ffffff"
+        strokeWidth={1.5}
+        rx={1}
+        style={{ cursor: handle.cursor }}
+        onMouseDown={(e) => handleResizeHandleMouseDown(e, handle.pos)}
+      />
+    ))
   }
 
   // Render chairs around round tables
@@ -751,6 +795,9 @@ const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart }) => {
           ry={obj.type.includes('round') ? obj.height / 2 : 6}
         />
       )}
+
+      {/* Resize handles */}
+      {renderResizeHandles()}
     </g>
   )
 })
@@ -790,11 +837,15 @@ export function VenueLayoutDesigner() {
   // Drag state - using refs to avoid re-renders
   const dragState = useRef({
     isDragging: false,
+    isResizing: false,
+    resizeHandle: null, // 'nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'
     draggedId: null,
     startX: 0,
     startY: 0,
     objectStartX: 0,
-    objectStartY: 0
+    objectStartY: 0,
+    objectStartWidth: 0,
+    objectStartHeight: 0
   })
 
   const [, forceUpdate] = useState(0)
@@ -989,11 +1040,34 @@ export function VenueLayoutDesigner() {
 
     dragState.current = {
       isDragging: true,
+      isResizing: false,
+      resizeHandle: null,
       draggedId: id,
       startX: coords.x,
       startY: coords.y,
       objectStartX: obj.x,
-      objectStartY: obj.y
+      objectStartY: obj.y,
+      objectStartWidth: obj.width,
+      objectStartHeight: obj.height
+    }
+  }, [objects, getCanvasCoords])
+
+  const handleResizeStart = useCallback((id, handle, e) => {
+    const coords = getCanvasCoords(e)
+    const obj = objects.find(o => o.id === id)
+    if (!obj) return
+
+    dragState.current = {
+      isDragging: false,
+      isResizing: true,
+      resizeHandle: handle,
+      draggedId: id,
+      startX: coords.x,
+      startY: coords.y,
+      objectStartX: obj.x,
+      objectStartY: obj.y,
+      objectStartWidth: obj.width,
+      objectStartHeight: obj.height
     }
   }, [objects, getCanvasCoords])
 
@@ -1004,28 +1078,80 @@ export function VenueLayoutDesigner() {
   }, [])
 
   const handleCanvasMouseMove = useCallback((e) => {
-    if (!dragState.current.isDragging) return
+    if (!dragState.current.isDragging && !dragState.current.isResizing) return
 
     const coords = getCanvasCoords(e)
     const dx = coords.x - dragState.current.startX
     const dy = coords.y - dragState.current.startY
 
-    const newX = snapValue(dragState.current.objectStartX + dx)
-    const newY = snapValue(dragState.current.objectStartY + dy)
+    if (dragState.current.isResizing) {
+      // Handle resizing
+      const { resizeHandle, objectStartX, objectStartY, objectStartWidth, objectStartHeight } = dragState.current
+      let newX = objectStartX
+      let newY = objectStartY
+      let newWidth = objectStartWidth
+      let newHeight = objectStartHeight
 
-    // Update object position directly
-    setObjects(prev => prev.map(obj =>
-      obj.id === dragState.current.draggedId
-        ? { ...obj, x: newX, y: newY }
-        : obj
-    ))
-  }, [getCanvasCoords, snapValue])
+      const MIN_SIZE = 20 // Minimum size in pixels
+
+      if (resizeHandle.includes('n')) {
+        const newHeight2 = Math.max(MIN_SIZE, objectStartHeight - dy)
+        newY = objectStartY + (objectStartHeight - newHeight2)
+        newHeight = newHeight2
+      }
+      if (resizeHandle.includes('s')) {
+        newHeight = Math.max(MIN_SIZE, objectStartHeight + dy)
+      }
+      if (resizeHandle.includes('w')) {
+        const newWidth2 = Math.max(MIN_SIZE, objectStartWidth - dx)
+        newX = objectStartX + (objectStartWidth - newWidth2)
+        newWidth = newWidth2
+      }
+      if (resizeHandle.includes('e')) {
+        newWidth = Math.max(MIN_SIZE, objectStartWidth + dx)
+      }
+
+      // Apply snapping if enabled
+      if (snapToGrid) {
+        newX = snapValue(newX)
+        newY = snapValue(newY)
+        newWidth = snapValue(newWidth)
+        newHeight = snapValue(newHeight)
+      }
+
+      setObjects(prev => prev.map(obj =>
+        obj.id === dragState.current.draggedId
+          ? { ...obj, x: newX, y: newY, width: newWidth, height: newHeight }
+          : obj
+      ))
+    } else if (dragState.current.isDragging) {
+      // Handle dragging
+      const newX = snapValue(dragState.current.objectStartX + dx)
+      const newY = snapValue(dragState.current.objectStartY + dy)
+
+      setObjects(prev => prev.map(obj =>
+        obj.id === dragState.current.draggedId
+          ? { ...obj, x: newX, y: newY }
+          : obj
+      ))
+    }
+  }, [getCanvasCoords, snapValue, snapToGrid])
 
   const handleCanvasMouseUp = useCallback(() => {
-    if (dragState.current.isDragging) {
+    if (dragState.current.isDragging || dragState.current.isResizing) {
       saveToHistory(objects)
-      dragState.current.isDragging = false
-      dragState.current.draggedId = null
+      dragState.current = {
+        isDragging: false,
+        isResizing: false,
+        resizeHandle: null,
+        draggedId: null,
+        startX: 0,
+        startY: 0,
+        objectStartX: 0,
+        objectStartY: 0,
+        objectStartWidth: 0,
+        objectStartHeight: 0
+      }
     }
   }, [objects, saveToHistory])
 
@@ -1472,6 +1598,7 @@ export function VenueLayoutDesigner() {
                   isSelected={selectedIds.includes(obj.id)}
                   onSelect={handleSelect}
                   onDragStart={handleDragStart}
+                  onResizeStart={handleResizeStart}
                 />
               ))}
             </svg>
@@ -1593,7 +1720,7 @@ export function VenueLayoutDesigner() {
                       variant="outline"
                       size="sm"
                       onClick={duplicateSelected}
-                      className="flex-1 h-7 text-xs border-[#3d3d4d] text-white hover:bg-white/10"
+                      className="flex-1 h-7 text-xs border-[#3d3d4d] bg-[#2a2a35] text-[#E0E0E0] hover:bg-[#3a3a45] hover:text-white"
                     >
                       <Copy className="w-3 h-3 mr-1" /> Copy
                     </Button>
