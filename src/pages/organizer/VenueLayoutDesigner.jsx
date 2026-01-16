@@ -1,24 +1,22 @@
 /**
- * Venue Layout Designer - Professional Edition
- * Inspired by SocialTables - Full-featured event floor plan designer
+ * Venue Layout Designer - Professional Edition v2
+ * Optimized for performance with React.memo and useCallback
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Save, Trash2, RotateCw, Plus, Minus, Undo, Redo, Grid, Copy,
-  ChevronLeft, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock,
-  ZoomIn, ZoomOut, Move, MousePointer, Square, Circle, Maximize2,
-  Download, Upload, Share2, Settings, HelpCircle, Layers, Star,
-  FolderOpen, Search, Image, Type, Ruler, Palette, Users, Music,
-  Utensils, Coffee, Briefcase, Mic, Monitor, Armchair, Table2,
-  LayoutGrid, PanelLeftClose, PanelRightClose
+  Save, Trash2, RotateCw, Plus, Undo, Redo, Grid, Copy,
+  ChevronLeft, ChevronRight, ChevronDown, Eye,
+  ZoomIn, ZoomOut, Move, MousePointer, Square, Circle,
+  Download, HelpCircle, Star, Search, Type, Palette, Users, Music,
+  Utensils, Briefcase, Monitor, Armchair, Table2,
+  LayoutGrid, PanelLeftClose, PanelRightClose, DoorOpen, Ticket,
+  Camera, Sparkles, MapPin, AlertTriangle, ShieldCheck, PartyPopper
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -33,53 +31,62 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { useOrganizer } from '@/contexts/OrganizerContext'
 import { supabase } from '@/lib/supabase'
 
 // =============================================================================
-// OBJECT LIBRARY - Categories and Items
+// OBJECT LIBRARY - Comprehensive Categories and Items
 // =============================================================================
 
 const OBJECT_CATEGORIES = [
   {
-    id: 'favorites',
-    name: 'Favorites',
-    icon: Star,
-    items: []
+    id: 'essentials',
+    name: 'Event Essentials',
+    icon: Ticket,
+    items: [
+      { id: 'check-in-desk', name: 'Check-in Desk', type: 'check-in', width: 120, height: 48, color: '#2969FF', label: 'CHECK-IN' },
+      { id: 'registration', name: 'Registration', type: 'registration', width: 144, height: 48, color: '#00BCD4', label: 'REGISTRATION' },
+      { id: 'exit-door', name: 'Exit', type: 'exit', width: 60, height: 24, color: '#F44336', label: 'EXIT' },
+      { id: 'entrance', name: 'Entrance', type: 'entrance', width: 60, height: 24, color: '#4CAF50', label: 'ENTRANCE' },
+      { id: 'vip-entrance', name: 'VIP Entrance', type: 'vip-entrance', width: 60, height: 24, color: '#9C27B0', label: 'VIP' },
+      { id: 'security', name: 'Security Post', type: 'security', width: 48, height: 48, color: '#455A64', label: '🛡️' },
+      { id: 'first-aid', name: 'First Aid', type: 'first-aid', width: 48, height: 48, color: '#F44336', label: '➕' },
+      { id: 'info-desk', name: 'Info Desk', type: 'info', width: 72, height: 48, color: '#03A9F4', label: 'INFO' },
+    ]
   },
   {
     id: 'tables',
     name: 'Tables & Seating',
     icon: Table2,
     items: [
-      { id: 'round-table-8', name: '8-Top Round', type: 'round-table', seats: 8, width: 72, height: 72, color: '#E91E63' },
       { id: 'round-table-10', name: '10-Top Round', type: 'round-table', seats: 10, width: 84, height: 84, color: '#E91E63' },
+      { id: 'round-table-8', name: '8-Top Round', type: 'round-table', seats: 8, width: 72, height: 72, color: '#E91E63' },
       { id: 'round-table-6', name: '6-Top Round', type: 'round-table', seats: 6, width: 60, height: 60, color: '#E91E63' },
-      { id: 'rect-table-6', name: '6ft Rectangle', type: 'rect-table', seats: 6, width: 96, height: 48, color: '#9C27B0' },
       { id: 'rect-table-8', name: '8ft Rectangle', type: 'rect-table', seats: 8, width: 120, height: 48, color: '#9C27B0' },
+      { id: 'rect-table-6', name: '6ft Rectangle', type: 'rect-table', seats: 6, width: 96, height: 48, color: '#9C27B0' },
       { id: 'cocktail-table', name: 'Cocktail Table', type: 'cocktail', seats: 4, width: 36, height: 36, color: '#673AB7' },
-      { id: 'banquet-chair', name: 'Banquet Chair', type: 'chair', seats: 1, width: 24, height: 24, color: '#E91E63' },
-      { id: 'chiavari-chair', name: 'Chiavari Chair', type: 'chiavari', seats: 1, width: 24, height: 24, color: '#FFD700' },
-      { id: 'ghost-chair', name: 'Ghost Chair', type: 'ghost', seats: 1, width: 24, height: 24, color: '#90CAF9' },
+      { id: 'highboy', name: 'Highboy Table', type: 'highboy', seats: 4, width: 30, height: 30, color: '#7B1FA2' },
+      { id: 'sweetheart', name: 'Sweetheart Table', type: 'sweetheart', seats: 2, width: 60, height: 36, color: '#EC407A' },
+      { id: 'head-table', name: 'Head Table', type: 'head-table', seats: 10, width: 180, height: 36, color: '#AB47BC' },
+      { id: 'banquet-chair', name: 'Chair', type: 'chair', seats: 1, width: 20, height: 20, color: '#E91E63' },
+      { id: 'chair-row', name: 'Chair Row (10)', type: 'chair-row', seats: 10, width: 200, height: 24, color: '#E91E63' },
     ]
   },
   {
-    id: 'entertainment',
-    name: 'Entertainment',
+    id: 'stage',
+    name: 'Stage & Performance',
     icon: Music,
     items: [
-      { id: 'stage-small', name: 'Stage (Small)', type: 'stage', width: 144, height: 96, color: '#795548' },
-      { id: 'stage-medium', name: 'Stage (Medium)', type: 'stage', width: 192, height: 120, color: '#795548' },
-      { id: 'stage-large', name: 'Stage (Large)', type: 'stage', width: 288, height: 144, color: '#795548' },
-      { id: 'dj-booth', name: 'DJ Booth', type: 'dj-booth', width: 72, height: 48, color: '#1a1a2e' },
-      { id: 'dance-floor', name: 'Dance Floor', type: 'dance-floor', width: 192, height: 192, color: '#1a1a2e' },
-      { id: 'photo-booth', name: 'Photo Booth', type: 'photo-booth', width: 96, height: 72, color: '#FF5722' },
+      { id: 'stage-small', name: 'Stage (12x8)', type: 'stage', width: 144, height: 96, color: '#5D4037', label: 'STAGE' },
+      { id: 'stage-medium', name: 'Stage (16x10)', type: 'stage', width: 192, height: 120, color: '#5D4037', label: 'STAGE' },
+      { id: 'stage-large', name: 'Stage (24x12)', type: 'stage', width: 288, height: 144, color: '#5D4037', label: 'STAGE' },
+      { id: 'runway', name: 'Runway/Catwalk', type: 'runway', width: 48, height: 240, color: '#424242', label: 'RUNWAY' },
+      { id: 'dj-booth', name: 'DJ Booth', type: 'dj-booth', width: 72, height: 48, color: '#311B92', label: 'DJ' },
+      { id: 'dj-setup', name: 'DJ Setup (Large)', type: 'dj-setup', width: 120, height: 60, color: '#4527A0', label: 'DJ' },
+      { id: 'band-stage', name: 'Band Area', type: 'band', width: 180, height: 120, color: '#6A1B9A', label: 'BAND' },
+      { id: 'dance-floor-s', name: 'Dance Floor (S)', type: 'dance-floor', width: 144, height: 144, color: '#1a1a2e' },
+      { id: 'dance-floor-m', name: 'Dance Floor (M)', type: 'dance-floor', width: 192, height: 192, color: '#1a1a2e' },
+      { id: 'dance-floor-l', name: 'Dance Floor (L)', type: 'dance-floor', width: 240, height: 240, color: '#1a1a2e' },
     ]
   },
   {
@@ -87,72 +94,222 @@ const OBJECT_CATEGORIES = [
     name: 'Food & Beverage',
     icon: Utensils,
     items: [
-      { id: 'buffet-table', name: 'Buffet Table', type: 'buffet', width: 144, height: 36, color: '#8BC34A' },
-      { id: 'bar', name: 'Bar', type: 'bar', width: 120, height: 48, color: '#795548' },
-      { id: 'dessert-table', name: 'Dessert Table', type: 'dessert', width: 96, height: 36, color: '#FFEB3B' },
-      { id: 'coffee-station', name: 'Coffee Station', type: 'coffee', width: 60, height: 36, color: '#795548' },
-      { id: 'cake-table', name: 'Cake Table', type: 'cake', width: 48, height: 48, color: '#F8BBD9' },
+      { id: 'buffet-line', name: 'Buffet Line', type: 'buffet', width: 180, height: 36, color: '#689F38', label: 'BUFFET' },
+      { id: 'food-station', name: 'Food Station', type: 'food-station', width: 72, height: 72, color: '#8BC34A' },
+      { id: 'bar-straight', name: 'Bar (Straight)', type: 'bar', width: 144, height: 48, color: '#4E342E', label: 'BAR' },
+      { id: 'bar-corner', name: 'Bar (L-Shape)', type: 'bar-l', width: 120, height: 120, color: '#4E342E', label: 'BAR' },
+      { id: 'bar-round', name: 'Bar (Round)', type: 'bar-round', width: 96, height: 96, color: '#4E342E', label: 'BAR' },
+      { id: 'dessert', name: 'Dessert Table', type: 'dessert', width: 96, height: 48, color: '#F48FB1', label: 'DESSERTS' },
+      { id: 'cake-table', name: 'Cake Table', type: 'cake', width: 60, height: 60, color: '#F8BBD9', label: 'CAKE' },
+      { id: 'coffee', name: 'Coffee Station', type: 'coffee', width: 60, height: 48, color: '#6D4C41' },
+      { id: 'water-station', name: 'Water/Drinks', type: 'drinks', width: 48, height: 36, color: '#29B6F6' },
     ]
   },
   {
-    id: 'tradeshow',
-    name: 'Trade Show',
-    icon: Briefcase,
+    id: 'photo',
+    name: 'Photo & Media',
+    icon: Camera,
     items: [
-      { id: 'booth-10x10', name: '10x10 Booth', type: 'booth', width: 120, height: 120, color: '#2196F3' },
-      { id: 'booth-10x20', name: '10x20 Booth', type: 'booth', width: 240, height: 120, color: '#2196F3' },
-      { id: 'registration', name: 'Registration Desk', type: 'registration', width: 144, height: 48, color: '#607D8B' },
-      { id: 'kiosk', name: 'Kiosk', type: 'kiosk', width: 48, height: 48, color: '#00BCD4' },
+      { id: 'photo-booth', name: 'Photo Booth', type: 'photo-booth', width: 96, height: 72, color: '#FF5722', label: 'PHOTO BOOTH' },
+      { id: 'backdrop', name: 'Photo Backdrop', type: 'backdrop', width: 144, height: 12, color: '#FF7043' },
+      { id: 'step-repeat', name: 'Step & Repeat', type: 'step-repeat', width: 180, height: 12, color: '#E64A19' },
+      { id: 'red-carpet', name: 'Red Carpet', type: 'red-carpet', width: 48, height: 180, color: '#C62828' },
+      { id: 'camera-platform', name: 'Camera Platform', type: 'camera', width: 48, height: 48, color: '#37474F' },
+      { id: 'livestream', name: 'Livestream Setup', type: 'livestream', width: 72, height: 48, color: '#D32F2F', label: 'LIVE' },
     ]
   },
   {
     id: 'av',
-    name: 'A/V Equipment',
+    name: 'A/V & Tech',
     icon: Monitor,
     items: [
-      { id: 'projector-screen', name: 'Projector Screen', type: 'screen', width: 144, height: 12, color: '#ECEFF1' },
-      { id: 'tv-display', name: 'TV Display', type: 'display', width: 72, height: 12, color: '#263238' },
-      { id: 'speaker', name: 'Speaker', type: 'speaker', width: 24, height: 24, color: '#37474F' },
-      { id: 'podium', name: 'Podium', type: 'podium', width: 36, height: 24, color: '#795548' },
+      { id: 'screen-large', name: 'Screen (Large)', type: 'screen', width: 192, height: 12, color: '#ECEFF1' },
+      { id: 'screen-medium', name: 'Screen (Medium)', type: 'screen', width: 144, height: 12, color: '#ECEFF1' },
+      { id: 'tv-65', name: 'TV 65"', type: 'display', width: 60, height: 8, color: '#263238' },
+      { id: 'led-wall', name: 'LED Wall', type: 'led-wall', width: 240, height: 12, color: '#1A237E' },
+      { id: 'speaker-main', name: 'Main Speaker', type: 'speaker', width: 30, height: 30, color: '#37474F' },
+      { id: 'speaker-sub', name: 'Subwoofer', type: 'subwoofer', width: 36, height: 36, color: '#263238' },
+      { id: 'sound-booth', name: 'Sound Booth', type: 'sound-booth', width: 72, height: 60, color: '#1B5E20', label: 'SOUND' },
+      { id: 'lighting-truss', name: 'Lighting Truss', type: 'truss', width: 180, height: 12, color: '#424242' },
+      { id: 'podium', name: 'Podium/Lectern', type: 'podium', width: 36, height: 24, color: '#5D4037' },
     ]
   },
   {
     id: 'lounge',
-    name: 'Lounge',
+    name: 'Lounge & VIP',
     icon: Armchair,
     items: [
-      { id: 'sofa', name: 'Sofa', type: 'sofa', width: 96, height: 40, color: '#5D4037' },
-      { id: 'loveseat', name: 'Loveseat', type: 'loveseat', width: 60, height: 40, color: '#5D4037' },
-      { id: 'ottoman', name: 'Ottoman', type: 'ottoman', width: 36, height: 36, color: '#8D6E63' },
-      { id: 'coffee-table-rect', name: 'Coffee Table', type: 'coffee-table', width: 60, height: 36, color: '#3E2723' },
+      { id: 'vip-section', name: 'VIP Section', type: 'vip-section', width: 180, height: 120, color: '#7B1FA2', label: 'VIP' },
+      { id: 'lounge-area', name: 'Lounge Area', type: 'lounge-area', width: 144, height: 96, color: '#5D4037' },
+      { id: 'sofa-3', name: '3-Seat Sofa', type: 'sofa', width: 96, height: 40, color: '#5D4037' },
+      { id: 'sofa-2', name: 'Loveseat', type: 'loveseat', width: 60, height: 40, color: '#5D4037' },
+      { id: 'armchair', name: 'Armchair', type: 'armchair', width: 36, height: 36, color: '#6D4C41' },
+      { id: 'ottoman', name: 'Ottoman', type: 'ottoman', width: 30, height: 30, color: '#8D6E63' },
+      { id: 'coffee-table', name: 'Coffee Table', type: 'coffee-table', width: 60, height: 36, color: '#3E2723' },
+      { id: 'side-table', name: 'Side Table', type: 'side-table', width: 24, height: 24, color: '#4E342E' },
     ]
   },
   {
     id: 'decor',
-    name: 'Decor & Other',
-    icon: Palette,
+    name: 'Decor & Barriers',
+    icon: Sparkles,
     items: [
-      { id: 'plant', name: 'Plant/Greenery', type: 'plant', width: 36, height: 36, color: '#4CAF50' },
-      { id: 'flowers', name: 'Flower Arrangement', type: 'flowers', width: 24, height: 24, color: '#E91E63' },
-      { id: 'carpet', name: 'Area Rug', type: 'carpet', width: 120, height: 96, color: '#9E9E9E' },
-      { id: 'rope-barrier', name: 'Rope Barrier', type: 'barrier', width: 72, height: 8, color: '#FFD700' },
-      { id: 'check-in', name: 'Check-in Desk', type: 'check-in', width: 96, height: 36, color: '#2969FF' },
+      { id: 'rope-barrier', name: 'Rope Barrier', type: 'barrier', width: 96, height: 8, color: '#FFD700' },
+      { id: 'stanchion', name: 'Stanchion Post', type: 'stanchion', width: 12, height: 12, color: '#CFD8DC' },
+      { id: 'divider-wall', name: 'Divider Wall', type: 'divider', width: 120, height: 8, color: '#9E9E9E' },
+      { id: 'pipe-drape', name: 'Pipe & Drape', type: 'drape', width: 144, height: 8, color: '#78909C' },
+      { id: 'plant-large', name: 'Large Plant', type: 'plant', width: 48, height: 48, color: '#2E7D32' },
+      { id: 'plant-small', name: 'Small Plant', type: 'plant-sm', width: 24, height: 24, color: '#43A047' },
+      { id: 'flowers', name: 'Flower Arrangement', type: 'flowers', width: 30, height: 30, color: '#EC407A' },
+      { id: 'balloon-arch', name: 'Balloon Arch', type: 'balloon', width: 144, height: 24, color: '#E040FB' },
+      { id: 'centerpiece', name: 'Centerpiece', type: 'centerpiece', width: 24, height: 24, color: '#FFB300' },
     ]
-  }
-]
-
-// Room/Layout Templates
-const LAYOUT_TEMPLATES = [
-  { id: 'blank', name: 'Blank Canvas', rooms: [] },
-  { id: 'wedding', name: 'Wedding Reception', preview: '🎊' },
-  { id: 'conference', name: 'Conference Room', preview: '📊' },
-  { id: 'banquet', name: 'Banquet Hall', preview: '🍽️' },
-  { id: 'tradeshow', name: 'Trade Show', preview: '🏢' },
-  { id: 'concert', name: 'Concert/Show', preview: '🎵' },
+  },
+  {
+    id: 'outdoor',
+    name: 'Outdoor & Tents',
+    icon: MapPin,
+    items: [
+      { id: 'tent-10x10', name: 'Tent 10x10', type: 'tent', width: 120, height: 120, color: '#ECEFF1' },
+      { id: 'tent-20x20', name: 'Tent 20x20', type: 'tent', width: 240, height: 240, color: '#ECEFF1' },
+      { id: 'canopy', name: 'Canopy', type: 'canopy', width: 144, height: 144, color: '#B0BEC5' },
+      { id: 'umbrella', name: 'Market Umbrella', type: 'umbrella', width: 72, height: 72, color: '#FF7043' },
+      { id: 'fire-pit', name: 'Fire Pit', type: 'fire-pit', width: 48, height: 48, color: '#FF5722' },
+      { id: 'heater', name: 'Patio Heater', type: 'heater', width: 24, height: 24, color: '#FF8A65' },
+    ]
+  },
 ]
 
 // =============================================================================
-// COMPONENT
+// OPTIMIZED CANVAS OBJECT COMPONENT
+// =============================================================================
+
+const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart }) => {
+  const handleMouseDown = (e) => {
+    e.stopPropagation()
+    onSelect(obj.id, e.shiftKey)
+    if (!obj.locked) {
+      onDragStart(obj.id, e)
+    }
+  }
+
+  // Render chairs around round tables
+  const renderChairs = () => {
+    if (!obj.type.includes('round-table') || !obj.seats) return null
+    return Array.from({ length: obj.seats }).map((_, i) => {
+      const angle = (i / obj.seats) * Math.PI * 2 - Math.PI / 2
+      const chairRadius = Math.max(obj.width, obj.height) / 2 + 12
+      const cx = obj.width / 2 + Math.cos(angle) * chairRadius
+      const cy = obj.height / 2 + Math.sin(angle) * chairRadius
+      return (
+        <circle
+          key={i}
+          cx={cx}
+          cy={cy}
+          r={8}
+          fill={obj.color}
+          opacity={0.7}
+        />
+      )
+    })
+  }
+
+  // Dance floor pattern
+  const renderDanceFloor = () => {
+    if (obj.type !== 'dance-floor') return null
+    const tiles = []
+    const tileSize = 24
+    for (let i = 0; i < Math.floor(obj.width / tileSize); i++) {
+      for (let j = 0; j < Math.floor(obj.height / tileSize); j++) {
+        tiles.push(
+          <rect
+            key={`${i}-${j}`}
+            x={i * tileSize + 1}
+            y={j * tileSize + 1}
+            width={tileSize - 2}
+            height={tileSize - 2}
+            fill={(i + j) % 2 === 0 ? '#2a2a4a' : '#1a1a2e'}
+          />
+        )
+      }
+    }
+    return tiles
+  }
+
+  const isRound = obj.type === 'round-table' || obj.type === 'cocktail' || 
+                  obj.type === 'highboy' || obj.type === 'bar-round' ||
+                  obj.type === 'fire-pit' || obj.type === 'umbrella'
+
+  return (
+    <g
+      transform={`translate(${obj.x}, ${obj.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`}
+      style={{ cursor: obj.locked ? 'not-allowed' : 'move' }}
+      onMouseDown={handleMouseDown}
+    >
+      {/* Main shape */}
+      {isRound ? (
+        <ellipse
+          cx={obj.width / 2}
+          cy={obj.height / 2}
+          rx={obj.width / 2 - 1}
+          ry={obj.height / 2 - 1}
+          fill={obj.color}
+          stroke={isSelected ? '#2969FF' : 'rgba(0,0,0,0.15)'}
+          strokeWidth={isSelected ? 2 : 1}
+        />
+      ) : (
+        <rect
+          width={obj.width}
+          height={obj.height}
+          rx={obj.type === 'dance-floor' ? 0 : 4}
+          fill={obj.color}
+          stroke={isSelected ? '#2969FF' : 'rgba(0,0,0,0.15)'}
+          strokeWidth={isSelected ? 2 : 1}
+        />
+      )}
+
+      {/* Chairs around tables */}
+      {renderChairs()}
+
+      {/* Dance floor tiles */}
+      {renderDanceFloor()}
+
+      {/* Label */}
+      {(obj.label || obj.tableNumber) && (
+        <text
+          x={obj.width / 2}
+          y={obj.height / 2 + 4}
+          textAnchor="middle"
+          fill="white"
+          fontSize={Math.min(12, obj.width / 6)}
+          fontWeight="600"
+          style={{ pointerEvents: 'none', userSelect: 'none' }}
+        >
+          {obj.tableNumber || obj.label}
+        </text>
+      )}
+
+      {/* Selection indicator */}
+      {isSelected && (
+        <rect
+          x={-2}
+          y={-2}
+          width={obj.width + 4}
+          height={obj.height + 4}
+          fill="none"
+          stroke="#2969FF"
+          strokeWidth={2}
+          strokeDasharray="4 2"
+          rx={isRound ? obj.width / 2 : 6}
+          ry={isRound ? obj.height / 2 : 6}
+        />
+      )}
+    </g>
+  )
+})
+
+// =============================================================================
+// MAIN COMPONENT
 // =============================================================================
 
 export function VenueLayoutDesigner() {
@@ -168,35 +325,31 @@ export function VenueLayoutDesigner() {
   const [canvasHeight, setCanvasHeight] = useState(800)
   const [objects, setObjects] = useState([])
   const [selectedIds, setSelectedIds] = useState([])
-  const [history, setHistory] = useState([])
-  const [historyIndex, setHistoryIndex] = useState(-1)
+  const [history, setHistory] = useState([[]])
+  const [historyIndex, setHistoryIndex] = useState(0)
 
   // UI state
-  const [zoom, setZoom] = useState(100)
+  const [zoom, setZoom] = useState(80)
   const [showGrid, setShowGrid] = useState(true)
   const [gridSize, setGridSize] = useState(24)
   const [snapToGrid, setSnapToGrid] = useState(true)
-  const [viewMode, setViewMode] = useState('2d') // '2d' or '3d'
   const [leftPanelOpen, setLeftPanelOpen] = useState(true)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
-  const [activeCategory, setActiveCategory] = useState('tables')
+  const [activeCategory, setActiveCategory] = useState('essentials')
   const [searchQuery, setSearchQuery] = useState('')
-  const [tool, setTool] = useState('select') // 'select', 'pan', 'draw-section'
+  const [tool, setTool] = useState('select')
 
-  // Drag state
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  // Drag state - using refs to avoid re-renders
+  const dragState = useRef({
+    isDragging: false,
+    draggedId: null,
+    startX: 0,
+    startY: 0,
+    objectStartX: 0,
+    objectStartY: 0
+  })
 
-  // Resize/rotate state
-  const [isResizing, setIsResizing] = useState(false)
-  const [resizeHandle, setResizeHandle] = useState(null)
-  const [isRotating, setIsRotating] = useState(false)
-
-  // Canvas pan/scroll
-  const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 })
-  const [isPanning, setIsPanning] = useState(false)
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [, forceUpdate] = useState(0)
 
   // Saving
   const [saving, setSaving] = useState(false)
@@ -226,6 +379,7 @@ export function VenueLayoutDesigner() {
       setCanvasWidth(data.width || 1200)
       setCanvasHeight(data.height || 800)
       setObjects(data.layout_data?.objects || [])
+      setHistory([data.layout_data?.objects || []])
     } catch (error) {
       console.error('Error loading layout:', error)
     }
@@ -236,37 +390,44 @@ export function VenueLayoutDesigner() {
   // =============================================================================
 
   const saveToHistory = useCallback((newObjects) => {
-    const newHistory = history.slice(0, historyIndex + 1)
-    newHistory.push([...newObjects])
-    setHistory(newHistory)
-    setHistoryIndex(newHistory.length - 1)
-  }, [history, historyIndex])
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1)
+      newHistory.push([...newObjects])
+      return newHistory
+    })
+    setHistoryIndex(prev => prev + 1)
+  }, [historyIndex])
 
-  const undo = () => {
+  const undo = useCallback(() => {
     if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1)
+      setHistoryIndex(prev => prev - 1)
       setObjects([...history[historyIndex - 1]])
     }
-  }
+  }, [historyIndex, history])
 
-  const redo = () => {
+  const redo = useCallback(() => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex(historyIndex + 1)
+      setHistoryIndex(prev => prev + 1)
       setObjects([...history[historyIndex + 1]])
     }
-  }
+  }, [historyIndex, history])
 
   // =============================================================================
   // OBJECT MANIPULATION
   // =============================================================================
 
-  const addObject = (item) => {
+  const snapValue = useCallback((value) => {
+    if (!snapToGrid) return value
+    return Math.round(value / gridSize) * gridSize
+  }, [snapToGrid, gridSize])
+
+  const addObject = useCallback((item) => {
     const newObject = {
-      id: `${item.type}-${Date.now()}`,
+      id: `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: item.type,
       name: item.name,
-      x: canvasWidth / 2 - item.width / 2,
-      y: canvasHeight / 2 - item.height / 2,
+      x: snapValue(canvasWidth / 2 - item.width / 2),
+      y: snapValue(canvasHeight / 2 - item.height / 2),
       width: item.width,
       height: item.height,
       rotation: 0,
@@ -274,56 +435,56 @@ export function VenueLayoutDesigner() {
       seats: item.seats || 0,
       locked: false,
       visible: true,
-      label: '',
+      label: item.label || '',
       tableNumber: '',
     }
     const newObjects = [...objects, newObject]
     setObjects(newObjects)
     saveToHistory(newObjects)
     setSelectedIds([newObject.id])
-  }
+  }, [objects, canvasWidth, canvasHeight, snapValue, saveToHistory])
 
-  const duplicateSelected = () => {
+  const duplicateSelected = useCallback(() => {
+    if (selectedIds.length === 0) return
     const newObjects = [...objects]
+    const newIds = []
     selectedIds.forEach(id => {
       const obj = objects.find(o => o.id === id)
       if (obj) {
+        const newId = `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         newObjects.push({
           ...obj,
-          id: `${obj.type}-${Date.now()}-copy`,
-          x: obj.x + 30,
-          y: obj.y + 30,
+          id: newId,
+          x: obj.x + 24,
+          y: obj.y + 24,
         })
+        newIds.push(newId)
       }
     })
     setObjects(newObjects)
     saveToHistory(newObjects)
-  }
+    setSelectedIds(newIds)
+  }, [objects, selectedIds, saveToHistory])
 
-  const deleteSelected = () => {
+  const deleteSelected = useCallback(() => {
+    if (selectedIds.length === 0) return
     const newObjects = objects.filter(o => !selectedIds.includes(o.id))
     setObjects(newObjects)
     saveToHistory(newObjects)
     setSelectedIds([])
-  }
+  }, [objects, selectedIds, saveToHistory])
 
-  const updateObject = (id, updates) => {
-    const newObjects = objects.map(obj =>
+  const updateObject = useCallback((id, updates) => {
+    setObjects(prev => prev.map(obj =>
       obj.id === id ? { ...obj, ...updates } : obj
-    )
-    setObjects(newObjects)
-  }
-
-  const snapToGridValue = (value) => {
-    if (!snapToGrid) return value
-    return Math.round(value / gridSize) * gridSize
-  }
+    ))
+  }, [])
 
   // =============================================================================
-  // MOUSE HANDLERS
+  // MOUSE HANDLERS - Optimized
   // =============================================================================
 
-  const getCanvasCoordinates = (e) => {
+  const getCanvasCoords = useCallback((e) => {
     const rect = canvasRef.current?.getBoundingClientRect()
     if (!rect) return { x: 0, y: 0 }
     const scale = zoom / 100
@@ -331,157 +492,101 @@ export function VenueLayoutDesigner() {
       x: (e.clientX - rect.left) / scale,
       y: (e.clientY - rect.top) / scale
     }
-  }
+  }, [zoom])
 
-  const handleCanvasMouseDown = (e) => {
-    const coords = getCanvasCoordinates(e)
-
-    if (tool === 'pan' || e.button === 1) {
-      setIsPanning(true)
-      setPanStart({ x: e.clientX - canvasOffset.x, y: e.clientY - canvasOffset.y })
-      return
-    }
-
-    // Check if clicking on an object
-    const clickedObject = [...objects].reverse().find(obj => {
-      if (!obj.visible) return false
-      return coords.x >= obj.x && coords.x <= obj.x + obj.width &&
-             coords.y >= obj.y && coords.y <= obj.y + obj.height
-    })
-
-    if (clickedObject) {
-      if (e.shiftKey) {
-        // Multi-select
-        setSelectedIds(prev => 
-          prev.includes(clickedObject.id) 
-            ? prev.filter(id => id !== clickedObject.id)
-            : [...prev, clickedObject.id]
-        )
-      } else {
-        setSelectedIds([clickedObject.id])
-      }
-
-      if (!clickedObject.locked) {
-        setIsDragging(true)
-        setDragStart(coords)
-        setDragOffset({ x: coords.x - clickedObject.x, y: coords.y - clickedObject.y })
-      }
+  const handleSelect = useCallback((id, shiftKey) => {
+    if (shiftKey) {
+      setSelectedIds(prev => 
+        prev.includes(id) 
+          ? prev.filter(i => i !== id)
+          : [...prev, id]
+      )
     } else {
+      setSelectedIds([id])
+    }
+  }, [])
+
+  const handleDragStart = useCallback((id, e) => {
+    const coords = getCanvasCoords(e)
+    const obj = objects.find(o => o.id === id)
+    if (!obj) return
+
+    dragState.current = {
+      isDragging: true,
+      draggedId: id,
+      startX: coords.x,
+      startY: coords.y,
+      objectStartX: obj.x,
+      objectStartY: obj.y
+    }
+  }, [objects, getCanvasCoords])
+
+  const handleCanvasMouseDown = useCallback((e) => {
+    if (e.target === canvasRef.current) {
       setSelectedIds([])
     }
-  }
+  }, [])
 
-  const handleCanvasMouseMove = (e) => {
-    const coords = getCanvasCoordinates(e)
+  const handleCanvasMouseMove = useCallback((e) => {
+    if (!dragState.current.isDragging) return
 
-    if (isPanning) {
-      setCanvasOffset({
-        x: e.clientX - panStart.x,
-        y: e.clientY - panStart.y
-      })
-      return
-    }
+    const coords = getCanvasCoords(e)
+    const dx = coords.x - dragState.current.startX
+    const dy = coords.y - dragState.current.startY
 
-    if (isDragging && selectedIds.length > 0) {
-      const dx = coords.x - dragStart.x
-      const dy = coords.y - dragStart.y
+    const newX = snapValue(dragState.current.objectStartX + dx)
+    const newY = snapValue(dragState.current.objectStartY + dy)
 
-      const newObjects = objects.map(obj => {
-        if (selectedIds.includes(obj.id) && !obj.locked) {
-          return {
-            ...obj,
-            x: snapToGridValue(obj.x + dx),
-            y: snapToGridValue(obj.y + dy)
-          }
-        }
-        return obj
-      })
-      setObjects(newObjects)
-      setDragStart(coords)
-    }
+    // Update object position directly
+    setObjects(prev => prev.map(obj =>
+      obj.id === dragState.current.draggedId
+        ? { ...obj, x: newX, y: newY }
+        : obj
+    ))
+  }, [getCanvasCoords, snapValue])
 
-    if (isResizing && selectedIds.length === 1 && resizeHandle) {
-      const obj = objects.find(o => o.id === selectedIds[0])
-      if (obj && !obj.locked) {
-        let newWidth = obj.width
-        let newHeight = obj.height
-        let newX = obj.x
-        let newY = obj.y
-
-        if (resizeHandle.includes('e')) newWidth = Math.max(24, coords.x - obj.x)
-        if (resizeHandle.includes('w')) {
-          newWidth = Math.max(24, obj.x + obj.width - coords.x)
-          newX = coords.x
-        }
-        if (resizeHandle.includes('s')) newHeight = Math.max(24, coords.y - obj.y)
-        if (resizeHandle.includes('n')) {
-          newHeight = Math.max(24, obj.y + obj.height - coords.y)
-          newY = coords.y
-        }
-
-        updateObject(obj.id, {
-          width: snapToGridValue(newWidth),
-          height: snapToGridValue(newHeight),
-          x: snapToGridValue(newX),
-          y: snapToGridValue(newY)
-        })
-      }
-    }
-  }
-
-  const handleCanvasMouseUp = () => {
-    if (isDragging || isResizing) {
+  const handleCanvasMouseUp = useCallback(() => {
+    if (dragState.current.isDragging) {
       saveToHistory(objects)
+      dragState.current.isDragging = false
+      dragState.current.draggedId = null
     }
-    setIsDragging(false)
-    setIsResizing(false)
-    setResizeHandle(null)
-    setIsPanning(false)
-    setIsRotating(false)
-  }
+  }, [objects, saveToHistory])
 
   // =============================================================================
   // DRAG FROM LIBRARY
   // =============================================================================
 
-  const handleDragStart = (e, item) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(item))
-    e.dataTransfer.effectAllowed = 'copy'
-  }
-
-  const handleDrop = (e) => {
+  const handleDrop = useCallback((e) => {
     e.preventDefault()
     const data = e.dataTransfer.getData('application/json')
-    if (data) {
-      const item = JSON.parse(data)
-      const coords = getCanvasCoordinates(e)
-      const newObject = {
-        id: `${item.type}-${Date.now()}`,
-        type: item.type,
-        name: item.name,
-        x: snapToGridValue(coords.x - item.width / 2),
-        y: snapToGridValue(coords.y - item.height / 2),
-        width: item.width,
-        height: item.height,
-        rotation: 0,
-        color: item.color,
-        seats: item.seats || 0,
-        locked: false,
-        visible: true,
-        label: '',
-        tableNumber: '',
-      }
-      const newObjects = [...objects, newObject]
-      setObjects(newObjects)
-      saveToHistory(newObjects)
-      setSelectedIds([newObject.id])
-    }
-  }
+    if (!data) return
 
-  const handleDragOver = (e) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'copy'
-  }
+    const item = JSON.parse(data)
+    const coords = getCanvasCoords(e)
+    
+    const newObject = {
+      id: `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: item.type,
+      name: item.name,
+      x: snapValue(coords.x - item.width / 2),
+      y: snapValue(coords.y - item.height / 2),
+      width: item.width,
+      height: item.height,
+      rotation: 0,
+      color: item.color,
+      seats: item.seats || 0,
+      locked: false,
+      visible: true,
+      label: item.label || '',
+      tableNumber: '',
+    }
+    
+    const newObjects = [...objects, newObject]
+    setObjects(newObjects)
+    saveToHistory(newObjects)
+    setSelectedIds([newObject.id])
+  }, [objects, getCanvasCoords, snapValue, saveToHistory])
 
   // =============================================================================
   // KEYBOARD SHORTCUTS
@@ -501,8 +606,7 @@ export function VenueLayoutDesigner() {
       }
       if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
-        if (e.shiftKey) redo()
-        else undo()
+        e.shiftKey ? redo() : undo()
       }
       if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
@@ -510,19 +614,14 @@ export function VenueLayoutDesigner() {
       }
       if (e.key === 'Escape') {
         setSelectedIds([])
-        setTool('select')
       }
-      if (e.key === '+' || e.key === '=') {
-        setZoom(z => Math.min(200, z + 10))
-      }
-      if (e.key === '-') {
-        setZoom(z => Math.max(25, z - 10))
-      }
+      if (e.key === '=' || e.key === '+') setZoom(z => Math.min(150, z + 10))
+      if (e.key === '-') setZoom(z => Math.max(25, z - 10))
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [objects, selectedIds, history, historyIndex])
+  }, [objects, deleteSelected, duplicateSelected, undo, redo])
 
   // =============================================================================
   // SAVE LAYOUT
@@ -530,14 +629,10 @@ export function VenueLayoutDesigner() {
 
   const saveLayout = async () => {
     if (!organizer?.id) return
-
     setSaving(true)
+
     try {
-      const layoutData = {
-        objects,
-        gridSize,
-        showGrid,
-      }
+      const layoutData = { objects, gridSize, showGrid }
 
       if (layoutId && layoutId !== 'create') {
         await supabase
@@ -551,7 +646,7 @@ export function VenueLayoutDesigner() {
           })
           .eq('id', layoutId)
       } else {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('venue_layouts')
           .insert({
             venue_id: venueId,
@@ -572,315 +667,48 @@ export function VenueLayoutDesigner() {
       setLastSaved(new Date())
     } catch (error) {
       console.error('Error saving layout:', error)
-      alert('Failed to save layout')
     } finally {
       setSaving(false)
     }
   }
 
   // =============================================================================
-  // RENDER OBJECT ON CANVAS
+  // COMPUTED VALUES
   // =============================================================================
 
-  const renderObject = (obj) => {
-    const isSelected = selectedIds.includes(obj.id)
-    if (!obj.visible) return null
+  const selectedObject = useMemo(() => 
+    selectedIds.length === 1 ? objects.find(o => o.id === selectedIds[0]) : null
+  , [selectedIds, objects])
 
-    return (
-      <g
-        key={obj.id}
-        transform={`translate(${obj.x}, ${obj.y}) rotate(${obj.rotation}, ${obj.width/2}, ${obj.height/2})`}
-        style={{ cursor: obj.locked ? 'not-allowed' : 'move' }}
-      >
-        {/* Main shape */}
-        {obj.type === 'round-table' || obj.type === 'cocktail' ? (
-          <ellipse
-            cx={obj.width / 2}
-            cy={obj.height / 2}
-            rx={obj.width / 2 - 2}
-            ry={obj.height / 2 - 2}
-            fill={obj.color}
-            stroke={isSelected ? '#2969FF' : 'rgba(0,0,0,0.2)'}
-            strokeWidth={isSelected ? 3 : 1}
-          />
-        ) : (
-          <rect
-            width={obj.width}
-            height={obj.height}
-            rx={obj.type === 'stage' ? 4 : obj.type === 'dance-floor' ? 0 : 8}
-            fill={obj.color}
-            stroke={isSelected ? '#2969FF' : 'rgba(0,0,0,0.2)'}
-            strokeWidth={isSelected ? 3 : 1}
-          />
-        )}
-
-        {/* Chairs around round tables */}
-        {obj.type === 'round-table' && obj.seats > 0 && (
-          <>
-            {Array.from({ length: obj.seats }).map((_, i) => {
-              const angle = (i / obj.seats) * Math.PI * 2 - Math.PI / 2
-              const chairRadius = Math.max(obj.width, obj.height) / 2 + 14
-              const cx = obj.width / 2 + Math.cos(angle) * chairRadius
-              const cy = obj.height / 2 + Math.sin(angle) * chairRadius
-              return (
-                <circle
-                  key={i}
-                  cx={cx}
-                  cy={cy}
-                  r={10}
-                  fill={obj.color}
-                  opacity={0.7}
-                  stroke="rgba(0,0,0,0.1)"
-                  strokeWidth={1}
-                />
-              )
-            })}
-          </>
-        )}
-
-        {/* Dance floor pattern */}
-        {obj.type === 'dance-floor' && (
-          <g>
-            {Array.from({ length: Math.floor(obj.width / 48) }).map((_, i) =>
-              Array.from({ length: Math.floor(obj.height / 48) }).map((_, j) => (
-                <rect
-                  key={`${i}-${j}`}
-                  x={i * 48 + 2}
-                  y={j * 48 + 2}
-                  width={44}
-                  height={44}
-                  fill={(i + j) % 2 === 0 ? '#2a2a4a' : '#1a1a2e'}
-                  rx={2}
-                />
-              ))
-            )}
-          </g>
-        )}
-
-        {/* Table number label */}
-        {(obj.tableNumber || obj.label) && (
-          <text
-            x={obj.width / 2}
-            y={obj.height / 2 + 5}
-            textAnchor="middle"
-            fill="white"
-            fontSize="14"
-            fontWeight="bold"
-          >
-            {obj.tableNumber || obj.label}
-          </text>
-        )}
-
-        {/* VIP badge */}
-        {obj.type === 'round-table' && obj.label?.toLowerCase().includes('vip') && (
-          <g transform={`translate(${obj.width - 20}, -8)`}>
-            <rect x={0} y={0} width={40} height={20} rx={4} fill="#E91E63" />
-            <text x={20} y={14} textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">VIP</text>
-          </g>
-        )}
-
-        {/* Selection handles */}
-        {isSelected && !obj.locked && (
-          <>
-            {/* Corner resize handles */}
-            {['nw', 'ne', 'sw', 'se'].map(handle => {
-              const x = handle.includes('w') ? -6 : obj.width - 6
-              const y = handle.includes('n') ? -6 : obj.height - 6
-              return (
-                <rect
-                  key={handle}
-                  x={x}
-                  y={y}
-                  width={12}
-                  height={12}
-                  fill="white"
-                  stroke="#2969FF"
-                  strokeWidth={2}
-                  rx={2}
-                  style={{ cursor: `${handle}-resize` }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation()
-                    setIsResizing(true)
-                    setResizeHandle(handle)
-                  }}
-                />
-              )
-            })}
-            {/* Edge resize handles */}
-            {['n', 's', 'e', 'w'].map(handle => {
-              const x = handle === 'w' ? -6 : handle === 'e' ? obj.width - 6 : obj.width / 2 - 6
-              const y = handle === 'n' ? -6 : handle === 's' ? obj.height - 6 : obj.height / 2 - 6
-              return (
-                <rect
-                  key={handle}
-                  x={x}
-                  y={y}
-                  width={12}
-                  height={12}
-                  fill="white"
-                  stroke="#2969FF"
-                  strokeWidth={2}
-                  rx={2}
-                  style={{ cursor: `${handle === 'n' || handle === 's' ? 'ns' : 'ew'}-resize` }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation()
-                    setIsResizing(true)
-                    setResizeHandle(handle)
-                  }}
-                />
-              )
-            })}
-            {/* Rotation handle */}
-            <circle
-              cx={obj.width / 2}
-              cy={-20}
-              r={8}
-              fill="#2969FF"
-              stroke="white"
-              strokeWidth={2}
-              style={{ cursor: 'grab' }}
-              onMouseDown={(e) => {
-                e.stopPropagation()
-                setIsRotating(true)
-              }}
-            />
-            <line
-              x1={obj.width / 2}
-              y1={0}
-              x2={obj.width / 2}
-              y2={-12}
-              stroke="#2969FF"
-              strokeWidth={2}
-            />
-          </>
-        )}
-      </g>
+  const filteredItems = useMemo(() => {
+    const category = OBJECT_CATEGORIES.find(c => c.id === activeCategory)
+    if (!category) return []
+    if (!searchQuery) return category.items
+    return category.items.filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  }
+  }, [activeCategory, searchQuery])
 
   // =============================================================================
   // RENDER
   // =============================================================================
 
-  const selectedObject = selectedIds.length === 1 ? objects.find(o => o.id === selectedIds[0]) : null
-  const filteredItems = OBJECT_CATEGORIES.find(c => c.id === activeCategory)?.items.filter(
-    item => !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || []
-
   return (
     <div className="h-screen flex flex-col bg-[#1e1e2e] text-white overflow-hidden">
       {/* ===== TOP TOOLBAR ===== */}
-      <div className="h-14 bg-[#2d2d3d] border-b border-[#3d3d4d] flex items-center px-2 gap-1">
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-3 border-r border-[#3d3d4d] mr-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <LayoutGrid className="w-5 h-5 text-white" />
-          </div>
-        </div>
+      <div className="h-12 bg-[#2d2d3d] border-b border-[#3d3d4d] flex items-center px-3 gap-2 flex-shrink-0">
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/organizer/venues`)}
+          className="text-white/70 hover:text-white hover:bg-white/10"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back
+        </Button>
 
-        {/* Menu Bar */}
-        {['File', 'Edit', 'Tools', 'Arrange', 'View', 'Help'].map(menu => (
-          <DropdownMenu key={menu}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 px-3">
-                {menu}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-[#2d2d3d] border-[#3d3d4d] text-white">
-              {menu === 'File' && (
-                <>
-                  <DropdownMenuItem onClick={saveLayout}>
-                    <Save className="w-4 h-4 mr-2" /> Save <span className="ml-auto text-xs text-white/50">⌘S</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Download className="w-4 h-4 mr-2" /> Export as PNG
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Download className="w-4 h-4 mr-2" /> Export as PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
-                  <DropdownMenuItem onClick={() => navigate(`/organizer/venues/${venueId}/layouts`)}>
-                    <ChevronLeft className="w-4 h-4 mr-2" /> Back to Layouts
-                  </DropdownMenuItem>
-                </>
-              )}
-              {menu === 'Edit' && (
-                <>
-                  <DropdownMenuItem onClick={undo} disabled={historyIndex <= 0}>
-                    <Undo className="w-4 h-4 mr-2" /> Undo <span className="ml-auto text-xs text-white/50">⌘Z</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={redo} disabled={historyIndex >= history.length - 1}>
-                    <Redo className="w-4 h-4 mr-2" /> Redo <span className="ml-auto text-xs text-white/50">⌘⇧Z</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
-                  <DropdownMenuItem onClick={duplicateSelected} disabled={selectedIds.length === 0}>
-                    <Copy className="w-4 h-4 mr-2" /> Duplicate <span className="ml-auto text-xs text-white/50">⌘D</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={deleteSelected} disabled={selectedIds.length === 0}>
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete <span className="ml-auto text-xs text-white/50">⌫</span>
-                  </DropdownMenuItem>
-                </>
-              )}
-              {menu === 'View' && (
-                <>
-                  <DropdownMenuItem onClick={() => setShowGrid(!showGrid)}>
-                    <Grid className="w-4 h-4 mr-2" /> {showGrid ? 'Hide Grid' : 'Show Grid'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSnapToGrid(!snapToGrid)}>
-                    {snapToGrid ? <Lock className="w-4 h-4 mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
-                    Snap to Grid: {snapToGrid ? 'On' : 'Off'}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
-                  <DropdownMenuItem onClick={() => setZoom(100)}>
-                    <Maximize2 className="w-4 h-4 mr-2" /> Reset Zoom (100%)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setZoom(z => Math.min(200, z + 25))}>
-                    <ZoomIn className="w-4 h-4 mr-2" /> Zoom In
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setZoom(z => Math.max(25, z - 25))}>
-                    <ZoomOut className="w-4 h-4 mr-2" /> Zoom Out
-                  </DropdownMenuItem>
-                </>
-              )}
-              {menu === 'Tools' && (
-                <>
-                  <DropdownMenuItem onClick={() => setTool('select')}>
-                    <MousePointer className="w-4 h-4 mr-2" /> Select Tool
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTool('pan')}>
-                    <Move className="w-4 h-4 mr-2" /> Pan Tool
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
-                  <DropdownMenuItem onClick={() => setTool('draw-section')}>
-                    <Square className="w-4 h-4 mr-2" /> Draw Section
-                  </DropdownMenuItem>
-                </>
-              )}
-              {menu === 'Arrange' && (
-                <>
-                  <DropdownMenuItem>Bring to Front</DropdownMenuItem>
-                  <DropdownMenuItem>Send to Back</DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
-                  <DropdownMenuItem>Align Left</DropdownMenuItem>
-                  <DropdownMenuItem>Align Center</DropdownMenuItem>
-                  <DropdownMenuItem>Align Right</DropdownMenuItem>
-                </>
-              )}
-              {menu === 'Help' && (
-                <>
-                  <DropdownMenuItem>
-                    <HelpCircle className="w-4 h-4 mr-2" /> Keyboard Shortcuts
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    Tutorial
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ))}
-
-        <div className="flex-1" />
+        <div className="w-px h-6 bg-[#3d3d4d]" />
 
         {/* Layout Name */}
         <Input
@@ -891,168 +719,98 @@ export function VenueLayoutDesigner() {
 
         <div className="flex-1" />
 
-        {/* Right side tools */}
-        <div className="flex items-center gap-1 border-l border-[#3d3d4d] pl-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
-                  className="text-white/70 hover:text-white hover:bg-white/10"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Switch to {viewMode === '2d' ? '3D' : '2D'} View</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {/* Undo/Redo */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={undo}
+          disabled={historyIndex <= 0}
+          className="text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30"
+        >
+          <Undo className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={redo}
+          disabled={historyIndex >= history.length - 1}
+          className="text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30"
+        >
+          <Redo className="w-4 h-4" />
+        </Button>
 
-          <Button
-            size="sm"
-            onClick={saveLayout}
-            disabled={saving}
-            className="bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="border-[#3d3d4d] text-white hover:bg-white/10">
-                Share <ChevronDown className="w-3 h-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-[#2d2d3d] border-[#3d3d4d] text-white">
-              <DropdownMenuItem>Copy Link</DropdownMenuItem>
-              <DropdownMenuItem>Email</DropdownMenuItem>
-              <DropdownMenuItem>Print</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* User avatar */}
-          <div className="w-8 h-8 rounded-full bg-[#2969FF] flex items-center justify-center ml-2">
-            {organizer?.business_name?.charAt(0) || 'U'}
-          </div>
-        </div>
-      </div>
-
-      {/* ===== SECONDARY TOOLBAR ===== */}
-      <div className="h-10 bg-[#252535] border-b border-[#3d3d4d] flex items-center px-2 gap-1">
-        {/* Drawing tools */}
-        <div className="flex items-center gap-0.5 border-r border-[#3d3d4d] pr-2 mr-2">
-          <TooltipProvider>
-            {[
-              { tool: 'select', icon: MousePointer, label: 'Select (V)' },
-              { tool: 'pan', icon: Move, label: 'Pan (H)' },
-            ].map(({ tool: t, icon: Icon, label }) => (
-              <Tooltip key={t}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`w-8 h-8 ${tool === t ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-                    onClick={() => setTool(t)}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{label}</TooltipContent>
-              </Tooltip>
-            ))}
-          </TooltipProvider>
-        </div>
-
-        {/* Shape/drawing tools */}
-        <div className="flex items-center gap-0.5 border-r border-[#3d3d4d] pr-2 mr-2">
-          <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10">
-            <Square className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10">
-            <Circle className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10">
-            <Type className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10">
-            <Image className="w-4 h-4" />
-          </Button>
-        </div>
+        <div className="w-px h-6 bg-[#3d3d4d]" />
 
         {/* Zoom controls */}
-        <div className="flex items-center gap-1 ml-auto">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10"
-            onClick={() => setZoom(z => Math.max(25, z - 10))}
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <span className="text-sm text-white/70 w-12 text-center">{zoom}%</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10"
-            onClick={() => setZoom(z => Math.min(200, z + 10))}
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setZoom(z => Math.max(25, z - 10))}
+          className="text-white/60 hover:text-white hover:bg-white/10"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </Button>
+        <span className="text-xs text-white/70 w-10 text-center">{zoom}%</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setZoom(z => Math.min(150, z + 10))}
+          className="text-white/60 hover:text-white hover:bg-white/10"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </Button>
 
-        {/* View mode toggle */}
-        <div className="flex items-center border-l border-[#3d3d4d] pl-2 ml-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`text-xs ${viewMode === '2d' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-            onClick={() => setViewMode('2d')}
-          >
-            2D
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`text-xs ${viewMode === '3d' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-            onClick={() => setViewMode('3d')}
-          >
-            3D
-          </Button>
-        </div>
+        <div className="w-px h-6 bg-[#3d3d4d]" />
+
+        {/* Grid toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowGrid(!showGrid)}
+          className={`${showGrid ? 'text-[#2969FF]' : 'text-white/60'} hover:text-white hover:bg-white/10`}
+        >
+          <Grid className="w-4 h-4" />
+        </Button>
+
+        <div className="w-px h-6 bg-[#3d3d4d]" />
+
+        {/* Save button */}
+        <Button
+          size="sm"
+          onClick={saveLayout}
+          disabled={saving}
+          className="bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
+        >
+          <Save className="w-4 h-4 mr-1" />
+          {saving ? 'Saving...' : 'Save'}
+        </Button>
       </div>
 
       {/* ===== MAIN CONTENT ===== */}
       <div className="flex-1 flex overflow-hidden">
-        {/* ===== LEFT PANEL - OBJECT LIBRARY ===== */}
-        <div className={`${leftPanelOpen ? 'w-64' : 'w-12'} bg-[#252535] border-r border-[#3d3d4d] flex flex-col transition-all duration-200`}>
+        {/* ===== LEFT PANEL ===== */}
+        <div className={`${leftPanelOpen ? 'w-56' : 'w-10'} bg-[#252535] border-r border-[#3d3d4d] flex flex-col transition-all duration-150 flex-shrink-0`}>
           {leftPanelOpen ? (
             <>
-              {/* Tabs */}
-              <div className="flex border-b border-[#3d3d4d]">
-                <button className="flex-1 py-2 text-xs font-medium text-white border-b-2 border-[#2969FF]">
-                  Objects
-                </button>
-                <button className="flex-1 py-2 text-xs font-medium text-white/60 hover:text-white">
-                  Templates
-                </button>
+              <div className="flex items-center justify-between p-2 border-b border-[#3d3d4d]">
+                <span className="text-xs font-medium text-white/80">Objects</span>
                 <button
-                  className="p-2 text-white/60 hover:text-white"
                   onClick={() => setLeftPanelOpen(false)}
+                  className="p-1 text-white/40 hover:text-white"
                 >
                   <PanelLeftClose className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Search */}
-              <div className="p-2">
+              <div className="p-2 border-b border-[#3d3d4d]">
                 <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/40" />
                   <Input
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                    className="pl-7 h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs"
                   />
                 </div>
               </div>
@@ -1060,16 +818,16 @@ export function VenueLayoutDesigner() {
               {/* Categories */}
               <div className="flex-1 overflow-y-auto">
                 {OBJECT_CATEGORIES.map(category => (
-                  <div key={category.id} className="border-b border-[#3d3d4d]">
+                  <div key={category.id}>
                     <button
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm ${
-                        activeCategory === category.id ? 'bg-[#2969FF]/20 text-white' : 'text-white/70 hover:bg-white/5'
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs ${
+                        activeCategory === category.id ? 'bg-[#2969FF]/20 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
                       }`}
                       onClick={() => setActiveCategory(activeCategory === category.id ? '' : category.id)}
                     >
-                      <category.icon className="w-4 h-4" />
-                      {category.name}
-                      <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${activeCategory === category.id ? 'rotate-180' : ''}`} />
+                      <category.icon className="w-3.5 h-3.5" />
+                      <span className="flex-1 text-left">{category.name}</span>
+                      <ChevronDown className={`w-3 h-3 transition-transform ${activeCategory === category.id ? 'rotate-180' : ''}`} />
                     </button>
                     
                     {activeCategory === category.id && (
@@ -1078,21 +836,27 @@ export function VenueLayoutDesigner() {
                           <div
                             key={item.id}
                             draggable
-                            onDragStart={(e) => handleDragStart(e, item)}
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('application/json', JSON.stringify(item))
+                              e.dataTransfer.effectAllowed = 'copy'
+                            }}
                             onClick={() => addObject(item)}
-                            className="flex flex-col items-center gap-1 p-2 rounded-lg bg-[#252535] hover:bg-[#3d3d4d] cursor-grab border border-transparent hover:border-[#2969FF]/50 transition-all"
+                            className="flex flex-col items-center gap-1 p-1.5 rounded bg-[#252535] hover:bg-[#3d3d4d] cursor-grab border border-transparent hover:border-[#2969FF]/50 transition-colors"
                           >
                             <div
-                              className="w-10 h-10 rounded flex items-center justify-center"
-                              style={{ backgroundColor: item.color + '40' }}
+                              className="w-8 h-8 rounded flex items-center justify-center"
+                              style={{ backgroundColor: item.color + '30' }}
                             >
-                              {item.type === 'round-table' || item.type === 'cocktail' ? (
-                                <div className="w-6 h-6 rounded-full" style={{ backgroundColor: item.color }} />
-                              ) : (
-                                <div className="w-8 h-4 rounded" style={{ backgroundColor: item.color }} />
-                              )}
+                              <div 
+                                className={`${item.type.includes('round') || item.type === 'cocktail' ? 'rounded-full' : 'rounded'}`}
+                                style={{ 
+                                  backgroundColor: item.color,
+                                  width: item.type.includes('round') || item.type === 'cocktail' ? 16 : 20,
+                                  height: item.type.includes('round') || item.type === 'cocktail' ? 16 : 10
+                                }}
+                              />
                             </div>
-                            <span className="text-[10px] text-white/70 text-center leading-tight">
+                            <span className="text-[9px] text-white/60 text-center leading-tight line-clamp-2">
                               {item.name}
                             </span>
                           </div>
@@ -1102,317 +866,186 @@ export function VenueLayoutDesigner() {
                   </div>
                 ))}
               </div>
-
-              {/* Rooms section */}
-              <div className="border-t border-[#3d3d4d] p-2">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-white/60">Layouts</span>
-                  <Button variant="ghost" size="icon" className="w-6 h-6 text-white/60 hover:text-white">
-                    <Plus className="w-3 h-3" />
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 p-2 rounded bg-[#2969FF]/20 text-white text-xs">
-                    <span className="w-8 text-center font-mono">240</span>
-                    <span>[8]</span>
-                  </div>
-                </div>
-              </div>
             </>
           ) : (
             <button
-              className="w-full h-12 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5"
               onClick={() => setLeftPanelOpen(true)}
+              className="flex-1 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {/* ===== CANVAS AREA ===== */}
+        {/* ===== CANVAS ===== */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto bg-[#1a1a2a] relative"
-          style={{ cursor: tool === 'pan' ? 'grab' : 'default' }}
+          className="flex-1 overflow-auto bg-[#1a1a2a]"
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
+          onMouseLeave={handleCanvasMouseUp}
         >
-          <div
-            className="relative"
-            style={{
-              transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px)`,
-              width: canvasWidth * (zoom / 100) + 200,
-              height: canvasHeight * (zoom / 100) + 200,
-              padding: 100
-            }}
-          >
+          <div className="p-8 min-w-max min-h-max">
             <svg
               ref={canvasRef}
-              width={canvasWidth}
-              height={canvasHeight}
+              width={canvasWidth * (zoom / 100)}
+              height={canvasHeight * (zoom / 100)}
               viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
-              style={{
-                transform: `scale(${zoom / 100})`,
-                transformOrigin: 'top left',
-                background: '#f8f9fa',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                borderRadius: 4
-              }}
+              className="bg-white rounded shadow-xl"
               onMouseDown={handleCanvasMouseDown}
-              onMouseMove={handleCanvasMouseMove}
-              onMouseUp={handleCanvasMouseUp}
-              onMouseLeave={handleCanvasMouseUp}
               onDrop={handleDrop}
-              onDragOver={handleDragOver}
+              onDragOver={(e) => e.preventDefault()}
             >
               {/* Grid */}
               {showGrid && (
-                <defs>
-                  <pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
-                    <path
-                      d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
-                      fill="none"
-                      stroke="#e0e0e0"
-                      strokeWidth="0.5"
-                    />
-                  </pattern>
-                </defs>
+                <>
+                  <defs>
+                    <pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
+                      <path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid)" />
+                </>
               )}
-              {showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
-
-              {/* Venue boundary */}
-              <rect
-                x={0}
-                y={0}
-                width={canvasWidth}
-                height={canvasHeight}
-                fill="none"
-                stroke="#ccc"
-                strokeWidth="2"
-                strokeDasharray="8 4"
-              />
 
               {/* Objects */}
-              {objects.map(renderObject)}
-
-              {/* Measurement line example */}
-              {selectedIds.length === 1 && selectedObject && (
-                <g>
-                  <line
-                    x1={selectedObject.x}
-                    y1={selectedObject.y + selectedObject.height + 20}
-                    x2={selectedObject.x + selectedObject.width}
-                    y2={selectedObject.y + selectedObject.height + 20}
-                    stroke="#2969FF"
-                    strokeWidth={1}
-                    markerStart="url(#arrow)"
-                    markerEnd="url(#arrow)"
-                  />
-                  <text
-                    x={selectedObject.x + selectedObject.width / 2}
-                    y={selectedObject.y + selectedObject.height + 35}
-                    textAnchor="middle"
-                    fill="#2969FF"
-                    fontSize={12}
-                  >
-                    {(selectedObject.width / 12).toFixed(2)} ft
-                  </text>
-                </g>
-              )}
+              {objects.map(obj => (
+                <CanvasObject
+                  key={obj.id}
+                  obj={obj}
+                  isSelected={selectedIds.includes(obj.id)}
+                  onSelect={handleSelect}
+                  onDragStart={handleDragStart}
+                />
+              ))}
             </svg>
           </div>
         </div>
 
-        {/* ===== RIGHT PANEL - PROPERTIES ===== */}
-        <div className={`${rightPanelOpen ? 'w-64' : 'w-12'} bg-[#252535] border-l border-[#3d3d4d] flex flex-col transition-all duration-200`}>
+        {/* ===== RIGHT PANEL ===== */}
+        <div className={`${rightPanelOpen ? 'w-56' : 'w-10'} bg-[#252535] border-l border-[#3d3d4d] flex flex-col transition-all duration-150 flex-shrink-0`}>
           {rightPanelOpen ? (
             <>
-              <div className="flex items-center justify-between p-3 border-b border-[#3d3d4d]">
-                <span className="text-sm font-medium text-white">Edit Object</span>
+              <div className="flex items-center justify-between p-2 border-b border-[#3d3d4d]">
+                <span className="text-xs font-medium text-white/80">Properties</span>
                 <button
-                  className="p-1 text-white/60 hover:text-white"
                   onClick={() => setRightPanelOpen(false)}
+                  className="p-1 text-white/40 hover:text-white"
                 >
                   <PanelRightClose className="w-4 h-4" />
                 </button>
               </div>
 
               {selectedObject ? (
-                <div className="flex-1 overflow-y-auto p-3 space-y-4">
-                  {/* Object type */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-3">
                   <div>
-                    <Label className="text-xs text-white/60">Type</Label>
-                    <p className="text-sm text-white capitalize">{selectedObject.type.replace('-', ' ')}</p>
+                    <Label className="text-[10px] text-white/50">Type</Label>
+                    <p className="text-xs text-white capitalize">{selectedObject.name}</p>
                   </div>
 
-                  {/* Label */}
                   <div>
-                    <Label className="text-xs text-white/60">Label</Label>
+                    <Label className="text-[10px] text-white/50">Label</Label>
                     <Input
                       value={selectedObject.label || ''}
                       onChange={(e) => updateObject(selectedObject.id, { label: e.target.value })}
-                      placeholder="VIP"
-                      className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1"
+                      className="h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs mt-1"
                     />
                   </div>
 
-                  {/* Size & Color */}
+                  {selectedObject.type.includes('table') && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px] text-white/50">Table #</Label>
+                        <Input
+                          value={selectedObject.tableNumber || ''}
+                          onChange={(e) => updateObject(selectedObject.id, { tableNumber: e.target.value })}
+                          className="h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-white/50">Seats</Label>
+                        <Input
+                          type="number"
+                          value={selectedObject.seats || 0}
+                          onChange={(e) => updateObject(selectedObject.id, { seats: parseInt(e.target.value) || 0 })}
+                          className="h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs mt-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label className="text-[10px] text-white/50">Color</Label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={selectedObject.color}
+                        onChange={(e) => updateObject(selectedObject.id, { color: e.target.value })}
+                        className="w-7 h-7 rounded cursor-pointer border-0"
+                      />
+                      <Input
+                        value={selectedObject.color}
+                        onChange={(e) => updateObject(selectedObject.id, { color: e.target.value })}
+                        className="flex-1 h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs text-white/60">Size</Label>
+                      <Label className="text-[10px] text-white/50">Width (ft)</Label>
                       <Input
                         type="number"
-                        value={Math.round(selectedObject.width / 12)}
-                        onChange={(e) => updateObject(selectedObject.id, { width: parseInt(e.target.value) * 12 })}
-                        className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1"
+                        value={(selectedObject.width / 12).toFixed(1)}
+                        onChange={(e) => updateObject(selectedObject.id, { width: parseFloat(e.target.value) * 12 })}
+                        className="h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs mt-1"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-white/60">Color</Label>
-                      <div className="flex items-center gap-1 mt-1">
-                        <input
-                          type="color"
-                          value={selectedObject.color}
-                          onChange={(e) => updateObject(selectedObject.id, { color: e.target.value })}
-                          className="w-8 h-8 rounded cursor-pointer"
-                        />
-                        <Input
-                          value={selectedObject.color}
-                          onChange={(e) => updateObject(selectedObject.id, { color: e.target.value })}
-                          className="flex-1 h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs"
-                        />
-                      </div>
+                      <Label className="text-[10px] text-white/50">Depth (ft)</Label>
+                      <Input
+                        type="number"
+                        value={(selectedObject.height / 12).toFixed(1)}
+                        onChange={(e) => updateObject(selectedObject.id, { height: parseFloat(e.target.value) * 12 })}
+                        className="h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs mt-1"
+                      />
                     </div>
                   </div>
 
-                  {/* Table specific */}
-                  {selectedObject.type.includes('table') && (
-                    <>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label className="text-xs text-white/60">Table Number</Label>
-                          <Input
-                            value={selectedObject.tableNumber || ''}
-                            onChange={(e) => updateObject(selectedObject.id, { tableNumber: e.target.value })}
-                            className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-white/60">Seats</Label>
-                          <Input
-                            type="number"
-                            value={selectedObject.seats || 0}
-                            onChange={(e) => updateObject(selectedObject.id, { seats: parseInt(e.target.value) || 0 })}
-                            className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label className="text-xs text-white/60">Standard Size</Label>
-                        <Select
-                          value={`${selectedObject.width}x${selectedObject.height}`}
-                          onValueChange={(v) => {
-                            const [w, h] = v.split('x').map(Number)
-                            updateObject(selectedObject.id, { width: w, height: h })
-                          }}
-                        >
-                          <SelectTrigger className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-[#2d2d3d] border-[#3d3d4d] text-white">
-                            <SelectItem value="60x60">5ft Round</SelectItem>
-                            <SelectItem value="72x72">6ft Round</SelectItem>
-                            <SelectItem value="84x84">7ft Round</SelectItem>
-                            <SelectItem value="96x48">8ft Rectangle</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Chair types */}
-                  {selectedObject.type === 'chair' && (
-                    <div>
-                      <Label className="text-xs text-white/60 mb-2 block">Chair Style</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {['Banquet', 'Chiavari', 'Ghost'].map((style) => (
-                          <button
-                            key={style}
-                            className={`p-2 rounded border text-xs ${
-                              selectedObject.name?.includes(style)
-                                ? 'border-[#2969FF] bg-[#2969FF]/20'
-                                : 'border-[#3d3d4d] hover:border-white/30'
-                            }`}
-                          >
-                            <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-white/20" />
-                            {style}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dimensions */}
                   <div>
-                    <Label className="text-xs text-white/60 mb-2 block">Dimensions</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label className="text-[10px] text-white/40">Width</Label>
-                        <Input
-                          type="number"
-                          value={(selectedObject.width / 12).toFixed(1)}
-                          onChange={(e) => updateObject(selectedObject.id, { width: parseFloat(e.target.value) * 12 })}
-                          className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-white/40">Height</Label>
-                        <Input
-                          type="number"
-                          value={(selectedObject.height / 12).toFixed(1)}
-                          onChange={(e) => updateObject(selectedObject.id, { height: parseFloat(e.target.value) * 12 })}
-                          className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Rotation */}
-                  <div>
-                    <Label className="text-xs text-white/60">Rotation</Label>
-                    <div className="flex items-center gap-2 mt-1">
+                    <Label className="text-[10px] text-white/50">Rotation</Label>
+                    <div className="flex gap-2 mt-1">
                       <Input
                         type="number"
                         value={selectedObject.rotation || 0}
                         onChange={(e) => updateObject(selectedObject.id, { rotation: parseInt(e.target.value) || 0 })}
-                        className="flex-1 h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                        className="flex-1 h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs"
                       />
-                      <span className="text-xs text-white/60">°</span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-8 h-8 text-white/60 hover:text-white"
-                        onClick={() => updateObject(selectedObject.id, { rotation: (selectedObject.rotation + 45) % 360 })}
+                        onClick={() => updateObject(selectedObject.id, { rotation: ((selectedObject.rotation || 0) + 45) % 360 })}
+                        className="w-7 h-7 text-white/60 hover:text-white hover:bg-white/10"
                       >
-                        <RotateCw className="w-4 h-4" />
+                        <RotateCw className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
 
-                  {/* Quick actions */}
                   <div className="flex gap-2 pt-2 border-t border-[#3d3d4d]">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 border-[#3d3d4d] text-white hover:bg-white/10"
                       onClick={duplicateSelected}
+                      className="flex-1 h-7 text-xs border-[#3d3d4d] text-white hover:bg-white/10"
                     >
-                      <Copy className="w-3 h-3 mr-1" /> Duplicate
+                      <Copy className="w-3 h-3 mr-1" /> Copy
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10"
                       onClick={deleteSelected}
+                      className="flex-1 h-7 text-xs border-red-500/30 text-red-400 hover:bg-red-500/10"
                     >
                       <Trash2 className="w-3 h-3 mr-1" /> Delete
                     </Button>
@@ -1420,51 +1053,40 @@ export function VenueLayoutDesigner() {
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center p-4">
-                  <p className="text-sm text-white/40 text-center">
-                    Select an object to edit its properties
+                  <p className="text-xs text-white/40 text-center">
+                    Select an object to edit
                   </p>
                 </div>
               )}
 
-              {/* Canvas settings */}
-              <div className="border-t border-[#3d3d4d] p-3 space-y-3">
-                <div>
-                  <Label className="text-xs text-white/60">Canvas Size (ft)</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
+              {/* Canvas Settings */}
+              <div className="border-t border-[#3d3d4d] p-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-white/50">Canvas W</Label>
                     <Input
                       type="number"
                       value={canvasWidth / 12}
                       onChange={(e) => setCanvasWidth(parseInt(e.target.value) * 12 || 1200)}
-                      className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                      className="h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs mt-1"
                     />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-white/50">Canvas H</Label>
                     <Input
                       type="number"
                       value={canvasHeight / 12}
                       onChange={(e) => setCanvasHeight(parseInt(e.target.value) * 12 || 800)}
-                      className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                      className="h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs mt-1"
                     />
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs text-white/60">Grid Size</Label>
-                  <Select value={gridSize.toString()} onValueChange={(v) => setGridSize(parseInt(v))}>
-                    <SelectTrigger className="w-20 h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#2d2d3d] border-[#3d3d4d] text-white">
-                      <SelectItem value="12">1 ft</SelectItem>
-                      <SelectItem value="24">2 ft</SelectItem>
-                      <SelectItem value="48">4 ft</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </>
           ) : (
             <button
-              className="w-full h-12 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5"
               onClick={() => setRightPanelOpen(true)}
+              className="flex-1 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -1473,15 +1095,19 @@ export function VenueLayoutDesigner() {
       </div>
 
       {/* ===== STATUS BAR ===== */}
-      <div className="h-6 bg-[#2d2d3d] border-t border-[#3d3d4d] flex items-center px-3 text-xs text-white/50">
+      <div className="h-6 bg-[#2d2d3d] border-t border-[#3d3d4d] flex items-center px-3 text-[10px] text-white/50 flex-shrink-0">
         <span>{objects.length} objects</span>
         <span className="mx-2">•</span>
         <span>{selectedIds.length} selected</span>
         <span className="mx-2">•</span>
-        <span>{canvasWidth / 12} × {canvasHeight / 12} ft</span>
+        <span>{canvasWidth / 12}×{canvasHeight / 12} ft</span>
         <div className="flex-1" />
+        <span>Snap: {snapToGrid ? 'On' : 'Off'}</span>
         {lastSaved && (
-          <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+          <>
+            <span className="mx-2">•</span>
+            <span>Saved {lastSaved.toLocaleTimeString()}</span>
+          </>
         )}
       </div>
     </div>
