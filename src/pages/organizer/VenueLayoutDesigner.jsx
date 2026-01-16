@@ -2154,7 +2154,7 @@ export function VenueLayoutDesigner() {
                     <feMergeNode in="SourceGraphic"/>
                   </feMerge>
                 </filter>
-                {/* Glow Effect -->
+                {/* Glow Effect */}
                 <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                   <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
                   <feMerge>
