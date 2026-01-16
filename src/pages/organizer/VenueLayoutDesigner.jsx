@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useOrganizer } from '@/contexts/OrganizerContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 // =============================================================================
@@ -762,6 +763,7 @@ export function VenueLayoutDesigner() {
   const { venueId, layoutId } = useParams()
   const navigate = useNavigate()
   const { organizer } = useOrganizer()
+  const { user } = useAuth()
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -1067,6 +1069,20 @@ export function VenueLayoutDesigner() {
   // =============================================================================
 
   const saveLayout = useCallback(async () => {
+    // Get the current user's ID (from profiles table)
+    // Use organizer.user_id if available, otherwise get from auth
+    let currentUserId = organizer?.user_id || user?.id
+    
+    if (!currentUserId) {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      currentUserId = authUser?.id
+    }
+
+    if (!currentUserId) {
+      alert('User authentication required. Please log in again.')
+      return
+    }
+
     if (!organizer?.id) {
       alert('Organizer information not available. Please refresh the page.')
       return
@@ -1125,11 +1141,12 @@ export function VenueLayoutDesigner() {
         }
       } else {
         // Create new layout
+        // Use currentUserId (from profiles table) instead of organizer.id
         const { data, error } = await supabase
           .from('venue_layouts')
           .insert({
             venue_id: venueId,
-            created_by: organizer.id,
+            created_by: currentUserId, // This must reference profiles(id)
             name: layoutName,
             total_width: widthInFeet,
             total_height: heightInFeet,
@@ -1163,7 +1180,7 @@ export function VenueLayoutDesigner() {
     } finally {
       setSaving(false)
     }
-  }, [organizer?.id, venueId, layoutId, layoutName, canvasWidth, canvasHeight, objects, gridSize, showGrid, zoom, snapToGrid, navigate])
+  }, [organizer?.id, organizer?.user_id, user?.id, venueId, layoutId, layoutName, canvasWidth, canvasHeight, objects, gridSize, showGrid, zoom, snapToGrid, navigate])
 
   // =============================================================================
   // KEYBOARD SHORTCUTS
