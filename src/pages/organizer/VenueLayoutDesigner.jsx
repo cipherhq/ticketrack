@@ -196,13 +196,178 @@ const renderRealisticObject = (obj, scale = 1) => {
   switch (obj.type) {
     // ===== TABLES =====
     case 'round-table':
+      const radius = Math.min(w, h) / 2
+      const tablecloth = obj.color === '#E91E63' || obj.color === '#9C27B0' || obj.color === '#EC407A' // Detecting tablecloth color
+      
       return (
         <>
-          {/* Table top */}
-          <circle cx={cx} cy={cy} r={Math.min(w, h) / 2 - 2} fill={fillColor} stroke="#000" strokeWidth={1} />
-          <circle cx={cx} cy={cy} r={Math.min(w, h) / 2 - 6} fill="none" stroke="#000" strokeWidth={0.5} opacity={0.3} />
-          {/* Table base */}
-          <circle cx={cx} cy={cy + Math.min(w, h) / 2 - 8} r={4} fill="#4a4a4a" />
+          <defs>
+            {/* Wood grain pattern - radial gradient */}
+            <radialGradient id={`wood-grain-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#D4A574" stopOpacity="0.9" />
+              <stop offset="30%" stopColor="#B8956A" stopOpacity="0.95" />
+              <stop offset="60%" stopColor="#9D7A4F" stopOpacity="1" />
+              <stop offset="85%" stopColor="#8B6B42" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#6B4F2D" stopOpacity="0.9" />
+            </radialGradient>
+            
+            {/* Tablecloth gradient - if fabric table */}
+            <radialGradient id={`tablecloth-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={fillColor} stopOpacity="1" />
+              <stop offset="50%" stopColor={fillColor} stopOpacity="0.95" />
+              <stop offset="100%" stopColor={fillColor} stopOpacity="0.85" />
+            </radialGradient>
+            
+            {/* Table shadow gradient */}
+            <radialGradient id={`table-shadow-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stopColor="#000000" stopOpacity="0.4" />
+              <stop offset="40%" stopColor="#000000" stopOpacity="0.2" />
+              <stop offset="70%" stopColor="#000000" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </radialGradient>
+            
+            {/* Leg gradient for 3D effect */}
+            <linearGradient id={`leg-gradient-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#5D4037" />
+              <stop offset="50%" stopColor="#4E342E" />
+              <stop offset="100%" stopColor="#3E2723" />
+            </linearGradient>
+            
+            {/* Table edge highlight */}
+            <linearGradient id={`edge-highlight-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          
+          {/* Shadow on floor - realistic drop shadow */}
+          <ellipse 
+            cx={cx} 
+            cy={cy + radius * 0.8} 
+            rx={radius * 0.95} 
+            ry={radius * 0.4} 
+            fill={`url(#table-shadow-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`}
+          />
+          
+          {/* Table top - with 3D perspective effect */}
+          {tablecloth ? (
+            // Tablecloth version - fabric texture
+            <>
+              <circle cx={cx} cy={cy} r={radius - 1} fill={`url(#tablecloth-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} 
+                      stroke="#000" strokeWidth={1.5} />
+              {/* Tablecloth fold patterns - subtle radial lines */}
+              {Array.from({ length: 8 }).map((_, i) => {
+                const angle = (i / 8) * Math.PI * 2
+                const x1 = cx + Math.cos(angle) * radius * 0.1
+                const y1 = cy + Math.sin(angle) * radius * 0.1
+                const x2 = cx + Math.cos(angle) * radius * 0.85
+                const y2 = cy + Math.sin(angle) * radius * 0.85
+                return (
+                  <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} 
+                        stroke={fillColor} strokeWidth={0.5} opacity={0.2} strokeLinecap="round" />
+                )
+              })}
+              {/* Edge banding - realistic tablecloth edge */}
+              <circle cx={cx} cy={cy} r={radius - 1} fill="none" stroke="#000" strokeWidth={1.5} opacity={0.8} />
+              <circle cx={cx} cy={cy} r={radius - 2} fill="none" stroke={fillColor} strokeWidth={0.5} opacity={0.6} />
+            </>
+          ) : (
+            // Wood version - realistic wood grain
+            <>
+              <circle cx={cx} cy={cy} r={radius - 1} fill={`url(#wood-grain-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} 
+                      stroke="#4E342E" strokeWidth={2} />
+              
+              {/* Wood grain lines - radial pattern from center */}
+              {Array.from({ length: 20 }).map((_, i) => {
+                const angle = (i / 20) * Math.PI * 2 + Math.random() * 0.1
+                const grainLength = radius * (0.3 + Math.random() * 0.5)
+                const x1 = cx + Math.cos(angle) * radius * 0.15
+                const y1 = cy + Math.sin(angle) * radius * 0.15
+                const x2 = cx + Math.cos(angle) * grainLength
+                const y2 = cy + Math.sin(angle) * grainLength
+                return (
+                  <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} 
+                        stroke="#8B6B42" strokeWidth={0.5} opacity={0.4} strokeLinecap="round" />
+                )
+              })}
+              
+              {/* Wood grain rings - growth rings */}
+              {[radius * 0.3, radius * 0.5, radius * 0.7, radius * 0.85].map((r, i) => (
+                <circle key={i} cx={cx} cy={cy} r={r} fill="none" 
+                        stroke="#6B4F2D" strokeWidth={0.5} opacity={0.3 - i * 0.05} />
+              ))}
+              
+              {/* Edge banding - realistic wood edge */}
+              <circle cx={cx} cy={cy} r={radius - 1} fill="none" stroke="#3E2723" strokeWidth={1.5} />
+              <circle cx={cx} cy={cy} r={radius - 2.5} fill="none" stroke="#D4A574" strokeWidth={0.5} opacity={0.3} />
+              
+              {/* Tabletop highlight - subtle shine */}
+              <ellipse cx={cx - radius * 0.15} cy={cy - radius * 0.15} 
+                       rx={radius * 0.4} ry={radius * 0.3} 
+                       fill="#FFFFFF" opacity={0.15} />
+            </>
+          )}
+          
+          {/* Table base/legs - 3D perspective with center post */}
+          <g>
+            {/* Center post base - cylindrical with shading */}
+            <ellipse cx={cx} cy={cy + radius * 0.55} rx={radius * 0.08} ry={radius * 0.15} 
+                     fill="#3E2723" stroke="#000" strokeWidth={1} />
+            
+            {/* Center post - vertical with gradient */}
+            <rect x={cx - radius * 0.08} y={cy + radius * 0.55} width={radius * 0.16} height={radius * 0.45} 
+                  fill={`url(#leg-gradient-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} 
+                  stroke="#000" strokeWidth={1} rx={radius * 0.08} />
+            
+            {/* Post highlight - 3D effect */}
+            <rect x={cx - radius * 0.06} y={cy + radius * 0.57} width={radius * 0.05} height={radius * 0.41} 
+                  fill="#FFFFFF" opacity={0.2} rx={radius * 0.06} />
+            
+            {/* Base platform - where legs attach */}
+            <ellipse cx={cx} cy={cy + radius * 1.0} rx={radius * 0.25} ry={radius * 0.12} 
+                     fill="#3E2723" stroke="#000" strokeWidth={1.5} />
+            
+            {/* Legs - 5 legs for stability (typical round table) */}
+            {[0, 1, 2, 3, 4].map((i) => {
+              const legAngle = (i / 5) * Math.PI * 2
+              const legX = cx + Math.cos(legAngle) * radius * 0.15
+              const legY = cy + radius * 0.6 + Math.sin(legAngle) * radius * 0.05
+              const legEndX = cx + Math.cos(legAngle) * radius * 0.7
+              const legEndY = cy + radius * 1.05 + Math.sin(legAngle) * radius * 0.3
+              
+              return (
+                <g key={i}>
+                  {/* Leg - with taper */}
+                  <path 
+                    d={`M ${legX} ${legY} 
+                        L ${legEndX - Math.cos(legAngle) * 1.5} ${legEndY - Math.sin(legAngle) * 1.5}
+                        L ${legEndX + Math.cos(legAngle) * 1.5} ${legEndY + Math.sin(legAngle) * 1.5} Z`}
+                    fill={`url(#leg-gradient-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`}
+                    stroke="#000"
+                    strokeWidth={0.8}
+                  />
+                  {/* Leg highlight - 3D effect */}
+                  <line x1={legX} y1={legY} x2={legEndX} y2={legEndY} 
+                        stroke="#FFFFFF" strokeWidth={0.5} opacity={0.3} />
+                </g>
+              )
+            })}
+            
+            {/* Bottom feet - rubber pads */}
+            {[0, 1, 2, 3, 4].map((i) => {
+              const footAngle = (i / 5) * Math.PI * 2
+              const footX = cx + Math.cos(footAngle) * radius * 0.7
+              const footY = cy + radius * 1.05 + Math.sin(footAngle) * radius * 0.3
+              return (
+                <ellipse key={i} cx={footX} cy={footY} rx={2.5} ry={1.5} 
+                         fill="#1a1a1a" stroke="#000" strokeWidth={0.5} />
+              )
+            })}
+          </g>
+          
+          {/* Inner detail ring - table edge profile */}
+          <circle cx={cx} cy={cy} r={radius * 0.95} fill="none" 
+                  stroke="#000" strokeWidth={0.5} opacity={0.2} />
         </>
       )
 
