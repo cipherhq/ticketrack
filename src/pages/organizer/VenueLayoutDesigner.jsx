@@ -34,6 +34,11 @@ import {
 import { useOrganizer } from '@/contexts/OrganizerContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+// 3D System imports
+import { toIsometric, toPerspective, getObjectHeight, getTransformFunction } from '@/utils/3dTransform'
+import { getMaterialForObjectType, generateMaterialGradient, MATERIALS } from '@/utils/materials'
+import { DEFAULT_LIGHTS, calculateCombinedLight, getSurfaceNormal } from '@/utils/lighting'
+import { generateShadowFilters, getShadowFilter } from '@/utils/shadowFilters'
 
 // =============================================================================
 // OBJECT LIBRARY - Comprehensive Categories and Items
@@ -1118,7 +1123,7 @@ const renderRealisticObject = (obj, scale = 1) => {
 // OPTIMIZED CANVAS OBJECT COMPONENT
 // =============================================================================
 
-const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart, onResizeStart }) => {
+const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart, onResizeStart, viewMode = '2d', cameraAngle = 30, canvasWidth = 1200, canvasHeight = 800 }) => {
   const handleMouseDown = (e) => {
     e.stopPropagation()
     onSelect(obj.id, e.shiftKey)
@@ -1193,11 +1198,40 @@ const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart, onResizeSta
     })
   }
 
+  // Calculate 3D transform based on view mode
+  const getTransform = () => {
+    if (viewMode === '2d') {
+      return `translate(${obj.x}, ${obj.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
+    } else if (viewMode === 'isometric') {
+      const z = getObjectHeight(obj.type, obj.width, obj.height)
+      const iso = toIsometric(obj.x, obj.y, z, { angle: cameraAngle, scale: 1 })
+      return `translate(${iso.x}, ${iso.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
+    } else {
+      // Perspective view
+      const z = getObjectHeight(obj.type, obj.width, obj.height)
+      const persp = toPerspective(obj.x, obj.y, z, {
+        position: { x: 0, y: -canvasWidth * 0.8, z: canvasHeight * 0.6 },
+        target: { x: canvasWidth / 2, y: canvasHeight / 2, z: 0 },
+        fov: 60,
+      })
+      if (persp.x === null) return null // Object out of view
+      return `translate(${persp.x}, ${persp.y}) scale(${persp.scale}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
+    }
+  }
+
+  const transform = getTransform()
+  if (!transform) return null // Don't render if out of view
+
+  // Get material for object
+  const material = getMaterialForObjectType(obj.type, obj.color)
+  const shadowFilterId = getShadowFilter(obj.type, obj.height)
+
   return (
     <g
-      transform={`translate(${obj.x}, ${obj.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`}
+      transform={transform}
       style={{ cursor: obj.locked ? 'not-allowed' : 'move' }}
       onMouseDown={handleMouseDown}
+      filter={viewMode !== '2d' ? `url(#${shadowFilterId})` : undefined}
     >
       {/* Render realistic object */}
       {renderRealisticObject(obj)}
@@ -1276,6 +1310,10 @@ export function VenueLayoutDesigner() {
   const [activeCategory, setActiveCategory] = useState('essentials')
   const [searchQuery, setSearchQuery] = useState('')
   const [tool, setTool] = useState('select')
+  
+  // 3D View Mode
+  const [viewMode, setViewMode] = useState('2d') // '2d', 'isometric', 'perspective'
+  const [cameraAngle, setCameraAngle] = useState(30) // For isometric view
 
   // Drag state - using refs to avoid re-renders
   const dragState = useRef({
@@ -1835,6 +1873,39 @@ export function VenueLayoutDesigner() {
           className="w-48 h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
         />
 
+        <div className="w-px h-6 bg-[#3d3d4d]" />
+
+        {/* View Mode Switcher */}
+        <div className="flex items-center gap-1 bg-[#1e1e2e] rounded-lg p-0.5 border border-[#3d3d4d]">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('2d')}
+            className={`h-7 px-3 text-xs ${viewMode === '2d' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+          >
+            <LayoutGrid className="w-3 h-3 mr-1" />
+            2D
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('isometric')}
+            className={`h-7 px-3 text-xs ${viewMode === 'isometric' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+          >
+            <Eye className="w-3 h-3 mr-1" />
+            3D ISO
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('perspective')}
+            className={`h-7 px-3 text-xs ${viewMode === 'perspective' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+          >
+            <Camera className="w-3 h-3 mr-1" />
+            3D PERSP
+          </Button>
+        </div>
+
         <div className="flex-1" />
 
         {/* Undo/Redo */}
@@ -2021,6 +2092,78 @@ export function VenueLayoutDesigner() {
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
             >
+              {/* Shadow Filters - 3D System */}
+              <defs>
+                {/* Drop Shadow - Standard */}
+                <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+                  <feOffset dx="2" dy="4" result="offsetblur"/>
+                  <feComponentTransfer>
+                    <feFuncA type="linear" slope="0.4"/>
+                  </feComponentTransfer>
+                  <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                {/* Drop Shadow - Soft */}
+                <filter id="dropShadowSoft" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+                  <feOffset dx="3" dy="6" result="offsetblur"/>
+                  <feComponentTransfer>
+                    <feFuncA type="linear" slope="0.3"/>
+                  </feComponentTransfer>
+                  <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                {/* Drop Shadow - Hard */}
+                <filter id="dropShadowHard" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+                  <feOffset dx="1" dy="2" result="offsetblur"/>
+                  <feComponentTransfer>
+                    <feFuncA type="linear" slope="0.5"/>
+                  </feComponentTransfer>
+                  <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                {/* Depth Shadow */}
+                <filter id="depthShadow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="5"/>
+                  <feOffset dx="4" dy="8" result="offsetblur"/>
+                  <feComponentTransfer>
+                    <feFuncA type="gamma" exponent="0.5" amplitude="0.6"/>
+                  </feComponentTransfer>
+                  <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                {/* Contact Shadow */}
+                <filter id="contactShadow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+                  <feOffset dx="0" dy="0" result="offsetblur"/>
+                  <feComponentTransfer>
+                    <feFuncA type="linear" slope="0.15"/>
+                  </feComponentTransfer>
+                  <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                {/* Glow Effect -->
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+              
               {/* Grid */}
               {showGrid && (
                 <>
@@ -2042,6 +2185,10 @@ export function VenueLayoutDesigner() {
                   onSelect={handleSelect}
                   onDragStart={handleDragStart}
                   onResizeStart={handleResizeStart}
+                  viewMode={viewMode}
+                  cameraAngle={cameraAngle}
+                  canvasWidth={canvasWidth}
+                  canvasHeight={canvasHeight}
                 />
               ))}
             </svg>
