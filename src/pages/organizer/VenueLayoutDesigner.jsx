@@ -800,6 +800,7 @@ export function VenueLayoutDesigner() {
   // Saving
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState(null)
+  const [saveStatus, setSaveStatus] = useState(null) // 'success' | 'error' | null
 
   // =============================================================================
   // LOAD LAYOUT
@@ -819,15 +820,42 @@ export function VenueLayoutDesigner() {
         .eq('id', layoutId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error loading layout:', error)
+        alert(`Failed to load layout: ${error.message}`)
+        navigate(`/organizer/venues/${venueId}/layouts`)
+        return
+      }
+
+      if (!data) {
+        alert('Layout not found')
+        navigate(`/organizer/venues/${venueId}/layouts`)
+        return
+      }
+
+      // Convert feet to pixels (assuming 1 foot = 12 pixels)
+      const widthInPixels = (data.total_width || 100) * 12
+      const heightInPixels = (data.total_height || 67) * 12
+      const gridSizeInPixels = (data.grid_size || 2) * 12
 
       setLayoutName(data.name || 'Untitled Layout')
-      setCanvasWidth(data.width || 1200)
-      setCanvasHeight(data.height || 800)
-      setObjects(data.layout_data?.objects || [])
-      setHistory([data.layout_data?.objects || []])
+      setCanvasWidth(widthInPixels)
+      setCanvasHeight(heightInPixels)
+      setGridSize(gridSizeInPixels)
+      
+      // Load objects from metadata
+      const layoutData = data.metadata || {}
+      setObjects(layoutData.objects || [])
+      setShowGrid(layoutData.showGrid !== false)
+      setSnapToGrid(layoutData.snapToGrid !== false)
+      if (layoutData.zoom) setZoom(layoutData.zoom)
+      
+      // Initialize history with loaded objects
+      setHistory([layoutData.objects || []])
+      setHistoryIndex(0)
     } catch (error) {
       console.error('Error loading layout:', error)
+      alert(`An error occurred while loading the layout: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -1058,6 +1086,10 @@ export function VenueLayoutDesigner() {
         e.preventDefault()
         setSelectedIds(objects.map(o => o.id))
       }
+      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        saveLayout()
+      }
       if (e.key === 'Escape') {
         setSelectedIds([])
       }
@@ -1067,52 +1099,106 @@ export function VenueLayoutDesigner() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [objects, deleteSelected, duplicateSelected, undo, redo])
+  }, [objects, deleteSelected, duplicateSelected, undo, redo, saveLayout])
 
   // =============================================================================
   // SAVE LAYOUT
   // =============================================================================
 
   const saveLayout = async () => {
-    if (!organizer?.id) return
+    if (!organizer?.id) {
+      alert('Organizer information not available. Please refresh the page.')
+      return
+    }
+
+    if (!venueId) {
+      alert('Venue ID is missing. Please go back and try again.')
+      return
+    }
+
     setSaving(true)
 
     try {
-      const layoutData = { objects, gridSize, showGrid }
+      // Prepare layout data to match database schema
+      const layoutData = {
+        objects,
+        gridSize,
+        showGrid,
+        zoom,
+        snapToGrid
+      }
+
+      // Convert pixels to feet (assuming 1 unit = 1 inch, so divide by 12)
+      const widthInFeet = canvasWidth / 12
+      const heightInFeet = canvasHeight / 12
+      const gridSizeInFeet = gridSize / 12
 
       if (layoutId && layoutId !== 'create') {
-        await supabase
+        // Update existing layout
+        const { data, error } = await supabase
           .from('venue_layouts')
           .update({
             name: layoutName,
-            width: canvasWidth,
-            height: canvasHeight,
-            layout_data: layoutData,
+            total_width: widthInFeet,
+            total_height: heightInFeet,
+            grid_size: gridSizeInFeet,
+            metadata: layoutData,
             updated_at: new Date().toISOString()
           })
           .eq('id', layoutId)
+          .select()
+          .single()
+
+        if (error) {
+          console.error('Error updating layout:', error)
+          setSaveStatus('error')
+          setTimeout(() => setSaveStatus(null), 3000)
+          alert(`Failed to save layout: ${error.message}`)
+          return
+        }
+
+        if (data) {
+          setLastSaved(new Date())
+          setSaveStatus('success')
+          setTimeout(() => setSaveStatus(null), 2000)
+        }
       } else {
-        const { data } = await supabase
+        // Create new layout
+        const { data, error } = await supabase
           .from('venue_layouts')
           .insert({
             venue_id: venueId,
-            organizer_id: organizer.id,
+            created_by: organizer.id,
             name: layoutName,
-            width: canvasWidth,
-            height: canvasHeight,
-            layout_data: layoutData
+            total_width: widthInFeet,
+            total_height: heightInFeet,
+            grid_size: gridSizeInFeet,
+            metadata: layoutData,
+            is_active: true
           })
           .select()
           .single()
 
+        if (error) {
+          console.error('Error creating layout:', error)
+          setSaveStatus('error')
+          setTimeout(() => setSaveStatus(null), 3000)
+          alert(`Failed to create layout: ${error.message}`)
+          return
+        }
+
         if (data) {
+          setLastSaved(new Date())
+          setSaveStatus('success')
+          // Navigate to the new layout's edit page
           navigate(`/organizer/venues/${venueId}/layouts/${data.id}`, { replace: true })
         }
       }
-
-      setLastSaved(new Date())
     } catch (error) {
       console.error('Error saving layout:', error)
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus(null), 3000)
+      alert(`An unexpected error occurred: ${error.message || 'Please try again.'}`)
     } finally {
       setSaving(false)
     }
@@ -1225,10 +1311,17 @@ export function VenueLayoutDesigner() {
           size="sm"
           onClick={saveLayout}
           disabled={saving}
-          className="bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
+          data-save-button
+          className={`${
+            saveStatus === 'success' 
+              ? 'bg-green-600 hover:bg-green-700' 
+              : saveStatus === 'error'
+              ? 'bg-red-600 hover:bg-red-700'
+              : 'bg-[#2969FF] hover:bg-[#1e4fd6]'
+          } text-white`}
         >
           <Save className="w-4 h-4 mr-1" />
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? 'Saving...' : saveStatus === 'success' ? '✓ Saved!' : saveStatus === 'error' ? 'Error' : 'Save'}
         </Button>
       </div>
 
