@@ -341,13 +341,47 @@ const renderRealisticObject = (obj, scale = 1) => {
     case 'bar-straight':
       return (
         <>
-          <rect x={0} y={h * 0.6} width={w} height={h * 0.4} fill={fillColor} stroke="#000" strokeWidth={1} />
-          <rect x={0} y={h * 0.6} width={w} height={6} fill="#5a4a3a" />
-          {/* Bar stools */}
-          {[w * 0.15, w * 0.35, w * 0.65, w * 0.85].map(x => (
-            <circle key={x} cx={x} cy={h * 0.3} r={4} fill="#8B7355" stroke="#000" />
+          {/* Bar counter - realistic wood with 3D effect */}
+          <defs>
+            <linearGradient id={`bar-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#6D4C41" />
+              <stop offset="50%" stopColor="#4E342E" />
+              <stop offset="100%" stopColor="#3E2723" />
+            </linearGradient>
+          </defs>
+          {/* Bar surface */}
+          <rect x={0} y={h * 0.6} width={w} height={h * 0.4} fill={`url(#bar-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke="#000" strokeWidth={1.5} />
+          {/* Bar top edge/rail */}
+          <rect x={0} y={h * 0.6} width={w} height={h * 0.12} fill="#8D6E63" stroke="#000" strokeWidth={1} />
+          {/* Wood grain texture */}
+          {Array.from({ length: Math.floor(w / 15) }).map((_, i) => (
+            <line key={i} x1={i * 15} y1={h * 0.62} x2={i * 15 + 8} y2={h * 0.62} 
+                  stroke="#5D4037" strokeWidth={0.5} opacity={0.3} />
           ))}
-          <text x={cx} y={h * 0.85} textAnchor="middle" fill="white" fontSize={Math.min(10, w / 12)} fontWeight="bold">BAR</text>
+          {/* Bar stools - more realistic */}
+          {[w * 0.12, w * 0.32, w * 0.52, w * 0.72, w * 0.92].map((x, i) => (
+            <g key={i}>
+              {/* Stool seat */}
+              <circle cx={x} cy={h * 0.3} r={w * 0.035} fill="#6D4C41" stroke="#3E2723" strokeWidth={1} />
+              {/* Stool back */}
+              <rect x={x - w * 0.008} y={h * 0.15} width={w * 0.016} height={h * 0.15} fill="#5D4037" stroke="#3E2723" strokeWidth={0.5} rx={1} />
+              {/* Stool legs */}
+              <line x1={x - w * 0.02} y1={h * 0.3} x2={x - w * 0.03} y2={h * 0.45} stroke="#5D4037" strokeWidth={1.5} strokeLinecap="round" />
+              <line x1={x + w * 0.02} y1={h * 0.3} x2={x + w * 0.03} y2={h * 0.45} stroke="#5D4037" strokeWidth={1.5} strokeLinecap="round" />
+            </g>
+          ))}
+          {/* Bar equipment - bottles/glasses */}
+          {[w * 0.2, w * 0.5, w * 0.8].map((x, i) => (
+            <g key={i}>
+              {/* Bottle */}
+              <rect x={x - w * 0.015} y={h * 0.45} width={w * 0.03} height={h * 0.12} fill="#1976D2" stroke="#0D47A1" strokeWidth={0.5} rx={1} />
+              {/* Glass/cocktail */}
+              <ellipse cx={x + w * 0.04} cy={h * 0.55} rx={w * 0.012} ry={h * 0.04} fill="#E3F2FD" stroke="#90CAF9" strokeWidth={0.5} />
+              <ellipse cx={x + w * 0.04} cy={h * 0.6} rx={w * 0.01} ry={h * 0.015} fill="#FFF9C4" />
+            </g>
+          ))}
+          <text x={cx} y={h * 0.85} textAnchor="middle" fill="white" fontSize={Math.min(10, w / 12)} fontWeight="bold"
+                style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>BAR</text>
         </>
       )
 
@@ -366,13 +400,180 @@ const renderRealisticObject = (obj, scale = 1) => {
     case 'buffet-line':
       return (
         <>
-          <rect x={0} y={h * 0.5} width={w} height={h * 0.5} fill={fillColor} stroke="#000" strokeWidth={1} />
-          <rect x={0} y={h * 0.5} width={w} height={4} fill="#6a5a4a" />
-          {/* Serving dishes */}
-          {[w * 0.2, w * 0.4, w * 0.6, w * 0.8].map(x => (
-            <ellipse key={x} cx={x} cy={h * 0.3} rx={6} ry={4} fill="#fff" stroke="#000" />
+          {/* Buffet table base - 3D effect */}
+          <defs>
+            <linearGradient id={`buffet-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#8BC34A" />
+              <stop offset="50%" stopColor="#689F38" />
+              <stop offset="100%" stopColor="#558B2F" />
+            </linearGradient>
+          </defs>
+          {/* Table surface with wood grain effect */}
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.5} fill={`url(#buffet-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke="#000" strokeWidth={1.5} />
+          {/* Table edge/shadow */}
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.08} fill="#6a5a4a" stroke="#000" strokeWidth={1} />
+          {/* Wood grain lines */}
+          {Array.from({ length: Math.floor(w / 20) }).map((_, i) => (
+            <line key={i} x1={i * 20} y1={h * 0.52} x2={i * 20 + 10} y2={h * 0.52} 
+                  stroke="#558B2F" strokeWidth={0.5} opacity={0.3} />
           ))}
-          <text x={cx} y={h * 0.75} textAnchor="middle" fill="white" fontSize={Math.min(9, w / 15)} fontWeight="bold">BUFFET</text>
+          {/* Food serving stations with dishes */}
+          {[
+            { x: w * 0.15, dishes: 3 },
+            { x: w * 0.35, dishes: 2 },
+            { x: w * 0.55, dishes: 3 },
+            { x: w * 0.75, dishes: 2 },
+            { x: w * 0.9, dishes: 1 }
+          ].map((station, idx) => (
+            <g key={idx}>
+              {/* Serving tray/platter base */}
+              <ellipse cx={station.x} cy={h * 0.28} rx={w * 0.05} ry={h * 0.06} fill="#fff" stroke="#ddd" strokeWidth={1} />
+              {/* Multiple food dishes on tray */}
+              {Array.from({ length: station.dishes }).map((_, i) => {
+                const angle = (i / station.dishes) * Math.PI * 2
+                const dishX = station.x + Math.cos(angle) * w * 0.03
+                const dishY = h * 0.28 + Math.sin(angle) * h * 0.03
+                return (
+                  <g key={i}>
+                    {/* Food dish */}
+                    <ellipse cx={dishX} cy={dishY} rx={w * 0.025} ry={h * 0.03} fill="#FFEB3B" stroke="#FFC107" strokeWidth={0.5} />
+                    {/* Food contents */}
+                    <ellipse cx={dishX} cy={dishY - h * 0.01} rx={w * 0.018} ry={h * 0.02} fill="#FF8F00" opacity={0.8} />
+                  </g>
+                )
+              })}
+              {/* Heat lamp above station */}
+              <ellipse cx={station.x} cy={h * 0.15} rx={w * 0.04} ry={h * 0.03} fill="#FF6F00" opacity={0.6} />
+              <ellipse cx={station.x} cy={h * 0.15} rx={w * 0.03} ry={h * 0.02} fill="#FFB300" opacity={0.4} />
+            </g>
+          ))}
+          {/* Serving utensils and tongs */}
+          {[w * 0.25, w * 0.65].map(x => (
+            <g key={x}>
+              <rect x={x} y={h * 0.35} width={w * 0.02} height={h * 0.08} fill="#C0C0C0" stroke="#999" strokeWidth={0.5} rx={1} />
+              <rect x={x + w * 0.03} y={h * 0.35} width={w * 0.02} height={h * 0.08} fill="#C0C0C0" stroke="#999" strokeWidth={0.5} rx={1} />
+            </g>
+          ))}
+          {/* Table label */}
+          <text x={cx} y={h * 0.8} textAnchor="middle" fill="white" fontSize={Math.min(10, w / 12)} fontWeight="bold" 
+                style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>BUFFET</text>
+        </>
+      )
+
+    case 'food-station':
+      return (
+        <>
+          {/* Food station table - square/round station */}
+          <defs>
+            <linearGradient id={`food-station-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#9CCC65" />
+              <stop offset="100%" stopColor="#689F38" />
+            </linearGradient>
+          </defs>
+          {/* Table surface */}
+          <ellipse cx={cx} cy={cy} rx={w * 0.48} ry={h * 0.48} fill={`url(#food-station-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke="#558B2F" strokeWidth={2} />
+          {/* Table edge */}
+          <ellipse cx={cx} cy={h * 0.6} rx={w * 0.48} ry={h * 0.15} fill="#6a5a4a" stroke="#000" strokeWidth={1} />
+          {/* Central display with food items arranged around */}
+          <ellipse cx={cx} cy={cy - h * 0.1} rx={w * 0.15} ry={h * 0.15} fill="#FFEB3B" stroke="#FFC107" strokeWidth={1} />
+          {/* Food items around center */}
+          {[0, 1, 2, 3].map((i) => {
+            const angle = (i / 4) * Math.PI * 2
+            const itemX = cx + Math.cos(angle) * w * 0.25
+            const itemY = cy + Math.sin(angle) * h * 0.25
+            return (
+              <ellipse key={i} cx={itemX} cy={itemY} rx={w * 0.12} ry={h * 0.12} 
+                      fill="#FF8F00" stroke="#E65100" strokeWidth={0.5} />
+            )
+          })}
+          {/* Serving utensils */}
+          <line x1={cx - w * 0.15} y1={cy} x2={cx + w * 0.15} y2={cy} stroke="#C0C0C0" strokeWidth={1.5} strokeLinecap="round" />
+        </>
+      )
+
+    case 'coffee':
+    case 'coffee-station':
+      return (
+        <>
+          {/* Coffee station table */}
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.5} fill="#6D4C41" stroke="#000" strokeWidth={1.5} rx={2} />
+          {/* Coffee machine */}
+          <rect x={w * 0.15} y={h * 0.15} width={w * 0.3} height={h * 0.35} fill="#3E2723" stroke="#000" strokeWidth={1} rx={2} />
+          {/* Coffee machine display */}
+          <rect x={w * 0.18} y={h * 0.18} width={w * 0.24} height={h * 0.12} fill="#1B5E20" stroke="#000" />
+          <rect x={w * 0.2} y={h * 0.2} width={w * 0.2} height={h * 0.08} fill="#4CAF50" />
+          {/* Coffee spout */}
+          <rect x={w * 0.28} y={h * 0.45} width={w * 0.04} height={h * 0.08} fill="#3E2723" stroke="#000" />
+          {/* Coffee cups on side */}
+          {[w * 0.6, w * 0.75].map((x, i) => (
+            <g key={i}>
+              {/* Cup */}
+              <ellipse cx={x} cy={h * 0.35} rx={w * 0.06} ry={h * 0.08} fill="#fff" stroke="#ddd" strokeWidth={0.5} />
+              {/* Coffee liquid */}
+              <ellipse cx={x} cy={h * 0.38} rx={w * 0.04} ry={h * 0.04} fill="#6D4C41" />
+              {/* Steam */}
+              <path d={`M ${x} ${h * 0.25} Q ${x - w * 0.02} ${h * 0.22} ${x - w * 0.03} ${h * 0.2} 
+                       M ${x} ${h * 0.25} Q ${x} ${h * 0.22} ${x} ${h * 0.2}
+                       M ${x} ${h * 0.25} Q ${x + w * 0.02} ${h * 0.22} ${x + w * 0.03} ${h * 0.2}`}
+                    stroke="#E0E0E0" strokeWidth={1} fill="none" opacity={0.6} />
+            </g>
+          ))}
+          {/* Cream and sugar containers */}
+          <ellipse cx={w * 0.6} cy={h * 0.55} rx={w * 0.05} ry={h * 0.04} fill="#fff" stroke="#ddd" strokeWidth={0.5} />
+          <ellipse cx={w * 0.75} cy={h * 0.55} rx={w * 0.05} ry={h * 0.04} fill="#FFF9C4" stroke="#FDD835" strokeWidth={0.5} />
+        </>
+      )
+
+    case 'dessert':
+      return (
+        <>
+          {/* Dessert table */}
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.5} fill="#F48FB1" stroke="#000" strokeWidth={1.5} rx={3} />
+          {/* Table edge */}
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.08} fill="#C2185B" stroke="#000" strokeWidth={1} />
+          {/* Display stand/cake tier */}
+          <ellipse cx={cx} cy={h * 0.3} rx={w * 0.25} ry={h * 0.08} fill="#fff" stroke="#F8BBD9" strokeWidth={1} />
+          <ellipse cx={cx} cy={h * 0.2} rx={w * 0.15} ry={h * 0.08} fill="#fff" stroke="#F8BBD9" strokeWidth={1} />
+          {/* Desserts on display */}
+          {[w * 0.2, w * 0.5, w * 0.8].map((x, i) => (
+            <g key={i}>
+              {/* Cake slice */}
+              <path d={`M ${x} ${h * 0.25} L ${x + w * 0.08} ${h * 0.35} L ${x - w * 0.08} ${h * 0.35} Z`}
+                    fill="#FFB74D" stroke="#F57C00" strokeWidth={0.5} />
+              {/* Frosting */}
+              <ellipse cx={x} cy={h * 0.25} rx={w * 0.06} ry={h * 0.02} fill="#FFF9C4" />
+              {/* Cupcakes */}
+              <ellipse cx={x + w * 0.15} cy={h * 0.35} rx={w * 0.04} ry={h * 0.05} fill="#8BC34A" stroke="#689F38" strokeWidth={0.5} />
+              <ellipse cx={x + w * 0.15} cy={h * 0.33} rx={w * 0.05} ry={h * 0.03} fill="#FFF9C4" />
+            </g>
+          ))}
+          <text x={cx} y={h * 0.75} textAnchor="middle" fill="white" fontSize={Math.min(8, w / 10)} fontWeight="bold">DESSERTS</text>
+        </>
+      )
+
+    case 'drinks':
+    case 'water-station':
+      return (
+        <>
+          {/* Drink station table */}
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.5} fill="#29B6F6" stroke="#000" strokeWidth={1.5} rx={2} />
+          {/* Water dispensers */}
+          {[w * 0.3, w * 0.7].map((x, i) => (
+            <g key={i}>
+              {/* Dispenser base */}
+              <rect x={x - w * 0.08} y={h * 0.2} width={w * 0.16} height={h * 0.3} fill="#0288D1" stroke="#000" strokeWidth={1} rx={1} />
+              {/* Water container */}
+              <rect x={x - w * 0.06} y={h * 0.25} width={w * 0.12} height={h * 0.2} fill="#B3E5FC" stroke="#0288D1" strokeWidth={0.5} />
+              {/* Water level */}
+              <rect x={x - w * 0.06} y={h * 0.35} width={w * 0.12} height={h * 0.1} fill="#4FC3F7" />
+              {/* Spout */}
+              <rect x={x - w * 0.02} y={h * 0.42} width={w * 0.04} height={h * 0.05} fill="#0288D1" stroke="#000" />
+            </g>
+          ))}
+          {/* Cups/disposable cups */}
+          {[w * 0.2, w * 0.5, w * 0.8].map((x, i) => (
+            <ellipse key={i} cx={x} cy={h * 0.6} rx={w * 0.04} ry={h * 0.05} fill="#E3F2FD" stroke="#90CAF9" strokeWidth={0.5} />
+          ))}
         </>
       )
 
@@ -523,11 +724,88 @@ const renderRealisticObject = (obj, scale = 1) => {
     case 'speaker-main':
       return (
         <>
-          <rect x={0} y={0} width={w} height={h} rx={2} fill="#37474F" stroke="#000" strokeWidth={1} />
-          {/* Speaker grille */}
-          {Array.from({ length: 3 }).map((_, i) => (
-            <rect key={i} x={w * 0.2} y={h * 0.2 + i * h * 0.2} width={w * 0.6} height={h * 0.1} fill="#263238" />
-          ))}
+          {/* Speaker cabinet - 3D effect with gradient */}
+          <defs>
+            <linearGradient id={`speaker-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#4a5568" />
+              <stop offset="50%" stopColor="#37474F" />
+              <stop offset="100%" stopColor="#263238" />
+            </linearGradient>
+          </defs>
+          {/* Main cabinet */}
+          <rect x={0} y={0} width={w} height={h} rx={3} fill={`url(#speaker-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke="#1a1a1a" strokeWidth={1.5} />
+          {/* Top shadow */}
+          <rect x={1} y={1} width={w - 2} height={h * 0.15} rx={2} fill="#1a1a1a" opacity={0.3} />
+          {/* Speaker grille frame */}
+          <rect x={w * 0.15} y={h * 0.15} width={w * 0.7} height={h * 0.7} rx={4} fill="#1a1a1a" stroke="#37474F" strokeWidth={1} />
+          {/* Speaker grille mesh pattern - circular holes */}
+          {Array.from({ length: 4 }).map((_, row) =>
+            Array.from({ length: 3 }).map((_, col) => (
+              <circle
+                key={`${row}-${col}`}
+                cx={w * 0.2 + col * w * 0.23}
+                cy={h * 0.2 + row * h * 0.23}
+                r={w * 0.06}
+                fill="#263238"
+                stroke="#37474F"
+                strokeWidth={0.5}
+              />
+            ))
+          )}
+          {/* Speaker cone/driver center */}
+          <ellipse cx={w * 0.5} cy={h * 0.5} rx={w * 0.15} ry={h * 0.15} fill="#1a1a1a" stroke="#555" strokeWidth={1} />
+          <ellipse cx={w * 0.5} cy={h * 0.5} rx={w * 0.08} ry={h * 0.08} fill="#263238" />
+          {/* Ventilation slots */}
+          <rect x={w * 0.05} y={h * 0.1} width={w * 0.05} height={h * 0.8} rx={1} fill="#1a1a1a" opacity={0.6} />
+          <rect x={w * 0.9} y={h * 0.1} width={w * 0.05} height={h * 0.8} rx={1} fill="#1a1a1a" opacity={0.6} />
+          {/* Bottom feet/support */}
+          <rect x={w * 0.2} y={h * 0.92} width={w * 0.15} height={h * 0.08} rx={1} fill="#1a1a1a" />
+          <rect x={w * 0.65} y={h * 0.92} width={w * 0.15} height={h * 0.08} rx={1} fill="#1a1a1a" />
+        </>
+      )
+
+    case 'subwoofer':
+    case 'speaker-sub':
+      return (
+        <>
+          {/* Subwoofer cabinet - large, square, with large driver */}
+          <defs>
+            <linearGradient id={`sub-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#3a3a3a" />
+              <stop offset="50%" stopColor="#263238" />
+              <stop offset="100%" stopColor="#1a1a1a" />
+            </linearGradient>
+          </defs>
+          {/* Main cabinet - square/rectangular for subwoofers */}
+          <rect x={0} y={0} width={w} height={h} rx={4} fill={`url(#sub-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke="#1a1a1a" strokeWidth={2} />
+          {/* Top shadow */}
+          <rect x={1} y={1} width={w - 2} height={h * 0.12} rx={3} fill="#000" opacity={0.4} />
+          {/* Large subwoofer grille frame */}
+          <rect x={w * 0.1} y={h * 0.1} width={w * 0.8} height={h * 0.8} rx={5} fill="#1a1a1a" stroke="#37474F" strokeWidth={1.5} />
+          {/* Large subwoofer driver/cone */}
+          <circle cx={w * 0.5} cy={h * 0.5} r={Math.min(w, h) * 0.3} fill="#1a1a1a" stroke="#555" strokeWidth={2} />
+          <circle cx={w * 0.5} cy={h * 0.5} r={Math.min(w, h) * 0.22} fill="#263238" stroke="#666" strokeWidth={1} />
+          {/* Driver cone center */}
+          <ellipse cx={w * 0.5} cy={h * 0.5} rx={Math.min(w, h) * 0.12} ry={Math.min(w, h) * 0.15} fill="#1a1a1a" />
+          {/* Speaker grille mesh pattern - denser for subwoofer */}
+          {Array.from({ length: 5 }).map((_, row) =>
+            Array.from({ length: 5}).map((_, col) => (
+              <circle
+                key={`${row}-${col}`}
+                cx={w * 0.15 + col * w * 0.18}
+                cy={h * 0.15 + row * h * 0.18}
+                r={w * 0.04}
+                fill="#263238"
+                stroke="#37474F"
+                strokeWidth={0.3}
+              />
+            ))
+          )}
+          {/* Large ventilation port (bottom) */}
+          <rect x={w * 0.15} y={h * 0.85} width={w * 0.7} height={h * 0.08} rx={2} fill="#1a1a1a" opacity={0.7} />
+          {/* Bottom support feet */}
+          <rect x={w * 0.1} y={h * 0.92} width={w * 0.2} height={h * 0.08} rx={2} fill="#1a1a1a" />
+          <rect x={w * 0.7} y={h * 0.92} width={w * 0.2} height={h * 0.08} rx={2} fill="#1a1a1a" />
         </>
       )
 
