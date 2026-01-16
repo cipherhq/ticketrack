@@ -181,6 +181,496 @@ const OBJECT_CATEGORIES = [
 ]
 
 // =============================================================================
+// REALISTIC OBJECT RENDERER
+// =============================================================================
+
+const renderRealisticObject = (obj, scale = 1) => {
+  const w = obj.width
+  const h = obj.height
+  const cx = w / 2
+  const cy = h / 2
+  const strokeColor = obj.color || '#333'
+  const fillColor = obj.color || '#666'
+
+  switch (obj.type) {
+    // ===== TABLES =====
+    case 'round-table':
+      return (
+        <>
+          {/* Table top */}
+          <circle cx={cx} cy={cy} r={Math.min(w, h) / 2 - 2} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <circle cx={cx} cy={cy} r={Math.min(w, h) / 2 - 6} fill="none" stroke="#000" strokeWidth={0.5} opacity={0.3} />
+          {/* Table base */}
+          <circle cx={cx} cy={cy + Math.min(w, h) / 2 - 8} r={4} fill="#4a4a4a" />
+        </>
+      )
+
+    case 'rect-table':
+    case 'head-table':
+      return (
+        <>
+          {/* Table top */}
+          <rect x={2} y={2} width={w - 4} height={h - 4} rx={2} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={4} y={4} width={w - 8} height={h - 8} fill="none" stroke="#000" strokeWidth={0.5} opacity={0.3} />
+          {/* Table legs */}
+          <rect x={w * 0.15} y={h - 6} width={3} height={4} fill="#4a4a4a" />
+          <rect x={w * 0.85 - 3} y={h - 6} width={3} height={4} fill="#4a4a4a" />
+        </>
+      )
+
+    case 'cocktail':
+    case 'highboy':
+      return (
+        <>
+          <circle cx={cx} cy={cy - 4} r={Math.min(w, h) / 2 - 2} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={cx - 2} y={cy - 4} width={4} height={h - Math.min(w, h) / 2 + 4} fill="#4a4a4a" />
+          <circle cx={cx} cy={h - 4} r={6} fill="#4a4a4a" />
+        </>
+      )
+
+    case 'sweetheart':
+      return (
+        <>
+          <ellipse cx={cx} cy={cy} rx={w / 2 - 2} ry={h / 2 - 2} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={cx - 2} y={cy} width={4} height={h / 2} fill="#4a4a4a" />
+        </>
+      )
+
+    // ===== CHAIRS =====
+    case 'chair':
+    case 'banquet-chair':
+    case 'chiavari':
+    case 'ghost':
+      return (
+        <>
+          {/* Seat */}
+          <rect x={w * 0.2} y={h * 0.3} width={w * 0.6} height={h * 0.3} rx={1} fill={fillColor} stroke="#000" strokeWidth={0.5} />
+          {/* Backrest */}
+          <rect x={w * 0.2} y={h * 0.1} width={w * 0.6} height={h * 0.2} rx={1} fill={fillColor} stroke="#000" strokeWidth={0.5} />
+          {/* Legs */}
+          <rect x={w * 0.25} y={h * 0.6} width={1.5} height={h * 0.4} fill="#4a4a4a" />
+          <rect x={w * 0.75 - 1.5} y={h * 0.6} width={1.5} height={h * 0.4} fill="#4a4a4a" />
+        </>
+      )
+
+    case 'chair-row':
+      return (
+        <>
+          {Array.from({ length: 10 }).map((_, i) => {
+            const x = (w / 10) * i + (w / 10) * 0.2
+            return (
+              <g key={i}>
+                <rect x={x} y={h * 0.3} width={w / 10 * 0.6} height={h * 0.3} rx={1} fill={fillColor} stroke="#000" strokeWidth={0.5} />
+                <rect x={x} y={h * 0.1} width={w / 10 * 0.6} height={h * 0.2} rx={1} fill={fillColor} stroke="#000" strokeWidth={0.5} />
+              </g>
+            )
+          })}
+        </>
+      )
+
+    // ===== STAGE & ENTERTAINMENT =====
+    case 'stage':
+      return (
+        <>
+          {/* Stage platform */}
+          <rect x={0} y={h * 0.7} width={w} height={h * 0.3} fill={fillColor} stroke="#000" strokeWidth={1} />
+          {/* Stage front */}
+          <rect x={0} y={h * 0.7} width={w} height={4} fill="#5a5a5a" />
+          {/* Stage supports */}
+          {[w * 0.1, w * 0.5, w * 0.9].map(x => (
+            <rect key={x} x={x - 2} y={h * 0.7} width={4} height={h * 0.3} fill="#4a4a4a" />
+          ))}
+          {/* Stage label */}
+          <text x={cx} y={h * 0.85} textAnchor="middle" fill="white" fontSize={Math.min(10, w / 15)} fontWeight="bold">STAGE</text>
+        </>
+      )
+
+    case 'dj-booth':
+    case 'dj-setup':
+      return (
+        <>
+          <rect x={2} y={2} width={w - 4} height={h - 4} rx={2} fill="#1a1a2e" stroke="#000" strokeWidth={1} />
+          {/* Turntables */}
+          <circle cx={w * 0.3} cy={h * 0.5} r={8} fill="#2a2a4a" stroke="#000" />
+          <circle cx={w * 0.7} cy={h * 0.5} r={8} fill="#2a2a4a" stroke="#000" />
+          <circle cx={w * 0.3} cy={h * 0.5} r={3} fill="#E91E63" />
+          <circle cx={w * 0.7} cy={h * 0.5} r={3} fill="#E91E63" />
+          {/* Mixer */}
+          <rect x={w * 0.4} y={h * 0.4} width={w * 0.2} height={h * 0.2} fill="#4CAF50" rx={1} />
+          <text x={cx} y={h * 0.7} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">DJ</text>
+        </>
+      )
+
+    case 'dance-floor':
+      const tileSize = 16
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#1a1a2e" stroke="#000" strokeWidth={1} />
+          {Array.from({ length: Math.floor(w / tileSize) }).map((_, i) =>
+            Array.from({ length: Math.floor(h / tileSize) }).map((_, j) => (
+              <rect
+                key={`${i}-${j}`}
+                x={i * tileSize}
+                y={j * tileSize}
+                width={tileSize}
+                height={tileSize}
+                fill={(i + j) % 2 === 0 ? '#2a2a4a' : '#1a1a2e'}
+                stroke="#000"
+                strokeWidth={0.5}
+              />
+            ))
+          )}
+        </>
+      )
+
+    case 'runway':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#424242" stroke="#000" strokeWidth={1} />
+          {/* Runway lines */}
+          <line x1={w / 2} y1={0} x2={w / 2} y2={h} stroke="#fff" strokeWidth={1} opacity={0.5} />
+          {[h * 0.25, h * 0.5, h * 0.75].map(y => (
+            <line key={y} x1={0} y1={y} x2={w} y2={y} stroke="#fff" strokeWidth={0.5} opacity={0.3} />
+          ))}
+        </>
+      )
+
+    // ===== FOOD & BEVERAGE =====
+    case 'bar':
+    case 'bar-straight':
+      return (
+        <>
+          <rect x={0} y={h * 0.6} width={w} height={h * 0.4} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={0} y={h * 0.6} width={w} height={6} fill="#5a4a3a" />
+          {/* Bar stools */}
+          {[w * 0.15, w * 0.35, w * 0.65, w * 0.85].map(x => (
+            <circle key={x} cx={x} cy={h * 0.3} r={4} fill="#8B7355" stroke="#000" />
+          ))}
+          <text x={cx} y={h * 0.85} textAnchor="middle" fill="white" fontSize={Math.min(10, w / 12)} fontWeight="bold">BAR</text>
+        </>
+      )
+
+    case 'bar-l':
+      return (
+        <>
+          <rect x={0} y={h * 0.6} width={w * 0.6} height={h * 0.4} fill={fillColor} stroke="#000" />
+          <rect x={w * 0.4} y={0} width={w * 0.6} height={h * 0.4} fill={fillColor} stroke="#000" />
+          <rect x={0} y={h * 0.6} width={w * 0.6} height={6} fill="#5a4a3a" />
+          <rect x={w * 0.4} y={0} width={w * 0.6} height={6} fill="#5a4a3a" />
+          <text x={cx} y={h * 0.85} textAnchor="middle" fill="white" fontSize={10} fontWeight="bold">BAR</text>
+        </>
+      )
+
+    case 'buffet':
+    case 'buffet-line':
+      return (
+        <>
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.5} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={0} y={h * 0.5} width={w} height={4} fill="#6a5a4a" />
+          {/* Serving dishes */}
+          {[w * 0.2, w * 0.4, w * 0.6, w * 0.8].map(x => (
+            <ellipse key={x} cx={x} cy={h * 0.3} rx={6} ry={4} fill="#fff" stroke="#000" />
+          ))}
+          <text x={cx} y={h * 0.75} textAnchor="middle" fill="white" fontSize={Math.min(9, w / 15)} fontWeight="bold">BUFFET</text>
+        </>
+      )
+
+    // ===== ESSENTIALS =====
+    case 'check-in':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} rx={2} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={w * 0.1} y={h * 0.2} width={w * 0.8} height={h * 0.3} fill="#fff" stroke="#000" strokeWidth={0.5} />
+          <rect x={w * 0.1} y={h * 0.6} width={w * 0.8} height={h * 0.2} fill="#fff" stroke="#000" strokeWidth={0.5} />
+          <text x={cx} y={h * 0.9} textAnchor="middle" fill="white" fontSize={Math.min(8, w / 12)} fontWeight="bold">CHECK-IN</text>
+        </>
+      )
+
+    case 'registration':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} rx={2} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={w * 0.15} y={h * 0.3} width={w * 0.7} height={h * 0.4} fill="#fff" stroke="#000" strokeWidth={0.5} />
+          <text x={cx} y={h * 0.85} textAnchor="middle" fill="white" fontSize={Math.min(7, w / 15)} fontWeight="bold">REGISTRATION</text>
+        </>
+      )
+
+    case 'exit':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#F44336" stroke="#000" strokeWidth={1} />
+          <path d={`M ${w * 0.2} ${h * 0.3} L ${w * 0.5} ${h * 0.5} L ${w * 0.2} ${h * 0.7} M ${w * 0.5} ${h * 0.5} L ${w * 0.8} ${h * 0.5}`}
+                stroke="white" strokeWidth={2} fill="none" strokeLinecap="round" />
+          <text x={cx} y={h * 0.9} textAnchor="middle" fill="white" fontSize={Math.min(8, w / 8)} fontWeight="bold">EXIT</text>
+        </>
+      )
+
+    case 'entrance':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#4CAF50" stroke="#000" strokeWidth={1} />
+          <path d={`M ${w * 0.8} ${h * 0.3} L ${w * 0.5} ${h * 0.5} L ${w * 0.8} ${h * 0.7} M ${w * 0.5} ${h * 0.5} L ${w * 0.2} ${h * 0.5}`}
+                stroke="white" strokeWidth={2} fill="none" strokeLinecap="round" />
+          <text x={cx} y={h * 0.9} textAnchor="middle" fill="white" fontSize={Math.min(7, w / 9)} fontWeight="bold">ENTRANCE</text>
+        </>
+      )
+
+    case 'vip-entrance':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#9C27B0" stroke="#000" strokeWidth={1} />
+          <path d={`M ${w * 0.8} ${h * 0.3} L ${w * 0.5} ${h * 0.5} L ${w * 0.8} ${h * 0.7} M ${w * 0.5} ${h * 0.5} L ${w * 0.2} ${h * 0.5}`}
+                stroke="white" strokeWidth={2} fill="none" strokeLinecap="round" />
+          <text x={cx} y={h * 0.9} textAnchor="middle" fill="white" fontSize={Math.min(7, w / 9)} fontWeight="bold">VIP</text>
+        </>
+      )
+
+    case 'security':
+      return (
+        <>
+          {/* Base */}
+          <rect x={w * 0.4} y={h * 0.7} width={w * 0.2} height={h * 0.3} fill="#555" stroke="#000" />
+          {/* Post */}
+          <rect x={w * 0.45} y={h * 0.2} width={w * 0.1} height={h * 0.5} fill="#666" stroke="#000" />
+          {/* Top sign */}
+          <rect x={w * 0.35} y={h * 0.2} width={w * 0.3} height={h * 0.15} fill="#F44336" stroke="#000" rx={1} />
+          <text x={cx} y={h * 0.3} textAnchor="middle" fill="white" fontSize={Math.min(6, w / 8)} fontWeight="bold">SECURITY</text>
+          {/* Shield icon */}
+          <path d={`M ${cx} ${h * 0.5} L ${cx - 4} ${h * 0.6} L ${cx} ${h * 0.65} L ${cx + 4} ${h * 0.6} Z`}
+                fill="#FFD700" stroke="#000" strokeWidth={0.5} />
+        </>
+      )
+
+    case 'first-aid':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#F44336" stroke="#000" strokeWidth={1} rx={2} />
+          <path d={`M ${cx} ${h * 0.3} L ${cx} ${h * 0.7} M ${cx - 6} ${h * 0.5} L ${cx + 6} ${h * 0.5}`}
+                stroke="white" strokeWidth={2} strokeLinecap="round" />
+          <text x={cx} y={h * 0.9} textAnchor="middle" fill="white" fontSize={Math.min(6, w / 8)} fontWeight="bold">FIRST AID</text>
+        </>
+      )
+
+    case 'info':
+    case 'info-desk':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} rx={2} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <circle cx={cx} cy={h * 0.4} r={w * 0.15} fill="white" stroke="#000" strokeWidth={1} />
+          <text x={cx} y={h * 0.45} textAnchor="middle" fill="#03A9F4" fontSize={Math.min(10, w / 5)} fontWeight="bold">?</text>
+          <text x={cx} y={h * 0.85} textAnchor="middle" fill="white" fontSize={Math.min(7, w / 10)} fontWeight="bold">INFO</text>
+        </>
+      )
+
+    // ===== PHOTO & MEDIA =====
+    case 'photo-booth':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} rx={2} fill={fillColor} stroke="#000" strokeWidth={1} />
+          {/* Camera */}
+          <rect x={w * 0.3} y={h * 0.2} width={w * 0.4} height={h * 0.3} fill="#333" stroke="#000" rx={2} />
+          <circle cx={cx} cy={h * 0.35} r={w * 0.08} fill="#000" />
+          {/* Flash */}
+          <rect x={w * 0.45} y={h * 0.15} width={w * 0.1} height={h * 0.08} fill="#fff" rx={1} />
+          <text x={cx} y={h * 0.9} textAnchor="middle" fill="white" fontSize={Math.min(7, w / 12)} fontWeight="bold">PHOTO BOOTH</text>
+        </>
+      )
+
+    case 'backdrop':
+    case 'step-repeat':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={w * 0.1} y={h * 0.2} width={w * 0.8} height={h * 0.6} fill="#fff" stroke="#000" strokeWidth={0.5} />
+        </>
+      )
+
+    case 'red-carpet':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#C62828" stroke="#000" strokeWidth={1} />
+          {Array.from({ length: Math.floor(h / 8) }).map((_, i) => (
+            <line key={i} x1={0} y1={i * 8} x2={w} y2={i * 8} stroke="#B71C1C" strokeWidth={0.5} />
+          ))}
+        </>
+      )
+
+    // ===== A/V EQUIPMENT =====
+    case 'screen':
+    case 'screen-large':
+    case 'screen-medium':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#263238" stroke="#000" strokeWidth={1} />
+          <rect x={2} y={2} width={w - 4} height={h - 4} fill="#1a1a2e" />
+          {/* Screen frame */}
+          <rect x={0} y={0} width={w} height={2} fill="#555" />
+          <rect x={0} y={h - 2} width={w} height={2} fill="#555" />
+        </>
+      )
+
+    case 'display':
+    case 'tv-65':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} fill="#263238" stroke="#000" strokeWidth={1} rx={1} />
+          <rect x={1} y={1} width={w - 2} height={h - 2} fill="#000" />
+        </>
+      )
+
+    case 'speaker':
+    case 'speaker-main':
+      return (
+        <>
+          <rect x={0} y={0} width={w} height={h} rx={2} fill="#37474F" stroke="#000" strokeWidth={1} />
+          {/* Speaker grille */}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <rect key={i} x={w * 0.2} y={h * 0.2 + i * h * 0.2} width={w * 0.6} height={h * 0.1} fill="#263238" />
+          ))}
+        </>
+      )
+
+    case 'podium':
+      return (
+        <>
+          {/* Podium top */}
+          <rect x={w * 0.2} y={0} width={w * 0.6} height={h * 0.3} fill={fillColor} stroke="#000" strokeWidth={1} />
+          {/* Podium body */}
+          <rect x={w * 0.1} y={h * 0.3} width={w * 0.8} height={h * 0.7} fill={fillColor} stroke="#000" strokeWidth={1} />
+          {/* Microphone */}
+          <circle cx={cx} cy={h * 0.15} r={2} fill="#333" />
+          <line x1={cx} y1={h * 0.15} x2={cx} y2={h * 0.3} stroke="#333" strokeWidth={1} />
+        </>
+      )
+
+    // ===== LOUNGE =====
+    case 'sofa':
+    case 'sofa-3':
+      return (
+        <>
+          {/* Sofa base */}
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.5} fill={fillColor} stroke="#000" strokeWidth={1} rx={2} />
+          {/* Backrest */}
+          <rect x={0} y={0} width={w} height={h * 0.5} fill={fillColor} stroke="#000" strokeWidth={1} rx={2} />
+          {/* Cushions */}
+          <rect x={w * 0.1} y={h * 0.1} width={w * 0.25} height={h * 0.3} fill="#8B7355" stroke="#000" strokeWidth={0.5} />
+          <rect x={w * 0.4} y={h * 0.1} width={w * 0.25} height={h * 0.3} fill="#8B7355" stroke="#000" strokeWidth={0.5} />
+          <rect x={w * 0.7} y={h * 0.1} width={w * 0.2} height={h * 0.3} fill="#8B7355" stroke="#000" strokeWidth={0.5} />
+          {/* Arms */}
+          <rect x={0} y={h * 0.2} width={w * 0.1} height={h * 0.6} fill={fillColor} stroke="#000" strokeWidth={1} />
+          <rect x={w * 0.9} y={h * 0.2} width={w * 0.1} height={h * 0.6} fill={fillColor} stroke="#000" strokeWidth={1} />
+        </>
+      )
+
+    case 'loveseat':
+    case 'sofa-2':
+      return (
+        <>
+          <rect x={0} y={h * 0.5} width={w} height={h * 0.5} fill={fillColor} stroke="#000" rx={2} />
+          <rect x={0} y={0} width={w} height={h * 0.5} fill={fillColor} stroke="#000" rx={2} />
+          <rect x={w * 0.2} y={h * 0.1} width={w * 0.3} height={h * 0.3} fill="#8B7355" stroke="#000" strokeWidth={0.5} />
+          <rect x={w * 0.5} y={h * 0.1} width={w * 0.3} height={h * 0.3} fill="#8B7355" stroke="#000" strokeWidth={0.5} />
+        </>
+      )
+
+    case 'armchair':
+      return (
+        <>
+          <rect x={w * 0.2} y={h * 0.5} width={w * 0.6} height={h * 0.5} fill={fillColor} stroke="#000" rx={2} />
+          <rect x={w * 0.2} y={0} width={w * 0.6} height={h * 0.5} fill={fillColor} stroke="#000" rx={2} />
+          <rect x={w * 0.25} y={h * 0.1} width={w * 0.5} height={h * 0.3} fill="#8B7355" stroke="#000" strokeWidth={0.5} />
+        </>
+      )
+
+    // ===== DECOR =====
+    case 'plant':
+    case 'plant-large':
+      return (
+        <>
+          {/* Pot */}
+          <ellipse cx={cx} cy={h * 0.8} rx={w * 0.4} ry={h * 0.1} fill="#8B4513" stroke="#000" />
+          <rect x={w * 0.2} y={h * 0.6} width={w * 0.6} height={h * 0.2} fill="#8B4513" stroke="#000" />
+          {/* Plant */}
+          <ellipse cx={cx} cy={h * 0.4} rx={w * 0.35} ry={h * 0.3} fill="#2E7D32" stroke="#1B5E20" />
+          <ellipse cx={cx - w * 0.15} cy={h * 0.3} rx={w * 0.2} ry={h * 0.25} fill="#43A047" />
+          <ellipse cx={cx + w * 0.15} cy={h * 0.3} rx={w * 0.2} ry={h * 0.25} fill="#43A047" />
+        </>
+      )
+
+    case 'stanchion':
+      return (
+        <>
+          {/* Base */}
+          <rect x={w * 0.4} y={h * 0.7} width={w * 0.2} height={h * 0.3} fill="#CFD8DC" stroke="#000" />
+          {/* Post */}
+          <rect x={w * 0.45} y={0} width={w * 0.1} height={h * 0.7} fill="#CFD8DC" stroke="#000" />
+          {/* Top */}
+          <circle cx={cx} cy={0} r={w * 0.15} fill="#FFD700" stroke="#000" />
+        </>
+      )
+
+    case 'barrier':
+    case 'rope-barrier':
+      return (
+        <>
+          <line x1={0} y1={h / 2} x2={w} y2={h / 2} stroke="#FFD700" strokeWidth={2} />
+          {[w * 0.1, w * 0.3, w * 0.5, w * 0.7, w * 0.9].map(x => (
+            <g key={x}>
+              <rect x={x - 2} y={h * 0.3} width={4} height={h * 0.4} fill="#CFD8DC" stroke="#000" />
+              <circle cx={x} cy={h * 0.3} r={3} fill="#FFD700" stroke="#000" />
+            </g>
+          ))}
+        </>
+      )
+
+    // ===== OUTDOOR =====
+    case 'tent':
+      return (
+        <>
+          {/* Tent roof */}
+          <path d={`M ${w / 2} 0 L 0 ${h * 0.3} L ${w} ${h * 0.3} Z`} fill="#ECEFF1" stroke="#000" strokeWidth={1} />
+          {/* Tent walls */}
+          <rect x={0} y={h * 0.3} width={w} height={h * 0.7} fill="#F5F5F5" stroke="#000" strokeWidth={1} />
+          {/* Tent entrance */}
+          <path d={`M ${w * 0.3} ${h * 0.3} L ${w * 0.5} ${h * 0.5} L ${w * 0.7} ${h * 0.3}`} fill="#E0E0E0" stroke="#000" />
+        </>
+      )
+
+    case 'umbrella':
+      return (
+        <>
+          {/* Umbrella top */}
+          <ellipse cx={cx} cy={h * 0.3} rx={w * 0.4} ry={h * 0.2} fill={fillColor} stroke="#000" />
+          {/* Umbrella pole */}
+          <rect x={cx - 1} y={h * 0.3} width={2} height={h * 0.7} fill="#8B4513" stroke="#000" />
+          {/* Umbrella base */}
+          <circle cx={cx} cy={h * 0.95} r={w * 0.15} fill="#666" stroke="#000" />
+        </>
+      )
+
+    case 'fire-pit':
+      return (
+        <>
+          <circle cx={cx} cy={cy} r={Math.min(w, h) / 2 - 2} fill="#333" stroke="#000" strokeWidth={1} />
+          <circle cx={cx} cy={cy} r={Math.min(w, h) / 2 - 6} fill="#1a1a1a" />
+          {/* Fire */}
+          <ellipse cx={cx} cy={cy - 2} rx={Math.min(w, h) / 4} ry={Math.min(w, h) / 6} fill="#FF5722" opacity={0.8} />
+          <ellipse cx={cx} cy={cy - 2} rx={Math.min(w, h) / 6} ry={Math.min(w, h) / 8} fill="#FFD700" />
+        </>
+      )
+
+    // Default fallback
+    default:
+      const isRound = obj.type.includes('round') || obj.type === 'cocktail' || obj.type === 'highboy'
+      return isRound ? (
+        <ellipse cx={cx} cy={cy} rx={w / 2 - 1} ry={h / 2 - 1} fill={fillColor} stroke="#000" strokeWidth={1} />
+      ) : (
+        <rect x={0} y={0} width={w} height={h} rx={2} fill={fillColor} stroke="#000" strokeWidth={1} />
+      )
+  }
+}
+
+// =============================================================================
 // OPTIMIZED CANVAS OBJECT COMPONENT
 // =============================================================================
 
@@ -198,47 +688,22 @@ const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart }) => {
     if (!obj.type.includes('round-table') || !obj.seats) return null
     return Array.from({ length: obj.seats }).map((_, i) => {
       const angle = (i / obj.seats) * Math.PI * 2 - Math.PI / 2
-      const chairRadius = Math.max(obj.width, obj.height) / 2 + 12
+      const chairRadius = Math.max(obj.width, obj.height) / 2 + 14
       const cx = obj.width / 2 + Math.cos(angle) * chairRadius
       const cy = obj.height / 2 + Math.sin(angle) * chairRadius
       return (
-        <circle
-          key={i}
-          cx={cx}
-          cy={cy}
-          r={8}
-          fill={obj.color}
-          opacity={0.7}
-        />
+        <g key={i} transform={`translate(${cx}, ${cy})`}>
+          {/* Chair seat */}
+          <rect x={-6} y={-2} width={12} height={8} rx={1} fill={obj.color} stroke="#000" strokeWidth={0.5} />
+          {/* Chair back */}
+          <rect x={-6} y={-6} width={12} height={4} rx={1} fill={obj.color} stroke="#000" strokeWidth={0.5} />
+          {/* Chair legs */}
+          <rect x={-5} y={6} width={1.5} height={4} fill="#4a4a4a" />
+          <rect x={3.5} y={6} width={1.5} height={4} fill="#4a4a4a" />
+        </g>
       )
     })
   }
-
-  // Dance floor pattern
-  const renderDanceFloor = () => {
-    if (obj.type !== 'dance-floor') return null
-    const tiles = []
-    const tileSize = 24
-    for (let i = 0; i < Math.floor(obj.width / tileSize); i++) {
-      for (let j = 0; j < Math.floor(obj.height / tileSize); j++) {
-        tiles.push(
-          <rect
-            key={`${i}-${j}`}
-            x={i * tileSize + 1}
-            y={j * tileSize + 1}
-            width={tileSize - 2}
-            height={tileSize - 2}
-            fill={(i + j) % 2 === 0 ? '#2a2a4a' : '#1a1a2e'}
-          />
-        )
-      }
-    }
-    return tiles
-  }
-
-  const isRound = obj.type === 'round-table' || obj.type === 'cocktail' || 
-                  obj.type === 'highboy' || obj.type === 'bar-round' ||
-                  obj.type === 'fire-pit' || obj.type === 'umbrella'
 
   return (
     <g
@@ -246,36 +711,17 @@ const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart }) => {
       style={{ cursor: obj.locked ? 'not-allowed' : 'move' }}
       onMouseDown={handleMouseDown}
     >
-      {/* Main shape */}
-      {isRound ? (
-        <ellipse
-          cx={obj.width / 2}
-          cy={obj.height / 2}
-          rx={obj.width / 2 - 1}
-          ry={obj.height / 2 - 1}
-          fill={obj.color}
-          stroke={isSelected ? '#2969FF' : 'rgba(0,0,0,0.15)'}
-          strokeWidth={isSelected ? 2 : 1}
-        />
-      ) : (
-        <rect
-          width={obj.width}
-          height={obj.height}
-          rx={obj.type === 'dance-floor' ? 0 : 4}
-          fill={obj.color}
-          stroke={isSelected ? '#2969FF' : 'rgba(0,0,0,0.15)'}
-          strokeWidth={isSelected ? 2 : 1}
-        />
-      )}
+      {/* Render realistic object */}
+      {renderRealisticObject(obj)}
 
       {/* Chairs around tables */}
       {renderChairs()}
 
-      {/* Dance floor tiles */}
-      {renderDanceFloor()}
-
       {/* Label */}
-      {(obj.label || obj.tableNumber) && (
+      {(obj.label || obj.tableNumber) && !obj.type.includes('stage') && !obj.type.includes('bar') && 
+       !obj.type.includes('buffet') && !obj.type.includes('check-in') && !obj.type.includes('registration') &&
+       !obj.type.includes('exit') && !obj.type.includes('entrance') && !obj.type.includes('security') &&
+       !obj.type.includes('first-aid') && !obj.type.includes('info') && !obj.type.includes('photo-booth') && (
         <text
           x={obj.width / 2}
           y={obj.height / 2 + 4}
@@ -300,8 +746,8 @@ const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart }) => {
           stroke="#2969FF"
           strokeWidth={2}
           strokeDasharray="4 2"
-          rx={isRound ? obj.width / 2 : 6}
-          ry={isRound ? obj.height / 2 : 6}
+          rx={obj.type.includes('round') ? obj.width / 2 : 6}
+          ry={obj.type.includes('round') ? obj.height / 2 : 6}
         />
       )}
     </g>
