@@ -1063,49 +1063,10 @@ export function VenueLayoutDesigner() {
   }, [objects, getCanvasCoords, snapValue, saveToHistory])
 
   // =============================================================================
-  // KEYBOARD SHORTCUTS
-  // =============================================================================
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault()
-        deleteSelected()
-      }
-      if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        duplicateSelected()
-      }
-      if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        e.shiftKey ? redo() : undo()
-      }
-      if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        setSelectedIds(objects.map(o => o.id))
-      }
-      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        saveLayout()
-      }
-      if (e.key === 'Escape') {
-        setSelectedIds([])
-      }
-      if (e.key === '=' || e.key === '+') setZoom(z => Math.min(150, z + 10))
-      if (e.key === '-') setZoom(z => Math.max(25, z - 10))
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [objects, deleteSelected, duplicateSelected, undo, redo, saveLayout])
-
-  // =============================================================================
   // SAVE LAYOUT
   // =============================================================================
 
-  const saveLayout = async () => {
+  const saveLayout = useCallback(async () => {
     if (!organizer?.id) {
       alert('Organizer information not available. Please refresh the page.')
       return
@@ -1202,7 +1163,46 @@ export function VenueLayoutDesigner() {
     } finally {
       setSaving(false)
     }
-  }
+  }, [organizer?.id, venueId, layoutId, layoutName, canvasWidth, canvasHeight, objects, gridSize, showGrid, zoom, snapToGrid, navigate])
+
+  // =============================================================================
+  // KEYBOARD SHORTCUTS
+  // =============================================================================
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+        deleteSelected()
+      }
+      if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        duplicateSelected()
+      }
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        e.shiftKey ? redo() : undo()
+      }
+      if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        setSelectedIds(objects.map(o => o.id))
+      }
+      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        saveLayout()
+      }
+      if (e.key === 'Escape') {
+        setSelectedIds([])
+      }
+      if (e.key === '=' || e.key === '+') setZoom(z => Math.min(150, z + 10))
+      if (e.key === '-') setZoom(z => Math.max(25, z - 10))
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [objects, deleteSelected, duplicateSelected, undo, redo, saveLayout])
 
   // =============================================================================
   // COMPUTED VALUES
