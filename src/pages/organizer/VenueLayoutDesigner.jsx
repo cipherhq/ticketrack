@@ -1,773 +1,1494 @@
 /**
- * Venue Layout Designer - Premium Edition
- * Mouse-based resize, rotate, and beautiful graphics
+ * Venue Layout Designer - Professional Edition
+ * Inspired by SocialTables - Full-featured event floor plan designer
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Save, Trash2, RotateCw, Plus, Minus, Undo, Grid,
-  ChevronLeft, GripVertical, Check, Layers, Eye, EyeOff,
-  Lock, Unlock, Maximize2, Copy, ZoomIn, ZoomOut
+  Save, Trash2, RotateCw, Plus, Minus, Undo, Redo, Grid, Copy,
+  ChevronLeft, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock,
+  ZoomIn, ZoomOut, Move, MousePointer, Square, Circle, Maximize2,
+  Download, Upload, Share2, Settings, HelpCircle, Layers, Star,
+  FolderOpen, Search, Image, Type, Ruler, Palette, Users, Music,
+  Utensils, Coffee, Briefcase, Mic, Monitor, Armchair, Table2,
+  LayoutGrid, PanelLeftClose, PanelRightClose
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useOrganizer } from '@/contexts/OrganizerContext'
 import { supabase } from '@/lib/supabase'
 
-// Premium SVG Icons for each item type
-const ITEM_ICONS = {
-  'chair': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="12" y="35" width="40" height="8" rx="2" fill="currentColor"/>
-      <rect x="14" y="43" width="6" height="16" rx="1" fill="currentColor" opacity="0.8"/>
-      <rect x="44" y="43" width="6" height="16" rx="1" fill="currentColor" opacity="0.8"/>
-      <rect x="12" y="10" width="8" height="25" rx="2" fill="currentColor" opacity="0.9"/>
-      <rect x="12" y="8" width="40" height="6" rx="2" fill="currentColor"/>
-    </svg>
-  ),
-  'vip-chair': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="8" y="30" width="48" height="12" rx="3" fill="currentColor"/>
-      <rect x="10" y="42" width="8" height="14" rx="2" fill="currentColor" opacity="0.8"/>
-      <rect x="46" y="42" width="8" height="14" rx="2" fill="currentColor" opacity="0.8"/>
-      <rect x="8" y="8" width="12" height="22" rx="3" fill="currentColor" opacity="0.9"/>
-      <rect x="8" y="4" width="48" height="8" rx="3" fill="currentColor"/>
-      <circle cx="32" cy="8" r="3" fill="#FFD700"/>
-    </svg>
-  ),
-  'sofa': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="4" y="24" width="56" height="20" rx="4" fill="currentColor"/>
-      <rect x="4" y="10" width="12" height="34" rx="4" fill="currentColor" opacity="0.9"/>
-      <rect x="48" y="10" width="12" height="34" rx="4" fill="currentColor" opacity="0.9"/>
-      <rect x="8" y="44" width="8" height="10" rx="2" fill="currentColor" opacity="0.7"/>
-      <rect x="48" y="44" width="8" height="10" rx="2" fill="currentColor" opacity="0.7"/>
-    </svg>
-  ),
-  'round-table': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <ellipse cx="32" cy="20" rx="28" ry="12" fill="currentColor"/>
-      <ellipse cx="32" cy="20" rx="22" ry="8" fill="currentColor" opacity="0.7"/>
-      <rect x="28" y="20" width="8" height="30" fill="currentColor" opacity="0.8"/>
-      <ellipse cx="32" cy="52" rx="12" ry="4" fill="currentColor" opacity="0.6"/>
-    </svg>
-  ),
-  'rect-table': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="4" y="12" width="56" height="24" rx="3" fill="currentColor"/>
-      <rect x="8" y="36" width="6" height="18" rx="1" fill="currentColor" opacity="0.7"/>
-      <rect x="50" y="36" width="6" height="18" rx="1" fill="currentColor" opacity="0.7"/>
-    </svg>
-  ),
-  'cocktail': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <circle cx="32" cy="16" r="14" fill="currentColor"/>
-      <rect x="29" y="16" width="6" height="32" fill="currentColor" opacity="0.8"/>
-      <ellipse cx="32" cy="52" rx="14" ry="5" fill="currentColor" opacity="0.6"/>
-    </svg>
-  ),
-  'stage': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="2" y="28" width="60" height="24" rx="2" fill="currentColor"/>
-      <rect x="2" y="24" width="60" height="8" rx="2" fill="currentColor" opacity="0.9"/>
-      <rect x="6" y="52" width="8" height="8" fill="currentColor" opacity="0.6"/>
-      <rect x="50" y="52" width="8" height="8" fill="currentColor" opacity="0.6"/>
-      <circle cx="16" cy="20" r="4" fill="#FFD700" opacity="0.8"/>
-      <circle cx="32" cy="18" r="5" fill="#FFD700"/>
-      <circle cx="48" cy="20" r="4" fill="#FFD700" opacity="0.8"/>
-    </svg>
-  ),
-  'dj-booth': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="4" y="20" width="56" height="32" rx="4" fill="currentColor"/>
-      <circle cx="20" cy="36" r="10" fill="currentColor" opacity="0.6"/>
-      <circle cx="44" cy="36" r="10" fill="currentColor" opacity="0.6"/>
-      <circle cx="20" cy="36" r="4" fill="#E91E63"/>
-      <circle cx="44" cy="36" r="4" fill="#E91E63"/>
-      <rect x="28" y="24" width="8" height="16" rx="2" fill="#4CAF50" opacity="0.8"/>
-      <rect x="16" y="12" width="4" height="8" fill="currentColor" opacity="0.7"/>
-      <rect x="44" y="12" width="4" height="8" fill="currentColor" opacity="0.7"/>
-    </svg>
-  ),
-  'screen': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="2" y="8" width="60" height="36" rx="3" fill="currentColor"/>
-      <rect x="6" y="12" width="52" height="28" rx="2" fill="#1a1a2e"/>
-      <rect x="26" y="44" width="12" height="6" fill="currentColor" opacity="0.8"/>
-      <rect x="18" y="50" width="28" height="4" rx="1" fill="currentColor" opacity="0.6"/>
-      <rect x="10" y="16" width="44" height="2" fill="#4CAF50" opacity="0.5"/>
-      <rect x="10" y="22" width="30" height="2" fill="#2196F3" opacity="0.5"/>
-    </svg>
-  ),
-  'bar': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="2" y="24" width="60" height="28" rx="3" fill="currentColor"/>
-      <rect x="2" y="20" width="60" height="8" rx="2" fill="currentColor" opacity="0.9"/>
-      <rect x="8" y="28" width="4" height="20" fill="currentColor" opacity="0.5"/>
-      <rect x="52" y="28" width="4" height="20" fill="currentColor" opacity="0.5"/>
-      <circle cx="20" cy="16" r="4" fill="#4CAF50" opacity="0.8"/>
-      <circle cx="32" cy="14" r="5" fill="#FF9800" opacity="0.8"/>
-      <circle cx="44" cy="16" r="4" fill="#E91E63" opacity="0.8"/>
-    </svg>
-  ),
-  'checkin': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="4" y="24" width="56" height="28" rx="3" fill="currentColor"/>
-      <rect x="8" y="16" width="20" height="12" rx="2" fill="currentColor" opacity="0.8"/>
-      <rect x="12" y="20" width="12" height="6" fill="#4CAF50" opacity="0.6"/>
-      <rect x="36" y="28" width="16" height="10" rx="1" fill="currentColor" opacity="0.5"/>
-      <circle cx="44" cy="40" r="6" fill="#2196F3" opacity="0.6"/>
-      <path d="M41 40 L43 42 L47 38" stroke="white" strokeWidth="2" fill="none"/>
-    </svg>
-  ),
-  'entrance': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="8" y="4" width="48" height="56" rx="4" fill="currentColor" opacity="0.3"/>
-      <rect x="12" y="8" width="40" height="48" rx="2" fill="currentColor"/>
-      <rect x="16" y="12" width="32" height="40" fill="currentColor" opacity="0.4"/>
-      <circle cx="42" cy="32" r="4" fill="#FFD700"/>
-      <path d="M26 32 L34 26 L34 38 Z" fill="white" opacity="0.8"/>
-    </svg>
-  ),
-  'exit': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="8" y="4" width="48" height="56" rx="4" fill="currentColor" opacity="0.3"/>
-      <rect x="12" y="8" width="40" height="48" rx="2" fill="currentColor"/>
-      <rect x="16" y="12" width="32" height="40" fill="currentColor" opacity="0.4"/>
-      <circle cx="22" cy="32" r="4" fill="#FFD700"/>
-      <path d="M38 32 L30 26 L30 38 Z" fill="white" opacity="0.8"/>
-      <text x="32" y="56" textAnchor="middle" fontSize="8" fill="white" fontWeight="bold">EXIT</text>
-    </svg>
-  ),
-  'dance-floor': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="4" y="4" width="56" height="56" rx="4" fill="currentColor" opacity="0.3"/>
-      <rect x="4" y="4" width="14" height="14" fill="currentColor" opacity="0.6"/>
-      <rect x="25" y="4" width="14" height="14" fill="currentColor" opacity="0.8"/>
-      <rect x="46" y="4" width="14" height="14" fill="currentColor" opacity="0.6"/>
-      <rect x="4" y="25" width="14" height="14" fill="currentColor" opacity="0.8"/>
-      <rect x="25" y="25" width="14" height="14" fill="currentColor"/>
-      <rect x="46" y="25" width="14" height="14" fill="currentColor" opacity="0.8"/>
-      <rect x="4" y="46" width="14" height="14" fill="currentColor" opacity="0.6"/>
-      <rect x="25" y="46" width="14" height="14" fill="currentColor" opacity="0.8"/>
-      <rect x="46" y="46" width="14" height="14" fill="currentColor" opacity="0.6"/>
-      <circle cx="32" cy="32" r="8" fill="#E91E63" opacity="0.6"/>
-    </svg>
-  ),
-  'vip-area': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="4" y="4" width="56" height="56" rx="6" fill="currentColor" opacity="0.2"/>
-      <rect x="8" y="8" width="48" height="48" rx="4" fill="currentColor" opacity="0.4"/>
-      <path d="M32 16 L36 28 L48 28 L38 36 L42 48 L32 40 L22 48 L26 36 L16 28 L28 28 Z" fill="#FFD700"/>
-      <text x="32" y="58" textAnchor="middle" fontSize="8" fill="currentColor" fontWeight="bold">VIP</text>
-    </svg>
-  ),
-  'standing': (
-    <svg viewBox="0 0 64 64" fill="currentColor">
-      <rect x="4" y="4" width="56" height="56" rx="4" fill="currentColor" opacity="0.3"/>
-      <circle cx="20" cy="20" r="6" fill="currentColor"/>
-      <rect x="17" y="26" width="6" height="14" fill="currentColor" opacity="0.8"/>
-      <circle cx="44" cy="24" r="6" fill="currentColor"/>
-      <rect x="41" y="30" width="6" height="14" fill="currentColor" opacity="0.8"/>
-      <circle cx="32" cy="36" r="6" fill="currentColor"/>
-      <rect x="29" y="42" width="6" height="14" fill="currentColor" opacity="0.8"/>
-    </svg>
-  ),
-}
+// =============================================================================
+// OBJECT LIBRARY - Categories and Items
+// =============================================================================
 
-// Item library with premium colors
-const ITEMS_LIBRARY = [
-  { id: 'chair', name: 'Chair', color: '#6D4C41', category: 'seating', width: 50, height: 50 },
-  { id: 'vip-chair', name: 'VIP Chair', color: '#FFB300', category: 'seating', width: 60, height: 60 },
-  { id: 'sofa', name: 'Sofa', color: '#7B1FA2', category: 'seating', width: 120, height: 60 },
-  { id: 'round-table', name: 'Round Table', color: '#5D4037', category: 'tables', width: 100, height: 100 },
-  { id: 'rect-table', name: 'Long Table', color: '#4E342E', category: 'tables', width: 140, height: 70 },
-  { id: 'cocktail', name: 'Cocktail Table', color: '#6D4C41', category: 'tables', width: 60, height: 60 },
-  { id: 'stage', name: 'Stage', color: '#37474F', category: 'stage', width: 250, height: 120 },
-  { id: 'dj-booth', name: 'DJ Booth', color: '#880E4F', category: 'stage', width: 140, height: 100 },
-  { id: 'screen', name: 'LED Screen', color: '#263238', category: 'stage', width: 180, height: 40 },
-  { id: 'bar', name: 'Bar Counter', color: '#4E342E', category: 'services', width: 180, height: 60 },
-  { id: 'checkin', name: 'Check-in', color: '#1565C0', category: 'services', width: 140, height: 60 },
-  { id: 'entrance', name: 'Entrance', color: '#2E7D32', category: 'services', width: 80, height: 100 },
-  { id: 'exit', name: 'Exit', color: '#C62828', category: 'services', width: 80, height: 100 },
-  { id: 'dance-floor', name: 'Dance Floor', color: '#AD1457', category: 'areas', width: 200, height: 200 },
-  { id: 'vip-area', name: 'VIP Area', color: '#FF8F00', category: 'areas', width: 180, height: 180 },
-  { id: 'standing', name: 'Standing Area', color: '#388E3C', category: 'areas', width: 160, height: 120 },
+const OBJECT_CATEGORIES = [
+  {
+    id: 'favorites',
+    name: 'Favorites',
+    icon: Star,
+    items: []
+  },
+  {
+    id: 'tables',
+    name: 'Tables & Seating',
+    icon: Table2,
+    items: [
+      { id: 'round-table-8', name: '8-Top Round', type: 'round-table', seats: 8, width: 72, height: 72, color: '#E91E63' },
+      { id: 'round-table-10', name: '10-Top Round', type: 'round-table', seats: 10, width: 84, height: 84, color: '#E91E63' },
+      { id: 'round-table-6', name: '6-Top Round', type: 'round-table', seats: 6, width: 60, height: 60, color: '#E91E63' },
+      { id: 'rect-table-6', name: '6ft Rectangle', type: 'rect-table', seats: 6, width: 96, height: 48, color: '#9C27B0' },
+      { id: 'rect-table-8', name: '8ft Rectangle', type: 'rect-table', seats: 8, width: 120, height: 48, color: '#9C27B0' },
+      { id: 'cocktail-table', name: 'Cocktail Table', type: 'cocktail', seats: 4, width: 36, height: 36, color: '#673AB7' },
+      { id: 'banquet-chair', name: 'Banquet Chair', type: 'chair', seats: 1, width: 24, height: 24, color: '#E91E63' },
+      { id: 'chiavari-chair', name: 'Chiavari Chair', type: 'chiavari', seats: 1, width: 24, height: 24, color: '#FFD700' },
+      { id: 'ghost-chair', name: 'Ghost Chair', type: 'ghost', seats: 1, width: 24, height: 24, color: '#90CAF9' },
+    ]
+  },
+  {
+    id: 'entertainment',
+    name: 'Entertainment',
+    icon: Music,
+    items: [
+      { id: 'stage-small', name: 'Stage (Small)', type: 'stage', width: 144, height: 96, color: '#795548' },
+      { id: 'stage-medium', name: 'Stage (Medium)', type: 'stage', width: 192, height: 120, color: '#795548' },
+      { id: 'stage-large', name: 'Stage (Large)', type: 'stage', width: 288, height: 144, color: '#795548' },
+      { id: 'dj-booth', name: 'DJ Booth', type: 'dj-booth', width: 72, height: 48, color: '#1a1a2e' },
+      { id: 'dance-floor', name: 'Dance Floor', type: 'dance-floor', width: 192, height: 192, color: '#1a1a2e' },
+      { id: 'photo-booth', name: 'Photo Booth', type: 'photo-booth', width: 96, height: 72, color: '#FF5722' },
+    ]
+  },
+  {
+    id: 'food',
+    name: 'Food & Beverage',
+    icon: Utensils,
+    items: [
+      { id: 'buffet-table', name: 'Buffet Table', type: 'buffet', width: 144, height: 36, color: '#8BC34A' },
+      { id: 'bar', name: 'Bar', type: 'bar', width: 120, height: 48, color: '#795548' },
+      { id: 'dessert-table', name: 'Dessert Table', type: 'dessert', width: 96, height: 36, color: '#FFEB3B' },
+      { id: 'coffee-station', name: 'Coffee Station', type: 'coffee', width: 60, height: 36, color: '#795548' },
+      { id: 'cake-table', name: 'Cake Table', type: 'cake', width: 48, height: 48, color: '#F8BBD9' },
+    ]
+  },
+  {
+    id: 'tradeshow',
+    name: 'Trade Show',
+    icon: Briefcase,
+    items: [
+      { id: 'booth-10x10', name: '10x10 Booth', type: 'booth', width: 120, height: 120, color: '#2196F3' },
+      { id: 'booth-10x20', name: '10x20 Booth', type: 'booth', width: 240, height: 120, color: '#2196F3' },
+      { id: 'registration', name: 'Registration Desk', type: 'registration', width: 144, height: 48, color: '#607D8B' },
+      { id: 'kiosk', name: 'Kiosk', type: 'kiosk', width: 48, height: 48, color: '#00BCD4' },
+    ]
+  },
+  {
+    id: 'av',
+    name: 'A/V Equipment',
+    icon: Monitor,
+    items: [
+      { id: 'projector-screen', name: 'Projector Screen', type: 'screen', width: 144, height: 12, color: '#ECEFF1' },
+      { id: 'tv-display', name: 'TV Display', type: 'display', width: 72, height: 12, color: '#263238' },
+      { id: 'speaker', name: 'Speaker', type: 'speaker', width: 24, height: 24, color: '#37474F' },
+      { id: 'podium', name: 'Podium', type: 'podium', width: 36, height: 24, color: '#795548' },
+    ]
+  },
+  {
+    id: 'lounge',
+    name: 'Lounge',
+    icon: Armchair,
+    items: [
+      { id: 'sofa', name: 'Sofa', type: 'sofa', width: 96, height: 40, color: '#5D4037' },
+      { id: 'loveseat', name: 'Loveseat', type: 'loveseat', width: 60, height: 40, color: '#5D4037' },
+      { id: 'ottoman', name: 'Ottoman', type: 'ottoman', width: 36, height: 36, color: '#8D6E63' },
+      { id: 'coffee-table-rect', name: 'Coffee Table', type: 'coffee-table', width: 60, height: 36, color: '#3E2723' },
+    ]
+  },
+  {
+    id: 'decor',
+    name: 'Decor & Other',
+    icon: Palette,
+    items: [
+      { id: 'plant', name: 'Plant/Greenery', type: 'plant', width: 36, height: 36, color: '#4CAF50' },
+      { id: 'flowers', name: 'Flower Arrangement', type: 'flowers', width: 24, height: 24, color: '#E91E63' },
+      { id: 'carpet', name: 'Area Rug', type: 'carpet', width: 120, height: 96, color: '#9E9E9E' },
+      { id: 'rope-barrier', name: 'Rope Barrier', type: 'barrier', width: 72, height: 8, color: '#FFD700' },
+      { id: 'check-in', name: 'Check-in Desk', type: 'check-in', width: 96, height: 36, color: '#2969FF' },
+    ]
+  }
 ]
 
-const CATEGORIES = [
-  { id: 'all', name: 'All', emoji: '✨' },
-  { id: 'seating', name: 'Seats', emoji: '🪑' },
-  { id: 'tables', name: 'Tables', emoji: '🍽️' },
-  { id: 'stage', name: 'Stage', emoji: '🎤' },
-  { id: 'services', name: 'Services', emoji: '🚪' },
-  { id: 'areas', name: 'Areas', emoji: '📍' },
+// Room/Layout Templates
+const LAYOUT_TEMPLATES = [
+  { id: 'blank', name: 'Blank Canvas', rooms: [] },
+  { id: 'wedding', name: 'Wedding Reception', preview: '🎊' },
+  { id: 'conference', name: 'Conference Room', preview: '📊' },
+  { id: 'banquet', name: 'Banquet Hall', preview: '🍽️' },
+  { id: 'tradeshow', name: 'Trade Show', preview: '🏢' },
+  { id: 'concert', name: 'Concert/Show', preview: '🎵' },
 ]
 
-// Handle types for resize/rotate
-const HANDLE_SIZE = 12
-const ROTATION_HANDLE_OFFSET = 30
+// =============================================================================
+// COMPONENT
+// =============================================================================
 
 export function VenueLayoutDesigner() {
   const { venueId, layoutId } = useParams()
   const navigate = useNavigate()
   const { organizer } = useOrganizer()
   const canvasRef = useRef(null)
-  
-  const [layoutName, setLayoutName] = useState('My Venue Layout')
-  const [placedItems, setPlacedItems] = useState([])
-  const [selectedItem, setSelectedItem] = useState(null)
-  const [draggedLibraryItem, setDraggedLibraryItem] = useState(null)
-  const [isOverCanvas, setIsOverCanvas] = useState(false)
-  
-  // Interaction states
-  const [interactionMode, setInteractionMode] = useState(null) // 'move', 'resize-nw', 'resize-ne', 'resize-sw', 'resize-se', 'rotate'
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [itemStart, setItemStart] = useState({ x: 0, y: 0, width: 0, height: 0, rotation: 0 })
-  
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [showGrid, setShowGrid] = useState(true)
-  const [zoom, setZoom] = useState(1)
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const containerRef = useRef(null)
+
+  // Layout state
+  const [layoutName, setLayoutName] = useState('Untitled Layout')
+  const [canvasWidth, setCanvasWidth] = useState(1200)
+  const [canvasHeight, setCanvasHeight] = useState(800)
+  const [objects, setObjects] = useState([])
+  const [selectedIds, setSelectedIds] = useState([])
   const [history, setHistory] = useState([])
-  
-  const CANVAS_WIDTH = 1000
-  const CANVAS_HEIGHT = 700
-  const GRID_SIZE = 25
+  const [historyIndex, setHistoryIndex] = useState(-1)
 
-  const filteredItems = selectedCategory === 'all' 
-    ? ITEMS_LIBRARY 
-    : ITEMS_LIBRARY.filter(item => item.category === selectedCategory)
+  // UI state
+  const [zoom, setZoom] = useState(100)
+  const [showGrid, setShowGrid] = useState(true)
+  const [gridSize, setGridSize] = useState(24)
+  const [snapToGrid, setSnapToGrid] = useState(true)
+  const [viewMode, setViewMode] = useState('2d') // '2d' or '3d'
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true)
+  const [rightPanelOpen, setRightPanelOpen] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('tables')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [tool, setTool] = useState('select') // 'select', 'pan', 'draw-section'
 
-  const saveHistory = useCallback(() => {
-    setHistory(prev => [...prev.slice(-30), JSON.stringify(placedItems)])
-  }, [placedItems])
+  // Drag state
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+
+  // Resize/rotate state
+  const [isResizing, setIsResizing] = useState(false)
+  const [resizeHandle, setResizeHandle] = useState(null)
+  const [isRotating, setIsRotating] = useState(false)
+
+  // Canvas pan/scroll
+  const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 })
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+
+  // Saving
+  const [saving, setSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState(null)
+
+  // =============================================================================
+  // LOAD LAYOUT
+  // =============================================================================
+
+  useEffect(() => {
+    if (layoutId && layoutId !== 'create') {
+      loadLayout()
+    }
+  }, [layoutId])
+
+  const loadLayout = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('venue_layouts')
+        .select('*')
+        .eq('id', layoutId)
+        .single()
+
+      if (error) throw error
+
+      setLayoutName(data.name || 'Untitled Layout')
+      setCanvasWidth(data.width || 1200)
+      setCanvasHeight(data.height || 800)
+      setObjects(data.layout_data?.objects || [])
+    } catch (error) {
+      console.error('Error loading layout:', error)
+    }
+  }
+
+  // =============================================================================
+  // HISTORY (UNDO/REDO)
+  // =============================================================================
+
+  const saveToHistory = useCallback((newObjects) => {
+    const newHistory = history.slice(0, historyIndex + 1)
+    newHistory.push([...newObjects])
+    setHistory(newHistory)
+    setHistoryIndex(newHistory.length - 1)
+  }, [history, historyIndex])
 
   const undo = () => {
-    if (history.length > 0) {
-      const lastState = history[history.length - 1]
-      setPlacedItems(JSON.parse(lastState))
-      setHistory(prev => prev.slice(0, -1))
-      setSelectedItem(null)
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1)
+      setObjects([...history[historyIndex - 1]])
     }
   }
 
-  const snapToGrid = (value) => showGrid ? Math.round(value / GRID_SIZE) * GRID_SIZE : value
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1)
+      setObjects([...history[historyIndex + 1]])
+    }
+  }
 
-  // Mouse down on canvas item
-  const handleItemMouseDown = (e, item, mode = 'move') => {
-    e.stopPropagation()
-    e.preventDefault()
-    
-    setSelectedItem(item)
-    setInteractionMode(mode)
-    setDragStart({ x: e.clientX, y: e.clientY })
-    setItemStart({ 
-      x: item.x, 
-      y: item.y, 
-      width: item.width, 
+  // =============================================================================
+  // OBJECT MANIPULATION
+  // =============================================================================
+
+  const addObject = (item) => {
+    const newObject = {
+      id: `${item.type}-${Date.now()}`,
+      type: item.type,
+      name: item.name,
+      x: canvasWidth / 2 - item.width / 2,
+      y: canvasHeight / 2 - item.height / 2,
+      width: item.width,
       height: item.height,
-      rotation: item.rotation || 0
-    })
-    saveHistory()
-  }
-
-  // Global mouse move
-  const handleMouseMove = useCallback((e) => {
-    if (!interactionMode || !selectedItem) return
-    
-    const dx = (e.clientX - dragStart.x) / zoom
-    const dy = (e.clientY - dragStart.y) / zoom
-    
-    let updates = {}
-    
-    if (interactionMode === 'move') {
-      updates = {
-        x: Math.max(0, Math.min(CANVAS_WIDTH - selectedItem.width, snapToGrid(itemStart.x + dx))),
-        y: Math.max(0, Math.min(CANVAS_HEIGHT - selectedItem.height, snapToGrid(itemStart.y + dy)))
-      }
-    } else if (interactionMode === 'rotate') {
-      // Calculate rotation based on mouse position relative to item center
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (rect) {
-        const centerX = rect.left + (selectedItem.x + selectedItem.width / 2) * zoom
-        const centerY = rect.top + (selectedItem.y + selectedItem.height / 2) * zoom
-        const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI) + 90
-        updates = { rotation: Math.round(angle / 15) * 15 } // Snap to 15 degree increments
-      }
-    } else if (interactionMode.startsWith('resize')) {
-      const minSize = 40
-      const maxSize = 500
-      
-      let newWidth = itemStart.width
-      let newHeight = itemStart.height
-      let newX = itemStart.x
-      let newY = itemStart.y
-      
-      // Calculate new dimensions based on which handle is being dragged
-      if (interactionMode.includes('e')) {
-        newWidth = Math.max(minSize, Math.min(maxSize, itemStart.width + dx))
-      }
-      if (interactionMode.includes('w')) {
-        const widthChange = Math.max(minSize, Math.min(maxSize, itemStart.width - dx)) - itemStart.width
-        newWidth = itemStart.width + widthChange
-        newX = itemStart.x - widthChange
-      }
-      if (interactionMode.includes('s')) {
-        newHeight = Math.max(minSize, Math.min(maxSize, itemStart.height + dy))
-      }
-      if (interactionMode.includes('n')) {
-        const heightChange = Math.max(minSize, Math.min(maxSize, itemStart.height - dy)) - itemStart.height
-        newHeight = itemStart.height + heightChange
-        newY = itemStart.y - heightChange
-      }
-      
-      updates = {
-        x: Math.max(0, newX),
-        y: Math.max(0, newY),
-        width: snapToGrid(newWidth),
-        height: snapToGrid(newHeight)
-      }
-    }
-    
-    setPlacedItems(prev => prev.map(item => 
-      item.id === selectedItem.id ? { ...item, ...updates } : item
-    ))
-    setSelectedItem(prev => prev ? { ...prev, ...updates } : null)
-  }, [interactionMode, selectedItem, dragStart, itemStart, zoom, showGrid])
-
-  const handleMouseUp = useCallback(() => {
-    setInteractionMode(null)
-  }, [])
-
-  // Register global mouse events
-  useEffect(() => {
-    if (interactionMode) {
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove)
-        window.removeEventListener('mouseup', handleMouseUp)
-      }
-    }
-  }, [interactionMode, handleMouseMove, handleMouseUp])
-
-  // Drop from library
-  const handleCanvasDrop = (e) => {
-    e.preventDefault()
-    setIsOverCanvas(false)
-    
-    if (!draggedLibraryItem) return
-    
-    const rect = canvasRef.current.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / zoom - draggedLibraryItem.width / 2
-    const y = (e.clientY - rect.top) / zoom - draggedLibraryItem.height / 2
-
-    saveHistory()
-    const newItem = {
-      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type: draggedLibraryItem.id,
-      name: draggedLibraryItem.name,
-      x: snapToGrid(Math.max(0, Math.min(CANVAS_WIDTH - draggedLibraryItem.width, x))),
-      y: snapToGrid(Math.max(0, Math.min(CANVAS_HEIGHT - draggedLibraryItem.height, y))),
-      width: draggedLibraryItem.width,
-      height: draggedLibraryItem.height,
-      color: draggedLibraryItem.color,
       rotation: 0,
+      color: item.color,
+      seats: item.seats || 0,
+      locked: false,
+      visible: true,
+      label: '',
+      tableNumber: '',
     }
-    setPlacedItems(prev => [...prev, newItem])
-    setSelectedItem(newItem)
-    setDraggedLibraryItem(null)
-  }
-
-  const deleteSelected = () => {
-    if (selectedItem) {
-      saveHistory()
-      setPlacedItems(prev => prev.filter(item => item.id !== selectedItem.id))
-      setSelectedItem(null)
-    }
+    const newObjects = [...objects, newObject]
+    setObjects(newObjects)
+    saveToHistory(newObjects)
+    setSelectedIds([newObject.id])
   }
 
   const duplicateSelected = () => {
-    if (selectedItem) {
-      saveHistory()
-      const newItem = {
-        ...selectedItem,
-        id: `item-${Date.now()}`,
-        x: Math.min(selectedItem.x + 40, CANVAS_WIDTH - selectedItem.width),
-        y: Math.min(selectedItem.y + 40, CANVAS_HEIGHT - selectedItem.height),
+    const newObjects = [...objects]
+    selectedIds.forEach(id => {
+      const obj = objects.find(o => o.id === id)
+      if (obj) {
+        newObjects.push({
+          ...obj,
+          id: `${obj.type}-${Date.now()}-copy`,
+          x: obj.x + 30,
+          y: obj.y + 30,
+        })
       }
-      setPlacedItems(prev => [...prev, newItem])
-      setSelectedItem(newItem)
+    })
+    setObjects(newObjects)
+    saveToHistory(newObjects)
+  }
+
+  const deleteSelected = () => {
+    const newObjects = objects.filter(o => !selectedIds.includes(o.id))
+    setObjects(newObjects)
+    saveToHistory(newObjects)
+    setSelectedIds([])
+  }
+
+  const updateObject = (id, updates) => {
+    const newObjects = objects.map(obj =>
+      obj.id === id ? { ...obj, ...updates } : obj
+    )
+    setObjects(newObjects)
+  }
+
+  const snapToGridValue = (value) => {
+    if (!snapToGrid) return value
+    return Math.round(value / gridSize) * gridSize
+  }
+
+  // =============================================================================
+  // MOUSE HANDLERS
+  // =============================================================================
+
+  const getCanvasCoordinates = (e) => {
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect) return { x: 0, y: 0 }
+    const scale = zoom / 100
+    return {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale
     }
   }
 
-  const saveLayout = async () => {
-    if (!organizer?.id) {
-      alert('Please log in to save')
+  const handleCanvasMouseDown = (e) => {
+    const coords = getCanvasCoordinates(e)
+
+    if (tool === 'pan' || e.button === 1) {
+      setIsPanning(true)
+      setPanStart({ x: e.clientX - canvasOffset.x, y: e.clientY - canvasOffset.y })
       return
     }
+
+    // Check if clicking on an object
+    const clickedObject = [...objects].reverse().find(obj => {
+      if (!obj.visible) return false
+      return coords.x >= obj.x && coords.x <= obj.x + obj.width &&
+             coords.y >= obj.y && coords.y <= obj.y + obj.height
+    })
+
+    if (clickedObject) {
+      if (e.shiftKey) {
+        // Multi-select
+        setSelectedIds(prev => 
+          prev.includes(clickedObject.id) 
+            ? prev.filter(id => id !== clickedObject.id)
+            : [...prev, clickedObject.id]
+        )
+      } else {
+        setSelectedIds([clickedObject.id])
+      }
+
+      if (!clickedObject.locked) {
+        setIsDragging(true)
+        setDragStart(coords)
+        setDragOffset({ x: coords.x - clickedObject.x, y: coords.y - clickedObject.y })
+      }
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleCanvasMouseMove = (e) => {
+    const coords = getCanvasCoordinates(e)
+
+    if (isPanning) {
+      setCanvasOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      })
+      return
+    }
+
+    if (isDragging && selectedIds.length > 0) {
+      const dx = coords.x - dragStart.x
+      const dy = coords.y - dragStart.y
+
+      const newObjects = objects.map(obj => {
+        if (selectedIds.includes(obj.id) && !obj.locked) {
+          return {
+            ...obj,
+            x: snapToGridValue(obj.x + dx),
+            y: snapToGridValue(obj.y + dy)
+          }
+        }
+        return obj
+      })
+      setObjects(newObjects)
+      setDragStart(coords)
+    }
+
+    if (isResizing && selectedIds.length === 1 && resizeHandle) {
+      const obj = objects.find(o => o.id === selectedIds[0])
+      if (obj && !obj.locked) {
+        let newWidth = obj.width
+        let newHeight = obj.height
+        let newX = obj.x
+        let newY = obj.y
+
+        if (resizeHandle.includes('e')) newWidth = Math.max(24, coords.x - obj.x)
+        if (resizeHandle.includes('w')) {
+          newWidth = Math.max(24, obj.x + obj.width - coords.x)
+          newX = coords.x
+        }
+        if (resizeHandle.includes('s')) newHeight = Math.max(24, coords.y - obj.y)
+        if (resizeHandle.includes('n')) {
+          newHeight = Math.max(24, obj.y + obj.height - coords.y)
+          newY = coords.y
+        }
+
+        updateObject(obj.id, {
+          width: snapToGridValue(newWidth),
+          height: snapToGridValue(newHeight),
+          x: snapToGridValue(newX),
+          y: snapToGridValue(newY)
+        })
+      }
+    }
+  }
+
+  const handleCanvasMouseUp = () => {
+    if (isDragging || isResizing) {
+      saveToHistory(objects)
+    }
+    setIsDragging(false)
+    setIsResizing(false)
+    setResizeHandle(null)
+    setIsPanning(false)
+    setIsRotating(false)
+  }
+
+  // =============================================================================
+  // DRAG FROM LIBRARY
+  // =============================================================================
+
+  const handleDragStart = (e, item) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(item))
+    e.dataTransfer.effectAllowed = 'copy'
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    const data = e.dataTransfer.getData('application/json')
+    if (data) {
+      const item = JSON.parse(data)
+      const coords = getCanvasCoordinates(e)
+      const newObject = {
+        id: `${item.type}-${Date.now()}`,
+        type: item.type,
+        name: item.name,
+        x: snapToGridValue(coords.x - item.width / 2),
+        y: snapToGridValue(coords.y - item.height / 2),
+        width: item.width,
+        height: item.height,
+        rotation: 0,
+        color: item.color,
+        seats: item.seats || 0,
+        locked: false,
+        visible: true,
+        label: '',
+        tableNumber: '',
+      }
+      const newObjects = [...objects, newObject]
+      setObjects(newObjects)
+      saveToHistory(newObjects)
+      setSelectedIds([newObject.id])
+    }
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+
+  // =============================================================================
+  // KEYBOARD SHORTCUTS
+  // =============================================================================
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+        deleteSelected()
+      }
+      if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        duplicateSelected()
+      }
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        if (e.shiftKey) redo()
+        else undo()
+      }
+      if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        setSelectedIds(objects.map(o => o.id))
+      }
+      if (e.key === 'Escape') {
+        setSelectedIds([])
+        setTool('select')
+      }
+      if (e.key === '+' || e.key === '=') {
+        setZoom(z => Math.min(200, z + 10))
+      }
+      if (e.key === '-') {
+        setZoom(z => Math.max(25, z - 10))
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [objects, selectedIds, history, historyIndex])
+
+  // =============================================================================
+  // SAVE LAYOUT
+  // =============================================================================
+
+  const saveLayout = async () => {
+    if (!organizer?.id) return
+
     setSaving(true)
     try {
-      const data = {
-        venue_id: venueId || null,
-        name: layoutName,
-        total_width: CANVAS_WIDTH,
-        total_height: CANVAS_HEIGHT,
-        is_active: true,
-        metadata: { items: placedItems, version: 2 }
+      const layoutData = {
+        objects,
+        gridSize,
+        showGrid,
       }
-      if (layoutId && !['create', 'layouts'].includes(layoutId)) {
-        await supabase.from('venue_layouts').update(data).eq('id', layoutId)
+
+      if (layoutId && layoutId !== 'create') {
+        await supabase
+          .from('venue_layouts')
+          .update({
+            name: layoutName,
+            width: canvasWidth,
+            height: canvasHeight,
+            layout_data: layoutData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', layoutId)
       } else {
-        await supabase.from('venue_layouts').insert(data)
+        const { data, error } = await supabase
+          .from('venue_layouts')
+          .insert({
+            venue_id: venueId,
+            organizer_id: organizer.id,
+            name: layoutName,
+            width: canvasWidth,
+            height: canvasHeight,
+            layout_data: layoutData
+          })
+          .select()
+          .single()
+
+        if (data) {
+          navigate(`/organizer/venues/${venueId}/layouts/${data.id}`, { replace: true })
+        }
       }
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    } catch (err) {
-      alert('Failed to save')
+
+      setLastSaved(new Date())
+    } catch (error) {
+      console.error('Error saving layout:', error)
+      alert('Failed to save layout')
     } finally {
       setSaving(false)
     }
   }
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (document.activeElement.tagName === 'INPUT') return
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedItem) { e.preventDefault(); deleteSelected() }
-      if (e.key === 'd' && (e.ctrlKey || e.metaKey) && selectedItem) { e.preventDefault(); duplicateSelected() }
-      if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo() }
-      if (e.key === 'Escape') setSelectedItem(null)
-      if (e.key === 'g') setShowGrid(p => !p)
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [selectedItem, history])
+  // =============================================================================
+  // RENDER OBJECT ON CANVAS
+  // =============================================================================
 
-  // Render item with handles
-  const renderItem = (item) => {
-    const isSelected = selectedItem?.id === item.id
-    const Icon = ITEM_ICONS[item.type]
-    
+  const renderObject = (obj) => {
+    const isSelected = selectedIds.includes(obj.id)
+    if (!obj.visible) return null
+
     return (
-      <div
-        key={item.id}
-        className={`absolute transition-shadow duration-150 ${
-          interactionMode && isSelected ? '' : 'hover:shadow-2xl'
-        }`}
-        style={{
-          left: item.x * zoom,
-          top: item.y * zoom,
-          width: item.width * zoom,
-          height: item.height * zoom,
-          transform: `rotate(${item.rotation || 0}deg)`,
-          transformOrigin: 'center center',
-          cursor: interactionMode === 'move' ? 'grabbing' : 'grab',
-        }}
+      <g
+        key={obj.id}
+        transform={`translate(${obj.x}, ${obj.y}) rotate(${obj.rotation}, ${obj.width/2}, ${obj.height/2})`}
+        style={{ cursor: obj.locked ? 'not-allowed' : 'move' }}
       >
-        {/* Item body */}
-        <div
-          className={`w-full h-full rounded-xl flex items-center justify-center overflow-hidden
-                      ${isSelected ? 'ring-4 ring-white shadow-2xl' : 'shadow-lg'}`}
-          style={{ 
-            backgroundColor: item.color,
-            boxShadow: isSelected ? `0 0 30px ${item.color}80` : undefined
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, item, 'move')}
-          onClick={(e) => { e.stopPropagation(); setSelectedItem(item) }}
-        >
-          <div 
-            className="text-white/90 pointer-events-none"
-            style={{ 
-              width: Math.min(item.width * zoom * 0.6, 80),
-              height: Math.min(item.height * zoom * 0.6, 80)
-            }}
-          >
-            {Icon}
-          </div>
-        </div>
-        
-        {/* Selection UI */}
-        {isSelected && !interactionMode && (
+        {/* Main shape */}
+        {obj.type === 'round-table' || obj.type === 'cocktail' ? (
+          <ellipse
+            cx={obj.width / 2}
+            cy={obj.height / 2}
+            rx={obj.width / 2 - 2}
+            ry={obj.height / 2 - 2}
+            fill={obj.color}
+            stroke={isSelected ? '#2969FF' : 'rgba(0,0,0,0.2)'}
+            strokeWidth={isSelected ? 3 : 1}
+          />
+        ) : (
+          <rect
+            width={obj.width}
+            height={obj.height}
+            rx={obj.type === 'stage' ? 4 : obj.type === 'dance-floor' ? 0 : 8}
+            fill={obj.color}
+            stroke={isSelected ? '#2969FF' : 'rgba(0,0,0,0.2)'}
+            strokeWidth={isSelected ? 3 : 1}
+          />
+        )}
+
+        {/* Chairs around round tables */}
+        {obj.type === 'round-table' && obj.seats > 0 && (
           <>
-            {/* Quick action buttons */}
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 flex gap-1 bg-black/80 rounded-lg p-1 shadow-xl backdrop-blur-sm">
-              <button
-                onClick={(e) => { e.stopPropagation(); duplicateSelected() }}
-                className="p-1.5 hover:bg-white/20 rounded text-white/80 hover:text-white transition-colors"
-                title="Duplicate (Ctrl+D)"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); deleteSelected() }}
-                className="p-1.5 hover:bg-red-500/50 rounded text-red-400 hover:text-red-300 transition-colors"
-                title="Delete (Del)"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-            
-            {/* Resize handles */}
-            {['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].map(pos => {
-              const style = {
-                position: 'absolute',
-                width: HANDLE_SIZE,
-                height: HANDLE_SIZE,
-                backgroundColor: '#fff',
-                border: '2px solid #2196F3',
-                borderRadius: pos.length === 2 ? '50%' : '2px',
-                cursor: `${pos}-resize`,
-                zIndex: 10,
-              }
-              
-              if (pos.includes('n')) style.top = -HANDLE_SIZE / 2
-              if (pos.includes('s')) style.bottom = -HANDLE_SIZE / 2
-              if (pos.includes('w')) style.left = -HANDLE_SIZE / 2
-              if (pos.includes('e')) style.right = -HANDLE_SIZE / 2
-              if (pos === 'n' || pos === 's') { style.left = '50%'; style.marginLeft = -HANDLE_SIZE / 2 }
-              if (pos === 'e' || pos === 'w') { style.top = '50%'; style.marginTop = -HANDLE_SIZE / 2 }
-              
+            {Array.from({ length: obj.seats }).map((_, i) => {
+              const angle = (i / obj.seats) * Math.PI * 2 - Math.PI / 2
+              const chairRadius = Math.max(obj.width, obj.height) / 2 + 14
+              const cx = obj.width / 2 + Math.cos(angle) * chairRadius
+              const cy = obj.height / 2 + Math.sin(angle) * chairRadius
               return (
-                <div
-                  key={pos}
-                  style={style}
-                  onMouseDown={(e) => handleItemMouseDown(e, item, `resize-${pos}`)}
+                <circle
+                  key={i}
+                  cx={cx}
+                  cy={cy}
+                  r={10}
+                  fill={obj.color}
+                  opacity={0.7}
+                  stroke="rgba(0,0,0,0.1)"
+                  strokeWidth={1}
                 />
               )
             })}
-            
-            {/* Rotation handle */}
-            <div
-              className="absolute flex flex-col items-center"
-              style={{ 
-                top: -ROTATION_HANDLE_OFFSET - HANDLE_SIZE,
-                left: '50%',
-                marginLeft: -HANDLE_SIZE / 2
-              }}
-            >
-              <div 
-                className="w-3 h-3 bg-green-500 rounded-full border-2 border-white cursor-grab shadow-lg"
-                onMouseDown={(e) => handleItemMouseDown(e, item, 'rotate')}
-              />
-              <div className="w-0.5 h-5 bg-green-500" />
-            </div>
-            
-            {/* Item name tooltip */}
-            <div 
-              className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white 
-                         text-xs px-3 py-1.5 rounded-lg whitespace-nowrap font-medium shadow-lg"
-            >
-              {item.name} • {Math.round(item.rotation || 0)}°
-            </div>
           </>
         )}
-      </div>
+
+        {/* Dance floor pattern */}
+        {obj.type === 'dance-floor' && (
+          <g>
+            {Array.from({ length: Math.floor(obj.width / 48) }).map((_, i) =>
+              Array.from({ length: Math.floor(obj.height / 48) }).map((_, j) => (
+                <rect
+                  key={`${i}-${j}`}
+                  x={i * 48 + 2}
+                  y={j * 48 + 2}
+                  width={44}
+                  height={44}
+                  fill={(i + j) % 2 === 0 ? '#2a2a4a' : '#1a1a2e'}
+                  rx={2}
+                />
+              ))
+            )}
+          </g>
+        )}
+
+        {/* Table number label */}
+        {(obj.tableNumber || obj.label) && (
+          <text
+            x={obj.width / 2}
+            y={obj.height / 2 + 5}
+            textAnchor="middle"
+            fill="white"
+            fontSize="14"
+            fontWeight="bold"
+          >
+            {obj.tableNumber || obj.label}
+          </text>
+        )}
+
+        {/* VIP badge */}
+        {obj.type === 'round-table' && obj.label?.toLowerCase().includes('vip') && (
+          <g transform={`translate(${obj.width - 20}, -8)`}>
+            <rect x={0} y={0} width={40} height={20} rx={4} fill="#E91E63" />
+            <text x={20} y={14} textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">VIP</text>
+          </g>
+        )}
+
+        {/* Selection handles */}
+        {isSelected && !obj.locked && (
+          <>
+            {/* Corner resize handles */}
+            {['nw', 'ne', 'sw', 'se'].map(handle => {
+              const x = handle.includes('w') ? -6 : obj.width - 6
+              const y = handle.includes('n') ? -6 : obj.height - 6
+              return (
+                <rect
+                  key={handle}
+                  x={x}
+                  y={y}
+                  width={12}
+                  height={12}
+                  fill="white"
+                  stroke="#2969FF"
+                  strokeWidth={2}
+                  rx={2}
+                  style={{ cursor: `${handle}-resize` }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation()
+                    setIsResizing(true)
+                    setResizeHandle(handle)
+                  }}
+                />
+              )
+            })}
+            {/* Edge resize handles */}
+            {['n', 's', 'e', 'w'].map(handle => {
+              const x = handle === 'w' ? -6 : handle === 'e' ? obj.width - 6 : obj.width / 2 - 6
+              const y = handle === 'n' ? -6 : handle === 's' ? obj.height - 6 : obj.height / 2 - 6
+              return (
+                <rect
+                  key={handle}
+                  x={x}
+                  y={y}
+                  width={12}
+                  height={12}
+                  fill="white"
+                  stroke="#2969FF"
+                  strokeWidth={2}
+                  rx={2}
+                  style={{ cursor: `${handle === 'n' || handle === 's' ? 'ns' : 'ew'}-resize` }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation()
+                    setIsResizing(true)
+                    setResizeHandle(handle)
+                  }}
+                />
+              )
+            })}
+            {/* Rotation handle */}
+            <circle
+              cx={obj.width / 2}
+              cy={-20}
+              r={8}
+              fill="#2969FF"
+              stroke="white"
+              strokeWidth={2}
+              style={{ cursor: 'grab' }}
+              onMouseDown={(e) => {
+                e.stopPropagation()
+                setIsRotating(true)
+              }}
+            />
+            <line
+              x1={obj.width / 2}
+              y1={0}
+              x2={obj.width / 2}
+              y2={-12}
+              stroke="#2969FF"
+              strokeWidth={2}
+            />
+          </>
+        )}
+      </g>
     )
   }
 
+  // =============================================================================
+  // RENDER
+  // =============================================================================
+
+  const selectedObject = selectedIds.length === 1 ? objects.find(o => o.id === selectedIds[0]) : null
+  const filteredItems = OBJECT_CATEGORIES.find(c => c.id === activeCategory)?.items.filter(
+    item => !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || []
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' }}>
-      {/* Toolbar */}
-      <div className="bg-black/30 backdrop-blur-xl border-b border-white/10 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/organizer/venues')} className="text-white/70 hover:text-white hover:bg-white/10">
-            <ChevronLeft className="w-4 h-4 mr-1" /> Back
-          </Button>
-          <div className="h-6 w-px bg-white/20" />
-          <Input
-            value={layoutName}
-            onChange={(e) => setLayoutName(e.target.value)}
-            className="w-72 bg-white/10 border-white/20 text-white font-semibold placeholder:text-white/40"
-          />
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={undo} disabled={!history.length} className="text-white/70 hover:text-white hover:bg-white/10 disabled:opacity-30">
-            <Undo className="w-4 h-4" />
-          </Button>
-          
-          <Button variant={showGrid ? 'default' : 'ghost'} size="sm" onClick={() => setShowGrid(!showGrid)}
-            className={showGrid ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}>
-            <Grid className="w-4 h-4" />
-          </Button>
-
-          <div className="flex items-center gap-1 bg-white/10 rounded-lg px-2 py-1">
-            <Button variant="ghost" size="sm" onClick={() => setZoom(Math.max(0.4, zoom - 0.1))} className="text-white/70 hover:text-white h-7 w-7 p-0">
-              <ZoomOut className="w-4 h-4" />
-            </Button>
-            <span className="text-sm w-14 text-center text-white/80">{Math.round(zoom * 100)}%</span>
-            <Button variant="ghost" size="sm" onClick={() => setZoom(Math.min(2, zoom + 0.1))} className="text-white/70 hover:text-white h-7 w-7 p-0">
-              <ZoomIn className="w-4 h-4" />
-            </Button>
+    <div className="h-screen flex flex-col bg-[#1e1e2e] text-white overflow-hidden">
+      {/* ===== TOP TOOLBAR ===== */}
+      <div className="h-14 bg-[#2d2d3d] border-b border-[#3d3d4d] flex items-center px-2 gap-1">
+        {/* Logo */}
+        <div className="flex items-center gap-2 px-3 border-r border-[#3d3d4d] mr-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <LayoutGrid className="w-5 h-5 text-white" />
           </div>
+        </div>
 
-          {selectedItem && (
-            <>
-              <div className="h-6 w-px bg-white/20" />
-              <Button variant="ghost" size="sm" onClick={duplicateSelected} className="text-white/70 hover:text-white hover:bg-white/10">
-                <Copy className="w-4 h-4" />
+        {/* Menu Bar */}
+        {['File', 'Edit', 'Tools', 'Arrange', 'View', 'Help'].map(menu => (
+          <DropdownMenu key={menu}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 px-3">
+                {menu}
               </Button>
-              <Button variant="ghost" size="sm" onClick={deleteSelected} className="text-red-400 hover:text-red-300 hover:bg-red-500/20">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </>
-          )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#2d2d3d] border-[#3d3d4d] text-white">
+              {menu === 'File' && (
+                <>
+                  <DropdownMenuItem onClick={saveLayout}>
+                    <Save className="w-4 h-4 mr-2" /> Save <span className="ml-auto text-xs text-white/50">⌘S</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Download className="w-4 h-4 mr-2" /> Export as PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Download className="w-4 h-4 mr-2" /> Export as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
+                  <DropdownMenuItem onClick={() => navigate(`/organizer/venues/${venueId}/layouts`)}>
+                    <ChevronLeft className="w-4 h-4 mr-2" /> Back to Layouts
+                  </DropdownMenuItem>
+                </>
+              )}
+              {menu === 'Edit' && (
+                <>
+                  <DropdownMenuItem onClick={undo} disabled={historyIndex <= 0}>
+                    <Undo className="w-4 h-4 mr-2" /> Undo <span className="ml-auto text-xs text-white/50">⌘Z</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={redo} disabled={historyIndex >= history.length - 1}>
+                    <Redo className="w-4 h-4 mr-2" /> Redo <span className="ml-auto text-xs text-white/50">⌘⇧Z</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
+                  <DropdownMenuItem onClick={duplicateSelected} disabled={selectedIds.length === 0}>
+                    <Copy className="w-4 h-4 mr-2" /> Duplicate <span className="ml-auto text-xs text-white/50">⌘D</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={deleteSelected} disabled={selectedIds.length === 0}>
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete <span className="ml-auto text-xs text-white/50">⌫</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+              {menu === 'View' && (
+                <>
+                  <DropdownMenuItem onClick={() => setShowGrid(!showGrid)}>
+                    <Grid className="w-4 h-4 mr-2" /> {showGrid ? 'Hide Grid' : 'Show Grid'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSnapToGrid(!snapToGrid)}>
+                    {snapToGrid ? <Lock className="w-4 h-4 mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
+                    Snap to Grid: {snapToGrid ? 'On' : 'Off'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
+                  <DropdownMenuItem onClick={() => setZoom(100)}>
+                    <Maximize2 className="w-4 h-4 mr-2" /> Reset Zoom (100%)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setZoom(z => Math.min(200, z + 25))}>
+                    <ZoomIn className="w-4 h-4 mr-2" /> Zoom In
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setZoom(z => Math.max(25, z - 25))}>
+                    <ZoomOut className="w-4 h-4 mr-2" /> Zoom Out
+                  </DropdownMenuItem>
+                </>
+              )}
+              {menu === 'Tools' && (
+                <>
+                  <DropdownMenuItem onClick={() => setTool('select')}>
+                    <MousePointer className="w-4 h-4 mr-2" /> Select Tool
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTool('pan')}>
+                    <Move className="w-4 h-4 mr-2" /> Pan Tool
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
+                  <DropdownMenuItem onClick={() => setTool('draw-section')}>
+                    <Square className="w-4 h-4 mr-2" /> Draw Section
+                  </DropdownMenuItem>
+                </>
+              )}
+              {menu === 'Arrange' && (
+                <>
+                  <DropdownMenuItem>Bring to Front</DropdownMenuItem>
+                  <DropdownMenuItem>Send to Back</DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-[#3d3d4d]" />
+                  <DropdownMenuItem>Align Left</DropdownMenuItem>
+                  <DropdownMenuItem>Align Center</DropdownMenuItem>
+                  <DropdownMenuItem>Align Right</DropdownMenuItem>
+                </>
+              )}
+              {menu === 'Help' && (
+                <>
+                  <DropdownMenuItem>
+                    <HelpCircle className="w-4 h-4 mr-2" /> Keyboard Shortcuts
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    Tutorial
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ))}
 
-          <div className="h-6 w-px bg-white/20" />
-          
-          <Button onClick={saveLayout} disabled={saving}
-            className={`min-w-[130px] ${saved ? 'bg-green-500 hover:bg-green-600' : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700'} shadow-lg`}>
-            {saved ? <><Check className="w-4 h-4 mr-2" /> Saved!</> : saving ? 'Saving...' : <><Save className="w-4 h-4 mr-2" /> Save</>}
+        <div className="flex-1" />
+
+        {/* Layout Name */}
+        <Input
+          value={layoutName}
+          onChange={(e) => setLayoutName(e.target.value)}
+          className="w-48 h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+        />
+
+        <div className="flex-1" />
+
+        {/* Right side tools */}
+        <div className="flex items-center gap-1 border-l border-[#3d3d4d] pl-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
+                  className="text-white/70 hover:text-white hover:bg-white/10"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Switch to {viewMode === '2d' ? '3D' : '2D'} View</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <Button
+            size="sm"
+            onClick={saveLayout}
+            disabled={saving}
+            className="bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="border-[#3d3d4d] text-white hover:bg-white/10">
+                Share <ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#2d2d3d] border-[#3d3d4d] text-white">
+              <DropdownMenuItem>Copy Link</DropdownMenuItem>
+              <DropdownMenuItem>Email</DropdownMenuItem>
+              <DropdownMenuItem>Print</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* User avatar */}
+          <div className="w-8 h-8 rounded-full bg-[#2969FF] flex items-center justify-center ml-2">
+            {organizer?.business_name?.charAt(0) || 'U'}
+          </div>
+        </div>
+      </div>
+
+      {/* ===== SECONDARY TOOLBAR ===== */}
+      <div className="h-10 bg-[#252535] border-b border-[#3d3d4d] flex items-center px-2 gap-1">
+        {/* Drawing tools */}
+        <div className="flex items-center gap-0.5 border-r border-[#3d3d4d] pr-2 mr-2">
+          <TooltipProvider>
+            {[
+              { tool: 'select', icon: MousePointer, label: 'Select (V)' },
+              { tool: 'pan', icon: Move, label: 'Pan (H)' },
+            ].map(({ tool: t, icon: Icon, label }) => (
+              <Tooltip key={t}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`w-8 h-8 ${tool === t ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+                    onClick={() => setTool(t)}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{label}</TooltipContent>
+              </Tooltip>
+            ))}
+          </TooltipProvider>
+        </div>
+
+        {/* Shape/drawing tools */}
+        <div className="flex items-center gap-0.5 border-r border-[#3d3d4d] pr-2 mr-2">
+          <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10">
+            <Square className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10">
+            <Circle className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10">
+            <Type className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10">
+            <Image className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Zoom controls */}
+        <div className="flex items-center gap-1 ml-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10"
+            onClick={() => setZoom(z => Math.max(25, z - 10))}
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <span className="text-sm text-white/70 w-12 text-center">{zoom}%</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8 text-white/60 hover:text-white hover:bg-white/10"
+            onClick={() => setZoom(z => Math.min(200, z + 10))}
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* View mode toggle */}
+        <div className="flex items-center border-l border-[#3d3d4d] pl-2 ml-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`text-xs ${viewMode === '2d' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+            onClick={() => setViewMode('2d')}
+          >
+            2D
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`text-xs ${viewMode === '3d' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+            onClick={() => setViewMode('3d')}
+          >
+            3D
           </Button>
         </div>
       </div>
 
+      {/* ===== MAIN CONTENT ===== */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Library */}
-        <div className="w-72 bg-black/20 backdrop-blur-xl border-r border-white/10 flex flex-col">
-          <div className="p-4 border-b border-white/10">
-            <h3 className="font-bold text-lg text-white flex items-center gap-2">
-              <Layers className="w-5 h-5 text-violet-400" /> Items
-            </h3>
-            <p className="text-sm text-white/50 mt-1">Drag onto canvas</p>
-          </div>
-
-          <div className="p-3 border-b border-white/10">
-            <div className="flex flex-wrap gap-1.5">
-              {CATEGORIES.map(cat => (
-                <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-2.5 py-1.5 text-xs rounded-lg transition-all ${
-                    selectedCategory === cat.id ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
-                  }`}>
-                  {cat.emoji} {cat.name}
+        {/* ===== LEFT PANEL - OBJECT LIBRARY ===== */}
+        <div className={`${leftPanelOpen ? 'w-64' : 'w-12'} bg-[#252535] border-r border-[#3d3d4d] flex flex-col transition-all duration-200`}>
+          {leftPanelOpen ? (
+            <>
+              {/* Tabs */}
+              <div className="flex border-b border-[#3d3d4d]">
+                <button className="flex-1 py-2 text-xs font-medium text-white border-b-2 border-[#2969FF]">
+                  Objects
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-3">
-            <div className="grid grid-cols-2 gap-3">
-              {filteredItems.map(item => (
-                <div
-                  key={item.id}
-                  draggable
-                  onDragStart={() => setDraggedLibraryItem(item)}
-                  onDragEnd={() => setDraggedLibraryItem(null)}
-                  className="group flex flex-col items-center p-4 bg-white/5 rounded-2xl cursor-grab 
-                            active:cursor-grabbing hover:bg-white/10 transition-all duration-200
-                            border border-transparent hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10
-                            hover:scale-105 active:scale-95"
+                <button className="flex-1 py-2 text-xs font-medium text-white/60 hover:text-white">
+                  Templates
+                </button>
+                <button
+                  className="p-2 text-white/60 hover:text-white"
+                  onClick={() => setLeftPanelOpen(false)}
                 >
-                  <div className="w-16 h-16 rounded-xl flex items-center justify-center mb-2 shadow-lg transition-transform group-hover:scale-110"
-                    style={{ backgroundColor: item.color }}>
-                    <div className="w-10 h-10 text-white/90">{ITEM_ICONS[item.id]}</div>
+                  <PanelLeftClose className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Search */}
+              <div className="p-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                  <Input
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Categories */}
+              <div className="flex-1 overflow-y-auto">
+                {OBJECT_CATEGORIES.map(category => (
+                  <div key={category.id} className="border-b border-[#3d3d4d]">
+                    <button
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm ${
+                        activeCategory === category.id ? 'bg-[#2969FF]/20 text-white' : 'text-white/70 hover:bg-white/5'
+                      }`}
+                      onClick={() => setActiveCategory(activeCategory === category.id ? '' : category.id)}
+                    >
+                      <category.icon className="w-4 h-4" />
+                      {category.name}
+                      <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${activeCategory === category.id ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {activeCategory === category.id && (
+                      <div className="grid grid-cols-2 gap-1 p-2 bg-[#1e1e2e]">
+                        {category.items.map(item => (
+                          <div
+                            key={item.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, item)}
+                            onClick={() => addObject(item)}
+                            className="flex flex-col items-center gap-1 p-2 rounded-lg bg-[#252535] hover:bg-[#3d3d4d] cursor-grab border border-transparent hover:border-[#2969FF]/50 transition-all"
+                          >
+                            <div
+                              className="w-10 h-10 rounded flex items-center justify-center"
+                              style={{ backgroundColor: item.color + '40' }}
+                            >
+                              {item.type === 'round-table' || item.type === 'cocktail' ? (
+                                <div className="w-6 h-6 rounded-full" style={{ backgroundColor: item.color }} />
+                              ) : (
+                                <div className="w-8 h-4 rounded" style={{ backgroundColor: item.color }} />
+                              )}
+                            </div>
+                            <span className="text-[10px] text-white/70 text-center leading-tight">
+                              {item.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <span className="text-xs font-medium text-white/70 group-hover:text-white text-center">{item.name}</span>
+                ))}
+              </div>
+
+              {/* Rooms section */}
+              <div className="border-t border-[#3d3d4d] p-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-white/60">Layouts</span>
+                  <Button variant="ghost" size="icon" className="w-6 h-6 text-white/60 hover:text-white">
+                    <Plus className="w-3 h-3" />
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-4 border-t border-white/10">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-white/50">Items:</span>
-              <Badge className="bg-violet-600/80">{placedItems.length}</Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Canvas */}
-        <div className="flex-1 overflow-auto p-8 flex items-center justify-center">
-          <div
-            ref={canvasRef}
-            className={`relative rounded-2xl shadow-2xl transition-all duration-300 ${isOverCanvas ? 'ring-4 ring-violet-500 ring-offset-4 ring-offset-transparent' : ''}`}
-            style={{
-              width: CANVAS_WIDTH * zoom,
-              height: CANVAS_HEIGHT * zoom,
-              background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)',
-              backgroundImage: showGrid ? `
-                linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)
-              ` : 'none',
-              backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px`,
-            }}
-            onDrop={handleCanvasDrop}
-            onDragOver={(e) => { e.preventDefault(); setIsOverCanvas(true) }}
-            onDragLeave={() => setIsOverCanvas(false)}
-            onClick={() => setSelectedItem(null)}
-          >
-            {placedItems.map(renderItem)}
-            
-            {placedItems.length === 0 && !isOverCanvas && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  <div className="text-8xl mb-6 animate-bounce">🎨</div>
-                  <p className="text-2xl font-bold text-white/40 mb-2">Drop items here</p>
-                  <p className="text-white/30">Drag from the left panel</p>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 p-2 rounded bg-[#2969FF]/20 text-white text-xs">
+                    <span className="w-8 text-center font-mono">240</span>
+                    <span>[8]</span>
+                  </div>
                 </div>
               </div>
-            )}
-            
-            {isOverCanvas && draggedLibraryItem && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-violet-500/10 rounded-2xl backdrop-blur-sm">
-                <div className="text-center animate-pulse">
-                  <div className="text-6xl mb-4">✨</div>
-                  <p className="text-xl font-bold text-violet-300">Release to place {draggedLibraryItem.name}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right panel - contextual help */}
-        <div className="w-64 bg-black/20 backdrop-blur-xl border-l border-white/10 p-4">
-          {selectedItem ? (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-bold text-white mb-1">Selected</h3>
-                <p className="text-violet-400 font-medium text-lg">{selectedItem.name}</p>
-              </div>
-              
-              <div className="space-y-2 text-sm text-white/60">
-                <div className="flex justify-between"><span>Position:</span><span className="text-white/80">{Math.round(selectedItem.x)}, {Math.round(selectedItem.y)}</span></div>
-                <div className="flex justify-between"><span>Size:</span><span className="text-white/80">{Math.round(selectedItem.width)} × {Math.round(selectedItem.height)}</span></div>
-                <div className="flex justify-between"><span>Rotation:</span><span className="text-white/80">{Math.round(selectedItem.rotation || 0)}°</span></div>
-              </div>
-
-              <div className="pt-4 border-t border-white/10 space-y-2">
-                <p className="text-xs text-white/40 uppercase tracking-wider font-medium">Mouse Controls</p>
-                <p className="text-sm text-white/60">• Drag center to <span className="text-white">move</span></p>
-                <p className="text-sm text-white/60">• Drag corners to <span className="text-white">resize</span></p>
-                <p className="text-sm text-white/60">• Drag green dot to <span className="text-white">rotate</span></p>
-              </div>
-            </div>
+            </>
           ) : (
-            <div className="space-y-4">
-              <h3 className="font-bold text-white">✨ Controls</h3>
-              <div className="space-y-3 text-sm">
-                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                  <p className="font-medium text-violet-400 mb-1">🖱️ Mouse</p>
-                  <p className="text-white/50">Drag corners to resize</p>
-                  <p className="text-white/50">Drag green dot to rotate</p>
-                </div>
-                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                  <p className="font-medium text-violet-400 mb-1">⌨️ Keyboard</p>
-                  <p className="text-white/50"><kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs">Del</kbd> Delete</p>
-                  <p className="text-white/50"><kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs">Ctrl+D</kbd> Duplicate</p>
-                  <p className="text-white/50"><kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs">Ctrl+Z</kbd> Undo</p>
-                  <p className="text-white/50"><kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs">G</kbd> Grid</p>
-                  <p className="text-white/50"><kbd className="bg-white/10 px-1.5 py-0.5 rounded text-xs">Esc</kbd> Deselect</p>
-                </div>
-              </div>
-            </div>
+            <button
+              className="w-full h-12 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5"
+              onClick={() => setLeftPanelOpen(true)}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           )}
         </div>
+
+        {/* ===== CANVAS AREA ===== */}
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-auto bg-[#1a1a2a] relative"
+          style={{ cursor: tool === 'pan' ? 'grab' : 'default' }}
+        >
+          <div
+            className="relative"
+            style={{
+              transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px)`,
+              width: canvasWidth * (zoom / 100) + 200,
+              height: canvasHeight * (zoom / 100) + 200,
+              padding: 100
+            }}
+          >
+            <svg
+              ref={canvasRef}
+              width={canvasWidth}
+              height={canvasHeight}
+              viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+              style={{
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: 'top left',
+                background: '#f8f9fa',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                borderRadius: 4
+              }}
+              onMouseDown={handleCanvasMouseDown}
+              onMouseMove={handleCanvasMouseMove}
+              onMouseUp={handleCanvasMouseUp}
+              onMouseLeave={handleCanvasMouseUp}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              {/* Grid */}
+              {showGrid && (
+                <defs>
+                  <pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
+                    <path
+                      d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
+                      fill="none"
+                      stroke="#e0e0e0"
+                      strokeWidth="0.5"
+                    />
+                  </pattern>
+                </defs>
+              )}
+              {showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
+
+              {/* Venue boundary */}
+              <rect
+                x={0}
+                y={0}
+                width={canvasWidth}
+                height={canvasHeight}
+                fill="none"
+                stroke="#ccc"
+                strokeWidth="2"
+                strokeDasharray="8 4"
+              />
+
+              {/* Objects */}
+              {objects.map(renderObject)}
+
+              {/* Measurement line example */}
+              {selectedIds.length === 1 && selectedObject && (
+                <g>
+                  <line
+                    x1={selectedObject.x}
+                    y1={selectedObject.y + selectedObject.height + 20}
+                    x2={selectedObject.x + selectedObject.width}
+                    y2={selectedObject.y + selectedObject.height + 20}
+                    stroke="#2969FF"
+                    strokeWidth={1}
+                    markerStart="url(#arrow)"
+                    markerEnd="url(#arrow)"
+                  />
+                  <text
+                    x={selectedObject.x + selectedObject.width / 2}
+                    y={selectedObject.y + selectedObject.height + 35}
+                    textAnchor="middle"
+                    fill="#2969FF"
+                    fontSize={12}
+                  >
+                    {(selectedObject.width / 12).toFixed(2)} ft
+                  </text>
+                </g>
+              )}
+            </svg>
+          </div>
+        </div>
+
+        {/* ===== RIGHT PANEL - PROPERTIES ===== */}
+        <div className={`${rightPanelOpen ? 'w-64' : 'w-12'} bg-[#252535] border-l border-[#3d3d4d] flex flex-col transition-all duration-200`}>
+          {rightPanelOpen ? (
+            <>
+              <div className="flex items-center justify-between p-3 border-b border-[#3d3d4d]">
+                <span className="text-sm font-medium text-white">Edit Object</span>
+                <button
+                  className="p-1 text-white/60 hover:text-white"
+                  onClick={() => setRightPanelOpen(false)}
+                >
+                  <PanelRightClose className="w-4 h-4" />
+                </button>
+              </div>
+
+              {selectedObject ? (
+                <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                  {/* Object type */}
+                  <div>
+                    <Label className="text-xs text-white/60">Type</Label>
+                    <p className="text-sm text-white capitalize">{selectedObject.type.replace('-', ' ')}</p>
+                  </div>
+
+                  {/* Label */}
+                  <div>
+                    <Label className="text-xs text-white/60">Label</Label>
+                    <Input
+                      value={selectedObject.label || ''}
+                      onChange={(e) => updateObject(selectedObject.id, { label: e.target.value })}
+                      placeholder="VIP"
+                      className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1"
+                    />
+                  </div>
+
+                  {/* Size & Color */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs text-white/60">Size</Label>
+                      <Input
+                        type="number"
+                        value={Math.round(selectedObject.width / 12)}
+                        onChange={(e) => updateObject(selectedObject.id, { width: parseInt(e.target.value) * 12 })}
+                        className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-white/60">Color</Label>
+                      <div className="flex items-center gap-1 mt-1">
+                        <input
+                          type="color"
+                          value={selectedObject.color}
+                          onChange={(e) => updateObject(selectedObject.id, { color: e.target.value })}
+                          className="w-8 h-8 rounded cursor-pointer"
+                        />
+                        <Input
+                          value={selectedObject.color}
+                          onChange={(e) => updateObject(selectedObject.id, { color: e.target.value })}
+                          className="flex-1 h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Table specific */}
+                  {selectedObject.type.includes('table') && (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs text-white/60">Table Number</Label>
+                          <Input
+                            value={selectedObject.tableNumber || ''}
+                            onChange={(e) => updateObject(selectedObject.id, { tableNumber: e.target.value })}
+                            className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-white/60">Seats</Label>
+                          <Input
+                            type="number"
+                            value={selectedObject.seats || 0}
+                            onChange={(e) => updateObject(selectedObject.id, { seats: parseInt(e.target.value) || 0 })}
+                            className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs text-white/60">Standard Size</Label>
+                        <Select
+                          value={`${selectedObject.width}x${selectedObject.height}`}
+                          onValueChange={(v) => {
+                            const [w, h] = v.split('x').map(Number)
+                            updateObject(selectedObject.id, { width: w, height: h })
+                          }}
+                        >
+                          <SelectTrigger className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#2d2d3d] border-[#3d3d4d] text-white">
+                            <SelectItem value="60x60">5ft Round</SelectItem>
+                            <SelectItem value="72x72">6ft Round</SelectItem>
+                            <SelectItem value="84x84">7ft Round</SelectItem>
+                            <SelectItem value="96x48">8ft Rectangle</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Chair types */}
+                  {selectedObject.type === 'chair' && (
+                    <div>
+                      <Label className="text-xs text-white/60 mb-2 block">Chair Style</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['Banquet', 'Chiavari', 'Ghost'].map((style) => (
+                          <button
+                            key={style}
+                            className={`p-2 rounded border text-xs ${
+                              selectedObject.name?.includes(style)
+                                ? 'border-[#2969FF] bg-[#2969FF]/20'
+                                : 'border-[#3d3d4d] hover:border-white/30'
+                            }`}
+                          >
+                            <div className="w-6 h-6 mx-auto mb-1 rounded-full bg-white/20" />
+                            {style}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dimensions */}
+                  <div>
+                    <Label className="text-xs text-white/60 mb-2 block">Dimensions</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px] text-white/40">Width</Label>
+                        <Input
+                          type="number"
+                          value={(selectedObject.width / 12).toFixed(1)}
+                          onChange={(e) => updateObject(selectedObject.id, { width: parseFloat(e.target.value) * 12 })}
+                          className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-white/40">Height</Label>
+                        <Input
+                          type="number"
+                          value={(selectedObject.height / 12).toFixed(1)}
+                          onChange={(e) => updateObject(selectedObject.id, { height: parseFloat(e.target.value) * 12 })}
+                          className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rotation */}
+                  <div>
+                    <Label className="text-xs text-white/60">Rotation</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input
+                        type="number"
+                        value={selectedObject.rotation || 0}
+                        onChange={(e) => updateObject(selectedObject.id, { rotation: parseInt(e.target.value) || 0 })}
+                        className="flex-1 h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                      />
+                      <span className="text-xs text-white/60">°</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 text-white/60 hover:text-white"
+                        onClick={() => updateObject(selectedObject.id, { rotation: (selectedObject.rotation + 45) % 360 })}
+                      >
+                        <RotateCw className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Quick actions */}
+                  <div className="flex gap-2 pt-2 border-t border-[#3d3d4d]">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-[#3d3d4d] text-white hover:bg-white/10"
+                      onClick={duplicateSelected}
+                    >
+                      <Copy className="w-3 h-3 mr-1" /> Duplicate
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10"
+                      onClick={deleteSelected}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center p-4">
+                  <p className="text-sm text-white/40 text-center">
+                    Select an object to edit its properties
+                  </p>
+                </div>
+              )}
+
+              {/* Canvas settings */}
+              <div className="border-t border-[#3d3d4d] p-3 space-y-3">
+                <div>
+                  <Label className="text-xs text-white/60">Canvas Size (ft)</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <Input
+                      type="number"
+                      value={canvasWidth / 12}
+                      onChange={(e) => setCanvasWidth(parseInt(e.target.value) * 12 || 1200)}
+                      className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                    />
+                    <Input
+                      type="number"
+                      value={canvasHeight / 12}
+                      onChange={(e) => setCanvasHeight(parseInt(e.target.value) * 12 || 800)}
+                      className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-white/60">Grid Size</Label>
+                  <Select value={gridSize.toString()} onValueChange={(v) => setGridSize(parseInt(v))}>
+                    <SelectTrigger className="w-20 h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#2d2d3d] border-[#3d3d4d] text-white">
+                      <SelectItem value="12">1 ft</SelectItem>
+                      <SelectItem value="24">2 ft</SelectItem>
+                      <SelectItem value="48">4 ft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </>
+          ) : (
+            <button
+              className="w-full h-12 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5"
+              onClick={() => setRightPanelOpen(true)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ===== STATUS BAR ===== */}
+      <div className="h-6 bg-[#2d2d3d] border-t border-[#3d3d4d] flex items-center px-3 text-xs text-white/50">
+        <span>{objects.length} objects</span>
+        <span className="mx-2">•</span>
+        <span>{selectedIds.length} selected</span>
+        <span className="mx-2">•</span>
+        <span>{canvasWidth / 12} × {canvasHeight / 12} ft</span>
+        <div className="flex-1" />
+        {lastSaved && (
+          <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+        )}
       </div>
     </div>
   )
 }
+
+export default VenueLayoutDesigner
