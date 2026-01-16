@@ -34,6 +34,7 @@ import { TaxDocuments } from '@/pages/organizer/TaxDocuments';
 import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
 import { VenueLayoutDesigner } from '@/pages/organizer/VenueLayoutDesigner';
 import { VenueManagement } from '@/pages/organizer/VenueManagement';
+import { EventPlaceDesigner } from '@/pages/organizer/EventPlaceDesigner';
 import { Loader2 } from 'lucide-react';
 
 export function OrganizerRoutes() {
@@ -93,6 +94,7 @@ export function OrganizerRoutes() {
           <Route path="/venues/:venueId/layouts/create" element={<VenueLayoutDesigner />} />
           <Route path="/venues/:venueId/layouts/:layoutId" element={<VenueLayoutDesigner />} />
           <Route path="/venues/:venueId/layouts/:layoutId/edit" element={<VenueLayoutDesigner />} />
+          <Route path="/event-place" element={<EventPlaceDesigner />} />
         </Routes>
       </OrganizerLayout>
     </OrganizerProvider>

@@ -19,6 +19,7 @@ const menuGroups = [
       { title: 'Dashboard', icon: LayoutDashboard, path: '/organizer' },
       { title: 'Events', icon: Calendar, path: '/organizer/events' },
       { title: 'Venues', icon: Building, path: '/organizer/venues' },
+      { title: 'Event Place', icon: Home, path: '/organizer/event-place' },
     ]
   },
   {
