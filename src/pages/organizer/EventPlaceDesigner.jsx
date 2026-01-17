@@ -104,7 +104,7 @@ export function EventPlaceDesigner() {
   const [wallStartPoint, setWallStartPoint] = useState(null)
   
   // History for undo/redo
-  const [history, setHistory] = useState([[]])
+  const [history, setHistory] = useState([{ walls: [], rooms: [], doors: [], windows: [], structuralElements: [] }])
   const [historyIndex, setHistoryIndex] = useState(0)
 
   // Drag state
@@ -151,21 +151,36 @@ export function EventPlaceDesigner() {
     setHistoryIndex(newHistory.length - 1)
   }, [history, historyIndex])
 
+  // Save current state to history
+  const saveCurrentState = useCallback(() => {
+    saveToHistory({ walls, rooms, doors, windows, structuralElements })
+  }, [walls, rooms, doors, windows, structuralElements, saveToHistory])
+
   const undo = useCallback(() => {
     if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1)
+      const newIndex = historyIndex - 1
+      setHistoryIndex(newIndex)
       // Restore state from history
-      const previousState = history[historyIndex - 1]
-      // TODO: Restore walls, rooms, etc. from history
+      const previousState = history[newIndex] || { walls: [], rooms: [], doors: [], windows: [], structuralElements: [] }
+      setWalls(previousState.walls || [])
+      setRooms(previousState.rooms || [])
+      setDoors(previousState.doors || [])
+      setWindows(previousState.windows || [])
+      setStructuralElements(previousState.structuralElements || [])
     }
   }, [history, historyIndex])
 
   const redo = useCallback(() => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex(historyIndex + 1)
+      const newIndex = historyIndex + 1
+      setHistoryIndex(newIndex)
       // Restore state from history
-      const nextState = history[historyIndex + 1]
-      // TODO: Restore walls, rooms, etc. from history
+      const nextState = history[newIndex] || { walls: [], rooms: [], doors: [], windows: [], structuralElements: [] }
+      setWalls(nextState.walls || [])
+      setRooms(nextState.rooms || [])
+      setDoors(nextState.doors || [])
+      setWindows(nextState.windows || [])
+      setStructuralElements(nextState.structuralElements || [])
     }
   }, [history, historyIndex])
 
@@ -176,12 +191,17 @@ export function EventPlaceDesigner() {
   const [tempWallEnd, setTempWallEnd] = useState(null)
   const [selectedWallType, setSelectedWallType] = useState('wall')
   const [selectedElement, setSelectedElement] = useState(null) // For doors/windows/rooms
+  const [drawingRoom, setDrawingRoom] = useState(false)
+  const [roomStartPoint, setRoomStartPoint] = useState(null)
+  const [tempRoomEnd, setTempRoomEnd] = useState(null)
 
   // =============================================================================
   // WALL DRAWING
   // =============================================================================
 
   const handleCanvasMouseDown = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
     const coords = getCanvasCoords(e)
     const snappedCoords = {
       x: snapValue(coords.x),
@@ -208,7 +228,7 @@ export function EventPlaceDesigner() {
         }
         setWalls(prev => {
           const updated = [...prev, newWall]
-          saveToHistory(updated)
+          saveToHistory({ walls: updated, rooms, doors, windows })
           return updated
         })
         setDrawingWall(false)
@@ -230,7 +250,7 @@ export function EventPlaceDesigner() {
       }
       setDoors(prev => {
         const updated = [...prev, newDoor]
-        saveToHistory(updated)
+        saveToHistory({ walls, rooms, doors: updated, windows })
         return updated
       })
     } else if (tool === 'window') {
@@ -248,45 +268,191 @@ export function EventPlaceDesigner() {
       }
       setWindows(prev => {
         const updated = [...prev, newWindow]
-        saveToHistory(updated)
+        saveToHistory({ walls, rooms, doors, windows: updated })
         return updated
       })
     } else if (tool === 'room') {
-      // Start room selection (click and drag)
-      // For now, just place a room marker
-      const roomType = ROOM_TYPES[0]
-      const newRoom = {
-        id: `room-${Date.now()}`,
-        type: 'room',
-        x: snappedCoords.x,
-        y: snappedCoords.y,
-        width: 200,
-        height: 150,
-        name: roomType.name,
-        color: roomType.color,
-        floor: currentFloor,
+      if (!drawingRoom) {
+        // Start drawing room
+        setDrawingRoom(true)
+        setRoomStartPoint(snappedCoords)
+      } else {
+        // Finish drawing room
+        const roomX = Math.min(roomStartPoint.x, snappedCoords.x)
+        const roomY = Math.min(roomStartPoint.y, snappedCoords.y)
+        const roomWidth = Math.abs(snappedCoords.x - roomStartPoint.x)
+        const roomHeight = Math.abs(snappedCoords.y - roomStartPoint.y)
+        
+        if (roomWidth > 20 && roomHeight > 20) { // Minimum size check
+          const roomType = ROOM_TYPES[0]
+          const newRoom = {
+            id: `room-${Date.now()}`,
+            type: 'room',
+            x: roomX,
+            y: roomY,
+            width: roomWidth,
+            height: roomHeight,
+            name: roomType.name,
+            color: roomType.color,
+            floor: currentFloor,
+          }
+          setRooms(prev => {
+            const updated = [...prev, newRoom]
+            saveToHistory({ walls, rooms: updated, doors, windows })
+            return updated
+          })
+        }
+        setDrawingRoom(false)
+        setRoomStartPoint(null)
+        setTempRoomEnd(null)
       }
-      setRooms(prev => {
-        const updated = [...prev, newRoom]
-        saveToHistory(updated)
-        return updated
-      })
-    } else {
-      // Select mode
-      setSelectedIds([])
+    } else if (tool === 'select') {
+      // Select mode - check if clicking on an element
+      const clickedElement = findElementAtPoint(snappedCoords)
+      if (clickedElement) {
+        if (e.shiftKey) {
+          // Multi-select
+          setSelectedIds(prev => 
+            prev.includes(clickedElement.id) 
+              ? prev.filter(id => id !== clickedElement.id)
+              : [...prev, clickedElement.id]
+          )
+        } else {
+          setSelectedIds([clickedElement.id])
+          // Start dragging
+          const element = clickedElement.element
+          let startX = 0
+          let startY = 0
+          
+          if (clickedElement.type === 'wall') {
+            startX = element.x1
+            startY = element.y1
+          } else if (clickedElement.type === 'room') {
+            startX = element.x
+            startY = element.y
+          } else {
+            startX = element.x || 0
+            startY = element.y || 0
+          }
+          
+          dragState.current = {
+            isDragging: true,
+            draggedId: clickedElement.id,
+            startX: coords.x, // Use raw coords for smooth dragging
+            startY: coords.y,
+            objectStartX: startX,
+            objectStartY: startY
+          }
+        }
+      } else {
+        setSelectedIds([])
+      }
     }
-  }, [tool, drawingWall, wallStartPoint, selectedWallType, getCanvasCoords, snapValue, currentFloor, saveToHistory])
+  }, [tool, drawingWall, drawingRoom, wallStartPoint, roomStartPoint, selectedWallType, getCanvasCoords, snapValue, currentFloor, saveToHistory])
+
+  // Helper to find element at point
+  const findElementAtPoint = useCallback((point) => {
+    // Check walls (simplified - check if point is near wall line)
+    for (const wall of walls) {
+      if (wall.floor !== currentFloor) continue
+      const dx = wall.x2 - wall.x1
+      const dy = wall.y2 - wall.y1
+      const length = Math.sqrt(dx * dx + dy * dy)
+      if (length === 0) continue
+      
+      const t = Math.max(0, Math.min(1, ((point.x - wall.x1) * dx + (point.y - wall.y1) * dy) / (length * length)))
+      const projX = wall.x1 + t * dx
+      const projY = wall.y1 + t * dy
+      const dist = Math.sqrt((point.x - projX) ** 2 + (point.y - projY) ** 2)
+      
+      if (dist < wall.thickness / 2 + 5) return { id: wall.id, type: 'wall', element: wall }
+    }
+    
+    // Check doors
+    for (const door of doors) {
+      if (door.floor !== currentFloor) continue
+      if (point.x >= door.x - door.width/2 && point.x <= door.x + door.width/2 &&
+          point.y >= door.y - door.height/2 && point.y <= door.y + door.height/2) {
+        return { id: door.id, type: 'door', element: door }
+      }
+    }
+    
+    // Check windows
+    for (const window of windows) {
+      if (window.floor !== currentFloor) continue
+      if (point.x >= window.x - window.width/2 && point.x <= window.x + window.width/2 &&
+          point.y >= window.y - window.height/2 && point.y <= window.y + window.height/2) {
+        return { id: window.id, type: 'window', element: window }
+      }
+    }
+    
+    // Check rooms
+    for (const room of rooms) {
+      if (room.floor !== currentFloor) continue
+      if (point.x >= room.x && point.x <= room.x + room.width &&
+          point.y >= room.y && point.y <= room.y + room.height) {
+        return { id: room.id, type: 'room', element: room }
+      }
+    }
+    
+    return null
+  }, [walls, doors, windows, rooms, currentFloor])
 
   const handleCanvasMouseMove = useCallback((e) => {
-    if (drawingWall && wallStartPoint && tool === 'wall') {
-      const coords = getCanvasCoords(e)
-      const snappedCoords = {
-        x: snapValue(coords.x),
-        y: snapValue(coords.y)
-      }
-      setTempWallEnd(snappedCoords)
+    const coords = getCanvasCoords(e)
+    const snappedCoords = {
+      x: snapValue(coords.x),
+      y: snapValue(coords.y)
     }
-  }, [drawingWall, wallStartPoint, tool, getCanvasCoords, snapValue])
+
+    if (drawingWall && wallStartPoint && tool === 'wall') {
+      setTempWallEnd(snappedCoords)
+    } else if (drawingRoom && roomStartPoint && tool === 'room') {
+      setTempRoomEnd(snappedCoords)
+    } else if (tool === 'select' && dragState.current.isDragging && dragState.current.draggedId) {
+      // Handle dragging selected elements
+      const dx = coords.x - dragState.current.startX
+      const dy = coords.y - dragState.current.startY
+      
+      const newX = snapValue(dragState.current.objectStartX + dx)
+      const newY = snapValue(dragState.current.objectStartY + dy)
+      
+      // Update dragged element position
+      const draggedId = dragState.current.draggedId
+      
+      // Update walls
+      const draggedWall = walls.find(w => w.id === draggedId)
+      if (draggedWall) {
+        const wallDx = draggedWall.x2 - draggedWall.x1
+        const wallDy = draggedWall.y2 - draggedWall.y1
+        setWalls(prev => prev.map(w => 
+          w.id === draggedId ? { ...w, x1: newX, y1: newY, x2: newX + wallDx, y2: newY + wallDy } : w
+        ))
+      }
+      
+      // Update doors, windows
+      if (doors.find(d => d.id === draggedId)) {
+        setDoors(prev => prev.map(d => d.id === draggedId ? { ...d, x: newX, y: newY } : d))
+      }
+      if (windows.find(w => w.id === draggedId)) {
+        setWindows(prev => prev.map(w => w.id === draggedId ? { ...w, x: newX, y: newY } : w))
+      }
+      
+      // Update rooms
+      const draggedRoom = rooms.find(r => r.id === draggedId)
+      if (draggedRoom) {
+        setRooms(prev => prev.map(r => r.id === draggedId ? { ...r, x: newX, y: newY } : r))
+      }
+    }
+  }, [drawingWall, drawingRoom, wallStartPoint, roomStartPoint, tool, getCanvasCoords, snapValue, walls, doors, windows, rooms])
+
+  const handleCanvasMouseUp = useCallback(() => {
+    if (dragState.current.isDragging) {
+      saveCurrentState()
+      dragState.current.isDragging = false
+      dragState.current.draggedId = null
+    }
+  }, [saveCurrentState])
 
   // =============================================================================
   // RENDERING FUNCTIONS
@@ -789,6 +955,9 @@ export function EventPlaceDesigner() {
           ref={containerRef}
           className="flex-1 overflow-auto bg-[#1a1a2a]"
           onMouseDown={handleCanvasMouseDown}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
+          onMouseLeave={handleCanvasMouseUp}
         >
           <div className="p-8 min-w-max min-h-max">
             <svg
@@ -797,7 +966,6 @@ export function EventPlaceDesigner() {
               height={canvasHeight * (zoom / 100)}
               viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
               className="bg-white rounded shadow-xl"
-              onMouseMove={handleCanvasMouseMove}
             >
               {/* Grid */}
               {renderGrid}
@@ -849,6 +1017,40 @@ export function EventPlaceDesigner() {
                         style={{ pointerEvents: 'none' }}
                       >
                         {pixelsToFeet(Math.sqrt(Math.pow(tempWallEnd.x - wallStartPoint.x, 2) + Math.pow(tempWallEnd.y - wallStartPoint.y, 2))).toFixed(1)} ft
+                      </text>
+                    </g>
+                  )}
+                </g>
+              )}
+
+              {/* Temporary room being drawn */}
+              {drawingRoom && roomStartPoint && tempRoomEnd && (
+                <g>
+                  <rect
+                    x={Math.min(roomStartPoint.x, tempRoomEnd.x)}
+                    y={Math.min(roomStartPoint.y, tempRoomEnd.y)}
+                    width={Math.abs(tempRoomEnd.x - roomStartPoint.x)}
+                    height={Math.abs(tempRoomEnd.y - roomStartPoint.y)}
+                    fill="#E91E63"
+                    fillOpacity={0.2}
+                    stroke="#E91E63"
+                    strokeWidth={2}
+                    strokeDasharray="4 2"
+                    rx={4}
+                  />
+                  {/* Dimensions preview */}
+                  {showDimensions && (
+                    <g>
+                      <text
+                        x={(roomStartPoint.x + tempRoomEnd.x) / 2}
+                        y={(roomStartPoint.y + tempRoomEnd.y) / 2}
+                        textAnchor="middle"
+                        fontSize="10"
+                        fill="#E91E63"
+                        fontWeight="bold"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        {pixelsToFeet(Math.abs(tempRoomEnd.x - roomStartPoint.x)).toFixed(1)} × {pixelsToFeet(Math.abs(tempRoomEnd.y - roomStartPoint.y)).toFixed(1)} ft
                       </text>
                     </g>
                   )}
@@ -922,22 +1124,75 @@ export function EventPlaceDesigner() {
             {selectedIds.length > 0 && (
               <div className="mb-4 p-3 bg-[#1e1e2e] rounded-lg border border-[#3d3d4d]">
                 <p className="text-xs text-white/60 mb-2">Selected: {selectedIds.length} item(s)</p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    // Delete selected items
-                    setWalls(prev => prev.filter(w => !selectedIds.includes(w.id)))
-                    setDoors(prev => prev.filter(d => !selectedIds.includes(d.id)))
-                    setWindows(prev => prev.filter(w => !selectedIds.includes(w.id)))
-                    setRooms(prev => prev.filter(r => !selectedIds.includes(r.id)))
-                    setSelectedIds([])
-                  }}
-                  className="w-full h-7 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                >
-                  <Trash2 className="w-3 h-3 mr-1" />
-                  Delete Selected
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // Copy selected items
+                      const copiedWalls = walls.filter(w => selectedIds.includes(w.id))
+                      const copiedDoors = doors.filter(d => selectedIds.includes(d.id))
+                      const copiedWindows = windows.filter(w => selectedIds.includes(w.id))
+                      const copiedRooms = rooms.filter(r => selectedIds.includes(r.id))
+                      
+                      // Offset copied items by 48px (4 feet)
+                      const offset = 48
+                      
+                      const newWalls = copiedWalls.map(w => ({
+                        ...w,
+                        id: `wall-${Date.now()}-${Math.random()}`,
+                        x1: w.x1 + offset,
+                        y1: w.y1 + offset,
+                        x2: w.x2 + offset,
+                        y2: w.y2 + offset
+                      }))
+                      const newDoors = copiedDoors.map(d => ({
+                        ...d,
+                        id: `door-${Date.now()}-${Math.random()}`,
+                        x: d.x + offset,
+                        y: d.y + offset
+                      }))
+                      const newWindows = copiedWindows.map(w => ({
+                        ...w,
+                        id: `window-${Date.now()}-${Math.random()}`,
+                        x: w.x + offset,
+                        y: w.y + offset
+                      }))
+                      const newRooms = copiedRooms.map(r => ({
+                        ...r,
+                        id: `room-${Date.now()}-${Math.random()}`,
+                        x: r.x + offset,
+                        y: r.y + offset
+                      }))
+                      
+                      setWalls(prev => [...prev, ...newWalls])
+                      setDoors(prev => [...prev, ...newDoors])
+                      setWindows(prev => [...prev, ...newWindows])
+                      setRooms(prev => [...prev, ...newRooms])
+                      setSelectedIds([...newWalls.map(w => w.id), ...newDoors.map(d => d.id), ...newWindows.map(w => w.id), ...newRooms.map(r => r.id)])
+                    }}
+                    className="flex-1 h-7 text-xs text-white/70 hover:text-white hover:bg-white/10"
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    Copy
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // Delete selected items
+                      setWalls(prev => prev.filter(w => !selectedIds.includes(w.id)))
+                      setDoors(prev => prev.filter(d => !selectedIds.includes(d.id)))
+                      setWindows(prev => prev.filter(w => !selectedIds.includes(w.id)))
+                      setRooms(prev => prev.filter(r => !selectedIds.includes(r.id)))
+                      setSelectedIds([])
+                    }}
+                    className="flex-1 h-7 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -965,12 +1220,13 @@ export function EventPlaceDesigner() {
           {/* Instructions */}
           <div className="p-4 border-t border-[#3d3d4d] mt-auto">
             <h4 className="text-xs font-medium text-white/80 mb-2">Instructions</h4>
-            <div className="space-y-1 text-xs text-white/60">
-              <p>• <strong>Wall:</strong> Click to start, click to end</p>
-              <p>• <strong>Door/Window:</strong> Click to place</p>
-              <p>• <strong>Room:</strong> Click to add room marker</p>
-              <p>• <strong>Grid:</strong> 4 feet per unit</p>
-              <p>• <strong>Snap:</strong> Enabled by default</p>
+              <div className="space-y-1 text-xs text-white/60 leading-relaxed">
+              <p><strong className="text-white/80">Wall Tool:</strong> Click to start, click to end. Choose wall type in Properties.</p>
+              <p><strong className="text-white/80">Door/Window:</strong> Click on canvas to place. Drag to move.</p>
+              <p><strong className="text-white/80">Room:</strong> Click and drag to create room. Click to select, drag to move.</p>
+              <p><strong className="text-white/80">Select:</strong> Click elements to select. Shift+Click for multi-select. Delete to remove.</p>
+              <p><strong className="text-white/80">Grid:</strong> 4 feet per unit (48px = 4ft). Snap enabled.</p>
+              <p><strong className="text-white/80">Shortcuts:</strong> S=Select, W=Wall, D=Door, I=Window, R=Room, G=Grid, M=Measure</p>
             </div>
           </div>
         </div>
