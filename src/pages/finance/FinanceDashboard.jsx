@@ -8,7 +8,7 @@ import {
   Calendar, ArrowRight, Loader2, AlertCircle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function FinanceDashboard() {
@@ -252,7 +252,7 @@ export function FinanceDashboard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-green-600">{formatPrice(payout.net_amount, payout.currency || 'NGN')}</p>
+                      <p className="font-bold text-green-600">{formatPrice(payout.net_amount, payout.currency || getDefaultCurrency(payout.country_code || payout.country))}</p>
                       <Badge className="bg-green-100 text-green-800 text-xs">Paid</Badge>
                     </div>
                   </div>

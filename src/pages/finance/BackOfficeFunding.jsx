@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function BackOfficeFunding() {
@@ -125,7 +125,7 @@ export function BackOfficeFunding() {
         activeEvents,
         completedUnpaidEvents,
         primaryBank,
-        currency: org.events?.[0]?.currency || 'NGN',
+        currency: org.events?.[0]?.currency || getDefaultCurrency(org.events?.[0]?.country_code || org.events?.[0]?.country),
         totalAdvancesPaid,
         availableForAdvance,
         advanceHistory: orgAdvances

@@ -597,11 +597,11 @@ export function AdminOrders() {
                             )}
                             <div className="flex justify-between text-purple-600">
                               <span>Platform Fee</span>
-                              <span>{formatPrice(order.platform_fee || 0, order.currency || 'NGN')}</span>
+                              <span>{formatPrice(order.platform_fee || 0, order.currency || order.events?.currency || getDefaultCurrency(order.events?.country_code || order.events?.country))}</span>
                             </div>
                             <div className="flex justify-between font-semibold border-t border-[#0F0F0F]/10 pt-2 mt-2">
                               <span>Total</span>
-                              <span>{formatPrice(order.total_amount, order.currency || 'NGN')}</span>
+                              <span>{formatPrice(order.total_amount, order.currency || order.events?.currency || getDefaultCurrency(order.events?.country_code || order.events?.country))}</span>
                             </div>
                           </div>
                         </div>
@@ -672,7 +672,7 @@ export function AdminOrders() {
               </div>
               <div className="flex justify-between text-sm mt-1">
                 <span className="text-[#0F0F0F]/60">Amount</span>
-                <span className="font-semibold">{formatPrice(refundOrder?.total_amount, refundOrder?.currency || 'NGN')}</span>
+                <span className="font-semibold">{formatPrice(refundOrder?.total_amount, refundOrder?.currency || refundOrder?.event?.currency || getDefaultCurrency(refundOrder?.event?.country_code || refundOrder?.event?.country))}</span>
               </div>
             </div>
             <div className="space-y-2">
