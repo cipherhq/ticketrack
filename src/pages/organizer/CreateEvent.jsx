@@ -475,8 +475,18 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     if (activeTab === "datetime") {
       if (!formData.startDate) errors.push("Start date is required");
       if (!formData.startTime) errors.push("Start time is required");
-      if (!formData.endDate) errors.push("End date is required");
       if (!formData.endTime) errors.push("End time is required");
+      
+      // End date validation depends on whether event is recurring
+      if (formData.isRecurring) {
+        // For recurring events, validate recurring end date if "on specific date" is selected
+        if (formData.recurringEndType === 'date' && !formData.recurringEndDate) {
+          errors.push("Recurring end date is required when ending on specific date");
+        }
+      } else {
+        // For non-recurring events, end date is always required
+        if (!formData.endDate) errors.push("End date is required");
+      }
       
       // Validate end time is after start time for same-day events
       if (formData.startDate && formData.endDate) {
@@ -485,6 +495,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         }
         if (formData.startDate === formData.endDate && formData.startTime && formData.endTime && formData.endTime <= formData.startTime) {
           errors.push("End time must be after start time for same-day events");
+        }
+      }
+      
+      // Validate recurring end date is after start date if specified
+      if (formData.isRecurring && formData.recurringEndType === 'date' && formData.recurringEndDate && formData.startDate) {
+        if (formData.recurringEndDate < formData.startDate) {
+          errors.push("Recurring end date cannot be before start date");
         }
       }
     }
@@ -1881,7 +1898,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
                       {formData.recurringEndType === 'date' && (
                         <div className="space-y-2">
-                          <Label>End date</Label>
+                          <Label>End date <span className="text-red-500">*</span></Label>
                           <Input
                             type="date"
                             value={formData.recurringEndDate}
