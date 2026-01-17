@@ -23,121 +23,87 @@ export function generateRecurringDates(
   const dates = [];
   const start = new Date(`${startDate}T${startTime}:00`);
   const maxEvents = 52; // Maximum events allowed
-
+  
   let currentDate = new Date(start);
   let eventCount = 0;
 
-  while (eventCount < maxEvents) {
-    // Check end conditions
-    if (recurringEndType === 'occurrences' && eventCount >= recurringOccurrences) {
-      break;
-    }
-    
-    if (recurringEndType === 'date' && recurringEndDate) {
-      const endDate = new Date(recurringEndDate + 'T23:59:59');
-      if (currentDate > endDate) {
-        break;
-      }
-    }
-
-    // Add date based on recurring type
-    if (recurringType === 'daily') {
-      if (eventCount === 0 || !dates.length || currentDate >= start) {
-        dates.push(new Date(currentDate));
-        eventCount++;
-      }
-      currentDate.setDate(currentDate.getDate() + 1);
-    } else if (recurringType === 'weekly' || recurringType === 'biweekly') {
-      const weekIncrement = recurringType === 'biweekly' ? 2 : 1;
-      
-      if (recurringDays.length > 0) {
-        // Find next occurrence on specified days
-        let found = false;
-        for (let weekOffset = 0; weekOffset < 52 && !found; weekOffset++) {
-          const checkDate = new Date(start);
-          checkDate.setDate(checkDate.getDate() + (weekOffset * 7 * weekIncrement));
-          
-          for (const dayOfWeek of recurringDays) {
-            const targetDate = new Date(checkDate);
-            const currentDay = targetDate.getDay();
-            const daysToAdd = (dayOfWeek - currentDay + 7) % 7;
-            targetDate.setDate(targetDate.getDate() + daysToAdd + (weekOffset * 7 * weekIncrement));
-            
-            if (targetDate >= start && !dates.find(d => d.getTime() === targetDate.getTime())) {
-              if (recurringEndType === 'date' && recurringEndDate && targetDate > new Date(recurringEndDate + 'T23:59:59')) {
-                found = true;
-                break;
-              }
-              if (recurringEndType === 'occurrences' && eventCount >= recurringOccurrences) {
-                found = true;
-                break;
-              }
-              dates.push(new Date(targetDate));
-              eventCount++;
-              if (eventCount >= maxEvents) {
-                found = true;
-                break;
-              }
-            }
-          }
-          if (found) break;
-        }
-        
-        // If we have enough dates, break
-        if (recurringEndType === 'occurrences' && eventCount >= recurringOccurrences) {
-          break;
-        }
-        if (recurringEndType === 'date' && recurringEndDate && currentDate > new Date(recurringEndDate + 'T23:59:59')) {
-          break;
-        }
-        
-        // Move to next week/biweek
-        currentDate.setDate(currentDate.getDate() + (7 * weekIncrement));
-      } else {
-        // No specific days, use start date's day of week
-        if (eventCount === 0) {
-          dates.push(new Date(start));
-          eventCount++;
-        }
-        currentDate.setDate(currentDate.getDate() + (7 * weekIncrement));
-        if (currentDate >= start || eventCount > 0) {
-          if (recurringEndType === 'date' && recurringEndDate && currentDate > new Date(recurringEndDate + 'T23:59:59')) {
-            break;
-          }
-          if (recurringEndType === 'occurrences' && eventCount >= recurringOccurrences) {
-            break;
-          }
-          dates.push(new Date(currentDate));
-          eventCount++;
-        }
-      }
-    } else if (recurringType === 'monthly') {
-      if (eventCount === 0) {
-        dates.push(new Date(start));
-        eventCount++;
-      }
-      currentDate.setMonth(currentDate.getMonth() + 1);
-      if (recurringEndType === 'date' && recurringEndDate && currentDate > new Date(recurringEndDate + 'T23:59:59')) {
-        break;
-      }
-      if (recurringEndType === 'occurrences' && eventCount >= recurringOccurrences) {
-        break;
-      }
-      dates.push(new Date(currentDate));
+  // Helper to add date to array
+  const addDate = (date) => {
+    if (!dates.find(d => d.getTime() === date.getTime())) {
+      dates.push(new Date(date));
       eventCount++;
     }
+  };
 
-    // Safety break to prevent infinite loops
-    if (eventCount >= maxEvents) {
-      break;
+  // Check end conditions
+  const shouldStop = () => {
+    if (eventCount >= maxEvents) return true;
+    if (recurringEndType === 'occurrences' && eventCount >= recurringOccurrences) return true;
+    if (recurringEndType === 'date' && recurringEndDate) {
+      const endDate = new Date(recurringEndDate + 'T23:59:59');
+      if (currentDate > endDate) return true;
+    }
+    return false;
+  };
+
+  // Add first date
+  addDate(start);
+
+  if (recurringType === 'daily') {
+    while (!shouldStop() && eventCount < maxEvents) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      if (!shouldStop()) {
+        addDate(currentDate);
+      }
+    }
+  } else if (recurringType === 'weekly' || recurringType === 'biweekly') {
+    const weekIncrement = recurringType === 'biweekly' ? 2 : 1;
+    
+    if (recurringDays.length > 0) {
+      // For specific days of week
+      let weekOffset = 0;
+      while (!shouldStop() && weekOffset < 52) {
+        const weekStart = new Date(start);
+        weekStart.setDate(weekStart.getDate() + (weekOffset * 7 * weekIncrement));
+        
+        for (const dayOfWeek of recurringDays) {
+          const targetDate = new Date(weekStart);
+          const currentDay = targetDate.getDay();
+          const daysToAdd = (dayOfWeek - currentDay + 7) % 7;
+          targetDate.setDate(targetDate.getDate() + daysToAdd + (weekOffset * 7 * weekIncrement));
+          
+          // Only add if it's on or after start date
+          if (targetDate >= start) {
+            if (recurringEndType === 'date' && recurringEndDate && targetDate > new Date(recurringEndDate + 'T23:59:59')) {
+              return dates.sort((a, b) => a - b);
+            }
+            addDate(targetDate);
+            if (shouldStop()) return dates.sort((a, b) => a - b);
+          }
+        }
+        weekOffset++;
+      }
+    } else {
+      // Same day of week each week/biweek
+      while (!shouldStop() && eventCount < maxEvents) {
+        currentDate.setDate(currentDate.getDate() + (7 * weekIncrement));
+        if (!shouldStop()) {
+          addDate(currentDate);
+        }
+      }
+    }
+  } else if (recurringType === 'monthly') {
+    while (!shouldStop() && eventCount < maxEvents) {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      if (!shouldStop()) {
+        addDate(currentDate);
+      }
     }
   }
 
-  // Sort dates and remove duplicates
-  const uniqueDates = [...new Set(dates.map(d => d.getTime()))]
+  // Sort and return unique dates
+  return [...new Set(dates.map(d => d.getTime()))]
     .map(time => new Date(time))
     .sort((a, b) => a - b)
     .slice(0, maxEvents);
-
-  return uniqueDates;
 }
