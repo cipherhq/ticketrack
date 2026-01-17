@@ -27,7 +27,7 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { Pagination, usePagination } from '@/components/ui/pagination';
 
 export function OrganizerOrders() {
@@ -177,7 +177,7 @@ export function OrganizerOrders() {
     const pending = ordersWithTickets.filter(o => o.status === 'pending');
     // Group revenue by currency
     const revenueByCurrency = completed.reduce((acc, o) => {
-      const currency = o.currency || 'NGN';
+      const currency = o.currency || o.event?.currency || getDefaultCurrency(o.event?.country_code || o.event?.country);
       acc[currency] = (acc[currency] || 0) + (parseFloat(o.total_amount) || 0);
       return acc;
     }, {});
@@ -318,7 +318,7 @@ export function OrganizerOrders() {
           user_id: refundOrder.user_id || ticket.user_id,
           amount: parseFloat(refundOrder.total_amount) || ticket.total_price,
           original_amount: parseFloat(refundOrder.total_amount) || ticket.total_price,
-          currency: refundOrder.currency || 'NGN',
+          currency: refundOrder.currency || refundOrder.events?.currency || getDefaultCurrency(refundOrder.events?.country_code || refundOrder.events?.country),
           reason: refundReasonCategory === 'Other' ? refundReason : refundReasonCategory,
           status: 'pending',
           organizer_decision: 'approved',
@@ -401,7 +401,7 @@ export function OrganizerOrders() {
               </div>
               <div>
                 <p className="text-[#0F0F0F]/60 text-sm">Revenue</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{Object.entries(stats.revenueByCurrency || {}).map(([currency, amount]) => formatPrice(amount, currency)).join(' | ') || formatPrice(0, 'NGN')}</h3>
+                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{Object.entries(stats.revenueByCurrency || {}).map(([currency, amount]) => formatPrice(amount, currency)).join(' | ') || formatPrice(0, getDefaultCurrency(organizer?.country_code || organizer?.country))}</h3>
               </div>
             </div>
           </CardContent>
@@ -519,7 +519,7 @@ export function OrganizerOrders() {
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="font-semibold text-[#0F0F0F]">
-                          {formatPrice(order.total_amount, order.currency || 'NGN')}
+                          {formatPrice(order.total_amount, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}
                         </p>
                         <p className="text-sm text-[#0F0F0F]/60">{order.ticketCount} ticket(s)</p>
                       </div>
@@ -553,21 +553,21 @@ export function OrganizerOrders() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-[#0F0F0F]/60">Subtotal</span>
-                              <span>{formatPrice(order.subtotal, order.currency || 'NGN')}</span>
+                              <span>{formatPrice(order.subtotal, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}</span>
                             </div>
                             {parseFloat(order.discount_amount) > 0 && (
                               <div className="flex justify-between text-green-600">
                                 <span>Discount</span>
-                                <span>-{formatPrice(order.discount_amount, order.currency || 'NGN')}</span>
+                                <span>-{formatPrice(order.discount_amount, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}</span>
                               </div>
                             )}
                             <div className="flex justify-between">
                               <span className="text-[#0F0F0F]/60">Platform Fee</span>
-                              <span>{formatPrice(order.platform_fee || 0, order.currency || 'NGN')}</span>
+                              <span>{formatPrice(order.platform_fee || 0, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}</span>
                             </div>
                             <div className="flex justify-between font-semibold border-t border-[#0F0F0F]/10 pt-2 mt-2">
                               <span>Total</span>
-                              <span>{formatPrice(order.total_amount, order.currency || 'NGN')}</span>
+                              <span>{formatPrice(order.total_amount, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}</span>
                             </div>
                           </div>
                         </div>

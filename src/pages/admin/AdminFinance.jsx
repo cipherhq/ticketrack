@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, formatMultiCurrency, currencies } from '@/config/currencies';
+import { formatPrice, formatMultiCurrency, currencies, getDefaultCurrency } from '@/config/currencies';
 import { useAdmin } from '@/contexts/AdminContext';
 
 // Country code to currency mapping (5 active countries)
@@ -199,7 +199,7 @@ export function AdminFinance() {
     completedEarnings.forEach(earning => {
       const affiliateId = earning.profiles?.id;
       if (!affiliateId) return;
-      const earnCurrency = earning.currency || earning.event?.currency || 'NGN';
+      const earnCurrency = earning.currency || earning.event?.currency || getDefaultCurrency(earning.event?.country_code || earning.event?.country);
       
       if (!affiliateMap[affiliateId]) {
         affiliateMap[affiliateId] = { 
@@ -257,7 +257,7 @@ export function AdminFinance() {
     // Calculate revenue by currency
     const revenueByCurrency = {};
     orders?.forEach(o => {
-      const currency = o.currency || 'NGN';
+      const currency = o.currency || o.event?.currency || getDefaultCurrency(o.event?.country_code || o.event?.country);
       revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + parseFloat(o.platform_fee || 0);
     });
 
@@ -265,7 +265,7 @@ export function AdminFinance() {
     const { data: payouts } = await supabase.from('payouts').select('net_amount, currency').eq('status', 'completed');
     const paidOutByCurrency = {};
     payouts?.forEach(p => {
-      const currency = p.currency || 'NGN';
+      const currency = p.currency || getDefaultCurrency(p.country_code || p.country);
       paidOutByCurrency[currency] = (paidOutByCurrency[currency] || 0) + parseFloat(p.net_amount || 0);
     });
 
@@ -273,7 +273,7 @@ export function AdminFinance() {
     const { data: pendingPayouts } = await supabase.from('payouts').select('net_amount, currency').in('status', ['pending', 'processing']);
     const pendingByCurrency = {};
     pendingPayouts?.forEach(p => {
-      const currency = p.currency || 'NGN';
+      const currency = p.currency || getDefaultCurrency(p.country_code || p.country);
       pendingByCurrency[currency] = (pendingByCurrency[currency] || 0) + parseFloat(p.net_amount || 0);
     });
 
@@ -291,7 +291,7 @@ export function AdminFinance() {
       
       const byCurrency = {};
       monthOrders.forEach(o => {
-        const currency = o.currency || 'NGN';
+        const currency = o.currency || o.events?.currency || getDefaultCurrency(o.events?.country_code || o.events?.country);
         byCurrency[currency] = (byCurrency[currency] || 0) + parseFloat(o.platform_fee || 0);
       });
       
@@ -306,7 +306,7 @@ export function AdminFinance() {
     const countryMap = {};
     orders?.forEach(o => {
       const countryCode = o.events?.country_code || 'Unknown';
-      const currency = COUNTRY_CURRENCIES[countryCode] || o.currency || 'NGN';
+      const currency = COUNTRY_CURRENCIES[countryCode] || o.currency || o.events?.currency || getDefaultCurrency(countryCode);
       
       if (!countryMap[countryCode]) {
         countryMap[countryCode] = {
@@ -324,7 +324,7 @@ export function AdminFinance() {
     const categoryMap = {};
     orders?.forEach(o => {
       const category = o.events?.category || 'Other';
-      const currency = o.currency || 'NGN';
+      const currency = o.currency || o.events?.currency || getDefaultCurrency(o.events?.country_code || o.events?.country);
       
       if (!categoryMap[category]) {
         categoryMap[category] = { category, byCurrency: {} };
@@ -725,7 +725,7 @@ export function AdminFinance() {
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
-                    <Badge className={getCurrencyColor(payout.currency)}>{payout.currency || 'NGN'}</Badge>
+                    <Badge className={getCurrencyColor(payout.currency)}>{payout.currency || getDefaultCurrency(payout.country_code || payout.country)}</Badge>
                     <div className="text-right">
                       <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.amount || payout.net_amount, payout.currency)}</p>
                       <p className="text-xs text-[#0F0F0F]/40">{payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}</p>

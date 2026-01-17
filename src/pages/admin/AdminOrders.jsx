@@ -26,7 +26,7 @@ import {
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 
 export function AdminOrders() {
   const [loading, setLoading] = useState(true);
@@ -158,7 +158,7 @@ export function AdminOrders() {
     const platformFeesByCurrency = {};
     
     completed.forEach(order => {
-      const currency = order.currency || 'NGN';
+      const currency = order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country);
       const amount = parseFloat(order.total_amount) || 0;
       const fee = parseFloat(order.platform_fee) || 0;
       
@@ -542,7 +542,7 @@ export function AdminOrders() {
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="font-semibold text-[#0F0F0F]">
-                          {formatPrice(order.total_amount, order.currency || 'NGN')}
+                          {formatPrice(order.total_amount, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}
                         </p>
                         <p className="text-sm text-[#0F0F0F]/60">{order.ticketCount} ticket(s)</p>
                       </div>
