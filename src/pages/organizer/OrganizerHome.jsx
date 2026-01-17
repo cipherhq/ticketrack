@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, formatMultiCurrencyCompact, getUserDefaultCurrency } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact, getUserDefaultCurrency, getDefaultCurrency } from '@/config/currencies';
 import { TaxDocuments } from '@/components/TaxDocuments';
 
 export function OrganizerHome() {
@@ -343,7 +343,7 @@ export function OrganizerHome() {
         .in('promoter_id', promoterIds);
 
       salesData?.forEach(sale => {
-        const currency = sale.events?.currency || 'USD';
+        const currency = sale.events?.currency || getDefaultCurrency(sale.events?.country_code || sale.events?.country);
         const promoterId = sale.promoter_id;
         ticketsSold += sale.tickets_sold || 0;
         revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + parseFloat(sale.sale_amount || 0);
@@ -365,7 +365,7 @@ export function OrganizerHome() {
 
       const paidByCurrency = {};
       payoutsData?.forEach(payout => {
-        const currency = payout.currency || 'USD';
+        const currency = payout.currency || getDefaultCurrency(payout.country_code || organizer?.country_code || organizer?.country);
         paidByCurrency[currency] = (paidByCurrency[currency] || 0) + parseFloat(payout.amount || 0);
       });
 

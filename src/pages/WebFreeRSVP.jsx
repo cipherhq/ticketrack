@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { formatPrice } from '@/config/currencies'
+import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { getRSVPSettings, checkRSVPLimit } from '@/services/settings'
 import { getPaymentProvider } from '@/config/payments'
@@ -243,7 +243,7 @@ export function WebFreeRSVP() {
           tax_amount: 0,
           discount_amount: 0,
           total_amount: 0,
-          currency: event?.currency || 'NGN',
+          currency: event?.currency || getDefaultCurrency(event?.country_code || event?.country),
           payment_method: 'free',
           payment_provider: 'none',
           buyer_email: formData.email,
@@ -375,7 +375,7 @@ export function WebFreeRSVP() {
       }
 
       // Determine payment provider based on currency
-      const currency = event?.currency || 'NGN'
+      const currency = event?.currency || getDefaultCurrency(event?.country_code || event?.country)
       const paymentProvider = getPaymentProvider(currency)
 
       // Fetch configurable donation fee from database (admin can change this)

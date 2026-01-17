@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, formatMultiCurrency, formatMultiCurrencyCompact } from '@/config/currencies';
+import { formatPrice, formatMultiCurrency, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 
 export function PromoterPerformance() {
   const { promoter } = usePromoter();
@@ -31,7 +31,7 @@ export function PromoterPerformance() {
       const revenueByCurrency = {};
       const commissionByCurrency = {};
       salesData?.forEach(s => {
-        const currency = s.events?.currency || 'NGN';
+        const currency = s.events?.currency || getDefaultCurrency(s.events?.country_code || s.events?.country);
         revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + parseFloat(s.sale_amount || 0);
         commissionByCurrency[currency] = (commissionByCurrency[currency] || 0) + parseFloat(s.commission_amount || 0);
       });

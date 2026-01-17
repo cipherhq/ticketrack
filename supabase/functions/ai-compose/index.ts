@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { errorResponse, logError } from './_shared/errorHandler.ts';
 
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
@@ -99,10 +100,7 @@ Keep the email concise, professional, and action-oriented. Use HTML formatting w
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('AI compose error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    logError('ai-compose', error);
+    return errorResponse('SRV_001', 500, error, undefined, corsHeaders);
   }
 });

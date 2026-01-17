@@ -1,4 +1,4 @@
-import { formatPrice } from '@/config/currencies'
+import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send, Copy, Wallet } from 'lucide-react'
@@ -269,7 +269,7 @@ export function WebTickets() {
     }
     
     // Get transfer fee from fee configuration
-    const currency = event?.currency || 'NGN'
+    const currency = event?.currency || getDefaultCurrency(event?.country_code || event?.country)
     const { calculateTransferFee, getFeesByCurrency } = await import('@/config/fees')
     const fees = await getFeesByCurrency(currency)
     const ticketPrice = ticket.total_price || 0
@@ -464,7 +464,7 @@ export function WebTickets() {
         originalAmount: ticketPrice,
         refundFee: fee,
         refundAmount: ticketPrice - fee,
-        currency: ticket.currency || 'NGN'
+        currency: ticket.currency || ticket.event?.currency || getDefaultCurrency(ticket.event?.country_code || ticket.event?.country)
       };
     } catch (error) {
       console.error('Error checking refund eligibility:', error);
