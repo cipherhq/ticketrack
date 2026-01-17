@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 
 export function AdminRefunds() {
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export function AdminRefunds() {
       const processed = data?.filter(r => r.refund_reference || r.status === 'processed').length || 0;
       const escalated = data?.filter(r => r.escalated_to_admin && !r.refund_reference).length || 0;
       const connectProcessed = data?.filter(r => r.order?.is_stripe_connect && (r.refund_reference || r.status === 'processed')).length || 0;
-      const refundedByCurrency = data?.filter(r => r.refund_reference || r.status === 'processed').reduce((acc, r) => { const curr = r.currency || 'USD'; acc[curr] = (acc[curr] || 0) + (r.amount || 0); return acc; }, {}) || {};
+      const refundedByCurrency = data?.filter(r => r.refund_reference || r.status === 'processed').reduce((acc, r) => { const curr = r.currency || r.event?.currency || getDefaultCurrency(r.event?.country_code || r.event?.country); acc[curr] = (acc[curr] || 0) + (r.amount || 0); return acc; }, {}) || {};
       setStats({ pending, approved, rejected, processed, escalated, connectProcessed, total: data?.length || 0, refundedByCurrency });
     } catch (error) {
       console.error('Error loading refunds:', error);
