@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useAdmin } from '@/contexts/AdminContext';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -84,7 +84,7 @@ export function AdminAffiliatesManagement() {
       const earningsByUser = {};
       earningsData?.forEach(e => {
         const userId = e.user_id;
-        const currency = e.currency || e.event?.currency || 'NGN';
+        const currency = e.currency || e.event?.currency || getDefaultCurrency(e.event?.country_code || e.event?.country);
         const amount = parseFloat(e.commission_amount) || 0;
 
         if (!earningsByUser[userId]) {

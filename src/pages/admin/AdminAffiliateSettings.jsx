@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 
 export function AdminAffiliateSettings() {
   const [loading, setLoading] = useState(true);
@@ -92,7 +92,7 @@ export function AdminAffiliateSettings() {
       });
 
       earnings?.forEach(e => {
-        const currency = e.currency || e.event?.currency || 'NGN';
+        const currency = e.currency || e.event?.currency || getDefaultCurrency(e.event?.country_code || e.event?.country);
         const amount = parseFloat(e.commission_amount || 0);
         
         if (totalEarnings[currency] !== undefined) {
