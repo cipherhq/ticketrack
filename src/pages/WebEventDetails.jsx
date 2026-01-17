@@ -62,27 +62,6 @@ export function WebEventDetails() {
     }
   }
 
-  // Function to load tickets for a specific event (for recurring events)
-  const loadTicketsForEvent = async (eventId) => {
-    try {
-      const { data: tickets, error: ticketsError } = await supabase
-        .from('ticket_types')
-        .select('*')
-        .eq('event_id', eventId)
-        .eq('is_active', true)
-        .order('price', { ascending: true })
-      
-      if (ticketsError) throw ticketsError
-      
-      // Set ticket types (empty array if none found - free events won't have tickets)
-      setTicketTypes(tickets || [])
-      // Reset selected tickets when switching dates
-      setSelectedTickets({})
-    } catch (err) {
-      console.error('Error loading tickets:', err)
-    }
-  }
-
   useEffect(() => {
     async function loadEvent() {
       setLoading(true)
