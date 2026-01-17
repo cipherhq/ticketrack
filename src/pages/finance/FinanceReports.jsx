@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 // Country configurations for tax/compliance
@@ -347,7 +347,7 @@ export function FinanceReports() {
           balanceRemaining: totalNetEarnings - totalPayouts,
           transactionCount: totalTransactions,
           eventCount: eventBreakdown.length,
-          currency: events?.[0]?.currency || 'NGN'
+          currency: events?.[0]?.currency || getDefaultCurrency(events?.[0]?.country_code || events?.[0]?.country)
         },
         events: eventBreakdown,
         payouts: payouts?.map(p => ({

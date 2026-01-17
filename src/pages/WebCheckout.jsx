@@ -1,6 +1,6 @@
 import { getOrganizerFees, DEFAULT_FEES, calculateFees } from '@/config/fees'
 import { getPaymentProvider, getProviderInfo, initStripeCheckout, initPayPalCheckout } from '@/config/payments'
-import { formatPrice } from '@/config/currencies'
+import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -833,7 +833,7 @@ export function WebCheckout() {
           discount_amount: discountAmount,
           promo_code_id: promoApplied?.id || null,
           total_amount: finalTotal,
-          currency: event?.currency || 'USD',
+          currency: event?.currency || getDefaultCurrency(event?.country_code || event?.country),
           payment_method: 'card',
           payment_provider: 'stripe',
           buyer_email: formData.email,
@@ -906,7 +906,7 @@ export function WebCheckout() {
           discount_amount: discountAmount,
           promo_code_id: promoApplied?.id || null,
           total_amount: finalTotal,
-          currency: event?.currency || 'USD',
+          currency: event?.currency || getDefaultCurrency(event?.country_code || event?.country),
           payment_method: 'paypal',
           payment_provider: 'paypal',
           buyer_email: formData.email,

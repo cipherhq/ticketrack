@@ -1,5 +1,5 @@
 import { getCountryFees } from '@/config/fees';
-import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -109,7 +109,7 @@ export function FinancePayouts() {
       // Total paid out from payouts table - group by currency
       const totalPaidOutByCurrency = {};
       payouts?.filter(p => p.status === 'completed')?.forEach(p => {
-        const currency = p.currency || 'USD';
+        const currency = p.currency || getDefaultCurrency(p.country_code || organizer?.country_code || organizer?.country);
         totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + (parseFloat(p.amount) || 0);
       });
 
