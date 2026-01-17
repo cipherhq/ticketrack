@@ -17,6 +17,7 @@ import { CartProvider } from './contexts/CartContext';
 import { ImpersonationProvider } from './contexts/ImpersonationContext';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
 import { SessionTimeoutProvider } from './hooks/useSessionTimeout.jsx';
+import { SESSION_TIMEOUT_MS, SESSION_WARNING_MS } from './config/app';
 
 // Web Layout and Pages
 import { WebLayout } from './pages/WebLayout';
@@ -71,7 +72,7 @@ function App() {
     <AuthProvider><FeatureFlagsProvider>
       <CartProvider>
         <ImpersonationProvider>
-          <SessionTimeoutProvider timeoutMs={30 * 60 * 1000} warningMs={5 * 60 * 1000}>
+          <SessionTimeoutProvider timeoutMs={SESSION_TIMEOUT_MS} warningMs={SESSION_WARNING_MS}>
           <Router>
             <ScrollToTop />
             <ImpersonationBanner />

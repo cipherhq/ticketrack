@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { termiiService } from './termii';
+import { generateSecureOTP } from '@/utils/crypto';
 
 class OTPService {
   constructor() {
@@ -25,8 +26,8 @@ class OTPService {
         throw new Error('Too many OTP requests. Please wait before requesting again.');
       }
 
-      // Generate 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate 6-digit OTP using cryptographically secure random number
+      const otp = generateSecureOTP(this.otpLength);
       const otpHash = await this.hashOTP(otp);
       const expiresAt = new Date(Date.now() + this.expiryMinutes * 60 * 1000);
 

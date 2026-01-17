@@ -50,7 +50,7 @@ import {
 } from '../../components/ui/dropdown-menu';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { sendPromoterInviteEmail } from '@/lib/emailService';
 
 
@@ -218,7 +218,7 @@ export function PromoterManagement() {
         promoCode: promoCode,
         isNewUser: !existingUser,
         appUrl: window.location.origin,
-        currency: selectedEvent?.currency || 'NGN',
+        currency: selectedEvent?.currency || getDefaultCurrency(organizer?.country_code || organizer?.country),
         eventId: selectedEvent?.id
       };
       
@@ -319,7 +319,7 @@ export function PromoterManagement() {
           promoCode: promoter.short_code || promoter.referral_code,
           isNewUser: !promoter.user_id,
           appUrl: window.location.origin,
-          currency: selectedEvent?.currency || events[0]?.currency || 'NGN',
+          currency: selectedEvent?.currency || events[0]?.currency || getDefaultCurrency(organizer?.country_code || organizer?.country),
           eventId: selectedEvent?.id
         },
         organizer.id
@@ -412,7 +412,7 @@ export function PromoterManagement() {
   const getOrganizerCurrency = () => {
     // Try to get currency from first event, fallback to NGN
     const firstEvent = events?.[0];
-    return firstEvent?.currency || 'NGN';
+    return firstEvent?.currency || getDefaultCurrency(organizer?.country_code || organizer?.country);
   };
 
   const formatCurrency = (amount, currency = null) => {

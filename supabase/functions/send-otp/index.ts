@@ -123,8 +123,18 @@ async function sendTermiiOTP(
   }
 }
 
+// Cryptographically secure OTP generation using Web Crypto API
 function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // Generate secure random bytes
+  const array = new Uint8Array(3); // 3 bytes = 24 bits, enough for 6-digit OTP
+  crypto.getRandomValues(array);
+  
+  // Convert to 6-digit number (100000-999999)
+  // Combine bytes to create a number in the desired range
+  const randomValue = (array[0] << 16) | (array[1] << 8) | array[2];
+  const otp = 100000 + (randomValue % 900000);
+  
+  return otp.toString();
 }
 
 serve(async (req) => {

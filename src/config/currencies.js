@@ -259,3 +259,19 @@ export const clearAllCurrencyCaches = () => {
   userDefaultCurrency = null;
   countryCurrencyCache = {};
 };
+
+// Get default currency for a country code
+// Fallback chain: country code -> 'USD' (international standard)
+export const getDefaultCurrency = (countryCode) => {
+  if (!countryCode) return 'USD'; // Safe international fallback
+  
+  const countryDefaults = {
+    NG: 'NGN',
+    GB: 'GBP',
+    US: 'USD',
+    GH: 'GHS',
+    CA: 'CAD',
+  };
+  
+  return countryDefaults[countryCode] || 'USD';
+};

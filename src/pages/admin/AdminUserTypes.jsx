@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/table';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { generateSecureOTP } from '@/utils/crypto';
 
 export function AdminUserTypes() {
   const { user } = useAuth();
@@ -338,8 +339,8 @@ export function AdminUserTypes() {
 
   const generateOTP = async (userId, phoneNumber) => {
     try {
-      // This would integrate with your SMS service
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Use cryptographically secure OTP generation
+      const otp = generateSecureOTP(6);
       
       const { error } = await supabase
         .from('user_otp')
