@@ -41,6 +41,48 @@ export function WebEventDetails() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
 
+  // Function to load tickets for a specific event (for recurring events)
+  const loadTicketsForEvent = async (eventId) => {
+    try {
+      const { data: tickets, error: ticketsError } = await supabase
+        .from('ticket_types')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('is_active', true)
+        .order('price', { ascending: true })
+      
+      if (ticketsError) throw ticketsError
+      
+      // Set ticket types (empty array if none found - free events won't have tickets)
+      setTicketTypes(tickets || [])
+      // Reset selected tickets when switching dates
+      setSelectedTickets({})
+    } catch (err) {
+      console.error('Error loading tickets:', err)
+    }
+  }
+
+  // Function to load tickets for a specific event (for recurring events)
+  const loadTicketsForEvent = async (eventId) => {
+    try {
+      const { data: tickets, error: ticketsError } = await supabase
+        .from('ticket_types')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('is_active', true)
+        .order('price', { ascending: true })
+      
+      if (ticketsError) throw ticketsError
+      
+      // Set ticket types (empty array if none found - free events won't have tickets)
+      setTicketTypes(tickets || [])
+      // Reset selected tickets when switching dates
+      setSelectedTickets({})
+    } catch (err) {
+      console.error('Error loading tickets:', err)
+    }
+  }
+
   useEffect(() => {
     async function loadEvent() {
       setLoading(true)
@@ -51,17 +93,7 @@ export function WebEventDetails() {
         setEvent(eventData)
         
         // Fetch ticket types for this event
-        const { data: tickets, error: ticketsError } = await supabase
-          .from('ticket_types')
-          .select('*')
-          .eq('event_id', eventData.id)
-          .eq('is_active', true)
-          .order('price', { ascending: true })
-        
-        if (ticketsError) throw ticketsError
-        
-        // Set ticket types (empty array if none found - free events won't have tickets)
-        setTicketTypes(tickets || [])
+        await loadTicketsForEvent(eventData.id)
       } catch (err) {
         console.error('Error loading event:', err)
         setError('Event not found')
@@ -267,16 +299,26 @@ export function WebEventDetails() {
     loadFees();
   }, [event?.currency]);
 
-  // Load child events for recurring events
+  // Load child events for recurring events (include current event + future dates)
   useEffect(() => {
     async function loadChildEvents() {
       if (event?.is_recurring) {
+        // Get all child events (future dates)
         const { data: children } = await supabase
           .from('events')
-          .select('id, title, start_date, end_date, slug')
+          .select('id, title, start_date, end_date, slug, status')
           .eq('parent_event_id', event.id)
+          .gte('start_date', new Date().toISOString()) // Only future dates
           .order('start_date', { ascending: true });
         setChildEvents(children || []);
+        
+        // Set current event as default selected date
+        if (!selectedDate) {
+          setSelectedDate(event.id);
+        }
+      } else {
+        // For non-recurring events, ensure selectedDate is the current event
+        setSelectedDate(event?.id || null);
       }
     }
     loadChildEvents();
@@ -356,10 +398,18 @@ export function WebEventDetails() {
 
   // Handle checkout/RSVP routing
   const handleCheckout = () => {
+    // For recurring events, use selected date's event ID, otherwise use current event
+    const targetEventId = (event?.is_recurring && selectedDate) ? selectedDate : event?.id;
+    
     // Free event - go directly to free RSVP page (handles auth there)
     if (isFreeEvent) {
       navigate('/free-rsvp', { 
-        state: { event } 
+        state: { 
+          event: selectedDate && selectedDate !== event.id 
+            ? childEvents.find(e => e.id === selectedDate) || event
+            : event,
+          selectedEventId: targetEventId
+        } 
       })
       return
     }
@@ -374,7 +424,10 @@ export function WebEventDetails() {
     if (totalTickets > 0) {
       navigate('/checkout', { 
         state: { 
-          event,
+          event: selectedDate && selectedDate !== event.id 
+            ? childEvents.find(e => e.id === selectedDate) || event
+            : event,
+          selectedEventId: targetEventId,
           selectedTickets, 
           ticketTypes,
           totalAmount
@@ -642,16 +695,25 @@ export function WebEventDetails() {
           </div>
 
           {/* Upcoming Dates - for recurring events */}
-          {event.is_recurring && childEvents.length > 0 && (
+          {event.is_recurring && (
             <>
               <Separator />
               <div>
                 <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">🔄 Upcoming Dates</h2>
-                <p className="text-[#0F0F0F]/60 mb-4">This is a recurring event. Choose a date below:</p>
+                <p className="text-[#0F0F0F]/60 mb-4">This is a recurring event. Select a date to purchase tickets for that specific occurrence:</p>
                 <div className="grid gap-3">
                   {/* Current/Parent Event */}
                   <div 
-                    className="p-4 bg-[#2969FF]/5 border-2 border-[#2969FF] rounded-xl cursor-pointer"
+                    onClick={() => {
+                      setSelectedDate(event.id);
+                      // Reload tickets for this event
+                      loadTicketsForEvent(event.id);
+                    }}
+                    className={`p-4 rounded-xl cursor-pointer transition-all ${
+                      selectedDate === event.id
+                        ? 'bg-[#2969FF]/10 border-2 border-[#2969FF] shadow-md'
+                        : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -662,7 +724,11 @@ export function WebEventDetails() {
                           {new Date(event.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(event.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                         </p>
                       </div>
-                      <Badge className="bg-[#2969FF] text-white">Current</Badge>
+                      {selectedDate === event.id ? (
+                        <Badge className="bg-[#2969FF] text-white">Selected</Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-[#0F0F0F]/20">Select</Badge>
+                      )}
                     </div>
                   </div>
                   
@@ -670,8 +736,16 @@ export function WebEventDetails() {
                   {childEvents.map((child) => (
                     <div 
                       key={child.id}
-                      onClick={() => navigate(`/event/${child.slug || child.id}`)}
-                      className="p-4 bg-[#F4F6FA] hover:bg-[#2969FF]/10 border border-[#0F0F0F]/10 rounded-xl cursor-pointer transition-colors"
+                      onClick={() => {
+                        setSelectedDate(child.id);
+                        // Reload tickets for this child event
+                        loadTicketsForEvent(child.id);
+                      }}
+                      className={`p-4 rounded-xl cursor-pointer transition-all ${
+                        selectedDate === child.id
+                          ? 'bg-[#2969FF]/10 border-2 border-[#2969FF] shadow-md'
+                          : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
+                      }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -682,7 +756,11 @@ export function WebEventDetails() {
                             {new Date(child.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(child.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                           </p>
                         </div>
-                        <Badge variant="outline" className="border-[#0F0F0F]/20">View</Badge>
+                        {selectedDate === child.id ? (
+                          <Badge className="bg-[#2969FF] text-white">Selected</Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-[#0F0F0F]/20">Select</Badge>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -962,6 +1040,50 @@ export function WebEventDetails() {
         <div className="lg:col-span-1">
           <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
             <CardContent className="p-6 space-y-6">
+              {/* Recurring Event Date Selector */}
+              {event?.is_recurring && (childEvents.length > 0 || event) && (
+                <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-xl">
+                  <label className="text-sm font-medium text-[#0F0F0F] mb-2 block">
+                    📅 Select Event Date
+                  </label>
+                  <select
+                    value={selectedDate || event.id}
+                    onChange={(e) => {
+                      const eventId = e.target.value;
+                      setSelectedDate(eventId);
+                      loadTicketsForEvent(eventId);
+                    }}
+                    className="w-full p-2 rounded-lg border border-purple-300 bg-white text-[#0F0F0F] focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value={event.id}>
+                      {new Date(event.start_date).toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                      })}
+                    </option>
+                    {childEvents.map((child) => (
+                      <option key={child.id} value={child.id}>
+                        {new Date(child.start_date).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        })}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-purple-600 mt-2">
+                    Tickets will be purchased for the selected date
+                  </p>
+                </div>
+              )}
+              
               <div>
                 <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">
                   {isFreeEvent ? 'Register' : 'Select Tickets'}
