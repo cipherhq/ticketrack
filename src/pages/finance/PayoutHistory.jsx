@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function PayoutHistory() {
@@ -94,7 +94,7 @@ export function PayoutHistory() {
       p.recipientEmail,
       p.eventTitle || '-',
       p.amount || p.net_amount,
-      p.currency || 'NGN',
+      p.currency || getDefaultCurrency(p.events?.country_code || p.event?.country_code || p.country_code),
       p.reference || p.transaction_reference || '-'
     ]);
     
@@ -202,7 +202,7 @@ export function PayoutHistory() {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.amount || payout.net_amount, payout.currency || 'NGN')}</p>
+                      <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.amount || payout.net_amount, payout.currency || getDefaultCurrency(payout.events?.country_code || payout.event?.country_code || payout.country_code))}</p>
                       <p className="text-xs text-[#0F0F0F]/40">{payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}</p>
                     </div>
                     <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>

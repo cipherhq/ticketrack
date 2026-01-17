@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { formatPrice } from '@/config/currencies'
+import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -510,7 +510,7 @@ export function AdminTransfers() {
                   </div>
                   <div>
                     <p className="text-[#0F0F0F]/60">Original Ticket Price</p>
-                    <p>{formatPrice(detailModal.transfer.ticket?.total_price || 0, detailModal.transfer.ticket?.event?.currency || 'NGN')}</p>
+                    <p>{formatPrice(detailModal.transfer.ticket?.total_price || 0, detailModal.transfer.ticket?.event?.currency || getDefaultCurrency(detailModal.transfer.ticket?.event?.country_code || detailModal.transfer.ticket?.event?.country))}</p>
                   </div>
                   <div>
                     <p className="text-[#0F0F0F]/60">Transfer Fee</p>

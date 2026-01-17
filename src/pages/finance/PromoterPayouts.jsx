@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function PromoterPayouts() {
@@ -70,7 +70,7 @@ export function PromoterPayouts() {
         
         promoterMap[promoterId].sales.push(sale);
         promoterMap[promoterId].totalEarned += parseFloat(sale.commission_amount || 0);
-        promoterMap[promoterId].currencies.add(sale.events?.currency || 'NGN');
+        promoterMap[promoterId].currencies.add(sale.events?.currency || getDefaultCurrency(sale.events?.country_code || sale.events?.country));
         
         if (sale.status === 'pending') {
           promoterMap[promoterId].totalPending += parseFloat(sale.commission_amount || 0);
@@ -118,7 +118,7 @@ export function PromoterPayouts() {
       const bankAccount = promoter.promoter?.promoter_bank_accounts?.[0];
       
       // Get the primary currency (most common)
-      const currency = Array.from(promoter.currencies)[0] || 'NGN';
+      const currency = Array.from(promoter.currencies)[0] || getDefaultCurrency(promoter.sales[0]?.events?.country_code || promoter.sales[0]?.events?.country);
 
       // Create payout record
       await supabase.from('promoter_payouts').insert({
@@ -257,7 +257,7 @@ export function PromoterPayouts() {
         <div className="space-y-3">
           {filteredPromoters.map((item, idx) => {
             const bankAccount = item.promoter?.promoter_bank_accounts?.[0];
-            const currency = Array.from(item.currencies)[0] || 'NGN';
+            const currency = Array.from(item.currencies)[0] || getDefaultCurrency(item.sales[0]?.events?.country_code || item.sales[0]?.events?.country);
             
             return (
               <Card key={idx} className="border-[#0F0F0F]/10 rounded-2xl">
