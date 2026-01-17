@@ -666,7 +666,7 @@ export function AdminAffiliatesManagement() {
                           <p className="text-xs text-[#0F0F0F]/60">{new Date(e.created_at).toLocaleDateString()}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-green-600">{formatPrice(e.commission_amount, e.currency || e.event?.currency || 'NGN')}</p>
+                          <p className="font-medium text-green-600">{formatPrice(e.commission_amount, e.currency || e.event?.currency || getDefaultCurrency(e.event?.country_code || e.event?.country))}</p>
                           <Badge className={`text-xs ${
                             e.status === 'available' ? 'bg-green-100 text-green-700' :
                             e.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
