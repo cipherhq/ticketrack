@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import ReactQuill from 'react-quill';
 import { EventAccessSettings } from '@/components/EventAccessSettings';
 import { CustomFormBuilder } from '@/components/CustomFormBuilder';
+import { generateRecurringDates } from '@/utils/recurringDates';
 import 'react-quill/dist/quill.snow.css';
 
 
@@ -958,7 +959,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
       const eventData = {
         title: formData.title,
-        slug: formData.slug || null,
+        // Don't pass slug - let createEvent service handle uniqueness
+        // slug: formData.slug || null,
         description: formData.description,
         event_type: formData.eventType,
         category: formData.category,
@@ -1189,8 +1191,36 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               ? `${formData.endDate}T${formData.endTime || '23:59'}:00`
               : `${dateStr}T${formData.endTime || '23:59'}:00`;
             
+            // Generate unique slug for child event by appending date
+            const childSlug = `${savedEvent.slug}-${dateStr}`.replace(/--+/g, '-').substring(0, 100);
+            
+            // Check if slug exists and make it unique if needed
+            let finalChildSlug = childSlug;
+            let slugCounter = 1;
+            const { data: existingSlug } = await supabase
+              .from('events')
+              .select('slug')
+              .eq('slug', finalChildSlug)
+              .single();
+            
+            if (existingSlug) {
+              // Append counter if slug exists
+              while (slugCounter < 100) {
+                finalChildSlug = `${childSlug}-${slugCounter}`;
+                const { data: checkSlug } = await supabase
+                  .from('events')
+                  .select('slug')
+                  .eq('slug', finalChildSlug)
+                  .single();
+                if (!checkSlug) break;
+                slugCounter++;
+              }
+            }
+            
             const childEventData = {
               ...eventData,
+              title: `${formData.title} - ${dateStr}`, // Add date to title for child events
+              slug: finalChildSlug,
               start_date: childStartDateTime,
               end_date: childEndDateTime,
               parent_event_id: savedEvent.id,

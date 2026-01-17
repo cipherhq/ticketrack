@@ -137,37 +137,44 @@ export async function createEvent(organizerId, eventData) {
   // Generate unique slug - use provided or create from title with sequential numbering
   let slug = eventData.slug;
   
-  if (!slug) {
-    const baseSlug = eventData.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-      .substring(0, 50);
-    
-    // Check if base slug exists, if so append -2, -3, etc.
-    const { data: existing } = await supabase
-      .from('events')
-      .select('slug')
-      .like('slug', `${baseSlug}%`)
-      .order('slug', { ascending: false });
-    
-    if (!existing || existing.length === 0) {
-      slug = baseSlug;
+  // Remove slug from eventData so we can handle it separately
+  const { slug: _slug, ...restEventData } = eventData;
+  
+  // Generate base slug from title
+  const baseSlug = eventData.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .substring(0, 50);
+  
+  // If slug provided, check if it's unique, otherwise use baseSlug
+  const targetSlug = slug || baseSlug;
+  
+  // Check if slug exists, if so append -2, -3, etc.
+  const { data: existing } = await supabase
+    .from('events')
+    .select('slug')
+    .like('slug', `${targetSlug}%`)
+    .order('slug', { ascending: false });
+  
+  if (!existing || existing.length === 0) {
+    slug = targetSlug;
+  } else {
+    // Check if exact slug exists
+    const exactMatch = existing.find(e => e.slug === targetSlug);
+    if (!exactMatch) {
+      slug = targetSlug;
     } else {
       // Find highest number suffix
-      const slugPattern = new RegExp(`^${baseSlug}(-\d+)?$`);
+      const slugPattern = new RegExp(`^${targetSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(-\\d+)?$`);
       const matchingSlugs = existing.filter(e => slugPattern.test(e.slug));
       
-      if (matchingSlugs.length === 0) {
-        slug = baseSlug;
-      } else {
-        const numbers = matchingSlugs.map(e => {
-          const match = e.slug.match(/-(\d+)$/);
-          return match ? parseInt(match[1]) : 1;
-        });
-        const maxNum = Math.max(...numbers, 1);
-        slug = `${baseSlug}-${maxNum + 1}`;
-      }
+      const numbers = matchingSlugs.map(e => {
+        const match = e.slug.match(/-(\d+)$/);
+        return match ? parseInt(match[1]) : 1;
+      });
+      const maxNum = matchingSlugs.length > 0 ? Math.max(...numbers) : 0;
+      slug = `${targetSlug}-${maxNum + 1}`;
     }
   }
 
@@ -183,7 +190,7 @@ export async function createEvent(organizerId, eventData) {
       is_featured: false,
       is_free: false,
       country_code: 'NG',
-      ...eventData,
+      ...restEventData,
     })
     .select()
     .single();
