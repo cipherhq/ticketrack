@@ -885,6 +885,11 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
   // Submit
   const handleSubmit = async () => {
+    // Prevent duplicate submissions
+    if (saving) {
+      return;
+    }
+
     if (!organizer?.id) {
       setError('Organizer profile not found');
       return;
