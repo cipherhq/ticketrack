@@ -587,12 +587,12 @@ export function AdminOrders() {
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-[#0F0F0F]/60">Subtotal</span>
-                              <span>{formatPrice(order.subtotal, order.currency || 'NGN')}</span>
+                              <span>{formatPrice(order.subtotal, order.currency || order.events?.currency || getDefaultCurrency(order.events?.country_code || order.events?.country))}</span>
                             </div>
                             {parseFloat(order.discount_amount) > 0 && (
                               <div className="flex justify-between text-green-600">
                                 <span>Discount</span>
-                                <span>-{formatPrice(order.discount_amount, order.currency || 'NGN')}</span>
+                                <span>-{formatPrice(order.discount_amount, order.currency || order.events?.currency || getDefaultCurrency(order.events?.country_code || order.events?.country))}</span>
                               </div>
                             )}
                             <div className="flex justify-between text-purple-600">

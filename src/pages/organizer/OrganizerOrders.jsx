@@ -664,7 +664,7 @@ export function OrganizerOrders() {
               </div>
               <div className="flex justify-between text-sm mt-1">
                 <span className="text-[#0F0F0F]/60">Amount</span>
-                <span className="font-semibold">{formatPrice(refundOrder?.total_amount, refundOrder?.currency || 'NGN')}</span>
+                <span className="font-semibold">{formatPrice(refundOrder?.total_amount, refundOrder?.currency || refundOrder?.event?.currency || getDefaultCurrency(refundOrder?.event?.country_code || refundOrder?.event?.country))}</span>
               </div>
             </div>
             <div className="space-y-2">
