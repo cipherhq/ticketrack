@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
+import { logger, handleApiError, getUserMessage, ERROR_CODES } from '@/lib/logger'
 import { getRSVPSettings, checkRSVPLimit } from '@/services/settings'
 import { getPaymentProvider } from '@/config/payments'
 import { getDonationFeePercent } from '@/config/fees'
@@ -347,8 +348,9 @@ export function WebFreeRSVP() {
       })
 
     } catch (err) {
-      console.error('RSVP error:', err)
-      setError(err.message || 'An error occurred. Please try again.')
+      logger.error('RSVP error', err)
+      const safeError = handleApiError(err, 'RSVP')
+      setError(getUserMessage(safeError.code, 'An error occurred. Please try again.'))
     } finally {
       setLoading(false)
     }
@@ -486,8 +488,9 @@ export function WebFreeRSVP() {
       }
 
     } catch (err) {
-      console.error('Donation RSVP error:', err)
-      setError(err.message || 'An error occurred. Please try again.')
+      logger.error('Donation RSVP error', err)
+      const safeError = handleApiError(err, 'Donation RSVP')
+      setError(getUserMessage(safeError.code, 'An error occurred. Please try again.'))
       setLoading(false)
     }
   }

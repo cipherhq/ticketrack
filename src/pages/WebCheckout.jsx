@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { markWaitlistPurchased } from '@/services/waitlist'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
+import { logger, handleApiError, getUserMessage, ERROR_CODES } from '@/lib/logger'
 
 
 // Credit promoter for referral sale
@@ -464,10 +465,10 @@ export function WebCheckout() {
       })
       
       if (error) {
-        console.error('Reserve tickets RPC error:', error)
+        logger.error('Reserve tickets RPC error', error)
         // Release any already reserved tickets
         await releaseAllTickets(reservations)
-        throw new Error(`Failed to reserve tickets: ${error.message}`)
+        throw new Error('Failed to reserve tickets')
       }
       
       if (!data.success) {
@@ -794,8 +795,9 @@ export function WebCheckout() {
         setLoading(false)
       }
     } catch (err) {
-      console.error('Checkout error:', err)
-      setError(err.message || 'An error occurred during checkout')
+      logger.error('Checkout error', err)
+      const safeError = handleApiError(err, 'Checkout')
+      setError(getUserMessage(safeError.code, 'Payment could not be processed. Please try again.'))
       setLoading(false)
     }
   }
@@ -869,8 +871,9 @@ export function WebCheckout() {
         throw new Error('Failed to create Stripe checkout session');
       }
     } catch (err) {
-      console.error('Stripe checkout error:', err);
-      setError(err.message || 'An error occurred during checkout');
+      logger.error('Stripe checkout error', err);
+      const safeError = handleApiError(err, 'Stripe Checkout');
+      setError(getUserMessage(safeError.code, 'Payment could not be processed. Please try again.'));
       setLoading(false);
     }
   };
@@ -940,8 +943,9 @@ export function WebCheckout() {
         throw new Error('Failed to create PayPal checkout');
       }
     } catch (err) {
-      console.error('PayPal checkout error:', err);
-      setError(err.message || 'An error occurred during checkout');
+      logger.error('PayPal checkout error', err);
+      const safeError = handleApiError(err, 'PayPal Checkout');
+      setError(getUserMessage(safeError.code, 'Payment could not be processed. Please try again.'));
       setLoading(false);
     }
   };
@@ -1037,8 +1041,8 @@ export function WebCheckout() {
       setPromoError('')
       
     } catch (err) {
-      console.error('Error applying promo:', err)
-      setPromoError('Failed to apply promo code')
+      logger.error('Error applying promo', err)
+      setPromoError('Failed to apply promo code. Please try again.')
     } finally {
       setApplyingPromo(false)
     }
