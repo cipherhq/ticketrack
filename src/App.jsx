@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
+import * as Sentry from '@sentry/react';
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -11,6 +12,7 @@ function ScrollToTop() {
   
   return null;
 }
+
 import { AuthProvider } from './contexts/AuthContext';
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import { CartProvider } from './contexts/CartContext';
@@ -18,54 +20,59 @@ import { ImpersonationProvider } from './contexts/ImpersonationContext';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
 import { SessionTimeoutProvider } from './hooks/useSessionTimeout.jsx';
 import { SESSION_TIMEOUT_MS, SESSION_WARNING_MS } from './config/app';
+import { Loader2 } from 'lucide-react';
 
-// Web Layout and Pages
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
+    <div className="text-center">
+      <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto mb-4" />
+      <p className="text-[#0F0F0F]/60">Loading...</p>
+    </div>
+  </div>
+);
+
+// Critical pages - loaded immediately (homepage, checkout, event details)
 import { WebLayout } from './pages/WebLayout';
 import { WebHome } from './pages/WebHome';
-import { WebEventBrowse } from './pages/WebEventBrowse';
 import { WebEventDetails } from './pages/WebEventDetails';
 import { WebCheckout } from './pages/WebCheckout';
-import { WaitlistPurchase } from './pages/WaitlistPurchase';
-import { WebFreeRSVP } from './pages/WebFreeRSVP';
 import { WebPaymentSuccess } from './pages/WebPaymentSuccess';
-import { WebTickets } from './pages/WebTickets';
-import { WebSearch } from './pages/WebSearch';
-import { WebCart } from './pages/WebCart';
-import { WebAbout } from './pages/WebAbout';
-import { WebContact } from './pages/WebContact';
-import { HelpCenter } from './pages/HelpCenter';
-import { WebSupport } from './pages/WebSupport';
-import { WebPricing } from './pages/WebPricing';
-import { WebPrivacy } from './pages/WebPrivacy';
-import { WebTerms } from './pages/WebTerms';
-import { WebTrustSafety } from './pages/WebTrustSafety';
-import { WebRefundPolicy } from './pages/WebRefundPolicy';
-import { WebCareers } from './pages/WebCareers';
-import { WebResources } from './pages/WebResources';
-import { CreateEvent } from './pages/organizer/CreateEvent';
-import { OrganizerProvider } from './contexts/OrganizerContext';
-import { AcceptTeamInvitation } from "./pages/AcceptTeamInvitation";
-import { TeamDashboard } from "./pages/TeamDashboard";
-import { AttendeeProfile } from './pages/AttendeeProfile';
-import { AccountDeleted } from './pages/AccountDeleted';
-import { OrganizerPublicProfile } from './pages/OrganizerPublicProfile';
-
-// Auth Pages
 import { WebAuth } from './pages/WebAuth';
-import { ForgotPassword } from './pages/ForgotPassword';
 import { AuthCallback } from './pages/AuthCallback';
 
-// Organizer Routes
-import { OrganizerRoutes } from './routes/OrganizerRoutes';
+// Less critical pages - lazy loaded
+const WebEventBrowse = lazy(() => import('./pages/WebEventBrowse').then(m => ({ default: m.WebEventBrowse })));
+const WaitlistPurchase = lazy(() => import('./pages/WaitlistPurchase').then(m => ({ default: m.WaitlistPurchase })));
+const WebFreeRSVP = lazy(() => import('./pages/WebFreeRSVP').then(m => ({ default: m.WebFreeRSVP })));
+const WebTickets = lazy(() => import('./pages/WebTickets').then(m => ({ default: m.WebTickets })));
+const WebSearch = lazy(() => import('./pages/WebSearch').then(m => ({ default: m.WebSearch })));
+const WebCart = lazy(() => import('./pages/WebCart').then(m => ({ default: m.WebCart })));
+const WebAbout = lazy(() => import('./pages/WebAbout').then(m => ({ default: m.WebAbout })));
+const WebContact = lazy(() => import('./pages/WebContact').then(m => ({ default: m.WebContact })));
+const HelpCenter = lazy(() => import('./pages/HelpCenter').then(m => ({ default: m.HelpCenter })));
+const WebSupport = lazy(() => import('./pages/WebSupport').then(m => ({ default: m.WebSupport })));
+const WebPricing = lazy(() => import('./pages/WebPricing').then(m => ({ default: m.WebPricing })));
+const WebPrivacy = lazy(() => import('./pages/WebPrivacy').then(m => ({ default: m.WebPrivacy })));
+const WebTerms = lazy(() => import('./pages/WebTerms').then(m => ({ default: m.WebTerms })));
+const WebTrustSafety = lazy(() => import('./pages/WebTrustSafety').then(m => ({ default: m.WebTrustSafety })));
+const WebRefundPolicy = lazy(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })));
+const WebCareers = lazy(() => import('./pages/WebCareers').then(m => ({ default: m.WebCareers })));
+const WebResources = lazy(() => import('./pages/WebResources').then(m => ({ default: m.WebResources })));
+const AttendeeProfile = lazy(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })));
+const OrganizerPublicProfile = lazy(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
+const AccountDeleted = lazy(() => import('./pages/AccountDeleted').then(m => ({ default: m.AccountDeleted })));
+const AcceptTeamInvitation = lazy(() => import('./pages/AcceptTeamInvitation').then(m => ({ default: m.AcceptTeamInvitation })));
+const TeamDashboard = lazy(() => import('./pages/TeamDashboard').then(m => ({ default: m.TeamDashboard })));
+const CreateEvent = lazy(() => import('./pages/organizer/CreateEvent').then(m => ({ default: m.CreateEvent })));
+import { OrganizerProvider } from './contexts/OrganizerContext';
 
-// Admin Routes
-import { AdminRoutes } from './routes/AdminRoutes';
-
-// Promoter Routes
-import { PromoterRoutes } from './routes/PromoterRoutes';
-
-// Finance Routes
-import { FinanceApp } from './routes/FinanceRoutes';
+// Heavy routes - lazy loaded (admin, organizer, promoter, finance)
+const OrganizerRoutes = lazy(() => import('./routes/OrganizerRoutes').then(m => ({ default: m.OrganizerRoutes })));
+const AdminRoutes = lazy(() => import('./routes/AdminRoutes').then(m => ({ default: m.AdminRoutes })));
+const PromoterRoutes = lazy(() => import('./routes/PromoterRoutes').then(m => ({ default: m.PromoterRoutes })));
+const FinanceApp = lazy(() => import('./routes/FinanceRoutes').then(m => ({ default: m.FinanceApp })));
 
 function App() {
   return (
@@ -76,60 +83,197 @@ function App() {
           <Router>
             <ScrollToTop />
             <ImpersonationBanner />
+            <Sentry.ErrorBoundary
+              fallback={({ error, resetError }) => (
+                <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
+                  <div className="text-center max-w-md px-6">
+                    <h1 className="text-2xl font-bold mb-4 text-[#0F0F0F]">Something went wrong</h1>
+                    <p className="text-[#0F0F0F]/60 mb-6">We've been notified and are working on fixing this issue.</p>
+                    <button
+                      onClick={resetError}
+                      className="px-6 py-2 bg-[#2969FF] text-white rounded-lg hover:bg-[#2969FF]/90 transition-colors"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              )}
+              showDialog
+            >
             <Routes>
-              {/* Organizer Dashboard Routes */}
-              <Route path="/organizer/*" element={<OrganizerRoutes />} />
+              {/* Organizer Dashboard Routes - Lazy loaded */}
+              <Route path="/organizer/*" element={
+                <Suspense fallback={<PageLoader />}>
+                  <OrganizerRoutes />
+                </Suspense>
+              } />
 
-              {/* Admin Dashboard Routes */}
-              <Route path="/admin/*" element={<AdminRoutes />} />
+              {/* Admin Dashboard Routes - Lazy loaded */}
+              <Route path="/admin/*" element={
+                <Suspense fallback={<PageLoader />}>
+                  <AdminRoutes />
+                </Suspense>
+              } />
 
-              {/* Promoter Portal Routes */}
-              <Route path="/promoter/*" element={<PromoterRoutes />} />
+              {/* Promoter Portal Routes - Lazy loaded */}
+              <Route path="/promoter/*" element={
+                <Suspense fallback={<PageLoader />}>
+                  <PromoterRoutes />
+                </Suspense>
+              } />
 
-              {/* Finance Portal Routes */}
-              <Route path="/finance/*" element={<FinanceApp />} />
+              {/* Finance Portal Routes - Lazy loaded */}
+              <Route path="/finance/*" element={
+                <Suspense fallback={<PageLoader />}>
+                  <FinanceApp />
+                </Suspense>
+              } />
 
-              {/* Create Event */}
-              <Route path="/create-event" element={<OrganizerProvider><CreateEvent /></OrganizerProvider>} />
+              {/* Create Event - Lazy loaded */}
+              <Route path="/create-event" element={
+                <Suspense fallback={<PageLoader />}>
+                  <OrganizerProvider>
+                    <CreateEvent />
+                  </OrganizerProvider>
+                </Suspense>
+              } />
 
               {/* Auth Routes */}
               <Route path="/login" element={<WebAuth />} />
               <Route path="/signup" element={<WebAuth />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/forgot-password" element={
+                <Suspense fallback={<PageLoader />}>
+                  <ForgotPassword />
+                </Suspense>
+              } />
               <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/account-deleted" element={<AccountDeleted />} />
-              <Route path="/accept-invite" element={<AcceptTeamInvitation />} />
-              <Route path="/team-dashboard" element={<TeamDashboard />} />
+              <Route path="/account-deleted" element={
+                <Suspense fallback={<PageLoader />}>
+                  <AccountDeleted />
+                </Suspense>
+              } />
+              <Route path="/accept-invite" element={
+                <Suspense fallback={<PageLoader />}>
+                  <AcceptTeamInvitation />
+                </Suspense>
+              } />
+              <Route path="/team-dashboard" element={
+                <Suspense fallback={<PageLoader />}>
+                  <TeamDashboard />
+                </Suspense>
+              } />
 
               {/* Web Routes with Layout */}
               <Route element={<WebLayout />}>
                 <Route path="/" element={<WebHome />} />
-                <Route path="/events" element={<WebEventBrowse />} />
+                <Route path="/events" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebEventBrowse />
+                  </Suspense>
+                } />
                 <Route path="/events/:id" element={<WebEventDetails />} />
                 <Route path="/event/:id" element={<WebEventDetails />} />
                 <Route path="/e/:id" element={<WebEventDetails />} />
-                <Route path="/waitlist/purchase" element={<WaitlistPurchase />} />
+                <Route path="/waitlist/purchase" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WaitlistPurchase />
+                  </Suspense>
+                } />
                 <Route path="/checkout" element={<WebCheckout />} />
-                <Route path="/free-rsvp" element={<WebFreeRSVP />} />
+                <Route path="/free-rsvp" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebFreeRSVP />
+                  </Suspense>
+                } />
                 <Route path="/payment-success" element={<WebPaymentSuccess />} />
-                <Route path="/tickets" element={<WebTickets />} />
-                <Route path="/search" element={<WebSearch />} />
-                <Route path="/cart" element={<WebCart />} />
-                <Route path="/about" element={<WebAbout />} />
-                <Route path="/contact" element={<WebContact />} />
-                <Route path="/help" element={<HelpCenter />} />
-                <Route path="/support" element={<WebSupport />} />
-                <Route path="/pricing" element={<WebPricing />} />
-                <Route path="/privacy" element={<WebPrivacy />} />
-                <Route path="/terms" element={<WebTerms />} />
-                <Route path="/trust-safety" element={<WebTrustSafety />} />
-                <Route path="/refund-policy" element={<WebRefundPolicy />} />
-                <Route path="/careers" element={<WebCareers />} />
-                <Route path="/resources" element={<WebResources />} />
-                <Route path="/profile" element={<AttendeeProfile />} />
-                <Route path="/o/:id" element={<OrganizerPublicProfile />} />
+                <Route path="/tickets" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebTickets />
+                  </Suspense>
+                } />
+                <Route path="/my-tickets" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebTickets />
+                  </Suspense>
+                } />
+                <Route path="/search" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebSearch />
+                  </Suspense>
+                } />
+                <Route path="/cart" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebCart />
+                  </Suspense>
+                } />
+                <Route path="/about" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebAbout />
+                  </Suspense>
+                } />
+                <Route path="/contact" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebContact />
+                  </Suspense>
+                } />
+                <Route path="/help" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <HelpCenter />
+                  </Suspense>
+                } />
+                <Route path="/support" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebSupport />
+                  </Suspense>
+                } />
+                <Route path="/pricing" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebPricing />
+                  </Suspense>
+                } />
+                <Route path="/privacy" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebPrivacy />
+                  </Suspense>
+                } />
+                <Route path="/terms" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebTerms />
+                  </Suspense>
+                } />
+                <Route path="/trust-safety" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebTrustSafety />
+                  </Suspense>
+                } />
+                <Route path="/refund-policy" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebRefundPolicy />
+                  </Suspense>
+                } />
+                <Route path="/careers" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebCareers />
+                  </Suspense>
+                } />
+                <Route path="/resources" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebResources />
+                  </Suspense>
+                } />
+                <Route path="/profile" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <AttendeeProfile />
+                  </Suspense>
+                } />
+                <Route path="/o/:id" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <OrganizerPublicProfile />
+                  </Suspense>
+                } />
               </Route>
             </Routes>
+            </Sentry.ErrorBoundary>
           </Router>
           </SessionTimeoutProvider>
         </ImpersonationProvider>

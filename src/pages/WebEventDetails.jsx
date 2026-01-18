@@ -6,7 +6,7 @@ import { useNavigate, useParams, useLocation, useSearchParams } from 'react-rout
 import { useAuth } from '@/contexts/AuthContext'
 import { WaitlistDialog } from '@/components/WaitlistDialog'
 import { getWaitlistPosition } from '@/services/waitlist'
-import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail, UserPlus, UserCheck } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail, UserPlus, UserCheck, Grid3x3, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,11 +35,17 @@ export function WebEventDetails() {
   const [savingFavorite, setSavingFavorite] = useState(false)
   const [childEvents, setChildEvents] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
-  const [feeRate, setFeeRate] = useState(DEFAULT_FEES.serviceFee)
+  const [fees, setFees] = useState({
+    serviceFeePercent: DEFAULT_FEES.serviceFeePercent || 0.05,
+    serviceFeeFixedPerTicket: DEFAULT_FEES.serviceFeeFixedPerTicket || 0,
+    serviceFeeCap: DEFAULT_FEES.serviceFeeCap || null
+  })
   const [accessGranted, setAccessGranted] = useState(false)
   const [recommendedEvents, setRecommendedEvents] = useState([])
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
+  const [recurringViewMode, setRecurringViewMode] = useState('grid') // 'grid' or 'calendar'
+  const [recurringPage, setRecurringPage] = useState(1)
 
   // Function to load tickets for a specific event (for recurring events)
   const loadTicketsForEvent = async (eventId) => {
@@ -69,13 +75,24 @@ export function WebEventDetails() {
       try {
         // Fetch event details
         const eventData = await getEvent(id)
+        if (!eventData) {
+          setError('Event not found')
+          return
+        }
         setEvent(eventData)
         
         // Fetch ticket types for this event
         await loadTicketsForEvent(eventData.id)
       } catch (err) {
         console.error('Error loading event:', err)
-        setError('Event not found')
+        // Provide more helpful error messages
+        if (err.code === 'PGRST116') {
+          setError('Event not found')
+        } else if (err.message?.includes('fetch') || err.message?.includes('network')) {
+          setError('Network error. Please check your connection and try again.')
+        } else {
+          setError('Event not found')
+        }
       } finally {
         setLoading(false)
       }
@@ -89,7 +106,10 @@ export function WebEventDetails() {
   // Check if user has saved this event
   useEffect(() => {
     async function checkIfSaved() {
-      if (!user || !event) return
+      if (!user || !event) {
+        setIsFavorite(false)
+        return
+      }
       
       try {
         const { data, error } = await supabase
@@ -97,13 +117,12 @@ export function WebEventDetails() {
           .select('id')
           .eq('user_id', user.id)
           .eq('event_id', event.id)
-          .single()
+          .maybeSingle() // Use maybeSingle() instead of single() to avoid errors when no row found
         
-        if (data && !error) {
-          setIsFavorite(true)
-        }
+        setIsFavorite(!!data && !error)
       } catch (err) {
         // Not saved - that's fine
+        setIsFavorite(false)
       }
     }
     
@@ -113,19 +132,23 @@ export function WebEventDetails() {
   // Check if user is following the organizer
   useEffect(() => {
     async function checkIfFollowing() {
-      if (!user || !event?.organizer?.id) return
+      if (!user || !event?.organizer?.id) {
+        setIsFollowing(false)
+        return
+      }
       
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('followers')
           .select('id')
           .eq('user_id', user.id)
           .eq('organizer_id', event.organizer.id)
-          .single()
+          .maybeSingle() // Use maybeSingle() instead of single() to avoid errors when no row found
         
-        setIsFollowing(!!data)
+        setIsFollowing(!!data && !error)
       } catch (err) {
         // Not following - that's fine
+        setIsFollowing(false)
       }
     }
     
@@ -271,25 +294,90 @@ export function WebEventDetails() {
   useEffect(() => {
     async function loadFees() {
       if (event?.currency) {
-        const fees = await getFeesByCurrency(event.currency);
-        setFeeRate(fees.serviceFee);
+        const feeData = await getFeesByCurrency(event.currency);
+        setFees({
+          serviceFeePercent: feeData?.serviceFeePercent || 0.05,
+          serviceFeeFixedPerTicket: feeData?.serviceFeeFixedPerTicket || 0,
+          serviceFeeCap: feeData?.serviceFeeCap || null
+        });
       }
     }
     loadFees();
   }, [event?.currency]);
 
-  // Load child events for recurring events (include current event + future dates)
+  // Load child events and generate future dates for recurring events
   useEffect(() => {
     async function loadChildEvents() {
       if (event?.is_recurring) {
-        // Get all child events (future dates)
+        // Get all existing child events (future dates)
         const { data: children } = await supabase
           .from('events')
           .select('id, title, start_date, end_date, slug, status')
           .eq('parent_event_id', event.id)
           .gte('start_date', new Date().toISOString()) // Only future dates
           .order('start_date', { ascending: true });
-        setChildEvents(children || []);
+        
+        const existingChildren = children || [];
+        
+        // Generate future dates dynamically (up to 1 year ahead) even if child events don't exist
+        const { generateRecurringDates } = await import('@/utils/recurringDates');
+        const maxFutureDate = new Date();
+        maxFutureDate.setFullYear(maxFutureDate.getFullYear() + 1); // 1 year ahead
+        
+        // Generate dates based on recurring pattern
+        const generatedDates = generateRecurringDates(
+          event.start_date.split('T')[0],
+          event.start_date.split('T')[1]?.substring(0, 5) || '00:00',
+          event.end_date.split('T')[1]?.substring(0, 5) || '23:59',
+          event.recurring_type || 'weekly',
+          event.recurring_days || [],
+          event.recurring_end_type || 'never',
+          event.recurring_occurrences || 52,
+          maxFutureDate.toISOString().split('T')[0] // Use 1 year as end date for generation
+        );
+        
+        // Filter to only future dates and create virtual events for dates that don't have child events
+        const now = new Date();
+        const virtualEvents = [];
+        const existingDates = new Set(existingChildren.map(c => c.start_date.split('T')[0]));
+        
+        generatedDates.forEach((date, index) => {
+          // Skip first date (parent event)
+          if (index === 0) return;
+          
+          // Only include future dates
+          if (date <= now) return;
+          
+          const dateStr = date.toISOString().split('T')[0];
+          
+          // If a child event exists for this date, use it
+          const existingChild = existingChildren.find(c => c.start_date.startsWith(dateStr));
+          if (existingChild) {
+            virtualEvents.push(existingChild);
+          } else {
+            // Create virtual event for dates that don't have child events yet
+            const startDateTime = `${dateStr}T${event.start_date.split('T')[1] || '00:00:00'}`;
+            const endDateTime = event.is_multi_day 
+              ? `${event.end_date.split('T')[0]}T${event.end_date.split('T')[1] || '23:59:00'}`
+              : `${dateStr}T${event.end_date.split('T')[1] || '23:59:00'}`;
+            
+            virtualEvents.push({
+              id: `virtual-${dateStr}`, // Virtual ID for dates without child events
+              title: event.title,
+              start_date: startDateTime,
+              end_date: endDateTime,
+              slug: null,
+              status: 'published',
+              image_url: event.image_url, // Inherit parent event image
+              cover_image_url: event.cover_image_url, // Inherit parent event cover image
+              is_virtual: true, // Flag to indicate this is a virtual event
+              parent_event_id: event.id
+            });
+          }
+        });
+        
+        // Limit to reasonable number (e.g., next 52 occurrences or 1 year)
+        setChildEvents(virtualEvents.slice(0, 52));
         
         // Set current event as default selected date
         if (!selectedDate) {
@@ -301,7 +389,7 @@ export function WebEventDetails() {
       }
     }
     loadChildEvents();
-  }, [event?.is_recurring, event?.id]);
+  }, [event?.is_recurring, event?.id, event?.recurring_type, event?.recurring_days, event?.recurring_end_type]);
 
   // Track referral code from URL
   useEffect(() => {
@@ -375,18 +463,48 @@ export function WebEventDetails() {
     return sum + (tier?.price || 0) * qty
   }, 0)
 
+  // Calculate service fee (percentage + fixed per ticket, with cap)
+  const serviceFee = (() => {
+    let fee = (totalAmount * fees.serviceFeePercent) + (fees.serviceFeeFixedPerTicket * totalTickets);
+    if (fees.serviceFeeCap && fee > fees.serviceFeeCap) {
+      fee = fees.serviceFeeCap;
+    }
+    return Math.round(fee * 100) / 100;
+  })();
+  
+  const totalWithFees = totalAmount + serviceFee;
+
   // Handle checkout/RSVP routing
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     // For recurring events, use selected date's event ID, otherwise use current event
     const targetEventId = (event?.is_recurring && selectedDate) ? selectedDate : event?.id;
+    
+    // If child event is selected, ensure it has all required fields
+    let checkoutEvent = event;
+    if (selectedDate && selectedDate !== event.id) {
+      const childEvent = childEvents.find(e => e.id === selectedDate);
+      if (childEvent) {
+        // If child event exists, use it but merge with parent's essential fields
+        checkoutEvent = {
+          ...event, // Parent event has all the metadata (organizer, currency, etc.)
+          ...childEvent, // Child event has the specific date
+          id: childEvent.id,
+          start_date: childEvent.start_date,
+          end_date: childEvent.end_date,
+          slug: childEvent.slug || event.slug,
+          parent_event_id: event.id
+        };
+      } else {
+        // Child event not found, fall back to parent
+        checkoutEvent = event;
+      }
+    }
     
     // Free event - go directly to free RSVP page (handles auth there)
     if (isFreeEvent) {
       navigate('/free-rsvp', { 
         state: { 
-          event: selectedDate && selectedDate !== event.id 
-            ? childEvents.find(e => e.id === selectedDate) || event
-            : event,
+          event: checkoutEvent,
           selectedEventId: targetEventId
         } 
       })
@@ -403,9 +521,7 @@ export function WebEventDetails() {
     if (totalTickets > 0) {
       navigate('/checkout', { 
         state: { 
-          event: selectedDate && selectedDate !== event.id 
-            ? childEvents.find(e => e.id === selectedDate) || event
-            : event,
+          event: checkoutEvent,
           selectedEventId: targetEventId,
           selectedTickets, 
           ticketTypes,
@@ -552,7 +668,16 @@ export function WebEventDetails() {
                   ) : (
                     <>
                       <MapPin className="w-5 h-5" />
-                      <span>{[event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}</span>
+                      <span className="flex flex-wrap items-center gap-x-1">
+                        {event.venue_name && <span className="font-medium">{event.venue_name}</span>}
+                        {event.venue_name && (event.venue_address || event.city) && <span className="text-[#0F0F0F]/60">•</span>}
+                        {event.venue_address && <span>{event.venue_address}</span>}
+                        {(event.venue_name || event.venue_address) && event.city && <span className="text-[#0F0F0F]/60">•</span>}
+                        {event.city && <span>{event.city}</span>}
+                        {event.city && event.country && <span className="text-[#0F0F0F]/60">,</span>}
+                        {event.country && <span>{event.country}</span>}
+                        {!event.venue_name && !event.venue_address && !event.city && !event.country && <span>Location TBA</span>}
+                      </span>
                     </>
                   )}
                 </div>
@@ -678,72 +803,270 @@ export function WebEventDetails() {
             <>
               <Separator />
               <div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">🔄 Upcoming Dates</h2>
-                <p className="text-[#0F0F0F]/60 mb-4">This is a recurring event. Select a date to purchase tickets for that specific occurrence:</p>
-                <div className="grid gap-3">
-                  {/* Current/Parent Event */}
-                  <div 
-                    onClick={() => {
-                      setSelectedDate(event.id);
-                      // Reload tickets for this event
-                      loadTicketsForEvent(event.id);
-                    }}
-                    className={`p-4 rounded-xl cursor-pointer transition-all ${
-                      selectedDate === event.id
-                        ? 'bg-[#2969FF]/10 border-2 border-[#2969FF] shadow-md'
-                        : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-[#0F0F0F]">
-                          {new Date(event.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                        </p>
-                        <p className="text-sm text-[#0F0F0F]/60">
-                          {new Date(event.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(event.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                        </p>
-                      </div>
-                      {selectedDate === event.id ? (
-                        <Badge className="bg-[#2969FF] text-white">Selected</Badge>
-                      ) : (
-                        <Badge variant="outline" className="border-[#0F0F0F]/20">Select</Badge>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Child Events */}
-                  {childEvents.map((child) => (
-                    <div 
-                      key={child.id}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-[#0F0F0F]">🔄 Upcoming Dates</h2>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={recurringViewMode === 'grid' ? 'default' : 'outline'}
+                      size="sm"
                       onClick={() => {
-                        setSelectedDate(child.id);
-                        // Reload tickets for this child event
-                        loadTicketsForEvent(child.id);
+                        setRecurringViewMode('grid');
+                        setRecurringPage(1);
                       }}
-                      className={`p-4 rounded-xl cursor-pointer transition-all ${
-                        selectedDate === child.id
-                          ? 'bg-[#2969FF]/10 border-2 border-[#2969FF] shadow-md'
-                          : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
-                      }`}
+                      className={`rounded-lg ${recurringViewMode === 'grid' ? 'bg-[#2969FF] hover:bg-[#1a4fd8] text-white' : ''}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-[#0F0F0F]">
-                            {new Date(child.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                          </p>
-                          <p className="text-sm text-[#0F0F0F]/60">
-                            {new Date(child.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(child.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                          </p>
-                        </div>
-                        {selectedDate === child.id ? (
-                          <Badge className="bg-[#2969FF] text-white">Selected</Badge>
-                        ) : (
-                          <Badge variant="outline" className="border-[#0F0F0F]/20">Select</Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                      <Grid3x3 className="w-4 h-4 mr-1" />
+                      Grid
+                    </Button>
+                    <Button
+                      variant={recurringViewMode === 'calendar' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        setRecurringViewMode('calendar');
+                        setRecurringPage(1);
+                      }}
+                      className={`rounded-lg ${recurringViewMode === 'calendar' ? 'bg-[#2969FF] hover:bg-[#1a4fd8] text-white' : ''}`}
+                    >
+                      <Calendar className="w-4 h-4 mr-1" />
+                      Calendar
+                    </Button>
+                  </div>
                 </div>
+                <p className="text-[#0F0F0F]/60 mb-4">This is a recurring event. Select a date to purchase tickets for that specific occurrence:</p>
+                {recurringViewMode === 'grid' ? (
+                  <>
+                        {(() => {
+                      // Combine parent event and child events with images
+                      const allEvents = [{ 
+                        id: event.id, 
+                        start_date: event.start_date, 
+                        end_date: event.end_date, 
+                        image_url: event.image_url,
+                        cover_image_url: event.cover_image_url,
+                        isParent: true 
+                      }, ...childEvents];
+                      const eventsPerPage = 12;
+                      const totalPages = Math.ceil(allEvents.length / eventsPerPage);
+                      const startIndex = (recurringPage - 1) * eventsPerPage;
+                      const endIndex = startIndex + eventsPerPage;
+                      const paginatedEvents = allEvents.slice(startIndex, endIndex);
+                      
+                      return (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {paginatedEvents.map((evt) => (
+                              <div 
+                                key={evt.id}
+                                onClick={() => {
+                                  setSelectedDate(evt.id);
+                                  loadTicketsForEvent(evt.id);
+                                }}
+                                className={`rounded-xl cursor-pointer transition-all overflow-hidden ${
+                                  selectedDate === evt.id
+                                    ? 'bg-[#2969FF]/10 border-2 border-[#2969FF] shadow-md'
+                                    : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
+                                }`}
+                              >
+                                {/* Event Image */}
+                                {(evt.image_url || evt.cover_image_url || event.image_url || event.cover_image_url) ? (
+                                  <div className="relative h-32 w-full overflow-hidden">
+                                    <img 
+                                      src={evt.image_url || evt.cover_image_url || event.image_url || event.cover_image_url}
+                                      alt={evt.title || event.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="h-32 w-full bg-gradient-to-br from-[#2969FF]/20 to-purple-500/20 flex items-center justify-center">
+                                    <Calendar className="w-8 h-8 text-[#2969FF]/40" />
+                                  </div>
+                                )}
+                                
+                                {/* Event Details */}
+                                <div className="p-4">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-semibold text-[#0F0F0F] text-sm truncate">
+                                        {new Date(evt.start_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                      </p>
+                                      <p className="text-xs text-[#0F0F0F]/60 mt-0.5">
+                                        {new Date(evt.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(evt.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                      </p>
+                                    </div>
+                                    {selectedDate === evt.id ? (
+                                      <Badge className="bg-[#2969FF] text-white ml-2 flex-shrink-0">Selected</Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="border-[#0F0F0F]/20 ml-2 flex-shrink-0">Select</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Pagination Controls */}
+                          {totalPages > 1 && (
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#0F0F0F]/10">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRecurringPage(prev => Math.max(1, prev - 1))}
+                                disabled={recurringPage === 1}
+                                className="rounded-lg"
+                              >
+                                <ChevronLeft className="w-4 h-4 mr-1" />
+                                Previous
+                              </Button>
+                              <span className="text-sm text-[#0F0F0F]/60">
+                                Page {recurringPage} of {totalPages}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRecurringPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={recurringPage === totalPages}
+                                className="rounded-lg"
+                              >
+                                Next
+                                <ChevronRight className="w-4 h-4 ml-1" />
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  // Calendar View
+                  <div className="space-y-6">
+                    {(() => {
+                      // Group events by month
+                      const allEvents = [{ id: event.id, start_date: event.start_date, end_date: event.end_date }, ...childEvents];
+                      const eventsByMonth = {};
+                      
+                      allEvents.forEach(evt => {
+                        const date = new Date(evt.start_date);
+                        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        if (!eventsByMonth[monthKey]) {
+                          eventsByMonth[monthKey] = [];
+                        }
+                        eventsByMonth[monthKey].push(evt);
+                      });
+                      
+                      return Object.keys(eventsByMonth).sort().map(monthKey => {
+                        const events = eventsByMonth[monthKey];
+                        const firstDate = new Date(events[0].start_date);
+                        const monthName = firstDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        
+                        // Get first day of month and days in month
+                        const year = firstDate.getFullYear();
+                        const month = firstDate.getMonth();
+                        const firstDayOfMonth = new Date(year, month, 1);
+                        const lastDayOfMonth = new Date(year, month + 1, 0);
+                        const daysInMonth = lastDayOfMonth.getDate();
+                        const startingDayOfWeek = firstDayOfMonth.getDay();
+                        
+                        // Create calendar grid
+                        const calendarDays = [];
+                        
+                        // Add empty cells for days before month starts
+                        for (let i = 0; i < startingDayOfWeek; i++) {
+                          calendarDays.push(null);
+                        }
+                        
+                        // Add days of month with events marked
+                        for (let day = 1; day <= daysInMonth; day++) {
+                          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                          const dayEvent = events.find(e => e.start_date.startsWith(dateStr));
+                          calendarDays.push({
+                            day,
+                            dateStr,
+                            event: dayEvent,
+                            isToday: dateStr === new Date().toISOString().split('T')[0]
+                          });
+                        }
+                        
+                        return (
+                          <div key={monthKey} className="space-y-3">
+                            <h3 className="text-lg font-semibold text-[#0F0F0F]">{monthName}</h3>
+                            <div className="grid grid-cols-7 gap-2">
+                              {/* Day headers */}
+                              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                <div key={day} className="text-center text-sm font-medium text-[#0F0F0F]/60 py-2">
+                                  {day}
+                                </div>
+                              ))}
+                              {/* Calendar days */}
+                              {calendarDays.map((dayData, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`aspect-square flex items-center justify-center text-sm rounded-lg transition-all ${
+                                    dayData === null
+                                      ? 'bg-transparent'
+                                      : dayData.event
+                                      ? `cursor-pointer ${
+                                          selectedDate === dayData.event.id
+                                            ? 'bg-[#2969FF] text-white shadow-md'
+                                            : 'bg-[#2969FF]/10 text-[#2969FF] hover:bg-[#2969FF]/20'
+                                        }`
+                                      : dayData.isToday
+                                      ? 'bg-[#F4F6FA] border-2 border-[#2969FF]/30 text-[#0F0F0F]'
+                                      : 'bg-[#F4F6FA] text-[#0F0F0F]/40'
+                                  }`}
+                                  onClick={dayData?.event ? () => {
+                                    setSelectedDate(dayData.event.id);
+                                    loadTicketsForEvent(dayData.event.id);
+                                  } : undefined}
+                                  title={dayData?.event ? new Date(dayData.event.start_date).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    month: 'long', 
+                                    day: 'numeric', 
+                                    year: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit'
+                                  }) : undefined}
+                                >
+                                  {dayData?.day || ''}
+                                </div>
+                              ))}
+                            </div>
+                            {/* List of events for this month with time */}
+                            <div className="space-y-2 mt-4">
+                              {events.map(evt => (
+                                <div
+                                  key={evt.id}
+                                  onClick={() => {
+                                    setSelectedDate(evt.id);
+                                    loadTicketsForEvent(evt.id);
+                                  }}
+                                  className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                    selectedDate === evt.id
+                                      ? 'bg-[#2969FF]/10 border-2 border-[#2969FF]'
+                                      : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="font-medium text-[#0F0F0F]">
+                                        {new Date(evt.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                      </p>
+                                      <p className="text-sm text-[#0F0F0F]/60">
+                                        {new Date(evt.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(evt.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                      </p>
+                                    </div>
+                                    {selectedDate === evt.id && (
+                                      <Badge className="bg-[#2969FF] text-white">Selected</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -969,19 +1292,28 @@ export function WebEventDetails() {
                 </div>
               )}
               <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    {event.venue_name && <h3 className="font-semibold text-[#0F0F0F]">{event.venue_name}</h3>}
-                    <p className="text-sm text-[#0F0F0F]/60">{[event.venue_address, event.city].filter(Boolean).join(', ') || 'Address TBA'}</p>
+                <div className="space-y-3">
+                  {event.venue_name && (
+                    <div>
+                      <h3 className="font-semibold text-[#0F0F0F] mb-1">{event.venue_name}</h3>
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    {event.venue_address && (
+                      <p className="text-sm text-[#0F0F0F]">{event.venue_address}</p>
+                    )}
+                    <p className="text-sm text-[#0F0F0F]/60">
+                      {[event.city, event.state, event.country].filter(Boolean).join(', ') || 'Address TBA'}
+                    </p>
                   </div>
                   <a 
-                    href={event.google_map_link || `https://maps.google.com/maps?q=${encodeURIComponent((event.venue_address || '') + ', ' + (event.city || ''))}`}
+                    href={event.google_map_link || `https://maps.google.com/maps?q=${encodeURIComponent([event.venue_address, event.city, event.state, event.country].filter(Boolean).join(', '))}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[#2969FF] hover:underline text-sm flex-shrink-0"
+                    className="inline-flex items-center gap-1.5 text-[#2969FF] hover:text-[#1e54cc] hover:underline text-sm font-medium transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    Directions
+                    Get Directions
                   </a>
                 </div>
               </CardContent>
@@ -1199,12 +1531,12 @@ export function WebEventDetails() {
                     </div>
                     <div className="flex justify-between text-[#0F0F0F]/60">
                       <span>Service Fee</span>
-                      <span>{formatPrice(Math.round(totalAmount * feeRate), event?.currency)}</span>
+                      <span>{formatPrice(serviceFee, event?.currency)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-lg text-[#0F0F0F]">
                       <span>Total</span>
-                      <span>{formatPrice(Math.round(totalAmount * (1 + feeRate)), event?.currency)}</span>
+                      <span>{formatPrice(totalWithFees, event?.currency)}</span>
                     </div>
                   </div>
                 </>
@@ -1233,7 +1565,13 @@ export function WebEventDetails() {
                   onClick={handleCheckout}
                   disabled={totalTickets === 0}
                 >
-                  {totalTickets > 0 ? 'Proceed to Checkout' : 'Select Tickets'}
+                  {totalTickets > 0 ? (
+                    <>
+                      Proceed to Checkout - {formatPrice(totalWithFees, event?.currency)}
+                    </>
+                  ) : (
+                    'Select Tickets'
+                  )}
                 </Button>
               )}
 
@@ -1301,7 +1639,18 @@ export function WebEventDetails() {
       <WaitlistDialog 
         open={waitlistOpen} 
         onOpenChange={setWaitlistOpen} 
-        event={event}
+        event={(() => {
+          // For recurring events, use the selected child event if a date is selected
+          // This ensures waitlist is per child event date, not parent event
+          if (event?.is_recurring && selectedDate && selectedDate !== event.id) {
+            const childEvent = childEvents.find(e => e.id === selectedDate);
+            if (childEvent) {
+              // Return child event with parent event's data merged (for organizer, currency, etc.)
+              return { ...event, ...childEvent, id: childEvent.id };
+            }
+          }
+          return event;
+        })()}
       />
     </div>
   )

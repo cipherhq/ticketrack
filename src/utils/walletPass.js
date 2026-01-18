@@ -46,14 +46,12 @@ export const GOOGLE_WALLET_CLASS = {
  * Generate Apple Wallet pass data
  * This creates the pass.json structure for .pkpass file
  */
-export function generateApplePassData(ticket, event) {
+export function generateApplePassData(ticket, event, includeWebService = false) {
   const eventDate = new Date(event.start_date)
   
-  return {
+  const passData = {
     ...APPLE_PASS_TEMPLATE,
     serialNumber: ticket.ticket_code,
-    webServiceURL: `${window.location.origin}/api/passes`,
-    authenticationToken: ticket.id,
     
     eventTicket: {
       primaryFields: [{
@@ -126,6 +124,14 @@ export function generateApplePassData(ticket, event) {
       relevantText: `You're near ${event.venue_name}!`
     }] : []
   }
+  
+  // Only include web service URL if we have a proper backend setup
+  if (includeWebService) {
+    passData.webServiceURL = `${window.location.origin}/api/passes`
+    passData.authenticationToken = ticket.id
+  }
+  
+  return passData
 }
 
 /**
@@ -202,33 +208,189 @@ export function generateGoogleWalletObject(ticket, event) {
 }
 
 /**
+ * Load JSZip from CDN
+ */
+function loadJSZip() {
+  return new Promise((resolve, reject) => {
+    if (window.JSZip) {
+      resolve(window.JSZip)
+      return
+    }
+    
+    const script = document.createElement('script')
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+    script.onload = () => {
+      if (window.JSZip) {
+        resolve(window.JSZip)
+      } else {
+        reject(new Error('JSZip failed to load'))
+      }
+    }
+    script.onerror = () => reject(new Error('Failed to load JSZip library'))
+    document.head.appendChild(script)
+  })
+}
+
+/**
+ * Generate client-side Apple Wallet .pkpass file
+ * Creates a downloadable .pkpass file without server-side certificates
+ */
+async function generateClientSideApplePass(ticket, event) {
+  try {
+    // Load JSZip from CDN
+    const JSZip = await loadJSZip()
+
+    // Generate pass.json (without webServiceURL for client-side generation)
+    const passData = generateApplePassData(ticket, event, false)
+    const passJson = JSON.stringify(passData, null, 2)
+
+    // Create simple images as base64 (required by Apple Wallet)
+    // Icon: 29x29, 58x58, 87x87, 60x60, 120x120, 180x180
+    // Logo: 27x27, 54x54, 81x81
+    // We'll create simple colored squares as placeholders
+    
+    const createImageDataURL = (size, color = '#2969FF') => {
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      ctx.fillStyle = color
+      ctx.fillRect(0, 0, size, size)
+      // Add white "TR" text
+      ctx.fillStyle = '#FFFFFF'
+      ctx.font = `bold ${size * 0.4}px Arial`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('TR', size / 2, size / 2)
+      return canvas.toDataURL('image/png')
+    }
+
+    // Note: QR code is already in pass.json barcode field, so we don't need to generate it separately
+
+    // Create zip file
+    const zip = new JSZip()
+    
+    // Add pass.json
+    zip.file('pass.json', passJson)
+    
+    // Add required images (using simple generated images)
+    zip.file('icon.png', createImageDataURL(29).split(',')[1], { base64: true })
+    zip.file('icon@2x.png', createImageDataURL(58).split(',')[1], { base64: true })
+    zip.file('icon@3x.png', createImageDataURL(87).split(',')[1], { base64: true })
+    
+    zip.file('logo.png', createImageDataURL(27).split(',')[1], { base64: true })
+    zip.file('logo@2x.png', createImageDataURL(54).split(',')[1], { base64: true })
+    zip.file('logo@3x.png', createImageDataURL(81).split(',')[1], { base64: true })
+    
+    // Strip image (320x84 or 640x168) - use event image if available
+    if (event.image_url) {
+      try {
+        const response = await fetch(event.image_url)
+        const blob = await response.blob()
+        const arrayBuffer = await blob.arrayBuffer()
+        zip.file('strip.png', arrayBuffer)
+        zip.file('strip@2x.png', arrayBuffer)
+      } catch (e) {
+        // Fallback to generated image
+        const stripData = createImageDataURL(320, '#1a4fd8').split(',')[1]
+        zip.file('strip.png', stripData, { base64: true })
+        zip.file('strip@2x.png', stripData, { base64: true })
+      }
+    } else {
+      const stripData = createImageDataURL(320, '#1a4fd8').split(',')[1]
+      zip.file('strip.png', stripData, { base64: true })
+      zip.file('strip@2x.png', stripData, { base64: true })
+    }
+
+    // Generate manifest.json with SHA1 hashes
+    const crypto = window.crypto || window.msCrypto
+    const manifest = {}
+    
+    const files = ['pass.json', 'icon.png', 'icon@2x.png', 'icon@3x.png', 'logo.png', 'logo@2x.png', 'logo@3x.png', 'strip.png', 'strip@2x.png']
+    
+    for (const filename of files) {
+      const fileData = await zip.file(filename).async('uint8array')
+      const hashBuffer = await crypto.subtle.digest('SHA-1', fileData)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+      manifest[filename] = hashHex
+    }
+    
+    zip.file('manifest.json', JSON.stringify(manifest))
+
+    // Generate the .pkpass file
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
+    const url = URL.createObjectURL(blob)
+    
+    // Trigger download
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${ticket.ticket_code}.pkpass`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Client-side Apple Pass generation error:', error)
+    throw error
+  }
+}
+
+/**
  * Request Apple Wallet pass from backend
- * The backend handles certificate signing
+ * Falls back to client-side generation if backend is not configured
  */
 export async function getAppleWalletPass(ticketId) {
   try {
-    const { data, error } = await supabase.functions.invoke('generate-wallet-pass', {
-      body: {
-        ticketId,
-        platform: 'apple'
-      }
-    })
-    
-    if (error) throw error
-    
-    if (data?.passUrl) {
-      // Open the .pkpass file URL
-      window.location.href = data.passUrl
-      return { success: true }
+    // First, fetch ticket and event data
+    const { data: ticketData, error: ticketError } = await supabase
+      .from('tickets')
+      .select(`
+        *,
+        event:events(
+          id, title, slug, start_date, end_date, 
+          venue_name, venue_address, city, 
+          image_url, venue_lat, venue_lng,
+          organizers(business_name, logo_url)
+        ),
+        ticket_type:ticket_types(name, price)
+      `)
+      .eq('id', ticketId)
+      .single()
+
+    if (ticketError || !ticketData) {
+      throw new Error('Ticket not found')
     }
+
+    // Try backend first
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-wallet-pass', {
+        body: {
+          ticketId,
+          platform: 'apple'
+        }
+      })
+      
+      if (!error && data?.passUrl) {
+        // Backend generated pass successfully
+        window.location.href = data.passUrl
+        return { success: true }
+      }
+    } catch (backendError) {
+      console.log('Backend pass generation not available, using client-side generation')
+    }
+
+    // Fallback to client-side generation
+    return await generateClientSideApplePass(ticketData, ticketData.event)
     
-    throw new Error('Failed to generate pass')
   } catch (error) {
     console.error('Apple Wallet pass error:', error)
     return { 
       success: false, 
       error: error.message,
-      fallback: true // Use fallback method
+      fallback: true
     }
   }
 }

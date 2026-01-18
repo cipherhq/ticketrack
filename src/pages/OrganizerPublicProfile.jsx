@@ -41,14 +41,24 @@ export function OrganizerPublicProfile() {
   }
 
   const checkIfFollowing = async (userId) => {
-    const { data } = await supabase
-      .from('followers')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('organizer_id', id)
-      .single()
+    if (!userId || !id) {
+      setIsFollowing(false)
+      return
+    }
     
-    setIsFollowing(!!data)
+    try {
+      const { data, error } = await supabase
+        .from('followers')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('organizer_id', id)
+        .maybeSingle() // Use maybeSingle() instead of single() to avoid errors when no row found
+      
+      setIsFollowing(!!data && !error)
+    } catch (err) {
+      // Not following - that's fine
+      setIsFollowing(false)
+    }
   }
 
   const fetchOrganizerData = async () => {
@@ -56,9 +66,42 @@ export function OrganizerPublicProfile() {
     setError(null)
     
     try {
+      // Only select public-safe fields (exclude sensitive: user_id, balances, kyc_status, stripe_connect_id, etc.)
       const { data: orgData, error: orgError } = await supabase
         .from('organizers')
-        .select('*')
+        .select(`
+          id,
+          business_name,
+          business_email,
+          business_phone,
+          description,
+          logo_url,
+          cover_image_url,
+          banner_url,
+          website_url,
+          website,
+          social_twitter,
+          social_facebook,
+          social_instagram,
+          social_linkedin,
+          twitter,
+          facebook,
+          instagram,
+          linkedin,
+          country_code,
+          location,
+          is_verified,
+          verification_level,
+          verified_at,
+          is_active,
+          total_events,
+          total_tickets_sold,
+          total_revenue,
+          average_rating,
+          created_at,
+          is_trusted,
+          trusted_at
+        `)
         .eq('id', id)
         .single()
       

@@ -36,7 +36,7 @@ export function FinancePayouts() {
       const now = new Date();
       const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-      // Fetch all events with their order totals
+      // Fetch all events with their order totals (including child events for recurring events)
       const { data: events, error: eventsError } = await supabase
         .from('events')
         .select(`
@@ -44,18 +44,30 @@ export function FinancePayouts() {
           currency,
           title,
           end_date,
+          start_date,
+          parent_event_id,
+          is_recurring,
           orders (
             id,
             subtotal,
             platform_fee,
             total_amount,
             status,
-            created_at
+            created_at,
+            event_id
           )
         `)
         .eq('organizer_id', organizer.id);
 
       if (eventsError) throw eventsError;
+
+      // Separate parent events and child events
+      const parentEvents = events?.filter(e => !e.parent_event_id) || [];
+      const childEvents = events?.filter(e => e.parent_event_id) || [];
+      
+      // Create a map of child events by ID for quick lookup
+      const childEventMap = {};
+      childEvents.forEach(e => { childEventMap[e.id] = e; });
 
 
       // Get platform fees from database
@@ -68,24 +80,62 @@ export function FinancePayouts() {
         .order('created_at', { ascending: false });
 
       // Calculate stats and categorize by currency
+      // Group orders by their actual event (child event if recurring, parent otherwise)
       const inEscrowByCurrency = {};
       const upcomingPayoutsByCurrency = {};
       const upcoming = [];
-
+      
+      // Process all orders and group by actual event date
+      const ordersByEventDate = {};
+      
       events?.forEach(event => {
-        const currency = event.currency;
+        const completedOrders = event.orders?.filter(o => o.status === 'completed') || [];
+        
+        completedOrders.forEach(order => {
+          // Get the actual event for this order (could be child or parent)
+          const actualEvent = childEventMap[order.event_id] || event;
+          const eventEndDate = new Date(actualEvent.end_date);
+          
+          // Create a key for grouping: event ID + event end date
+          const eventKey = `${actualEvent.id}-${actualEvent.end_date}`;
+          
+          if (!ordersByEventDate[eventKey]) {
+            ordersByEventDate[eventKey] = {
+              event: actualEvent,
+              orders: [],
+              currency: actualEvent.currency,
+            };
+          }
+          
+          ordersByEventDate[eventKey].orders.push(order);
+        });
+      });
+      
+      // Process each group of orders by event date
+      Object.values(ordersByEventDate).forEach(({ event, orders, currency }) => {
+        if (orders.length === 0) return;
+        
+        const grossRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
+        const netAmount = orders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
+        const platformFeeTotal = orders.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
+        
+        if (netAmount === 0) return;
+        
         const eventEndDate = new Date(event.end_date);
         const payoutDate = new Date(eventEndDate.getTime() + 24 * 60 * 60 * 1000);
         
-        // Sum completed orders for this event
-        // Organizer receives subtotal (platform fee is already separated)
-        const completedOrders = event.orders?.filter(o => o.status === 'completed') || [];
-        const grossRevenue = completedOrders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
-        const netAmount = completedOrders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
-        const platformFeeTotal = completedOrders.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
-
-        if (netAmount === 0) return;
-
+        // Determine event display name (include date if child event)
+        let eventDisplayName = event.title;
+        if (event.parent_event_id) {
+          // Child event - show date in title
+          const eventDate = new Date(event.start_date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+          eventDisplayName = `${event.title} - ${eventDate}`;
+        }
+        
         if (eventEndDate > now) {
           // Event hasn't ended yet - In Escrow
           inEscrowByCurrency[currency] = (inEscrowByCurrency[currency] || 0) + netAmount;
@@ -95,7 +145,7 @@ export function FinancePayouts() {
           upcoming.push({
             id: event.id,
             currency,
-            event: event.title,
+            event: eventDisplayName,
             grossAmount: grossRevenue,
             platformFee: platformFeeTotal,
             netAmount: netAmount,

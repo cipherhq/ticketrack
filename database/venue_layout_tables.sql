@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS furniture_types (
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
-);
+);oject
 
 -- Pre-populate furniture library
 INSERT INTO furniture_types (name, category, description, default_width, default_height, default_capacity, properties) VALUES

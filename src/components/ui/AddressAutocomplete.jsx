@@ -49,9 +49,10 @@ export function AddressAutocomplete({
     if (!isLoaded || !inputRef.current) return;
 
     // Initialize autocomplete
+    // Restrict to US, UK, Canada, Nigeria, and Ghana
     autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
       types: ['establishment', 'geocode'],
-      componentRestrictions: { country: ['ng', 'gh', 'ke', 'za', 'us', 'gb', 'ca'] }, // Supported countries
+      componentRestrictions: { country: ['us', 'gb', 'ca', 'ng', 'gh'] }, // US, UK, Canada, Nigeria, Ghana
       fields: ['formatted_address', 'geometry', 'name', 'place_id', 'address_components'],
     });
 

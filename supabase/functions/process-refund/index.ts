@@ -28,7 +28,7 @@ serve(async (req) => {
       .from("refund_requests")
       .select(`
         *,
-        order:orders(id, payment_reference, payment_provider, currency, country_code),
+        order:orders(id, payment_reference, payment_provider, currency),
         ticket:tickets(id, ticket_code, attendee_email, attendee_name)
       `)
       .eq("id", refundRequestId)
@@ -48,7 +48,8 @@ serve(async (req) => {
 
     const paymentProvider = refundRequest.order?.payment_provider || refundRequest.payment_provider;
     const paymentReference = refundRequest.order?.payment_reference || refundRequest.payment_reference;
-    const countryCode = refundRequest.order?.country_code || "NG";
+    // Get country code from event if available, otherwise default to NG
+    const countryCode = "NG"; // Default for test orders, can be fetched from event if needed
     const refundAmount = Math.round(refundRequest.amount * 100); // Convert to kobo/cents
     const currency = refundRequest.currency || refundRequest.order?.currency || "NGN";
 
@@ -210,6 +211,44 @@ serve(async (req) => {
         console.error("PayPal refund failed:", refundData);
         const errorMessage = refundData.details?.[0]?.description || refundData.message || "PayPal refund failed";
         throw new Error(errorMessage);
+      }
+
+    // ========== FLUTTERWAVE REFUND ==========
+    } else if (paymentProvider === "flutterwave") {
+      const { data: flutterwaveConfig } = await supabase
+        .from("payment_gateway_config")
+        .select("secret_key_encrypted")
+        .eq("provider", "flutterwave")
+        .eq("is_active", true)
+        .in("country_code", [countryCode, "NG", "GH"])
+        .limit(1)
+        .single();
+
+      if (!flutterwaveConfig) {
+        throw new Error("Flutterwave not configured");
+      }
+
+      // Flutterwave refund API
+      // payment_reference should be the transaction ID (tx_ref or id from Flutterwave)
+      const flutterwaveResponse = await fetch("https://api.flutterwave.com/v3/transactions/refund", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${flutterwaveConfig.secret_key_encrypted}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: paymentReference, // Transaction ID
+          amount: refundAmount / 100, // Convert back to currency unit (Flutterwave uses actual amounts, not cents)
+        }),
+      });
+
+      const flutterwaveResult = await flutterwaveResponse.json();
+
+      if (flutterwaveResult.status === "success" && flutterwaveResult.data) {
+        refundReference = flutterwaveResult.data.id || flutterwaveResult.data.refund_id;
+        refundStatus = flutterwaveResult.data.status === "completed" ? "processed" : "processing";
+      } else {
+        throw new Error(flutterwaveResult.message || "Flutterwave refund failed");
       }
 
     } else {

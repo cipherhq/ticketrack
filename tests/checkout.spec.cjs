@@ -11,10 +11,10 @@ test.describe('Checkout Flow', () => {
     await expect(page.getByRole('button', { name: 'Browse Events' }).first()).toBeVisible();
   });
 
-  // TODO: Fix app bug - /my-tickets shows blank page when not logged in
-  // Should redirect to login or show "please login" message
-  test.skip('my tickets page loads', async ({ page }) => {
+  test('my tickets page redirects to login when not logged in', async ({ page }) => {
     await page.goto('/my-tickets');
-    await expect(page.locator('body')).toBeVisible();
+    // Should redirect to login page
+    await page.waitForURL(/.*\/login.*/, { timeout: 5000 });
+    await expect(page.url()).toContain('/login');
   });
 });

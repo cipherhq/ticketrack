@@ -12,7 +12,8 @@ import {
   Download, HelpCircle, Star, Search, Type, Palette, Users, Music,
   Utensils, Briefcase, Monitor, Armchair, Table2,
   LayoutGrid, PanelLeftClose, PanelRightClose, DoorOpen, Ticket,
-  Camera, Sparkles, MapPin, AlertTriangle, ShieldCheck, PartyPopper
+  Camera, Sparkles, MapPin, AlertTriangle, ShieldCheck, PartyPopper,
+  Box, FileText, MessageCircle, Bot, Wand2, Lightbulb, Zap
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,11 +35,8 @@ import {
 import { useOrganizer } from '@/contexts/OrganizerContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-// 3D System imports
-import { toIsometric, toPerspective, getObjectHeight, getTransformFunction } from '@/utils/3dTransform'
-import { getMaterialForObjectType, generateMaterialGradient, MATERIALS } from '@/utils/materials'
-import { DEFAULT_LIGHTS, calculateCombinedLight, getSurfaceNormal } from '@/utils/lighting'
-import { generateShadowFilters, getShadowFilter } from '@/utils/shadowFilters'
+// PDF export
+import jsPDF from 'jspdf'
 
 // =============================================================================
 // OBJECT LIBRARY - Comprehensive Categories and Items
@@ -313,62 +311,7 @@ const renderRealisticObject = (obj, scale = 1) => {
             </>
           )}
           
-          {/* Table base/legs - 3D perspective with center post */}
-          <g>
-            {/* Center post base - cylindrical with shading */}
-            <ellipse cx={cx} cy={cy + radius * 0.55} rx={radius * 0.08} ry={radius * 0.15} 
-                     fill="#3E2723" stroke="#000" strokeWidth={1} />
-            
-            {/* Center post - vertical with gradient */}
-            <rect x={cx - radius * 0.08} y={cy + radius * 0.55} width={radius * 0.16} height={radius * 0.45} 
-                  fill={`url(#leg-gradient-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} 
-                  stroke="#000" strokeWidth={1} rx={radius * 0.08} />
-            
-            {/* Post highlight - 3D effect */}
-            <rect x={cx - radius * 0.06} y={cy + radius * 0.57} width={radius * 0.05} height={radius * 0.41} 
-                  fill="#FFFFFF" opacity={0.2} rx={radius * 0.06} />
-            
-            {/* Base platform - where legs attach */}
-            <ellipse cx={cx} cy={cy + radius * 1.0} rx={radius * 0.25} ry={radius * 0.12} 
-                     fill="#3E2723" stroke="#000" strokeWidth={1.5} />
-            
-            {/* Legs - 5 legs for stability (typical round table) */}
-            {[0, 1, 2, 3, 4].map((i) => {
-              const legAngle = (i / 5) * Math.PI * 2
-              const legX = cx + Math.cos(legAngle) * radius * 0.15
-              const legY = cy + radius * 0.6 + Math.sin(legAngle) * radius * 0.05
-              const legEndX = cx + Math.cos(legAngle) * radius * 0.7
-              const legEndY = cy + radius * 1.05 + Math.sin(legAngle) * radius * 0.3
-              
-              return (
-                <g key={i}>
-                  {/* Leg - with taper */}
-                  <path 
-                    d={`M ${legX} ${legY} 
-                        L ${legEndX - Math.cos(legAngle) * 1.5} ${legEndY - Math.sin(legAngle) * 1.5}
-                        L ${legEndX + Math.cos(legAngle) * 1.5} ${legEndY + Math.sin(legAngle) * 1.5} Z`}
-                    fill={`url(#leg-gradient-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`}
-                    stroke="#000"
-                    strokeWidth={0.8}
-                  />
-                  {/* Leg highlight - 3D effect */}
-                  <line x1={legX} y1={legY} x2={legEndX} y2={legEndY} 
-                        stroke="#FFFFFF" strokeWidth={0.5} opacity={0.3} />
-                </g>
-              )
-            })}
-            
-            {/* Bottom feet - rubber pads */}
-            {[0, 1, 2, 3, 4].map((i) => {
-              const footAngle = (i / 5) * Math.PI * 2
-              const footX = cx + Math.cos(footAngle) * radius * 0.7
-              const footY = cy + radius * 1.05 + Math.sin(footAngle) * radius * 0.3
-              return (
-                <ellipse key={i} cx={footX} cy={footY} rx={2.5} ry={1.5} 
-                         fill="#1a1a1a" stroke="#000" strokeWidth={0.5} />
-              )
-            })}
-          </g>
+          {/* Table base removed - no legs */}
           
           {/* Inner detail ring - table edge profile */}
           <circle cx={cx} cy={cy} r={radius * 0.95} fill="none" 
@@ -383,9 +326,7 @@ const renderRealisticObject = (obj, scale = 1) => {
           {/* Table top */}
           <rect x={2} y={2} width={w - 4} height={h - 4} rx={2} fill={fillColor} stroke="#000" strokeWidth={1} />
           <rect x={4} y={4} width={w - 8} height={h - 8} fill="none" stroke="#000" strokeWidth={0.5} opacity={0.3} />
-          {/* Table legs */}
-          <rect x={w * 0.15} y={h - 6} width={3} height={4} fill="#4a4a4a" />
-          <rect x={w * 0.85 - 3} y={h - 6} width={3} height={4} fill="#4a4a4a" />
+          {/* Table legs removed */}
         </>
       )
 
@@ -394,8 +335,7 @@ const renderRealisticObject = (obj, scale = 1) => {
       return (
         <>
           <circle cx={cx} cy={cy - 4} r={Math.min(w, h) / 2 - 2} fill={fillColor} stroke="#000" strokeWidth={1} />
-          <rect x={cx - 2} y={cy - 4} width={4} height={h - Math.min(w, h) / 2 + 4} fill="#4a4a4a" />
-          <circle cx={cx} cy={h - 4} r={6} fill="#4a4a4a" />
+          {/* Legs removed */}
         </>
       )
 
@@ -403,7 +343,7 @@ const renderRealisticObject = (obj, scale = 1) => {
       return (
         <>
           <ellipse cx={cx} cy={cy} rx={w / 2 - 2} ry={h / 2 - 2} fill={fillColor} stroke="#000" strokeWidth={1} />
-          <rect x={cx - 2} y={cy} width={4} height={h / 2} fill="#4a4a4a" />
+          {/* Legs removed */}
         </>
       )
 
@@ -418,9 +358,7 @@ const renderRealisticObject = (obj, scale = 1) => {
           <rect x={w * 0.2} y={h * 0.3} width={w * 0.6} height={h * 0.3} rx={1} fill={fillColor} stroke="#000" strokeWidth={0.5} />
           {/* Backrest */}
           <rect x={w * 0.2} y={h * 0.1} width={w * 0.6} height={h * 0.2} rx={1} fill={fillColor} stroke="#000" strokeWidth={0.5} />
-          {/* Legs */}
-          <rect x={w * 0.25} y={h * 0.6} width={1.5} height={h * 0.4} fill="#4a4a4a" />
-          <rect x={w * 0.75 - 1.5} y={h * 0.6} width={1.5} height={h * 0.4} fill="#4a4a4a" />
+          {/* Legs removed */}
         </>
       )
 
@@ -443,16 +381,85 @@ const renderRealisticObject = (obj, scale = 1) => {
     case 'stage':
       return (
         <>
-          {/* Stage platform */}
-          <rect x={0} y={h * 0.7} width={w} height={h * 0.3} fill={fillColor} stroke="#000" strokeWidth={1} />
-          {/* Stage front */}
-          <rect x={0} y={h * 0.7} width={w} height={4} fill="#5a5a5a" />
-          {/* Stage supports */}
-          {[w * 0.1, w * 0.5, w * 0.9].map(x => (
-            <rect key={x} x={x - 2} y={h * 0.7} width={4} height={h * 0.3} fill="#4a4a4a" />
+          <defs>
+            {/* Stage platform gradient - realistic wood/floor texture */}
+            <linearGradient id={`stage-platform-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#6D4C41" />
+              <stop offset="30%" stopColor="#5D4037" />
+              <stop offset="70%" stopColor="#4E342E" />
+              <stop offset="100%" stopColor="#3E2723" />
+            </linearGradient>
+            {/* Stage front edge gradient */}
+            <linearGradient id={`stage-front-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#8D6E63" />
+              <stop offset="50%" stopColor="#6D4C41" />
+              <stop offset="100%" stopColor="#5D4037" />
+            </linearGradient>
+            {/* Stage shadow */}
+            <linearGradient id={`stage-shadow-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#000000" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          
+          {/* Stage shadow on floor */}
+          <ellipse cx={cx} cy={h * 0.95} rx={w * 0.48} ry={h * 0.1} fill={`url(#stage-shadow-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} />
+          
+          {/* Stage platform - raised platform with depth */}
+          <rect x={0} y={h * 0.65} width={w} height={h * 0.35} fill={`url(#stage-platform-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke="#000" strokeWidth={1.5} />
+          
+          {/* Stage front edge - prominent front face */}
+          <rect x={0} y={h * 0.65} width={w} height={h * 0.08} fill={`url(#stage-front-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke="#000" strokeWidth={1.5} />
+          
+          {/* Stage floor planks - wood grain texture */}
+          {Array.from({ length: Math.floor(w / 20) }).map((_, i) => (
+            <line 
+              key={i} 
+              x1={i * 20} 
+              y1={h * 0.65} 
+              x2={i * 20} 
+              y2={h} 
+              stroke="#4E342E" 
+              strokeWidth={0.5} 
+              opacity={0.3} 
+            />
           ))}
-          {/* Stage label */}
-          <text x={cx} y={h * 0.85} textAnchor="middle" fill="white" fontSize={Math.min(10, w / 15)} fontWeight="bold">STAGE</text>
+          
+          {/* Stage supports/legs - visible supports */}
+          {[w * 0.1, w * 0.3, w * 0.5, w * 0.7, w * 0.9].map(x => (
+            <g key={x}>
+              {/* Support post */}
+              <rect x={x - 3} y={h * 0.65} width={6} height={h * 0.35} fill="#3E2723" stroke="#000" strokeWidth={1} />
+              {/* Support base */}
+              <rect x={x - 4} y={h * 0.98} width={8} height={h * 0.02} fill="#1a1a1a" stroke="#000" strokeWidth={0.5} />
+            </g>
+          ))}
+          
+          {/* Stage edge highlight - top edge */}
+          <line x1={0} y1={h * 0.65} x2={w} y2={h * 0.65} stroke="#8D6E63" strokeWidth={1} opacity={0.5} />
+          
+          {/* Stage label - centered */}
+          <text 
+            x={cx} 
+            y={h * 0.82} 
+            textAnchor="middle" 
+            fill="white" 
+            fontSize={Math.min(14, w / 12)} 
+            fontWeight="bold"
+            style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
+          >
+            STAGE
+          </text>
+          
+          {/* Optional: Stage steps/stairs at front */}
+          {h > 40 && (
+            <>
+              {/* Step 1 */}
+              <rect x={w * 0.1} y={h * 0.73} width={w * 0.8} height={h * 0.02} fill="#8D6E63" stroke="#000" strokeWidth={0.5} />
+              {/* Step 2 */}
+              <rect x={w * 0.15} y={h * 0.76} width={w * 0.7} height={h * 0.02} fill="#8D6E63" stroke="#000" strokeWidth={0.5} />
+            </>
+          )}
         </>
       )
 
@@ -885,8 +892,51 @@ const renderRealisticObject = (obj, scale = 1) => {
     case 'tv-65':
       return (
         <>
-          <rect x={0} y={0} width={w} height={h} fill="#263238" stroke="#000" strokeWidth={1} rx={1} />
-          <rect x={1} y={1} width={w - 2} height={h - 2} fill="#000" />
+          <defs>
+            {/* TV screen gradient - realistic screen glow */}
+            <linearGradient id={`tv-screen-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#1a1a2e" stopOpacity="0.9" />
+              <stop offset="30%" stopColor="#000000" stopOpacity="1" />
+              <stop offset="70%" stopColor="#000000" stopOpacity="1" />
+              <stop offset="100%" stopColor="#1a1a2e" stopOpacity="0.9" />
+            </linearGradient>
+            {/* TV bezel gradient */}
+            <linearGradient id={`tv-bezel-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#424242" />
+              <stop offset="50%" stopColor="#263238" />
+              <stop offset="100%" stopColor="#1a1a1a" />
+            </linearGradient>
+            {/* Screen reflection */}
+            <linearGradient id={`tv-reflection-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.15" />
+              <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          
+          {/* TV outer bezel/frame - realistic TV frame */}
+          <rect x={0} y={0} width={w} height={h} rx={h * 0.08} fill={`url(#tv-bezel-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke="#000" strokeWidth={1.5} />
+          
+          {/* TV inner bezel - thinner border around screen */}
+          <rect x={w * 0.05} y={h * 0.05} width={w * 0.9} height={h * 0.9} rx={h * 0.06} fill="#1a1a1a" stroke="#000" strokeWidth={1} />
+          
+          {/* TV screen - realistic black screen with slight glow */}
+          <rect x={w * 0.08} y={h * 0.08} width={w * 0.84} height={h * 0.84} rx={h * 0.04} fill={`url(#tv-screen-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} />
+          
+          {/* Screen reflection - realistic light reflection on screen */}
+          <rect x={w * 0.08} y={h * 0.08} width={w * 0.84} height={h * 0.84} rx={h * 0.04} fill={`url(#tv-reflection-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} />
+          
+          {/* TV stand/base - if TV is tall enough */}
+          {h > 20 && (
+            <>
+              <rect x={w * 0.3} y={h * 0.95} width={w * 0.4} height={h * 0.05} rx={1} fill="#1a1a1a" stroke="#000" strokeWidth={0.5} />
+              {/* Stand support */}
+              <rect x={w * 0.45} y={h * 0.92} width={w * 0.1} height={h * 0.03} fill="#263238" stroke="#000" strokeWidth={0.5} />
+            </>
+          )}
+          
+          {/* TV indicator light (power LED) - small red/green dot */}
+          <circle cx={w * 0.92} cy={h * 0.1} r={1.5} fill="#4CAF50" opacity={0.8} />
         </>
       )
 
@@ -1108,6 +1158,80 @@ const renderRealisticObject = (obj, scale = 1) => {
         </>
       )
 
+    // ===== CONTAINER AREAS (VIP, LOUNGE) =====
+    case 'vip-section':
+      return (
+        <>
+          <defs>
+            {/* VIP section gradient - luxurious purple */}
+            <linearGradient id={`vip-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#9C27B0" stopOpacity="0.3" />
+              <stop offset="50%" stopColor="#7B1FA2" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#6A1B9A" stopOpacity="0.3" />
+            </linearGradient>
+            {/* VIP border gradient */}
+            <linearGradient id={`vip-border-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#E1BEE7" />
+              <stop offset="50%" stopColor="#9C27B0" />
+              <stop offset="100%" stopColor="#6A1B9A" />
+            </linearGradient>
+          </defs>
+          {/* VIP section area - semi-transparent with border */}
+          <rect x={0} y={0} width={w} height={h} rx={4} fill={`url(#vip-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke={`url(#vip-border-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} strokeWidth={3} strokeDasharray="8 4" />
+          {/* VIP label - prominent */}
+          <text 
+            x={cx} 
+            y={h * 0.1} 
+            textAnchor="middle" 
+            fill="#9C27B0" 
+            fontSize={Math.min(16, w / 8)} 
+            fontWeight="bold"
+            style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}
+          >
+            VIP SECTION
+          </text>
+          {/* Decorative corner accents */}
+          <circle cx={w * 0.1} cy={h * 0.1} r={4} fill="#9C27B0" opacity={0.6} />
+          <circle cx={w * 0.9} cy={h * 0.1} r={4} fill="#9C27B0" opacity={0.6} />
+          <circle cx={w * 0.1} cy={h * 0.9} r={4} fill="#9C27B0" opacity={0.6} />
+          <circle cx={w * 0.9} cy={h * 0.9} r={4} fill="#9C27B0" opacity={0.6} />
+        </>
+      )
+
+    case 'lounge-area':
+      return (
+        <>
+          <defs>
+            {/* Lounge area gradient - warm brown */}
+            <linearGradient id={`lounge-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#5D4037" stopOpacity="0.3" />
+              <stop offset="50%" stopColor="#4E342E" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#3E2723" stopOpacity="0.3" />
+            </linearGradient>
+            {/* Lounge border */}
+            <linearGradient id={`lounge-border-${obj.id.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8D6E63" />
+              <stop offset="50%" stopColor="#5D4037" />
+              <stop offset="100%" stopColor="#3E2723" />
+            </linearGradient>
+          </defs>
+          {/* Lounge area - semi-transparent with border */}
+          <rect x={0} y={0} width={w} height={h} rx={4} fill={`url(#lounge-grad-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} stroke={`url(#lounge-border-${obj.id.replace(/[^a-zA-Z0-9]/g, '')})`} strokeWidth={2} strokeDasharray="6 3" />
+          {/* Lounge label */}
+          <text 
+            x={cx} 
+            y={h * 0.1} 
+            textAnchor="middle" 
+            fill="#5D4037" 
+            fontSize={Math.min(14, w / 10)} 
+            fontWeight="bold"
+            style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}
+          >
+            LOUNGE
+          </text>
+        </>
+      )
+
     // Default fallback
     default:
       const isRound = obj.type.includes('round') || obj.type === 'cocktail' || obj.type === 'highboy'
@@ -1123,7 +1247,7 @@ const renderRealisticObject = (obj, scale = 1) => {
 // OPTIMIZED CANVAS OBJECT COMPONENT
 // =============================================================================
 
-const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart, onResizeStart, viewMode = '2d', cameraAngle = 30, canvasWidth = 1200, canvasHeight = 800 }) => {
+const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart, onResizeStart, canvasWidth = 1200, canvasHeight = 800 }) => {
   const handleMouseDown = (e) => {
     e.stopPropagation()
     onSelect(obj.id, e.shiftKey)
@@ -1198,62 +1322,40 @@ const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart, onResizeSta
     })
   }
 
-  // Calculate 3D transform based on view mode
+  // Transform for 2D view only
   const getTransform = () => {
-    if (viewMode === '2d') {
-      return `translate(${obj.x}, ${obj.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
-    } else if (viewMode === 'isometric') {
-      const z = getObjectHeight(obj.type, obj.width, obj.height)
-      const iso = toIsometric(obj.x, obj.y, z, { angle: cameraAngle, scale: 1 })
-      return `translate(${iso.x}, ${iso.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
-    } else {
-      // Perspective view
-      const z = getObjectHeight(obj.type, obj.width, obj.height)
-      const persp = toPerspective(obj.x, obj.y, z, {
-        position: { x: 0, y: -canvasWidth * 0.8, z: canvasHeight * 0.6 },
-        target: { x: canvasWidth / 2, y: canvasHeight / 2, z: 0 },
-        fov: 60,
-      })
-      if (persp.x === null) return null // Object out of view
-      return `translate(${persp.x}, ${persp.y}) scale(${persp.scale}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
-    }
+    return `translate(${obj.x}, ${obj.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
   }
-
-  const transform = getTransform()
-  if (!transform) return null // Don't render if out of view
-
-  // Get material for object
-  const material = getMaterialForObjectType(obj.type, obj.color)
-  const shadowFilterId = getShadowFilter(obj.type, obj.height)
 
   return (
     <g
-      transform={transform}
+      transform={getTransform()}
       style={{ cursor: obj.locked ? 'not-allowed' : 'move' }}
       onMouseDown={handleMouseDown}
-      filter={viewMode !== '2d' ? `url(#${shadowFilterId})` : undefined}
+      filter={undefined}
     >
-      {/* Render realistic object */}
+      {/* Render 2D object */}
       {renderRealisticObject(obj)}
 
       {/* Chairs around tables */}
       {renderChairs()}
 
-      {/* Label */}
-      {(obj.label || obj.tableNumber) && !obj.type.includes('stage') && !obj.type.includes('bar') && 
-       !obj.type.includes('buffet') && !obj.type.includes('check-in') && !obj.type.includes('registration') &&
-       !obj.type.includes('exit') && !obj.type.includes('entrance') && !obj.type.includes('security') &&
-       !obj.type.includes('first-aid') && !obj.type.includes('info') && !obj.type.includes('photo-booth') && (
+      {/* Label - Show name, label, or table number */}
+      {(obj.name || obj.label || obj.tableNumber) && (
         <text
           x={obj.width / 2}
           y={obj.height / 2 + 4}
           textAnchor="middle"
           fill="white"
-          fontSize={Math.min(12, obj.width / 6)}
+          fontSize={Math.min(10, Math.max(8, obj.width / 10))}
           fontWeight="600"
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
+          style={{ 
+            pointerEvents: 'none', 
+            userSelect: 'none',
+            textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
+          }}
         >
-          {obj.tableNumber || obj.label}
+          {obj.tableNumber || obj.label || obj.name}
         </text>
       )}
 
@@ -1311,9 +1413,31 @@ export function VenueLayoutDesigner() {
   const [searchQuery, setSearchQuery] = useState('')
   const [tool, setTool] = useState('select')
   
-  // 3D View Mode
-  const [viewMode, setViewMode] = useState('2d') // '2d', 'isometric', 'perspective'
-  const [cameraAngle, setCameraAngle] = useState(30) // For isometric view
+  // View Mode - 2D only (3D disabled)
+  const viewMode = '2d' // Always 2D
+  
+  // AI Assistant
+  const [aiPanelOpen, setAiPanelOpen] = useState(false)
+  const [aiMessages, setAiMessages] = useState([
+    { role: 'assistant', content: "Hi! I'm your AI venue design assistant. I can help you:\n\n• Auto-arrange objects with optimal spacing\n• Suggest layouts based on event type\n• Optimize capacity and flow\n• Answer design questions\n• Generate layouts from a questionnaire\n\nTry asking: 'Arrange tables for 100 guests' or 'Generate layout from questions'!" }
+  ])
+  const [aiInput, setAiInput] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  
+  // Layout Generator Questionnaire
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false)
+  const [questionnaireStep, setQuestionnaireStep] = useState(0)
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState({
+    eventType: '',
+    guestCount: 50,
+    seatingStyle: 'round-tables',
+    stageNeeded: true,
+    danceFloorNeeded: false,
+    barNeeded: true,
+    foodStations: 0,
+    vipSection: false,
+    layoutStyle: 'traditional'
+  })
 
   // Drag state - using refs to avoid re-renders
   const dragState = useRef({
@@ -1489,6 +1613,49 @@ export function VenueLayoutDesigner() {
   }, [])
 
   // =============================================================================
+  // CONTAINER DETECTION - For nested objects
+  // =============================================================================
+
+  // Check if a point is inside a container object
+  const isPointInContainer = useCallback((x, y, container) => {
+    if (!container) return null
+    // Container types that can hold nested objects
+    const containerTypes = ['vip-section', 'lounge-area']
+    if (!containerTypes.includes(container.type)) return null
+    
+    // Check if point is within container bounds
+    const isInside = x >= container.x && 
+                     x <= container.x + container.width &&
+                     y >= container.y && 
+                     y <= container.y + container.height
+    return isInside ? container : null
+  }, [])
+
+  // Find container at a given point
+  const findContainerAtPoint = useCallback((x, y) => {
+    // Check containers in reverse order (top to bottom)
+    const containers = objects.filter(obj => 
+      ['vip-section', 'lounge-area'].includes(obj.type)
+    )
+    
+    // Sort by z-index (larger objects first, then by creation order)
+    const sortedContainers = containers.sort((a, b) => {
+      const aArea = a.width * a.height
+      const bArea = b.width * b.height
+      if (aArea !== bArea) return bArea - aArea
+      return 0
+    })
+    
+    // Find the first container that contains this point
+    for (const container of sortedContainers) {
+      if (isPointInContainer(x, y, container)) {
+        return container
+      }
+    }
+    return null
+  }, [objects, isPointInContainer])
+
+  // =============================================================================
   // MOUSE HANDLERS - Optimized
   // =============================================================================
 
@@ -1607,8 +1774,62 @@ export function VenueLayoutDesigner() {
       ))
     } else if (dragState.current.isDragging) {
       // Handle dragging
-      const newX = snapValue(dragState.current.objectStartX + dx)
-      const newY = snapValue(dragState.current.objectStartY + dy)
+      let newX = snapValue(dragState.current.objectStartX + dx)
+      let newY = snapValue(dragState.current.objectStartY + dy)
+
+      const draggedObj = objects.find(o => o.id === dragState.current.draggedId)
+      if (!draggedObj) return
+
+      // Check if object is being dragged into/out of a container
+      const centerX = newX + draggedObj.width / 2
+      const centerY = newY + draggedObj.height / 2
+      
+      // Use findContainerAtPoint function (defined earlier)
+      const containers = objects.filter(obj => 
+        ['vip-section', 'lounge-area'].includes(obj.type)
+      )
+      const sortedContainers = containers.sort((a, b) => {
+        const aArea = a.width * a.height
+        const bArea = b.width * b.height
+        if (aArea !== bArea) return bArea - aArea
+        return 0
+      })
+      let newContainer = null
+      for (const container of sortedContainers) {
+        const isInside = centerX >= container.x && 
+                         centerX <= container.x + container.width &&
+                         centerY >= container.y && 
+                         centerY <= container.y + container.height
+        if (isInside) {
+          newContainer = container
+          break
+        }
+      }
+
+      // If object has a parent container, constrain movement
+      if (draggedObj.parentId) {
+        const parentContainer = objects.find(o => o.id === draggedObj.parentId)
+        if (parentContainer) {
+          // If still inside parent, constrain to bounds
+          if (newContainer?.id === parentContainer.id) {
+            const padding = 4
+            newX = Math.max(parentContainer.x + padding, 
+                     Math.min(newX, parentContainer.x + parentContainer.width - draggedObj.width - padding))
+            newY = Math.max(parentContainer.y + padding, 
+                     Math.min(newY, parentContainer.y + parentContainer.height - draggedObj.height - padding))
+          } else {
+            // Moved outside parent - allow free movement but keep parentId for now
+            // Will be updated on mouse up
+          }
+        }
+      } else if (newContainer) {
+        // Object is being dragged into a container - constrain to container bounds
+        const padding = 4
+        newX = Math.max(newContainer.x + padding, 
+                 Math.min(newX, newContainer.x + newContainer.width - draggedObj.width - padding))
+        newY = Math.max(newContainer.y + padding, 
+                 Math.min(newY, newContainer.y + newContainer.height - draggedObj.height - padding))
+      }
 
       setObjects(prev => prev.map(obj =>
         obj.id === dragState.current.draggedId
@@ -1616,25 +1837,55 @@ export function VenueLayoutDesigner() {
           : obj
       ))
     }
-  }, [getCanvasCoords, snapValue, snapToGrid])
+  }, [getCanvasCoords, snapValue, snapToGrid, objects])
 
-  const handleCanvasMouseUp = useCallback(() => {
+  const handleCanvasMouseUp = useCallback((e) => {
+    // Always clear drag state, even if not currently dragging (prevents stuck state)
     if (dragState.current.isDragging || dragState.current.isResizing) {
-      saveToHistory(objects)
-      dragState.current = {
-        isDragging: false,
-        isResizing: false,
-        resizeHandle: null,
-        draggedId: null,
-        startX: 0,
-        startY: 0,
-        objectStartX: 0,
-        objectStartY: 0,
-        objectStartWidth: 0,
-        objectStartHeight: 0
-      }
+      // Get current objects state for parentId update
+      setObjects(currentObjects => {
+        let updatedObjects = currentObjects
+        
+        // Update parentId based on final position if dragging
+        if (dragState.current.isDragging && dragState.current.draggedId) {
+          const draggedObj = currentObjects.find(o => o.id === dragState.current.draggedId)
+          if (draggedObj) {
+            const centerX = draggedObj.x + draggedObj.width / 2
+            const centerY = draggedObj.y + draggedObj.height / 2
+            const newContainer = findContainerAtPoint(centerX, centerY)
+            
+            // Update parentId if container changed
+            if (newContainer?.id !== draggedObj.parentId) {
+              updatedObjects = currentObjects.map(obj =>
+                obj.id === dragState.current.draggedId
+                  ? { ...obj, parentId: newContainer?.id || null }
+                  : obj
+              )
+            }
+          }
+        }
+        
+        // Save to history
+        saveToHistory(updatedObjects)
+        
+        return updatedObjects
+      })
     }
-  }, [objects, saveToHistory])
+    
+    // Always reset drag state, even if not dragging (safety measure)
+    dragState.current = {
+      isDragging: false,
+      isResizing: false,
+      resizeHandle: null,
+      draggedId: null,
+      startX: 0,
+      startY: 0,
+      objectStartX: 0,
+      objectStartY: 0,
+      objectStartWidth: 0,
+      objectStartHeight: 0
+    }
+  }, [saveToHistory, findContainerAtPoint])
 
   // =============================================================================
   // DRAG FROM LIBRARY
@@ -1648,12 +1899,29 @@ export function VenueLayoutDesigner() {
     const item = JSON.parse(data)
     const coords = getCanvasCoords(e)
     
+    // Check if dropping inside a container
+    const container = findContainerAtPoint(coords.x, coords.y)
+    
+    // Calculate position relative to container if inside one
+    let finalX = snapValue(coords.x - item.width / 2)
+    let finalY = snapValue(coords.y - item.height / 2)
+    
+    // If inside container, ensure object stays within bounds
+    if (container) {
+      // Constrain to container bounds with padding
+      const padding = 4
+      finalX = Math.max(container.x + padding, 
+               Math.min(finalX, container.x + container.width - item.width - padding))
+      finalY = Math.max(container.y + padding, 
+               Math.min(finalY, container.y + container.height - item.height - padding))
+    }
+    
     const newObject = {
       id: `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: item.type,
       name: item.name,
-      x: snapValue(coords.x - item.width / 2),
-      y: snapValue(coords.y - item.height / 2),
+      x: finalX,
+      y: finalY,
       width: item.width,
       height: item.height,
       rotation: 0,
@@ -1663,13 +1931,14 @@ export function VenueLayoutDesigner() {
       visible: true,
       label: item.label || '',
       tableNumber: '',
+      parentId: container ? container.id : null, // Track parent container
     }
     
     const newObjects = [...objects, newObject]
     setObjects(newObjects)
     saveToHistory(newObjects)
     setSelectedIds([newObject.id])
-  }, [objects, getCanvasCoords, snapValue, saveToHistory])
+  }, [objects, getCanvasCoords, snapValue, saveToHistory, findContainerAtPoint])
 
   // =============================================================================
   // SAVE LAYOUT
@@ -1790,6 +2059,22 @@ export function VenueLayoutDesigner() {
   }, [organizer?.id, organizer?.user_id, user?.id, venueId, layoutId, layoutName, canvasWidth, canvasHeight, objects, gridSize, showGrid, zoom, snapToGrid, navigate])
 
   // =============================================================================
+  // GLOBAL MOUSE UP LISTENER - Ensures drag state is cleared
+  // =============================================================================
+
+  useEffect(() => {
+    const handleGlobalMouseUp = (e) => {
+      // Clear drag state if mouse is released anywhere
+      if (dragState.current.isDragging || dragState.current.isResizing) {
+        handleCanvasMouseUp(e)
+      }
+    }
+
+    window.addEventListener('mouseup', handleGlobalMouseUp)
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp)
+  }, [handleCanvasMouseUp])
+
+  // =============================================================================
   // KEYBOARD SHORTCUTS
   // =============================================================================
 
@@ -1829,12 +2114,482 @@ export function VenueLayoutDesigner() {
   }, [objects, deleteSelected, duplicateSelected, undo, redo, saveLayout])
 
   // =============================================================================
+  // PDF EXPORT
+  // =============================================================================
+
+  const exportToPDF = useCallback(async () => {
+    try {
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      })
+
+      // Calculate dimensions in feet (assuming 12 pixels per foot)
+      const widthInFeet = canvasWidth / 12
+      const heightInFeet = canvasHeight / 12
+
+      // Add title
+      pdf.setFontSize(20)
+      pdf.text(layoutName || 'Venue Layout', 20, 20)
+
+      // Add metadata
+      pdf.setFontSize(12)
+      pdf.text(`Canvas: ${widthInFeet.toFixed(1)}ft × ${heightInFeet.toFixed(1)}ft`, 20, 30)
+      pdf.text(`Objects: ${objects.length}`, 20, 36)
+      pdf.text(`Date: ${new Date().toLocaleDateString()}`, 20, 42)
+
+      // Convert SVG to image using html2canvas approach
+      const svgElement = canvasRef.current
+      if (svgElement) {
+        // Create a temporary canvas to render SVG
+        const svgData = new XMLSerializer().serializeToString(svgElement)
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+        const svgUrl = URL.createObjectURL(svgBlob)
+
+        const img = new Image()
+        img.onload = () => {
+          const imgWidth = 190 // A4 width minus margins
+          const imgHeight = (img.height * imgWidth) / img.width
+          
+          pdf.addImage(img, 'PNG', 20, 50, imgWidth, imgHeight)
+          pdf.save(`${layoutName || 'venue-layout'}.pdf`)
+          URL.revokeObjectURL(svgUrl)
+        }
+        img.src = svgUrl
+      } else {
+        // Fallback: just save the PDF with metadata
+        pdf.save(`${layoutName || 'venue-layout'}.pdf`)
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error)
+      alert('Failed to export PDF. Please try again.')
+    }
+  }, [layoutName, canvasWidth, canvasHeight, objects])
+
+  // =============================================================================
+  // AI ASSISTANT
+  // =============================================================================
+
+  const handleAiQuery = useCallback(async (query) => {
+    if (!query.trim()) return
+
+    const userMessage = { role: 'user', content: query }
+    setAiMessages(prev => [...prev, userMessage])
+    setAiInput('')
+    setAiLoading(true)
+
+    // Simulate AI processing (in production, this would call an AI API)
+    setTimeout(() => {
+      const lowerQuery = query.toLowerCase()
+      let response = ''
+
+      // Auto-arrange commands
+      if (lowerQuery.includes('arrange') || lowerQuery.includes('auto') || lowerQuery.includes('layout')) {
+        const guestCount = parseInt(query.match(/\d+/)?.[0] || '50')
+        response = autoArrangeLayout(guestCount)
+      }
+      // Event type suggestions
+      else if (lowerQuery.includes('wedding') || lowerQuery.includes('marriage')) {
+        response = suggestWeddingLayout()
+      }
+      else if (lowerQuery.includes('conference') || lowerQuery.includes('meeting')) {
+        response = suggestConferenceLayout()
+      }
+      else if (lowerQuery.includes('party') || lowerQuery.includes('celebration')) {
+        response = suggestPartyLayout()
+      }
+      else if (lowerQuery.includes('capacity') || lowerQuery.includes('seating')) {
+        response = calculateCapacity()
+      }
+      else if (lowerQuery.includes('spacing') || lowerQuery.includes('distance')) {
+        response = suggestSpacing()
+      }
+      else if (lowerQuery.includes('flow') || lowerQuery.includes('traffic')) {
+        response = suggestFlowOptimization()
+      }
+      else if (lowerQuery.includes('help') || lowerQuery.includes('what can you')) {
+        response = `I can help you with:\n\n• Auto-arranging objects: "Arrange tables for 100 guests"\n• Event layouts: "Suggest a wedding layout"\n• Capacity: "What's my current capacity?"\n• Spacing: "Check spacing between tables"\n• Flow: "Optimize traffic flow"\n• General questions about venue design\n\nJust ask me anything!`
+      }
+      else {
+        response = `I understand you're asking about "${query}". Here are some suggestions:\n\n• Try "Arrange tables for [number] guests" to auto-arrange\n• Ask "Suggest a [event type] layout" for event-specific designs\n• Use "What's my capacity?" to check seating\n• Say "Optimize spacing" for spacing recommendations\n\nNeed more specific help? Describe what you're trying to achieve!`
+      }
+
+      setAiMessages(prev => [...prev, { role: 'assistant', content: response }])
+      setAiLoading(false)
+    }, 800)
+  }, [objects, saveToHistory])
+
+  const autoArrangeLayout = (guestCount) => {
+    const tables = objects.filter(o => o.type.includes('table') || o.type.includes('chair'))
+    if (tables.length === 0) {
+      return `I don't see any tables to arrange. Add some tables first, then ask me to arrange them!`
+    }
+
+    // Clear existing table positions
+    const otherObjects = objects.filter(o => !o.type.includes('table') && !o.type.includes('chair'))
+    
+    // Calculate grid layout
+    const tablesPerRow = Math.ceil(Math.sqrt(tables.length))
+    const spacing = 120 // 10 feet spacing
+    const startX = 200
+    const startY = 200
+
+    const newTablePositions = tables.map((table, index) => {
+      const row = Math.floor(index / tablesPerRow)
+      const col = index % tablesPerRow
+      return {
+        ...table,
+        x: startX + col * spacing,
+        y: startY + row * spacing
+      }
+    })
+
+    setObjects([...otherObjects, ...newTablePositions])
+    saveToHistory([...otherObjects, ...newTablePositions])
+
+    return `✅ Arranged ${tables.length} tables in a grid layout for approximately ${guestCount} guests!\n\n• Spacing: 10ft between tables\n• Layout: ${tablesPerRow} tables per row\n• Total capacity: ~${tables.reduce((sum, t) => sum + (t.seats || 8), 0)} seats\n\nYou can adjust individual table positions as needed.`
+  }
+
+  const suggestWeddingLayout = () => {
+    return `💒 Wedding Layout Suggestions:\n\n• Head Table: Place at front, elevated if possible\n• Guest Tables: 8-10 person round tables, 10ft spacing\n• Dance Floor: Center or near stage, 20x20ft minimum\n• Bar: 2-3 bars around perimeter for easy access\n• Photo Booth: Near entrance or in corner\n• Sweetheart Table: Optional, near head table\n\nWould you like me to auto-arrange a wedding layout? Say "Arrange wedding layout"!`
+  }
+
+  const suggestConferenceLayout = () => {
+    return `📊 Conference Layout Suggestions:\n\n• Stage: Front center, elevated\n• Seating: Theater style (chairs in rows) or classroom (tables with chairs)\n• Aisles: 3-4ft wide for easy access\n• Registration: Near entrance\n• Break Area: Separate space with refreshments\n• Networking: Cocktail tables in break area\n\nSay "Arrange conference layout" to auto-arrange!`
+  }
+
+  const suggestPartyLayout = () => {
+    return `🎉 Party Layout Suggestions:\n\n• Dance Floor: Large central area, 24x24ft minimum\n• Bar: Multiple bars around perimeter\n• Seating: Mix of cocktail tables and lounge areas\n• Stage/DJ: One end of dance floor\n• Food Stations: Around perimeter, not blocking flow\n• VIP Area: Elevated or roped off section\n\nWant me to create this layout? Ask me to "Arrange party layout"!`
+  }
+
+  const calculateCapacity = () => {
+    const tables = objects.filter(o => o.type.includes('table'))
+    const chairs = objects.filter(o => o.type === 'chair' || o.type === 'banquet-chair')
+    const chairRows = objects.filter(o => o.type === 'chair-row')
+    
+    const tableSeats = tables.reduce((sum, t) => sum + (t.seats || 0), 0)
+    const individualChairs = chairs.length
+    const rowSeats = chairRows.reduce((sum, r) => sum + (r.seats || 10), 0)
+    const totalCapacity = tableSeats + individualChairs + rowSeats
+
+    return `📊 Current Capacity Analysis:\n\n• Tables: ${tables.length} tables, ${tableSeats} seats\n• Individual Chairs: ${individualChairs} seats\n• Chair Rows: ${chairRows.length} rows, ${rowSeats} seats\n• **Total Capacity: ${totalCapacity} guests**\n\n💡 Tip: Add more tables or chair rows to increase capacity!`
+  }
+
+  const suggestSpacing = () => {
+    const tables = objects.filter(o => o.type.includes('table'))
+    if (tables.length < 2) {
+      return `Add at least 2 tables to check spacing recommendations.`
+    }
+
+    // Check spacing between tables
+    let spacingIssues = []
+    tables.forEach((table1, i) => {
+      tables.slice(i + 1).forEach((table2, j) => {
+        const distance = Math.sqrt(
+          Math.pow(table1.x - table2.x, 2) + Math.pow(table1.y - table2.y, 2)
+        )
+        const minSpacing = 120 // 10 feet minimum
+        if (distance < minSpacing) {
+          spacingIssues.push(`Tables ${i + 1} and ${i + j + 2} are too close (${Math.round(distance / 12)}ft, need 10ft+)`)
+        }
+      })
+    })
+
+    if (spacingIssues.length === 0) {
+      return `✅ Spacing looks good! All tables have adequate spacing (10ft+ between tables).`
+    } else {
+      return `⚠️ Spacing Recommendations:\n\n${spacingIssues.join('\n')}\n\n💡 Minimum spacing: 10ft (120px) between tables for comfortable movement.`
+    }
+  }
+
+  const suggestFlowOptimization = () => {
+    const entrances = objects.filter(o => o.type === 'entrance' || o.type === 'vip-entrance')
+    const exits = objects.filter(o => o.type === 'exit')
+    const tables = objects.filter(o => o.type.includes('table'))
+    
+    let suggestions = []
+    
+    if (entrances.length === 0) {
+      suggestions.push('• Add an entrance near the top of your layout')
+    }
+    if (exits.length === 0) {
+      suggestions.push('• Add exit doors for safety compliance')
+    }
+    if (tables.length > 0) {
+      suggestions.push('• Ensure clear pathways (4ft minimum) between table groups')
+      suggestions.push('• Place high-traffic areas (bar, food) near entrance but not blocking it')
+    }
+
+    return `🚶 Traffic Flow Optimization:\n\n${suggestions.join('\n')}\n\n💡 Best Practices:\n• Create clear pathways from entrance to seating\n• Place bars/food stations around perimeter\n• Keep dance floor/stage accessible from all areas\n• Ensure exits are clearly marked and accessible`
+  }
+
+  // =============================================================================
+  // LAYOUT GENERATOR FROM QUESTIONNAIRE
+  // =============================================================================
+
+  const generateLayoutFromQuestionnaire = useCallback(() => {
+    const answers = questionnaireAnswers
+    const generatedObjects = []
+    let currentX = 100
+    let currentY = 100
+    const spacing = 120 // 10ft spacing
+
+    // Add entrance
+    generatedObjects.push({
+      id: `gen-${Date.now()}-entrance`,
+      type: 'entrance',
+      name: 'Entrance',
+      x: currentX,
+      y: 50,
+      width: 60,
+      height: 24,
+      color: '#4CAF50',
+      label: 'ENTRANCE'
+    })
+
+    // Add check-in
+    generatedObjects.push({
+      id: `gen-${Date.now()}-checkin`,
+      type: 'check-in',
+      name: 'Check-in Desk',
+      x: currentX + 100,
+      y: 50,
+      width: 120,
+      height: 48,
+      color: '#2969FF',
+      label: 'CHECK-IN'
+    })
+
+    // Add stage if needed
+    if (answers.stageNeeded) {
+      generatedObjects.push({
+        id: `gen-${Date.now()}-stage`,
+        type: 'stage',
+        name: 'Stage',
+        x: 400,
+        y: 100,
+        width: 288,
+        height: 144,
+        color: '#5D4037',
+        label: 'STAGE'
+      })
+      currentY = 280
+    } else {
+      currentY = 150
+    }
+
+    // Calculate tables needed
+    const guestCount = answers.guestCount || 50
+    let tablesNeeded = 0
+    let seatsPerTable = 8
+
+    if (answers.seatingStyle === 'round-tables') {
+      seatsPerTable = 10
+      tablesNeeded = Math.ceil(guestCount / seatsPerTable)
+    } else if (answers.seatingStyle === 'rect-tables') {
+      seatsPerTable = 8
+      tablesNeeded = Math.ceil(guestCount / seatsPerTable)
+    } else if (answers.seatingStyle === 'theater') {
+      // Theater style - use chair rows
+      const chairsPerRow = 20
+      const rowsNeeded = Math.ceil(guestCount / chairsPerRow)
+      for (let i = 0; i < rowsNeeded; i++) {
+        generatedObjects.push({
+          id: `gen-${Date.now()}-row-${i}`,
+          type: 'chair-row',
+          name: `Chair Row ${i + 1}`,
+          x: 200,
+          y: currentY + (i * 40),
+          width: 400,
+          height: 24,
+          color: '#E91E63',
+          seats: Math.min(chairsPerRow, guestCount - (i * chairsPerRow))
+        })
+      }
+    } else if (answers.seatingStyle === 'cocktail') {
+      seatsPerTable = 4
+      tablesNeeded = Math.ceil(guestCount / seatsPerTable)
+    } else {
+      // Mixed - use round tables
+      seatsPerTable = 10
+      tablesNeeded = Math.ceil(guestCount / seatsPerTable)
+    }
+
+    // Add tables (if not theater style)
+    if (answers.seatingStyle !== 'theater') {
+      const tablesPerRow = Math.ceil(Math.sqrt(tablesNeeded))
+      for (let i = 0; i < tablesNeeded; i++) {
+        const row = Math.floor(i / tablesPerRow)
+        const col = i % tablesPerRow
+        const tableType = answers.seatingStyle === 'round-tables' ? 'round-table' : 
+                         answers.seatingStyle === 'rect-tables' ? 'rect-table' : 'cocktail'
+        const tableSize = tableType === 'round-table' ? 84 : tableType === 'rect-table' ? 120 : 36
+
+        const tableName = tableType === 'round-table' ? `${seatsPerTable}-Top Round` :
+                          tableType === 'rect-table' ? `${Math.round(tableSize/12)}ft Rectangle` :
+                          'Cocktail Table'
+        generatedObjects.push({
+          id: `gen-${Date.now()}-table-${i}`,
+          type: tableType,
+          name: tableName,
+          x: currentX + (col * spacing),
+          y: currentY + (row * spacing),
+          width: tableSize,
+          height: tableType === 'rect-table' ? 48 : tableSize,
+          color: '#E91E63',
+          seats: seatsPerTable
+        })
+      }
+    }
+
+    // Add dance floor if needed
+    if (answers.danceFloorNeeded) {
+      generatedObjects.push({
+        id: `gen-${Date.now()}-dance`,
+        type: 'dance-floor',
+        name: 'Dance Floor',
+        x: 300,
+        y: 600,
+        width: 192,
+        height: 192,
+        color: '#1a1a2e'
+      })
+    }
+
+    // Add bar if needed
+    if (answers.barNeeded) {
+      generatedObjects.push({
+        id: `gen-${Date.now()}-bar`,
+        type: 'bar',
+        name: 'Bar',
+        x: 50,
+        y: 600,
+        width: 180,
+        height: 48,
+        color: '#FF9800',
+        label: 'BAR'
+      })
+    }
+
+    // Add VIP section if needed
+    if (answers.vipSection) {
+      generatedObjects.push({
+        id: `gen-${Date.now()}-vip`,
+        type: 'vip-section',
+        name: 'VIP Section',
+        x: 700,
+        y: 200,
+        width: 200,
+        height: 300,
+        color: '#9C27B0',
+        label: 'VIP'
+      })
+    }
+
+    // Add food stations
+    for (let i = 0; i < answers.foodStations; i++) {
+      generatedObjects.push({
+        id: `gen-${Date.now()}-food-${i}`,
+        type: 'food-station',
+        name: `Food Station ${i + 1}`,
+        x: 50 + (i * 200),
+        y: 500,
+        width: 72,
+        height: 72,
+        color: '#8BC34A'
+      })
+    }
+
+    // Add exits
+    generatedObjects.push({
+      id: `gen-${Date.now()}-exit1`,
+      type: 'exit',
+      name: 'Exit',
+      x: 50,
+      y: 800,
+      width: 60,
+      height: 24,
+      color: '#F44336',
+      label: 'EXIT'
+    })
+    generatedObjects.push({
+      id: `gen-${Date.now()}-exit2`,
+      type: 'exit',
+      name: 'Exit',
+      x: 1100,
+      y: 800,
+      width: 60,
+      height: 24,
+      color: '#F44336',
+      label: 'EXIT'
+    })
+
+    // Apply the generated layout
+    setObjects(generatedObjects)
+    saveToHistory(generatedObjects)
+    setShowQuestionnaire(false)
+    setQuestionnaireStep(0)
+    setLayoutName(`${answers.eventType.charAt(0).toUpperCase() + answers.eventType.slice(1)} Event Layout`)
+    
+    // Show success message
+    alert(`✅ Layout generated successfully!\n\n• ${tablesNeeded || 'Theater'} ${answers.seatingStyle === 'theater' ? 'rows' : 'tables'}\n• ${guestCount} guests capacity\n• All requested features included`)
+  }, [questionnaireAnswers, saveToHistory])
+
+  // =============================================================================
+  // SAMPLE DESIGN
+  // =============================================================================
+
+  const loadSampleDesign = useCallback(() => {
+    if (!confirm('Load sample design? This will replace your current layout.')) {
+      return
+    }
+
+    const sampleObjects = [
+      // Entrance
+      { id: 'sample-1', type: 'entrance', x: 50, y: 50, width: 60, height: 24, color: '#4CAF50', label: 'ENTRANCE' },
+      // Check-in
+      { id: 'sample-2', type: 'check-in', x: 150, y: 50, width: 120, height: 48, color: '#2969FF', label: 'CHECK-IN' },
+      // Stage
+      { id: 'sample-3', type: 'stage', x: 400, y: 100, width: 288, height: 144, color: '#5D4037', label: 'STAGE' },
+      // Tables
+      { id: 'sample-4', type: 'round-table', x: 200, y: 300, width: 84, height: 84, color: '#E91E63', seats: 10 },
+      { id: 'sample-5', type: 'round-table', x: 350, y: 300, width: 84, height: 84, color: '#E91E63', seats: 10 },
+      { id: 'sample-6', type: 'round-table', x: 500, y: 300, width: 84, height: 84, color: '#E91E63', seats: 10 },
+      { id: 'sample-7', type: 'round-table', x: 200, y: 450, width: 84, height: 84, color: '#E91E63', seats: 10 },
+      { id: 'sample-8', type: 'round-table', x: 350, y: 450, width: 84, height: 84, color: '#E91E63', seats: 10 },
+      { id: 'sample-9', type: 'round-table', x: 500, y: 450, width: 84, height: 84, color: '#E91E63', seats: 10 },
+      // VIP Section
+      { id: 'sample-10', type: 'vip-section', x: 700, y: 200, width: 200, height: 300, color: '#9C27B0', label: 'VIP' },
+      // Bar
+      { id: 'sample-11', type: 'bar', x: 50, y: 600, width: 180, height: 48, color: '#FF9800', label: 'BAR' },
+      // Dance floor
+      { id: 'sample-12', type: 'dance-floor', x: 300, y: 600, width: 192, height: 192, color: '#1a1a2e' },
+    ]
+
+    setObjects(sampleObjects)
+    saveToHistory(sampleObjects)
+    setLayoutName('Sample Event Layout')
+  }, [saveToHistory])
+
+  // =============================================================================
   // COMPUTED VALUES
   // =============================================================================
 
   const selectedObject = useMemo(() => 
     selectedIds.length === 1 ? objects.find(o => o.id === selectedIds[0]) : null
   , [selectedIds, objects])
+
+  // Sort objects for rendering: containers first (background), then regular objects (foreground)
+  const sortedObjects = useMemo(() => {
+    const containers = objects.filter(obj => 
+      ['vip-section', 'lounge-area'].includes(obj.type)
+    )
+    const regularObjects = objects.filter(obj => 
+      !['vip-section', 'lounge-area'].includes(obj.type)
+    )
+    return [...containers, ...regularObjects]
+  }, [objects])
 
   const filteredItems = useMemo(() => {
     const category = OBJECT_CATEGORIES.find(c => c.id === activeCategory)
@@ -1874,37 +2629,6 @@ export function VenueLayoutDesigner() {
         />
 
         <div className="w-px h-6 bg-[#3d3d4d]" />
-
-        {/* View Mode Switcher */}
-        <div className="flex items-center gap-1 bg-[#1e1e2e] rounded-lg p-0.5 border border-[#3d3d4d]">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode('2d')}
-            className={`h-7 px-3 text-xs ${viewMode === '2d' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-          >
-            <LayoutGrid className="w-3 h-3 mr-1" />
-            2D
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode('isometric')}
-            className={`h-7 px-3 text-xs ${viewMode === 'isometric' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-          >
-            <Eye className="w-3 h-3 mr-1" />
-            3D ISO
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode('perspective')}
-            className={`h-7 px-3 text-xs ${viewMode === 'perspective' ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
-          >
-            <Camera className="w-3 h-3 mr-1" />
-            3D PERSP
-          </Button>
-        </div>
 
         <div className="flex-1" />
 
@@ -1959,6 +2683,58 @@ export function VenueLayoutDesigner() {
           className={`${showGrid ? 'text-[#2969FF]' : 'text-white/60'} hover:text-white hover:bg-white/10`}
         >
           <Grid className="w-4 h-4" />
+        </Button>
+
+        <div className="w-px h-6 bg-[#3d3d4d]" />
+
+        {/* AI Assistant Toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setAiPanelOpen(!aiPanelOpen)}
+          className={`${aiPanelOpen ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+        >
+          <Bot className="w-4 h-4 mr-1" />
+          AI Help
+        </Button>
+
+        <div className="w-px h-6 bg-[#3d3d4d]" />
+
+        {/* Export PDF */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={exportToPDF}
+          className="text-white/60 hover:text-white hover:bg-white/10"
+        >
+          <Download className="w-4 h-4 mr-1" />
+          Export PDF
+        </Button>
+
+        <div className="w-px h-6 bg-[#3d3d4d]" />
+
+        {/* Generate Layout from Questionnaire */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowQuestionnaire(true)}
+          className="text-white/60 hover:text-white hover:bg-white/10"
+        >
+          <Wand2 className="w-4 h-4 mr-1" />
+          Generate Layout
+        </Button>
+
+        <div className="w-px h-6 bg-[#3d3d4d]" />
+
+        {/* Load Sample Design */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={loadSampleDesign}
+          className="text-white/60 hover:text-white hover:bg-white/10"
+        >
+          <Star className="w-4 h-4 mr-1" />
+          Sample
         </Button>
 
         <div className="w-px h-6 bg-[#3d3d4d]" />
@@ -2092,7 +2868,7 @@ export function VenueLayoutDesigner() {
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
             >
-              {/* Shadow Filters - 3D System */}
+              {/* Shadow Filters - 2D Drop Shadows */}
               <defs>
                 {/* Drop Shadow - Standard */}
                 <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
@@ -2176,8 +2952,8 @@ export function VenueLayoutDesigner() {
                 </>
               )}
 
-              {/* Objects */}
-              {objects.map(obj => (
+              {/* Objects - render containers first (background), then regular objects (foreground) */}
+              {sortedObjects.map(obj => (
                 <CanvasObject
                   key={obj.id}
                   obj={obj}
@@ -2185,8 +2961,6 @@ export function VenueLayoutDesigner() {
                   onSelect={handleSelect}
                   onDragStart={handleDragStart}
                   onResizeStart={handleResizeStart}
-                  viewMode={viewMode}
-                  cameraAngle={cameraAngle}
                   canvasWidth={canvasWidth}
                   canvasHeight={canvasHeight}
                 />
@@ -2194,6 +2968,126 @@ export function VenueLayoutDesigner() {
             </svg>
           </div>
         </div>
+
+        {/* ===== AI ASSISTANT PANEL ===== */}
+        {aiPanelOpen && (
+          <div className="w-80 bg-[#252535] border-l border-[#3d3d4d] flex flex-col transition-all duration-150 flex-shrink-0">
+            <div className="flex items-center justify-between p-3 border-b border-[#3d3d4d]">
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-[#2969FF]" />
+                <span className="text-sm font-medium text-white">AI Assistant</span>
+              </div>
+              <button
+                onClick={() => setAiPanelOpen(false)}
+                className="p-1 text-white/40 hover:text-white"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {aiMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-lg p-2 text-xs ${
+                      msg.role === 'user'
+                        ? 'bg-[#2969FF] text-white'
+                        : 'bg-[#1e1e2e] text-white/90 border border-[#3d3d4d]'
+                    }`}
+                  >
+                    {msg.role === 'assistant' && (
+                      <Bot className="w-3 h-3 text-[#2969FF] mb-1" />
+                    )}
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                  </div>
+                </div>
+              ))}
+              {aiLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-[#1e1e2e] border border-[#3d3d4d] rounded-lg p-2 text-xs text-white/60">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-[#2969FF] rounded-full animate-pulse" />
+                      <span>Thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="p-2 border-t border-[#3d3d4d] space-y-1">
+              <div className="text-[10px] text-white/50 mb-2 px-2">Quick Actions:</div>
+              <div className="grid grid-cols-2 gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAiQuery('What\'s my current capacity?')}
+                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-white/10"
+                >
+                  <Users className="w-3 h-3 mr-1" />
+                  Capacity
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAiQuery('Check spacing between tables')}
+                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-white/10"
+                >
+                  <Grid className="w-3 h-3 mr-1" />
+                  Spacing
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAiQuery('Optimize traffic flow')}
+                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-white/10"
+                >
+                  <Zap className="w-3 h-3 mr-1" />
+                  Flow
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleAiQuery('Suggest a wedding layout')}
+                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-white/10"
+                >
+                  <Lightbulb className="w-3 h-3 mr-1" />
+                  Ideas
+                </Button>
+              </div>
+            </div>
+
+            {/* Input */}
+            <div className="p-3 border-t border-[#3d3d4d]">
+              <div className="flex gap-2">
+                <Input
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleAiQuery(aiInput)
+                    }
+                  }}
+                  placeholder="Ask me anything..."
+                  className="h-8 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleAiQuery(aiInput)}
+                  disabled={!aiInput.trim() || aiLoading}
+                  className="h-8 bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
+                >
+                  <Send className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ===== RIGHT PANEL ===== */}
         <div className={`${rightPanelOpen ? 'w-56' : 'w-10'} bg-[#252535] border-l border-[#3d3d4d] flex flex-col transition-all duration-150 flex-shrink-0`}>
@@ -2366,6 +3260,235 @@ export function VenueLayoutDesigner() {
           )}
         </div>
       </div>
+
+      {/* ===== LAYOUT GENERATOR QUESTIONNAIRE MODAL ===== */}
+      {showQuestionnaire && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-[#252535] rounded-xl border border-[#3d3d4d] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-[#3d3d4d] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-5 h-5 text-[#2969FF]" />
+                <h2 className="text-lg font-semibold text-white">Generate Layout</h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowQuestionnaire(false)
+                  setQuestionnaireStep(0)
+                }}
+                className="text-white/60 hover:text-white"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Step 1: Event Type */}
+              {questionnaireStep === 0 && (
+                <>
+                  <div>
+                    <Label className="text-white mb-3 block">What type of event is this?</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {['Wedding', 'Conference', 'Party', 'Corporate', 'Concert', 'Other'].map(type => (
+                        <Button
+                          key={type}
+                          variant={questionnaireAnswers.eventType === type.toLowerCase() ? 'default' : 'outline'}
+                          onClick={() => setQuestionnaireAnswers({...questionnaireAnswers, eventType: type.toLowerCase()})}
+                          className={`h-12 ${questionnaireAnswers.eventType === type.toLowerCase() 
+                            ? 'bg-[#2969FF] text-white hover:bg-[#1e4fd6]' 
+                            : 'border-[#3d3d4d] bg-[#1e1e2e] text-white hover:bg-[#2a2a35] hover:text-white'}`}
+                        >
+                          {type}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowQuestionnaire(false)}
+                      className="text-white/60 hover:text-white"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => setQuestionnaireStep(1)}
+                      disabled={!questionnaireAnswers.eventType}
+                      className="bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 2: Guest Count */}
+              {questionnaireStep === 1 && (
+                <>
+                  <div>
+                    <Label className="text-white mb-3 block">How many guests are you expecting?</Label>
+                    <Input
+                      type="number"
+                      value={questionnaireAnswers.guestCount}
+                      onChange={(e) => setQuestionnaireAnswers({...questionnaireAnswers, guestCount: parseInt(e.target.value) || 50})}
+                      className="h-12 bg-[#1e1e2e] border-[#3d3d4d] text-white text-lg"
+                      min="10"
+                      max="1000"
+                    />
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setQuestionnaireStep(0)}
+                      className="text-white/60 hover:text-white"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={() => setQuestionnaireStep(2)}
+                      className="bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 3: Seating Style */}
+              {questionnaireStep === 2 && (
+                <>
+                  <div>
+                    <Label className="text-white mb-3 block">What seating style do you prefer?</Label>
+                    <div className="space-y-2">
+                      {[
+                        { value: 'round-tables', label: 'Round Tables (8-10 per table)' },
+                        { value: 'rect-tables', label: 'Rectangular Tables (6-8 per table)' },
+                        { value: 'theater', label: 'Theater Style (Chairs in rows)' },
+                        { value: 'cocktail', label: 'Cocktail Tables (Standing/Mingling)' },
+                        { value: 'mixed', label: 'Mixed Seating' }
+                      ].map(option => (
+                        <Button
+                          key={option.value}
+                          variant={questionnaireAnswers.seatingStyle === option.value ? 'default' : 'outline'}
+                          onClick={() => setQuestionnaireAnswers({...questionnaireAnswers, seatingStyle: option.value})}
+                          className={`w-full h-12 justify-start ${questionnaireAnswers.seatingStyle === option.value 
+                            ? 'bg-[#2969FF] text-white hover:bg-[#1e4fd6]' 
+                            : 'border-[#3d3d4d] bg-[#1e1e2e] text-white hover:bg-[#2a2a35] hover:text-white'}`}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setQuestionnaireStep(1)}
+                      className="text-white/60 hover:text-white"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={() => setQuestionnaireStep(3)}
+                      className="bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 4: Features */}
+              {questionnaireStep === 3 && (
+                <>
+                  <div>
+                    <Label className="text-white mb-3 block">What features do you need?</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-[#1e1e2e] rounded-lg">
+                        <span className="text-white">Stage/Podium</span>
+                        <Button
+                          variant={questionnaireAnswers.stageNeeded ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setQuestionnaireAnswers({...questionnaireAnswers, stageNeeded: !questionnaireAnswers.stageNeeded})}
+                          className={questionnaireAnswers.stageNeeded 
+                            ? 'bg-[#2969FF] text-white hover:bg-[#1e4fd6]' 
+                            : 'border-[#3d3d4d] bg-[#1e1e2e] text-white hover:bg-[#2a2a35]'}
+                        >
+                          {questionnaireAnswers.stageNeeded ? 'Yes' : 'No'}
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-[#1e1e2e] rounded-lg">
+                        <span className="text-white">Dance Floor</span>
+                        <Button
+                          variant={questionnaireAnswers.danceFloorNeeded ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setQuestionnaireAnswers({...questionnaireAnswers, danceFloorNeeded: !questionnaireAnswers.danceFloorNeeded})}
+                          className={questionnaireAnswers.danceFloorNeeded 
+                            ? 'bg-[#2969FF] text-white hover:bg-[#1e4fd6]' 
+                            : 'border-[#3d3d4d] bg-[#1e1e2e] text-white hover:bg-[#2a2a35]'}
+                        >
+                          {questionnaireAnswers.danceFloorNeeded ? 'Yes' : 'No'}
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-[#1e1e2e] rounded-lg">
+                        <span className="text-white">Bar</span>
+                        <Button
+                          variant={questionnaireAnswers.barNeeded ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setQuestionnaireAnswers({...questionnaireAnswers, barNeeded: !questionnaireAnswers.barNeeded})}
+                          className={questionnaireAnswers.barNeeded 
+                            ? 'bg-[#2969FF] text-white hover:bg-[#1e4fd6]' 
+                            : 'border-[#3d3d4d] bg-[#1e1e2e] text-white hover:bg-[#2a2a35]'}
+                        >
+                          {questionnaireAnswers.barNeeded ? 'Yes' : 'No'}
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-[#1e1e2e] rounded-lg">
+                        <span className="text-white">VIP Section</span>
+                        <Button
+                          variant={questionnaireAnswers.vipSection ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setQuestionnaireAnswers({...questionnaireAnswers, vipSection: !questionnaireAnswers.vipSection})}
+                          className={questionnaireAnswers.vipSection 
+                            ? 'bg-[#2969FF] text-white hover:bg-[#1e4fd6]' 
+                            : 'border-[#3d3d4d] bg-[#1e1e2e] text-white hover:bg-[#2a2a35]'}
+                        >
+                          {questionnaireAnswers.vipSection ? 'Yes' : 'No'}
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-[#1e1e2e] rounded-lg">
+                        <span className="text-white">Food Stations</span>
+                        <Input
+                          type="number"
+                          value={questionnaireAnswers.foodStations}
+                          onChange={(e) => setQuestionnaireAnswers({...questionnaireAnswers, foodStations: parseInt(e.target.value) || 0})}
+                          className="w-20 h-8 bg-[#252535] border-[#3d3d4d] text-white text-sm"
+                          min="0"
+                          max="10"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setQuestionnaireStep(2)}
+                      className="text-white/60 hover:text-white"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={generateLayoutFromQuestionnaire}
+                      className="bg-[#2969FF] hover:bg-[#1e4fd6] text-white"
+                    >
+                      Generate Layout
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== STATUS BAR ===== */}
       <div className="h-6 bg-[#2d2d3d] border-t border-[#3d3d4d] flex items-center px-3 text-[10px] text-white/50 flex-shrink-0">

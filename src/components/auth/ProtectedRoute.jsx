@@ -6,8 +6,10 @@ export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   const location = useLocation()
 
-  // Debug logging
-  console.log('ProtectedRoute check:', { user: !!user, loading, path: location.pathname })
+  // Debug logging - only in development
+  if (import.meta.env.DEV) {
+    console.log('ProtectedRoute check:', { user: !!user, loading, path: location.pathname })
+  }
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -23,10 +25,14 @@ export function ProtectedRoute({ children }) {
 
   // Not logged in - redirect to login with return URL
   if (!user) {
-    console.log('No user, redirecting to login')
+    if (import.meta.env.DEV) {
+      console.log('No user, redirecting to login')
+    }
     return <Navigate to="/login" state={{ from: location.pathname }} replace />
   }
 
-  console.log('User authenticated, rendering children')
+  if (import.meta.env.DEV) {
+    console.log('User authenticated, rendering children')
+  }
   return children
 }

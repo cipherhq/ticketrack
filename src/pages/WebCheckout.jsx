@@ -1,5 +1,5 @@
 import { getOrganizerFees, DEFAULT_FEES, calculateFees } from '@/config/fees'
-import { getPaymentProvider, getProviderInfo, initStripeCheckout, initPayPalCheckout } from '@/config/payments'
+import { getPaymentProvider, getPaymentProviderWithFallback, getPaymentProviders, getProviderInfo, initStripeCheckout, initPayPalCheckout, initFlutterwaveCheckout, getActiveGateway } from '@/config/payments'
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
 import { useState, useEffect } from 'react'
@@ -266,7 +266,141 @@ export function WebCheckout() {
   const { isEnabledForCurrency } = useFeatureFlags()
   
   // Extract checkout data - includes waitlist info if coming from waitlist purchase
-  const { event, selectedTickets, ticketTypes, totalAmount, fromWaitlist, waitlistId } = location.state || {}
+  const { event, selectedTickets, ticketTypes, totalAmount, fromWaitlist, waitlistId, selectedEventId } = location.state || {}
+  
+  // For recurring events, ensure child event exists in database before creating order
+  // This ensures payouts are correctly calculated based on child event's end_date
+  const ensureChildEventExists = async () => {
+    // If event is virtual (not in DB), we need to create it or find existing child event
+    // When purchasing a future recurring event date, use that exact date for the child event
+    if (event?.is_virtual || (typeof event?.id === 'string' && event?.id?.startsWith('virtual-'))) {
+      const parentEventId = event?.parent_event_id;
+      // Use the start_date and end_date from the event object (which should be the future date selected)
+      const childEventStartDate = event?.start_date;
+      const childEventEndDate = event?.end_date;
+      
+      if (!parentEventId || !childEventStartDate || !childEventEndDate) {
+        // Fall back to parent event if we can't determine child event dates
+        return event?.parent_event_id || event?.id?.replace('virtual-', '');
+      }
+      
+      // Check if child event already exists for this date
+      // start_date is a timestamp, so we need to compare dates properly
+      const dateStr = childEventStartDate.split('T')[0]; // YYYY-MM-DD
+      const dateStart = `${dateStr}T00:00:00`;
+      const dateEnd = `${dateStr}T23:59:59`;
+      
+      const { data: existingChildren } = await supabase
+        .from('events')
+        .select('id, start_date, end_date')
+        .eq('parent_event_id', parentEventId)
+        .gte('start_date', dateStart)
+        .lte('start_date', dateEnd);
+      
+      const existingChild = existingChildren && existingChildren.length > 0 ? existingChildren[0] : null;
+      
+      if (existingChild) {
+        // Child event exists, use it
+        return existingChild.id;
+      }
+      
+      // Create child event in database
+      // Get parent event details first
+      const { data: parentEvent } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', parentEventId)
+        .single();
+      
+      if (!parentEvent) {
+        // Parent event not found, fall back
+        return parentEventId;
+      }
+      
+      // Generate slug for child event (dateStr already defined above)
+      const childSlug = `${parentEvent.slug}-${dateStr}`.replace(/--+/g, '-').substring(0, 100);
+      
+      // Create child event
+      const { data: newChildEvent, error: createError } = await supabase
+        .from('events')
+        .insert({
+          organizer_id: parentEvent.organizer_id,
+          parent_event_id: parentEventId,
+          title: parentEvent.title,
+          slug: childSlug,
+          description: parentEvent.description,
+          event_type: parentEvent.event_type,
+          category: parentEvent.category,
+          start_date: childEventStartDate, // Use the future date from the virtual event
+          end_date: childEventEndDate, // Use the future end date from the virtual event
+          venue_name: parentEvent.venue_name,
+          venue_address: parentEvent.venue_address,
+          city: parentEvent.city,
+          country_code: parentEvent.country_code,
+          currency: parentEvent.currency,
+          status: 'published',
+          is_recurring: false, // Child events are not recurring themselves
+          timezone: parentEvent.timezone,
+          image_url: parentEvent.image_url,
+          // Copy other relevant fields from parent
+        })
+        .select()
+        .single();
+      
+      if (createError || !newChildEvent) {
+        console.error('Error creating child event:', createError);
+        // Fall back to parent event ID
+        return parentEventId;
+      }
+      
+      // Check if ticket types already exist for this child event
+      const { data: existingChildTicketTypes } = await supabase
+        .from('ticket_types')
+        .select('id')
+        .eq('event_id', newChildEvent.id)
+        .limit(1);
+      
+      // Only create ticket types if they don't already exist
+      if (!existingChildTicketTypes || existingChildTicketTypes.length === 0) {
+        // Get parent event's ticket types to create separate inventory for child event
+        const { data: parentTicketTypes } = await supabase
+          .from('ticket_types')
+          .select('*')
+          .eq('event_id', parentEventId)
+          .eq('is_active', true);
+        
+        if (parentTicketTypes && parentTicketTypes.length > 0) {
+          // Create ticket types for child event with their own inventory
+          // Each child event gets its own ticket inventory (separate from parent)
+          const childTicketTypes = parentTicketTypes.map(tt => ({
+            event_id: newChildEvent.id,
+            name: tt.name,
+            description: tt.description,
+            price: tt.price,
+            quantity_available: tt.quantity_available, // Same capacity as parent, but separate inventory
+            quantity_sold: 0, // Fresh count for child event
+            max_per_order: tt.max_per_order,
+            is_active: tt.is_active,
+            is_table_ticket: tt.is_table_ticket || false,
+            seats_per_table: tt.seats_per_table || null,
+          }));
+          
+          const { error: ticketTypesError } = await supabase
+            .from('ticket_types')
+            .insert(childTicketTypes);
+          
+          if (ticketTypesError) {
+            console.error('Error creating ticket types for child event:', ticketTypesError);
+          }
+        }
+      }
+      
+      return newChildEvent.id;
+    }
+    
+    // Not a virtual event, return the event ID as-is
+    return event?.id;
+  };
   
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [formData, setFormData] = useState({ 
@@ -363,11 +497,16 @@ export function WebCheckout() {
 
 
   // Detect payment provider and available methods based on currency and features
+  // Includes fallback logic (Paystack -> Flutterwave for NGN/GHS)
   useEffect(() => {
     const loadPaymentOptions = async () => {
-      if (!event?.currency) return;
+      if (!event?.currency || !event?.country_code) return;
       
-      const provider = getPaymentProvider(event.currency);
+      // Get provider with fallback support
+      const { provider, isBackup } = await getPaymentProviderWithFallback(
+        event.currency, 
+        event.country_code
+      );
       setPaymentProvider(provider);
       
       // Build available payment methods based on provider and features
@@ -377,6 +516,17 @@ export function WebCheckout() {
         methods.push({ id: 'card', label: 'Card / Apple Pay / Google Pay' });
       } else if (provider === 'paypal') {
         methods.push({ id: 'paypal', label: 'PayPal' });
+      } else if (provider === 'flutterwave') {
+        // Flutterwave - check features for each method
+        methods.push({ id: 'card', label: 'Card' });
+        
+        const bankEnabled = await isEnabledForCurrency(event.currency, 'bank_transfer');
+        if (bankEnabled) methods.push({ id: 'bank', label: 'Bank Transfer' });
+        
+        const ussdEnabled = await isEnabledForCurrency(event.currency, 'ussd');
+        if (ussdEnabled) methods.push({ id: 'ussd', label: 'USSD' });
+        
+        methods.push({ id: 'mobile_money', label: 'Mobile Money' });
       } else {
         // Paystack - check features for each method
         methods.push({ id: 'card', label: 'Card' });
@@ -393,7 +543,7 @@ export function WebCheckout() {
     };
     
     loadPaymentOptions();
-  }, [event?.currency]);
+  }, [event?.currency, event?.country_code]);
 
   useEffect(() => {
     const TIMER_KEY = `checkout_timer_${event?.id}`
@@ -454,11 +604,49 @@ export function WebCheckout() {
 
   const totalTicketCount = ticketSummary.reduce((sum, t) => sum + t.quantity, 0)
 
+  // Helper function to ensure child event exists and map ticket types for future recurring events
+  const prepareChildEventAndTickets = async () => {
+    // Ensure child event exists
+    const finalEventId = await ensureChildEventExists();
+    
+    // If we're purchasing a future date (child event), map parent ticket type IDs to child ticket type IDs
+    let mappedTicketSummary = ticketSummary;
+    if (finalEventId !== event?.id && (event?.is_virtual || event?.id?.startsWith('virtual-'))) {
+      // Get child event's ticket types (should match parent's by name/price)
+      const { data: childTicketTypes } = await supabase
+        .from('ticket_types')
+        .select('*')
+        .eq('event_id', finalEventId)
+        .eq('is_active', true);
+      
+      if (childTicketTypes && childTicketTypes.length > 0) {
+        // Map parent ticket type IDs to child ticket type IDs by matching name and price
+        mappedTicketSummary = ticketSummary.map(parentTicket => {
+          const matchingChildTicket = childTicketTypes.find(
+            child => child.name === parentTicket.name && 
+                     parseFloat(child.price) === parseFloat(parentTicket.price)
+          );
+          
+          if (matchingChildTicket) {
+            return {
+              ...parentTicket,
+              id: matchingChildTicket.id // Use child ticket type ID for availability check
+            };
+          }
+          return parentTicket; // Fallback to parent if no match found
+        });
+      }
+    }
+    
+    return { finalEventId, mappedTicketSummary };
+  };
+
   // Reserve tickets atomically (prevents overselling)
-  const reserveAllTickets = async () => {
+  // For future recurring events, this should use child event's ticket type IDs
+  const reserveAllTickets = async (ticketSummaryToUse = ticketSummary) => {
     const reservations = []
     
-    for (const item of ticketSummary) {
+    for (const item of ticketSummaryToUse) {
       const { data, error } = await supabase.rpc('reserve_tickets', {
         p_ticket_type_id: item.id,
         p_quantity: item.quantity
@@ -506,32 +694,68 @@ export function WebCheckout() {
 
   // Create tickets in database
   const createTickets = async (orderId, paymentRef) => {
-    const ticketsToCreate = []
+    // Get order with order_items (which have the correct ticket_type_id for child events)
+    const { data: orderData } = await supabase
+      .from('orders')
+      .select(`
+        event_id,
+        order_items (
+          ticket_type_id,
+          quantity,
+          unit_price
+        )
+      `)
+      .eq('id', orderId)
+      .single();
     
-    for (const item of ticketSummary) {
-      for (let i = 0; i < item.quantity; i++) {
-        const ticketCode = generateTicketNumber(i)
+    if (!orderData) {
+      throw new Error('Order not found')
+    }
+    
+    const ticketEventId = orderData?.event_id || event?.id;
+    const orderItems = orderData?.order_items || [];
+    
+    // If no order_items, fall back to ticketSummary (for backward compatibility)
+    const itemsToUse = orderItems.length > 0 
+      ? orderItems 
+      : ticketSummary.map(t => ({ 
+          ticket_type_id: t.id, 
+          quantity: t.quantity, 
+          unit_price: t.price 
+        }));
+    
+    const ticketsToCreate = []
+    let ticketIndex = 0
+    
+    for (const item of itemsToUse) {
+      const ticketTypeId = item.ticket_type_id || item.id;
+      const quantity = item.quantity || 0;
+      const unitPrice = parseFloat(item.unit_price || item.price || 0);
+      
+      for (let i = 0; i < quantity; i++) {
+        const ticketCode = generateTicketNumber(ticketIndex++)
         ticketsToCreate.push({
-          event_id: event.id,
-          ticket_type_id: item.id,
+          event_id: ticketEventId,
+          ticket_type_id: ticketTypeId, // Use correct ticket type ID from order_items
           user_id: user.id,
           attendee_email: formData.email,
           attendee_name: `${formData.firstName} ${formData.lastName}`,
           attendee_phone: formData.phone || null,
           ticket_code: ticketCode,
           qr_code: ticketCode,
-          unit_price: item.price,
-          total_price: item.price,
+          unit_price: unitPrice,
+          total_price: unitPrice,
           payment_reference: paymentRef,
           payment_status: 'completed',
-          payment_method: 'paystack',
+          payment_method: paymentProvider || 'paystack',
           order_id: orderId,
           status: 'active'
         })
       }
     }
 
-    console.log('Creating tickets:', ticketsToCreate)
+    // Debug log removed - contains user data
+    // if (import.meta.env.DEV) console.log('Creating tickets:', ticketsToCreate.length)
     const { data, error } = await supabase.from('tickets').insert(ticketsToCreate).select()
     
     if (error) {
@@ -592,8 +816,14 @@ export function WebCheckout() {
         }
       }
 
-      // Credit promoter for referral sale
-      await creditPromoter(orderId, event.id, finalTotal, totalTicketCount)
+      // Credit promoter for referral sale - get order's event_id
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('event_id')
+        .eq('id', orderId)
+        .single();
+      
+      await creditPromoter(orderId, orderData?.event_id || event?.id, finalTotal, totalTicketCount)
 
       // Increment promo code usage if applied
       if (promoApplied?.id) {
@@ -604,8 +834,8 @@ export function WebCheckout() {
         }
       }
 
-      // Credit affiliate for referral sale
-      await creditAffiliate(orderId, event.id, serviceFee, event.currency, user?.id, formData.email, formData.phone)
+      // Credit affiliate for referral sale - use order's event_id
+      await creditAffiliate(orderId, orderData?.event_id || event?.id, serviceFee, event.currency, user?.id, formData.email, formData.phone)
 
       // Generate PDF tickets and send confirmation email
       try {
@@ -616,7 +846,8 @@ export function WebCheckout() {
           attendee_email: formData.email,
           ticket_type_name: t.ticket_type_name || ticketSummary.find(ts => ts.id === t.ticket_type_id)?.name || "General"
         }))
-        console.log("DEBUG PDF:", { ticketCount: ticketsForPdf.length, tickets: ticketsForPdf, hasSponsors: event.event_sponsors?.length || 0, hasOrganizerLogo: !!event.organizer?.logo_url })
+        // Debug log removed for production security
+        // console.log("DEBUG PDF:", { ticketCount: ticketsForPdf.length, ... })
         const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, event)
         
         sendConfirmationEmail({
@@ -719,15 +950,19 @@ export function WebCheckout() {
     setError(null)
 
     try {
-      // Reserve tickets first (prevents overselling)
-      await reserveAllTickets()
+      // For recurring events, ensure child event exists and map ticket types FIRST
+      // This ensures availability is checked against the child event's inventory, not parent's
+      const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
 
-      // Create order
+      // Reserve tickets first (prevents overselling) - use mapped ticket summary for child events
+      await reserveAllTickets(mappedTicketSummary)
+
+      // Create order - use finalEventId which will be the child event ID if it was created
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: user.id,
-          event_id: event.id,
+          event_id: finalEventId,
           order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
           subtotal: totalAmount,
@@ -756,9 +991,16 @@ export function WebCheckout() {
 
       const paymentRef = `TKT-${order.id.slice(0, 8).toUpperCase()}-${Date.now()}`
 
+      // Get organizer subaccount info if available
+      const organizer = event?.organizer
+      const useSubaccount = 
+        organizer?.paystack_subaccount_id &&
+        organizer?.paystack_subaccount_status === 'active' &&
+        organizer?.paystack_subaccount_enabled === true
+
       // Initialize Paystack
       if (window.PaystackPop) {
-        const handler = window.PaystackPop.setup({
+        const paystackConfig = {
           key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
           email: formData.email,
           amount: finalTotal * 100,
@@ -788,11 +1030,26 @@ export function WebCheckout() {
           onClose: function() {
             setLoading(false)
           }
-        })
+        }
+
+        // Add subaccount if available
+        if (useSubaccount && organizer.paystack_subaccount_id) {
+          paystackConfig.split_code = organizer.paystack_subaccount_id
+        }
+
+        const handler = window.PaystackPop.setup(paystackConfig)
         handler.openIframe()
+      } else {
+        // Paystack not loaded, try Flutterwave as fallback if available
+        const { primary, backup } = getPaymentProviders(event?.currency)
+        if (backup === 'flutterwave') {
+          console.log('Paystack not available, trying Flutterwave fallback')
+          // Use mapped ticket summary for child events (already prepared above)
+          await handleFlutterwavePaymentFallback(order, mappedTicketSummary)
       } else {
         setError('Payment system not loaded. Please refresh the page.')
         setLoading(false)
+        }
       }
     } catch (err) {
       logger.error('Checkout error', err)
@@ -818,15 +1075,18 @@ export function WebCheckout() {
     setError(null);
 
     try {
-      // Reserve tickets first
-      await reserveAllTickets();
+      // For recurring events, ensure child event exists and map ticket types FIRST
+      const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
 
-      // Create order
+      // Reserve tickets first - use mapped ticket summary for child events
+      await reserveAllTickets(mappedTicketSummary);
+
+      // Create order - use finalEventId which will be the child event ID if it was created
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: user.id,
-          event_id: event.id,
+          event_id: finalEventId,
           order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
           subtotal: totalAmount,
@@ -848,8 +1108,8 @@ export function WebCheckout() {
 
       if (orderError) throw orderError;
 
-      // Create order items
-      const orderItems = ticketSummary.map(ticket => ({
+      // Create order items - use mappedTicketSummary to ensure child event ticket types are used
+      const orderItems = mappedTicketSummary.map(ticket => ({
         order_id: order.id,
         ticket_type_id: ticket.id,
         quantity: ticket.quantity,
@@ -894,13 +1154,17 @@ export function WebCheckout() {
     setError(null);
 
     try {
-      await reserveAllTickets();
+      // For recurring events, ensure child event exists and map ticket types FIRST
+      const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
+
+      // Reserve tickets first - use mapped ticket summary for child events
+      await reserveAllTickets(mappedTicketSummary);
 
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: user.id,
-          event_id: event.id,
+          event_id: finalEventId,
           order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
           subtotal: totalAmount,
@@ -922,7 +1186,8 @@ export function WebCheckout() {
 
       if (orderError) throw orderError;
 
-      const orderItems = ticketSummary.map(ticket => ({
+      // Create order items - use mappedTicketSummary to ensure child event ticket types are used
+      const orderItems = mappedTicketSummary.map(ticket => ({
         order_id: order.id,
         ticket_type_id: ticket.id,
         quantity: ticket.quantity,
@@ -950,12 +1215,141 @@ export function WebCheckout() {
     }
   };
 
+  // Handle Flutterwave payment (server-side like Stripe)
+  const handleFlutterwavePayment = async (existingOrder = null) => {
+    if (!formData.email || !formData.firstName || !formData.lastName) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    if (!user) {
+      setError('Please log in to continue');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // For recurring events, ensure child event exists and map ticket types FIRST
+      const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
+
+      // Reserve tickets first - use mapped ticket summary for child events
+      await reserveAllTickets(mappedTicketSummary);
+
+      let order = existingOrder;
+      
+      // Create order if not provided
+      if (!order) {
+        const { data: newOrder, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            event_id: finalEventId,
+            order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
+            status: 'pending',
+            subtotal: totalAmount,
+            platform_fee: serviceFee,
+            tax_amount: 0,
+            discount_amount: discountAmount,
+            promo_code_id: promoApplied?.id || null,
+            total_amount: finalTotal,
+            currency: event?.currency,
+            payment_method: paymentMethod,
+            payment_provider: 'flutterwave',
+            buyer_email: formData.email,
+            buyer_phone: formData.phone || null,
+            buyer_name: `${formData.firstName} ${formData.lastName}`,
+            waitlist_id: fromWaitlist ? waitlistId : null
+          })
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+        order = newOrder;
+      }
+
+      // Create order items - use mappedTicketSummary to ensure child event ticket types are used
+      const orderItems = mappedTicketSummary.map(ticket => ({
+        order_id: order.id,
+        ticket_type_id: ticket.id,
+        quantity: ticket.quantity,
+        unit_price: ticket.price,
+        subtotal: ticket.subtotal
+      }));
+
+      await supabase.from('order_items').insert(orderItems);
+
+      // Initialize Flutterwave Checkout
+      const successUrl = `${window.location.origin}/payment-success`;
+      const cancelUrl = `${window.location.origin}/e/${event.slug || event.id}`;
+
+      const { url } = await initFlutterwaveCheckout(order.id, successUrl, cancelUrl);
+
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('Failed to create Flutterwave payment link');
+      }
+    } catch (err) {
+      logger.error('Flutterwave checkout error', err);
+      const safeError = handleApiError(err, 'Flutterwave Checkout');
+      setError(getUserMessage(safeError.code, 'Payment could not be processed. Please try again.'));
+      setLoading(false);
+    }
+  };
+
+  // Fallback Flutterwave handler (called when Paystack fails)
+  const handleFlutterwavePaymentFallback = async (order, mappedTicketSummaryForOrder = ticketSummary) => {
+    // Update order provider to Flutterwave
+    await supabase
+      .from('orders')
+      .update({ payment_provider: 'flutterwave' })
+      .eq('id', order.id);
+
+    // Create order items if not exists - use mapped ticket summary for child events
+    const { count } = await supabase
+      .from('order_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('order_id', order.id);
+
+    if (count === 0) {
+      const orderItems = mappedTicketSummaryForOrder.map(ticket => ({
+        order_id: order.id,
+        ticket_type_id: ticket.id,
+        quantity: ticket.quantity,
+        unit_price: ticket.price,
+        subtotal: ticket.subtotal
+      }));
+      await supabase.from('order_items').insert(orderItems);
+    }
+
+    // Initialize Flutterwave Checkout
+    const successUrl = `${window.location.origin}/payment-success`;
+    const cancelUrl = `${window.location.origin}/e/${event.slug || event.id}`;
+
+    try {
+      const { url } = await initFlutterwaveCheckout(order.id, successUrl, cancelUrl);
+      if (url) {
+        window.location.href = url;
+      } else {
+        setError('Failed to create Flutterwave payment link');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('Payment system error. Please try again.');
+      setLoading(false);
+    }
+  };
+
   // Handle payment based on provider
   const handlePayment = () => {
     if (paymentProvider === 'stripe') {
       handleStripePayment();
     } else if (paymentProvider === 'paypal') {
       handlePayPalPayment();
+    } else if (paymentProvider === 'flutterwave') {
+      handleFlutterwavePayment();
     } else {
       handlePaystackPayment();
     }
@@ -987,10 +1381,20 @@ export function WebCheckout() {
       }
       
       // Check if promo is for this event or all events
-      if (promo.event_id && promo.event_id !== event?.id) {
-        setPromoError('This code is not valid for this event')
-        setPromoApplied(null)
-        return
+      // For recurring events: if promo is on parent event, it applies to all child events
+      if (promo.event_id) {
+        // Get the actual event ID we're purchasing (could be child or parent)
+        // For virtual child events, we'll need to check parent_event_id after ensureChildEventExists
+        // But for now, check if promo.event_id matches event.id or event.parent_event_id
+        const isParentPromoForChildEvent = 
+          promo.event_id === event?.parent_event_id || 
+          promo.event_id === event?.id;
+        
+        if (!isParentPromoForChildEvent) {
+          setPromoError('This code is not valid for this event')
+          setPromoApplied(null)
+          return
+        }
       }
       
       // Check if promo has started

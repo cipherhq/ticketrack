@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { ImageWithFallback } from '@/components/ui/image-with-fallback'
 import { supabase } from '@/lib/supabase'
 import { formatPrice } from '@/config/currencies'
+import { getUserLocation, sortEventsByDistance, formatDistance } from '@/utils/location'
 
 const RECENT_SEARCHES_KEY = 'ticketrack_recent_searches'
 const trendingSearches = ['Concert', 'Music', 'Festival', 'Party', 'Free Events']
@@ -20,6 +21,7 @@ const dateOptions = [
 ]
 
 const sortOptions = [
+  { value: 'distance', label: 'Distance (Nearest)' },
   { value: 'relevance', label: 'Relevance' },
   { value: 'date_asc', label: 'Date (Soonest)' },
   { value: 'price_asc', label: 'Price (Low to High)' },
@@ -42,16 +44,26 @@ export function WebSearch() {
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [recentSearchList, setRecentSearchList] = useState([])
+  const [userLocation, setUserLocation] = useState(null)
   
   // Dropdown visibility
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
   const [showDateDropdown, setShowDateDropdown] = useState(false)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
 
-  // Load cities and recent searches on mount
+  // Load cities, get user location, and recent searches on mount
   useEffect(() => {
     loadCities()
     loadRecentSearches()
+    
+    // Get user location for distance sorting
+    getUserLocation()
+      .then(loc => {
+        setUserLocation(loc)
+      })
+      .catch(error => {
+        console.log('Location not available:', error.message)
+      })
     
     // If there are URL params, search immediately
     if (searchParams.get('q') || searchParams.get('location')) {
@@ -130,8 +142,9 @@ export function WebSearch() {
       
       let queryBuilder = supabase
         .from('events')
-        .select('id, title, description, image_url, venue_name, city, start_date, category, currency, status, ticket_types (price)')
+        .select('id, title, description, image_url, venue_name, city, start_date, category, currency, status, is_recurring, parent_event_id, venue_lat, venue_lng, ticket_types (price)')
         .eq('status', 'published')
+        .is('parent_event_id', null) // Only show parent events in search (child events accessible via parent page)
         .gte('start_date', start)
 
       // Date filter
@@ -172,11 +185,19 @@ export function WebSearch() {
           : 0
       }))
 
-      // Client-side price sorting
-      if (sortBy === 'price_asc') {
-        resultsWithPrices.sort((a, b) => a.minPrice - b.minPrice)
-      } else if (sortBy === 'price_desc') {
-        resultsWithPrices.sort((a, b) => b.minPrice - a.minPrice)
+      // Sort by distance first if user location is available and sortBy is 'distance'
+      if (sortBy === 'distance' && userLocation) {
+        resultsWithPrices = sortEventsByDistance(resultsWithPrices, userLocation.lat, userLocation.lng)
+      } else {
+        // Client-side sorting by other criteria
+        if (sortBy === 'price_asc') {
+          resultsWithPrices.sort((a, b) => a.minPrice - b.minPrice)
+        } else if (sortBy === 'price_desc') {
+          resultsWithPrices.sort((a, b) => b.minPrice - a.minPrice)
+        } else if (sortBy === 'date_asc') {
+          resultsWithPrices.sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+        }
+        // 'relevance' - keep database order (already sorted by date_asc)
       }
 
       setSearchResults(resultsWithPrices)

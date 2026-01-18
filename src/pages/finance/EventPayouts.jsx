@@ -40,13 +40,14 @@ export function EventPayouts() {
     setLoading(true);
     try {
       const now = new Date().toISOString();
+      // Include both parent and child events - only show events that have ended
       const { data: events, error } = await supabase.from('events').select(`
-        id, title, slug, start_date, end_date, currency, payout_status, organizer_id,
+        id, title, slug, start_date, end_date, currency, payout_status, organizer_id, parent_event_id,
         organizers ( 
           id, business_name, email, phone,
           bank_accounts (id, bank_name, account_number_encrypted, account_name, is_default, is_verified) 
         ),
-        orders (id, total_amount, status, platform_fee)
+        orders (id, total_amount, status, platform_fee, event_id)
       `).lt('end_date', now).order('end_date', { ascending: false });
 
       if (error) throw error;
@@ -61,7 +62,7 @@ export function EventPayouts() {
           promoters ( id, full_name, email, promoter_bank_accounts (id, bank_name, account_number, account_name, is_verified) )
         `).eq('event_id', event.id);
 
-        const completedOrders = event.orders?.filter(o => o.status === 'completed') || [];
+        const completedOrders = eventOrders?.filter(o => o.status === 'completed') || [];
         const totalSales = completedOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
         const platformFees = completedOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0);
 

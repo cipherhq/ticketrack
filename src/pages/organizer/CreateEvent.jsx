@@ -471,6 +471,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (!formData.eventType) errors.push("Event type is required");
       if (!formData.category) errors.push("Category is required");
       if (!formData.description?.trim()) errors.push("Description is required");
+      
+      // Visibility validation
+      if (formData.visibility === 'password' && !formData.accessPassword?.trim()) {
+        errors.push("Access password is required for password-protected events");
+      }
+      // Note: invite_only and email_whitelist validation is handled by EventAccessSettings component
+      // which manages invite codes and emails in separate database tables (event_invite_codes, event_email_whitelist)
     }
     
     if (activeTab === "datetime") {
@@ -478,14 +485,37 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (!formData.startTime) errors.push("Start time is required");
       if (!formData.endTime) errors.push("End time is required");
       
-      // End date validation depends on whether event is recurring
+      // Multi-day and recurring events cannot be combined
+      if (formData.isMultiDay && formData.isRecurring) {
+        errors.push("Multi-day and recurring events cannot be combined. Please choose one.");
+      }
+      
+      // Multi-day event validation
+      if (formData.isMultiDay) {
+        if (formData.eventDays.length === 0) {
+          errors.push("Multi-day events must have at least one event day");
+        } else {
+          // Validate each event day has required fields
+          formData.eventDays.forEach((day, index) => {
+            if (!day.date) {
+              errors.push(`Day ${day.dayNumber} is missing a date`);
+            }
+            // Optional: validate day dates are sequential
+            if (index > 0 && day.date <= formData.eventDays[index - 1].date) {
+              errors.push(`Day ${day.dayNumber} date must be after Day ${day.dayNumber - 1}`);
+            }
+          });
+        }
+      }
+      
+      // End date validation depends on whether event is recurring or multi-day
       if (formData.isRecurring) {
         // For recurring events, validate recurring end date if "on specific date" is selected
         if (formData.recurringEndType === 'date' && !formData.recurringEndDate) {
           errors.push("Recurring end date is required when ending on specific date");
         }
-      } else {
-        // For non-recurring events, end date is always required
+      } else if (!formData.isMultiDay) {
+        // For non-recurring, non-multi-day events, end date is required
         if (!formData.endDate) errors.push("End date is required");
       }
       
@@ -956,9 +986,23 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       }
 
       const startDateTime = `${formData.startDate}T${formData.startTime || '00:00'}:00`;
-      const endDateTime = formData.endDate 
-        ? `${formData.endDate}T${formData.endTime || '23:59'}:00`
-        : `${formData.startDate}T${formData.endTime || '23:59'}:00`;
+      
+      // For multi-day events, calculate end_date from the last event day
+      let endDateTime;
+      if (formData.isMultiDay && formData.eventDays.length > 0) {
+        // Get the last event day (should be sorted by date, but ensure it is)
+        const sortedDays = [...formData.eventDays].sort((a, b) => 
+          new Date(a.date) - new Date(b.date)
+        );
+        const lastDay = sortedDays[sortedDays.length - 1];
+        const lastDayEndTime = lastDay.endTime || formData.endTime || '23:59';
+        endDateTime = `${lastDay.date}T${lastDayEndTime}:00`;
+      } else {
+        // For single-day or recurring events, use formData.endDate
+        endDateTime = formData.endDate 
+          ? `${formData.endDate}T${formData.endTime || '23:59'}:00`
+          : `${formData.startDate}T${formData.endTime || '23:59'}:00`;
+      }
 
       const totalCapacity = validTickets.reduce((sum, t) => sum + (parseInt(t.quantity) || 0), 0);
 
@@ -1192,9 +1236,20 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           for (const date of childDates) {
             const dateStr = date.toISOString().split('T')[0];
             const childStartDateTime = `${dateStr}T${formData.startTime}:00`;
-            const childEndDateTime = formData.isMultiDay 
-              ? `${formData.endDate}T${formData.endTime || '23:59'}:00`
-              : `${dateStr}T${formData.endTime || '23:59'}:00`;
+            // Recurring events cannot be multi-day (handled by validation above)
+            // But if somehow isMultiDay is true, calculate from last event day
+            let childEndDateTime;
+            if (formData.isMultiDay && formData.eventDays.length > 0) {
+              const sortedDays = [...formData.eventDays].sort((a, b) => 
+                new Date(a.date) - new Date(b.date)
+              );
+              const lastDay = sortedDays[sortedDays.length - 1];
+              const lastDayEndTime = lastDay.endTime || formData.endTime || '23:59';
+              childEndDateTime = `${lastDay.date}T${lastDayEndTime}:00`;
+            } else {
+              // For single-day recurring events, use the same date for end
+              childEndDateTime = `${dateStr}T${formData.endTime || '23:59'}:00`;
+            }
             
             // Generate unique slug for child event by appending date
             const childSlug = `${savedEvent.slug}-${dateStr}`.replace(/--+/g, '-').substring(0, 100);
@@ -1652,14 +1707,25 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               </div>
 
               <div className="space-y-4 pt-4">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="multiday"
-                    checked={formData.isMultiDay}
-                    onCheckedChange={(checked) => handleInputChange('isMultiDay', checked)}
-                  />
-                  <Label htmlFor="multiday" className="cursor-pointer">Multi-day event</Label>
-                </div>                
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="multiday"
+                      checked={formData.isMultiDay}
+                      disabled={formData.isRecurring}
+                      onCheckedChange={(checked) => {
+                        handleInputChange('isMultiDay', checked);
+                        if (checked) {
+                          // Disable recurring when multi-day is enabled
+                          handleInputChange('isRecurring', false);
+                          handleInputChange('recurringEndDate', '');
+                        }
+                      }}
+                    />
+                    <Label htmlFor="multiday" className={`cursor-pointer ${formData.isRecurring ? 'text-gray-400' : ''}`}>
+                      Multi-day event
+                      {formData.isRecurring && <span className="text-xs text-gray-500 ml-2">(cannot combine with recurring)</span>}
+                    </Label>
+                  </div>
                 {/* Multi-Day Event UI - Shows when checkbox is checked */}
                 {formData.isMultiDay && (
                   <div className="mt-4 p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30 space-y-5">
@@ -1832,13 +1898,6 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   </div>
                 )}
 
-                
-                {/* Multi-Day Event UI - Shows when checkbox is checked */}
-                {formData.isMultiDay && (
-                  <div className="mt-4 p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30 space-y-5">
-                    
-                  </div>
-                )}
                 
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">

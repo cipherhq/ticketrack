@@ -83,7 +83,7 @@ export function WebPaymentSuccess() {
       // Fetch order with event and order items
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('*, events(*, organizer:organizers(id, business_name, logo_url), event_sponsors(*)), order_items(*, ticket_types(name, price))') 
+        .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, is_free, organizer:organizers(id, business_name, logo_url), event_sponsors(*)), order_items(*, ticket_types(name, price))') 
         .eq('id', orderId)
         .single()
 
@@ -144,7 +144,18 @@ export function WebPaymentSuccess() {
             console.error('Error creating tickets:', ticketError)
           } else {
             console.log('Tickets created:', newTickets?.length)
-            setTickets(newTickets || [])
+            // Attach order data to tickets for donation display
+            const ticketsWithOrder = (newTickets || []).map(ticket => ({
+              ...ticket,
+              order: {
+                id: orderData.id,
+                order_number: orderData.order_number,
+                total_amount: orderData.total_amount,
+                is_donation: orderData.is_donation,
+                currency: orderData.currency
+              }
+            }))
+            setTickets(ticketsWithOrder)
           }
         }
 
@@ -165,7 +176,8 @@ export function WebPaymentSuccess() {
                 attendee_email: orderData.buyer_email,
                 ticket_type_name: t.ticket_type_name || orderItems.find(oi => oi.ticket_type_id === t.ticket_type_id)?.ticket_types?.name || 'Ticket'
               }))
-              console.log("DEBUG PDF:", { ticketCount: ticketsForPdf.length, tickets: ticketsForPdf.map(t => t.ticket_code), hasSponsors: eventData?.event_sponsors?.length || 0 }); const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, eventData)
+              // Debug log removed for production security
+              const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, eventData)
               pdfAttachment = [{
                 filename: pdfData.filename,
                 content: pdfData.base64,
@@ -227,10 +239,13 @@ export function WebPaymentSuccess() {
           console.error('Email error:', emailErr)
         }
       } else {
-        // Order already completed, just load tickets
+        // Order already completed, just load tickets with order data
         const { data: ticketsData } = await supabase
           .from('tickets')
-          .select('*')
+          .select(`
+            *,
+            order:orders(id, order_number, total_amount, is_donation, currency)
+          `)
           .eq('order_id', orderId)
         
         setTickets(ticketsData || [])
@@ -503,10 +518,21 @@ export function WebPaymentSuccess() {
                   
                   return (
                     <div key={index} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-[#0F0F0F]">Ticket #{index + 1}</p>
                         <p className="text-sm text-[#0F0F0F]/60">{ticket.attendee_name}</p>
                         <p className="text-xs text-[#0F0F0F]/40 font-mono mt-1">{ticket.ticket_code}</p>
+                        {/* Show donation amount for free events with donations */}
+                        {event?.is_free && ticket.order?.is_donation && ticket.order?.total_amount > 0 && (
+                          <div className="mt-2 pt-2 border-t border-[#0F0F0F]/10">
+                            <p className="text-xs text-[#0F0F0F]/60">Your Donation</p>
+                            <p className="text-green-600 font-semibold flex items-center gap-1 text-sm">
+                              <span>💚</span>
+                              {formatPrice(ticket.order.total_amount, ticket.order.currency || order.currency)}
+                              <span className="text-xs font-normal text-[#0F0F0F]/50 ml-1">Thank you!</span>
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <div className="bg-white rounded-lg p-2 border border-[#0F0F0F]/10">
                         <QRCodeSVG 

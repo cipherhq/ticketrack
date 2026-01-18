@@ -83,9 +83,10 @@ export function OrganizerOrders() {
   };
 
   const loadEvents = async () => {
+    // Load both parent events and child events (for recurring events)
     const { data, error } = await supabase
       .from('events')
-      .select('id, title')
+      .select('id, title, start_date, parent_event_id')
       .eq('organizer_id', organizer.id)
       .order('start_date', { ascending: false });
 
@@ -93,10 +94,10 @@ export function OrganizerOrders() {
   };
 
   const loadOrders = async () => {
-    // Get organizer's events
+    // Get organizer's events (both parent and child events for recurring events)
     const { data: orgEvents } = await supabase
       .from('events')
-      .select('id, title, currency')
+      .select('id, title, currency, start_date, end_date, parent_event_id, is_recurring')
       .eq('organizer_id', organizer.id);
 
     if (!orgEvents || orgEvents.length === 0) {
@@ -104,9 +105,18 @@ export function OrganizerOrders() {
       return;
     }
 
-    const eventIds = orgEvents.map(e => e.id);
+    // Include child events by checking parent_event_id
+    const parentEventIds = orgEvents.filter(e => !e.parent_event_id).map(e => e.id);
+    const { data: childEvents } = await supabase
+      .from('events')
+      .select('id, title, currency, start_date, end_date, parent_event_id, is_recurring')
+      .in('parent_event_id', parentEventIds);
+
+    // Combine all events (parent + child)
+    const allEvents = [...orgEvents, ...(childEvents || [])];
+    const eventIds = allEvents.map(e => e.id);
     const eventMap = {};
-    orgEvents.forEach(e => { eventMap[e.id] = e; });
+    allEvents.forEach(e => { eventMap[e.id] = e; });
 
     // Get orders for these events
     const { data: ordersData, error } = await supabase
@@ -502,6 +512,15 @@ export function OrganizerOrders() {
                         {order.is_stripe_connect && <Badge className="bg-purple-100 text-purple-700 ml-1"><CreditCard className="w-3 h-3 mr-1" />Connect</Badge>}
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                        {order.event?.title && (
+                          <span className="flex items-center gap-1" title="Event">
+                            <Calendar className="w-4 h-4" />
+                            {order.event.title}
+                            {order.event.start_date && (
+                              <span className="ml-1">• {formatDate(order.event.start_date)}</span>
+                            )}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1">
                           <User className="w-4 h-4" />
                           {order.buyer_name || 'N/A'}
@@ -510,8 +529,7 @@ export function OrganizerOrders() {
                           <Mail className="w-4 h-4" />
                           {order.buyer_email}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
+                        <span className="flex items-center gap-1" title="Order Date">
                           {formatDate(order.created_at)}
                         </span>
                       </div>
@@ -543,6 +561,12 @@ export function OrganizerOrders() {
                               <span className="text-[#0F0F0F]/60">Event</span>
                               <span className="font-medium">{order.event?.title || 'Unknown'}</span>
                             </div>
+                            {order.event?.start_date && (
+                              <div className="flex justify-between">
+                                <span className="text-[#0F0F0F]/60">Event Date</span>
+                                <span className="font-medium">{formatDate(order.event.start_date)}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between">
                               <span className="text-[#0F0F0F]/60">Payment Method</span>
                               <span className="font-medium capitalize">{order.payment_method || 'N/A'}</span>

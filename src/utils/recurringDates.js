@@ -70,7 +70,7 @@ export function generateRecurringDates(
           const targetDate = new Date(weekStart);
           const currentDay = targetDate.getDay();
           const daysToAdd = (dayOfWeek - currentDay + 7) % 7;
-          targetDate.setDate(targetDate.getDate() + daysToAdd + (weekOffset * 7 * weekIncrement));
+          targetDate.setDate(targetDate.getDate() + daysToAdd);
           
           // Only add if it's on or after start date
           if (targetDate >= start) {

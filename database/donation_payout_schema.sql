@@ -126,7 +126,7 @@ BEGIN
 END;
 $func$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- View for donation analytics
+-- View for donation analyticsa
 -- Note: This view depends on the is_donation column being added above
 -- Create the view only if the column exists
 DO $$

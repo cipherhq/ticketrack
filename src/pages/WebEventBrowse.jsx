@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { getCategories } from '@/services/events'
 import { supabase } from '@/lib/supabase'
+import { getUserLocation, sortEventsByDistance, formatDistance } from '@/utils/location'
 
 const dateOptions = [
   { value: 'all', label: 'All Dates' },
@@ -19,6 +20,7 @@ const dateOptions = [
 ]
 
 const sortOptions = [
+  { value: 'distance', label: 'Distance (Nearest)' },
   { value: 'date', label: 'Date (Soonest)' },
   { value: 'price-low', label: 'Price: Low to High' },
   { value: 'price-high', label: 'Price: High to Low' },
@@ -48,8 +50,10 @@ export function WebEventBrowse() {
   const [events, setEvents] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [userLocation, setUserLocation] = useState(null)
+  const [locationPermission, setLocationPermission] = useState(null) // 'granted', 'denied', 'prompt'
 
-  // Load categories on mount
+  // Load categories and get user location on mount
   useEffect(() => {
     async function loadCategories() {
       try {
@@ -60,12 +64,30 @@ export function WebEventBrowse() {
       }
     }
     loadCategories()
+
+    // Get user location for distance sorting
+    getUserLocation()
+      .then(loc => {
+        setUserLocation(loc)
+        setLocationPermission('granted')
+        // Reload events with distance sorting
+        if (sortBy === 'distance' || (!sortBy || sortBy === 'date')) {
+          loadEvents(loc)
+        }
+      })
+      .catch(error => {
+        console.log('Location not available:', error.message)
+        setLocationPermission('denied')
+      })
   }, [])
 
-  // Load events when filters change
+  // Load events when filters change (skip if location is being fetched)
   useEffect(() => {
-    loadEvents()
-  }, [])
+    // Only reload if location permission is not still being determined
+    if (locationPermission !== null) {
+      loadEvents(userLocation)
+    }
+  }, [dateFilter, location, searchTerm, selectedCategories, sortBy])
 
   const getDateRange = () => {
     const now = new Date()
@@ -89,7 +111,7 @@ export function WebEventBrowse() {
     }
   }
 
-  const loadEvents = async () => {
+  const loadEvents = async (useLocation = null) => {
     setLoading(true)
     
     try {
@@ -97,9 +119,10 @@ export function WebEventBrowse() {
       
       let query = supabase
         .from('events')
-        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, is_virtual, ticket_types (price)')
+        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, is_virtual, is_recurring, parent_event_id, venue_lat, venue_lng, ticket_types (price)')
         .eq('status', 'published')
         .or('visibility.eq.public,visibility.is.null')
+        .is('parent_event_id', null) // Only show parent events in browse (child events accessible via parent page)
         .gte('start_date', start)
 
       // Date filter
@@ -141,13 +164,36 @@ export function WebEventBrowse() {
           : 0
       }))
 
-      // Client-side sorting
-      if (sortBy === 'price-low') {
-        results.sort((a, b) => a.min_price - b.min_price)
-      } else if (sortBy === 'price-high') {
-        results.sort((a, b) => b.min_price - a.min_price)
-      } else if (sortBy === 'popular') {
-        results.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
+      // Sort by distance first if user location is available and sortBy is 'distance' or default
+      const locationToUse = useLocation || userLocation
+      if ((sortBy === 'distance' || (!sortBy || sortBy === 'date')) && locationToUse) {
+        results = sortEventsByDistance(results, locationToUse.lat, locationToUse.lng)
+        // If sortBy is 'distance', keep distance sort; otherwise sort by date within distance groups
+        if (sortBy === 'distance') {
+          // Already sorted by distance
+        } else {
+          // Sort by date within same distance ranges (events within 5km sorted by date, then 5-10km, etc.)
+          results = results.sort((a, b) => {
+            const distanceDiff = Math.floor(a.distance || Infinity) - Math.floor(b.distance || Infinity)
+            if (Math.abs(distanceDiff) <= 5) {
+              // Same distance range, sort by date
+              return new Date(a.start_date) - new Date(b.start_date)
+            }
+            return distanceDiff
+          })
+        }
+      } else {
+        // Client-side sorting by other criteria
+        if (sortBy === 'price-low') {
+          results.sort((a, b) => a.min_price - b.min_price)
+        } else if (sortBy === 'price-high') {
+          results.sort((a, b) => b.min_price - a.min_price)
+        } else if (sortBy === 'popular') {
+          results.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
+        } else {
+          // Default: sort by date
+          results.sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+        }
       }
 
       // Price range filter (client-side)
@@ -179,7 +225,7 @@ export function WebEventBrowse() {
     if (selectedCategories.length === 1) params.set('category', selectedCategories[0])
     setSearchParams(params)
     
-    loadEvents()
+    loadEvents(userLocation)
   }
 
   const handleCategoryToggle = (categorySlug) => {
@@ -543,6 +589,11 @@ export function WebEventBrowse() {
                           Free
                         </Badge>
                       )}
+                      {event.is_recurring && (
+                        <Badge className={`absolute ${event.is_free ? 'top-12' : 'top-4'} right-4 bg-purple-500 text-white border-0 flex items-center gap-1`}>
+                          <Calendar className="w-3 h-3" /> Series
+                        </Badge>
+                      )}
                       {event.is_virtual && (
                         <Badge className="absolute bottom-4 left-4 bg-purple-600 text-white border-0 flex items-center gap-1">
                           <Monitor className="w-3 h-3" /> Virtual
@@ -562,7 +613,14 @@ export function WebEventBrowse() {
                       
                       <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-4">
                         <MapPin className="w-4 h-4" />
-                        <span className="line-clamp-1">{event.venue_name}{event.city ? `, ${event.city}` : ''}</span>
+                        <span className="line-clamp-1">
+                          {event.venue_name}{event.city ? `, ${event.city}` : ''}
+                          {event.distance && event.distance !== Infinity && (
+                            <span className="ml-2 text-[#2969FF] font-medium">
+                              • {formatDistance(event.distance)}
+                            </span>
+                          )}
+                        </span>
                       </div>
                       
                       <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">

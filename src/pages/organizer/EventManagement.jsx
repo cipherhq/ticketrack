@@ -1,7 +1,7 @@
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle, Heart, Users } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle, Heart, Users, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -28,6 +28,17 @@ const MANUAL_ISSUE_TYPES = [
   { value: 'giveaway_winner', label: 'Giveaway Winner' },
 ];
 
+const PAYMENT_METHODS = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'card', label: 'Card Payment' },
+  { value: 'mobile_money', label: 'Mobile Money' },
+  { value: 'paystack', label: 'Paystack' },
+  { value: 'stripe', label: 'Stripe' },
+  { value: 'flutterwave', label: 'Flutterwave' },
+  { value: 'other', label: 'Other' },
+];
+
 function generateTicketCode() {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -51,11 +62,19 @@ export function EventManagement() {
     attendee_email: '',
     attendee_phone: '',
     ticket_type_id: '',
+    issue_mode: 'complimentary', // 'complimentary' or 'sell'
     manual_issue_type: 'complimentary',
+    payment_method: 'cash',
+    payment_reference: '',
   });
   const [issueLoading, setIssueLoading] = useState(false);
   const [issueSuccess, setIssueSuccess] = useState(null);
   const [issueError, setIssueError] = useState(null);
+  
+  // Track expanded recurring events and their child events
+  const [expandedRecurringEvents, setExpandedRecurringEvents] = useState({});
+  const [childEventsData, setChildEventsData] = useState({});
+  const [loadingChildEvents, setLoadingChildEvents] = useState({});
 
   useEffect(() => {
     if (organizer?.id) {
@@ -217,7 +236,10 @@ export function EventManagement() {
       attendee_email: '',
       attendee_phone: '',
       ticket_type_id: event.ticket_types?.[0]?.id || '',
+      issue_mode: 'complimentary',
       manual_issue_type: 'complimentary',
+      payment_method: 'cash',
+      payment_reference: '',
     });
     setIssueSuccess(null);
     setIssueError(null);
@@ -225,7 +247,17 @@ export function EventManagement() {
 
   const closeIssueTicketModal = () => {
     setIssueTicketModal({ open: false, event: null });
-    setIssueForm({ firstName: '', lastName: '', attendee_email: '', attendee_phone: '', ticket_type_id: '', manual_issue_type: 'complimentary' });
+    setIssueForm({ 
+      firstName: '', 
+      lastName: '', 
+      attendee_email: '', 
+      attendee_phone: '', 
+      ticket_type_id: '', 
+      issue_mode: 'complimentary',
+      manual_issue_type: 'complimentary',
+      payment_method: 'cash',
+      payment_reference: '',
+    });
     setIssueSuccess(null);
     setIssueError(null);
   };
@@ -254,22 +286,70 @@ export function EventManagement() {
 
       const ticketCode = generateTicketCode();
       const fullName = `${issueForm.firstName.trim()} ${issueForm.lastName.trim()}`;
+      const isSelling = issueForm.issue_mode === 'sell';
+      const ticketPrice = selectedTicketType.price || 0;
+      const currency = event.currency || getDefaultCurrency(event.country_code || event.country);
 
+      let orderId = null;
+
+      // If selling, create an order first
+      if (isSelling) {
+        if (!issueForm.payment_method) throw new Error('Payment method is required when selling tickets');
+        
+        const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
+        const { data: newOrder, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            order_number: orderNumber,
+            event_id: event.id,
+            organizer_id: organizer.id,
+            user_id: null, // Manual sale, no user account
+            buyer_name: fullName,
+            buyer_email: issueForm.attendee_email.trim().toLowerCase(),
+            buyer_phone: issueForm.attendee_phone.trim() || null,
+            total_amount: ticketPrice,
+            currency: currency,
+            status: 'completed',
+            payment_method: issueForm.payment_method,
+            payment_reference: issueForm.payment_reference.trim() || null,
+            paid_at: new Date().toISOString(),
+            is_manual_sale: true,
+          })
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+        orderId = newOrder.id;
+
+        // Create order item
+        await supabase
+          .from('order_items')
+          .insert({
+            order_id: orderId,
+            ticket_type_id: issueForm.ticket_type_id,
+            quantity: 1,
+            unit_price: ticketPrice,
+            total_price: ticketPrice,
+          });
+      }
+
+      // Create ticket
       const { data: newTicket, error: ticketError } = await supabase
         .from('tickets')
         .insert({
           event_id: event.id,
+          order_id: orderId,
           ticket_type_id: issueForm.ticket_type_id,
           attendee_name: fullName,
           attendee_email: issueForm.attendee_email.trim().toLowerCase(),
           attendee_phone: issueForm.attendee_phone.trim() || null,
           ticket_code: ticketCode,
           quantity: 1,
-          unit_price: 0,
-          total_price: 0,
-          currency: event.currency || getDefaultCurrency(event.country_code || event.country),
-          payment_status: 'complimentary',
-          payment_method: null,
+          unit_price: isSelling ? ticketPrice : 0,
+          total_price: isSelling ? ticketPrice : 0,
+          currency: currency,
+          payment_status: isSelling ? 'paid' : 'complimentary',
+          payment_method: isSelling ? issueForm.payment_method : null,
           status: 'active',
           is_manual_issue: true,
           issued_by: user?.id,
@@ -280,11 +360,13 @@ export function EventManagement() {
 
       if (ticketError) throw ticketError;
 
+      // Update ticket type sold count
       await supabase
         .from('ticket_types')
         .update({ quantity_sold: (selectedTicketType.quantity_sold || 0) + 1 })
         .eq('id', issueForm.ticket_type_id);
 
+      // Send confirmation email
       try {
         await supabase.functions.invoke('send-email', {
           body: {
@@ -298,10 +380,10 @@ export function EventManagement() {
               city: event.city,
               ticketType: selectedTicketType.name,
               quantity: 1,
-              orderNumber: ticketCode,
-              totalAmount: 0,
-              currency: event.currency || getDefaultCurrency(event.country_code || event.country),
-              isFree: true,
+              orderNumber: orderId ? `ORD-${orderId.substring(0, 8)}` : ticketCode,
+              totalAmount: isSelling ? ticketPrice : 0,
+              currency: currency,
+              isFree: !isSelling,
               appUrl: window.location.origin,
             },
             userId: null,
@@ -318,7 +400,10 @@ export function EventManagement() {
         attendeeName: fullName,
         attendeeEmail: issueForm.attendee_email.trim(),
         ticketType: selectedTicketType.name,
+        amount: isSelling ? ticketPrice : 0,
+        paymentMethod: isSelling ? PAYMENT_METHODS.find(p => p.value === issueForm.payment_method)?.label : null,
         reason: MANUAL_ISSUE_TYPES.find(t => t.value === issueForm.manual_issue_type)?.label,
+        isSelling,
       });
       loadEvents();
     } catch (err) {
@@ -361,35 +446,247 @@ export function EventManagement() {
       alert('Cannot delete this event because tickets have been sold. For audit purposes, events with sales must be preserved.');
       return;
     }
+    
+    // Check if this is a recurring event with child events
+    if (event && event.is_recurring && event.childEventCount > 0) {
+      const confirmDelete = confirm(
+        `This is a recurring event with ${event.childEventCount} child event(s). ` +
+        `Deleting the parent event will also delete all child events. Are you sure you want to continue?`
+      );
+      if (!confirmDelete) return;
+      
+      // Delete all child events first
+      try {
+        const { error: childError } = await supabase
+          .from('events')
+          .delete()
+          .eq('parent_event_id', id);
+        if (childError) throw childError;
+      } catch (childErr) {
+        console.error('Error deleting child events:', childErr);
+        alert('Failed to delete child events. Please try again.');
+        return;
+      }
+    }
+    
     if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
+    
     try {
       setDeleting(id);
-      const { error } = await supabase.from('events').delete().eq('id', id);
+      
+      // Delete associated ticket types first (if any)
+      const { error: ticketTypesError } = await supabase
+        .from('ticket_types')
+        .delete()
+        .eq('event_id', id);
+      // Don't fail if no ticket types exist
+      
+      // Delete the event
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id);
+      
       if (error) throw error;
-      setEvents(events.filter(e => e.id !== id));
+      
+      // Reload events from database to ensure consistency
+      await loadEvents();
     } catch (err) {
       console.error('Error deleting event:', err);
-      alert('Failed to delete event. It may have associated tickets or orders.');
+      alert(`Failed to delete event: ${err.message || 'It may have associated tickets or orders.'}`);
     } finally {
       setDeleting(null);
     }
   };
 
+  const loadChildEvents = async (parentEventId) => {
+    if (childEventsData[parentEventId]) {
+      // Already loaded
+      return;
+    }
+
+    setLoadingChildEvents(prev => ({ ...prev, [parentEventId]: true }));
+    try {
+      // Load child events with ticket stats
+      const { data: children, error } = await supabase
+        .from('events')
+        .select(`
+          *,
+          ticket_types (id, name, price, quantity_available, quantity_sold)
+        `)
+        .eq('parent_event_id', parentEventId)
+        .order('start_date', { ascending: true });
+
+      if (error) throw error;
+
+      // Get ticket counts and revenue for each child event
+      const childEventIds = children?.map(c => c.id) || [];
+      let childRSVPCounts = {};
+      let childDonationAmounts = {};
+      
+      if (childEventIds.length > 0) {
+        // Get tickets for child events
+        const { data: tickets } = await supabase
+          .from('tickets')
+          .select('event_id, quantity')
+          .in('event_id', childEventIds);
+
+        tickets?.forEach(t => {
+          childRSVPCounts[t.event_id] = (childRSVPCounts[t.event_id] || 0) + (t.quantity || 1);
+        });
+
+        // Get donations for free child events
+        const freeChildIds = children?.filter(c => c.is_free).map(c => c.id) || [];
+        if (freeChildIds.length > 0) {
+          const { data: donations } = await supabase
+            .from('orders')
+            .select('event_id, total_amount')
+            .in('event_id', freeChildIds)
+            .eq('is_donation', true)
+            .eq('status', 'completed');
+
+          donations?.forEach(d => {
+            childDonationAmounts[d.event_id] = (childDonationAmounts[d.event_id] || 0) + parseFloat(d.total_amount || 0);
+          });
+        }
+      }
+
+      // Calculate stats for each child event
+      const childrenWithStats = (children || []).map(child => {
+        const ticketTypes = child.ticket_types || [];
+        const totalTickets = ticketTypes.reduce((sum, t) => sum + (t.quantity_available || 0), 0) || child.total_capacity || 100;
+        
+        const soldTickets = child.is_free 
+          ? (childRSVPCounts[child.id] || 0)
+          : ticketTypes.reduce((sum, t) => sum + (t.quantity_sold || 0), 0);
+        
+        const revenue = child.is_free
+          ? (childDonationAmounts[child.id] || 0)
+          : ticketTypes.reduce((sum, t) => sum + ((t.quantity_sold || 0) * (t.price || 0)), 0);
+
+        return {
+          ...child,
+          totalTickets,
+          soldTickets,
+          revenue,
+          isFree: child.is_free,
+          donationAmount: childDonationAmounts[child.id] || 0
+        };
+      });
+
+      setChildEventsData(prev => ({ ...prev, [parentEventId]: childrenWithStats }));
+    } catch (err) {
+      console.error('Error loading child events:', err);
+    } finally {
+      setLoadingChildEvents(prev => ({ ...prev, [parentEventId]: false }));
+    }
+  };
+
+  const toggleRecurringEvent = async (eventId) => {
+    const isExpanded = expandedRecurringEvents[eventId];
+    
+    if (!isExpanded) {
+      // Expanding - load child events
+      await loadChildEvents(eventId);
+    }
+    
+    setExpandedRecurringEvents(prev => ({
+      ...prev,
+      [eventId]: !isExpanded
+    }));
+  };
+
   const cancelSeries = async (event) => {
     if (!event.is_recurring) return;
-    const confirmed = confirm('Cancel entire series? This will cancel this event and all ' + (event.childEventCount || 0) + ' upcoming events in the series. Attendees will be notified.');
+    const confirmed = confirm('Cancel entire series? This will cancel this event and all ' + (event.childEventCount || 0) + ' upcoming events in the series. All tickets will be automatically refunded.');
     if (!confirmed) return;
     try {
       setCancelingSeries(event.id);
+      
+      // Cancel parent event
       await supabase.from('events').update({ status: 'cancelled' }).eq('id', event.id);
+      
+      // Cancel all child events and trigger auto-refunds
+      const { data: childEvents } = await supabase
+        .from('events')
+        .select('id')
+        .eq('parent_event_id', event.id);
+      
+      // Cancel all child events
       await supabase.from('events').update({ status: 'cancelled' }).eq('parent_event_id', event.id);
-      alert('Series cancelled successfully. Consider notifying attendees via email.');
+      
+      // Trigger auto-refunds for parent event
+      try {
+        await supabase.functions.invoke('auto-refund-on-cancellation', {
+          body: {
+            eventId: event.id,
+            reason: 'Event series cancelled by organizer',
+            organizerId: organizer.id
+          }
+        });
+      } catch (refundError) {
+        console.error('Error processing auto-refunds for parent event:', refundError);
+      }
+      
+      // Trigger auto-refunds for each child event
+      if (childEvents && childEvents.length > 0) {
+        for (const childEvent of childEvents) {
+          try {
+            await supabase.functions.invoke('auto-refund-on-cancellation', {
+              body: {
+                eventId: childEvent.id,
+                reason: 'Event series cancelled by organizer',
+                organizerId: organizer.id
+              }
+            });
+          } catch (refundError) {
+            console.error(`Error processing auto-refunds for child event ${childEvent.id}:`, refundError);
+          }
+        }
+      }
+      
+      alert('Series cancelled successfully. All tickets are being automatically refunded. Attendees will receive email notifications.');
       loadEvents();
     } catch (err) {
       console.error('Error cancelling series:', err);
-      alert('Failed to cancel series');
+      alert('Failed to cancel series: ' + (err.message || 'Unknown error'));
     } finally {
       setCancelingSeries(null);
+    }
+  };
+
+  const cancelSingleChildEvent = async (childEvent) => {
+    if (!confirm(`Cancel "${childEvent.title}" on ${formatDate(childEvent.start_date)}? All tickets for this date will be automatically refunded.`)) return;
+    try {
+      // Cancel the child event
+      await supabase.from('events').update({ status: 'cancelled' }).eq('id', childEvent.id);
+      
+      // Trigger auto-refunds for this child event
+      try {
+        const { error: refundError } = await supabase.functions.invoke('auto-refund-on-cancellation', {
+          body: {
+            eventId: childEvent.id,
+            reason: `Event date cancelled: ${formatDate(childEvent.start_date)}`,
+            organizerId: organizer.id
+          }
+        });
+        
+        if (refundError) {
+          console.error('Error processing auto-refunds:', refundError);
+          alert('Event date cancelled, but there was an error processing refunds. Please check and process refunds manually.');
+        } else {
+          alert('Event date cancelled successfully. All tickets are being automatically refunded. Attendees will receive email notifications.');
+        }
+      } catch (refundError) {
+        console.error('Error processing auto-refunds:', refundError);
+        alert('Event date cancelled, but there was an error processing refunds. Please check and process refunds manually.');
+      }
+      
+      // Reload child events for this parent
+      await loadChildEvents(childEvent.parent_event_id);
+    } catch (err) {
+      console.error('Error cancelling child event:', err);
+      alert('Failed to cancel event date: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -473,7 +770,26 @@ export function EventManagement() {
                                 {event.soldTickets} {event.isFree ? 'RSVPs' : 'sold'}
                               </Badge>
                             )}
-                            {event.is_recurring && <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1"><RefreshCw className="w-3 h-3" />Series ({event.childEventCount + 1} events)</Badge>}
+                            {event.is_recurring && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleRecurringEvent(event.id);
+                                }}
+                                className="h-auto p-1 text-purple-700 hover:bg-purple-100 rounded-lg"
+                              >
+                                <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1 cursor-pointer hover:bg-purple-200">
+                                  {expandedRecurringEvents[event.id] ? (
+                                    <ChevronDown className="w-3 h-3" />
+                                  ) : (
+                                    <ChevronRight className="w-3 h-3" />
+                                  )}
+                                  <RefreshCw className="w-3 h-3" />Series ({event.childEventCount + 1} events)
+                                </Badge>
+                              </Button>
+                            )}
                           </div>
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
                             <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(event.start_date)}</span>
@@ -498,6 +814,73 @@ export function EventManagement() {
                           </div>
                         </div>
                       </div>
+                      {event.is_recurring && expandedRecurringEvents[event.id] && (
+                        <div className="mt-4 ml-8 space-y-2 border-l-2 border-purple-200 pl-4">
+                          {loadingChildEvents[event.id] ? (
+                            <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 py-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />Loading event dates...
+                            </div>
+                          ) : childEventsData[event.id]?.length > 0 ? (
+                            childEventsData[event.id].map((childEvent) => {
+                              const childStatus = getEventStatus(childEvent);
+                              const isChildEditable = canEditEvent(childEvent);
+                              return (
+                                <div
+                                  key={childEvent.id}
+                                  className={`p-3 rounded-lg ${
+                                    childEvent.isFree 
+                                      ? 'bg-green-50/50 hover:bg-green-100/50' 
+                                      : 'bg-white/50 hover:bg-white'
+                                  } border border-[#0F0F0F]/5`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Calendar className="w-3.5 h-3.5 text-[#0F0F0F]/60" />
+                                        <span className="text-sm font-medium text-[#0F0F0F]">{formatDate(childEvent.start_date)}</span>
+                                        {getStatusBadge(childEvent)}
+                                        {childEvent.isFree && <Badge className="bg-green-100 text-green-700 text-xs">Free</Badge>}
+                                      </div>
+                                      <div className="flex items-center gap-4 text-xs text-[#0F0F0F]/60 ml-6">
+                                        <span>
+                                          <span className="font-medium text-[#0F0F0F]">{childEvent.soldTickets}</span>/{childEvent.totalTickets} {childEvent.isFree ? 'RSVPs' : 'sold'}
+                                        </span>
+                                        {childEvent.isFree ? (
+                                          childEvent.donationAmount > 0 ? (
+                                            <span className="text-emerald-600 font-medium flex items-center gap-1">
+                                              <Heart className="w-3 h-3" />
+                                              {formatPrice(childEvent.donationAmount, childEvent.currency)} donations
+                                            </span>
+                                          ) : (
+                                            <span className="text-[#0F0F0F]/40">No donations</span>
+                                          )
+                                        ) : (
+                                          <span className="text-[#2969FF] font-medium flex items-center gap-1">
+                                            <DollarSign className="w-3 h-3" />
+                                            {formatPrice(childEvent.revenue, childEvent.currency)}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <Button variant="ghost" size="icon" onClick={() => navigate(`/e/${childEvent.slug || childEvent.id}`)} className="rounded-lg h-8 w-8" title="View Public Page"><Eye className="w-3.5 h-3.5" /></Button>
+                                      {isChildEditable && (
+                                        <Button variant="ghost" size="icon" onClick={() => navigate(`/organizer/events/${childEvent.id}/edit`)} className="rounded-lg h-8 w-8" title="Edit Event Date"><Edit className="w-3.5 h-3.5" /></Button>
+                                      )}
+                                      <Button variant="ghost" size="icon" onClick={() => navigate(`/organizer/analytics?event=${childEvent.id}`)} className="rounded-lg h-8 w-8" title="View Analytics"><BarChart3 className="w-3.5 h-3.5" /></Button>
+                                      {childStatus !== 'completed' && childEvent.status !== 'cancelled' && (
+                                        <Button variant="ghost" size="icon" onClick={() => cancelSingleChildEvent(childEvent)} className="rounded-lg h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title="Cancel This Date"><X className="w-3.5 h-3.5" /></Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="text-sm text-[#0F0F0F]/40 py-2">No event dates found</div>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center space-x-1">
                         <Button variant="ghost" size="icon" onClick={() => navigate(`/e/${event.slug || event.id}`)} className="rounded-lg" title="View Public Page"><Eye className="w-4 h-4" /></Button>
                         {isEditable ? (
@@ -571,12 +954,23 @@ export function EventManagement() {
                 <div className="bg-[#F4F6FA] rounded-xl p-4 space-y-3">
                   <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Attendee</span><span className="text-sm font-medium text-[#0F0F0F]">{issueSuccess.attendeeName}</span></div>
                   <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Ticket Type</span><span className="text-sm font-medium text-[#0F0F0F]">{issueSuccess.ticketType}</span></div>
-                  <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Price</span><Badge className="bg-green-100 text-green-700">Complimentary</Badge></div>
+                  <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Price</span>
+                  {issueSuccess.isSelling ? (
+                    <span className="text-sm font-medium text-[#0F0F0F]">{formatPrice(issueSuccess.amount, issueTicketModal.event?.currency || 'USD')}</span>
+                  ) : (
+                    <Badge className="bg-green-100 text-green-700">Complimentary</Badge>
+                  )}
+                </div>
+                {issueSuccess.isSelling && issueSuccess.paymentMethod && (
+                  <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Payment Method</span><span className="text-sm font-medium text-[#0F0F0F]">{issueSuccess.paymentMethod}</span></div>
+                )}
+                {!issueSuccess.isSelling && issueSuccess.reason && (
                   <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Reason</span><span className="text-sm font-medium text-[#0F0F0F]">{issueSuccess.reason}</span></div>
+                )}
                   <div className="flex justify-between pt-2 border-t border-gray-200"><span className="text-sm text-[#0F0F0F]/60">Ticket Code</span><span className="text-sm font-mono font-medium text-[#2969FF]">{issueSuccess.ticketCode}</span></div>
                 </div>
                 <div className="flex gap-3 mt-6">
-                  <Button onClick={() => { setIssueSuccess(null); setIssueForm({ firstName: '', lastName: '', attendee_email: '', attendee_phone: '', ticket_type_id: issueTicketModal.event?.ticket_types?.[0]?.id || '', manual_issue_type: 'complimentary' }); }} variant="outline" className="flex-1 rounded-xl">Issue Another</Button>
+                  <Button onClick={() => { setIssueSuccess(null); setIssueForm({ firstName: '', lastName: '', attendee_email: '', attendee_phone: '', ticket_type_id: issueTicketModal.event?.ticket_types?.[0]?.id || '', issue_mode: 'complimentary', manual_issue_type: 'complimentary', payment_method: 'cash', payment_reference: '' }); }} variant="outline" className="flex-1 rounded-xl">Issue Another</Button>
                   <Button onClick={closeIssueTicketModal} className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">Done</Button>
                 </div>
               </div>
@@ -608,20 +1002,75 @@ export function EventManagement() {
                     <option value="">Select ticket type</option>
                     {issueTicketModal.event?.ticket_types?.map((type) => {
                       const remaining = (type.quantity_available || 0) - (type.quantity_sold || 0);
+                      const selectedTicketType = issueTicketModal.event?.ticket_types?.find(t => t.id === issueForm.ticket_type_id);
                       return <option key={type.id} value={type.id} disabled={remaining <= 0}>{type.name} - {formatPrice(type.price, issueTicketModal.event?.currency)} ({remaining} left)</option>;
                     })}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="issue_type" className="text-sm font-medium text-[#0F0F0F]">Reason for Issue <span className="text-red-500">*</span></Label>
-                  <select id="issue_type" value={issueForm.manual_issue_type} onChange={(e) => setIssueForm(prev => ({ ...prev, manual_issue_type: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0 text-[#0F0F0F] focus:ring-2 focus:ring-[#2969FF]" required>
-                    {MANUAL_ISSUE_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
-                  </select>
+                  <Label className="text-sm font-medium text-[#0F0F0F]">Issue Mode <span className="text-red-500">*</span></Label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIssueForm(prev => ({ ...prev, issue_mode: 'complimentary' }))}
+                      className={`flex-1 h-12 px-4 rounded-xl font-medium transition-all ${
+                        issueForm.issue_mode === 'complimentary'
+                          ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                          : 'bg-[#F4F6FA] text-[#0F0F0F]/60 border-2 border-transparent hover:bg-[#E8EAED]'
+                      }`}
+                    >
+                      Complimentary
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIssueForm(prev => ({ ...prev, issue_mode: 'sell' }))}
+                      className={`flex-1 h-12 px-4 rounded-xl font-medium transition-all ${
+                        issueForm.issue_mode === 'sell'
+                          ? 'bg-[#2969FF]/10 text-[#2969FF] border-2 border-[#2969FF]'
+                          : 'bg-[#F4F6FA] text-[#0F0F0F]/60 border-2 border-transparent hover:bg-[#E8EAED]'
+                      }`}
+                    >
+                      Sell Ticket
+                    </button>
+                  </div>
                 </div>
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                  <p className="text-sm text-green-700"><span className="font-medium">Price:</span> Complimentary (Free)</p>
-                  <p className="text-xs text-green-600 mt-1">This ticket will not count toward revenue reports.</p>
-                </div>
+                {issueForm.issue_mode === 'complimentary' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="issue_type" className="text-sm font-medium text-[#0F0F0F]">Reason for Issue <span className="text-red-500">*</span></Label>
+                    <select id="issue_type" value={issueForm.manual_issue_type} onChange={(e) => setIssueForm(prev => ({ ...prev, manual_issue_type: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0 text-[#0F0F0F] focus:ring-2 focus:ring-[#2969FF]" required>
+                      {MANUAL_ISSUE_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+                    </select>
+                  </div>
+                )}
+                {issueForm.issue_mode === 'sell' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="payment_method" className="text-sm font-medium text-[#0F0F0F]">Payment Method <span className="text-red-500">*</span></Label>
+                      <select id="payment_method" value={issueForm.payment_method} onChange={(e) => setIssueForm(prev => ({ ...prev, payment_method: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0 text-[#0F0F0F] focus:ring-2 focus:ring-[#2969FF]" required>
+                        {PAYMENT_METHODS.map((method) => <option key={method.value} value={method.value}>{method.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="payment_reference" className="text-sm font-medium text-[#0F0F0F]">Payment Reference <span className="text-[#0F0F0F]/40">(optional)</span></Label>
+                      <Input id="payment_reference" type="text" placeholder="Transaction ID, receipt number, etc." value={issueForm.payment_reference} onChange={(e) => setIssueForm(prev => ({ ...prev, payment_reference: e.target.value }))} className="h-12 rounded-xl bg-[#F4F6FA] border-0" />
+                    </div>
+                    {(() => {
+                      const selectedTicketType = issueTicketModal.event?.ticket_types?.find(t => t.id === issueForm.ticket_type_id);
+                      return (
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                          <p className="text-sm text-blue-700"><span className="font-medium">Ticket Price:</span> {formatPrice(selectedTicketType?.price || 0, issueTicketModal.event?.currency || 'USD')}</p>
+                          <p className="text-xs text-blue-600 mt-1">This sale will be recorded and counted toward revenue reports.</p>
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
+                {issueForm.issue_mode === 'complimentary' && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                    <p className="text-sm text-green-700"><span className="font-medium">Price:</span> Complimentary (Free)</p>
+                    <p className="text-xs text-green-600 mt-1">This ticket will not count toward revenue reports.</p>
+                  </div>
+                )}
                 <Button type="submit" disabled={issueLoading} className="w-full h-12 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl font-medium">
                   {issueLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Issuing Ticket...</> : <><Ticket className="w-4 h-4 mr-2" />Issue Ticket</>}
                 </Button>

@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import './lib/sentry' // Initialize Sentry before App (only loads in production if DSN is set)
 import App from './App'
 import './index.css'
 

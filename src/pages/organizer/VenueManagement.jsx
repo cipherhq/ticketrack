@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   MapPin, Plus, Settings, Edit, Eye, Trash2,
-  Wifi, WifiOff, Users, Layout, Building2
+  Users, Layout, Building2
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -260,12 +260,12 @@ export function VenueManagement() {
                 <input
                   type="checkbox"
                   id="iotEnabled"
-                  checked={venueForm.iot_enabled}
-                  onChange={(e) => setVenueForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
+                  checked={false}
+                  disabled={true}
+                  title="IoT feature is currently disabled"
                 />
-                <Label htmlFor="iotEnabled" className="flex items-center">
-                  <Wifi className="w-4 h-4 mr-1" />
-                  Enable IoT Smart Features
+                <Label htmlFor="iotEnabled" className="flex items-center opacity-50">
+                  Enable IoT Smart Features (Disabled)
                 </Label>
               </div>
               <div className="flex justify-end space-x-2 pt-4">
@@ -315,14 +315,12 @@ export function VenueManagement() {
                       <Badge variant="outline" className="capitalize">
                         {venue.venue_type}
                       </Badge>
-                      {venue.iot_enabled ? (
+                      {false ? (
                         <Badge variant="default" className="bg-green-100 text-green-800">
-                          <Wifi className="w-3 h-3 mr-1" />
                           IoT
                         </Badge>
                       ) : (
                         <Badge variant="secondary">
-                          <WifiOff className="w-3 h-3 mr-1" />
                           Basic
                         </Badge>
                       )}
@@ -371,16 +369,6 @@ export function VenueManagement() {
                           <Layout className="w-4 h-4 mr-1" />
                           Layouts
                         </Button>
-                        {venue.iot_enabled && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/organizer/iot-venue/${venue.id}`)}
-                          >
-                            <Wifi className="w-4 h-4 mr-1" />
-                            IoT
-                          </Button>
-                        )}
                       </div>
                       <Button
                         variant="ghost"

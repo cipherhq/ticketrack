@@ -494,7 +494,8 @@ export function AdminSettings() {
                     secret_key_encrypted: '',
                     webhook_secret_encrypted: '',
                     sandbox_mode: true,
-                    is_active: true
+                    is_active: true,
+                    config: {}
                   }
                 })}
                 className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl"
@@ -527,7 +528,8 @@ export function AdminSettings() {
                               secret_key_encrypted: '',
                               webhook_secret_encrypted: '',
                               sandbox_mode: true,
-                              is_active: true
+                              is_active: true,
+                              config: {}
                             }
                           })}
                           className="rounded-lg"
@@ -572,7 +574,7 @@ export function AdminSettings() {
                                 </Button>
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className={`grid gap-3 text-sm ${gw.provider === 'flutterwave' ? 'grid-cols-3' : 'grid-cols-2'}`}>
                               <div>
                                 <p className="text-[#0F0F0F]/60">Public Key</p>
                                 <p className="font-mono text-xs">{maskSecret(gw.public_key) || 'Not set'}</p>
@@ -581,6 +583,12 @@ export function AdminSettings() {
                                 <p className="text-[#0F0F0F]/60">Secret Key</p>
                                 <p className="font-mono text-xs">{maskSecret(gw.secret_key_encrypted) || 'Not set'}</p>
                               </div>
+                              {gw.provider === 'flutterwave' && (
+                                <div>
+                                  <p className="text-[#0F0F0F]/60">Encryption Key</p>
+                                  <p className="font-mono text-xs">{maskSecret(gw.config?.encryption_key_encrypted) || 'Not set'}</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -1232,6 +1240,40 @@ export function AdminSettings() {
                   </Button>
                 </div>
               </div>
+              {/* Flutterwave-specific: Encryption Key */}
+              {gatewayModal.data.provider === 'flutterwave' && (
+                <div>
+                  <Label>Encryption Key</Label>
+                  <div className="relative">
+                    <Input 
+                      type={showSecrets.encryption ? 'text' : 'password'}
+                      value={gatewayModal.data.config?.encryption_key_encrypted || ''} 
+                      onChange={(e) => setGatewayModal(prev => ({ 
+                        ...prev, 
+                        data: { 
+                          ...prev.data, 
+                          config: { 
+                            ...prev.data.config, 
+                            encryption_key_encrypted: e.target.value 
+                          } 
+                        } 
+                      }))}
+                      className="rounded-xl mt-1 font-mono text-sm pr-10"
+                      placeholder="FLWSECK_TEST_..."
+                    />
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2"
+                      onClick={() => setShowSecrets(prev => ({ ...prev, encryption: !prev.encryption }))}
+                    >
+                      {showSecrets.encryption ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-[#0F0F0F]/60 mt-1">Required for Flutterwave payment encryption</p>
+                </div>
+              )}
               <div>
                 <Label>Webhook Secret</Label>
                 <div className="relative">
@@ -1240,7 +1282,7 @@ export function AdminSettings() {
                     value={gatewayModal.data.webhook_secret_encrypted || ''} 
                     onChange={(e) => setGatewayModal(prev => ({ ...prev, data: { ...prev.data, webhook_secret_encrypted: e.target.value }}))}
                     className="rounded-xl mt-1 font-mono text-sm pr-10"
-                    placeholder="whsec_..."
+                    placeholder={gatewayModal.data.provider === 'flutterwave' ? 'FLWSECK_...' : 'whsec_...'}
                   />
                   <Button 
                     type="button"

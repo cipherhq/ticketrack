@@ -2,24 +2,41 @@ import { supabase } from '@/lib/supabase';
 
 // Payment method options per provider (fallback defaults)
 
-// Currency to payment provider mapping
+// Currency to payment provider mapping (primary -> backup)
 const CURRENCY_PROVIDER_MAP = {
-  // Paystack currencies (Africa)
-  NGN: 'paystack',
-  GHS: 'paystack',
-  KES: 'paystack',
-  ZAR: 'paystack',
+  // Paystack currencies (Africa) - Flutterwave as backup
+  NGN: { primary: 'paystack', backup: 'flutterwave' },
+  GHS: { primary: 'paystack', backup: 'flutterwave' },
+  KES: { primary: 'paystack', backup: null },
+  ZAR: { primary: 'paystack', backup: null },
   // Stripe currencies (International)
-  USD: 'stripe',
-  GBP: 'stripe',
-  EUR: 'stripe',
-  CAD: 'stripe',
-  AUD: 'stripe',
+  USD: { primary: 'stripe', backup: null },
+  GBP: { primary: 'stripe', backup: null },
+  EUR: { primary: 'stripe', backup: null },
+  CAD: { primary: 'stripe', backup: null },
+  AUD: { primary: 'stripe', backup: null },
 };
 
-// Get the appropriate payment provider for a currency
-export const getPaymentProvider = (currency = 'NGN') => {
-  return CURRENCY_PROVIDER_MAP[currency?.toUpperCase()] || 'paystack';
+// Get the appropriate payment provider for a currency (with fallback support)
+export const getPaymentProvider = (currency = 'NGN', useBackup = false) => {
+  const mapping = CURRENCY_PROVIDER_MAP[currency?.toUpperCase()];
+  if (!mapping) return 'paystack';
+  
+  // For backward compatibility, return primary if mapping is old format
+  if (typeof mapping === 'string') return mapping;
+  
+  return useBackup && mapping.backup ? mapping.backup : mapping.primary;
+};
+
+// Get primary and backup providers for a currency
+export const getPaymentProviders = (currency = 'NGN') => {
+  const mapping = CURRENCY_PROVIDER_MAP[currency?.toUpperCase()];
+  if (!mapping) return { primary: 'paystack', backup: null };
+  
+  // For backward compatibility
+  if (typeof mapping === 'string') return { primary: mapping, backup: null };
+  
+  return mapping;
 };
 
 // Check if a provider is active for a country
@@ -61,6 +78,12 @@ const DEFAULT_PAYMENT_METHODS = {
     { id: 'card', label: 'Card', icon: 'CreditCard' },
     { id: 'bank', label: 'Bank Transfer', icon: 'Building2' },
     { id: 'ussd', label: 'USSD', icon: 'Smartphone' },
+  ],
+  flutterwave: [
+    { id: 'card', label: 'Card', icon: 'CreditCard' },
+    { id: 'bank', label: 'Bank Transfer', icon: 'Building2' },
+    { id: 'ussd', label: 'USSD', icon: 'Smartphone' },
+    { id: 'mobile_money', label: 'Mobile Money', icon: 'Smartphone' },
   ],
   stripe: [
     { id: 'card', label: 'Card', icon: 'CreditCard', description: 'Credit/Debit Card' },
@@ -161,6 +184,11 @@ export const PROVIDER_INFO = {
     description: 'Secure payment via Paystack',
     supportedMethods: 'Cards, Bank Transfer, USSD',
   },
+  flutterwave: {
+    name: 'Flutterwave',
+    description: 'Secure payment via Flutterwave',
+    supportedMethods: 'Cards, Bank Transfer, USSD, Mobile Money',
+  },
   stripe: {
     name: 'Stripe',
     description: 'Secure payment via Stripe',
@@ -196,4 +224,36 @@ export const capturePayPalPayment = async (orderId, paypalOrderId) => {
 
   if (error) throw new Error(error.message);
   return data;
+};
+
+// Initialize Flutterwave Checkout
+export const initFlutterwaveCheckout = async (orderId, successUrl, cancelUrl) => {
+  const { data, error } = await supabase.functions.invoke('create-flutterwave-checkout', {
+    body: { orderId, successUrl, cancelUrl }
+  });
+
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+// Get payment provider with fallback logic (checks active gateways)
+export const getPaymentProviderWithFallback = async (currency, countryCode) => {
+  const { primary, backup } = getPaymentProviders(currency);
+  
+  // Check if primary provider is active
+  const primaryActive = await getActiveGateway(countryCode, primary);
+  if (primaryActive) {
+    return { provider: primary, isBackup: false };
+  }
+  
+  // Try backup if available
+  if (backup) {
+    const backupActive = await getActiveGateway(countryCode, backup);
+    if (backupActive) {
+      return { provider: backup, isBackup: true };
+    }
+  }
+  
+  // Fallback to primary even if not active (for backward compatibility)
+  return { provider: primary, isBackup: false };
 };

@@ -56,19 +56,18 @@ export async function getEvents({
 export async function getEvent(idOrSlug) {
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug)
   
+  // Build select query separately to avoid syntax issues
+  const selectQuery = `*,category:categories(id,name,slug,icon),organizer:organizers(id,business_name,business_email,email,logo_url,description,is_verified,verification_level,social_twitter,social_facebook,social_instagram,total_events,country_code),event_days(*,event_day_activities(*)),event_sponsors(*)`
+  
+  // Build query with proper filter - try slug first, then custom_url if slug fails
   let query = supabase
     .from('events')
-    .select(`
-      *,
-      category:categories(id, name, slug, icon),
-      organizer:organizers(id, business_name, business_email, email, logo_url, description, is_verified, verification_level, social_twitter, social_facebook, social_instagram, total_events),
-      event_days(*, event_day_activities(*)),
-      event_sponsors(*)
-    `)
+    .select(selectQuery)
   
   if (isUUID) {
     query = query.eq('id', idOrSlug)
   } else {
+    // Use or() filter - format: field.operator.value,field.operator.value
     query = query.or(`slug.eq.${idOrSlug},custom_url.eq.${idOrSlug}`)
   }
   
