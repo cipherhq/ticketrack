@@ -30,7 +30,7 @@ export function WebAbout() {
         </div>
         <h1 className="text-5xl font-bold text-[#0F0F0F] mb-4">About Ticketrack</h1>
         <p className="text-xl text-[#0F0F0F]/60 max-w-3xl mx-auto">
-          Africa's leading event ticketing platform, making it easy for organizers to create amazing events and for attendees to discover unforgettable experiences.
+          The world's leading event ticketing platform, making it easy for organizers to create amazing events and for attendees to discover unforgettable experiences across the globe.
         </p>
       </div>
 

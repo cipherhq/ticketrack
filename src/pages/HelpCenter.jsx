@@ -5,7 +5,7 @@ import {
   ShoppingCart, CreditCard, RotateCcw, QrCode, Calendar, BarChart3,
   FileText, Download, CheckCircle, UserPlus, Link as LinkIcon, Wallet,
   HelpCircle, Mail, Shield, Bell, Eye, Plus, Edit, Trash2, Clock,
-  Image as ImageIcon
+  Image as ImageIcon, Building, ClipboardList, Monitor, MapPin
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -485,9 +485,274 @@ const helpContent = {
         tips: [
           'Choose the currency your target audience uses',
           'International events can use USD, GBP, or EUR',
-          'African events typically use local currencies (NGN, GHS, KES, ZAR)'
+          'Regional events typically use local currencies (NGN, GHS, KES, ZAR, etc.)'
         ],
         important: 'Currency is set per event and cannot be changed after tickets are sold.'
+      },
+      {
+        id: 'create-recurring-events',
+        title: 'How to Create Recurring Events',
+        icon: Calendar,
+        steps: [
+          'When creating an event, go to the "Date & Time" section.',
+          'Toggle on "This is a recurring event".',
+          'Select recurring pattern: Daily, Weekly, Biweekly, or Monthly.',
+          'For weekly/biweekly, choose which days of the week (e.g., Monday, Wednesday, Friday).',
+          'Choose end type: After X occurrences or Until a specific date.',
+          'Set the number of occurrences or end date.',
+          'Each recurring date will have its own ticket inventory and can be purchased separately.',
+          'Save your event - attendees will see all available dates to choose from.'
+        ],
+        screenshot: '/help/recurring-events.png',
+        tips: [
+          'Use recurring events for classes, workshops, or regular meetups',
+          'Each date is treated as a separate event instance with its own tickets',
+          'Promo codes from the parent event apply to all child event dates',
+          'Waitlists are separate per date'
+        ],
+        important: 'You cannot change a regular event to recurring after tickets are sold. Plan ahead!'
+      },
+      {
+        id: 'create-multi-day-events',
+        title: 'How to Create Multi-Day Events',
+        icon: Calendar,
+        steps: [
+          'When creating an event, go to the "Date & Time" section.',
+          'Toggle on "This is a multi-day event".',
+          'Set your start date and time.',
+          'Click "Add Event Day" for each day of your event.',
+          'For each day, set: date, start time, end time, and optional activities/description.',
+          'The event end date will automatically use the last day you added.',
+          'Attendees can buy tickets for the full event duration.',
+          'Save your event - it will show as a multi-day event on the public page.'
+        ],
+        screenshot: '/help/multi-day-events.png',
+        tips: [
+          'Perfect for festivals, conferences, or workshops spanning multiple days',
+          'You can add activities for each day to show what happens when',
+          'Tickets are for the entire event, not individual days',
+          'You cannot make an event multi-day after it\'s published if tickets are sold'
+        ],
+        important: 'Multi-day events and recurring events cannot be combined. Choose one format.'
+      },
+      {
+        id: 'venue-layout-designer',
+        title: 'How to Design Venue Layouts',
+        icon: ImageIcon,
+        steps: [
+          'Go to Organizer Dashboard → Venues.',
+          'Select a venue or create a new one.',
+          'Click "Design Layout" or "Create Layout".',
+          'Use the object library to add furniture: chairs, tables, stages, etc.',
+          'Drag and drop objects onto the canvas.',
+          'Resize and rotate objects as needed.',
+          'Add labels to sections (e.g., "VIP", "General Admission").',
+          'Name your layout and click "Save".',
+          'You can export the layout as a PDF to share with your team or venue.'
+        ],
+        screenshot: '/help/venue-designer.png',
+        tips: [
+          'Use the AI assistant for layout suggestions based on your event type',
+          'The questionnaire feature can auto-generate layouts based on your answers',
+          'Export PDFs for printing or sharing with venue staff',
+          'Each venue can have multiple layout designs'
+        ]
+      },
+      {
+        id: 'manual-ticket-sales',
+        title: 'How to Sell Tickets Manually to Attendees',
+        icon: Ticket,
+        steps: [
+          'Go to Organizer Dashboard → Events.',
+          'Find the event you want to sell tickets for.',
+          'Click the three-dot menu (⋮) and select "Issue Ticket".',
+          'Choose mode: "Complimentary" (free) or "Sell Ticket" (paid).',
+          'Select the ticket type and quantity.',
+          'Enter attendee details: name, email, phone.',
+          'If selling, select payment method (Cash, Bank Transfer, Card, etc.).',
+          'Enter payment reference if applicable.',
+          'Click "Issue Ticket" - the attendee will receive their ticket via email.'
+        ],
+        screenshot: '/help/manual-tickets.png',
+        tips: [
+          'Use for on-site sales or special cases',
+          'Manual sales are tracked in your Orders and Analytics',
+          'Payment references help you reconcile sales later',
+          'Tickets issued manually appear in your attendee list'
+        ]
+      },
+      {
+        id: 'waitlist-management',
+        title: 'How to Manage Waitlists',
+        icon: UserPlus,
+        steps: [
+          'When your event sells out, attendees can join the waitlist automatically.',
+          'Go to Organizer Dashboard → Events → select your event.',
+          'View waitlist entries: see number of people waiting and their positions.',
+          'If you have more tickets or cancellations, release them to waitlist members.',
+          'Waitlist members are notified via email when tickets become available.',
+          'Each recurring event date has its own separate waitlist.'
+        ],
+        screenshot: '/help/waitlist-management.png',
+        tips: [
+          'Monitor waitlist size to gauge demand for future events',
+          'Consider creating additional dates if waitlist is long',
+          'Waitlist members have priority access to newly released tickets'
+        ]
+      },
+      {
+        id: 'auto-refund-cancellation',
+        title: 'Automatic Refunds on Event Cancellation',
+        icon: RotateCcw,
+        steps: [
+          'When you cancel an event, refunds are processed automatically.',
+          'Go to Organizer Dashboard → Events → find your event.',
+          'Click "Cancel Event" and confirm cancellation.',
+          'The system automatically processes refunds for all ticket purchases.',
+          'Refunds are sent back to the original payment method.',
+          'Attendees are notified via email about the cancellation and refund.',
+          'Refund processing may take 5-10 business days depending on payment method.'
+        ],
+        screenshot: '/help/auto-refund.png',
+        tips: [
+          'Cancellation should be a last resort - consider rescheduling first',
+          'Attendees appreciate prompt cancellation notifications',
+          'All refunds are tracked in your Refunds dashboard',
+          'For recurring events, you can cancel individual dates or the entire series'
+        ],
+        important: 'Cancelled events cannot be undone. All ticket holders will receive automatic refunds.'
+      },
+      {
+        id: 'virtual-events',
+        title: 'How to Create Virtual Events',
+        icon: Monitor,
+        steps: [
+          'When creating an event, go to the "Venue Details" section.',
+          'Toggle on "This is a virtual/online event".',
+          'Enter your streaming URL (Zoom, YouTube, Vimeo, etc.).',
+          'Select the streaming platform type.',
+          'Add any access instructions or meeting details.',
+          'Virtual events don\'t require a physical venue address.',
+          'Attendees will receive the streaming link in their ticket confirmation.',
+          'You can still add a city/country for event discovery purposes.'
+        ],
+        screenshot: '/help/virtual-events.png',
+        tips: [
+          'Test your streaming link before the event',
+          'Include clear instructions for attendees on how to join',
+          'Virtual events can still have ticketing and pricing',
+          'Consider timezone when scheduling virtual events for global audiences'
+        ]
+      },
+      {
+        id: 'free-donation-events',
+        title: 'How to Create Free or Donation-Based Events',
+        icon: Ticket,
+        steps: [
+          'When creating an event, go to the "Ticketing" section.',
+          'Toggle on "This is a free event" for completely free events.',
+          'Or toggle on "Accept Donations" to allow optional donations.',
+          'For donation events, set suggested donation amounts.',
+          'Choose if you want to allow custom donation amounts.',
+          'Free events use RSVP instead of ticket purchase.',
+          'Donation events still require "purchase" but amount is optional.',
+          'Both types track attendance and send confirmations via email.'
+        ],
+        screenshot: '/help/free-events.png',
+        tips: [
+          'Free events have capacity limits - set a maximum RSVP count',
+          'Donation events help cover costs while keeping events accessible',
+          'Both types can still have waitlists if capacity is reached',
+          'Attendees receive confirmation emails for both free and donation events'
+        ]
+      },
+      {
+        id: 'venue-management',
+        title: 'How to Manage Venues',
+        icon: Building,
+        steps: [
+          'Go to Organizer Dashboard → Venues.',
+          'Click "Create Venue" to add a new venue.',
+          'Enter venue details: name, address, capacity, type (indoor/outdoor).',
+          'Save your venue - you can reuse it for multiple events.',
+          'Each venue can have multiple layout designs.',
+          'Click "Design Layout" to create floor plans for the venue.',
+          'When creating events, select from your saved venues.',
+          'Update venue information anytime by clicking "Edit".'
+        ],
+        screenshot: '/help/venue-management.png',
+        tips: [
+          'Save venues you use frequently for faster event creation',
+          'Link Google Maps to your venue address for easy navigation',
+          'Upload venue photos to help attendees find the location',
+          'Track which events use which venues in your analytics'
+        ]
+      },
+      {
+        id: 'project-manager',
+        title: 'How to Use the Project Manager',
+        icon: ClipboardList,
+        steps: [
+          'Go to Organizer Dashboard → Projects.',
+          'You\'ll see all your events as projects in a Kanban board.',
+          'Each event has tasks organized by phase: Pre-Event, During Event, Post-Event.',
+          'Click "Add Task" to create tasks for an event.',
+          'Assign tasks to team members, set due dates, and priorities.',
+          'Drag tasks between columns (Pending, In Progress, Completed) as you work.',
+          'Add subtasks, comments, and labels to organize your work.',
+          'Track progress with the progress bar on each event card.'
+        ],
+        screenshot: '/help/project-manager.png',
+        tips: [
+          'Use templates to quickly create common task lists',
+          'Assign tasks to team members for collaboration',
+          'Add comments and notes to keep everyone in sync',
+          'Mark tasks as completed to track overall event progress'
+        ]
+      },
+      {
+        id: 'team-management',
+        title: 'How to Manage Your Team',
+        icon: Users,
+        steps: [
+          'Go to Organizer Dashboard → Team.',
+          'Click "Invite Team Member" to add someone new.',
+          'Enter their email and select their role (Manager, Staff, etc.).',
+          'Choose permissions: what they can access and edit.',
+          'Send invitation - they\'ll receive an email to accept.',
+          'Once accepted, they can access the dashboard based on their permissions.',
+          'View all team members and their roles.',
+          'Remove team members or change permissions anytime.'
+        ],
+        screenshot: '/help/team-management.png',
+        tips: [
+          'Use roles to control access - managers can create events, staff can only check-in',
+          'Team members can be assigned to specific events or have access to all',
+          'Track team activity in your dashboard',
+          'Revoke access immediately if needed for security'
+        ]
+      },
+      {
+        id: 'post-event-dashboard',
+        title: 'How to Use the Post-Event Dashboard',
+        icon: BarChart3,
+        steps: [
+          'After your event ends, go to Organizer Dashboard → Events.',
+          'Find your completed event and click "Post-Event Dashboard".',
+          'View comprehensive event analytics: attendance, revenue, check-ins.',
+          'See attendee feedback and ratings (if collected).',
+          'Review check-in statistics and no-shows.',
+          'Export final attendee lists and reports.',
+          'Track refunds and final revenue calculations.',
+          'Use insights to improve future events.'
+        ],
+        screenshot: '/help/post-event.png',
+        tips: [
+          'Check the post-event dashboard within 48 hours of event completion',
+          'Compare actual attendance vs. tickets sold to understand no-shows',
+          'Export data for accounting and record-keeping',
+          'Use feedback to plan your next event'
+        ]
       },
     ]
   },
@@ -914,7 +1179,7 @@ export function HelpCenter() {
 
         {/* Footer Note */}
         <p className="text-center text-sm text-[#0F0F0F]/40 mt-8">
-          Last updated: December 2024 • Ticketrack Help Center
+          Last updated: January 2025 • Ticketrack Help Center
         </p>
       </div>
     </div>

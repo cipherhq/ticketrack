@@ -94,7 +94,7 @@ export function WebLayout() {
   return (
     <div className="min-h-screen bg-[#F4F6FA]">
       {/* Header */}
-      <header className="bg-white border-b border-[#0F0F0F]/10 sticky top-0 z-50">
+      <header className="bg-white border-b border-[#0F0F0F]/10 sticky top-0 z-50" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -278,8 +278,9 @@ export function WebLayout() {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2"
+              className="md:hidden p-3 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
                 <X className="w-6 h-6 text-[#0F0F0F]" />
@@ -299,7 +300,7 @@ export function WebLayout() {
                   navigate('/events')
                   setMobileMenuOpen(false)
                 }}
-                className="block w-full text-left py-2 text-[#0F0F0F]"
+                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
               >
                 Browse Events
               </button>
@@ -308,7 +309,7 @@ export function WebLayout() {
                   navigate('/profile', { state: { tab: 'tickets' } })
                   setMobileMenuOpen(false)
                 }}
-                className="block w-full text-left py-2 text-[#0F0F0F]"
+                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
               >
                 My Tickets
               </button>
@@ -317,7 +318,7 @@ export function WebLayout() {
                   navigate('/search')
                   setMobileMenuOpen(false)
                 }}
-                className="block w-full text-left py-2 text-[#0F0F0F]"
+                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
               >
                 Search
               </button>
@@ -326,7 +327,7 @@ export function WebLayout() {
                   navigate('/pricing')
                   setMobileMenuOpen(false)
                 }}
-                className="block w-full text-left py-2 text-[#0F0F0F]"
+                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
               >
                 Pricing
               </button>

@@ -13,7 +13,7 @@ const PHONE_PREFIX_TO_COUNTRY: Record<string, string> = {
 };
 
 // Provider priority by country
-// US/UK/CA use Twilio Verify, African countries use Termii
+// US/UK/CA use Twilio Verify, Nigeria/Ghana/Kenya/ZA use Termii
 const PROVIDER_PRIORITY: Record<string, string[]> = {
   'US': ['twilio_verify'],
   'GB': ['twilio_verify'],
@@ -87,7 +87,7 @@ async function sendTwilioVerify(
   }
 }
 
-// Termii SMS - for African countries
+// Termii SMS - for Nigeria, Ghana, Kenya, South Africa, and other supported countries
 async function sendTermiiOTP(
   to: string,
   otp: string,

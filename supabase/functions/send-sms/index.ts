@@ -11,7 +11,7 @@ const TWILIO_API_URL = 'https://api.twilio.com/2010-04-01';
 
 // Map phone prefixes to country codes
 const PHONE_PREFIX_TO_COUNTRY: Record<string, string> = {
-  '234': 'NG', '233': 'GH', '254': 'KE', '27': 'ZA',  // Africa
+  '234': 'NG', '233': 'GH', '254': 'KE', '27': 'ZA',  // Nigeria, Ghana, Kenya, South Africa
   '1': 'US', '44': 'GB', '1242': 'BS', '1246': 'BB',  // US/UK/Caribbean
 };
 
@@ -246,7 +246,7 @@ serve(async (req) => {
         providerByCountry[country] = config;
       }
     }
-    // Default provider (Termii for Africa)
+    // Default provider (Termii for Nigeria, Ghana, Kenya, South Africa, etc.)
     const defaultProvider = smsConfigs.find(c => c.provider === 'termii') || smsConfigs[0];
 
     // Gather recipients

@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { getCategories } from '@/services/events'
 import { supabase } from '@/lib/supabase'
-import { getUserLocation, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { getUserLocation, getUserCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
 
 const dateOptions = [
   { value: 'all', label: 'All Dates' },
@@ -51,6 +51,7 @@ export function WebEventBrowse() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [userLocation, setUserLocation] = useState(null)
+  const [userCountryCode, setUserCountryCode] = useState(null)
   const [locationPermission, setLocationPermission] = useState(null) // 'granted', 'denied', 'prompt'
 
   // Load categories and get user location on mount
@@ -65,14 +66,22 @@ export function WebEventBrowse() {
     }
     loadCategories()
 
-    // Get user location for distance sorting
-    getUserLocation()
-      .then(loc => {
-        setUserLocation(loc)
-        setLocationPermission('granted')
-        // Reload events with distance sorting
-        if (sortBy === 'distance' || (!sortBy || sortBy === 'date')) {
-          loadEvents(loc)
+    // Load events immediately (don't wait for location)
+    loadEvents(null, null)
+
+    // Get user location and country code for filtering (non-blocking)
+    getUserCountry()
+      .then(result => {
+        if (result) {
+          setUserLocation({ lat: result.lat, lng: result.lng })
+          setUserCountryCode(result.countryCode)
+          setLocationPermission('granted')
+          // Reload events with location-based filtering
+          if (sortBy === 'distance' || (!sortBy || sortBy === 'date')) {
+            loadEvents({ lat: result.lat, lng: result.lng }, result.countryCode)
+          }
+        } else {
+          setLocationPermission('denied')
         }
       })
       .catch(error => {
@@ -81,12 +90,10 @@ export function WebEventBrowse() {
       })
   }, [])
 
-  // Load events when filters change (skip if location is being fetched)
+  // Load events when filters change
   useEffect(() => {
-    // Only reload if location permission is not still being determined
-    if (locationPermission !== null) {
-      loadEvents(userLocation)
-    }
+    // Always load events, even if location permission is still being determined
+    loadEvents(userLocation, userCountryCode)
   }, [dateFilter, location, searchTerm, selectedCategories, sortBy])
 
   const getDateRange = () => {
@@ -111,19 +118,25 @@ export function WebEventBrowse() {
     }
   }
 
-  const loadEvents = async (useLocation = null) => {
+  const loadEvents = async (useLocation = null, countryCode = null) => {
     setLoading(true)
     
     try {
       const { start, end } = getDateRange()
       
+      // Use country code from parameter or state
+      const userCountry = countryCode || userCountryCode
+      
       let query = supabase
         .from('events')
-        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, is_virtual, is_recurring, parent_event_id, venue_lat, venue_lng, ticket_types (price)')
+        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, is_virtual, is_recurring, parent_event_id, venue_lat, venue_lng, country_code, ticket_types (price)')
         .eq('status', 'published')
         .or('visibility.eq.public,visibility.is.null')
         .is('parent_event_id', null) // Only show parent events in browse (child events accessible via parent page)
         .gte('start_date', start)
+
+      // Removed US-only restriction to show events from all countries
+      // Users can filter by location if needed
 
       // Date filter
       if (end) {
@@ -139,6 +152,7 @@ export function WebEventBrowse() {
       // Text search
       if (searchTerm.trim()) {
         const term = `%${searchTerm.trim()}%`
+        // Use separate filter for text search to avoid conflicts with location filter
         query = query.or(`title.ilike.${term},description.ilike.${term},category.ilike.${term}`)
       }
 
@@ -207,9 +221,13 @@ export function WebEventBrowse() {
       }
 
       setEvents(results)
+      console.log(`Loaded ${results.length} events`)
     } catch (error) {
       console.error('Error loading events:', error)
+      console.error('Error details:', error.message, error.stack)
       setEvents([])
+      // Show error to user
+      alert('Failed to load events. Please check your connection and try again.')
     } finally {
       setLoading(false)
     }
@@ -345,9 +363,9 @@ export function WebEventBrowse() {
   return (
     <div className="min-h-screen bg-[#F4F6FA]">
       {/* Search Header */}
-      <div className="bg-[#2969FF] py-6">
+      <div className="bg-[#2969FF] py-4 md:py-6">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="bg-white rounded-2xl p-2 flex flex-col md:flex-row gap-2">
+          <div className="bg-white rounded-2xl p-2 md:p-2 flex flex-col md:flex-row gap-2 md:gap-2">
             {/* Location Input */}
             <div className="flex-1 relative">
               <div className="flex items-center gap-2 px-4 py-3 border border-[#0F0F0F]/10 rounded-xl">
@@ -361,10 +379,11 @@ export function WebEventBrowse() {
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="City or Venue"
                     className="w-full outline-none text-sm text-[#0F0F0F] placeholder-[#0F0F0F]/40"
+                    style={{ fontSize: '16px' }}
                   />
                 </div>
                 {location && (
-                  <button onClick={() => setLocation('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F]">
+                  <button onClick={() => setLocation('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F] min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation">
                     <X className="w-4 h-4" />
                   </button>
                 )}
@@ -390,7 +409,7 @@ export function WebEventBrowse() {
                     <button
                       key={option.value}
                       onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 hover:bg-[#F4F6FA] text-sm ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                      className={`w-full text-left px-4 py-3 hover:bg-[#F4F6FA] text-sm min-h-[44px] touch-manipulation ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
                     >
                       {option.label}
                     </button>
@@ -412,10 +431,11 @@ export function WebEventBrowse() {
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="Artist, Event or Venue"
                     className="w-full outline-none text-sm"
+                    style={{ fontSize: '16px' }}
                   />
                 </div>
                 {searchTerm && (
-                  <button onClick={() => setSearchTerm('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F]">
+                  <button onClick={() => setSearchTerm('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F] min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation">
                     <X className="w-4 h-4" />
                   </button>
                 )}
@@ -425,7 +445,7 @@ export function WebEventBrowse() {
             {/* Search Button */}
             <Button 
               onClick={handleSearch}
-              className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-8 py-6"
+              className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-8 py-6 min-h-[44px] touch-manipulation w-full md:w-auto"
             >
               Search
             </Button>
@@ -450,7 +470,7 @@ export function WebEventBrowse() {
             {/* Mobile Filter Button */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="md:hidden rounded-xl border-[#0F0F0F]/10">
+                <Button variant="outline" className="md:hidden rounded-xl border-[#0F0F0F]/10 min-h-[44px] touch-manipulation">
                   <SlidersHorizontal className="w-5 h-5 mr-2" />
                   Filters
                 </Button>
@@ -480,7 +500,7 @@ export function WebEventBrowse() {
                     <button
                       key={option.value}
                       onClick={() => { setSortBy(option.value); setShowSortDropdown(false); handleSearch(); }}
-                      className={`w-full text-left px-4 py-3 hover:bg-[#F4F6FA] text-sm ${sortBy === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                      className={`w-full text-left px-4 py-3 hover:bg-[#F4F6FA] text-sm min-h-[44px] touch-manipulation ${sortBy === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
                     >
                       {option.label}
                     </button>
@@ -560,16 +580,16 @@ export function WebEventBrowse() {
                 <div className="text-6xl mb-4">🎫</div>
                 <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No events found</h3>
                 <p className="text-[#0F0F0F]/60 mb-6">Try adjusting your filters or search terms</p>
-                <Button onClick={clearFilters} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
+                <Button onClick={clearFilters} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl min-h-[44px] touch-manipulation">
                   Clear Filters
                 </Button>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {events.map((event) => (
                   <Card 
                     key={event.id}
-                    className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group"
+                    className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group touch-manipulation active:scale-[0.98]"
                     onClick={() => navigate(`/e/${event.slug || event.id}`)}
                   >
                     <div className="relative h-48 bg-gray-100">
@@ -578,6 +598,8 @@ export function WebEventBrowse() {
                         alt={event.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => { e.target.style.display = 'none' }}
+                        loading="lazy"
+                        decoding="async"
                       />
                       {event.category && (
                         <Badge className="absolute top-4 left-4 bg-white text-[#0F0F0F] border-0 font-medium shadow-sm">

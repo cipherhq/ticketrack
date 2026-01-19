@@ -15,7 +15,7 @@ export function WebCareers() {
     { title: 'User Obsessed', description: 'We put our users first in every decision we make' },
     { title: 'Move Fast', description: 'We ship quickly and iterate based on feedback' },
     { title: 'Be Transparent', description: 'We communicate openly and honestly' },
-    { title: 'Think Big', description: 'We\'re building the future of event ticketing in Africa and beyond' }
+    { title: 'Think Big', description: 'We\'re building the future of event ticketing worldwide' }
   ]
 
   const openPositions = [
@@ -31,7 +31,7 @@ export function WebCareers() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Join Our Team</h1>
           <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8">
-            Help us revolutionize event ticketing across Africa and beyond. We're building something special and we'd love for you to be part of it.
+            Help us revolutionize event ticketing worldwide. We're building something special and we'd love for you to be part of it.
           </p>
           <a href="#positions" className="inline-flex items-center gap-2 bg-white text-[#2969FF] px-8 py-4 rounded-xl font-semibold hover:bg-white/90 transition-colors">
             View Open Positions
@@ -46,10 +46,10 @@ export function WebCareers() {
           <div className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8">
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">About Ticketrack</h2>
             <p className="text-[#0F0F0F]/70 mb-4">
-              Ticketrack is Africa's premier event ticketing platform, helping organizers create unforgettable experiences and connecting people with events they love. We process thousands of transactions daily across multiple countries and currencies.
+              Ticketrack is the world's premier event ticketing platform, helping organizers create unforgettable experiences and connecting people with events they love. We process thousands of transactions daily across multiple countries and currencies worldwide.
             </p>
             <p className="text-[#0F0F0F]/70">
-              Founded with the mission to make event ticketing seamless, secure, and accessible, we're now expanding globally while keeping our roots in Africa. Our team is distributed across multiple time zones, united by our passion for building great products.
+              Founded with the mission to make event ticketing seamless, secure, and accessible globally, we're empowering event organizers and delighting attendees around the world. Our team is distributed across multiple time zones, united by our passion for building great products.
             </p>
           </div>
         </section>

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { ImageWithFallback } from '@/components/ui/image-with-fallback'
 import { supabase } from '@/lib/supabase'
 import { formatPrice } from '@/config/currencies'
-import { getUserLocation, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { getUserLocation, getUserCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
 
 const RECENT_SEARCHES_KEY = 'ticketrack_recent_searches'
 const trendingSearches = ['Concert', 'Music', 'Festival', 'Party', 'Free Events']
@@ -45,6 +45,7 @@ export function WebSearch() {
   const [hasSearched, setHasSearched] = useState(false)
   const [recentSearchList, setRecentSearchList] = useState([])
   const [userLocation, setUserLocation] = useState(null)
+  const [userCountryCode, setUserCountryCode] = useState(null)
   
   // Dropdown visibility
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
@@ -56,10 +57,13 @@ export function WebSearch() {
     loadCities()
     loadRecentSearches()
     
-    // Get user location for distance sorting
-    getUserLocation()
-      .then(loc => {
-        setUserLocation(loc)
+    // Get user location and country code for filtering
+    getUserCountry()
+      .then(result => {
+        if (result) {
+          setUserLocation({ lat: result.lat, lng: result.lng })
+          setUserCountryCode(result.countryCode)
+        }
       })
       .catch(error => {
         console.log('Location not available:', error.message)
@@ -142,10 +146,15 @@ export function WebSearch() {
       
       let queryBuilder = supabase
         .from('events')
-        .select('id, title, description, image_url, venue_name, city, start_date, category, currency, status, is_recurring, parent_event_id, venue_lat, venue_lng, ticket_types (price)')
+        .select('id, title, description, image_url, venue_name, city, start_date, category, currency, status, is_recurring, parent_event_id, venue_lat, venue_lng, country_code, ticket_types (price)')
         .eq('status', 'published')
         .is('parent_event_id', null) // Only show parent events in search (child events accessible via parent page)
         .gte('start_date', start)
+
+      // If user is in US, only show US events
+      if (userCountryCode === 'US') {
+        queryBuilder = queryBuilder.eq('country_code', 'US')
+      }
 
       // Date filter
       if (end) {

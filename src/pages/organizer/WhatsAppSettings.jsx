@@ -102,7 +102,7 @@ export function WhatsAppSettings() {
     { value: '360dialog', label: '360dialog', description: 'Official WhatsApp Business API partner.', free: false },
     { value: 'wati', label: 'WATI', description: 'Easy-to-use WhatsApp Business Platform.', free: false },
     { value: 'twilio', label: 'Twilio', description: 'Reliable global provider.', free: false },
-    { value: 'termii', label: 'Termii', description: 'African-focused messaging platform.', free: false },
+    { value: 'termii', label: 'Termii', description: 'Messaging platform for Nigeria, Ghana, Kenya, and other supported countries.', free: false },
   ];
 
   if (loading) {

@@ -2957,7 +2957,7 @@ Ad Sizes:
 CREATE TABLE IF NOT EXISTS "public"."platform_branding" (
     "id" "text" DEFAULT 'default'::"text" NOT NULL,
     "company_name" "text" DEFAULT 'Ticketrack'::"text",
-    "tagline" "text" DEFAULT 'Event ticketing for Africa'::"text",
+    "tagline" "text" DEFAULT 'Your Global Event Ticketing Partner'::"text",
     "logo_url" "text",
     "favicon_url" "text",
     "primary_color" "text" DEFAULT '#2969FF'::"text",

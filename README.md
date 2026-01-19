@@ -1,6 +1,6 @@
 # Ticketrack - Phase 2
 
-Africa's Premier Event Ticketing Platform
+The World's Most Trusted Event Ticketing Platform
 
 ## Features (Phase 2 - Web Public Pages)
 

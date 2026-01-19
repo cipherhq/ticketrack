@@ -17,7 +17,7 @@ const categories = [
 
 const faqs = [
   { category: 'General', questions: [
-    { question: 'What is Ticketrack?', answer: "Ticketrack is Africa's leading event ticketing platform that connects event organizers with attendees." },
+    { question: 'What is Ticketrack?', answer: "Ticketrack is the world's leading event ticketing platform that connects event organizers with attendees across the globe." },
     { question: 'How do I create an account?', answer: 'Click on "Sign Up" in the top right corner, enter your email, create a password, and verify your email address.' },
     { question: 'Is Ticketrack free to use?', answer: 'Creating an account and browsing events is completely free. We charge a small service fee when you purchase tickets.' },
   ]},

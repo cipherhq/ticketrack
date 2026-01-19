@@ -116,3 +116,81 @@ export function formatDistance(distance, useMiles = false) {
     ? `${Math.round(distance * 10) / 10} km`
     : `${Math.round(distance)} km`
 }
+
+/**
+ * Get user's country code from coordinates using reverse geocoding
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @returns {Promise<string|null>} Country code (e.g., 'US', 'NG', 'GB') or null if unavailable
+ */
+export async function getCountryFromCoordinates(lat, lng) {
+  try {
+    // Use Google Maps Geocoding API if available
+    if (window.google && window.google.maps) {
+      const geocoder = new window.google.maps.Geocoder()
+      
+      return new Promise((resolve, reject) => {
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          if (status === 'OK' && results && results.length > 0) {
+            // Find country in address components
+            const countryComponent = results[0].address_components?.find(
+              component => component.types.includes('country')
+            )
+            
+            if (countryComponent) {
+              resolve(countryComponent.short_name) // Returns ISO 3166-1 alpha-2 code (e.g., 'US')
+            } else {
+              resolve(null)
+            }
+          } else {
+            resolve(null)
+          }
+        })
+      })
+    }
+    
+    // Fallback: Use a free reverse geocoding service (OpenStreetMap Nominatim)
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+      {
+        headers: {
+          'User-Agent': 'Ticketrack'
+        }
+      }
+    )
+    
+    if (response.ok) {
+      const data = await response.json()
+      return data.address?.country_code?.toUpperCase() || null
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Error getting country from coordinates:', error)
+    return null
+  }
+}
+
+/**
+ * Get user's country code from their current location
+ * @returns {Promise<{countryCode: string, lat: number, lng: number} | null>}
+ */
+export async function getUserCountry() {
+  try {
+    const location = await getUserLocation()
+    const countryCode = await getCountryFromCoordinates(location.lat, location.lng)
+    
+    if (countryCode) {
+      return {
+        countryCode,
+        lat: location.lat,
+        lng: location.lng
+      }
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Error getting user country:', error)
+    return null
+  }
+}

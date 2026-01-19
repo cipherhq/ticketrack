@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 // Currency to payment provider mapping (primary -> backup)
 const CURRENCY_PROVIDER_MAP = {
-  // Paystack currencies (Africa) - Flutterwave as backup
+  // Paystack currencies (NGN, GHS, etc.) - Flutterwave as backup
   NGN: { primary: 'paystack', backup: 'flutterwave' },
   GHS: { primary: 'paystack', backup: 'flutterwave' },
   KES: { primary: 'paystack', backup: null },

@@ -18,7 +18,7 @@ export function WebPrivacy() {
     { title: '3. Information Sharing', content: [
       'Event Organizers: We share your name and contact information with event organizers for events you attend.',
       'Payment Processors: We share payment information with our payment processors (Paystack, Stripe, PayPal) to complete transactions.',
-      'SMS Service Providers: We share your phone number with our SMS providers (Twilio for US/UK/EU, Termii for African regions) solely to deliver transactional messages.',
+      'SMS Service Providers: We share your phone number with our SMS providers (Twilio for US/UK/EU, Termii for Nigeria, Ghana, Kenya, and other supported countries) solely to deliver transactional messages.',
       'Service Providers: We may share information with third-party service providers who assist in operating our platform.',
     ]},
     { title: '4. SMS/Text Messaging Policy', content: [
@@ -26,7 +26,7 @@ export function WebPrivacy() {
       'Message types include: ticket confirmations, event reminders, check-in codes, order updates, and account security alerts.',
       'Message frequency varies based on your activity (typically 1-5 messages per event purchase).',
       'Message and data rates may apply depending on your mobile carrier and plan.',
-      'SMS messages are sent via Twilio (US, UK, EU customers) and Termii (Nigeria, Ghana, Kenya, and other African countries).',
+      'SMS messages are sent via Twilio (US, UK, EU customers) and Termii (Nigeria, Ghana, Kenya, and other supported countries).',
       'We do not send promotional or marketing messages via SMS without separate explicit consent.',
       'Your phone number is never sold, rented, or shared for third-party marketing purposes.',
       'To opt-out of SMS messages, reply STOP to any message or update your notification preferences in account settings.',
@@ -58,7 +58,7 @@ export function WebPrivacy() {
     ]},
     { title: '9. International Data Transfers', content: [
       'Your data may be processed in different countries depending on your location and the services used.',
-      'For African users: Data is processed through Termii (Nigeria-based) and Paystack for local compliance.',
+      'For users in Nigeria, Ghana, Kenya, and other supported countries: Data is processed through Termii (Nigeria-based) and Paystack for local compliance.',
       'For US/UK/EU users: Data is processed through Twilio (US-based) and Stripe with appropriate data protection measures.',
       'We ensure all data transfers comply with applicable data protection laws including GDPR and NDPR.',
     ]},
@@ -110,7 +110,7 @@ export function WebPrivacy() {
           <p><strong>Cost:</strong> Message and data rates may apply</p>
           <p><strong>Opt-out:</strong> Reply STOP to any message</p>
           <p><strong>Help:</strong> Reply HELP or email support@ticketrack.com</p>
-          <p><strong>Providers:</strong> Twilio (US/UK/EU) • Termii (Africa)</p>
+          <p><strong>Providers:</strong> Twilio (US/UK/EU) • Termii (Nigeria, Ghana, Kenya & more)</p>
         </div>
       </div>
 

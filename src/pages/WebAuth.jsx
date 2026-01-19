@@ -600,7 +600,10 @@ export function WebAuth() {
                     onChange={handleInputChange}
                     className="pl-10 rounded-xl border-[#0F0F0F]/10"
                     required
-                    autoComplete="nope"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                 </div>
               </div>

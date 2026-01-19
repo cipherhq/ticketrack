@@ -28,3 +28,111 @@ body {
   background: #CBD5E1;
   border-radius: 4px;
 }
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  /* Prevent text size adjustment on iOS */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Improve touch targets - minimum 44x44px */
+  button, 
+  a, 
+  input[type="button"], 
+  input[type="submit"],
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Prevent zoom on input focus (iOS Safari) */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+
+  /* Improve tap highlighting */
+  * {
+    -webkit-tap-highlight-color: rgba(41, 105, 255, 0.1);
+  }
+
+  /* Better scrolling on mobile */
+  body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Safe area insets for notched devices */
+  @supports (padding: max(0px)) {
+    body {
+      padding-left: max(0px, env(safe-area-inset-left));
+      padding-right: max(0px, env(safe-area-inset-right));
+    }
+    
+    header {
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
+  }
+
+  /* Prevent pull-to-refresh on overscroll */
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Improve text readability */
+  p, span, div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Better form inputs */
+  input, textarea, select {
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+
+  /* Improve button spacing */
+  button {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  *:hover {
+    /* Keep essential hover states but reduce visual changes */
+  }
+
+  /* Improve clickable areas */
+  a, button {
+    cursor: pointer;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
