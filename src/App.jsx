@@ -59,6 +59,8 @@ const WebTrustSafety = lazy(() => import('./pages/WebTrustSafety').then(m => ({ 
 const WebRefundPolicy = lazy(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })));
 const WebCareers = lazy(() => import('./pages/WebCareers').then(m => ({ default: m.WebCareers })));
 const WebResources = lazy(() => import('./pages/WebResources').then(m => ({ default: m.WebResources })));
+const WebBlog = lazy(() => import('./pages/WebBlog').then(m => ({ default: m.WebBlog })));
+const WebBlogPost = lazy(() => import('./pages/WebBlogPost').then(m => ({ default: m.WebBlogPost })));
 const AttendeeProfile = lazy(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })));
 const OrganizerPublicProfile = lazy(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
@@ -259,6 +261,16 @@ function App() {
                 <Route path="/resources" element={
                   <Suspense fallback={<PageLoader />}>
                     <WebResources />
+                  </Suspense>
+                } />
+                <Route path="/blog" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebBlog />
+                  </Suspense>
+                } />
+                <Route path="/blog/:slug" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebBlogPost />
                   </Suspense>
                 } />
                 <Route path="/profile" element={

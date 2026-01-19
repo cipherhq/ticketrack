@@ -128,6 +128,14 @@ export function WebLayout() {
                 Pricing
               </button>
               <button
+                onClick={() => navigate('/blog')}
+                className={`text-[#0F0F0F] hover:text-[#2969FF] transition-colors ${
+                  isActive('/blog') ? 'text-[#2969FF]' : ''
+                }`}
+              >
+                Blog
+              </button>
+              <button
                 onClick={() => navigate('/search')}
                 className="text-[#0F0F0F] hover:text-[#2969FF] transition-colors"
               >
@@ -317,6 +325,15 @@ export function WebLayout() {
                 className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
               >
                 Search
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/blog')
+                  setMobileMenuOpen(false)
+                }}
+                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
+              >
+                Blog
               </button>
               <button
                 onClick={() => {
@@ -513,6 +530,11 @@ export function WebLayout() {
                 <li>
                   <button onClick={() => navigate('/resources')} className="hover:text-white transition-colors">
                     Resources
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/blog')} className="hover:text-white transition-colors">
+                    Blog
                   </button>
                 </li>
               </ul>

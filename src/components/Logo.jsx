@@ -11,14 +11,17 @@ export function Logo({ className = 'h-8', showText = false, variant = 'dark' }) 
   // Always redirect to homepage
   const logoPath = '/';
   
+  // Force showText to false - logo should never show text
+  const shouldShowText = false;
+  
   return (
-    <Link to={logoPath} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+    <Link to={logoPath} className="flex items-center hover:opacity-80 transition-opacity">
       <img 
         src={brand.logo} 
         alt={brand.name} 
         className={`${className} w-auto object-contain`}
       />
-      {showText && (
+      {shouldShowText && showText && (
         <span className="text-xl font-semibold">{brand.name}</span>
       )}
     </Link>
