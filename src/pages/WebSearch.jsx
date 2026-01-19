@@ -336,7 +336,8 @@ export function WebSearch() {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   placeholder="Artist, Event or Venue"
-                  className="flex-1 outline-none text-sm"
+                  className="flex-1 outline-none"
+                  style={{ fontSize: '16px' }}
                 />
                 {query && (
                   <button onClick={() => setQuery('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F]">

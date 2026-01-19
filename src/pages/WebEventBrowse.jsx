@@ -316,7 +316,8 @@ export function WebEventBrowse() {
               placeholder="Min"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-[#0F0F0F]/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+              className="w-full px-3 py-2 border border-[#0F0F0F]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+              style={{ fontSize: '16px' }}
             />
             <span className="text-[#0F0F0F]/40">-</span>
             <input
@@ -324,7 +325,8 @@ export function WebEventBrowse() {
               placeholder="Max"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-[#0F0F0F]/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+              className="w-full px-3 py-2 border border-[#0F0F0F]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+              style={{ fontSize: '16px' }}
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -378,7 +380,7 @@ export function WebEventBrowse() {
                     onChange={(e) => setLocation(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="City or Venue"
-                    className="w-full outline-none text-sm text-[#0F0F0F] placeholder-[#0F0F0F]/40"
+                    className="w-full outline-none text-[#0F0F0F] placeholder-[#0F0F0F]/40"
                     style={{ fontSize: '16px' }}
                   />
                 </div>
@@ -430,7 +432,7 @@ export function WebEventBrowse() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="Artist, Event or Venue"
-                    className="w-full outline-none text-sm"
+                    className="w-full outline-none"
                     style={{ fontSize: '16px' }}
                   />
                 </div>

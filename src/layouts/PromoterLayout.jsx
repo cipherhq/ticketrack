@@ -40,9 +40,7 @@ export function PromoterLayout() {
     <div className="min-h-screen bg-[#F4F6FA] flex">
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-[#0F0F0F]/10">
         <div className="p-6 border-b border-[#0F0F0F]/10">
-          <Link to="/promoter" className="text-xl font-bold text-[#2969FF]">
-<img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" />
-          </Link>
+          <Logo className="h-8" />
           <p className="text-sm text-[#0F0F0F]/60 mt-2">Promoter Portal</p>
         </div>
 
@@ -95,7 +93,7 @@ export function PromoterLayout() {
       <aside className={`lg:hidden fixed top-0 left-0 h-full w-64 bg-white z-50 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-[#0F0F0F]/10 flex items-center justify-between">
           <div>
-            <Link to="/promoter"><img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" /></Link>
+            <Logo className="h-8" />
             <p className="text-sm text-[#0F0F0F]/60 mt-2">Promoter Portal</p>
           </div>
           <button onClick={() => setSidebarOpen(false)}><X className="w-6 h-6 text-[#0F0F0F]/60" /></button>

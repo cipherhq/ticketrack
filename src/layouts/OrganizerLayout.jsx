@@ -9,6 +9,7 @@ import {
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
 import { NotificationBadge, useOrganizerNotifications } from '@/components/NotificationBadge';
+import { Logo } from '@/components/Logo';
 
 // Grouped menu items for better organization
 const menuGroups = [
@@ -131,9 +132,7 @@ export function OrganizerLayout({ children }) {
     <div className="h-full flex flex-col">
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-[#0F0F0F]/10">
-        <Link to="/organizer" className="flex items-center gap-2">
-          <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-10" />
-        </Link>
+        <Logo className="h-10" />
         {isMobile && (
           <button
             onClick={() => setSidebarOpen(false)}
@@ -223,9 +222,7 @@ export function OrganizerLayout({ children }) {
         >
           <Menu className="w-6 h-6 text-[#0F0F0F]" />
         </button>
-        <Link to="/organizer" className="flex items-center gap-2">
-          <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-10" />
-        </Link>
+        <Logo className="h-10" />
         <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative">
           <Bell className="w-6 h-6 text-[#0F0F0F]" />
           {getTotalNotifications() > 0 && (

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { PhoneInput, COUNTRIES } from '@/components/ui/phone-input'
 import { useAuth } from '@/contexts/AuthContext'
+import { Logo } from '@/components/Logo'
 
 export function WebAuth() {
   const navigate = useNavigate()
@@ -217,11 +218,8 @@ export function WebAuth() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
         <div className="w-full max-w-md">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
-              <Ticket className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+          <div className="flex items-center justify-center mb-8">
+            <Logo className="h-12" />
           </div>
 
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -276,11 +274,8 @@ export function WebAuth() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
         <div className="w-full max-w-md">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
-              <Ticket className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+          <div className="flex items-center justify-center mb-8">
+            <Logo className="h-12" />
           </div>
 
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -336,11 +331,8 @@ export function WebAuth() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
         <div className="w-full max-w-md">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
-              <Ticket className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+          <div className="flex items-center justify-center mb-8">
+            <Logo className="h-12" />
           </div>
 
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -401,11 +393,8 @@ export function WebAuth() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
         <div className="w-full max-w-md">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
-              <Ticket className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+          <div className="flex items-center justify-center mb-8">
+            <Logo className="h-12" />
           </div>
 
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -476,11 +465,8 @@ export function WebAuth() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-[#2969FF] rounded-xl flex items-center justify-center">
-            <Ticket className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-semibold text-[#0F0F0F]">Ticketrack</span>
+        <div className="flex items-center justify-center mb-8">
+          <Logo className="h-12" />
         </div>
 
         <Card className="border-[#0F0F0F]/10 rounded-2xl">

@@ -7,6 +7,7 @@ import {
   Sparkles, ArrowRight, Star, MessageCircle, Loader2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { Logo } from '@/components/Logo';
 
 // Flag mapping - flags rarely change, so we keep them here
 const FLAG_MAP = {
@@ -383,10 +384,9 @@ export function WebPricing() {
             <div className="grid grid-cols-3 bg-gray-50 border-b border-gray-100">
               <div className="p-6 font-semibold text-gray-600">Feature</div>
               <div className="p-6 text-center">
-                <div className="inline-flex items-center gap-2 bg-[#2969FF] text-white rounded-full px-4 py-1">
-                  <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-5" />
-                  <span className="font-semibold">Ticketrack</span>
-                </div>
+                <Link to="/" className="inline-flex items-center justify-center bg-[#2969FF] text-white rounded-full px-4 py-1 hover:opacity-90 transition-opacity">
+                  <Logo className="h-5" variant="light" />
+                </Link>
               </div>
               <div className="p-6 text-center font-semibold text-gray-600">Others</div>
             </div>

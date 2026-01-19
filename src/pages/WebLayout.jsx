@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/Logo'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,12 +99,7 @@ export function WebLayout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div
-              className="flex items-center cursor-pointer gap-2"
-              onClick={() => navigate('/')}
-            >
-              <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-12 w-auto object-contain" />
-            </div>
+            <Logo className="h-12" />
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-8">
@@ -432,8 +428,8 @@ export function WebLayout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-12 w-auto object-contain" />
+              <div className="mb-4">
+                <Logo className="h-12" variant="light" />
               </div>
               <p className="text-white/60 text-sm">
                 The best platform for discovering and booking events worldwide.

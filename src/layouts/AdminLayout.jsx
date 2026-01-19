@@ -20,6 +20,8 @@ import { AlertTriangle, FileText, ArrowRightLeft,
   Loader2,
   Settings,
   Clock,
+} from 'lucide-react';
+import { Logo } from '@/components/Logo';
   Home,
   FolderOpen, Receipt, ChevronDown, Globe,
 } from 'lucide-react';
@@ -168,10 +170,10 @@ export function AdminLayout({ children }) {
   const renderSidebar = (isMobile = false) => (
     <>
       <div className="p-4 border-b border-[#0F0F0F]/10 flex items-center justify-between">
-        <Link to="/" className="block hover:opacity-80 transition-opacity">
-          <img src="/ticketrackLogo.png" alt="Ticketrack" className="h-8" />
+        <div>
+          <Logo className="h-8" />
           <p className="text-xs text-[#0F0F0F]/60 mt-1">Admin Portal</p>
-        </Link>
+        </div>
         {isMobile && (
           <button onClick={() => setSidebarOpen(false)}>
             <X className="w-6 h-6 text-[#0F0F0F]/60" />
