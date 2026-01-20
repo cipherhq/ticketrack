@@ -218,14 +218,31 @@ export function WebAuth() {
           formData.phone,
           formData.countryCode
         )
-        setSignupEmail(result.email)
-        setSignupPhone(formData.phone)
-        // Show OTP method selection for verification
-        setStep('otp-method-selection')
-        setSuccess('Account created! Please verify your account.')
+        
+        if (result.success) {
+          setSignupEmail(result.email)
+          setSignupPhone(formData.phone)
+          // Show OTP method selection for verification
+          setStep('otp-method-selection')
+          setSuccess('Account created! Please verify your account.')
+        }
       }
     } catch (err) {
-      setError(err.message)
+      console.error('Signup error:', err)
+      // Provide more specific error messages
+      if (err.message?.includes('already registered') || err.message?.includes('already exists') || err.message?.includes('User already registered')) {
+        setError('An account with this email already exists. Please sign in instead.')
+      } else if (err.message?.includes('rate limit') || err.message?.includes('too many') || err.message?.includes('Too many')) {
+        setError('Too many attempts. Please try again in a few minutes.')
+      } else if (err.message?.includes('network') || err.message?.includes('fetch') || err.message?.includes('Network')) {
+        setError('Network error. Please check your connection and try again.')
+      } else if (err.message?.includes('Invalid') || err.message?.includes('invalid')) {
+        setError(err.message)
+      } else if (err.message) {
+        setError(err.message)
+      } else {
+        setError('An error occurred. Please try again. If the problem persists, contact support.')
+      }
     } finally {
       setLoading(false)
     }
