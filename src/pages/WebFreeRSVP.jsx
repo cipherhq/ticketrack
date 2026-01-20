@@ -562,6 +562,45 @@ export function WebFreeRSVP() {
         })
       }
 
+      // Send notification to organizer for new RSVP
+      try {
+        // Fetch organizer email
+        const { data: eventWithOrganizer } = await supabase
+          .from('events')
+          .select('organizers(email, business_name, profiles(email))')
+          .eq('id', eventId)
+          .single()
+        
+        const organizerEmail = eventWithOrganizer?.organizers?.email || 
+                               eventWithOrganizer?.organizers?.profiles?.email
+        
+        if (organizerEmail) {
+          sendConfirmationEmail({
+            type: "new_ticket_sale",
+            to: organizerEmail,
+            data: {
+              eventTitle: event.title,
+              eventId: eventId,
+              ticketType: "Free RSVP",
+              quantity: quantity,
+              buyerName: `${formData.firstName} ${formData.lastName}`,
+              buyerEmail: formData.email,
+              buyerPhone: formData.phone || null,
+              amount: 0,
+              isFree: true,
+              currency: event.currency || 'NGN',
+              totalSold: (event.tickets_sold || 0) + quantity,
+              totalCapacity: event.capacity || 0,
+              appUrl: window.location.origin
+            }
+          })
+          console.log('Organizer notification sent for RSVP')
+        }
+      } catch (orgEmailErr) {
+        console.error('Failed to send organizer notification:', orgEmailErr)
+        // Don't fail the RSVP if organizer notification fails
+      }
+
       // Navigate to success
       navigate('/payment-success', {
         state: { order, event, tickets, reference: 'FREE' }
@@ -826,6 +865,42 @@ export function WebFreeRSVP() {
         })
       }
 
+      // Send notification to organizer for donation RSVP
+      try {
+        const { data: eventWithOrganizer } = await supabase
+          .from('events')
+          .select('organizers(email, profiles(email))')
+          .eq('id', event.id)
+          .single()
+        
+        const organizerEmail = eventWithOrganizer?.organizers?.email || 
+                               eventWithOrganizer?.organizers?.profiles?.email
+        
+        if (organizerEmail) {
+          sendConfirmationEmail({
+            type: "new_ticket_sale",
+            to: organizerEmail,
+            data: {
+              eventTitle: event.title,
+              eventId: event.id,
+              ticketType: "Free RSVP + Donation",
+              quantity: quantity,
+              buyerName: `${formData.firstName} ${formData.lastName}`,
+              buyerEmail: formData.email,
+              buyerPhone: formData.phone || null,
+              amount: actualDonation,
+              isFree: false,
+              currency: event.currency || 'NGN',
+              totalSold: (event.tickets_sold || 0) + quantity,
+              totalCapacity: event.capacity || 0,
+              appUrl: window.location.origin
+            }
+          })
+        }
+      } catch (orgEmailErr) {
+        console.error('Failed to send organizer notification:', orgEmailErr)
+      }
+
       navigate('/payment-success', {
         state: { order, event, tickets, reference: paymentRef }
       })
@@ -929,6 +1004,42 @@ export function WebFreeRSVP() {
             appUrl: window.location.origin
           }
         })
+      }
+
+      // Send notification to organizer for fallback RSVP
+      try {
+        const { data: eventWithOrganizer } = await supabase
+          .from('events')
+          .select('organizers(email, profiles(email))')
+          .eq('id', event.id)
+          .single()
+        
+        const organizerEmail = eventWithOrganizer?.organizers?.email || 
+                               eventWithOrganizer?.organizers?.profiles?.email
+        
+        if (organizerEmail) {
+          sendConfirmationEmail({
+            type: "new_ticket_sale",
+            to: organizerEmail,
+            data: {
+              eventTitle: event.title,
+              eventId: event.id,
+              ticketType: "Free RSVP",
+              quantity: quantity,
+              buyerName: `${formData.firstName} ${formData.lastName}`,
+              buyerEmail: formData.email,
+              buyerPhone: formData.phone || null,
+              amount: 0,
+              isFree: true,
+              currency: event.currency || 'NGN',
+              totalSold: (event.tickets_sold || 0) + quantity,
+              totalCapacity: event.capacity || 0,
+              appUrl: window.location.origin
+            }
+          })
+        }
+      } catch (orgEmailErr) {
+        console.error('Failed to send organizer notification:', orgEmailErr)
       }
 
       navigate('/payment-success', {
