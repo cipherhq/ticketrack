@@ -104,9 +104,16 @@ export function AuthProvider({ children }) {
       })
 
       if (error) {
+        console.error('Signup error details:', error)
         if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
-        if (error.message?.includes('already registered')) {
-          throw new Error('Unable to create account. Please try again or sign in.')
+        if (error.status === 500 || error.status >= 500) {
+          throw new Error('Server error. Please try again in a moment. If the problem persists, contact support.')
+        }
+        if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+          throw new Error('An account with this email already exists. Please sign in instead.')
+        }
+        if (error.message) {
+          throw new Error(error.message)
         }
         throw new Error(AUTH_ERRORS.UNKNOWN)
       }
