@@ -633,7 +633,7 @@ export function WebEventDetails() {
 
           {/* Event Header */}
           <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex flex-wrap gap-2 mb-3">
                 <Badge className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg">
                   {event.category?.icon} {event.category?.name || 'Event'}
@@ -649,25 +649,25 @@ export function WebEventDetails() {
                   </Badge>
                 )}
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-[#0F0F0F] mb-4">{event.title}</h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#0F0F0F] mb-4 pr-12 sm:pr-0">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-[#0F0F0F]/60">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
+                  <Calendar className="w-5 h-5 flex-shrink-0" />
                   <span>{formatDate(event.start_date)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
+                  <Clock className="w-5 h-5 flex-shrink-0" />
                   <span>{formatTime(event.start_date)} - {formatTime(event.end_date)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {event.is_virtual ? (
                     <>
-                      <Monitor className="w-5 h-5 text-purple-600" />
+                      <Monitor className="w-5 h-5 text-purple-600 flex-shrink-0" />
                       <span className="text-purple-600 font-medium">Virtual Event (Online)</span>
                     </>
                   ) : (
                     <>
-                      <MapPin className="w-5 h-5" />
+                      <MapPin className="w-5 h-5 flex-shrink-0" />
                       <span className="flex flex-wrap items-center gap-x-1">
                         {event.venue_name && <span className="font-medium">{event.venue_name}</span>}
                         {event.venue_name && (event.venue_address || event.city) && <span className="text-[#0F0F0F]/60">•</span>}
@@ -683,13 +683,14 @@ export function WebEventDetails() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <Button 
                 variant="outline" 
                 size="icon" 
-                onClick={toggleFavorite}
+                onClick={(e) => { e.stopPropagation(); toggleFavorite(); }}
                 disabled={savingFavorite}
-                className={`rounded-xl ${isFavorite ? 'text-red-500 border-red-500 bg-red-50' : ''}`}
+                className={`rounded-xl min-w-[44px] min-h-[44px] touch-manipulation ${isFavorite ? 'text-red-500 border-red-500 bg-red-50 hover:bg-red-100' : ''}`}
+                aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
               >
                 {savingFavorite ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -700,8 +701,9 @@ export function WebEventDetails() {
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="rounded-xl"
-                onClick={handleShare}
+                className="rounded-xl min-w-[44px] min-h-[44px] touch-manipulation"
+                onClick={(e) => { e.stopPropagation(); handleShare(); }}
+                aria-label="Share event"
               >
                 <Share2 className="w-5 h-5" />
               </Button>

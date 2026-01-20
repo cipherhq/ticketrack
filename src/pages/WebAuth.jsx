@@ -58,6 +58,20 @@ export function WebAuth() {
     if (user) navigate(from, { replace: true, state: location.state })
   }, [user, navigate, from])
 
+  // Handle auto-redirect after email verification success
+  useEffect(() => {
+    if (step === 'email-verified-success') {
+      const timer = setTimeout(() => {
+        // Wait for auth state to update, then redirect
+        setTimeout(() => {
+          navigate(from || '/profile', { replace: true, state: location.state })
+        }, 500)
+      }, 2500) // Show message for 2.5 seconds
+
+      return () => clearTimeout(timer)
+    }
+  }, [step, navigate, from, location.state])
+
   useEffect(() => {
     if (!formData.password) {
       setPasswordStrength({ score: 0, feedback: '' })
@@ -132,9 +146,8 @@ export function WebAuth() {
           // Email OTP verification for signup - pass isSignup = true to use type 'signup'
           const result = await verifyEmailOTP(signupEmail, formData.otp, !isLogin)
           console.log('Email OTP verification result:', result)
-          // Wait for auth state to update
-          await new Promise(resolve => setTimeout(resolve, 500))
-          navigate(from, { replace: true, state: location.state })
+          // Show success message before redirecting
+          setStep('email-verified-success')
           return
         } else {
           // Phone OTP verification (login or signup)
@@ -379,6 +392,34 @@ export function WebAuth() {
               >
                 Back to Login
               </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Email Verified Success Screen
+  if (step === 'email-verified-success') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+        <div className="w-full max-w-md">
+          <div className="flex items-center justify-center mb-8">
+            <Logo className="h-12" />
+          </div>
+
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Email Verified!</h2>
+              <p className="text-[#0F0F0F] font-medium mb-4">Your email has been verified successfully!</p>
+              <p className="text-[#0F0F0F]/60 text-sm mb-6">Redirecting you to your profile...</p>
+              
+              <div className="flex justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-[#2969FF]" />
+              </div>
             </CardContent>
           </Card>
         </div>

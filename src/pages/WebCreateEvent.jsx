@@ -42,6 +42,7 @@ export function WebCreateEvent() {
   const [tabErrors, setTabErrors] = useState({});
   const [urlStatus, setUrlStatus] = useState({ checking: false, available: null, message: "" });
   const urlCheckTimeout = useRef(null);
+  const ticketingSectionRef = useRef(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -278,11 +279,22 @@ export function WebCreateEvent() {
     setVenueLayoutPreview('');
   };
 
+  // Scroll ticketing section to top when tab becomes active
+  useEffect(() => {
+    if (activeTab === 'ticketing' && ticketingSectionRef.current) {
+      // Use setTimeout to ensure DOM is rendered
+      setTimeout(() => {
+        ticketingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [activeTab]);
+
   // Ticket Functions
   const addTicket = () => {
     setTickets([...tickets, { 
       id: Date.now(), name: '', price: '', quantity: '', description: '', isRefundable: true 
     }]);
+    // Don't auto-scroll when adding ticket - keep current scroll position
   };
 
   const removeTicket = (id) => {
@@ -998,7 +1010,7 @@ export function WebCreateEvent() {
 
             {/* Ticketing Tab */}
             {activeTab === 'ticketing' && (
-              <div className="space-y-6">
+              <div ref={ticketingSectionRef} className="space-y-6">
                 {/* Free Event Toggle */}
                 <Card className="border-[#0F0F0F]/10 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50">
                   <CardContent className="p-5">

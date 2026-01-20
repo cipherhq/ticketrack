@@ -62,6 +62,7 @@ export function CreateEvent() {
   const galleryInputRef = useRef(null);
   const sponsorInputRef = useRef(null);
   const venueLayoutInputRef = useRef(null);
+  const ticketingSectionRef = useRef(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -839,11 +840,22 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     setVenueLayoutPreview('');
   };
 
+  // Scroll ticketing section to top when tab becomes active
+  useEffect(() => {
+    if (activeTab === 'ticketing' && ticketingSectionRef.current) {
+      // Use setTimeout to ensure DOM is rendered
+      setTimeout(() => {
+        ticketingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [activeTab]);
+
   // Ticket Functions
   const addTicket = () => {
     setTickets([...tickets, { 
       id: Date.now(), name: '', price: '', quantity: '', description: '', isRefundable: true 
     }]);
+    // Don't auto-scroll when adding ticket - keep current scroll position
   };
 
   const removeTicket = (id) => {
@@ -2301,7 +2313,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
           {/* Ticketing Tab */}
           {activeTab === 'ticketing' && (
-            <div className="space-y-6">
+            <div ref={ticketingSectionRef} className="space-y-6">
               {/* Free Event Toggle */}
               <div className="p-5 bg-gradient-to-r from-green-500/10 to-green-500/5 rounded-xl border-2 border-green-500/30">
                 <div className="flex items-center justify-between">

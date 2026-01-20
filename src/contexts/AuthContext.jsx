@@ -160,6 +160,33 @@ export function AuthProvider({ children }) {
         if (error.message?.includes('Email not confirmed')) {
           return { success: false, emailNotVerified: true, email: emailResult.value }
         }
+        
+        // After failed login, check if user exists to provide better error message
+        // Only check if it's an "Invalid login credentials" error
+        if (error.message?.includes('Invalid login credentials') || error.message?.includes('Invalid')) {
+          try {
+            const { data: existingUser } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('email', emailResult.value.toLowerCase())
+              .maybeSingle()
+            
+            // If no user found in profiles, account doesn't exist
+            if (!existingUser) {
+              throw new Error('No account found with this email. Please sign up first.')
+            }
+            // User exists but password is wrong
+            throw new Error('Incorrect password. Please try again or reset your password.')
+          } catch (checkError) {
+            // If the error message already contains our custom message, throw it
+            if (checkError.message?.includes('No account found') || checkError.message?.includes('Incorrect password')) {
+              throw checkError
+            }
+            // Otherwise, fall back to generic error
+            throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
+          }
+        }
+        
         throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
       }
 
