@@ -105,17 +105,41 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error('Signup error details:', error)
+        console.error('Error status:', error.status)
+        console.error('Error message:', error.message)
+        
         if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        
+        // Handle SMTP/email configuration errors
+        if (error.message?.includes('email') && (error.message?.includes('send') || error.message?.includes('SMTP') || error.message?.includes('mail'))) {
+          console.error('Email sending error - likely SMTP configuration issue')
+          throw new Error('Unable to send verification email. Please check your email settings or try again later.')
+        }
+        
         if (error.status === 500 || error.status >= 500) {
+          // Check if it's an email-related 500 error
+          if (error.message?.toLowerCase().includes('email') || error.message?.toLowerCase().includes('smtp') || error.message?.toLowerCase().includes('mail')) {
+            throw new Error('Email service error. Please check your SMTP configuration or try again later.')
+          }
           throw new Error('Server error. Please try again in a moment. If the problem persists, contact support.')
         }
+        
         if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
           throw new Error('An account with this email already exists. Please sign in instead.')
         }
+        
         if (error.message) {
           throw new Error(error.message)
         }
         throw new Error(AUTH_ERRORS.UNKNOWN)
+      }
+
+      // Even if signup succeeds, check if email was actually sent
+      // Supabase might create the user but fail to send email silently
+      if (data?.user && !data?.session) {
+        // User created but not confirmed - email should have been sent
+        // If SMTP is misconfigured, this might fail silently
+        console.log('User created, verification email should be sent')
       }
 
       return { success: true, message: 'Please check your email to verify your account', email: emailResult.value }
