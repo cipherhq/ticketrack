@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const signUp = useCallback(async (email, password, firstName, lastName, phone, countryCode = 'NG') => {
+  const signUp = useCallback(async (email, password, firstName, lastName, phone, countryCode = 'NG', marketingConsent = false) => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
 
@@ -98,6 +98,8 @@ export function AuthProvider({ children }) {
             full_name: `${firstNameResult.value} ${lastNameResult.value}`,
             phone: formattedPhoneForStorage, // Store without + prefix (e.g., "12025579406")
             country_code: countryCode,
+            marketing_consent: marketingConsent, // GDPR: Store marketing consent
+            marketing_consent_date: marketingConsent ? new Date().toISOString() : null,
           },
           emailRedirectTo: `${window.location.origin}/`,
         }

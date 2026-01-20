@@ -20,6 +20,7 @@ import { ImpersonationProvider } from './contexts/ImpersonationContext';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
 import { SessionTimeoutProvider } from './hooks/useSessionTimeout.jsx';
 import { SESSION_TIMEOUT_MS, SESSION_WARNING_MS } from './config/app';
+import { CookieConsent } from './components/CookieConsent';
 import { Loader2 } from 'lucide-react';
 
 // Loading fallback component
@@ -54,6 +55,7 @@ const HelpCenter = lazy(() => import('./pages/HelpCenter').then(m => ({ default:
 const WebSupport = lazy(() => import('./pages/WebSupport').then(m => ({ default: m.WebSupport })));
 const WebPricing = lazy(() => import('./pages/WebPricing').then(m => ({ default: m.WebPricing })));
 const WebPrivacy = lazy(() => import('./pages/WebPrivacy').then(m => ({ default: m.WebPrivacy })));
+const WebCookies = lazy(() => import('./pages/WebCookies').then(m => ({ default: m.WebCookies })));
 const WebTerms = lazy(() => import('./pages/WebTerms').then(m => ({ default: m.WebTerms })));
 const WebTrustSafety = lazy(() => import('./pages/WebTrustSafety').then(m => ({ default: m.WebTrustSafety })));
 const WebRefundPolicy = lazy(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })));
@@ -238,6 +240,11 @@ function App() {
                     <WebPrivacy />
                   </Suspense>
                 } />
+                <Route path="/cookies" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebCookies />
+                  </Suspense>
+                } />
                 <Route path="/terms" element={
                   <Suspense fallback={<PageLoader />}>
                     <WebTerms />
@@ -285,6 +292,7 @@ function App() {
                 } />
               </Route>
             </Routes>
+            <CookieConsent />
             </Sentry.ErrorBoundary>
           </Router>
           </SessionTimeoutProvider>

@@ -38,6 +38,8 @@ export function WebAuth() {
     confirmPassword: '',
     otp: '',
     countryCode: '',
+    marketingConsent: false, // GDPR: Explicit marketing consent
+    termsAccepted: false, // GDPR: Explicit terms acceptance
   })
 
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: '' })
@@ -216,7 +218,8 @@ export function WebAuth() {
           formData.firstName, 
           formData.lastName, 
           formData.phone,
-          formData.countryCode
+          formData.countryCode,
+          formData.marketingConsent // GDPR: Pass marketing consent
         )
         
         if (result.success) {
@@ -980,10 +983,46 @@ export function WebAuth() {
                 </div>
               )}
 
+              {/* GDPR Consent Checkboxes - Signup only */}
+              {!isLogin && (
+                <div className="space-y-3 pt-2">
+                  {/* Terms & Privacy - Required */}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.termsAccepted}
+                      onChange={(e) => setFormData(prev => ({ ...prev, termsAccepted: e.target.checked }))}
+                      className="mt-1 w-4 h-4 rounded border-[#0F0F0F]/20 text-[#2969FF] focus:ring-[#2969FF]"
+                    />
+                    <span className="text-sm text-[#0F0F0F]/70">
+                      I agree to the{' '}
+                      <a href="/terms" target="_blank" className="text-[#2969FF] hover:underline">Terms of Service</a>
+                      {' '}and{' '}
+                      <a href="/privacy" target="_blank" className="text-[#2969FF] hover:underline">Privacy Policy</a>
+                      {' '}<span className="text-red-500">*</span>
+                    </span>
+                  </label>
+                  
+                  {/* Marketing Consent - Optional */}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.marketingConsent}
+                      onChange={(e) => setFormData(prev => ({ ...prev, marketingConsent: e.target.checked }))}
+                      className="mt-1 w-4 h-4 rounded border-[#0F0F0F]/20 text-[#2969FF] focus:ring-[#2969FF]"
+                    />
+                    <span className="text-sm text-[#0F0F0F]/70">
+                      I'd like to receive event recommendations, special offers, and updates via email. 
+                      <span className="text-[#0F0F0F]/50 block text-xs mt-0.5">You can unsubscribe at any time.</span>
+                    </span>
+                  </label>
+                </div>
+              )}
+
               <Button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6"
+                disabled={loading || (!isLogin && !formData.termsAccepted)}
+                className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6 disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : isLogin ? "Sign In" : "Create Account"}
               </Button>

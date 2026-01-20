@@ -38,12 +38,29 @@ export function WebPrivacy() {
       'We never store your full payment card details on our servers.',
       'Phone numbers are stored securely and transmitted via encrypted connections to SMS providers.',
     ]},
-    { title: '6. Your Rights', content: [
-      'Access: You can request a copy of your personal data at any time.',
-      'Correction: You can update or correct your information through your account settings.',
-      'Deletion: You can request deletion of your account and associated data.',
-      'Opt-out: You can unsubscribe from marketing communications at any time.',
+    { title: '6. Your Rights (GDPR/UK GDPR)', content: [
+      'Right of Access: You can request a copy of your personal data at any time via your Profile Settings.',
+      'Right to Rectification: You can update or correct your information through your account settings.',
+      'Right to Erasure ("Right to be Forgotten"): You can delete your account and all associated data via Profile → Settings → Delete Account.',
+      'Right to Data Portability: You can export all your data in JSON format via Profile → Settings → Export My Data.',
+      'Right to Object: You can opt-out of marketing communications at any time via your account settings or email unsubscribe links.',
+      'Right to Restrict Processing: You can request we limit how we use your data by contacting support@ticketrack.com.',
+      'Right to Withdraw Consent: Where we rely on consent, you can withdraw it at any time without affecting prior processing.',
       'SMS Opt-out: Reply STOP to any SMS message or manage preferences in your account settings.',
+      'Automated Decision Making: We do not use automated decision-making or profiling that significantly affects you.',
+    ]},
+    { title: '6a. Legal Basis for Processing (GDPR Article 6)', content: [
+      'Contract Performance: Processing your data to provide ticketing services, process payments, and deliver tickets you\'ve purchased.',
+      'Legitimate Interests: Improving our services, fraud prevention, security, analytics, and customer support.',
+      'Consent: Marketing communications and optional features require your explicit opt-in consent.',
+      'Legal Obligations: Tax compliance, regulatory requirements, and responding to lawful requests from authorities.',
+    ]},
+    { title: '6b. UK & EU Specific Rights', content: [
+      'For UK users: Your rights are protected under the UK General Data Protection Regulation (UK GDPR) and Data Protection Act 2018.',
+      'For EU users: Your rights are protected under the EU General Data Protection Regulation (GDPR).',
+      'Data Controller: Ticketrack Ltd is the data controller for your personal information.',
+      'Supervisory Authority: You have the right to lodge a complaint with your local data protection authority (e.g., ICO in the UK).',
+      'Contact for Data Protection: privacy@ticketrack.com or support@ticketrack.com',
     ]},
     { title: '7. Cookies and Tracking', content: [
       'We use cookies and similar technologies to improve your experience and analyze platform usage.',
@@ -76,7 +93,7 @@ export function WebPrivacy() {
           <div className="w-16 h-16 bg-[#2969FF]/10 rounded-2xl flex items-center justify-center"><Shield className="w-8 h-8 text-[#2969FF]" /></div>
         </div>
         <h1 className="text-4xl font-bold text-[#0F0F0F] mb-4">Privacy Policy</h1>
-        <p className="text-[#0F0F0F]/60">Last updated: January 12, 2025</p>
+        <p className="text-[#0F0F0F]/60">Last updated: January 20, 2026</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8 mb-8">

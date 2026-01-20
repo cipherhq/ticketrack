@@ -1412,6 +1412,114 @@ export function AttendeeProfile() {
                   </CardContent>
                 </Card>
 
+                {/* GDPR Privacy Rights Card */}
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                      <Lock className="w-5 h-5 text-[#2969FF]" />
+                      Privacy & Data Rights
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                      <p className="text-sm text-[#0F0F0F]/70 mb-3">
+                        Under GDPR and UK data protection laws, you have the right to access, export, and delete your personal data.
+                      </p>
+                    </div>
+                    
+                    {/* Marketing Preferences */}
+                    <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                      <div>
+                        <p className="font-medium text-[#0F0F0F]">Marketing Emails</p>
+                        <p className="text-sm text-[#0F0F0F]/60">Receive event recommendations and offers</p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const newValue = !profile?.marketing_consent
+                          await supabase.from('profiles').update({ 
+                            marketing_consent: newValue,
+                            marketing_consent_date: newValue ? new Date().toISOString() : null
+                          }).eq('id', user.id)
+                          setProfile(p => ({ ...p, marketing_consent: newValue }))
+                        }}
+                        className={`w-12 h-6 rounded-full flex items-center px-1 transition-colors ${
+                          profile?.marketing_consent ? 'bg-[#2969FF] justify-end' : 'bg-[#0F0F0F]/20 justify-start'
+                        }`}
+                      >
+                        <div className="w-4 h-4 bg-white rounded-full" />
+                      </button>
+                    </div>
+                    
+                    {/* Data Export */}
+                    <Button 
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          // Gather all user data for export
+                          const { data: profileData } = await supabase
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', user.id)
+                            .single()
+                          
+                          const { data: ticketsData } = await supabase
+                            .from('tickets')
+                            .select('*, event:events(title, start_date)')
+                            .eq('user_id', user.id)
+                          
+                          const { data: ordersData } = await supabase
+                            .from('orders')
+                            .select('*')
+                            .eq('user_id', user.id)
+                          
+                          const { data: followersData } = await supabase
+                            .from('followers')
+                            .select('*, organizer:organizers(business_name)')
+                            .eq('user_id', user.id)
+                          
+                          const { data: savedData } = await supabase
+                            .from('saved_events')
+                            .select('*, event:events(title)')
+                            .eq('user_id', user.id)
+                          
+                          const exportData = {
+                            exported_at: new Date().toISOString(),
+                            profile: profileData,
+                            tickets: ticketsData,
+                            orders: ordersData,
+                            following: followersData,
+                            saved_events: savedData,
+                          }
+                          
+                          // Create and download JSON file
+                          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+                          const url = URL.createObjectURL(blob)
+                          const a = document.createElement('a')
+                          a.href = url
+                          a.download = `ticketrack-data-export-${new Date().toISOString().split('T')[0]}.json`
+                          document.body.appendChild(a)
+                          a.click()
+                          document.body.removeChild(a)
+                          URL.revokeObjectURL(url)
+                          
+                          alert('Your data has been exported successfully!')
+                        } catch (error) {
+                          console.error('Error exporting data:', error)
+                          alert('Failed to export data. Please try again.')
+                        }
+                      }}
+                      className="w-full rounded-xl"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Export My Data (GDPR)
+                    </Button>
+                    
+                    <p className="text-xs text-[#0F0F0F]/50 text-center">
+                      Your data will be downloaded as a JSON file containing your profile, tickets, orders, and saved events.
+                    </p>
+                  </CardContent>
+                </Card>
+
                 {/* Delete Account Card */}
                 <Card className="border-red-200 rounded-2xl">
                   <CardHeader>
