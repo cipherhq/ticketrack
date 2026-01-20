@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Mail, Lock, User, Eye, EyeOff, Ticket, AlertCircle, CheckCircle2, Loader2, RefreshCw, ArrowLeft, Globe } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, Ticket, AlertCircle, CheckCircle2, Loader2, RefreshCw, ArrowLeft, Globe, Phone } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,7 @@ import { Logo } from '@/components/Logo'
 export function WebAuth() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn, signUp, sendOTP, verifyOTP, resendOTP, resendVerificationEmail, user, pendingUser } = useAuth()
+  const { signIn, signUp, sendOTP, verifyOTP, sendEmailOTP, verifyEmailOTP, resendOTP, resendVerificationEmail, user, pendingUser } = useAuth()
   
   const isLogin = location.pathname === '/login'
   const from = location.state?.from || '/profile'
@@ -23,9 +23,11 @@ export function WebAuth() {
   const [success, setSuccess] = useState('')
   const [step, setStep] = useState(isLogin ? 'credentials' : 'country-selection')
   const [loginMethod, setLoginMethod] = useState("email")
+  const [otpMethod, setOtpMethod] = useState("email") // 'email' or 'phone' for signup verification
   const showPhoneLogin = true // Twilio Verify enabled // "email" or "phone"
   const [unverifiedEmail, setUnverifiedEmail] = useState('')
   const [signupEmail, setSignupEmail] = useState('')
+  const [signupPhone, setSignupPhone] = useState('')
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -125,29 +127,48 @@ export function WebAuth() {
 
     try {
       if (step === 'otp') {
-        const phone = loginMethod === "phone" ? formData.phone : pendingUser?.user_metadata?.phone
-        const result = await verifyOTP(phone, formData.otp)
-        console.log('verifyOTP result:', result)
-        
-        // Check if this is a new user who needs to register
-        if (result.isNewUser) {
-          setError('No account found with this phone number. Please sign up first.')
-          setStep('credentials')
+        // Handle OTP verification based on method
+        if (otpMethod === 'email' && signupEmail) {
+          // Email OTP verification for signup - pass isSignup = true to use type 'signup'
+          const result = await verifyEmailOTP(signupEmail, formData.otp, !isLogin)
+          console.log('Email OTP verification result:', result)
+          // Wait for auth state to update
+          await new Promise(resolve => setTimeout(resolve, 500))
+          navigate(from, { replace: true, state: location.state })
+          return
+        } else {
+          // Phone OTP verification (login or signup)
+          const phone = loginMethod === "phone" ? formData.phone : (signupPhone || pendingUser?.user_metadata?.phone)
+          // Determine if this is signup or login
+          const verificationType = isLogin ? 'login' : 'signup'
+          const emailForSignup = !isLogin ? signupEmail : null
+          
+          const result = await verifyOTP(phone, formData.otp, verificationType, emailForSignup)
+          console.log('verifyOTP result:', result)
+          
+          // For login flow only, check if this is a new user who needs to register
+          if (isLogin && result.isNewUser) {
+            setError('No account found with this phone number. Please sign up first.')
+            setStep('credentials')
+            return
+          }
+          
+          // For signup flow, if user doesn't exist yet, that's expected - we just created the account
+          // The verify-otp function should have found the user by email and verified their phone
+          
+          // Wait a moment for auth state to update
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          // Navigate to profile/destination
+          navigate(from, { replace: true, state: location.state })
           return
         }
-        
-        // Wait a moment for auth state to update
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Navigate to profile/destination
-        navigate(from, { replace: true, state: location.state })
-        return
       }
 
       if (isLogin) {
         if (loginMethod === "phone") {
-          // Phone login - send OTP
-          await sendOTP(formData.phone)
+          // Phone login - send OTP with type 'login'
+          await sendOTP(formData.phone, 'login')
           setStep("otp")
           setSuccess("OTP sent to your phone")
         } else {
@@ -185,8 +206,10 @@ export function WebAuth() {
           formData.countryCode
         )
         setSignupEmail(result.email)
-        setStep('verify-email')
-        setSuccess(result.message)
+        setSignupPhone(formData.phone)
+        // Show OTP method selection for verification
+        setStep('otp-method-selection')
+        setSuccess('Account created! Please verify your account.')
       }
     } catch (err) {
       setError(err.message)
@@ -199,8 +222,45 @@ export function WebAuth() {
     setError('')
     setLoading(true)
     try {
-      await resendOTP()
-      setSuccess('New OTP sent!')
+      if (otpMethod === 'email' && signupEmail) {
+        // For signup, pass isSignup = true to use resend with type 'signup'
+        await sendEmailOTP(signupEmail, !isLogin)
+        setSuccess('New verification code sent to your email!')
+      } else {
+        const phone = signupPhone || pendingUser?.user_metadata?.phone
+        if (phone) {
+          // Determine if this is signup or login
+          const otpType = isLogin ? 'login' : 'signup'
+          await sendOTP(phone, otpType)
+          setSuccess('New OTP sent to your phone!')
+        } else {
+          throw new Error('No phone number available')
+        }
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOtpMethodSelection = async (method) => {
+    setOtpMethod(method)
+    setError('')
+    setSuccess('')
+    setLoading(true)
+    try {
+      if (method === 'email') {
+        // For signup, pass isSignup = true to use resend with type 'signup'
+        await sendEmailOTP(signupEmail, true)
+        setSuccess('Verification code sent to your email!')
+        setStep('otp')
+      } else {
+        // For signup, use type 'signup' so the backend knows this is a new user verification
+        await sendOTP(signupPhone, 'signup')
+        setSuccess('OTP sent to your phone!')
+        setStep('otp')
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -388,8 +448,8 @@ export function WebAuth() {
     )
   }
 
-  // OTP Screen
-  if (step === 'otp') {
+  // OTP Method Selection Screen (Signup only)
+  if (step === 'otp-method-selection') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
         <div className="w-full max-w-md">
@@ -399,8 +459,95 @@ export function WebAuth() {
 
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#0F0F0F] text-center">Verify Your Phone</CardTitle>
-              <p className="text-center text-[#0F0F0F]/60 mt-2">Enter the 6-digit code sent to your phone</p>
+              <CardTitle className="text-2xl text-[#0F0F0F] text-center">Verify Your Account</CardTitle>
+              <p className="text-center text-[#0F0F0F]/60 mt-2">Choose how you'd like to verify your account</p>
+            </CardHeader>
+            <CardContent>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+
+              {success && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{success}</span>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleOtpMethodSelection('email')}
+                  disabled={loading}
+                  className="w-full p-4 rounded-xl border-2 border-[#0F0F0F]/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all text-left flex items-center gap-3"
+                >
+                  <div className="w-12 h-12 bg-[#2969FF]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-6 h-6 text-[#2969FF]" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[#0F0F0F]">Verify via Email</div>
+                    <div className="text-sm text-[#0F0F0F]/60">{signupEmail}</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleOtpMethodSelection('phone')}
+                  disabled={loading}
+                  className="w-full p-4 rounded-xl border-2 border-[#0F0F0F]/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all text-left flex items-center gap-3"
+                >
+                  <div className="w-12 h-12 bg-[#2969FF]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-6 h-6 text-[#2969FF]" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[#0F0F0F]">Verify via Phone</div>
+                    <div className="text-sm text-[#0F0F0F]/60">{signupPhone || 'Your phone number'}</div>
+                  </div>
+                </button>
+              </div>
+
+              {loading && (
+                <div className="mt-4 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-[#2969FF]" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // OTP Screen
+  if (step === 'otp') {
+    const verificationTarget = otpMethod === 'email' 
+      ? (signupEmail || unverifiedEmail) 
+      : (signupPhone || formData.phone || pendingUser?.user_metadata?.phone)
+    
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+        <div className="w-full max-w-md">
+          <div className="flex items-center justify-center mb-8">
+            <Logo className="h-12" />
+          </div>
+
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-2xl text-[#0F0F0F] text-center">
+                {otpMethod === 'email' ? 'Verify Your Email' : 'Verify Your Phone'}
+              </CardTitle>
+              <p className="text-center text-[#0F0F0F]/60 mt-2">
+                Enter the 6-digit code sent to {otpMethod === 'email' ? 'your email' : 'your phone'}
+              </p>
+              {verificationTarget && (
+                <p className="text-center text-sm text-[#0F0F0F]/40 mt-1">
+                  {otpMethod === 'email' 
+                    ? signupEmail || unverifiedEmail
+                    : `+${verificationTarget.replace(/\D/g, '').slice(0, 3)}****${verificationTarget.replace(/\D/g, '').slice(-4)}`
+                  }
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               {error && (

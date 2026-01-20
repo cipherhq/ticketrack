@@ -81,6 +81,13 @@ export function AuthProvider({ children }) {
     if (!phoneResult.valid) throw new Error(phoneResult.error)
 
     try {
+      // Format phone number consistently (remove + prefix for storage)
+      // This matches the format used in edge functions (formatPhoneNumber)
+      let formattedPhoneForStorage = phoneResult.value
+      if (formattedPhoneForStorage.startsWith('+')) {
+        formattedPhoneForStorage = formattedPhoneForStorage.substring(1)
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email: emailResult.value,
         password,
@@ -89,7 +96,7 @@ export function AuthProvider({ children }) {
             first_name: firstNameResult.value,
             last_name: lastNameResult.value,
             full_name: `${firstNameResult.value} ${lastNameResult.value}`,
-            phone: phoneResult.value,
+            phone: formattedPhoneForStorage, // Store without + prefix (e.g., "12025579406")
             country_code: countryCode,
           },
           emailRedirectTo: `${window.location.origin}/`,
@@ -164,14 +171,91 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const sendOTP = useCallback(async (phone) => {
+  const sendEmailOTP = useCallback(async (email, isSignup = false) => {
+    const emailResult = validateEmail(email)
+    if (!emailResult.valid) throw new Error(emailResult.error)
+
+    try {
+      // Use signInWithOtp for both signup and login
+      // This sends a 6-digit OTP code, not a magic link
+      // For signup, this works even if the user hasn't verified yet
+      console.log(`[Email OTP] Sending OTP to ${email}, isSignup: ${isSignup}`)
+      
+      const { error } = await supabase.auth.signInWithOtp({
+        email: emailResult.value,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          // Explicitly request OTP code instead of magic link
+          shouldCreateUser: !isSignup, // For signup, user already exists, so set to false
+        }
+      })
+
+      if (error) {
+        console.error('[Email OTP] Send error:', error)
+        if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        // If user doesn't exist and we're trying to login, provide clearer error
+        if (error.message?.includes('User not found') && !isSignup) {
+          throw new Error('No account found with this email. Please sign up first.')
+        }
+        throw new Error(error.message || 'Failed to send email OTP')
+      }
+
+      console.log('[Email OTP] OTP sent successfully')
+      setOtpSent(true)
+      return { success: true, message: 'Verification code sent to your email' }
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      throw error
+    }
+  }, [])
+
+  const verifyEmailOTP = useCallback(async (email, token, isSignup = false) => {
+    const emailResult = validateEmail(email)
+    if (!emailResult.valid) throw new Error(emailResult.error)
+
+    const otpResult = validateOTP(token)
+    if (!otpResult.valid) throw new Error(otpResult.error)
+
+    try {
+      // signInWithOtp always uses type 'email' regardless of signup or login
+      // The type is determined by how the OTP was sent, not by when the account was created
+      console.log(`[Email OTP] Verifying OTP for ${email}, token: ${otpResult.value.substring(0, 2)}...`)
+      
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: emailResult.value,
+        token: otpResult.value,
+        type: 'email' // signInWithOtp always uses type 'email'
+      })
+
+      if (error) {
+        console.error('[Email OTP] Verification error:', error)
+        if (error.message?.includes('expired') || error.message?.includes('Expired')) {
+          throw new Error(AUTH_ERRORS.OTP_EXPIRED)
+        }
+        if (error.message?.includes('Invalid') || error.message?.includes('invalid') || error.message?.includes('token')) {
+          throw new Error(AUTH_ERRORS.OTP_INVALID)
+        }
+        throw new Error(error.message || AUTH_ERRORS.OTP_INVALID)
+      }
+
+      console.log('[Email OTP] Verification successful, user:', data.user?.id)
+      setOtpSent(false)
+      setPendingUser(null)
+      return { success: true, user: data.user }
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      throw error
+    }
+  }, [])
+
+  const sendOTP = useCallback(async (phone, type = 'login') => {
     const phoneResult = validatePhone(phone)
     if (!phoneResult.valid) throw new Error(phoneResult.error)
 
-    console.log("Sending OTP to:", phoneResult.value)
+    console.log("Sending OTP to:", phoneResult.value, "Type:", type)
     try {
       const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { phone: phoneResult.value, type: 'login' }
+        body: { phone: phoneResult.value, type }
       })
       
       if (error || !data?.success) {
@@ -188,7 +272,7 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const verifyOTP = useCallback(async (phone, otp) => {
+  const verifyOTP = useCallback(async (phone, otp, type = 'login', email = null) => {
     const phoneResult = validatePhone(phone)
     if (!phoneResult.valid) throw new Error(phoneResult.error)
 
@@ -197,7 +281,12 @@ export function AuthProvider({ children }) {
 
     try {
       const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { phone: phoneResult.value, otp: otpResult.value, type: 'login' }
+        body: { 
+          phone: phoneResult.value, 
+          otp: otpResult.value, 
+          type,
+          email // Pass email for signup verification
+        }
       })
 
       if (error || !data?.success) {
@@ -220,8 +309,8 @@ export function AuthProvider({ children }) {
       } else if (data.requiresEmailLogin) {
         // User exists but we could not create session
         throw new Error('Phone verified. Please login with your email.')
-      } else if (data.isNewUser) {
-        // New user - needs to register
+      } else if (data.isNewUser && type === 'login') {
+        // New user - needs to register (only for login flow)
         return { success: true, isNewUser: true, phone: data.phone }
       }
 
@@ -296,6 +385,8 @@ export function AuthProvider({ children }) {
     signOut,
     sendOTP,
     verifyOTP,
+    sendEmailOTP,
+    verifyEmailOTP,
     resendOTP,
     resetPassword,
     updatePassword,

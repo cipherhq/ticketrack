@@ -67,7 +67,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { phone, otp, type = 'login' } = await req.json();
+    const { phone, otp, type = 'login', email } = await req.json();
 
     if (!phone || !otp) {
       return new Response(
@@ -157,12 +157,79 @@ serve(async (req) => {
       .update({ verified: true, verified_at: new Date().toISOString() })
       .eq('id', otpRecord.id);
 
-    // Find existing user by phone
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, phone')
-      .eq('phone', formattedPhone)
-      .single();
+    // Helper function to normalize phone numbers for comparison
+    // Removes all non-digit characters and leading zeros
+    const normalizePhone = (phone: string): string => {
+      if (!phone) return '';
+      // Remove all non-digit characters
+      return phone.replace(/\D/g, '');
+    };
+    
+    // Normalize the formatted phone for consistent comparison
+    const normalizedFormattedPhone = normalizePhone(formattedPhone);
+
+    // For signup verification, try to find user by email first (if provided)
+    // This handles the case where the user just signed up with email but is verifying via phone
+    let existingProfile = null;
+    if (type === 'signup' && email) {
+      console.log(`[Signup OTP] Looking up user by email: ${email}`);
+      // Try to find user by email (since they just signed up)
+      const { data: profileByEmail, error: emailError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, phone')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+      
+      if (emailError) {
+        console.error('[Signup OTP] Error looking up by email:', emailError);
+      }
+      
+      if (profileByEmail) {
+        console.log(`[Signup OTP] Found profile by email: ${profileByEmail.id}, current phone: ${profileByEmail.phone}`);
+        existingProfile = profileByEmail;
+        // Always update the profile's phone number with the formatted version (without + prefix)
+        // This ensures consistency: stored as "12025579406" not "+12025579406"
+        const normalizedExisting = normalizePhone(profileByEmail.phone || '');
+        const normalizedNew = normalizedFormattedPhone;
+        
+        console.log(`[Signup OTP] Normalized phones - existing: ${normalizedExisting}, new: ${normalizedNew}`);
+        console.log(`[Signup OTP] Raw phones - existing: ${profileByEmail.phone}, formatted: ${formattedPhone}`);
+        
+        // Update phone number to ensure it's in the correct format (without + prefix)
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ phone: formattedPhone }) // formattedPhone is already without + prefix from formatPhoneNumber()
+          .eq('id', profileByEmail.id);
+        
+        if (updateError) {
+          console.error('[Signup OTP] Error updating phone:', updateError);
+        } else {
+          console.log(`[Signup OTP] Updated phone to: ${formattedPhone}`);
+          existingProfile.phone = formattedPhone;
+        }
+      } else {
+        console.log('[Signup OTP] No profile found by email');
+      }
+    }
+
+    // If not found by email, try by phone (for login or if email lookup failed)
+    if (!existingProfile) {
+      // Normalize both phone numbers for comparison
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, phone');
+      
+      if (allProfiles) {
+        // Find profile with matching normalized phone number
+        existingProfile = allProfiles.find(p => 
+          normalizePhone(p.phone || '') === normalizedFormattedPhone
+        ) || null;
+        
+        if (existingProfile) {
+          console.log(`[OTP] Found profile by phone: ${existingProfile.id}, phone: ${existingProfile.phone}`);
+        }
+      }
+    }
 
     if (existingProfile) {
       // User exists - get their auth record and create session
