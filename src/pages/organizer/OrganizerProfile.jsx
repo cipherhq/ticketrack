@@ -12,6 +12,7 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { uploadOrganizerLogo } from '@/services/organizerService';
 
 export function OrganizerProfile() {
   const { organizer, refreshOrganizer } = useOrganizer();
@@ -73,24 +74,18 @@ export function OrganizerProfile() {
     setError('');
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${organizer.id}-logo-${Date.now()}.${fileExt}`;
-      const filePath = `organizer-logos/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('public')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('public')
-        .getPublicUrl(filePath);
-
+      const publicUrl = await uploadOrganizerLogo(organizer.id, file);
       setFormData({ ...formData, logo_url: publicUrl });
     } catch (error) {
       console.error('Error uploading logo:', error);
-      setError('Failed to upload logo. Please try again.');
+      // Provide more helpful error message
+      if (error.message?.includes('Bucket not found')) {
+        setError('Storage not configured. Please contact support to enable logo uploads.');
+      } else if (error.message?.includes('storage')) {
+        setError('Storage error. Please try again or contact support.');
+      } else {
+        setError('Failed to upload logo. Please try again.');
+      }
     } finally {
       setUploadingLogo(false);
     }

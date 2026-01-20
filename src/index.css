@@ -29,6 +29,16 @@ body {
   border-radius: 4px;
 }
 
+/* Logo Optimizations */
+img[alt*="Ticketrack"],
+img[alt*="tickettrack"] {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: optimize-contrast;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   /* Prevent text size adjustment on iOS */
@@ -46,6 +56,13 @@ body {
     min-height: 44px;
     min-width: 44px;
     touch-action: manipulation;
+  }
+
+  /* Ensure logo is visible and properly sized on mobile */
+  img[alt*="Ticketrack"],
+  img[alt*="tickettrack"] {
+    max-width: 150px;
+    height: auto;
   }
 
   /* Prevent zoom on input focus (iOS Safari) - MUST be 16px or larger */

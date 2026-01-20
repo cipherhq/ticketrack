@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
-import { NotificationBadge, useOrganizerNotifications } from '@/components/NotificationBadge';
+import { NotificationBadge, useOrganizerNotifications, OrganizerNotificationDropdown } from '@/components/NotificationBadge';
 import { Logo } from '@/components/Logo';
 
 // Grouped menu items for better organization
@@ -83,7 +83,8 @@ export function OrganizerLayout({ children }) {
   const { signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState({});
-  const { counts } = useOrganizerNotifications(organizer?.id);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const { counts, markAsViewed } = useOrganizerNotifications(organizer?.id);
 
   const toggleGroup = (groupId) => {
     setCollapsedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
@@ -103,11 +104,19 @@ export function OrganizerLayout({ children }) {
 
   const getTotalNotifications = () => counts.total;
 
+  const handleNavClick = (item) => {
+    setSidebarOpen(false);
+    // Clear notification badge when tab is clicked
+    if (item.notificationKey && counts[item.notificationKey] > 0) {
+      markAsViewed(item.notificationKey);
+    }
+  };
+
   const renderNavItem = (item) => (
     <Link
       key={item.path}
       to={item.path}
-      onClick={() => setSidebarOpen(false)}
+      onClick={() => handleNavClick(item)}
       className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
         isActive(item.path)
           ? 'bg-[#2969FF] text-white'
@@ -223,12 +232,22 @@ export function OrganizerLayout({ children }) {
           <Menu className="w-6 h-6 text-[#0F0F0F]" />
         </button>
         <Logo className="h-10" />
-        <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative">
-          <Bell className="w-6 h-6 text-[#0F0F0F]" />
-          {getTotalNotifications() > 0 && (
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
-          )}
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setNotificationOpen(!notificationOpen)}
+            className="p-2 hover:bg-[#F4F6FA] rounded-lg relative"
+          >
+            <Bell className="w-6 h-6 text-[#0F0F0F]" />
+            {getTotalNotifications() > 0 && (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
+            )}
+          </button>
+          <OrganizerNotificationDropdown 
+            organizerId={organizer?.id}
+            isOpen={notificationOpen}
+            onClose={() => setNotificationOpen(false)}
+          />
+        </div>
       </header>
 
       {/* Sidebar Overlay */}
@@ -256,19 +275,23 @@ export function OrganizerLayout({ children }) {
             <h2 className="font-medium text-[#0F0F0F]">Welcome back!</h2>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative group" title="Notifications">
-              <Bell className="w-5 h-5 text-[#0F0F0F]/60" />
-              {getTotalNotifications() > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              )}
-              {/* Tooltip */}
-              {getTotalNotifications() > 0 && (
-                <div className="absolute right-0 top-full mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg 
-                                opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 whitespace-nowrap">
-                  {getTotalNotifications()} pending items
-                </div>
-              )}
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setNotificationOpen(!notificationOpen)}
+                className="p-2 hover:bg-[#F4F6FA] rounded-lg relative" 
+                title="Notifications"
+              >
+                <Bell className="w-5 h-5 text-[#0F0F0F]/60" />
+                {getTotalNotifications() > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </button>
+              <OrganizerNotificationDropdown 
+                organizerId={organizer?.id}
+                isOpen={notificationOpen}
+                onClose={() => setNotificationOpen(false)}
+              />
+            </div>
             <Link
               to="/organizer/profile"
               className="flex items-center gap-2 hover:bg-[#F4F6FA] rounded-lg p-2"

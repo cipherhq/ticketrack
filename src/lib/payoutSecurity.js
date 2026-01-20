@@ -409,37 +409,77 @@ class PayoutSecurityService {
   }
 
   /**
-   * Execute actual payout (integrates with payment providers)
+   * Execute actual payout via Paystack/Stripe Connect
    */
   async executePayout(payoutData, actionId) {
     try {
-      // This would integrate with your payment providers (Stripe, Paystack)
-      // For demo purposes, we'll simulate the process
-      
-      console.log('Processing payout:', payoutData);
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate 95% success rate
-      const success = Math.random() > 0.05;
-      
-      if (success) {
-        return {
-          success: true,
-          reference: `PAY_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      console.log('Processing payout via payment provider:', payoutData);
+
+      // Get organizer details to determine payment method
+      const { data: organizer, error: orgError } = await supabase
+        .from('organizers')
+        .select('stripe_connect_id, country_code, payout_currency')
+        .eq('id', payoutData.organizerId)
+        .single();
+
+      if (orgError || !organizer) {
+        throw new Error('Organizer not found');
+      }
+
+      // Determine which payout method to use
+      const useStripeConnect = organizer.stripe_connect_id && 
+        ['US', 'GB', 'EU', 'CA', 'AU'].includes(organizer.country_code);
+
+      let result;
+
+      if (useStripeConnect) {
+        // Use Stripe Connect for supported countries
+        const { data, error } = await supabase.functions.invoke('trigger-stripe-connect-payout', {
+          body: {
+            organizerId: payoutData.organizerId,
+            eventId: payoutData.eventId,
+            triggeredBy: actionId,
+            isDonationPayout: payoutData.isDonation || false
+          }
+        });
+
+        if (error) throw new Error(error.message || 'Stripe Connect payout failed');
+
+        result = {
+          success: data?.success || false,
+          reference: data?.data?.reference || data?.reference,
+          error: data?.message
         };
       } else {
-        return {
-          success: false,
-          error: 'Payment provider error: Insufficient funds or invalid account'
+        // Use Paystack for Nigeria, Ghana, and other African countries
+        const { data, error } = await supabase.functions.invoke('trigger-paystack-payout', {
+          body: {
+            organizerId: payoutData.organizerId,
+            eventId: payoutData.eventId,
+            triggeredBy: actionId,
+            isDonationPayout: payoutData.isDonation || false
+          }
+        });
+
+        if (error) throw new Error(error.message || 'Paystack payout failed');
+
+        result = {
+          success: data?.success || false,
+          reference: data?.data?.reference || data?.reference,
+          error: data?.message
         };
       }
 
+      // Log the payout result
+      console.log('Payout result:', result);
+
+      return result;
+
     } catch (error) {
+      console.error('Payout execution error:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message || 'Payout processing failed'
       };
     }
   }

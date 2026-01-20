@@ -22,6 +22,7 @@ import {
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { Pagination, usePagination } from '@/components/ui/pagination';
+import { sendTicketPurchaseEmail } from '@/lib/emailService';
 
 export function ManageAttendees() {
   const navigate = useNavigate();
@@ -316,8 +317,78 @@ export function ManageAttendees() {
     link.click();
   };
 
+  const [resending, setResending] = useState(null);
+
   const resendTicket = async (attendee) => {
-    alert(`Ticket resent to ${attendee.email}`);
+    if (!attendee?.email || !attendee?.id) {
+      alert('Invalid attendee data');
+      return;
+    }
+
+    setResending(attendee.id);
+
+    try {
+      // Get full ticket details including event info
+      const { data: ticketData, error: ticketError } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          event:events(id, title, start_date, end_date, venue_name, city, image_url, is_virtual),
+          ticket_type:ticket_types(name, price),
+          order:orders(id, order_number, total_amount, currency)
+        `)
+        .eq('id', attendee.id)
+        .single();
+
+      if (ticketError || !ticketData) {
+        throw new Error('Could not find ticket details');
+      }
+
+      const event = ticketData.event;
+      const ticketType = ticketData.ticket_type;
+      const order = ticketData.order;
+
+      // Format the event date
+      const eventDate = event?.start_date 
+        ? new Date(event.start_date).toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          })
+        : 'TBA';
+
+      // Send the confirmation email
+      const emailResult = await sendTicketPurchaseEmail(attendee.email, {
+        attendeeName: attendee.name || 'Valued Guest',
+        eventTitle: event?.title || 'Event',
+        eventDate: eventDate,
+        venueName: event?.is_virtual ? 'Virtual Event' : (event?.venue_name || 'TBA'),
+        city: event?.city || '',
+        ticketType: ticketType?.name || 'General Admission',
+        ticketCode: ticketData.ticket_code,
+        quantity: ticketData.quantity || 1,
+        orderNumber: order?.order_number || ticketData.ticket_code,
+        totalAmount: order?.total_amount || ticketData.total_price || 0,
+        currency: order?.currency || 'NGN',
+        isFree: ticketData.total_price === 0 || ticketData.payment_status === 'free',
+      });
+
+      if (emailResult?.error) {
+        console.warn('Email sending issue:', emailResult.error);
+        alert(`Ticket details resent to ${attendee.email}\n\nNote: Email delivery may be delayed.`);
+      } else {
+        alert(`✓ Ticket confirmation resent to ${attendee.email}`);
+      }
+
+    } catch (error) {
+      console.error('Error resending ticket:', error);
+      alert(`Failed to resend ticket: ${error.message}`);
+    } finally {
+      setResending(null);
+    }
   };
 
   const manualCheckIn = async (attendeeId, checkedIn) => {

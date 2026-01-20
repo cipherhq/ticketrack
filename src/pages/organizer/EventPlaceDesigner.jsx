@@ -78,6 +78,7 @@ export function EventPlaceDesigner() {
   const containerRef = useRef(null)
 
   // Floor plan state
+  const [floorPlanId, setFloorPlanId] = useState(null) // For tracking saved floor plans
   const [floorPlanName, setFloorPlanName] = useState('Untitled Floor Plan')
   const [canvasWidth, setCanvasWidth] = useState(2000)
   const [canvasHeight, setCanvasHeight] = useState(1500)
@@ -711,33 +712,63 @@ export function EventPlaceDesigner() {
 
     try {
       const floorPlanData = {
-        name: floorPlanName,
+        name: floorPlanName || 'Untitled Floor Plan',
         organizer_id: organizer.id,
         created_by: organizer.user_id || user.id,
         canvas_width: canvasWidth,
         canvas_height: canvasHeight,
         grid_size: gridSize,
-        floors: floors,
-        walls: walls,
-        rooms: rooms,
-        doors: doors,
-        windows: windows,
-        structural_elements: structuralElements,
-        metadata: {
-          viewMode,
-          zoom,
-          showGrid,
-          showDimensions
-        }
+        floor_data: JSON.stringify({
+          floors,
+          walls,
+          rooms,
+          doors,
+          windows,
+          structural_elements: structuralElements,
+          metadata: {
+            viewMode,
+            zoom,
+            showGrid,
+            showDimensions
+          }
+        })
       }
 
-      // TODO: Save to Supabase `event_floor_plans` table
-      alert('Floor plan saved! (Database integration coming soon)')
+      // Check if we're updating an existing floor plan or creating new
+      if (floorPlanId) {
+        // Update existing
+        const { error } = await supabase
+          .from('event_floor_plans')
+          .update({
+            ...floorPlanData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', floorPlanId)
+
+        if (error) throw error
+        alert('✓ Floor plan updated successfully!')
+      } else {
+        // Create new
+        const { data, error } = await supabase
+          .from('event_floor_plans')
+          .insert(floorPlanData)
+          .select()
+          .single()
+
+        if (error) throw error
+        setFloorPlanId(data.id)
+        alert('✓ Floor plan saved successfully!')
+      }
     } catch (error) {
       console.error('Error saving floor plan:', error)
-      alert('Failed to save floor plan: ' + error.message)
+      // If table doesn't exist, show helpful message
+      if (error.code === '42P01') {
+        alert('Floor plans table not set up. Please run the database migration.')
+      } else {
+        alert('Failed to save floor plan: ' + error.message)
+      }
     }
-  }, [organizer, user, floorPlanName, canvasWidth, canvasHeight, gridSize, floors, walls, rooms, doors, windows, structuralElements, viewMode, zoom, showGrid, showDimensions])
+  }, [organizer, user, floorPlanName, floorPlanId, canvasWidth, canvasHeight, gridSize, floors, walls, rooms, doors, windows, structuralElements, viewMode, zoom, showGrid, showDimensions])
 
   // =============================================================================
   // KEYBOARD SHORTCUTS

@@ -337,9 +337,8 @@ export function EmailCampaigns() {
       }
 
       if (sendNow) {
-        // In production, this would trigger an Edge Function to send emails
-        // For now, we'll simulate sending
-        await simulateSendCampaign(campaignId);
+        // Send emails via Resend Edge Function
+        await sendCampaignEmails(campaignId);
       }
 
       await loadCampaigns();
@@ -353,23 +352,120 @@ export function EmailCampaigns() {
     }
   };
 
-  const simulateSendCampaign = async (campaignId) => {
-    // In production, call an Edge Function that:
-    // 1. Fetches recipients based on recipient_type
-    // 2. Sends emails via SendGrid/Resend/etc
-    // 3. Updates campaign status and stats
+  const sendCampaignEmails = async (campaignId) => {
+    // Fetch recipients based on recipient_type
+    let recipients = [];
     
-    // For now, just update status
-    await supabase
-      .from('email_campaigns')
-      .update({
-        status: 'sent',
-        sent_at: new Date().toISOString(),
-        total_sent: recipientCount,
-      })
-      .eq('id', campaignId);
+    if (formData.recipientType === 'selected' && preSelectedAttendeeIds.length > 0) {
+      // Get selected attendees
+      const { data: attendees } = await supabase
+        .from('tickets')
+        .select('attendee_email, attendee_name, ticket_types(name)')
+        .in('id', preSelectedAttendeeIds);
+      recipients = attendees?.map(a => ({
+        email: a.attendee_email,
+        name: a.attendee_name,
+        ticket_type: a.ticket_types?.name
+      })) || [];
+    } else if (formData.recipientType === 'followers') {
+      const { data: followers } = await supabase
+        .from('followers')
+        .select('profiles(email, first_name, last_name)')
+        .eq('organizer_id', organizer.id);
+      recipients = followers?.map(f => ({
+        email: f.profiles?.email,
+        name: `${f.profiles?.first_name || ''} ${f.profiles?.last_name || ''}`.trim() || 'there'
+      })).filter(r => r.email) || [];
+    } else if (formData.recipientType === 'event_attendees' && formData.eventId) {
+      const { data: attendees } = await supabase
+        .from('tickets')
+        .select('attendee_email, attendee_name, ticket_types(name)')
+        .eq('event_id', formData.eventId)
+        .eq('payment_status', 'completed');
+      recipients = attendees?.map(a => ({
+        email: a.attendee_email,
+        name: a.attendee_name,
+        ticket_type: a.ticket_types?.name
+      })) || [];
+    } else if (formData.recipientType === 'all_attendees') {
+      const { data: orgEvents } = await supabase
+        .from('events')
+        .select('id')
+        .eq('organizer_id', organizer.id);
+      
+      if (orgEvents?.length > 0) {
+        const eventIds = orgEvents.map(e => e.id);
+        const { data: attendees } = await supabase
+          .from('tickets')
+          .select('attendee_email, attendee_name, ticket_types(name)')
+          .in('event_id', eventIds)
+          .eq('payment_status', 'completed');
+        recipients = attendees?.map(a => ({
+          email: a.attendee_email,
+          name: a.attendee_name,
+          ticket_type: a.ticket_types?.name
+        })) || [];
+      }
+    }
 
-    alert('Campaign sent successfully! (In production, emails will be sent via email service)');
+    // Remove duplicates by email
+    const uniqueRecipients = Array.from(
+      new Map(recipients.map(r => [r.email, r])).values()
+    );
+
+    if (uniqueRecipients.length === 0) {
+      throw new Error('No valid recipients found');
+    }
+
+    // Get event data for variable replacement
+    let eventData = {};
+    if (formData.eventId) {
+      const { data: event } = await supabase
+        .from('events')
+        .select('title, start_date, venue_name, city')
+        .eq('id', formData.eventId)
+        .single();
+      
+      if (event) {
+        eventData = {
+          event_name: event.title,
+          event_date: new Date(event.start_date).toLocaleDateString('en-US', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+          }),
+          event_venue: event.venue_name || event.city || 'TBA',
+          event_link: `${window.location.origin}/e/${formData.eventId}`
+        };
+      }
+    }
+
+    // Add organizer name to variables
+    eventData.organizer_name = organizer.business_name || 'The Organizer';
+
+    // Call the send-bulk-email Edge Function
+    const { data, error } = await supabase.functions.invoke('send-bulk-email', {
+      body: {
+        campaignId,
+        recipients: uniqueRecipients,
+        subject: formData.subject,
+        body: formData.body,
+        variables: eventData,
+        organizerId: organizer.id
+      }
+    });
+
+    if (error) throw error;
+
+    // Show success message
+    const sent = data?.sent || 0;
+    const failed = data?.failed || 0;
+    
+    if (failed > 0) {
+      alert(`Campaign sent!\n\n✅ Delivered: ${sent}\n❌ Failed: ${failed}`);
+    } else {
+      alert(`✅ Campaign sent successfully to ${sent} recipients!`);
+    }
+
+    return data;
   };
 
   const sendCampaign = async (campaignId) => {
@@ -377,11 +473,44 @@ export function EmailCampaigns() {
 
     setSending(true);
     try {
-      await simulateSendCampaign(campaignId);
+      // Fetch campaign data first
+      const { data: campaign } = await supabase
+        .from('email_campaigns')
+        .select('*')
+        .eq('id', campaignId)
+        .single();
+      
+      if (!campaign) throw new Error('Campaign not found');
+
+      // Set form data from campaign for sending
+      setFormData({
+        name: campaign.name,
+        subject: campaign.subject,
+        body: campaign.body,
+        recipientType: campaign.recipient_type,
+        eventId: campaign.event_id || '',
+        selectedTemplate: 'custom',
+        scheduledFor: '',
+      });
+
+      // Update status to sending
+      await supabase
+        .from('email_campaigns')
+        .update({ status: 'sending' })
+        .eq('id', campaignId);
+
+      // Send emails via Resend
+      await sendCampaignEmails(campaignId);
       await loadCampaigns();
     } catch (error) {
       console.error('Error sending campaign:', error);
-      alert('Failed to send campaign');
+      alert('Failed to send campaign: ' + error.message);
+      
+      // Revert status on failure
+      await supabase
+        .from('email_campaigns')
+        .update({ status: 'draft' })
+        .eq('id', campaignId);
     } finally {
       setSending(false);
     }

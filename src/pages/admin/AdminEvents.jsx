@@ -592,7 +592,7 @@ export function AdminEvents() {
                   <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      {selectedEvent.location || selectedEvent.venue || 'TBD'}
+                      {selectedEvent.venue_name || selectedEvent.city || 'TBD'}
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
@@ -664,7 +664,7 @@ export function AdminEvents() {
                     </div>
                     <div className="p-4 bg-[#F4F6FA] rounded-xl">
                       <p className="text-sm text-[#0F0F0F]/60 mb-1">Venue</p>
-                      <p className="text-[#0F0F0F]">{selectedEvent.venue || 'N/A'}</p>
+                      <p className="text-[#0F0F0F]">{selectedEvent.venue_name || 'N/A'}</p>
                     </div>
                     <div className="p-4 bg-[#F4F6FA] rounded-xl">
                       <p className="text-sm text-[#0F0F0F]/60 mb-1">Created</p>

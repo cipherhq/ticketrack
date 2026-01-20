@@ -198,12 +198,12 @@ export function WebEventBrowse() {
         }
       } else {
         // Client-side sorting by other criteria
-        if (sortBy === 'price-low') {
-          results.sort((a, b) => a.min_price - b.min_price)
-        } else if (sortBy === 'price-high') {
-          results.sort((a, b) => b.min_price - a.min_price)
-        } else if (sortBy === 'popular') {
-          results.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
+      if (sortBy === 'price-low') {
+        results.sort((a, b) => a.min_price - b.min_price)
+      } else if (sortBy === 'price-high') {
+        results.sort((a, b) => b.min_price - a.min_price)
+      } else if (sortBy === 'popular') {
+        results.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0))
         } else {
           // Default: sort by date
           results.sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
@@ -635,16 +635,19 @@ export function WebEventBrowse() {
                         {formatDate(event.start_date)}
                       </div>
                       
-                      <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-4">
-                        <MapPin className="w-4 h-4" />
-                        <span className="line-clamp-1">
-                          {event.venue_name}{event.city ? `, ${event.city}` : ''}
+                      <div className="flex items-start gap-2 text-sm text-[#0F0F0F]/60 mb-4">
+                        <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <span className="line-clamp-2">
+                            {event.venue_name || event.city || 'Location TBA'}
+                            {event.venue_name && event.city && ` • ${event.city}`}
+                          </span>
                           {event.distance && event.distance !== Infinity && (
-                            <span className="ml-2 text-[#2969FF] font-medium">
-                              • {formatDistance(event.distance)}
+                            <span className="text-[#2969FF] font-medium block mt-0.5">
+                              {formatDistance(event.distance)} away
                             </span>
                           )}
-                        </span>
+                        </div>
                       </div>
                       
                       <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">

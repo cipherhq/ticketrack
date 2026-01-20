@@ -87,7 +87,7 @@ export function FinancePayouts() {
       
       // Process all orders and group by actual event date
       const ordersByEventDate = {};
-      
+
       events?.forEach(event => {
         const completedOrders = event.orders?.filter(o => o.status === 'completed') || [];
         
@@ -135,7 +135,7 @@ export function FinancePayouts() {
           });
           eventDisplayName = `${event.title} - ${eventDate}`;
         }
-        
+
         if (eventEndDate > now) {
           // Event hasn't ended yet - In Escrow
           inEscrowByCurrency[currency] = (inEscrowByCurrency[currency] || 0) + netAmount;

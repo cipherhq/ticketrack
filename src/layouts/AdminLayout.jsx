@@ -1,30 +1,13 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, FileText, ArrowRightLeft,
-  LayoutDashboard,
-  Shield,
-  Calendar,
-  DollarSign,
-  RefreshCw,
-  MessageSquare,
-  Users,
-  Menu,
-  X,
-  Building,
-  UserCheck,
-  Mail,
-  Send,
-  Bell,
-  TrendingUp,
-  LogOut,
-  Loader2,
-  Settings,
-  Clock,
+import { 
+  AlertTriangle, FileText, ArrowRightLeft,
+  LayoutDashboard, Shield, Calendar, DollarSign, RefreshCw,
+  MessageSquare, Users, Menu, X, Building, UserCheck,
+  Mail, Send, Bell, TrendingUp, LogOut, Loader2, Settings,
+  Clock, Home, FolderOpen, Receipt, ChevronDown, Globe,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
-  Home,
-  FolderOpen, Receipt, ChevronDown, Globe,
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/contexts/AdminContext';
 import { supabase } from '@/lib/supabase';

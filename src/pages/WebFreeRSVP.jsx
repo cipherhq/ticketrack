@@ -37,19 +37,24 @@ const sendConfirmationEmail = async (emailData) => {
   }
 }
 
-// Credit promoter for referral
+// Credit promoter for referral - non-blocking, errors won't affect RSVP
 const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
   try {
     const refCode = localStorage.getItem('referral_code')
     if (!refCode || !/^[A-Za-z0-9-]+$/.test(refCode)) return
     
-    const { data: promoter } = await supabase
+    const { data: promoter, error: promoterError } = await supabase
       .from('promoters')
       .select('id, commission_type, commission_value, commission_rate')
       .or(`short_code.eq.${refCode},referral_code.eq.${refCode}`)
       .single()
     
-    if (!promoter) return
+    if (promoterError || !promoter) {
+      // Silently ignore - promoter may not exist
+      localStorage.removeItem('referral_code')
+      localStorage.removeItem('referral_event_id')
+      return
+    }
     
     const commissionRate = promoter.commission_value || promoter.commission_rate || 10
     const commissionType = promoter.commission_type || 'percentage'
@@ -61,6 +66,7 @@ const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
       commissionAmount = commissionRate * ticketCount
     }
     
+    // Insert promoter sale - ignore errors
     await supabase.from('promoter_sales').insert({
       promoter_id: promoter.id,
       event_id: eventId,
@@ -70,19 +76,23 @@ const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
       commission_rate: commissionRate,
       commission_amount: commissionAmount,
       status: 'pending'
-    })
+    }).catch(() => {})
     
+    // Update promoter stats - ignore errors (RPC may not exist)
     await supabase.rpc('update_promoter_sales', { 
       p_promoter_id: promoter.id,
       p_sale_amount: saleAmount,
       p_commission: commissionAmount,
       p_ticket_count: ticketCount
-    })
+    }).catch(() => {})
     
     localStorage.removeItem('referral_code')
     localStorage.removeItem('referral_event_id')
   } catch (err) {
-    console.error('Error crediting promoter:', err)
+    // Silently ignore - don't let promoter credit fail the RSVP
+    console.warn('Promoter credit skipped:', err.message)
+    localStorage.removeItem('referral_code')
+    localStorage.removeItem('referral_event_id')
   }
 }
 
@@ -91,7 +101,9 @@ export function WebFreeRSVP() {
   const location = useLocation()
   const { user } = useAuth()
   
-  const { event } = location.state || {}
+  // Support both event and selectedEventId from navigation state
+  const { event: passedEvent, selectedEventId } = location.state || {}
+  const event = passedEvent
   
   // Form state
   const [formData, setFormData] = useState({
@@ -100,6 +112,138 @@ export function WebFreeRSVP() {
     firstName: '',
     lastName: ''
   })
+
+  // Function to ensure child event exists for recurring events
+  // Creates child event on-demand when user RSVPs for a future date
+  const ensureChildEventExists = async () => {
+    // Check if this is a virtual event (future date without child event in DB)
+    const isVirtual = event?.is_virtual || 
+                      (typeof selectedEventId === 'string' && selectedEventId?.startsWith('virtual-'))
+    
+    if (!isVirtual) {
+      // Not a virtual event - use selectedEventId if it's a real UUID, otherwise event.id
+      if (selectedEventId && !selectedEventId.startsWith('virtual-')) {
+        return selectedEventId
+      }
+      return event?.id
+    }
+    
+    // This is a virtual event - need to create or find child event
+    const parentEventId = event?.parent_event_id || event?.id
+    const childEventStartDate = event?.start_date
+    const childEventEndDate = event?.end_date
+    
+    if (!parentEventId || !childEventStartDate || !childEventEndDate) {
+      console.warn('Missing data for child event creation, using parent event')
+      return parentEventId || event?.id
+    }
+    
+    // Check if child event already exists for this date
+    const dateStr = childEventStartDate.split('T')[0] // YYYY-MM-DD
+    const dateStart = `${dateStr}T00:00:00`
+    const dateEnd = `${dateStr}T23:59:59`
+    
+    const { data: existingChildren } = await supabase
+      .from('events')
+      .select('id, start_date, end_date')
+      .eq('parent_event_id', parentEventId)
+      .gte('start_date', dateStart)
+      .lte('start_date', dateEnd)
+    
+    if (existingChildren && existingChildren.length > 0) {
+      console.log('Found existing child event:', existingChildren[0].id)
+      return existingChildren[0].id
+    }
+    
+    // Get parent event details to create child
+    const { data: parentEvent, error: parentError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', parentEventId)
+      .single()
+    
+    if (parentError || !parentEvent) {
+      console.error('Parent event not found:', parentEventId)
+      return parentEventId
+    }
+    
+    // Generate slug for child event
+    const childSlug = `${parentEvent.slug}-${dateStr}`.replace(/--+/g, '-').substring(0, 100)
+    
+    // Create child event
+    console.log('Creating child event for date:', dateStr)
+    const { data: newChildEvent, error: createError } = await supabase
+      .from('events')
+      .insert({
+        organizer_id: parentEvent.organizer_id,
+        parent_event_id: parentEventId,
+        title: parentEvent.title,
+        slug: childSlug,
+        description: parentEvent.description,
+        event_type: parentEvent.event_type,
+        category: parentEvent.category,
+        start_date: childEventStartDate,
+        end_date: childEventEndDate,
+        venue_name: parentEvent.venue_name,
+        venue_address: parentEvent.venue_address,
+        city: parentEvent.city,
+        country_code: parentEvent.country_code,
+        currency: parentEvent.currency,
+        status: 'published',
+        is_recurring: false, // Child events are not recurring themselves
+        is_free: parentEvent.is_free,
+        timezone: parentEvent.timezone,
+        image_url: parentEvent.image_url,
+        cover_image_url: parentEvent.cover_image_url,
+        is_virtual: parentEvent.is_virtual,
+        streaming_url: parentEvent.streaming_url,
+        streaming_platform: parentEvent.streaming_platform,
+        total_capacity: parentEvent.total_capacity,
+        max_tickets_per_order: parentEvent.max_tickets_per_order,
+        accepts_donations: parentEvent.accepts_donations,
+        donation_amounts: parentEvent.donation_amounts,
+        allow_custom_donation: parentEvent.allow_custom_donation,
+      })
+      .select()
+      .single()
+    
+    if (createError || !newChildEvent) {
+      console.error('Error creating child event:', createError)
+      // Fall back to parent event
+      return parentEventId
+    }
+    
+    console.log('Created child event:', newChildEvent.id)
+    
+    // If parent has ticket types, copy them to child event
+    const { data: parentTicketTypes } = await supabase
+      .from('ticket_types')
+      .select('*')
+      .eq('event_id', parentEventId)
+      .eq('is_active', true)
+    
+    if (parentTicketTypes && parentTicketTypes.length > 0) {
+      const childTicketTypes = parentTicketTypes.map(tt => ({
+        event_id: newChildEvent.id,
+        name: tt.name,
+        description: tt.description,
+        price: tt.price,
+        quantity_available: tt.quantity_available,
+        quantity_sold: 0,
+        max_per_order: tt.max_per_order,
+        min_per_order: tt.min_per_order,
+        sales_start: tt.sales_start,
+        sales_end: tt.sales_end,
+        is_active: true,
+        sort_order: tt.sort_order,
+      }))
+      
+      await supabase.from('ticket_types').insert(childTicketTypes)
+      console.log('Created', childTicketTypes.length, 'ticket types for child event')
+    }
+    
+    return newChildEvent.id
+  }
   
   // RSVP state
   const [quantity, setQuantity] = useState(1)
@@ -173,102 +317,175 @@ export function WebFreeRSVP() {
   // Load platform settings and check RSVP limit
   useEffect(() => {
     async function loadSettings() {
-      if (!event || !user) return
+      if (!event?.id || !user?.email) {
+        setSettingsLoaded(true)
+        return
+      }
       
       try {
-        // Get platform settings
+        // Get platform settings (will return defaults if DB fails)
         const rsvpSettings = await getRSVPSettings()
         setSettings(rsvpSettings)
         
-        // Check existing RSVPs for this user/event
-        const limitCheck = await checkRSVPLimit(event.id, user.email)
+        // For initial load, use parent event ID for RSVP limit check
+        // The actual child event will be created during RSVP submission
+        const checkEventId = event?.parent_event_id || event?.id
+        
+        // Check existing RSVPs for this user/event (will allow if check fails)
+        const limitCheck = await checkRSVPLimit(checkEventId, user.email)
         setRsvpLimit(limitCheck)
         
         // Set max quantity based on limits
-        const maxFromSettings = Math.min(rsvpSettings.maxTicketsPerOrder, limitCheck.remaining)
-        setMaxQuantity(maxFromSettings)
+        const maxFromSettings = Math.min(rsvpSettings.maxTicketsPerOrder || 10, limitCheck.remaining || 10)
+        setMaxQuantity(Math.max(1, maxFromSettings))
         
         // If already at limit, show error
-        if (!limitCheck.allowed) {
+        if (!limitCheck.allowed && limitCheck.current > 0) {
           setError(`You've already registered ${limitCheck.current} time(s) for this event (max ${limitCheck.max}).`)
         }
-        
-        setSettingsLoaded(true)
       } catch (err) {
-        console.error('Error loading settings:', err)
+        console.warn('Error loading RSVP settings:', err.message)
+        // Use defaults on failure - don't block the user
+        setMaxQuantity(10)
+      } finally {
         setSettingsLoaded(true)
       }
     }
     loadSettings()
-  }, [event, user])
+  }, [event?.id, event?.parent_event_id, user?.email])
 
-  // Generate unique ticket code
-  const generateTicketCode = (index) => {
-    const timestamp = Date.now().toString(36).toUpperCase()
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-    return `TKT${timestamp}${random}${index}`
+  // Generate unique 8-character ticket code (TR + 6 chars)
+  const generateTicketCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Removed similar looking chars (0,O,1,I)
+    let code = 'TR'
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return code
   }
 
   // Handle free RSVP (no donation)
   const handleFreeRSVP = async () => {
+    // Prevent double submission
+    if (loading) return
+    
     if (!validateForm()) return
+    
+    if (!event?.id) {
+      setError('Event information is missing. Please go back and try again.')
+      return
+    }
+    
+    if (!user?.id) {
+      setError('Please log in to register for this event.')
+      navigate('/login', { state: { from: location.pathname, event } })
+      return
+    }
     
     setLoading(true)
     setError(null)
 
     try {
-      // Double-check RSVP limit
-      const limitCheck = await checkRSVPLimit(event.id, formData.email)
-      if (!limitCheck.allowed) {
+      // Verify session is still valid
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        setError('Your session has expired. Please log in again.')
+        setLoading(false)
+        navigate('/login', { state: { from: location.pathname, event } })
+        return
+      }
+      
+      // For recurring events, ensure child event exists (creates on-demand if needed)
+      // This handles virtual IDs like "virtual-2026-04-04"
+      console.log('Ensuring child event exists for:', selectedEventId || event?.id)
+      const eventId = await ensureChildEventExists()
+      console.log('Final eventId to use:', eventId)
+      
+      if (!eventId) {
+        setError('Event not found. Please go back and try again.')
+        setLoading(false)
+        return
+      }
+      
+      // Verify event exists in database (should always exist now after ensureChildEventExists)
+      const { data: eventCheck, error: eventCheckError } = await supabase
+        .from('events')
+        .select('id, currency, country_code')
+        .eq('id', eventId)
+        .single()
+      
+      if (eventCheckError || !eventCheck) {
+        console.error('Event not found after creation:', eventId, eventCheckError)
+        setError('Failed to prepare event. Please try again.')
+        setLoading(false)
+        return
+      }
+      
+      // Double-check RSVP limit (will allow if check fails)
+      const limitCheck = await checkRSVPLimit(eventId, formData.email)
+      if (!limitCheck.allowed && limitCheck.current > 0) {
         setError(`You've reached the maximum RSVPs for this event (${limitCheck.max}).`)
         setLoading(false)
         return
       }
       
-      if (quantity > limitCheck.remaining) {
+      if (limitCheck.remaining > 0 && quantity > limitCheck.remaining) {
         setError(`You can only register ${limitCheck.remaining} more time(s) for this event.`)
         setLoading(false)
         return
       }
+      
+      // Create order - use verified event data for currency
+      const orderData = {
+        user_id: user.id,
+        event_id: eventId,
+        order_number: `RSVP${Date.now().toString(36).toUpperCase()}`,
+        status: settings.freeEventOrderStatus || 'completed',
+        subtotal: 0,
+        platform_fee: 0,
+        tax_amount: 0,
+        discount_amount: 0,
+        total_amount: 0,
+        currency: eventCheck?.currency || event?.currency || getDefaultCurrency(eventCheck?.country_code || event?.country_code || event?.country) || 'NGN',
+        payment_method: 'free',
+        payment_provider: 'none',
+        buyer_email: formData.email,
+        buyer_phone: formData.phone || null,
+        buyer_name: `${formData.firstName} ${formData.lastName}`.trim(),
+        paid_at: new Date().toISOString()
+      }
 
-      // Create order
+      console.log('Creating order with data:', { eventId, userId: user.id, email: formData.email })
+      
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_id: user.id,
-          event_id: event.id,
-          order_number: `RSVP${Date.now().toString(36).toUpperCase()}`,
-          status: settings.freeEventOrderStatus,
-          subtotal: 0,
-          platform_fee: 0,
-          tax_amount: 0,
-          discount_amount: 0,
-          total_amount: 0,
-          currency: event?.currency || getDefaultCurrency(event?.country_code || event?.country),
-          payment_method: 'free',
-          payment_provider: 'none',
-          buyer_email: formData.email,
-          buyer_phone: formData.phone || null,
-          buyer_name: `${formData.firstName} ${formData.lastName}`,
-          paid_at: new Date().toISOString()
-        })
+        .insert(orderData)
         .select()
         .single()
 
-      if (orderError) throw orderError
+      if (orderError) {
+        console.error('Order creation failed:', {
+          code: orderError.code,
+          message: orderError.message,
+          details: orderError.details,
+          hint: orderError.hint
+        })
+        throw orderError
+      }
 
       // Create tickets (one per quantity)
       const ticketsToCreate = []
       for (let i = 0; i < quantity; i++) {
         ticketsToCreate.push({
-          event_id: event.id,
+          event_id: eventId, // Use same eventId as order
           user_id: user.id,
+          order_id: order.id, // Link to order
           ticket_type_id: null, // Free admission
           attendee_email: formData.email,
           attendee_name: `${formData.firstName} ${formData.lastName}`,
           attendee_phone: formData.phone || null,
-          ticket_code: generateTicketCode(i),
-          qr_code: generateTicketCode(i),
+          ticket_code: generateTicketCode(),
+          qr_code: generateTicketCode(),
           unit_price: 0,
           total_price: 0,
           payment_reference: 'FREE',
@@ -283,10 +500,13 @@ export function WebFreeRSVP() {
         .insert(ticketsToCreate)
         .select()
 
-      if (ticketsError) throw ticketsError
+      if (ticketsError) {
+        console.error('Ticket creation failed:', ticketsError)
+        throw ticketsError
+      }
 
       // Credit promoter (even for free, track conversion)
-      await creditPromoter(order.id, event.id, 0, quantity)
+      await creditPromoter(order.id, eventId, 0, quantity)
 
       // Generate PDF and send confirmation email
       try {
@@ -349,8 +569,26 @@ export function WebFreeRSVP() {
 
     } catch (err) {
       logger.error('RSVP error', err)
-      const safeError = handleApiError(err, 'RSVP')
-      setError(getUserMessage(safeError.code, 'An error occurred. Please try again.'))
+      
+      // Provide more specific error messages based on error type
+      let errorMessage = 'An error occurred. Please try again.'
+      
+      if (err?.code === '23505') {
+        errorMessage = 'You have already registered for this event.'
+      } else if (err?.code === '42501' || err?.code === '42P01' || err?.message?.includes('permission') || err?.message?.includes('policy')) {
+        errorMessage = 'Unable to process registration. Please try logging in again.'
+      } else if (err?.message?.includes('network') || err?.message?.includes('fetch') || err?.message?.includes('Failed to fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.'
+      } else if (err?.code?.startsWith('PGRST') || err?.code === '400') {
+        errorMessage = 'Server error. Please try again in a moment.'
+      } else if (err?.code === '23503') {
+        errorMessage = 'Event not found. Please go back and try again.'
+      } else if (err?.message) {
+        // Log the actual error for debugging but show generic message
+        console.error('RSVP error details:', err.message)
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -515,8 +753,8 @@ export function WebFreeRSVP() {
           attendee_email: formData.email,
           attendee_name: `${formData.firstName} ${formData.lastName}`,
           attendee_phone: formData.phone || null,
-          ticket_code: generateTicketCode(i),
-          qr_code: generateTicketCode(i),
+          ticket_code: generateTicketCode(),
+          qr_code: generateTicketCode(),
           unit_price: 0,
           total_price: 0,
           payment_reference: paymentRef,
@@ -621,8 +859,8 @@ export function WebFreeRSVP() {
           attendee_email: formData.email,
           attendee_name: `${formData.firstName} ${formData.lastName}`,
           attendee_phone: formData.phone || null,
-          ticket_code: generateTicketCode(i),
-          qr_code: generateTicketCode(i),
+          ticket_code: generateTicketCode(),
+          qr_code: generateTicketCode(),
           unit_price: 0,
           total_price: 0,
           payment_reference: 'FREE',
@@ -723,8 +961,9 @@ export function WebFreeRSVP() {
       return false
     }
 
-    if (quantity < 1 || quantity > maxQuantity) {
-      setError(`Please select between 1 and ${maxQuantity} tickets.`)
+    const effectiveMax = maxQuantity || 10
+    if (quantity < 1 || quantity > effectiveMax) {
+      setError(`Please select between 1 and ${effectiveMax} tickets.`)
       return false
     }
 
@@ -878,7 +1117,7 @@ export function WebFreeRSVP() {
                   >
                     +
                   </button>
-                  <span className="text-sm text-[#0F0F0F]/60 ml-2">(max {maxQuantity})</span>
+                  <span className="text-sm text-[#0F0F0F]/60 ml-2">(max {maxQuantity || 10})</span>
                 </div>
                 {rsvpLimit && rsvpLimit.current > 0 && (
                   <p className="text-sm text-amber-600 mt-2">

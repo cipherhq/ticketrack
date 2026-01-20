@@ -186,7 +186,9 @@ const EventCard = ({ event, showDistance = false }) => {
         </div>
         <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
           <MapPin size={14} />
-          <span className="line-clamp-1">{event.venue || event.location}</span>
+          <span className="line-clamp-1">
+            {event.is_virtual ? 'Virtual Event' : (event.venue_name || event.city || 'Location TBA')}
+          </span>
         </div>
         <div className="mt-auto flex items-center justify-between">
           <span className="text-sm text-gray-500">From</span>
@@ -263,7 +265,9 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
               </div>
               <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
                 <MapPin size={14} />
-                <span className="line-clamp-1">{event.venue_name || event.city}</span>
+                <span className="line-clamp-1">
+                  {event.is_virtual ? 'Virtual Event' : (event.venue_name || event.city || 'Location TBA')}
+                </span>
               </div>
               <div className="mt-auto flex items-center justify-between">
                 <span className="text-sm text-gray-500">From</span>

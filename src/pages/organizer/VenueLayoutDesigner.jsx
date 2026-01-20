@@ -1324,7 +1324,7 @@ const CanvasObject = memo(({ obj, isSelected, onSelect, onDragStart, onResizeSta
 
   // Transform for 2D view only
   const getTransform = () => {
-    return `translate(${obj.x}, ${obj.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
+      return `translate(${obj.x}, ${obj.y}) rotate(${obj.rotation || 0}, ${obj.width/2}, ${obj.height/2})`
   }
 
   return (
@@ -1873,18 +1873,18 @@ export function VenueLayoutDesigner() {
     }
     
     // Always reset drag state, even if not dragging (safety measure)
-    dragState.current = {
-      isDragging: false,
-      isResizing: false,
-      resizeHandle: null,
-      draggedId: null,
-      startX: 0,
-      startY: 0,
-      objectStartX: 0,
-      objectStartY: 0,
-      objectStartWidth: 0,
-      objectStartHeight: 0
-    }
+      dragState.current = {
+        isDragging: false,
+        isResizing: false,
+        resizeHandle: null,
+        draggedId: null,
+        startX: 0,
+        startY: 0,
+        objectStartX: 0,
+        objectStartY: 0,
+        objectStartWidth: 0,
+        objectStartHeight: 0
+      }
   }, [saveToHistory, findContainerAtPoint])
 
   // =============================================================================
@@ -2179,46 +2179,106 @@ export function VenueLayoutDesigner() {
     setAiInput('')
     setAiLoading(true)
 
-    // Simulate AI processing (in production, this would call an AI API)
-    setTimeout(() => {
+    try {
       const lowerQuery = query.toLowerCase()
       let response = ''
+      let useLocalFunction = false
 
-      // Auto-arrange commands
-      if (lowerQuery.includes('arrange') || lowerQuery.includes('auto') || lowerQuery.includes('layout')) {
+      // Check for command patterns that trigger local functions
+      if (lowerQuery.includes('arrange') || lowerQuery.includes('auto')) {
         const guestCount = parseInt(query.match(/\d+/)?.[0] || '50')
         response = autoArrangeLayout(guestCount)
-      }
-      // Event type suggestions
-      else if (lowerQuery.includes('wedding') || lowerQuery.includes('marriage')) {
-        response = suggestWeddingLayout()
-      }
-      else if (lowerQuery.includes('conference') || lowerQuery.includes('meeting')) {
-        response = suggestConferenceLayout()
-      }
-      else if (lowerQuery.includes('party') || lowerQuery.includes('celebration')) {
-        response = suggestPartyLayout()
+        useLocalFunction = true
       }
       else if (lowerQuery.includes('capacity') || lowerQuery.includes('seating')) {
         response = calculateCapacity()
+        useLocalFunction = true
       }
       else if (lowerQuery.includes('spacing') || lowerQuery.includes('distance')) {
         response = suggestSpacing()
+        useLocalFunction = true
       }
       else if (lowerQuery.includes('flow') || lowerQuery.includes('traffic')) {
         response = suggestFlowOptimization()
+        useLocalFunction = true
       }
-      else if (lowerQuery.includes('help') || lowerQuery.includes('what can you')) {
-        response = `I can help you with:\n\n• Auto-arranging objects: "Arrange tables for 100 guests"\n• Event layouts: "Suggest a wedding layout"\n• Capacity: "What's my current capacity?"\n• Spacing: "Check spacing between tables"\n• Flow: "Optimize traffic flow"\n• General questions about venue design\n\nJust ask me anything!`
-      }
-      else {
-        response = `I understand you're asking about "${query}". Here are some suggestions:\n\n• Try "Arrange tables for [number] guests" to auto-arrange\n• Ask "Suggest a [event type] layout" for event-specific designs\n• Use "What's my capacity?" to check seating\n• Say "Optimize spacing" for spacing recommendations\n\nNeed more specific help? Describe what you're trying to achieve!`
+
+      // For general questions, call the AI API
+      if (!useLocalFunction) {
+        // Build context about current layout
+        const tables = objects.filter(o => o.type.includes('table'))
+        const chairs = objects.filter(o => o.type === 'chair' || o.type === 'banquet-chair')
+        const currentCapacity = tables.reduce((sum, t) => sum + (t.seats || 8), 0) + chairs.length
+        
+        const layoutContext = {
+          canvasSize: `${canvasWidth}x${canvasHeight} pixels (${Math.round(canvasWidth/12)}x${Math.round(canvasHeight/12)} feet)`,
+          objectCount: objects.length,
+          tables: tables.length,
+          chairs: chairs.length,
+          estimatedCapacity: currentCapacity,
+          hasStage: objects.some(o => o.type.includes('stage')),
+          hasBar: objects.some(o => o.type.includes('bar')),
+          hasDanceFloor: objects.some(o => o.type.includes('dance')),
+        }
+
+        // Call AI Edge Function
+        const { data, error } = await supabase.functions.invoke('ai-compose', {
+          body: {
+            prompt: query,
+            context: {
+              type: 'venue_layout',
+              organizerName: organizer?.business_name || 'Event Organizer',
+              eventName: 'Venue Design',
+              layoutContext
+            },
+            systemOverride: `You are a professional venue layout designer assistant for Ticketrack. Help users design optimal event layouts.
+
+Current Layout Context:
+- Canvas: ${layoutContext.canvasSize}
+- Objects: ${layoutContext.objectCount} total (${layoutContext.tables} tables, ${layoutContext.chairs} chairs)
+- Estimated Capacity: ${layoutContext.estimatedCapacity} guests
+- Has Stage: ${layoutContext.hasStage ? 'Yes' : 'No'}
+- Has Bar: ${layoutContext.hasBar ? 'Yes' : 'No'}
+- Has Dance Floor: ${layoutContext.hasDanceFloor ? 'Yes' : 'No'}
+
+Respond helpfully about venue layout, event planning, seating arrangements, traffic flow, and space optimization.
+For commands like "arrange tables" or "calculate capacity", tell users to use those exact phrases.
+Keep responses concise and actionable. Use bullet points and emojis for clarity.`
+          }
+        })
+
+        if (error) {
+          console.warn('AI API error, using fallback:', error)
+          // Fallback to pattern matching for event types
+          if (lowerQuery.includes('wedding') || lowerQuery.includes('marriage')) {
+            response = suggestWeddingLayout()
+          } else if (lowerQuery.includes('conference') || lowerQuery.includes('meeting')) {
+            response = suggestConferenceLayout()
+          } else if (lowerQuery.includes('party') || lowerQuery.includes('celebration')) {
+            response = suggestPartyLayout()
+          } else if (lowerQuery.includes('help') || lowerQuery.includes('what can you')) {
+            response = `I can help you with:\n\n• Auto-arranging objects: "Arrange tables for 100 guests"\n• Event layouts: "Suggest a wedding layout"\n• Capacity: "What's my current capacity?"\n• Spacing: "Check spacing between tables"\n• Flow: "Optimize traffic flow"\n• General questions about venue design\n\nJust ask me anything!`
+          } else {
+            response = `I understand you're asking about "${query}". Here are some things I can help with:\n\n• Try "Arrange tables for [number] guests"\n• Ask "Suggest a [event type] layout"\n• Use "What's my capacity?"\n• Say "Check spacing"\n\nDescribe what you're trying to achieve!`
+          }
+        } else {
+          // Parse AI response
+          response = data?.body || data?.subject || data?.content || 
+            `Here are my suggestions for "${query}":\n\n• Consider your guest flow and accessibility\n• Standard table spacing is 10-12 feet apart\n• Keep emergency exits clear\n• Position bars away from main traffic areas\n\nWould you like me to help with something specific?`
+        }
       }
 
       setAiMessages(prev => [...prev, { role: 'assistant', content: response }])
+    } catch (error) {
+      console.error('AI Query Error:', error)
+      setAiMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `Sorry, I encountered an error. Here are some things I can help with:\n\n• "Arrange tables for [number] guests"\n• "What's my current capacity?"\n• "Suggest a wedding layout"\n• "Check spacing between tables"\n\nTry one of these commands!`
+      }])
+    } finally {
       setAiLoading(false)
-    }, 800)
-  }, [objects, saveToHistory])
+    }
+  }, [objects, saveToHistory, canvasWidth, canvasHeight, organizer])
 
   const autoArrangeLayout = (guestCount) => {
     const tables = objects.filter(o => o.type.includes('table') || o.type.includes('chair'))

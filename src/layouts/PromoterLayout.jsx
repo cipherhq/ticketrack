@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,31 +9,153 @@ import {
   X,
   History,
   LogOut,
-  Bell, FileText, HelpCircle,
+  Bell, FileText, HelpCircle, Home,
 } from 'lucide-react';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { Logo } from '@/components/Logo';
+import { NotificationBadge, PromoterNotificationDropdown } from '@/components/NotificationBadge';
+import { supabase } from '@/lib/supabase';
+
+// Helper functions for localStorage
+const getLastViewed = (key) => {
+  try {
+    const stored = localStorage.getItem(`notification_viewed_${key}`)
+    return stored ? new Date(stored) : null
+  } catch {
+    return null
+  }
+}
+
+const setLastViewed = (key) => {
+  try {
+    localStorage.setItem(`notification_viewed_${key}`, new Date().toISOString())
+  } catch {
+    // localStorage not available
+  }
+}
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/promoter' },
-  { icon: TrendingUp, label: 'Performance', path: '/promoter/performance' },
+  { icon: TrendingUp, label: 'Performance', path: '/promoter/performance', notificationKey: 'newSales' },
   { icon: CreditCard, label: 'Bank Accounts', path: '/promoter/bank-accounts' },
-  { icon: History, label: 'Payment History', path: '/promoter/payment-history' },
+  { icon: History, label: 'Payment History', path: '/promoter/payment-history', notificationKey: 'pendingPayouts' },
   { icon: FileText, label: 'Tax Documents', path: '/promoter/tax-documents' },
   { icon: UserCircle, label: 'Profile', path: '/promoter/profile' },
-  { icon: HelpCircle, label: 'Support', path: '/promoter/support' },
+  { icon: HelpCircle, label: 'Support', path: '/promoter/support', notificationKey: 'supportTickets' },
 ];
+
+// Hook for promoter notifications
+function usePromoterNotifications(promoterId) {
+  const [counts, setCounts] = useState({
+    newSales: 0,
+    pendingPayouts: 0,
+    supportTickets: 0,
+    total: 0
+  });
+
+  const markAsViewed = (key) => {
+    setLastViewed(key);
+    setCounts(prev => ({
+      ...prev,
+      [key]: 0,
+      total: prev.total - prev[key]
+    }));
+  };
+
+  useEffect(() => {
+    if (!promoterId) return;
+
+    const fetchCounts = async () => {
+      let newSales = 0;
+      let pendingPayouts = 0;
+      let supportTickets = 0;
+
+      // Get last viewed times
+      const salesLastViewed = getLastViewed('newSales');
+      const payoutsLastViewed = getLastViewed('pendingPayouts');
+      const supportLastViewed = getLastViewed('supportTickets');
+
+      try {
+        // Fetch new sales (since last viewed or last 24 hours)
+        const sinceTime = salesLastViewed || new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const { count } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('promoter_id', promoterId)
+          .in('status', ['completed', 'confirmed', 'paid'])
+          .gte('created_at', sinceTime.toISOString());
+        newSales = count || 0;
+      } catch (e) { /* table may not exist */ }
+
+      try {
+        // Fetch pending payouts for this promoter
+        let query = supabase
+          .from('promoter_payouts')
+          .select('*', { count: 'exact', head: true })
+          .eq('promoter_id', promoterId)
+          .eq('status', 'pending');
+        
+        if (payoutsLastViewed) {
+          query = query.gte('created_at', payoutsLastViewed.toISOString());
+        }
+        
+        const { count } = await query;
+        pendingPayouts = count || 0;
+      } catch (e) { /* table may not exist */ }
+
+      try {
+        // Fetch open support tickets
+        let query = supabase
+          .from('support_tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('promoter_id', promoterId)
+          .in('status', ['open', 'pending']);
+        
+        if (supportLastViewed) {
+          query = query.gte('created_at', supportLastViewed.toISOString());
+        }
+        
+        const { count } = await query;
+        supportTickets = count || 0;
+      } catch (e) { /* table may not exist */ }
+
+      setCounts({
+        newSales,
+        pendingPayouts,
+        supportTickets,
+        total: newSales + pendingPayouts + supportTickets
+      });
+    };
+
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 60000);
+    return () => clearInterval(interval);
+  }, [promoterId]);
+
+  return { counts, markAsViewed };
+}
 
 export function PromoterLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { promoter } = usePromoter();
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const { counts, markAsViewed } = usePromoterNotifications(promoter?.id);
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigate('/');
+  };
+
+  const handleNavClick = (item) => {
+    setSidebarOpen(false);
+    // Clear notification badge when tab is clicked
+    if (item.notificationKey && counts[item.notificationKey] > 0) {
+      markAsViewed(item.notificationKey);
+    }
   };
 
   return (
@@ -63,20 +185,31 @@ export function PromoterLayout() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${
+              onClick={() => handleNavClick(item)}
+              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
                 location.pathname === item.path
                   ? 'bg-[#2969FF] text-white'
                   : 'text-[#0F0F0F]/60 hover:bg-[#F4F6FA]'
               }`}
             >
+              <span className="flex items-center space-x-3">
               <item.icon className="w-5 h-5" />
               <span>{item.label}</span>
+              </span>
+              {item.notificationKey && counts[item.notificationKey] > 0 && (
+                <NotificationBadge 
+                  count={counts[item.notificationKey]} 
+                  size="sm"
+                  className={location.pathname === item.path ? 'bg-white text-[#2969FF]' : ''}
+                />
+              )}
             </Link>
           ))}
         </nav>
 
         <div className="p-4 border-t border-[#0F0F0F]/10 space-y-1">
           <Link to="/" className="flex items-center space-x-3 px-4 py-3 rounded-xl text-[#0F0F0F]/60 hover:bg-[#F4F6FA]">
+            <Home className="w-5 h-5" />
             <span>Back to Platform</span>
           </Link>
           <button onClick={handleLogout} className="flex items-center space-x-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 w-full">
@@ -100,9 +233,18 @@ export function PromoterLayout() {
         </div>
         <nav className="p-4 space-y-1">
           {navItems.map((item) => (
-            <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${location.pathname === item.path ? 'bg-[#2969FF] text-white' : 'text-[#0F0F0F]/60 hover:bg-[#F4F6FA]'}`}>
-              <item.icon className="w-5 h-5" /><span>{item.label}</span>
+            <Link key={item.path} to={item.path} onClick={() => handleNavClick(item)}
+              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${location.pathname === item.path ? 'bg-[#2969FF] text-white' : 'text-[#0F0F0F]/60 hover:bg-[#F4F6FA]'}`}>
+              <span className="flex items-center space-x-3">
+                <item.icon className="w-5 h-5" /><span>{item.label}</span>
+              </span>
+              {item.notificationKey && counts[item.notificationKey] > 0 && (
+                <NotificationBadge 
+                  count={counts[item.notificationKey]} 
+                  size="sm"
+                  className={location.pathname === item.path ? 'bg-white text-[#2969FF]' : ''}
+                />
+              )}
             </Link>
           ))}
         </nav>
@@ -118,7 +260,23 @@ export function PromoterLayout() {
               <h1 className="text-[#0F0F0F]">Promoter Portal</h1>
             </div>
             <div className="flex items-center space-x-3">
-              <button className="p-2 hover:bg-[#F4F6FA] rounded-lg relative"><Bell className="w-5 h-5 text-[#0F0F0F]/60" /></button>
+              <div className="relative">
+                <button 
+                  onClick={() => setNotificationOpen(!notificationOpen)}
+                  className="p-2 hover:bg-[#F4F6FA] rounded-lg relative" 
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5 text-[#0F0F0F]/60" />
+                  {counts.total > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                  )}
+                </button>
+                <PromoterNotificationDropdown 
+                  promoterId={promoter?.id}
+                  isOpen={notificationOpen}
+                  onClose={() => setNotificationOpen(false)}
+                />
+              </div>
               <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-bold">
                 {promoter?.full_name?.charAt(0) || 'P'}
               </div>

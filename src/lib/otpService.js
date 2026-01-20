@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { termiiService } from './termii';
 import { generateSecureOTP } from '@/utils/crypto';
 
 class OTPService {
@@ -48,20 +47,28 @@ class OTPService {
 
       if (error) throw error;
 
-      // Send SMS via Termii
-      const message = `Your Ticketrack verification code is: ${otp}. Valid for ${this.expiryMinutes} minutes. Do not share this code.`;
+      // Send OTP via Twilio (default) or Termii (fallback)
+      const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-otp', {
+        body: {
+          phone: phoneNumber,
+          type: purpose,
+          channel: 'sms'
+        }
+      });
       
-      const smsResult = await termiiService.sendSMS(phoneNumber, message);
-      
-      if (!smsResult.success) {
+      if (smsError || !smsResult?.success) {
         // Clean up OTP record if SMS failed
         await supabase
           .from('user_otp')
           .delete()
           .eq('id', otpRecord.id);
         
-        throw new Error('Failed to send OTP SMS');
+        console.error('OTP SMS error:', smsError || smsResult?.error);
+        throw new Error(smsResult?.error || 'Failed to send OTP SMS');
       }
+      
+      // Log which provider was used
+      console.log(`OTP sent via ${smsResult.provider || 'unknown'} to ${this.maskPhoneNumber(phoneNumber)}`);
 
       // Log security event
       await this.logSecurityEvent(userId, 'otp_generated', {
@@ -237,16 +244,26 @@ class OTPService {
       .eq('id', otpId);
   }
 
-  // Hash OTP for secure storage
+  // Hash OTP for secure storage using SHA-256
   async hashOTP(otp) {
-    // In production, use proper hashing (bcrypt, argon2, etc.)
-    return btoa(otp + 'salt');
+    // Use Web Crypto API for secure SHA-256 hashing
+    const salt = 'ticketrack_otp_v1'; // Static salt for OTP verification
+    const data = new TextEncoder().encode(otp + salt);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  // Compare OTP with hash
+  // Compare OTP with hash using constant-time comparison
   async compareOTP(otp, hash) {
-    // In production, use proper comparison
-    return btoa(otp + 'salt') === hash;
+    const otpHash = await this.hashOTP(otp);
+    // Constant-time comparison to prevent timing attacks
+    if (otpHash.length !== hash.length) return false;
+    let result = 0;
+    for (let i = 0; i < otpHash.length; i++) {
+      result |= otpHash.charCodeAt(i) ^ hash.charCodeAt(i);
+    }
+    return result === 0;
   }
 
   // Mask phone number for logging

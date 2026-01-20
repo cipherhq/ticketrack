@@ -342,21 +342,40 @@ export function AdminUserTypes() {
       // Use cryptographically secure OTP generation
       const otp = generateSecureOTP(6);
       
+      // Hash OTP using SHA-256
+      const salt = 'ticketrack_otp_v1';
+      const data = new TextEncoder().encode(otp + salt);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const otpHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
       const { error } = await supabase
         .from('user_otp')
         .insert({
           user_id: userId,
           phone_number: phoneNumber,
-          otp_code: otp,
-          otp_hash: btoa(otp), // In production, use proper hashing
+          otp_code: otp, // Stored for fallback verification
+          otp_hash: otpHash,
           expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes
           purpose: 'admin_access'
         });
 
       if (error) throw error;
 
-      // Here you would send SMS via your SMS service
-      alert(`OTP sent to ${phoneNumber}: ${otp} (Demo mode)`);
+      // Send SMS via Supabase Edge Function
+      const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
+        body: {
+          to: phoneNumber,
+          message: `Your Ticketrack admin verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`
+        }
+      });
+
+      if (smsError || !smsResult?.success) {
+        console.warn('SMS send warning:', smsError || smsResult?.error);
+        alert(`OTP generated: ${otp}\n\nNote: SMS delivery may be delayed. Please enter this code to continue.`);
+      } else {
+        alert(`OTP sent to ${phoneNumber}. Please check your phone.`);
+      }
     } catch (error) {
       console.error('Error generating OTP:', error);
       alert('Failed to generate OTP');

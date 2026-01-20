@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Search, QrCode, UserCheck, Calendar, Users, CheckCircle, 
   Loader2, X, Undo2, History, Smartphone, RefreshCw,
   AlertCircle, Clock, ChevronDown, Volume2, VolumeX
 } from 'lucide-react';
+import jsQR from 'jsqr';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
@@ -65,6 +66,9 @@ export function CheckInByEvents() {
   const [scanning, setScanning] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const canvasRef = useRef(null);
+  const scanningRef = useRef(false); // Use ref to track scanning state in animation loop
+  const animationFrameRef = useRef(null);
 
   // Load events on mount
   useEffect(() => {
@@ -93,9 +97,13 @@ export function CheckInByEvents() {
     return () => clearInterval(interval);
   }, [autoRefresh, selectedEvent]);
 
-  // Cleanup camera on unmount
+  // Cleanup camera and animation frame on unmount
   useEffect(() => {
     return () => {
+      scanningRef.current = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -151,7 +159,7 @@ export function CheckInByEvents() {
           )
         `)
         .eq('event_id', selectedEvent)
-        .eq('payment_status', 'completed')
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']) // Include all valid ticket types
         .order('attendee_name', { ascending: true });
 
       if (error) throw error;
@@ -200,7 +208,7 @@ export function CheckInByEvents() {
           checked_in_by
         `)
         .eq('event_id', selectedEvent)
-        .eq('payment_status', 'completed')
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']) // Include all valid ticket types
         .not('checked_in_at', 'is', null)
         .order('checked_in_at', { ascending: false })
         .limit(50);
@@ -226,58 +234,127 @@ export function CheckInByEvents() {
     setProcessing(true);
     setCheckInResult(null);
 
+    // Clean up the input
+    const cleanCode = ticketCodeOrId?.trim()?.toUpperCase();
+    
+    if (!cleanCode) {
+      playSound('error');
+      setCheckInResult({
+        success: false,
+        message: 'Please enter a valid ticket code.',
+      });
+      setProcessing(false);
+      return;
+    }
+
+    console.log('Attempting check-in for:', cleanCode);
+
     try {
-      // Find ticket by code or ID
+      // Find ticket by code or ID - include all valid ticket payment statuses
+      // Check if it looks like a UUID (36 chars with dashes)
+      // Ticket codes are now 8 characters, UUIDs are 36 chars with dashes
+      const isUUID = cleanCode.length === 36 && cleanCode.split('-').length === 5;
+      
       let query = supabase
         .from('tickets')
-        .select('id, attendee_name, ticket_code, is_checked_in, event_id')
-        .eq('payment_status', 'completed');
+        .select('id, attendee_name, attendee_email, ticket_code, is_checked_in, event_id, payment_status');
 
-      if (ticketCodeOrId.startsWith('TKT-') || ticketCodeOrId.length < 36) {
-        query = query.eq('ticket_code', ticketCodeOrId.toUpperCase());
+      if (isUUID) {
+        // It's a UUID - search by ID
+        query = query.eq('id', cleanCode);
       } else {
-        query = query.eq('id', ticketCodeOrId);
+        // It's a ticket code - search by ticket_code (supports TKT-XXX and TKTXXX formats)
+        query = query.eq('ticket_code', cleanCode);
       }
 
-      const { data: tickets, error: findError } = await query.single();
+      const { data: ticket, error: findError } = await query.maybeSingle();
 
-      if (findError || !tickets) {
+      console.log('Query result:', { ticket, findError });
+
+      if (findError) {
+        console.error('Database error:', findError);
         playSound('error');
         setCheckInResult({
           success: false,
-          message: 'Ticket not found. Please check the code and try again.',
+          message: 'Database error. Please try again.',
+        });
+        return;
+      }
+
+      if (!ticket) {
+        playSound('error');
+        setCheckInResult({
+          success: false,
+          message: `Ticket "${cleanCode}" not found. Please check the code and try again.`,
+        });
+        return;
+      }
+
+      // Check payment status
+      const validStatuses = ['completed', 'free', 'paid', 'complimentary'];
+      if (!validStatuses.includes(ticket.payment_status)) {
+        playSound('error');
+        setCheckInResult({
+          success: false,
+          message: `This ticket has status "${ticket.payment_status}" and cannot be checked in.`,
+          attendeeName: ticket.attendee_name,
         });
         return;
       }
 
       // Verify ticket is for selected event
-      if (tickets.event_id !== selectedEvent) {
+      if (ticket.event_id !== selectedEvent) {
+        // Get the event name for better error message
+        const { data: ticketEvent } = await supabase
+          .from('events')
+          .select('title')
+          .eq('id', ticket.event_id)
+          .single();
+        
         playSound('error');
         setCheckInResult({
           success: false,
-          message: 'This ticket is for a different event.',
-          attendeeName: tickets.attendee_name,
+          message: `This ticket is for "${ticketEvent?.title || 'a different event'}". Please select the correct event.`,
+          attendeeName: ticket.attendee_name,
+        });
+        return;
+      }
+
+      // Double-check the event belongs to this organizer (security validation)
+      const { data: eventData, error: eventError } = await supabase
+        .from('events')
+        .select('id, organizer_id')
+        .eq('id', ticket.event_id)
+        .eq('organizer_id', organizer.id)
+        .single();
+
+      if (eventError || !eventData) {
+        playSound('error');
+        setCheckInResult({
+          success: false,
+          message: 'You do not have permission to check in tickets for this event.',
+          attendeeName: ticket.attendee_name,
         });
         return;
       }
 
       // Check current status
-      if (!isUndo && tickets.is_checked_in) {
+      if (!isUndo && ticket.is_checked_in) {
         playSound('warning');
         setCheckInResult({
           success: false,
           message: 'This ticket has already been checked in.',
-          attendeeName: tickets.attendee_name,
+          attendeeName: ticket.attendee_name,
           alreadyCheckedIn: true,
         });
         return;
       }
 
-      if (isUndo && !tickets.is_checked_in) {
+      if (isUndo && !ticket.is_checked_in) {
         setCheckInResult({
           success: false,
           message: 'This ticket is not checked in.',
-          attendeeName: tickets.attendee_name,
+          attendeeName: ticket.attendee_name,
         });
         return;
       }
@@ -293,16 +370,19 @@ export function CheckInByEvents() {
           checked_in_at: !isUndo ? new Date().toISOString() : null,
           checked_in_by: !isUndo ? user?.id : null,
         })
-        .eq('id', tickets.id);
+        .eq('id', ticket.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
 
       playSound(isUndo ? 'undo' : 'success');
       setCheckInResult({
         success: true,
-        message: isUndo ? 'Check-in reversed successfully!' : 'Check-in successful!',
-        attendeeName: tickets.attendee_name,
-        ticketCode: tickets.ticket_code,
+        message: isUndo ? 'Check-in reversed successfully!' : `✓ ${ticket.attendee_name} checked in!`,
+        attendeeName: ticket.attendee_name,
+        ticketCode: ticket.ticket_code,
       });
 
       // Refresh data
@@ -315,9 +395,17 @@ export function CheckInByEvents() {
     } catch (error) {
       console.error('Check-in error:', error);
       playSound('error');
+      
+      let errorMessage = 'An error occurred. Please try again.';
+      if (error.message?.includes('permission') || error.code === '42501') {
+        errorMessage = 'Permission denied. Please contact support.';
+      } else if (error.message?.includes('network') || error.code === 'NETWORK_ERROR') {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
       setCheckInResult({
         success: false,
-        message: 'An error occurred. Please try again.',
+        message: errorMessage,
       });
     } finally {
       setProcessing(false);
@@ -372,6 +460,8 @@ export function CheckInByEvents() {
 
   const startQRScanner = async () => {
     setScanning(true);
+    scanningRef.current = true;
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
@@ -380,47 +470,111 @@ export function CheckInByEvents() {
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
         
-        // Start scanning with BarcodeDetector if available
-        if ('BarcodeDetector' in window) {
-          const barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        // Create canvas for jsQR if not exists
+        if (!canvasRef.current) {
+          canvasRef.current = document.createElement('canvas');
+        }
+        
+        // Check if BarcodeDetector is available (Chrome/Edge)
+        const hasBarcodeDetector = 'BarcodeDetector' in window;
+        let barcodeDetector = null;
+        
+        if (hasBarcodeDetector) {
+          try {
+            barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+          } catch (e) {
+            console.log('BarcodeDetector failed, falling back to jsQR');
+          }
+        }
+        
+        const scanFrame = async () => {
+          // Use ref to check scanning state (closure-safe)
+          if (!scanningRef.current || !videoRef.current) return;
           
-          const scanFrame = async () => {
-            if (!scanning || !videoRef.current) return;
-            
+          const video = videoRef.current;
+          
+          // Wait for video to be ready
+          if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+            animationFrameRef.current = requestAnimationFrame(scanFrame);
+            return;
+          }
+          
+          let detectedCode = null;
+          
+          // Try BarcodeDetector first (faster, native)
+          if (barcodeDetector) {
             try {
-              const barcodes = await barcodeDetector.detect(videoRef.current);
+              const barcodes = await barcodeDetector.detect(video);
               if (barcodes.length > 0) {
-                const code = barcodes[0].rawValue;
-                stopQRScanner();
-                performCheckIn(code);
-                return;
+                detectedCode = barcodes[0].rawValue;
               }
             } catch (e) {
-              // Continue scanning
+              // BarcodeDetector failed, will fallback to jsQR
             }
-            
-            requestAnimationFrame(scanFrame);
-          };
+          }
           
-          scanFrame();
-        }
+          // Fallback to jsQR (works in all browsers including Safari/Firefox)
+          if (!detectedCode) {
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            try {
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'dontInvert',
+              });
+              
+              if (code && code.data) {
+                detectedCode = code.data;
+              }
+            } catch (e) {
+              // jsQR failed, continue scanning
+            }
+          }
+          
+          // If we found a code, process it
+          if (detectedCode) {
+            stopQRScanner();
+            performCheckIn(detectedCode);
+            return;
+          }
+          
+          // Continue scanning
+          animationFrameRef.current = requestAnimationFrame(scanFrame);
+        };
+        
+        // Start scanning loop
+        animationFrameRef.current = requestAnimationFrame(scanFrame);
       }
     } catch (error) {
       console.error('Camera error:', error);
       setScanning(false);
+      scanningRef.current = false;
       alert('Could not access camera. Please check permissions.');
     }
   };
 
-  const stopQRScanner = () => {
+  const stopQRScanner = useCallback(() => {
     setScanning(false);
+    scanningRef.current = false;
+    
+    // Cancel animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    // Stop camera stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-  };
+  }, []);
 
   const handleManualCheckIn = () => {
     if (ticketCode.trim()) {

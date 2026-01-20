@@ -10,11 +10,15 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 
-const FROM_EMAIL = 'Ticketrack <tickets@ticketrack.com>'
+const FROM_EMAIL = 'Ticketrack <support@ticketrack.com>'
 const SECURITY_EMAIL = 'Ticketrack Security <security@ticketrack.com>'
+const SUPPORT_EMAIL = 'support@ticketrack.com'
 const BRAND_COLOR = '#2969FF'
 const BRAND_NAME = 'Ticketrack'
 const APP_URL = 'https://ticketrack.com'
+
+// Email types that should send a copy to support (purchases and RSVPs)
+const BCC_TO_SUPPORT_TYPES = ['ticket_purchase', 'new_ticket_sale']
 
 const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:3000']
 const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000, security: 100 }
@@ -68,6 +72,7 @@ const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; from
   support_ticket_created: { auth: 'USER_AUTH', rateKey: 'standard' },
   new_follower: { auth: 'USER_AUTH', rateKey: 'standard' },
   following_organizer: { auth: 'USER_AUTH', rateKey: 'standard' },
+  birthday_wish: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   // Organizer auth emails
   organizer_welcome: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   new_ticket_sale: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
@@ -296,6 +301,27 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   payout_blocked_kyc: d => ({ subject: `⚠️ Payout Pending - KYC Required`, html: baseTemplate(`<div class="highlight"><strong>Action Required</strong></div><h2>Complete Verification</h2><p>Hi ${d.organizerName},</p><p>${d.message || 'You have pending payouts but KYC verification is required.'}</p><div class="warning"><strong>What to do:</strong><p style="margin:8px 0 0">Complete your identity verification to receive payouts.</p></div><div class="btn-wrap"><a href="${d.appUrl || APP_URL + '/organizer/kyc-verification'}" class="btn">Verify Now</a></div>`) }),
   stripe_connect_payout_completed: d => ({ subject: `✅ Stripe Payout Complete - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Payout Received!</strong></div><h2>Funds Transferred</h2><p>Hi ${d.organizerName},</p><p>Your payout has been successfully deposited.</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:#10b981;font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Reference</span><span class="value" style="font-family:monospace">${d.payoutId || d.reference}</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:#10b981">Completed</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/stripe-connect" class="btn">View Stripe Dashboard</a></div>`) }),
   pre_payout_reminder: d => ({ subject: `📅 Payout Coming Tomorrow - ${d.eventTitle}`, html: baseTemplate(`<h2>Payout Reminder</h2><p>Hi ${d.organizerName},</p><p>Your payout for <strong>${d.eventTitle}</strong> will be processed tomorrow!</p><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Payout Date</span><span class="value">${d.payoutDate}</span></div></div><div class="highlight"><strong>Make sure:</strong><ul style="margin:8px 0 0;padding-left:20px"><li>Bank details are correct</li><li>KYC is verified</li></ul></div><div class="btn-wrap"><a href="${d.appUrl || APP_URL + '/organizer/finance'}" class="btn">Check Finance</a></div>`) }),
+  // BIRTHDAY
+  birthday_wish: d => ({ 
+    subject: `🎂 Happy Birthday, ${d.firstName}!`, 
+    html: `<!DOCTYPE html>
+<html>
+<body style="font-family: sans-serif; text-align: center; color: #334155; max-width: 500px; margin: 40px auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+    <h1 style="color: #0f172a; font-size: 20px;">TICKETRACK</h1>
+    <h2 style="margin-top: 40px;">Happy Birthday, ${d.firstName}! 🎂</h2>
+    <p>We hope your day is as spectacular as the events you design.</p>
+    
+    <div style="background: #f8fafc; border: 1px dashed #007AFF; padding: 20px; margin: 30px 0; border-radius: 8px;">
+        <span style="color: #007AFF; font-weight: bold; font-size: 18px;">A Birthday Gift for You</span>
+        <p style="margin: 5px 0 0 0;">Enjoy 20% off your next premium asset pack.</p>
+    </div>
+    
+    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #007AFF; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Claim Gift</a>
+    
+    <p style="margin-top: 40px; font-size: 12px; color: #94a3b8;">Sent with ❤️ from the Ticketrack Team</p>
+</body>
+</html>`
+  }),
 }
 
 // Send email
@@ -315,7 +341,15 @@ async function sendEmail(supabase: any, req: any) {
     } catch (e) { console.error('Log error:', e) }
   }
   try {
-    const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from, to, subject, html, attachments: req.attachments }) })
+    // Build email payload
+    const emailPayload: any = { from, to, subject, html, attachments: req.attachments }
+    
+    // Add BCC to support for purchase/RSVP emails
+    if (BCC_TO_SUPPORT_TYPES.includes(req.type)) {
+      emailPayload.bcc = [SUPPORT_EMAIL]
+    }
+    
+    const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(emailPayload) })
     const result = await res.json()
     if (!res.ok) {
       if (logId) await supabase.from('communication_logs').update({ status: 'failed', error_message: result.message }).eq('id', logId)

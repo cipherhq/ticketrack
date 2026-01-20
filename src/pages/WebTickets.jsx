@@ -194,12 +194,15 @@ export function WebTickets() {
   // Email ticket
   const emailTicket = (ticket) => {
     const subject = encodeURIComponent(`Your Ticket for ${ticket.event?.title}`)
+    const venueDisplay = ticket.event?.is_virtual 
+      ? 'Virtual Event (Online)' 
+      : [ticket.event?.venue_name, ticket.event?.city].filter(Boolean).join(', ') || 'Venue TBA'
     const body = encodeURIComponent(
       `Here are your ticket details:\n\n` +
       `Event: ${ticket.event?.title}\n` +
       `Date: ${formatDate(ticket.event?.start_date)}\n` +
       `Time: ${formatTime(ticket.event?.start_date)}\n` +
-      `Venue: ${ticket.event?.venue_name}, ${ticket.event?.city}\n` +
+      `Venue: ${venueDisplay}\n` +
       `Ticket Type: ${ticket.ticket_type?.name || 'General'}\n` +
       `QR Code: ${ticket.ticket_code}\n\n` +
       `Please show your QR code at the venue entrance.`
@@ -719,7 +722,7 @@ export function WebTickets() {
                 ) : (
                   <p className="text-[#0F0F0F] text-sm flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
-                    {ticket.event?.venue_name}, {ticket.event?.city}
+                    {[ticket.event?.venue_name, ticket.event?.venue_address, ticket.event?.city].filter(Boolean).join(', ') || 'Venue TBA'}
                   </p>
                 )}
               </div>

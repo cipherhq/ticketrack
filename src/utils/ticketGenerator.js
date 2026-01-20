@@ -19,6 +19,16 @@ const TICKETRACK_LOGO_WHITE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKA
 const TICKETRACK_BLUE = { r: 0, g: 102, b: 255 }
 const TICKETRACK_BLUE_DARK = { r: 0, g: 74, b: 204 }
 
+// Generate unique 8-character ticket code (TR + 6 chars)
+function generateShortCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'TR'
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}
+
 // Helper to load image as base64
 async function loadImageAsBase64(url, timeout = 5000) {
   return new Promise((resolve, reject) => {
@@ -130,7 +140,7 @@ export async function generateTicketPDF(ticket, event) {
   pdf.line(width - 100, 0, width - 100, height)
   pdf.setLineDashPattern([], 0)
 
-  const ticketNum = ticket.ticket_code || `TKT${Date.now().toString(36).toUpperCase()}`
+  const ticketNum = ticket.ticket_code || generateShortCode()
   
   // Ticket number vertical
   pdf.setFontSize(7)
@@ -358,7 +368,7 @@ export async function generateTicketPDFBase64(ticket, event) {
   pdf.line(width - 100, 0, width - 100, height)
   pdf.setLineDashPattern([], 0)
 
-  const ticketNum = ticket.ticket_code || `TKT${Date.now().toString(36).toUpperCase()}`
+  const ticketNum = ticket.ticket_code || generateShortCode()
   
   // Ticket number vertical
   pdf.setFontSize(7)
@@ -631,7 +641,7 @@ export async function generateMultiTicketPDFBase64(tickets, event) {
     pdf.line(width - 100, 0, width - 100, height)
     pdf.setLineDashPattern([], 0)
 
-    const ticketNum = ticket.ticket_code || `TKT${Date.now().toString(36).toUpperCase()}`
+    const ticketNum = ticket.ticket_code || generateShortCode()
     
     // Ticket number vertical
     pdf.setFontSize(7)
@@ -819,7 +829,7 @@ export async function generateMultiTicketPDFBase64(tickets, event) {
 
   // Return as base64
   const pdfBase64 = pdf.output('datauristring').split(',')[1]
-  const firstTicketCode = tickets[0]?.ticket_code || `TKT${Date.now().toString(36).toUpperCase()}`
+  const firstTicketCode = tickets[0]?.ticket_code || generateShortCode()
   
   return {
     base64: pdfBase64,

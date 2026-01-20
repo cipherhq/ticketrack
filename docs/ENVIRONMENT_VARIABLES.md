@@ -39,7 +39,7 @@ These should **NEVER** be exposed to the browser. Set them in:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `RESEND_API_KEY` | Resend API key for email sending | Required for email functionality |
+| `RESEND_API_KEY` | Resend API key for email sending | Required for email functionality (including birthday emails) |
 
 Get from: https://resend.com/api-keys
 

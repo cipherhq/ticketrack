@@ -32,11 +32,38 @@ The World's Most Trusted Event Ticketing Platform
 npm install
 ```
 
-2. Set environment variables in Vercel:
+2. Set environment variables:
+
+**Frontend (Vercel/Client-side):**
 ```
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+**Supabase Edge Functions (Server-side):**
+Set in Supabase Dashboard → Project Settings → Edge Functions → Environment Variables:
+- `SUPABASE_URL` (auto-set by Supabase)
+- `SUPABASE_SERVICE_ROLE_KEY` (from API settings)
+- `SUPABASE_ANON_KEY` (from API settings)
+- `RESEND_API_KEY` (required for email features, get from resend.com)
+
+**Deploy Edge Functions:**
+```bash
+# Option 1: Use npx (no installation needed)
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase functions deploy send-birthday-emails
+npx supabase functions deploy send-email
+
+# Option 2: Install globally (if you prefer)
+# Fix npm permissions first:
+mkdir ~/.npm-global && npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc && source ~/.zshrc
+npm install -g supabase
+# Then use: supabase login, supabase link, etc.
+```
+
+📚 See `docs/ENVIRONMENT_VARIABLES.md` for complete environment variable documentation.
 
 3. Run development server:
 ```bash

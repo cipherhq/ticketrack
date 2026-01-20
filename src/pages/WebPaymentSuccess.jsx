@@ -329,7 +329,7 @@ export function WebPaymentSuccess() {
       `Event: ${event.title}\n` +
       `Date: ${formatDate(event.start_date)}\n` +
       `Time: ${formatTime(event.start_date)}\n` +
-      `Venue: ${event.venue_name}, ${event.city}\n\n` +
+      `Venue: ${event.is_virtual ? 'Online Event' : [event.venue_name, event.city].filter(Boolean).join(', ') || 'Venue TBA'}\n\n` +
       `Number of tickets: ${tickets?.length || 0}\n` +
       `Order Number: ${order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}\n\n` +
       `Please show your QR code at the venue entrance.\n\n` +
@@ -354,7 +354,7 @@ export function WebPaymentSuccess() {
     }
     
     const title = encodeURIComponent(event.title)
-    const location = encodeURIComponent(event.is_virtual ? 'Online Event' : `${event.venue_name}, ${event.venue_address || event.city}`)
+    const location = encodeURIComponent(event.is_virtual ? 'Online Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Venue TBA')
     const description = encodeURIComponent(`Ticket: ${tickets[0]?.ticket_code || 'See email'}\n\nView tickets: ${window.location.origin}/tickets`)
     
     return {
@@ -377,7 +377,7 @@ export function WebPaymentSuccess() {
       `DTSTART:${formatICalDate(startDate)}`,
       `DTEND:${formatICalDate(endDate)}`,
       `SUMMARY:${event.title}`,
-      `LOCATION:${event.is_virtual ? 'Online Event' : (event.venue_name + ', ' + (event.venue_address || event.city))}`,
+      `LOCATION:${event.is_virtual ? 'Online Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Venue TBA'}`,
       `DESCRIPTION:Ticket: ${tickets[0]?.ticket_code || 'See email'}. View tickets at ${window.location.origin}/tickets`,
       `URL:${window.location.origin}/events/${event.slug || event.id}`,
       'END:VEVENT',
@@ -464,7 +464,7 @@ export function WebPaymentSuccess() {
                   ) : (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      <span>{event.venue_name}, {event.city}</span>
+                      <span>{[event.venue_name, event.city].filter(Boolean).join(', ') || 'Venue TBA'}</span>
                     </div>
                   )}
                 </div>

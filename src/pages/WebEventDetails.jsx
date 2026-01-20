@@ -49,6 +49,8 @@ export function WebEventDetails() {
 
   // Function to load tickets for a specific event (for recurring events)
   const loadTicketsForEvent = async (eventId) => {
+    if (!eventId) return
+    
     try {
       const { data: tickets, error: ticketsError } = await supabase
         .from('ticket_types')
@@ -57,14 +59,19 @@ export function WebEventDetails() {
         .eq('is_active', true)
         .order('price', { ascending: true })
       
-      if (ticketsError) throw ticketsError
+      if (ticketsError) {
+        console.warn('Error loading tickets for event:', ticketsError.message)
+        // Don't throw - free events may not have tickets
+      }
       
       // Set ticket types (empty array if none found - free events won't have tickets)
       setTicketTypes(tickets || [])
       // Reset selected tickets when switching dates
       setSelectedTickets({})
     } catch (err) {
-      console.error('Error loading tickets:', err)
+      console.warn('Error loading tickets:', err.message)
+      // Set empty array on error - page can still show free event info
+      setTicketTypes([])
     }
   }
 
@@ -87,7 +94,7 @@ export function WebEventDetails() {
         console.error('Error loading event:', err)
         // Provide more helpful error messages
         if (err.code === 'PGRST116') {
-          setError('Event not found')
+        setError('Event not found')
         } else if (err.message?.includes('fetch') || err.message?.includes('network')) {
           setError('Network error. Please check your connection and try again.')
         } else {
@@ -632,8 +639,35 @@ export function WebEventDetails() {
           </div>
 
           {/* Event Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
+          <div className="relative">
+            {/* Favorite and Share Buttons - Positioned absolutely on mobile, flex on desktop */}
+            <div className="absolute top-0 right-0 z-10 flex gap-2 sm:relative sm:z-auto">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={(e) => { e.stopPropagation(); toggleFavorite(); }}
+                disabled={savingFavorite}
+                className={`rounded-xl w-11 h-11 touch-manipulation flex-shrink-0 ${isFavorite ? 'text-red-500 border-red-500 bg-red-50 hover:bg-red-100' : ''}`}
+                aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                {savingFavorite ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500' : ''}`} />
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-xl w-11 h-11 touch-manipulation flex-shrink-0"
+                onClick={(e) => { e.stopPropagation(); handleShare(); }}
+                aria-label="Share event"
+              >
+                <Share2 className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="pr-24 sm:pr-0">
               <div className="flex flex-wrap gap-2 mb-3">
                 <Badge className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg">
                   {event.category?.icon} {event.category?.name || 'Event'}
@@ -649,7 +683,7 @@ export function WebEventDetails() {
                   </Badge>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#0F0F0F] mb-4 pr-12 sm:pr-0">{event.title}</h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#0F0F0F] mb-4">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-[#0F0F0F]/60">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 flex-shrink-0" />
@@ -667,46 +701,22 @@ export function WebEventDetails() {
                     </>
                   ) : (
                     <>
-                      <MapPin className="w-5 h-5 flex-shrink-0" />
-                      <span className="flex flex-wrap items-center gap-x-1">
-                        {event.venue_name && <span className="font-medium">{event.venue_name}</span>}
-                        {event.venue_name && (event.venue_address || event.city) && <span className="text-[#0F0F0F]/60">•</span>}
-                        {event.venue_address && <span>{event.venue_address}</span>}
-                        {(event.venue_name || event.venue_address) && event.city && <span className="text-[#0F0F0F]/60">•</span>}
-                        {event.city && <span>{event.city}</span>}
-                        {event.city && event.country && <span className="text-[#0F0F0F]/60">,</span>}
-                        {event.country && <span>{event.country}</span>}
-                        {!event.venue_name && !event.venue_address && !event.city && !event.country && <span>Location TBA</span>}
-                      </span>
+                      <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <div className="flex flex-col">
+                        {event.venue_name && (
+                          <span className="font-medium text-[#0F0F0F]">{event.venue_name}</span>
+                        )}
+                        {event.venue_address && (
+                          <span className="text-[#0F0F0F]/80 text-sm">{event.venue_address}</span>
+                        )}
+                        <span className="text-[#0F0F0F]/60 text-sm">
+                          {[event.city, event.state, event.country].filter(Boolean).join(', ') || (!event.venue_name && !event.venue_address && 'Location TBA')}
+                        </span>
+                      </div>
                     </>
                   )}
                 </div>
               </div>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={(e) => { e.stopPropagation(); toggleFavorite(); }}
-                disabled={savingFavorite}
-                className={`rounded-xl min-w-[44px] min-h-[44px] touch-manipulation ${isFavorite ? 'text-red-500 border-red-500 bg-red-50 hover:bg-red-100' : ''}`}
-                aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-              >
-                {savingFavorite ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500' : ''}`} />
-                )}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="rounded-xl min-w-[44px] min-h-[44px] touch-manipulation"
-                onClick={(e) => { e.stopPropagation(); handleShare(); }}
-                aria-label="Share event"
-              >
-                <Share2 className="w-5 h-5" />
-              </Button>
             </div>
           </div>
 
@@ -859,16 +869,16 @@ export function WebEventDetails() {
                             {paginatedEvents.map((evt) => (
                               <div 
                                 key={evt.id}
-                                onClick={() => {
+                    onClick={() => {
                                   setSelectedDate(evt.id);
                                   loadTicketsForEvent(evt.id);
-                                }}
+                    }}
                                 className={`rounded-xl cursor-pointer transition-all overflow-hidden ${
                                   selectedDate === evt.id
-                                    ? 'bg-[#2969FF]/10 border-2 border-[#2969FF] shadow-md'
-                                    : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
-                                }`}
-                              >
+                        ? 'bg-[#2969FF]/10 border-2 border-[#2969FF] shadow-md'
+                        : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
+                    }`}
+                  >
                                 {/* Event Image */}
                                 {(evt.image_url || evt.cover_image_url || event.image_url || event.cover_image_url) ? (
                                   <div className="relative h-32 w-full overflow-hidden">
@@ -893,19 +903,19 @@ export function WebEventDetails() {
                                       </p>
                                       <p className="text-xs text-[#0F0F0F]/60 mt-0.5">
                                         {new Date(evt.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(evt.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                                      </p>
-                                    </div>
+                        </p>
+                      </div>
                                     {selectedDate === evt.id ? (
                                       <Badge className="bg-[#2969FF] text-white ml-2 flex-shrink-0">Selected</Badge>
-                                    ) : (
+                      ) : (
                                       <Badge variant="outline" className="border-[#0F0F0F]/20 ml-2 flex-shrink-0">Select</Badge>
-                                    )}
-                                  </div>
+                      )}
+                    </div>
                                 </div>
                               </div>
                             ))}
-                          </div>
-                          
+                  </div>
+                  
                           {/* Pagination Controls */}
                           {totalPages > 1 && (
                             <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#0F0F0F]/10">
@@ -1037,32 +1047,32 @@ export function WebEventDetails() {
                               {events.map(evt => (
                                 <div
                                   key={evt.id}
-                                  onClick={() => {
+                      onClick={() => {
                                     setSelectedDate(evt.id);
                                     loadTicketsForEvent(evt.id);
                                   }}
                                   className={`p-3 rounded-lg cursor-pointer transition-all ${
                                     selectedDate === evt.id
                                       ? 'bg-[#2969FF]/10 border-2 border-[#2969FF]'
-                                      : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div>
+                          : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
                                       <p className="font-medium text-[#0F0F0F]">
                                         {new Date(evt.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                                      </p>
-                                      <p className="text-sm text-[#0F0F0F]/60">
+                          </p>
+                          <p className="text-sm text-[#0F0F0F]/60">
                                         {new Date(evt.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(evt.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                                      </p>
-                                    </div>
+                          </p>
+                        </div>
                                     {selectedDate === evt.id && (
-                                      <Badge className="bg-[#2969FF] text-white">Selected</Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                          <Badge className="bg-[#2969FF] text-white">Selected</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
                           </div>
                         );
                       });

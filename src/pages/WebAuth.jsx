@@ -157,24 +157,24 @@ export function WebAuth() {
           const emailForSignup = !isLogin ? signupEmail : null
           
           const result = await verifyOTP(phone, formData.otp, verificationType, emailForSignup)
-          console.log('verifyOTP result:', result)
-          
+        console.log('verifyOTP result:', result)
+        
           // For login flow only, check if this is a new user who needs to register
           if (isLogin && result.isNewUser) {
-            setError('No account found with this phone number. Please sign up first.')
-            setStep('credentials')
-            return
-          }
+          setError('No account found with this phone number. Please sign up first.')
+          setStep('credentials')
+          return
+        }
           
           // For signup flow, if user doesn't exist yet, that's expected - we just created the account
           // The verify-otp function should have found the user by email and verified their phone
-          
-          // Wait a moment for auth state to update
-          await new Promise(resolve => setTimeout(resolve, 500))
-          
-          // Navigate to profile/destination
-          navigate(from, { replace: true, state: location.state })
-          return
+        
+        // Wait a moment for auth state to update
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Navigate to profile/destination
+        navigate(from, { replace: true, state: location.state })
+        return
         }
       }
 
@@ -220,11 +220,12 @@ export function WebAuth() {
         )
         
         if (result.success) {
-          setSignupEmail(result.email)
+        setSignupEmail(result.email)
           setSignupPhone(formData.phone)
           // Show OTP method selection for verification
+          // Phone is recommended as it's more reliable
           setStep('otp-method-selection')
-          setSuccess('Account created! Please verify your account.')
+          setSuccess('Account created! Please verify your account. Phone verification is recommended for faster access.')
         }
       }
     } catch (err) {
@@ -237,7 +238,7 @@ export function WebAuth() {
       } else if (err.message?.includes('network') || err.message?.includes('fetch') || err.message?.includes('Network')) {
         setError('Network error. Please check your connection and try again.')
       } else if (err.message?.includes('Invalid') || err.message?.includes('invalid')) {
-        setError(err.message)
+      setError(err.message)
       } else if (err.message) {
         setError(err.message)
       } else {
@@ -282,9 +283,23 @@ export function WebAuth() {
     try {
       if (method === 'email') {
         // For signup, pass isSignup = true to use resend with type 'signup'
-        await sendEmailOTP(signupEmail, true)
-        setSuccess('Verification code sent to your email!')
-        setStep('otp')
+        try {
+          await sendEmailOTP(signupEmail, true)
+          setSuccess('Verification code sent to your email!')
+          setStep('otp')
+        } catch (emailError) {
+          // If email fails, automatically fallback to phone OTP
+          console.warn('Email OTP failed, falling back to phone:', emailError)
+          if (signupPhone) {
+            setError('Email verification failed. Using phone verification instead.')
+            setOtpMethod('phone')
+            await sendOTP(signupPhone, 'signup')
+            setSuccess('OTP sent to your phone!')
+            setStep('otp')
+          } else {
+            throw new Error('Email verification failed. Please try phone verification or contact support.')
+          }
+        }
       } else {
         // For signup, use type 'signup' so the backend knows this is a new user verification
         await sendOTP(signupPhone, 'signup')
@@ -492,6 +507,32 @@ export function WebAuth() {
                 )}
               </Button>
 
+              {signupPhone && (
+                <Button
+                  onClick={async () => {
+                    setError('')
+                    setSuccess('')
+                    setLoading(true)
+                    try {
+                      setOtpMethod('phone')
+                      await sendOTP(signupPhone, 'signup')
+                      setSuccess('OTP sent to your phone!')
+                      setStep('otp')
+                    } catch (err) {
+                      setError(err.message)
+                    } finally {
+                      setLoading(false)
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full rounded-xl bg-[#2969FF] text-white mb-4 hover:bg-[#2969FF]/90"
+                >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                    <><Phone className="w-5 h-5 mr-2" />Verify with Phone Instead</>
+                  )}
+                </Button>
+              )}
+
               <Button
                 variant="outline"
                 onClick={() => navigate('/login')}
@@ -519,6 +560,7 @@ export function WebAuth() {
             <CardHeader>
               <CardTitle className="text-2xl text-[#0F0F0F] text-center">Verify Your Account</CardTitle>
               <p className="text-center text-[#0F0F0F]/60 mt-2">Choose how you'd like to verify your account</p>
+              <p className="text-center text-xs text-[#2969FF] mt-2 font-medium">💡 Phone verification is faster and more reliable</p>
             </CardHeader>
             <CardContent>
               {error && (
@@ -537,6 +579,23 @@ export function WebAuth() {
 
               <div className="space-y-3">
                 <button
+                  onClick={() => handleOtpMethodSelection('phone')}
+                  disabled={loading}
+                  className="w-full p-4 rounded-xl border-2 border-[#2969FF] bg-[#2969FF]/5 hover:bg-[#2969FF]/10 transition-all text-left flex items-center gap-3"
+                >
+                  <div className="w-12 h-12 bg-[#2969FF] rounded-full flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+                      Verify via Phone
+                      <span className="text-xs bg-[#2969FF] text-white px-2 py-0.5 rounded-full">Recommended</span>
+                    </div>
+                    <div className="text-sm text-[#0F0F0F]/60">{signupPhone || 'Your phone number'}</div>
+                  </div>
+                </button>
+
+                <button
                   onClick={() => handleOtpMethodSelection('email')}
                   disabled={loading}
                   className="w-full p-4 rounded-xl border-2 border-[#0F0F0F]/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all text-left flex items-center gap-3"
@@ -547,20 +606,7 @@ export function WebAuth() {
                   <div>
                     <div className="font-semibold text-[#0F0F0F]">Verify via Email</div>
                     <div className="text-sm text-[#0F0F0F]/60">{signupEmail}</div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => handleOtpMethodSelection('phone')}
-                  disabled={loading}
-                  className="w-full p-4 rounded-xl border-2 border-[#0F0F0F]/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all text-left flex items-center gap-3"
-                >
-                  <div className="w-12 h-12 bg-[#2969FF]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-6 h-6 text-[#2969FF]" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-[#0F0F0F]">Verify via Phone</div>
-                    <div className="text-sm text-[#0F0F0F]/60">{signupPhone || 'Your phone number'}</div>
+                    <div className="text-xs text-[#0F0F0F]/40 mt-1">May take longer or fail if email service is unavailable</div>
                   </div>
                 </button>
               </div>
@@ -647,10 +693,39 @@ export function WebAuth() {
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify'}
                 </Button>
 
-                <div className="text-center">
+                <div className="text-center space-y-2">
                   <button type="button" onClick={handleResendOTP} disabled={loading} className="text-sm text-[#2969FF] hover:underline">
                     Resend Code
                   </button>
+                  
+                  {/* Show "Switch to Phone" option if using email verification and phone is available */}
+                  {!isLogin && otpMethod === 'email' && signupPhone && (
+                    <div>
+                      <button 
+                        type="button" 
+                        onClick={async () => {
+                          setError('')
+                          setSuccess('')
+                          setLoading(true)
+                          try {
+                            setOtpMethod('phone')
+                            await sendOTP(signupPhone, 'signup')
+                            setSuccess('OTP sent to your phone!')
+                            setFormData(prev => ({ ...prev, otp: '' }))
+                          } catch (err) {
+                            setError(err.message)
+                          } finally {
+                            setLoading(false)
+                          }
+                        }}
+                        disabled={loading}
+                        className="text-sm text-[#2969FF] hover:underline flex items-center justify-center gap-1 mx-auto"
+                      >
+                        <Phone className="w-4 h-4" />
+                        Switch to Phone Verification
+                  </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-center">

@@ -1391,9 +1391,9 @@ export function WebCheckout() {
           promo.event_id === event?.id;
         
         if (!isParentPromoForChildEvent) {
-          setPromoError('This code is not valid for this event')
-          setPromoApplied(null)
-          return
+        setPromoError('This code is not valid for this event')
+        setPromoApplied(null)
+        return
         }
       }
       

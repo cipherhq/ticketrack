@@ -21,15 +21,19 @@ export async function getPlatformSettings() {
       .select('key, value, category')
 
     if (error) {
-      console.error('Error fetching platform settings:', error)
-      // Return defaults if DB fails
-      return getDefaultSettings()
+      // Silently use defaults - table may not exist or RLS may block
+      console.warn('Platform settings unavailable, using defaults')
+      settingsCache = getDefaultSettings()
+      cacheTimestamp = Date.now()
+      return settingsCache
     }
 
     // Transform array to object for easy access
-    const settings = {}
-    for (const row of data) {
-      settings[row.key] = parseSettingValue(row.value)
+    const settings = { ...getDefaultSettings() } // Start with defaults
+    if (data && data.length > 0) {
+      for (const row of data) {
+        settings[row.key] = parseSettingValue(row.value)
+      }
     }
 
     // Update cache
@@ -38,8 +42,11 @@ export async function getPlatformSettings() {
 
     return settings
   } catch (err) {
-    console.error('Settings fetch error:', err)
-    return getDefaultSettings()
+    // Catch any unexpected errors
+    console.warn('Settings fetch exception, using defaults')
+    settingsCache = getDefaultSettings()
+    cacheTimestamp = Date.now()
+    return settingsCache
   }
 }
 
@@ -112,24 +119,36 @@ export function clearSettingsCache() {
  * Check if user has reached RSVP limit for an event
  */
 export async function checkRSVPLimit(eventId, email) {
-  const settings = await getRSVPSettings()
-  
-  const { count, error } = await supabase
-    .from('tickets')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', eventId)
-    .eq('attendee_email', email)
-    .eq('status', 'active')
-
-  if (error) {
-    console.error('Error checking RSVP limit:', error)
-    return { allowed: true, current: 0, max: settings.maxTicketsPerEmail }
+  if (!eventId || !email) {
+    // Return default allowed if missing params
+    return { allowed: true, current: 0, max: 10, remaining: 10 }
   }
 
-  return {
-    allowed: count < settings.maxTicketsPerEmail,
-    current: count,
-    max: settings.maxTicketsPerEmail,
-    remaining: Math.max(0, settings.maxTicketsPerEmail - count)
+  try {
+    const settings = await getRSVPSettings()
+    
+    const { count, error } = await supabase
+      .from('tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId)
+      .eq('attendee_email', email)
+      .eq('status', 'active')
+
+    if (error) {
+      // Silently fail and allow the RSVP - don't block users due to DB issues
+      console.warn('RSVP limit check failed, defaulting to allowed:', error.message)
+      return { allowed: true, current: 0, max: settings.maxTicketsPerEmail, remaining: settings.maxTicketsPerEmail }
+    }
+
+    return {
+      allowed: count < settings.maxTicketsPerEmail,
+      current: count || 0,
+      max: settings.maxTicketsPerEmail,
+      remaining: Math.max(0, settings.maxTicketsPerEmail - (count || 0))
+    }
+  } catch (err) {
+    // Catch any unexpected errors and default to allowing
+    console.warn('RSVP limit check exception, defaulting to allowed:', err.message)
+    return { allowed: true, current: 0, max: 10, remaining: 10 }
   }
 }

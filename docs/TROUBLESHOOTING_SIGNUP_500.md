@@ -14,8 +14,16 @@ When a user signs up, Supabase:
 ## Quick Check: Verify SMTP Configuration
 
 ### 1. Check Supabase Dashboard
-- Go to **Settings** → **Auth** → **SMTP Settings**
-- Verify all fields are correct:
+**Location:** Settings → Authentication → Email (NOT Providers!)
+
+**Navigation Path:**
+1. Go to your Supabase project dashboard
+2. Click **Settings** (gear icon in left sidebar)
+3. Click **Authentication** (under Settings)
+4. Click **Email** tab (NOT "Providers" - that's for OAuth like Google/GitHub)
+5. Scroll down to **SMTP Settings** section
+
+**Verify all fields are correct:**
   - ✅ **Host**: `smtp.resend.com`
   - ✅ **Port**: `587` (not 583!)
   - ✅ **Username**: `resend` (lowercase)
@@ -23,10 +31,50 @@ When a user signs up, Supabase:
   - ✅ **Sender email**: `tickets@ticketrack.com` (must be verified in Resend)
   - ✅ **Sender name**: `Ticketrack`
 
-### 2. Verify Domain in Resend
-- Go to [Resend Dashboard](https://resend.com/domains)
-- Ensure `ticketrack.com` is **verified**
-- Check that `tickets@ticketrack.com` is allowed to send emails
+### 2. Verify Domain in Resend (CRITICAL - This is likely your issue!)
+
+**The domain must be verified with DNS records before SMTP will work!**
+
+1. Go to [Resend Dashboard](https://resend.com/domains) → **Domains** → Your domain
+2. You'll see DNS records that need to be added:
+   - **DKIM Record** (for domain verification)
+   - **SPF Records** (for sending emails)
+
+3. **Add DNS Records to Your Domain:**
+   - Go to your domain registrar (where you bought ticketrack.com)
+   - Navigate to DNS settings
+   - Add the records shown in Resend dashboard:
+
+   **DKIM Record:**
+   - Type: `TXT`
+   - Name: `resend._domainkey` (or as shown in Resend)
+   - Value: (the long string from Resend - starts with `p=MIGfMAOGCSqGSIb3...`)
+   - TTL: `Auto` or `3600`
+
+   **SPF Records (2 records needed):**
+   - **Record 1:**
+     - Type: `MX`
+     - Name: `send` (or `@` for root domain)
+     - Value: `feedback-smtp.us-east-1.amazonses.com` (or as shown)
+     - Priority: `10`
+   
+   - **Record 2:**
+     - Type: `TXT`
+     - Name: `send` (or `@` for root domain)
+     - Value: `v=spf1 include:amazonses.com ~all` (or as shown in Resend)
+     - TTL: `Auto` or `3600`
+
+4. **Wait for DNS Propagation:**
+   - DNS changes can take 5 minutes to 48 hours
+   - Usually takes 15-30 minutes
+   - Resend will automatically check and update status
+
+5. **Check Status in Resend:**
+   - Go back to Resend → Domains
+   - Status should change from "Failed" to "Verified" ✅
+   - All records should show green checkmarks
+
+**⚠️ Until these DNS records are added and verified, SMTP will fail with 500 errors!**
 
 ### 3. Test SMTP Connection
 - In Supabase dashboard, look for a "Test SMTP" button

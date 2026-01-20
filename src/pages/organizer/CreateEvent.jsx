@@ -1012,8 +1012,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       } else {
         // For single-day or recurring events, use formData.endDate
         endDateTime = formData.endDate 
-          ? `${formData.endDate}T${formData.endTime || '23:59'}:00`
-          : `${formData.startDate}T${formData.endTime || '23:59'}:00`;
+        ? `${formData.endDate}T${formData.endTime || '23:59'}:00`
+        : `${formData.startDate}T${formData.endTime || '23:59'}:00`;
       }
 
       const totalCapacity = validTickets.reduce((sum, t) => sum + (parseInt(t.quantity) || 0), 0);
@@ -1719,10 +1719,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               </div>
 
               <div className="space-y-4 pt-4">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="multiday"
-                      checked={formData.isMultiDay}
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="multiday"
+                    checked={formData.isMultiDay}
                       disabled={formData.isRecurring}
                       onCheckedChange={(checked) => {
                         handleInputChange('isMultiDay', checked);
@@ -1737,7 +1737,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       Multi-day event
                       {formData.isRecurring && <span className="text-xs text-gray-500 ml-2">(cannot combine with recurring)</span>}
                     </Label>
-                  </div>
+                </div>                
                 {/* Multi-Day Event UI - Shows when checkbox is checked */}
                 {formData.isMultiDay && (
                   <div className="mt-4 p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30 space-y-5">

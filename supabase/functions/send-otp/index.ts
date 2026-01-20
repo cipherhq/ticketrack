@@ -13,16 +13,18 @@ const PHONE_PREFIX_TO_COUNTRY: Record<string, string> = {
 };
 
 // Provider priority by country
-// US/UK/CA use Twilio Verify, Nigeria/Ghana/Kenya/ZA use Termii
+// Twilio Verify is now the default for all countries, with Termii as fallback
 const PROVIDER_PRIORITY: Record<string, string[]> = {
   'US': ['twilio_verify'],
   'GB': ['twilio_verify'],
   'CA': ['twilio_verify'],
-  'NG': ['termii', 'twilio_verify'],
-  'GH': ['termii', 'twilio_verify'],
-  'KE': ['termii', 'twilio_verify'],
-  'ZA': ['termii', 'twilio_verify'],
-  'DEFAULT': ['twilio_verify', 'termii'],
+  'AU': ['twilio_verify'],
+  'EU': ['twilio_verify'],
+  'NG': ['twilio_verify', 'termii'],  // Twilio first, Termii fallback
+  'GH': ['twilio_verify', 'termii'],  // Twilio first, Termii fallback
+  'KE': ['twilio_verify', 'termii'],  // Twilio first, Termii fallback
+  'ZA': ['twilio_verify', 'termii'],  // Twilio first, Termii fallback
+  'DEFAULT': ['twilio_verify', 'termii'],  // Twilio is default globally
 };
 
 function formatPhoneNumber(phone: string): string {

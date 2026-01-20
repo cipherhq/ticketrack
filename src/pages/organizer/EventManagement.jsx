@@ -39,10 +39,14 @@ const PAYMENT_METHODS = [
   { value: 'other', label: 'Other' },
 ];
 
+// Generate unique 8-character ticket code (TR + 6 chars)
 function generateTicketCode() {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `TKT-${timestamp}${random}`;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar looking chars (0,O,1,I)
+  let code = 'TR';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 export function EventManagement() {
@@ -860,8 +864,8 @@ export function EventManagement() {
                                             {formatPrice(childEvent.revenue, childEvent.currency)}
                                           </span>
                                         )}
-                                      </div>
-                                    </div>
+                        </div>
+                      </div>
                                     <div className="flex items-center space-x-1">
                                       <Button variant="ghost" size="icon" onClick={() => navigate(`/e/${childEvent.slug || childEvent.id}`)} className="rounded-lg h-8 w-8" title="View Public Page"><Eye className="w-3.5 h-3.5" /></Button>
                                       {isChildEditable && (
@@ -1035,12 +1039,12 @@ export function EventManagement() {
                   </div>
                 </div>
                 {issueForm.issue_mode === 'complimentary' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="issue_type" className="text-sm font-medium text-[#0F0F0F]">Reason for Issue <span className="text-red-500">*</span></Label>
-                    <select id="issue_type" value={issueForm.manual_issue_type} onChange={(e) => setIssueForm(prev => ({ ...prev, manual_issue_type: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0 text-[#0F0F0F] focus:ring-2 focus:ring-[#2969FF]" required>
-                      {MANUAL_ISSUE_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
-                    </select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="issue_type" className="text-sm font-medium text-[#0F0F0F]">Reason for Issue <span className="text-red-500">*</span></Label>
+                  <select id="issue_type" value={issueForm.manual_issue_type} onChange={(e) => setIssueForm(prev => ({ ...prev, manual_issue_type: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0 text-[#0F0F0F] focus:ring-2 focus:ring-[#2969FF]" required>
+                    {MANUAL_ISSUE_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+                  </select>
+                </div>
                 )}
                 {issueForm.issue_mode === 'sell' && (
                   <>
@@ -1066,10 +1070,10 @@ export function EventManagement() {
                   </>
                 )}
                 {issueForm.issue_mode === 'complimentary' && (
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                    <p className="text-sm text-green-700"><span className="font-medium">Price:</span> Complimentary (Free)</p>
-                    <p className="text-xs text-green-600 mt-1">This ticket will not count toward revenue reports.</p>
-                  </div>
+                <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                  <p className="text-sm text-green-700"><span className="font-medium">Price:</span> Complimentary (Free)</p>
+                  <p className="text-xs text-green-600 mt-1">This ticket will not count toward revenue reports.</p>
+                </div>
                 )}
                 <Button type="submit" disabled={issueLoading} className="w-full h-12 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl font-medium">
                   {issueLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Issuing Ticket...</> : <><Ticket className="w-4 h-4 mr-2" />Issue Ticket</>}
