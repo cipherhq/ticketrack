@@ -140,6 +140,24 @@ export function AuthProvider({ children }) {
         // User created but not confirmed - email should have been sent
         // If SMTP is misconfigured, this might fail silently
         console.log('User created, verification email should be sent')
+        
+        // Send welcome email to new user
+        try {
+          await supabase.functions.invoke('send-email', {
+            body: {
+              type: 'welcome',
+              to: emailResult.value,
+              data: {
+                firstName: firstNameResult.value,
+                appUrl: window.location.origin
+              }
+            }
+          })
+          console.log('Welcome email sent to new user')
+        } catch (emailErr) {
+          console.error('Failed to send welcome email:', emailErr)
+          // Don't fail signup if welcome email fails
+        }
       }
 
       return { success: true, message: 'Please check your email to verify your account', email: emailResult.value }

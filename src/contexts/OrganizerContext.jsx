@@ -74,6 +74,23 @@ export function OrganizerProvider({ children }) {
 
         if (!error && newOrg) {
           setOrganizer(newOrg);
+          
+          // Send welcome email to new organizer
+          try {
+            await supabase.functions.invoke('send-email', {
+              body: {
+                type: 'organizer_welcome',
+                to: user.email,
+                data: {
+                  businessName: newOrg.business_name || profile?.full_name || 'there',
+                  appUrl: window.location.origin
+                }
+              }
+            });
+          } catch (emailErr) {
+            console.error('Failed to send organizer welcome email:', emailErr);
+            // Don't fail organizer creation if email fails
+          }
         }
       }
     } catch (err) {

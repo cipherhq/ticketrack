@@ -175,6 +175,60 @@ export function OrganizerPublicProfile() {
         await supabase.from('followers').insert({ user_id: currentUser.id, organizer_id: id, notifications_enabled: true })
         setIsFollowing(true)
         setFollowersCount(prev => prev + 1)
+        
+        // Send notification emails for new follower
+        try {
+          // Get user profile for follower name
+          const { data: followerProfile } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', currentUser.id)
+            .single()
+          
+          // Get organizer profile for email
+          const { data: orgProfile } = await supabase
+            .from('organizers')
+            .select('email, profiles(email)')
+            .eq('id', id)
+            .single()
+          
+          const organizerEmail = orgProfile?.email || orgProfile?.profiles?.email
+          
+          // Notify organizer of new follower
+          if (organizerEmail) {
+            await supabase.functions.invoke('send-email', {
+              body: {
+                type: 'new_follower',
+                to: organizerEmail,
+                data: {
+                  organizerName: organizer?.business_name,
+                  followerName: followerProfile?.full_name || 'Someone',
+                  totalFollowers: followersCount + 1,
+                  appUrl: window.location.origin
+                }
+              }
+            })
+          }
+          
+          // Notify user they're now following
+          if (followerProfile?.email) {
+            await supabase.functions.invoke('send-email', {
+              body: {
+                type: 'following_organizer',
+                to: followerProfile.email,
+                data: {
+                  userName: followerProfile.full_name || 'there',
+                  organizerName: organizer?.business_name,
+                  organizerSlug: organizer?.slug || id,
+                  appUrl: window.location.origin
+                }
+              }
+            })
+          }
+        } catch (emailErr) {
+          console.error('Failed to send follow notification emails:', emailErr)
+          // Don't fail the follow action if emails fail
+        }
       }
     } catch (err) {
       console.error('Error toggling follow:', err)

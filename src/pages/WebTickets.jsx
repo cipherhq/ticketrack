@@ -376,6 +376,51 @@ export function WebTickets() {
       if (error) throw error
       
       if (data?.success) {
+        // Send transfer emails to both sender and recipient
+        const ticket = transferModal.ticket
+        const eventData = ticket.event
+        
+        // Email to sender (current user)
+        try {
+          await supabase.functions.invoke('send-email', {
+            body: {
+              type: 'ticket_transfer_sent',
+              to: user.email,
+              data: {
+                senderName: ticket.attendee_name || user.email,
+                recipientName: data.recipient_name,
+                recipientEmail: data.recipient_email,
+                eventTitle: eventData?.title,
+                eventDate: eventData?.start_date,
+                ticketType: ticket.ticket_type?.name || 'General',
+                appUrl: window.location.origin
+              }
+            }
+          })
+        } catch (emailErr) {
+          console.error('Failed to send sender notification:', emailErr)
+        }
+        
+        // Email to recipient
+        try {
+          await supabase.functions.invoke('send-email', {
+            body: {
+              type: 'ticket_transfer_received',
+              to: data.recipient_email,
+              data: {
+                senderName: ticket.attendee_name || user.email,
+                recipientName: data.recipient_name,
+                eventTitle: eventData?.title,
+                eventDate: eventData?.start_date,
+                ticketType: ticket.ticket_type?.name || 'General',
+                appUrl: window.location.origin
+              }
+            }
+          })
+        } catch (emailErr) {
+          console.error('Failed to send recipient notification:', emailErr)
+        }
+        
         alert('Ticket transferred successfully!\n\nTransfer ID: ' + (data.transfer_reference || 'N/A') + '\nRecipient: ' + data.recipient_name + ' (' + data.recipient_email + ')')
         setTransferModal({ open: false, ticket: null })
         setTransferEmail('')

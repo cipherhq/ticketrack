@@ -1431,6 +1431,32 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       // END SPONSOR SAVE
       // =====================================================
 
+      // Send event published notification (only for new events, not edits)
+      if (!isEditMode && savedEvent) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          const eventUrl = `${window.location.origin}/event/${savedEvent.slug}`;
+          
+          await supabase.functions.invoke('send-email', {
+            body: {
+              type: 'event_published',
+              to: user?.email,
+              data: {
+                eventTitle: savedEvent.title,
+                eventId: savedEvent.id,
+                eventDate: savedEvent.start_date,
+                eventUrl: eventUrl,
+                appUrl: window.location.origin
+              }
+            }
+          });
+          console.log('Event published notification sent');
+        } catch (emailErr) {
+          console.error('Failed to send event published email:', emailErr);
+          // Don't fail event creation if email fails
+        }
+      }
+
       navigate('/organizer/events');
     } catch (err) {
       console.error('Error saving event:', err);
