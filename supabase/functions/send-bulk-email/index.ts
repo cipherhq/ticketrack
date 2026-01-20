@@ -6,6 +6,7 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const FROM_EMAIL = 'Ticketrack <support@ticketrack.com>';
+const SUPPORT_EMAIL = 'support@ticketrack.com';
 const APP_URL = 'https://ticketrack.com';
 
 const corsHeaders = {
@@ -97,10 +98,11 @@ serve(async (req) => {
             personalizedBody = personalizedBody.replace(regex, value as string);
           });
 
-          // Send email
+          // Send email with BCC to support for record-keeping
           const { data, error } = await resend.emails.send({
             from: FROM_EMAIL,
             to: recipient.email,
+            bcc: recipient.email !== SUPPORT_EMAIL ? [SUPPORT_EMAIL] : undefined,
             subject: personalizedSubject,
             html: emailTemplate(personalizedBody),
           });

@@ -17,8 +17,8 @@ const BRAND_COLOR = '#2969FF'
 const BRAND_NAME = 'Ticketrack'
 const APP_URL = 'https://ticketrack.com'
 
-// Email types that should send a copy to support (purchases and RSVPs)
-const BCC_TO_SUPPORT_TYPES = ['ticket_purchase', 'new_ticket_sale']
+// BCC support@ticketrack.com on ALL emails for record-keeping
+const BCC_ALL_EMAILS = true
 
 const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:3000']
 const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000, security: 100 }
@@ -344,9 +344,13 @@ async function sendEmail(supabase: any, req: any) {
     // Build email payload
     const emailPayload: any = { from, to, subject, html, attachments: req.attachments }
     
-    // Add BCC to support for purchase/RSVP emails
-    if (BCC_TO_SUPPORT_TYPES.includes(req.type)) {
-      emailPayload.bcc = [SUPPORT_EMAIL]
+    // BCC support@ticketrack.com on ALL emails for complete record-keeping
+    if (BCC_ALL_EMAILS) {
+      // Don't BCC if sending TO support (avoid duplicate)
+      const toEmails = Array.isArray(to) ? to : [to]
+      if (!toEmails.includes(SUPPORT_EMAIL)) {
+        emailPayload.bcc = [SUPPORT_EMAIL]
+      }
     }
     
     const res = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(emailPayload) })
