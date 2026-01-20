@@ -56,6 +56,7 @@ const WebSupport = lazy(() => import('./pages/WebSupport').then(m => ({ default:
 const WebPricing = lazy(() => import('./pages/WebPricing').then(m => ({ default: m.WebPricing })));
 const WebPrivacy = lazy(() => import('./pages/WebPrivacy').then(m => ({ default: m.WebPrivacy })));
 const WebCookies = lazy(() => import('./pages/WebCookies').then(m => ({ default: m.WebCookies })));
+const GroupBuyJoin = lazy(() => import('./pages/GroupBuyJoin').then(m => ({ default: m.GroupBuyJoin })));
 const WebTerms = lazy(() => import('./pages/WebTerms').then(m => ({ default: m.WebTerms })));
 const WebTrustSafety = lazy(() => import('./pages/WebTrustSafety').then(m => ({ default: m.WebTrustSafety })));
 const WebRefundPolicy = lazy(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })));
@@ -178,6 +179,16 @@ function App() {
                 <Route path="/events/:id" element={<WebEventDetails />} />
                 <Route path="/event/:id" element={<WebEventDetails />} />
                 <Route path="/e/:id" element={<WebEventDetails />} />
+                <Route path="/group/:code" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <GroupBuyJoin />
+                  </Suspense>
+                } />
+                <Route path="/group" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <GroupBuyJoin />
+                  </Suspense>
+                } />
                 <Route path="/waitlist/purchase" element={
                   <Suspense fallback={<PageLoader />}>
                     <WaitlistPurchase />

@@ -5,8 +5,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { WaitlistDialog } from '@/components/WaitlistDialog'
+import { StartGroupModal } from '@/components/StartGroupModal'
 import { getWaitlistPosition } from '@/services/waitlist'
-import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail, UserPlus, UserCheck, Grid3x3, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail, UserPlus, UserCheck, Grid3x3, ChevronLeft, ChevronRight, UsersRound } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -46,6 +47,7 @@ export function WebEventDetails() {
   const [followLoading, setFollowLoading] = useState(false)
   const [recurringViewMode, setRecurringViewMode] = useState('grid') // 'grid' or 'calendar'
   const [recurringPage, setRecurringPage] = useState(1)
+  const [showGroupModal, setShowGroupModal] = useState(false) // Group Buy modal
 
   // Function to load tickets for a specific event (for recurring events)
   const loadTicketsForEvent = async (eventId) => {
@@ -1586,6 +1588,16 @@ export function WebEventDetails() {
                   )}
                 </Button>
               )}
+              
+              {/* Buy with Friends Button */}
+              <Button 
+                variant="outline"
+                className="w-full rounded-xl py-5 border-[#2969FF]/30 text-[#2969FF] hover:bg-[#2969FF]/5"
+                onClick={() => setShowGroupModal(true)}
+              >
+                <UsersRound className="w-5 h-5 mr-2" />
+                Buy with Friends
+              </Button>
 
               <p className="text-xs text-center text-[#0F0F0F]/40">
                 By {isFreeEvent ? 'registering' : 'purchasing'}, you agree to our Terms of Service
@@ -1595,7 +1607,12 @@ export function WebEventDetails() {
         </div>
       </div>
 
-      
+      {/* Group Buy Modal */}
+      <StartGroupModal 
+        open={showGroupModal} 
+        onOpenChange={setShowGroupModal} 
+        event={event}
+      />
 
       {/* Recommended Events */}
       {recommendedEvents.length > 0 && (
