@@ -740,7 +740,7 @@ export function WebTickets() {
               </div>
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Amount Paid</p>
-                <p className="text-[#0F0F0F]">{ticket.payment_status === "free" ? "Free" : formatPrice(ticket.total_price || 0, ticket.currency)}</p>
+                <p className="text-[#0F0F0F]">{ticket.payment_status === "free" ? "Free" : formatPrice(ticket.total_price || 0, ticket.order?.currency || ticket.currency)}</p>
               </div>
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Payment Method</p>
