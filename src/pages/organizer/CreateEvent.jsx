@@ -470,6 +470,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     
     if (activeTab === "details") {
       if (!formData.title?.trim()) errors.push("Event title is required");
+      if (formData.title && /[^a-zA-Z0-9\s\-',.!?&()]/.test(formData.title)) {
+        errors.push("Event title contains invalid special characters");
+      }
       if (!formData.eventType) errors.push("Event type is required");
       if (!formData.category) errors.push("Category is required");
       if (!formData.description?.trim()) errors.push("Description is required");
@@ -648,8 +651,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
   const handleInputChange = (field, value) => {
     // Auto-populate slug from title
     if (field === "title" && !urlManuallyEdited) {
-      const slug = generateSlug(value);
-      setFormData(prev => ({ ...prev, title: value, slug: slug }));
+      // Remove special characters from title (allow letters, numbers, spaces, hyphens, apostrophes, commas, periods)
+      const sanitizedTitle = value.replace(/[^a-zA-Z0-9\s\-',.!?&()]/g, '');
+      const slug = generateSlug(sanitizedTitle);
+      setFormData(prev => ({ ...prev, title: sanitizedTitle, slug: slug }));
       // Debounce URL check
       clearTimeout(urlCheckTimeout.current);
       urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(slug), 500);
