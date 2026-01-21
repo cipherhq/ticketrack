@@ -166,8 +166,9 @@ export function WebAuth() {
         console.log('verifyOTP result:', result)
         
           // For login flow only, check if this is a new user who needs to register
+          // Security: Use generic error to prevent user enumeration
           if (isLogin && result.isNewUser) {
-          setError('No account found with this phone number. Please sign up first.')
+          setError('Unable to verify. Please check your phone number or sign up.')
           setStep('credentials')
           return
         }

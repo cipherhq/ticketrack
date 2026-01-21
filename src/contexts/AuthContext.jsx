@@ -257,11 +257,12 @@ export function AuthProvider({ children }) {
       if (error) {
         console.error('[Email OTP] Send error:', error)
         if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
-        // If user doesn't exist and we're trying to login, provide clearer error
+        // Security: Use generic error to prevent user enumeration
+        // Don't reveal whether email exists in our system
         if (error.message?.includes('User not found') && !isSignup) {
-          throw new Error('No account found with this email. Please sign up first.')
+          throw new Error('Unable to send verification code. Please check your email or sign up.')
         }
-        throw new Error(error.message || 'Failed to send email OTP')
+        throw new Error(error.message || 'Failed to send verification code')
       }
 
       setOtpSent(true)
