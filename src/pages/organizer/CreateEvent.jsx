@@ -593,6 +593,87 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     }
   };
 
+  // Validate a specific tab by its id
+  const validateTab = (tabId) => {
+    const errors = [];
+    
+    if (tabId === "details") {
+      if (!formData.title?.trim()) errors.push("Event title is required");
+      if (formData.title && /[^a-zA-Z0-9\s\-',.!?&()]/.test(formData.title)) {
+        errors.push("Event title contains invalid special characters");
+      }
+      if (!formData.eventType) errors.push("Event type is required");
+      if (!formData.category) errors.push("Category is required");
+      if (!formData.description?.trim()) errors.push("Description is required");
+      if (formData.visibility === 'password' && !formData.accessPassword?.trim()) {
+        errors.push("Access password is required for password-protected events");
+      }
+    }
+    
+    if (tabId === "datetime") {
+      if (!formData.startDate) errors.push("Start date is required");
+      if (!formData.startTime) errors.push("Start time is required");
+      if (!formData.endTime) errors.push("End time is required");
+      if (formData.isMultiDay && formData.isRecurring) {
+        errors.push("Multi-day and recurring events cannot be combined");
+      }
+      if (formData.gateOpeningTime && formData.startTime && formData.gateOpeningTime >= formData.startTime) {
+        errors.push("Gate opening time must be before event start time");
+      }
+    }
+    
+    if (tabId === "venue") {
+      if (!formData.isVirtual && !formData.venueAddress?.trim()) {
+        errors.push("Venue address is required for in-person events");
+      }
+    }
+    
+    if (tabId === "ticketing") {
+      const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0);
+      if (!formData.isFree && validTickets.length === 0) {
+        errors.push("At least one ticket type is required");
+      }
+      if (!formData.isFree && validTickets.some(t => parseFloat(t.price) <= 0)) {
+        errors.push("All ticket types must have a price greater than 0");
+      }
+    }
+    
+    return errors;
+  };
+
+  // Handle tab click with validation
+  const handleTabClick = (targetTabId) => {
+    const targetIndex = tabs.findIndex(t => t.id === targetTabId);
+    
+    // Allow going backwards without validation
+    if (targetIndex <= currentTabIndex) {
+      setActiveTab(targetTabId);
+      setError("");
+      window.scrollTo(0, 0);
+      return;
+    }
+    
+    // Validate all tabs between current and target
+    const allErrors = [];
+    for (let i = currentTabIndex; i < targetIndex; i++) {
+      const tabErrors = validateTab(tabs[i].id);
+      if (tabErrors.length > 0) {
+        allErrors.push(`${tabs[i].label}: ${tabErrors.join(", ")}`);
+      }
+    }
+    
+    if (allErrors.length > 0) {
+      setError(allErrors[0]); // Show first error
+      // Stay on current tab or go to first tab with errors
+      return;
+    }
+    
+    // All validations passed, go to target tab
+    setError("");
+    setActiveTab(targetTabId);
+    window.scrollTo(0, 0);
+  };
+
 
   // Generate slug from title
   const generateSlug = (title) => {
@@ -1502,7 +1583,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); window.scrollTo(0, 0); }}
+                onClick={() => handleTabClick(tab.id)}
                 className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
                   activeTab === tab.id
                     ? 'border-[#2969FF] text-[#2969FF]'
