@@ -103,8 +103,50 @@ function getDefaultSettings() {
     rsvp_max_tickets_per_order: 10,
     rsvp_require_phone: true,
     free_event_order_status: 'completed',
-    donation_failed_still_rsvp: true
+    donation_failed_still_rsvp: true,
+    // Contact info (can be overridden from DB)
+    contact_email: 'support@ticketrack.com',
+    contact_phone: '+1 (800) TICKETS',
+    // Social links (can be overridden from DB)
+    social_twitter: 'https://twitter.com/ticketrack',
+    social_instagram: 'https://instagram.com/ticketrack',
+    social_facebook: 'https://facebook.com/ticketrack',
+    social_linkedin: 'https://linkedin.com/company/ticketrack',
+    // Default currency
+    default_currency: 'GBP'
   }
+}
+
+/**
+ * Get contact information
+ */
+export async function getContactInfo() {
+  const settings = await getPlatformSettings()
+  return {
+    email: settings.contact_email || 'support@ticketrack.com',
+    phone: settings.contact_phone || '+1 (800) TICKETS'
+  }
+}
+
+/**
+ * Get social media links
+ */
+export async function getSocialLinks() {
+  const settings = await getPlatformSettings()
+  return {
+    twitter: settings.social_twitter || 'https://twitter.com/ticketrack',
+    instagram: settings.social_instagram || 'https://instagram.com/ticketrack',
+    facebook: settings.social_facebook || 'https://facebook.com/ticketrack',
+    linkedin: settings.social_linkedin || 'https://linkedin.com/company/ticketrack'
+  }
+}
+
+/**
+ * Get default currency for the platform
+ */
+export async function getDefaultCurrency() {
+  const settings = await getPlatformSettings()
+  return settings.default_currency || 'GBP'
 }
 
 /**
@@ -113,6 +155,82 @@ function getDefaultSettings() {
 export function clearSettingsCache() {
   settingsCache = null
   cacheTimestamp = null
+}
+
+/**
+ * Get platform statistics (cached)
+ * Returns real counts from database with fallbacks
+ */
+let statsCache = null
+let statsCacheTimestamp = null
+const STATS_CACHE_TTL = 15 * 60 * 1000 // 15 minutes
+
+export async function getPlatformStats() {
+  // Check cache
+  if (statsCache && statsCacheTimestamp && (Date.now() - statsCacheTimestamp < STATS_CACHE_TTL)) {
+    return statsCache
+  }
+
+  try {
+    // Get counts in parallel
+    const [eventsResult, ticketsResult, organizersResult, countriesResult] = await Promise.all([
+      supabase.from('events').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+      supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+      supabase.from('organizers').select('id', { count: 'exact', head: true }),
+      supabase.from('countries').select('id', { count: 'exact', head: true }).eq('is_active', true)
+    ])
+
+    const eventsCount = eventsResult.count || 0
+    const ticketsCount = ticketsResult.count || 0
+    const organizersCount = organizersResult.count || 0
+    const countriesCount = countriesResult.count || 0
+
+    // Format stats with friendly suffixes
+    const formatCount = (count) => {
+      if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M+`
+      if (count >= 1000) return `${(count / 1000).toFixed(0)}K+`
+      if (count >= 100) return `${count}+`
+      return count.toString()
+    }
+
+    const stats = {
+      eventsHosted: formatCount(eventsCount),
+      eventsHostedRaw: eventsCount,
+      ticketsSold: formatCount(ticketsCount),
+      ticketsSoldRaw: ticketsCount,
+      organizers: formatCount(organizersCount),
+      organizersRaw: organizersCount,
+      countries: countriesCount.toString(),
+      countriesRaw: countriesCount
+    }
+
+    // Cache results
+    statsCache = stats
+    statsCacheTimestamp = Date.now()
+
+    return stats
+  } catch (err) {
+    console.warn('Error fetching platform stats, using defaults:', err.message)
+    // Return fallback values
+    return {
+      eventsHosted: '100+',
+      eventsHostedRaw: 100,
+      ticketsSold: '1K+',
+      ticketsSoldRaw: 1000,
+      organizers: '50+',
+      organizersRaw: 50,
+      countries: '6',
+      countriesRaw: 6
+    }
+  }
+}
+
+/**
+ * Clear stats cache (call after significant data changes)
+ */
+export function clearStatsCache() {
+  statsCache = null
+  statsCacheTimestamp = null
 }
 
 /**

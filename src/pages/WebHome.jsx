@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { getPlatformStats } from '@/services/settings';
 import { 
   Search, MapPin, Calendar, ChevronRight, ChevronLeft, Star, 
   Download, Shield, CreditCard, Headphones, TrendingUp, Clock,
@@ -330,6 +331,12 @@ export function WebHome() {
     free: []
   });
   const [categories, setCategories] = useState([]);
+  const [platformStats, setPlatformStats] = useState({
+    eventsHosted: '100+',
+    ticketsSold: '1K+',
+    organizers: '50+',
+    countries: '6'
+  });
   const [ads, setAds] = useState({
     top: null,
     bottom: null,
@@ -440,6 +447,15 @@ export function WebHome() {
       }
 
       await fetchAds();
+      
+      // Fetch platform stats
+      try {
+        const stats = await getPlatformStats();
+        setPlatformStats(stats);
+      } catch (err) {
+        console.warn('Failed to fetch platform stats');
+      }
+      
       setLoading(false);
     };
 
@@ -577,15 +593,15 @@ export function WebHome() {
             {/* Stats */}
             <div className="flex flex-wrap gap-8 md:gap-12">
               <div>
-                <div className="text-3xl md:text-4xl font-bold text-white">10K+</div>
+                <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.eventsHosted}</div>
                 <div className="text-gray-400 text-sm">Events Hosted</div>
               </div>
               <div>
-                <div className="text-3xl md:text-4xl font-bold text-white">500K+</div>
+                <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.ticketsSold}</div>
                 <div className="text-gray-400 text-sm">Tickets Sold</div>
               </div>
               <div>
-                <div className="text-3xl md:text-4xl font-bold text-white">6</div>
+                <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.countries}</div>
                 <div className="text-gray-400 text-sm">Countries</div>
               </div>
             </div>
@@ -679,20 +695,20 @@ export function WebHome() {
           <section className="py-12 my-8 bg-white rounded-2xl shadow-sm">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div>
-                <div className="text-3xl md:text-4xl font-bold text-blue-600">10K+</div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.eventsHosted}</div>
                 <div className="text-gray-500 mt-1">Events</div>
               </div>
               <div>
-                <div className="text-3xl md:text-4xl font-bold text-blue-600">500K+</div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.ticketsSold}</div>
                 <div className="text-gray-500 mt-1">Tickets Sold</div>
               </div>
               <div>
-                <div className="text-3xl md:text-4xl font-bold text-blue-600">15+</div>
-                <div className="text-gray-500 mt-1">Countries</div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.organizers}</div>
+                <div className="text-gray-500 mt-1">Organizers</div>
               </div>
               <div>
-                <div className="text-3xl md:text-4xl font-bold text-blue-600">4.9</div>
-                <div className="text-gray-500 mt-1">User Rating</div>
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.countries}</div>
+                <div className="text-gray-500 mt-1">Countries</div>
               </div>
             </div>
           </section>

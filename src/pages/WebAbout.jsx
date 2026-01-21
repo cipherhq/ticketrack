@@ -1,10 +1,30 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Ticket, Users, Shield, Zap, Target, Award } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { getPlatformStats } from '@/services/settings'
 
 export function WebAbout() {
   const navigate = useNavigate()
+  const [platformStats, setPlatformStats] = useState({
+    eventsHosted: '100+',
+    ticketsSold: '1K+',
+    organizers: '50+',
+    countries: '6'
+  })
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const stats = await getPlatformStats()
+        setPlatformStats(stats)
+      } catch (err) {
+        console.warn('Failed to fetch platform stats')
+      }
+    }
+    fetchStats()
+  }, [])
 
   const values = [
     { icon: Shield, title: 'Trust & Security', description: 'Your data and payments are protected with industry-leading security standards.' },
@@ -14,10 +34,10 @@ export function WebAbout() {
   ]
 
   const stats = [
-    { label: 'Events Hosted', value: '50,000+' },
-    { label: 'Tickets Sold', value: '2M+' },
-    { label: 'Happy Customers', value: '500K+' },
-    { label: 'Cities Covered', value: '100+' },
+    { label: 'Events Hosted', value: platformStats.eventsHosted },
+    { label: 'Tickets Sold', value: platformStats.ticketsSold },
+    { label: 'Organizers', value: platformStats.organizers },
+    { label: 'Countries', value: platformStats.countries },
   ]
 
   return (

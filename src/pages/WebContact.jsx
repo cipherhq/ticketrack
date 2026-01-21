@@ -1,14 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Mail, Phone, MapPin, Send, MessageSquare, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { getContactInfo } from '@/services/settings'
 
 export function WebContact() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
+  const [contact, setContact] = useState({
+    email: 'support@ticketrack.com',
+    phone: '+1 (800) TICKETS'
+  })
+
+  useEffect(() => {
+    const fetchContact = async () => {
+      try {
+        const info = await getContactInfo()
+        setContact(info)
+      } catch (err) {
+        console.warn('Failed to fetch contact info')
+      }
+    }
+    fetchContact()
+  }, [])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -17,10 +34,10 @@ export function WebContact() {
   }
 
   const contactInfo = [
-    { icon: Mail, title: 'Email Us', details: ['support@ticketrack.com', 'hello@ticketrack.com'] },
-    { icon: Phone, title: 'Call Us', details: ['+234 801 234 5678', '+234 809 876 5432'] },
-    { icon: MapPin, title: 'Visit Us', details: ['123 Tech Avenue', 'Victoria Island, Lagos, Nigeria'] },
-    { icon: Clock, title: 'Working Hours', details: ['Monday - Friday: 9AM - 6PM', 'Saturday: 10AM - 4PM'] },
+    { icon: Mail, title: 'Email Us', details: [contact.email] },
+    { icon: Phone, title: 'Call Us', details: [contact.phone] },
+    { icon: MapPin, title: 'Visit Us', details: ['Remote-first Company', 'Operating Globally'] },
+    { icon: Clock, title: 'Working Hours', details: ['Monday - Friday: 9AM - 6PM (GMT)', '24/7 Online Support'] },
   ]
 
   return (

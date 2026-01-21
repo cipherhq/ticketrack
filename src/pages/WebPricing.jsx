@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Logo } from '@/components/Logo';
+import { getPlatformStats } from '@/services/settings';
 
 // Flag mapping - flags rarely change, so we keep them here
 const FLAG_MAP = {
@@ -85,8 +86,14 @@ export function WebPricing() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pricingData, setPricingData] = useState({});
+  const [platformStats, setPlatformStats] = useState({
+    eventsHosted: '100+',
+    ticketsSold: '1K+',
+    organizers: '50+',
+    countries: '6'
+  });
   
-  // Fetch pricing data from database on mount
+  // Fetch pricing data and platform stats from database on mount
   useEffect(() => {
     loadPricingData();
   }, []);
@@ -152,6 +159,14 @@ export function WebPricing() {
       // Set default country to first available if NG not available
       if (!pricing['NG'] && Object.keys(pricing).length > 0) {
         setSelectedCountry(Object.keys(pricing)[0]);
+      }
+      
+      // Fetch platform stats
+      try {
+        const stats = await getPlatformStats();
+        setPlatformStats(stats);
+      } catch (err) {
+        console.warn('Failed to fetch platform stats');
       }
     } catch (error) {
       console.error('Error loading pricing data:', error);
@@ -319,20 +334,20 @@ export function WebPricing() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="text-4xl font-bold text-[#2969FF] mb-2">10K+</div>
+              <div className="text-4xl font-bold text-[#2969FF] mb-2">{platformStats.eventsHosted}</div>
               <div className="text-gray-600">Events Created</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-[#2969FF] mb-2">500K+</div>
+              <div className="text-4xl font-bold text-[#2969FF] mb-2">{platformStats.ticketsSold}</div>
               <div className="text-gray-600">Tickets Sold</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-[#2969FF] mb-2">{Object.keys(pricingData).length}</div>
+              <div className="text-4xl font-bold text-[#2969FF] mb-2">{Object.keys(pricingData).length || platformStats.countries}</div>
               <div className="text-gray-600">Countries</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-[#2969FF] mb-2">99.9%</div>
-              <div className="text-gray-600">Uptime</div>
+              <div className="text-4xl font-bold text-[#2969FF] mb-2">{platformStats.organizers}</div>
+              <div className="text-gray-600">Organizers</div>
             </div>
           </div>
         </div>
