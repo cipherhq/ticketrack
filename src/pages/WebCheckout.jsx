@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase'
 import { markWaitlistPurchased } from '@/services/waitlist'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { logger, handleApiError, getUserMessage, ERROR_CODES } from '@/lib/logger'
+import { toast } from 'sonner'
 
 
 // Credit promoter for referral sale
@@ -566,7 +567,7 @@ export function WebCheckout() {
         setTimeLeft(0)
         setTimerExpired(true)
         localStorage.removeItem(TIMER_KEY)
-        alert("Time expired! Your session has ended. Please select your tickets again.")
+        toast.error("Time expired! Your session has ended. Please select your tickets again.")
         navigate(`/e/${event?.slug || event?.id}`)
       } else {
         setTimeLeft(remaining)

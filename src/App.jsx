@@ -21,6 +21,7 @@ import { ImpersonationBanner } from './components/ImpersonationBanner';
 import { SessionTimeoutProvider } from './hooks/useSessionTimeout.jsx';
 import { SESSION_TIMEOUT_MS, SESSION_WARNING_MS } from './config/app';
 import { CookieConsent } from './components/CookieConsent';
+import { Toaster } from './components/ui/toaster';
 import { Loader2 } from 'lucide-react';
 
 // Retry wrapper for lazy imports - handles chunk loading failures after deployments
@@ -347,6 +348,7 @@ function App() {
               </Route>
             </Routes>
             <CookieConsent />
+            <Toaster />
             </Sentry.ErrorBoundary>
           </Router>
           </SessionTimeoutProvider>

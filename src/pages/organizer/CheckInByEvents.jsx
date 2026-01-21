@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { HelpTip, OnboardingBanner } from '@/components/HelpTip';
+import { toast } from 'sonner';
 
 // Generate unique device ID for multi-session tracking
 const getDeviceId = () => {
@@ -634,7 +635,7 @@ export function CheckInByEvents() {
       console.error('Camera error:', error);
       setScanning(false);
       scanningRef.current = false;
-      alert('Could not access camera. Please check permissions.');
+      toast.error('Could not access camera. Please check permissions.');
     }
   };
 

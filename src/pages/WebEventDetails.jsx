@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator'
 import { getEvent } from '@/services/events'
 import { supabase } from '@/lib/supabase'
 import { EventAccessGate } from '@/components/EventAccessGate'
+import { toast } from 'sonner'
 
 export function WebEventDetails() {
   const navigate = useNavigate()
@@ -573,7 +574,7 @@ export function WebEventDetails() {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href)
-      alert('Link copied to clipboard!')
+      toast.success('Link copied to clipboard!')
     }
   }
 

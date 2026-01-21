@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Users, Calendar, MapPin, Star, ExternalLink, Mail, Share2, Loader2, AlertCircle, Twitter, Facebook, Instagram, Linkedin } from 'lucide-react'
+import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -184,7 +185,7 @@ export function OrganizerPublicProfile() {
       .maybeSingle()
     
     if (ownOrganizer) {
-      alert("You cannot follow your own organizer profile")
+      toast.info("You cannot follow your own organizer profile")
       return
     }
     
@@ -271,7 +272,7 @@ export function OrganizerPublicProfile() {
       }
     } else {
       navigator.clipboard.writeText(url)
-      alert('Link copied to clipboard!')
+      toast.success('Link copied to clipboard!')
     }
   }
 

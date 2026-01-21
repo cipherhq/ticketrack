@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase'
 import { QRCodeSVG } from 'qrcode.react'
 import { downloadTicketPDF } from '@/utils/ticketGenerator'
 import { WalletButtons } from '@/components/WalletButtons'
+import { toast } from 'sonner'
 
 // Helper to truncate long references with copy functionality
 const TruncatedRef = ({ value, maxLength = 20 }) => {
@@ -262,12 +263,12 @@ export function WebTickets() {
       .single()
     
     if (!event?.allow_transfers) {
-      alert('Ticket transfers are disabled for this event')
+      toast.error('Ticket transfers are disabled for this event')
       return
     }
     
     if (ticket.transfer_count >= (event.max_transfers || 2)) {
-      alert('Maximum transfer limit reached for this ticket')
+      toast.error('Maximum transfer limit reached for this ticket')
       return
     }
     
@@ -421,7 +422,7 @@ export function WebTickets() {
           console.error('Failed to send recipient notification:', emailErr)
         }
         
-        alert('Ticket transferred successfully!\n\nTransfer ID: ' + (data.transfer_reference || 'N/A') + '\nRecipient: ' + data.recipient_name + ' (' + data.recipient_email + ')')
+        toast.success(`Ticket transferred to ${data.recipient_name} (${data.recipient_email})`)
         setTransferModal({ open: false, ticket: null })
         setTransferEmail('')
         loadTickets()
@@ -454,7 +455,7 @@ export function WebTickets() {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
-      alert('Link copied to clipboard!')
+      toast.success('Link copied to clipboard!')
     }
   }
 
@@ -619,7 +620,7 @@ export function WebTickets() {
 
       setRefundModal({ open: false, ticket: null });
       setRefundReason('');
-      alert('Refund request submitted successfully! You will be notified once the organizer reviews your request.');
+      toast.success('Refund request submitted! You will be notified once reviewed.');
       loadTickets();
     } catch (error) {
       console.error('Error submitting refund:', error);
@@ -650,7 +651,7 @@ export function WebTickets() {
   // Escalate refund to admin
   const escalateRefund = async () => {
     if (!escalateReason.trim()) {
-      alert('Please provide a reason for escalation');
+      toast.error('Please provide a reason for escalation');
       return;
     }
     setEscalating(true);
@@ -667,11 +668,11 @@ export function WebTickets() {
       
       setEscalateModal({ open: false, refund: null });
       setEscalateReason('');
-      alert('Your refund has been escalated to admin for review.');
+      toast.success('Your refund has been escalated to admin for review.');
       loadRefundStatus();
     } catch (err) {
       console.error('Error escalating:', err);
-      alert('Failed to escalate. Please try again.');
+      toast.error('Failed to escalate. Please try again.');
     } finally {
       setEscalating(false);
     }

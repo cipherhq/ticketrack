@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Calendar, Clock, User, ArrowLeft, Share2, BookOpen, Tag, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { toast } from 'sonner'
 import DOMPurify from 'dompurify'
 
 // Full blog posts content
@@ -805,7 +806,7 @@ export function WebBlogPost() {
       }
     } else {
       navigator.clipboard.writeText(window.location.href)
-      alert('Link copied to clipboard!')
+      toast.success('Link copied to clipboard!')
     }
   }
 

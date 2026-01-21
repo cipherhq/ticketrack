@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { formatTimeRemaining, getShareableLink } from '@/services/groupBuy'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 
 export function MyGroups() {
   const { user } = useAuth()
@@ -194,7 +195,7 @@ export function MyGroups() {
                   className="rounded-lg text-xs"
                   onClick={() => {
                     navigator.clipboard.writeText(getShareableLink(session.code))
-                    alert('Link copied!')
+                    toast.success('Link copied!')
                   }}
                 >
                   <Share2 className="w-3 h-3 mr-1" />
