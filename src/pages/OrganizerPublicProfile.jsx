@@ -266,7 +266,9 @@ export function OrganizerPublicProfile() {
     if (navigator.share) {
       try {
         await navigator.share({ title: organizer?.business_name, text: 'Check out ' + organizer?.business_name + ' on Ticketrack', url })
-      } catch (err) {}
+      } catch (err) {
+        // User cancelled share dialog - expected behavior, no action needed
+      }
     } else {
       navigator.clipboard.writeText(url)
       alert('Link copied to clipboard!')

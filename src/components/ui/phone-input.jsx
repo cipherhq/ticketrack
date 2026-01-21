@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { getCountryFromIP } from '@/utils/location'
 
 const COUNTRIES = [
   { code: 'NG', name: 'Nigeria', dial: '+234', flag: '🇳🇬' },
@@ -7,6 +8,8 @@ const COUNTRIES = [
   { code: 'US', name: 'United States', dial: '+1', flag: '🇺🇸' },
   { code: 'GB', name: 'United Kingdom', dial: '+44', flag: '🇬🇧' },
   { code: 'CA', name: 'Canada', dial: '+1', flag: '🇨🇦' },
+  { code: 'KE', name: 'Kenya', dial: '+254', flag: '🇰🇪' },
+  { code: 'ZA', name: 'South Africa', dial: '+27', flag: '🇿🇦' },
 ]
 
 // Export countries for use elsewhere
@@ -16,16 +19,36 @@ export function PhoneInput({
   value, 
   onChange, 
   onCountryChange,
-  defaultCountry = 'NG',
-  lockedCountry = null,  // New: if set, country cannot be changed
+  defaultCountry = null, // Now defaults to null for auto-detection
+  lockedCountry = null,  // If set, country cannot be changed
+  autoDetect = true,     // Auto-detect user's country from IP
   className = '', 
   required = false 
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedCountry, setSelectedCountry] = useState(
-    COUNTRIES.find(c => c.code === (lockedCountry || defaultCountry)) || COUNTRIES[0]
+    COUNTRIES.find(c => c.code === (lockedCountry || defaultCountry)) || COUNTRIES.find(c => c.code === 'GB') || COUNTRIES[0]
   )
   const [phoneNumber, setPhoneNumber] = useState('')
+  const [hasAutoDetected, setHasAutoDetected] = useState(false)
+
+  // Auto-detect country from IP on mount
+  useEffect(() => {
+    if (autoDetect && !lockedCountry && !defaultCountry && !hasAutoDetected) {
+      getCountryFromIP().then(detectedCode => {
+        const country = COUNTRIES.find(c => c.code === detectedCode)
+        if (country) {
+          setSelectedCountry(country)
+          if (onCountryChange) {
+            onCountryChange(country.code)
+          }
+        }
+        setHasAutoDetected(true)
+      }).catch(() => {
+        setHasAutoDetected(true)
+      })
+    }
+  }, [autoDetect, lockedCountry, defaultCountry, hasAutoDetected])
 
   // Update selected country if lockedCountry changes
   useEffect(() => {

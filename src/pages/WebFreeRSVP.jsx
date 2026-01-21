@@ -76,7 +76,7 @@ const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
       commission_rate: commissionRate,
       commission_amount: commissionAmount,
       status: 'pending'
-    }).catch(() => {})
+    }).catch(e => console.warn('Promoter sale insert skipped:', e.message))
     
     // Update promoter stats - ignore errors (RPC may not exist)
     await supabase.rpc('update_promoter_sales', { 
@@ -84,7 +84,7 @@ const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
       p_sale_amount: saleAmount,
       p_commission: commissionAmount,
       p_ticket_count: ticketCount
-    }).catch(() => {})
+    }).catch(e => console.warn('Promoter stats update skipped:', e.message))
     
     localStorage.removeItem('referral_code')
     localStorage.removeItem('referral_event_id')

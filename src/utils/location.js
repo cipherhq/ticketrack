@@ -194,3 +194,128 @@ export async function getUserCountry() {
     return null
   }
 }
+
+// Cache for IP-based country detection
+let cachedCountryCode = null
+let cacheTimestamp = null
+const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
+
+/**
+ * Get user's country code from IP address (no permission needed)
+ * Uses multiple free APIs with fallbacks
+ * @returns {Promise<string>} Country code (e.g., 'US', 'NG', 'GB') - defaults to 'GB' if detection fails
+ */
+export async function getCountryFromIP() {
+  // Check cache first
+  if (cachedCountryCode && cacheTimestamp && (Date.now() - cacheTimestamp < CACHE_DURATION)) {
+    return cachedCountryCode
+  }
+
+  // Check localStorage cache
+  try {
+    const stored = localStorage.getItem('user_country_code')
+    const storedTime = localStorage.getItem('user_country_code_time')
+    if (stored && storedTime && (Date.now() - parseInt(storedTime) < CACHE_DURATION)) {
+      cachedCountryCode = stored
+      cacheTimestamp = parseInt(storedTime)
+      return stored
+    }
+  } catch (e) {
+    // localStorage not available
+  }
+
+  // Supported countries mapping
+  const supportedCountries = ['NG', 'GH', 'US', 'GB', 'CA', 'KE', 'ZA']
+  
+  try {
+    // Try ip-api.com first (free, no key needed, 45 req/min)
+    const response = await fetch('http://ip-api.com/json/?fields=countryCode', {
+      signal: AbortSignal.timeout(3000) // 3 second timeout
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.countryCode && supportedCountries.includes(data.countryCode)) {
+        cacheCountry(data.countryCode)
+        return data.countryCode
+      }
+    }
+  } catch (e) {
+    // Try fallback
+  }
+
+  try {
+    // Fallback: ipapi.co (free tier: 1000/day)
+    const response = await fetch('https://ipapi.co/country/', {
+      signal: AbortSignal.timeout(3000)
+    })
+    
+    if (response.ok) {
+      const countryCode = (await response.text()).trim().toUpperCase()
+      if (supportedCountries.includes(countryCode)) {
+        cacheCountry(countryCode)
+        return countryCode
+      }
+    }
+  } catch (e) {
+    // Both failed
+  }
+
+  // Try browser language/timezone as last resort
+  const browserCountry = getCountryFromBrowser()
+  if (browserCountry && supportedCountries.includes(browserCountry)) {
+    cacheCountry(browserCountry)
+    return browserCountry
+  }
+
+  // Default to GB (most neutral for international platform)
+  return 'GB'
+}
+
+/**
+ * Cache the detected country
+ */
+function cacheCountry(countryCode) {
+  cachedCountryCode = countryCode
+  cacheTimestamp = Date.now()
+  try {
+    localStorage.setItem('user_country_code', countryCode)
+    localStorage.setItem('user_country_code_time', cacheTimestamp.toString())
+  } catch (e) {
+    // localStorage not available
+  }
+}
+
+/**
+ * Get country from browser language/timezone
+ * @returns {string|null}
+ */
+function getCountryFromBrowser() {
+  // Try navigator.language
+  const lang = navigator.language || navigator.userLanguage
+  if (lang) {
+    const langCountry = lang.split('-')[1]?.toUpperCase()
+    if (langCountry) return langCountry
+  }
+
+  // Try timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  if (timezone) {
+    const tzCountryMap = {
+      'Africa/Lagos': 'NG',
+      'Africa/Accra': 'GH',
+      'America/New_York': 'US',
+      'America/Chicago': 'US',
+      'America/Denver': 'US',
+      'America/Los_Angeles': 'US',
+      'America/Toronto': 'CA',
+      'America/Vancouver': 'CA',
+      'Europe/London': 'GB',
+      'Africa/Nairobi': 'KE',
+      'Africa/Johannesburg': 'ZA',
+    }
+    return tzCountryMap[timezone] || null
+  }
+
+  return null
+}

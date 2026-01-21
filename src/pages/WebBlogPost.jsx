@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Calendar, Clock, User, ArrowLeft, Share2, BookOpen, Tag, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import DOMPurify from 'dompurify'
 
 // Full blog posts content
 const blogPosts = {
@@ -871,7 +872,7 @@ export function WebBlogPost() {
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div 
           className="prose prose-lg max-w-none prose-headings:text-[#0F0F0F] prose-p:text-[#0F0F0F]/80 prose-li:text-[#0F0F0F]/80 prose-strong:text-[#0F0F0F] prose-a:text-[#2969FF] prose-a:no-underline hover:prose-a:underline"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span', 'pre', 'code'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
         />
 
         {/* Tags */}

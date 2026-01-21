@@ -26,7 +26,7 @@ export const brand = {
   // Contact
   contact: {
     email: 'support@ticketrack.com',
-    phone: '+234 XXX XXX XXXX',
+    phone: '+44 20 XXXX XXXX', // UK-based platform
   },
   
   // Stats (placeholder for now, can connect to DB later)
