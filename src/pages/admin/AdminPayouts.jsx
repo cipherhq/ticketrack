@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { formatPrice } from '@/config/currencies';
 
 export function AdminPayouts() {
   const navigate = useNavigate();
@@ -121,12 +122,9 @@ export function AdminPayouts() {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
+  // Use multi-currency formatting
+  const formatCurrency = (amount, currency = 'NGN') => {
+    return formatPrice(amount || 0, currency);
   };
 
   const getStatusBadge = (status) => {
@@ -201,7 +199,7 @@ export function AdminPayouts() {
               <div>
                 <p className="text-[#0F0F0F]/60 mb-1">Pending Payouts</p>
                 <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.pending}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.pendingAmount)}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.pendingAmount, 'NGN')}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-yellow-500" />
@@ -216,7 +214,7 @@ export function AdminPayouts() {
               <div>
                 <p className="text-[#0F0F0F]/60 mb-1">Processing</p>
                 <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.processing}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.processingAmount)}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.processingAmount, 'NGN')}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-[#2969FF]" />
@@ -231,7 +229,7 @@ export function AdminPayouts() {
               <div>
                 <p className="text-[#0F0F0F]/60 mb-1">Completed</p>
                 <h3 className="text-2xl font-semibold text-green-600">{stats.completed}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.completedAmount)}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.completedAmount, 'NGN')}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-500" />
@@ -246,7 +244,7 @@ export function AdminPayouts() {
               <div>
                 <p className="text-[#0F0F0F]/60 mb-1">Failed</p>
                 <h3 className="text-2xl font-semibold text-red-600">{stats.failed}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.failedAmount)}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.failedAmount, 'NGN')}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
                 <AlertCircle className="w-5 h-5 text-red-500" />
@@ -316,13 +314,13 @@ export function AdminPayouts() {
                       <p className="text-[#0F0F0F]/80">{payout.events?.title || 'N/A'}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]">{formatCurrency(payout.amount)}</p>
+                      <p className="text-[#0F0F0F]">{formatCurrency(payout.amount, payout.currency)}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/60">{formatCurrency(payout.fee)}</p>
+                      <p className="text-[#0F0F0F]/60">{formatCurrency(payout.fee, payout.currency)}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#2969FF] font-medium">{formatCurrency(payout.net_amount)}</p>
+                      <p className="text-[#2969FF] font-medium">{formatCurrency(payout.net_amount, payout.currency)}</p>
                     </td>
                     <td className="py-4 px-4">
                       <p className="text-[#0F0F0F]/80 text-sm">
@@ -398,11 +396,11 @@ export function AdminPayouts() {
             {actionDialog !== 'details' && (
               <DialogDescription>
                 {actionDialog === 'approve' &&
-                  `Are you sure you want to approve this payout of ${formatCurrency(selectedPayout?.net_amount)} to ${selectedPayout?.organizers?.business_name}?`}
+                  `Are you sure you want to approve this payout of ${formatCurrency(selectedPayout?.net_amount, selectedPayout?.currency)} to ${selectedPayout?.organizers?.business_name}?`}
                 {actionDialog === 'reject' &&
                   `Are you sure you want to reject this payout request from ${selectedPayout?.organizers?.business_name}?`}
                 {actionDialog === 'complete' &&
-                  `Mark this payout of ${formatCurrency(selectedPayout?.net_amount)} as completed?`}
+                  `Mark this payout of ${formatCurrency(selectedPayout?.net_amount, selectedPayout?.currency)} as completed?`}
               </DialogDescription>
             )}
           </DialogHeader>
@@ -418,15 +416,15 @@ export function AdminPayouts() {
               </div>
               <div className="flex justify-between">
                 <span className="text-[#0F0F0F]/60">Gross Amount:</span>
-                <span className="text-[#0F0F0F]">{formatCurrency(selectedPayout.amount)}</span>
+                <span className="text-[#0F0F0F]">{formatCurrency(selectedPayout.amount, selectedPayout.currency)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#0F0F0F]/60">Platform Fee:</span>
-                <span className="text-[#0F0F0F]">{formatCurrency(selectedPayout.fee)}</span>
+                <span className="text-[#0F0F0F]">{formatCurrency(selectedPayout.fee, selectedPayout.currency)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#0F0F0F]/60">Net Payout:</span>
-                <span className="text-[#2969FF] font-medium">{formatCurrency(selectedPayout.net_amount)}</span>
+                <span className="text-[#2969FF] font-medium">{formatCurrency(selectedPayout.net_amount, selectedPayout.currency)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#0F0F0F]/60">Bank Account:</span>

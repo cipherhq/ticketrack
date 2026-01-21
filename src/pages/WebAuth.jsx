@@ -54,7 +54,11 @@ export function WebAuth() {
   useEffect(() => {
     if (location.state?.message) setSuccess(location.state.message)
     if (location.state?.error) setError(location.state.error)
-  }, [location.state])
+    // Pre-fill email if coming from signup with existing account
+    if (location.state?.email && isLogin) {
+      setFormData(prev => ({ ...prev, email: location.state.email }))
+    }
+  }, [location.state, isLogin])
 
   useEffect(() => {
     if (user) navigate(from, { replace: true, state: location.state })
@@ -234,14 +238,15 @@ export function WebAuth() {
     } catch (err) {
       console.error('Signup error:', err)
       // Provide more specific error messages
-      if (err.message?.includes('already registered') || err.message?.includes('already exists') || err.message?.includes('User already registered')) {
-        setError('An account with this email already exists. Please sign in instead.')
+      if (err.isEmailExists || err.message === 'EMAIL_ALREADY_REGISTERED' || err.message?.includes('already registered') || err.message?.includes('already exists') || err.message?.includes('User already registered')) {
+        // Set a special state to show the "email exists" message with sign-in link
+        setError('EMAIL_EXISTS')
       } else if (err.message?.includes('rate limit') || err.message?.includes('too many') || err.message?.includes('Too many')) {
         setError('Too many attempts. Please try again in a few minutes.')
       } else if (err.message?.includes('network') || err.message?.includes('fetch') || err.message?.includes('Network')) {
         setError('Network error. Please check your connection and try again.')
       } else if (err.message?.includes('Invalid') || err.message?.includes('invalid')) {
-      setError(err.message)
+        setError(err.message)
       } else if (err.message) {
         setError(err.message)
       } else {
@@ -780,7 +785,53 @@ export function WebAuth() {
               </div>
             )}
 
-            {error && (
+            {error && error === 'EMAIL_EXISTS' ? (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-800 mb-1">
+                      An account with this email already exists
+                    </p>
+                    <p className="text-sm text-blue-700 mb-3">
+                      It looks like you've already signed up. Please sign in to continue.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setError('')
+                        navigate('/login', { state: { email: formData.email } })
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm py-2 px-4"
+                    >
+                      Sign In Instead
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : error && error === 'Invalid email or password' && isLogin ? (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800 mb-1">
+                      Invalid email or password
+                    </p>
+                    <p className="text-sm text-amber-700 mb-3">
+                      Please check your credentials and try again.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/forgot-password', { state: { email: formData.email } })}
+                      className="text-sm text-[#2969FF] hover:underline font-medium flex items-center gap-1"
+                    >
+                      <Lock className="w-4 h-4" />
+                      Forgot your password?
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">{error}</span>

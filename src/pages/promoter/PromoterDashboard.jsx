@@ -176,7 +176,7 @@ export function PromoterDashboard() {
 
       {/* Tax Documents */}
       {promoter?.id && (
-        <TaxDocuments type="promoter" recipientId={promoter.id} countryCode="NG" />
+        <TaxDocuments type="promoter" recipientId={promoter.id} countryCode={promoter.country_code || 'NG'} />
       )}
     </div>
   );

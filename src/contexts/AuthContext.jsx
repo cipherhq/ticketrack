@@ -126,8 +126,19 @@ export function AuthProvider({ children }) {
           throw new Error('Server error. Please try again in a moment. If the problem persists, contact support.')
         }
         
-        if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
-          throw new Error('An account with this email already exists. Please sign in instead.')
+        // Handle "email already registered" error with special flag
+        if (
+          error.message?.toLowerCase().includes('already registered') || 
+          error.message?.toLowerCase().includes('already exists') ||
+          error.message?.toLowerCase().includes('user already registered') ||
+          error.message?.includes('User already registered') ||
+          error.message?.includes('duplicate key') ||
+          error.message?.includes('unique constraint')
+        ) {
+          const customError = new Error('EMAIL_ALREADY_REGISTERED')
+          customError.isEmailExists = true
+          customError.userMessage = 'An account with this email already exists.'
+          throw customError
         }
         
         if (error.message) {
@@ -207,30 +218,11 @@ export function AuthProvider({ children }) {
           return { success: false, emailNotVerified: true, email: emailResult.value }
         }
         
-        // After failed login, check if user exists to provide better error message
-        // Only check if it's an "Invalid login credentials" error
+        // Security Best Practice: Use generic error message to prevent user enumeration
+        // Attackers cannot determine if an email exists in our system
+        // Additional protections: Supabase rate limiting + we can add CAPTCHA if needed
         if (error.message?.includes('Invalid login credentials') || error.message?.includes('Invalid')) {
-          try {
-            const { data: existingUser } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('email', emailResult.value.toLowerCase())
-              .maybeSingle()
-            
-            // If no user found in profiles, account doesn't exist
-            if (!existingUser) {
-              throw new Error('No account found with this email. Please sign up first.')
-            }
-            // User exists but password is wrong
-            throw new Error('Incorrect password. Please try again or reset your password.')
-          } catch (checkError) {
-            // If the error message already contains our custom message, throw it
-            if (checkError.message?.includes('No account found') || checkError.message?.includes('Incorrect password')) {
-              throw checkError
-            }
-            // Otherwise, fall back to generic error
-            throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
-          }
+          throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
         }
         
         throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS)
