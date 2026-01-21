@@ -31,6 +31,7 @@ CREATE POLICY "Only authenticated users can update settings" ON platform_setting
   FOR ALL USING (auth.role() = 'authenticated');
 
 -- Insert default settings (use ON CONFLICT to avoid duplicates)
+-- NOTE: Currency is NOT a platform-wide setting - it's determined by organizer's country
 INSERT INTO platform_settings (key, value, category, description) VALUES
   -- RSVP Settings
   ('rsvp_max_tickets_per_email', '10', 'rsvp', 'Maximum tickets one email can RSVP for per event'),
@@ -47,10 +48,7 @@ INSERT INTO platform_settings (key, value, category, description) VALUES
   ('social_twitter', 'https://twitter.com/ticketrack', 'social', 'Twitter/X profile URL'),
   ('social_instagram', 'https://instagram.com/ticketrack', 'social', 'Instagram profile URL'),
   ('social_facebook', 'https://facebook.com/ticketrack', 'social', 'Facebook page URL'),
-  ('social_linkedin', 'https://linkedin.com/company/ticketrack', 'social', 'LinkedIn company URL'),
-  
-  -- Default Currency
-  ('default_currency', 'GBP', 'general', 'Default currency for new events')
+  ('social_linkedin', 'https://linkedin.com/company/ticketrack', 'social', 'LinkedIn company URL')
   
 ON CONFLICT (key) DO NOTHING;
 

@@ -111,9 +111,7 @@ function getDefaultSettings() {
     social_twitter: 'https://twitter.com/ticketrack',
     social_instagram: 'https://instagram.com/ticketrack',
     social_facebook: 'https://facebook.com/ticketrack',
-    social_linkedin: 'https://linkedin.com/company/ticketrack',
-    // Default currency
-    default_currency: 'GBP'
+    social_linkedin: 'https://linkedin.com/company/ticketrack'
   }
 }
 
@@ -142,11 +140,20 @@ export async function getSocialLinks() {
 }
 
 /**
- * Get default currency for the platform
+ * Get currency for a country code
+ * Multi-currency platform - currency is determined by country, not a global default
  */
-export async function getDefaultCurrency() {
-  const settings = await getPlatformSettings()
-  return settings.default_currency || 'GBP'
+export async function getCurrencyForCountry(countryCode) {
+  const currencyMap = {
+    'NG': 'NGN',  // Nigeria
+    'GH': 'GHS',  // Ghana
+    'US': 'USD',  // United States
+    'GB': 'GBP',  // United Kingdom
+    'CA': 'CAD',  // Canada
+    'KE': 'KES',  // Kenya
+    'ZA': 'ZAR',  // South Africa
+  }
+  return currencyMap[countryCode] || 'USD' // USD as neutral fallback
 }
 
 /**
