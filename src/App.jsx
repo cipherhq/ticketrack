@@ -23,6 +23,30 @@ import { SESSION_TIMEOUT_MS, SESSION_WARNING_MS } from './config/app';
 import { CookieConsent } from './components/CookieConsent';
 import { Loader2 } from 'lucide-react';
 
+// Retry wrapper for lazy imports - handles chunk loading failures after deployments
+// If chunk fails to load (e.g., after deployment with new hashes), reload the page
+function lazyWithRetry(importFn, moduleName) {
+  return lazy(() => 
+    importFn().catch((error) => {
+      // Check if it's a chunk loading error
+      const isChunkError = error.message?.includes('Failed to fetch dynamically imported module') ||
+                           error.message?.includes('Loading chunk') ||
+                           error.message?.includes('Loading CSS chunk');
+      
+      if (isChunkError) {
+        console.warn(`Chunk loading failed for ${moduleName}, reloading page...`);
+        // Only reload once to avoid infinite loops
+        const hasReloaded = sessionStorage.getItem('chunk_reload_' + moduleName);
+        if (!hasReloaded) {
+          sessionStorage.setItem('chunk_reload_' + moduleName, 'true');
+          window.location.reload();
+        }
+      }
+      throw error;
+    })
+  );
+}
+
 // Loading fallback component
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
@@ -42,43 +66,56 @@ import { WebPaymentSuccess } from './pages/WebPaymentSuccess';
 import { WebAuth } from './pages/WebAuth';
 import { AuthCallback } from './pages/AuthCallback';
 
-// Less critical pages - lazy loaded
-const WebEventBrowse = lazy(() => import('./pages/WebEventBrowse').then(m => ({ default: m.WebEventBrowse })));
-const WaitlistPurchase = lazy(() => import('./pages/WaitlistPurchase').then(m => ({ default: m.WaitlistPurchase })));
-const WebFreeRSVP = lazy(() => import('./pages/WebFreeRSVP').then(m => ({ default: m.WebFreeRSVP })));
-const WebTickets = lazy(() => import('./pages/WebTickets').then(m => ({ default: m.WebTickets })));
-const WebSearch = lazy(() => import('./pages/WebSearch').then(m => ({ default: m.WebSearch })));
-const WebCart = lazy(() => import('./pages/WebCart').then(m => ({ default: m.WebCart })));
-const WebAbout = lazy(() => import('./pages/WebAbout').then(m => ({ default: m.WebAbout })));
-const WebContact = lazy(() => import('./pages/WebContact').then(m => ({ default: m.WebContact })));
-const HelpCenter = lazy(() => import('./pages/HelpCenter').then(m => ({ default: m.HelpCenter })));
-const WebSupport = lazy(() => import('./pages/WebSupport').then(m => ({ default: m.WebSupport })));
-const WebPricing = lazy(() => import('./pages/WebPricing').then(m => ({ default: m.WebPricing })));
-const WebPrivacy = lazy(() => import('./pages/WebPrivacy').then(m => ({ default: m.WebPrivacy })));
-const WebCookies = lazy(() => import('./pages/WebCookies').then(m => ({ default: m.WebCookies })));
-const GroupBuyJoin = lazy(() => import('./pages/GroupBuyJoin').then(m => ({ default: m.GroupBuyJoin })));
-const MyGroups = lazy(() => import('./pages/MyGroups').then(m => ({ default: m.MyGroups })));
-const WebTerms = lazy(() => import('./pages/WebTerms').then(m => ({ default: m.WebTerms })));
-const WebTrustSafety = lazy(() => import('./pages/WebTrustSafety').then(m => ({ default: m.WebTrustSafety })));
-const WebRefundPolicy = lazy(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })));
-const WebCareers = lazy(() => import('./pages/WebCareers').then(m => ({ default: m.WebCareers })));
-const WebResources = lazy(() => import('./pages/WebResources').then(m => ({ default: m.WebResources })));
-const WebBlog = lazy(() => import('./pages/WebBlog').then(m => ({ default: m.WebBlog })));
-const WebBlogPost = lazy(() => import('./pages/WebBlogPost').then(m => ({ default: m.WebBlogPost })));
-const AttendeeProfile = lazy(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })));
-const OrganizerPublicProfile = lazy(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
-const AccountDeleted = lazy(() => import('./pages/AccountDeleted').then(m => ({ default: m.AccountDeleted })));
-const AcceptTeamInvitation = lazy(() => import('./pages/AcceptTeamInvitation').then(m => ({ default: m.AcceptTeamInvitation })));
-const TeamDashboard = lazy(() => import('./pages/TeamDashboard').then(m => ({ default: m.TeamDashboard })));
-const CreateEvent = lazy(() => import('./pages/organizer/CreateEvent').then(m => ({ default: m.CreateEvent })));
+// Less critical pages - lazy loaded with retry for chunk failures
+const WebEventBrowse = lazyWithRetry(() => import('./pages/WebEventBrowse').then(m => ({ default: m.WebEventBrowse })), 'WebEventBrowse');
+const WaitlistPurchase = lazyWithRetry(() => import('./pages/WaitlistPurchase').then(m => ({ default: m.WaitlistPurchase })), 'WaitlistPurchase');
+const WebFreeRSVP = lazyWithRetry(() => import('./pages/WebFreeRSVP').then(m => ({ default: m.WebFreeRSVP })), 'WebFreeRSVP');
+const WebTickets = lazyWithRetry(() => import('./pages/WebTickets').then(m => ({ default: m.WebTickets })), 'WebTickets');
+const WebSearch = lazyWithRetry(() => import('./pages/WebSearch').then(m => ({ default: m.WebSearch })), 'WebSearch');
+const WebCart = lazyWithRetry(() => import('./pages/WebCart').then(m => ({ default: m.WebCart })), 'WebCart');
+const WebAbout = lazyWithRetry(() => import('./pages/WebAbout').then(m => ({ default: m.WebAbout })), 'WebAbout');
+const WebContact = lazyWithRetry(() => import('./pages/WebContact').then(m => ({ default: m.WebContact })), 'WebContact');
+const HelpCenter = lazyWithRetry(() => import('./pages/HelpCenter').then(m => ({ default: m.HelpCenter })), 'HelpCenter');
+const WebSupport = lazyWithRetry(() => import('./pages/WebSupport').then(m => ({ default: m.WebSupport })), 'WebSupport');
+const WebPricing = lazyWithRetry(() => import('./pages/WebPricing').then(m => ({ default: m.WebPricing })), 'WebPricing');
+const WebPrivacy = lazyWithRetry(() => import('./pages/WebPrivacy').then(m => ({ default: m.WebPrivacy })), 'WebPrivacy');
+const WebCookies = lazyWithRetry(() => import('./pages/WebCookies').then(m => ({ default: m.WebCookies })), 'WebCookies');
+const GroupBuyJoin = lazyWithRetry(() => import('./pages/GroupBuyJoin').then(m => ({ default: m.GroupBuyJoin })), 'GroupBuyJoin');
+const MyGroups = lazyWithRetry(() => import('./pages/MyGroups').then(m => ({ default: m.MyGroups })), 'MyGroups');
+const WebTerms = lazyWithRetry(() => import('./pages/WebTerms').then(m => ({ default: m.WebTerms })), 'WebTerms');
+const WebTrustSafety = lazyWithRetry(() => import('./pages/WebTrustSafety').then(m => ({ default: m.WebTrustSafety })), 'WebTrustSafety');
+const WebRefundPolicy = lazyWithRetry(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })), 'WebRefundPolicy');
+const WebCareers = lazyWithRetry(() => import('./pages/WebCareers').then(m => ({ default: m.WebCareers })), 'WebCareers');
+const WebResources = lazyWithRetry(() => import('./pages/WebResources').then(m => ({ default: m.WebResources })), 'WebResources');
+const WebBlog = lazyWithRetry(() => import('./pages/WebBlog').then(m => ({ default: m.WebBlog })), 'WebBlog');
+const WebBlogPost = lazyWithRetry(() => import('./pages/WebBlogPost').then(m => ({ default: m.WebBlogPost })), 'WebBlogPost');
+const AttendeeProfile = lazyWithRetry(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })), 'AttendeeProfile');
+const OrganizerPublicProfile = lazyWithRetry(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })), 'OrganizerPublicProfile');
+const ForgotPassword = lazyWithRetry(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })), 'ForgotPassword');
+const AccountDeleted = lazyWithRetry(() => import('./pages/AccountDeleted').then(m => ({ default: m.AccountDeleted })), 'AccountDeleted');
+const AcceptTeamInvitation = lazyWithRetry(() => import('./pages/AcceptTeamInvitation').then(m => ({ default: m.AcceptTeamInvitation })), 'AcceptTeamInvitation');
+const TeamDashboard = lazyWithRetry(() => import('./pages/TeamDashboard').then(m => ({ default: m.TeamDashboard })), 'TeamDashboard');
+const CreateEvent = lazyWithRetry(() => import('./pages/organizer/CreateEvent').then(m => ({ default: m.CreateEvent })), 'CreateEvent');
 import { OrganizerProvider } from './contexts/OrganizerContext';
 
-// Heavy routes - lazy loaded (admin, organizer, promoter, finance)
-const OrganizerRoutes = lazy(() => import('./routes/OrganizerRoutes').then(m => ({ default: m.OrganizerRoutes })));
-const AdminRoutes = lazy(() => import('./routes/AdminRoutes').then(m => ({ default: m.AdminRoutes })));
-const PromoterRoutes = lazy(() => import('./routes/PromoterRoutes').then(m => ({ default: m.PromoterRoutes })));
-const FinanceApp = lazy(() => import('./routes/FinanceRoutes').then(m => ({ default: m.FinanceApp })));
+// Heavy routes - lazy loaded with retry (admin, organizer, promoter, finance)
+// These use lazyWithRetry to auto-reload page if chunk fails after deployment
+const OrganizerRoutes = lazyWithRetry(
+  () => import('./routes/OrganizerRoutes').then(m => ({ default: m.OrganizerRoutes })),
+  'OrganizerRoutes'
+);
+const AdminRoutes = lazyWithRetry(
+  () => import('./routes/AdminRoutes').then(m => ({ default: m.AdminRoutes })),
+  'AdminRoutes'
+);
+const PromoterRoutes = lazyWithRetry(
+  () => import('./routes/PromoterRoutes').then(m => ({ default: m.PromoterRoutes })),
+  'PromoterRoutes'
+);
+const FinanceApp = lazyWithRetry(
+  () => import('./routes/FinanceRoutes').then(m => ({ default: m.FinanceApp })),
+  'FinanceApp'
+);
 
 function App() {
   return (
