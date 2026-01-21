@@ -24,6 +24,7 @@ export function OrganizerPublicProfile() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [followLoading, setFollowLoading] = useState(false)
+  const [isOwnProfile, setIsOwnProfile] = useState(false)
 
   useEffect(() => {
     checkCurrentUser()
@@ -37,6 +38,16 @@ export function OrganizerPublicProfile() {
     setCurrentUser(user)
     if (user && id) {
       checkIfFollowing(user.id)
+      
+      // Check if this is the user's own organizer profile
+      const { data: ownOrganizer } = await supabase
+        .from('organizers')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('id', id)
+        .maybeSingle()
+      
+      setIsOwnProfile(!!ownOrganizer)
     }
   }
 
@@ -161,6 +172,19 @@ export function OrganizerPublicProfile() {
   const handleFollow = async () => {
     if (!currentUser) {
       navigate('/auth?redirect=' + encodeURIComponent(window.location.pathname))
+      return
+    }
+    
+    // Check if user is trying to follow their own organizer profile
+    const { data: ownOrganizer } = await supabase
+      .from('organizers')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .eq('id', id)
+      .maybeSingle()
+    
+    if (ownOrganizer) {
+      alert("You cannot follow your own organizer profile")
       return
     }
     
@@ -324,9 +348,14 @@ export function OrganizerPublicProfile() {
 
                     <div className="flex items-center gap-3">
                       <Button variant="outline" size="icon" className="rounded-xl border-[#0F0F0F]/10" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
-                      <Button onClick={handleFollow} disabled={followLoading} className={`rounded-xl ${isFollowing ? 'bg-[#0F0F0F]/10 text-[#0F0F0F] hover:bg-[#0F0F0F]/20' : 'bg-[#2969FF] hover:bg-[#2969FF]/90 text-white'}`}>
-                        {followLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isFollowing ? 'Following' : 'Follow'}
-                      </Button>
+                      {!isOwnProfile && (
+                        <Button onClick={handleFollow} disabled={followLoading} className={`rounded-xl ${isFollowing ? 'bg-[#0F0F0F]/10 text-[#0F0F0F] hover:bg-[#0F0F0F]/20' : 'bg-[#2969FF] hover:bg-[#2969FF]/90 text-white'}`}>
+                          {followLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isFollowing ? 'Following' : 'Follow'}
+                        </Button>
+                      )}
+                      {isOwnProfile && (
+                        <Badge className="bg-[#2969FF]/10 text-[#2969FF] border-0">Your Profile</Badge>
+                      )}
                     </div>
                   </div>
 
