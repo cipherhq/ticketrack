@@ -540,6 +540,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           errors.push("Recurring end date cannot be before start date");
         }
       }
+      
+      // Validate gate opening time is before start time
+      if (formData.gateOpeningTime && formData.startTime) {
+        if (formData.gateOpeningTime >= formData.startTime) {
+          errors.push("Gate opening time must be before event start time");
+        }
+      }
     }
     
     if (activeTab === "venue") {
