@@ -801,7 +801,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     setFormData(prev => ({
       ...prev,
       venueAddress: place.address,
-      venueName: place.name || prev.venueName,
+      // Don't overwrite venue name with address - keep it separate
+      // venueName should be manually entered by the organizer
       googleMapLink: place.googleMapLink || '',
       city: place.city || prev.city,
       country: place.country || prev.country,

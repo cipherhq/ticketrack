@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { MapPin, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { MapPin, Loader2, ChevronDown } from 'lucide-react';
 import { Input } from './input';
+
+// UK postcode regex pattern
+const UK_POSTCODE_REGEX = /^([A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2})$/i;
 
 export function AddressAutocomplete({ 
   value, 
@@ -11,8 +14,12 @@ export function AddressAutocomplete({
 }) {
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
+  const placesServiceRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [postcodeAddresses, setPostcodeAddresses] = useState([]);
+  const [showPostcodeDropdown, setShowPostcodeDropdown] = useState(false);
+  const [searchingPostcode, setSearchingPostcode] = useState(false);
 
   useEffect(() => {
     // Check if Google Maps is already loaded
@@ -45,117 +52,192 @@ export function AddressAutocomplete({
     };
   }, []);
 
+  // Search for addresses in a UK postcode
+  const searchPostcodeAddresses = useCallback((postcode) => {
+    if (!isLoaded || !window.google) return;
+
+    setSearchingPostcode(true);
+    setPostcodeAddresses([]);
+
+    // Create a PlacesService if not exists
+    if (!placesServiceRef.current) {
+      const mapDiv = document.createElement('div');
+      const map = new window.google.maps.Map(mapDiv);
+      placesServiceRef.current = new window.google.maps.places.PlacesService(map);
+    }
+
+    // Search for addresses in the postcode
+    const request = {
+      query: postcode + ', UK',
+      type: 'address',
+    };
+
+    placesServiceRef.current.textSearch(request, (results, status) => {
+      setSearchingPostcode(false);
+      
+      if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+        // Filter and format results
+        const addresses = results.slice(0, 10).map(place => ({
+          placeId: place.place_id,
+          name: place.name,
+          address: place.formatted_address,
+          lat: place.geometry?.location?.lat(),
+          lng: place.geometry?.location?.lng(),
+        }));
+        
+        setPostcodeAddresses(addresses);
+        setShowPostcodeDropdown(true);
+      }
+    });
+  }, [isLoaded]);
+
+  // Check if input is a UK postcode and search
+  const handleInputChange = (e) => {
+    const newValue = e.target.value;
+    onChange(newValue);
+
+    // Check if it's a complete UK postcode
+    if (UK_POSTCODE_REGEX.test(newValue.trim())) {
+      searchPostcodeAddresses(newValue.trim());
+    } else {
+      setShowPostcodeDropdown(false);
+      setPostcodeAddresses([]);
+    }
+  };
+
+  // Handle selecting an address from postcode dropdown
+  const handlePostcodeAddressSelect = (address) => {
+    setShowPostcodeDropdown(false);
+    
+    // Get full place details
+    if (!placesServiceRef.current) return;
+
+    placesServiceRef.current.getDetails(
+      { placeId: address.placeId, fields: ['formatted_address', 'geometry', 'name', 'place_id', 'address_components'] },
+      (place, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+          processPlaceResult(place);
+        } else {
+          // Fallback to basic address
+          onChange(address.address);
+          onPlaceSelect?.({
+            address: address.address,
+            name: address.name,
+            placeId: address.placeId,
+            lat: address.lat,
+            lng: address.lng,
+          });
+        }
+      }
+    );
+  };
+
+  // Process place result (shared between autocomplete and postcode search)
+  const processPlaceResult = (place) => {
+    if (!place || !place.formatted_address) return;
+
+    const placeData = {
+      address: place.formatted_address,
+      name: place.name || '',
+      placeId: place.place_id,
+      lat: place.geometry?.location?.lat(),
+      lng: place.geometry?.location?.lng(),
+      city: '',
+      country: '',
+      streetNumber: '',
+      streetName: '',
+      postalCode: '',
+      subpremise: '',
+    };
+
+    // Extract detailed address components
+    if (place.address_components) {
+      place.address_components.forEach(component => {
+        if (component.types.includes('subpremise')) {
+          placeData.subpremise = component.long_name;
+        }
+        if (component.types.includes('street_number')) {
+          placeData.streetNumber = component.long_name;
+        }
+        if (component.types.includes('route')) {
+          placeData.streetName = component.long_name;
+        }
+        if (component.types.includes('postal_code')) {
+          placeData.postalCode = component.long_name;
+        }
+        if (component.types.includes('locality') || component.types.includes('postal_town')) {
+          placeData.city = component.long_name;
+        }
+        if (component.types.includes('administrative_area_level_1') && !placeData.city) {
+          placeData.city = component.long_name;
+        }
+        if (component.types.includes('country')) {
+          placeData.country = component.long_name;
+          placeData.countryCode = component.short_name;
+        }
+      });
+    }
+
+    // For UK addresses, build a complete address
+    let displayAddress = place.formatted_address;
+    
+    if (placeData.countryCode === 'GB') {
+      const addressParts = [];
+      
+      if (placeData.subpremise) {
+        addressParts.push(placeData.subpremise);
+      }
+      
+      if (placeData.streetNumber && placeData.streetName) {
+        addressParts.push(`${placeData.streetNumber} ${placeData.streetName}`);
+      } else if (placeData.streetName) {
+        addressParts.push(placeData.streetName);
+      }
+      
+      if (placeData.city) {
+        addressParts.push(placeData.city);
+      }
+      
+      if (placeData.postalCode) {
+        addressParts.push(placeData.postalCode);
+      }
+      
+      if (addressParts.length >= 2) {
+        displayAddress = addressParts.join(', ');
+      }
+      
+      placeData.fullUKAddress = {
+        flatNumber: placeData.subpremise || '',
+        houseNumber: placeData.streetNumber || '',
+        street: placeData.streetName || '',
+        city: placeData.city || '',
+        postcode: placeData.postalCode || '',
+      };
+    }
+
+    if (placeData.lat && placeData.lng) {
+      placeData.googleMapLink = `https://www.google.com/maps/search/?api=1&query=${placeData.lat},${placeData.lng}&query_place_id=${placeData.placeId}`;
+    }
+
+    placeData.address = displayAddress;
+    onChange(displayAddress);
+    onPlaceSelect?.(placeData);
+  };
+
   useEffect(() => {
     if (!isLoaded || !inputRef.current) return;
 
     // Initialize autocomplete
-    // Restrict to US, UK, Canada, Nigeria, and Ghana
     autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-      types: ['establishment', 'geocode'],
-      componentRestrictions: { country: ['us', 'gb', 'ca', 'ng', 'gh'] }, // US, UK, Canada, Nigeria, Ghana
+      types: ['establishment', 'geocode', 'address'],
+      componentRestrictions: { country: ['us', 'gb', 'ca', 'ng', 'gh'] },
       fields: ['formatted_address', 'geometry', 'name', 'place_id', 'address_components'],
     });
 
-    // Listen for place selection
     autocompleteRef.current.addListener('place_changed', () => {
       const place = autocompleteRef.current.getPlace();
-      
-      if (place && place.formatted_address) {
-        const placeData = {
-          address: place.formatted_address,
-          name: place.name || '',
-          placeId: place.place_id,
-          lat: place.geometry?.location?.lat(),
-          lng: place.geometry?.location?.lng(),
-          city: '',
-          country: '',
-          streetNumber: '',
-          streetName: '',
-          postalCode: '',
-          subpremise: '', // For flat/unit numbers
-        };
-
-        // Extract detailed address components (important for UK addresses)
-        if (place.address_components) {
-          place.address_components.forEach(component => {
-            if (component.types.includes('subpremise')) {
-              placeData.subpremise = component.long_name; // Flat/Unit number
-            }
-            if (component.types.includes('street_number')) {
-              placeData.streetNumber = component.long_name;
-            }
-            if (component.types.includes('route')) {
-              placeData.streetName = component.long_name;
-            }
-            if (component.types.includes('postal_code')) {
-              placeData.postalCode = component.long_name;
-            }
-            if (component.types.includes('locality') || component.types.includes('postal_town')) {
-              placeData.city = component.long_name;
-            }
-            if (component.types.includes('administrative_area_level_1') && !placeData.city) {
-              placeData.city = component.long_name;
-            }
-            if (component.types.includes('country')) {
-              placeData.country = component.long_name;
-              placeData.countryCode = component.short_name;
-            }
-          });
-        }
-
-        // For UK addresses, build a complete address with house number and flat/apt
-        let displayAddress = place.formatted_address;
-        
-        // UK address format: Flat X, House Number, Street Name, City, Postcode
-        if (placeData.countryCode === 'GB') {
-          const addressParts = [];
-          
-          // Add flat/apartment number first if exists
-          if (placeData.subpremise) {
-            addressParts.push(placeData.subpremise);
-          }
-          
-          // Add house number and street
-          if (placeData.streetNumber && placeData.streetName) {
-            addressParts.push(`${placeData.streetNumber} ${placeData.streetName}`);
-          } else if (placeData.streetName) {
-            addressParts.push(placeData.streetName);
-          }
-          
-          // Add city
-          if (placeData.city) {
-            addressParts.push(placeData.city);
-          }
-          
-          // Add postcode
-          if (placeData.postalCode) {
-            addressParts.push(placeData.postalCode);
-          }
-          
-          // Use our built address if we have street details, otherwise use Google's
-          if (addressParts.length >= 2) {
-            displayAddress = addressParts.join(', ');
-          }
-          
-          // Store the full structured address
-          placeData.fullUKAddress = {
-            flatNumber: placeData.subpremise || '',
-            houseNumber: placeData.streetNumber || '',
-            street: placeData.streetName || '',
-            city: placeData.city || '',
-            postcode: placeData.postalCode || '',
-          };
-        }
-
-        // Generate Google Maps link
-        if (placeData.lat && placeData.lng) {
-          placeData.googleMapLink = `https://www.google.com/maps/search/?api=1&query=${placeData.lat},${placeData.lng}&query_place_id=${placeData.placeId}`;
-        }
-
-        placeData.address = displayAddress;
-        onChange(displayAddress);
-        onPlaceSelect?.(placeData);
-      }
+      setShowPostcodeDropdown(false);
+      processPlaceResult(place);
     });
 
     return () => {
@@ -164,6 +246,17 @@ export function AddressAutocomplete({
       }
     };
   }, [isLoaded, onChange, onPlaceSelect]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (inputRef.current && !inputRef.current.contains(e.target)) {
+        setShowPostcodeDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (isLoading) {
     return (
@@ -179,7 +272,6 @@ export function AddressAutocomplete({
   }
 
   if (!isLoaded) {
-    // Fallback to regular input if Google Maps fails to load
     return (
       <div className={`relative ${className}`}>
         <Input
@@ -199,11 +291,39 @@ export function AddressAutocomplete({
         ref={inputRef}
         type="text"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={handleInputChange}
         placeholder={placeholder}
         className="w-full h-12 rounded-xl bg-[#F4F6FA] border-0 pl-10 pr-4 text-[#0F0F0F] placeholder:text-[#0F0F0F]/40 focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
       />
       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+      
+      {/* UK Postcode Address Dropdown */}
+      {showPostcodeDropdown && postcodeAddresses.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-[#0F0F0F]/10 z-50 max-h-64 overflow-y-auto">
+          <div className="p-2 text-xs text-[#0F0F0F]/60 border-b border-[#0F0F0F]/10 bg-[#F4F6FA]">
+            Select address from postcode:
+          </div>
+          {postcodeAddresses.map((addr, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handlePostcodeAddressSelect(addr)}
+              className="w-full text-left px-4 py-3 hover:bg-[#F4F6FA] border-b border-[#0F0F0F]/5 last:border-0 transition-colors"
+            >
+              <div className="font-medium text-[#0F0F0F] text-sm">{addr.name}</div>
+              <div className="text-xs text-[#0F0F0F]/60 truncate">{addr.address}</div>
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {/* Loading indicator for postcode search */}
+      {searchingPostcode && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-[#0F0F0F]/10 z-50 p-4 flex items-center justify-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-[#2969FF]" />
+          <span className="text-sm text-[#0F0F0F]/60">Finding addresses...</span>
+        </div>
+      )}
     </div>
   );
 }
