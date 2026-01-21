@@ -11,67 +11,67 @@ import { useAuth } from '../contexts/AuthContext';
 import { NotificationBadge, useOrganizerNotifications, OrganizerNotificationDropdown } from '@/components/NotificationBadge';
 import { Logo } from '@/components/Logo';
 
-// Grouped menu items for better organization
+// Grouped menu items for better organization with helpful descriptions
 const menuGroups = [
   {
     id: 'main',
     label: 'Main',
     items: [
-      { title: 'Dashboard', icon: LayoutDashboard, path: '/organizer' },
-      { title: 'Events', icon: Calendar, path: '/organizer/events' },
-      { title: 'Venues', icon: Building, path: '/organizer/venues' },
-      { title: 'Event Place', icon: Home, path: '/organizer/event-place' },
+      { title: 'Dashboard', icon: LayoutDashboard, path: '/organizer', tip: 'Overview of your events, sales, and key metrics' },
+      { title: 'Events', icon: Calendar, path: '/organizer/events', tip: 'Create, edit, and manage all your events' },
+      { title: 'Venues', icon: Building, path: '/organizer/venues', tip: 'Design interactive seating layouts for your venues' },
+      { title: 'Event Place', icon: Home, path: '/organizer/event-place', tip: 'Visual floor plan designer for event layouts' },
     ]
   },
   {
     id: 'sales',
     label: 'Sales & Attendees',
     items: [
-      { title: 'Orders', icon: Receipt, path: '/organizer/orders', notificationKey: 'orders' },
-      { title: 'Attendees', icon: Users, path: '/organizer/attendees' },
-      { title: 'Check-In', icon: QrCode, path: '/organizer/check-in' },
-      { title: 'Transfers', icon: ArrowRightLeft, path: '/organizer/transfers', notificationKey: 'transfers' },
+      { title: 'Orders', icon: Receipt, path: '/organizer/orders', notificationKey: 'orders', tip: 'View all ticket orders and payment details' },
+      { title: 'Attendees', icon: Users, path: '/organizer/attendees', tip: 'Manage attendee list and resend tickets' },
+      { title: 'Check-In', icon: QrCode, path: '/organizer/check-in', tip: 'Scan tickets and check in attendees at your event' },
+      { title: 'Transfers', icon: ArrowRightLeft, path: '/organizer/transfers', notificationKey: 'transfers', tip: 'Review and approve ticket transfers between attendees' },
     ]
   },
   {
     id: 'finance',
     label: 'Finance',
     items: [
-      { title: 'Analytics', icon: BarChart3, path: '/organizer/analytics' },
-      { title: 'Payouts', icon: DollarSign, path: '/organizer/payouts' },
-      { title: 'Refunds', icon: RotateCcw, path: '/organizer/refunds', notificationKey: 'refunds' },
+      { title: 'Analytics', icon: BarChart3, path: '/organizer/analytics', tip: 'Sales reports, revenue charts, and performance insights' },
+      { title: 'Payouts', icon: DollarSign, path: '/organizer/payouts', tip: 'Track your earnings and withdrawal history' },
+      { title: 'Refunds', icon: RotateCcw, path: '/organizer/refunds', notificationKey: 'refunds', tip: 'Process and manage refund requests from attendees' },
     ]
   },
   {
     id: 'marketing',
     label: 'Marketing',
     items: [
-      { title: 'Promo Codes', icon: Tag, path: '/organizer/promo-codes' },
-      { title: 'Promoters', icon: Users, path: '/organizer/promoters' },
-      { title: 'Communications', icon: Tag, path: '/organizer/communications' },
-      { title: 'Send SMS', icon: Tag, path: '/organizer/sms' },
-      { title: 'SMS Credits', icon: Tag, path: '/organizer/sms-credits' },
-      { title: 'Followers', icon: UserPlus, path: '/organizer/followers', notificationKey: 'followers' },
+      { title: 'Promo Codes', icon: Tag, path: '/organizer/promo-codes', tip: 'Create discount codes to boost ticket sales' },
+      { title: 'Promoters', icon: Users, path: '/organizer/promoters', tip: 'Invite promoters to sell tickets and earn commission' },
+      { title: 'Communications', icon: Tag, path: '/organizer/communications', tip: 'Send email campaigns to attendees and followers' },
+      { title: 'Send SMS', icon: Tag, path: '/organizer/sms', tip: 'Send text message updates to attendees' },
+      { title: 'SMS Credits', icon: Tag, path: '/organizer/sms-credits', tip: 'Purchase SMS credits for messaging' },
+      { title: 'Followers', icon: UserPlus, path: '/organizer/followers', notificationKey: 'followers', tip: 'See who follows your organizer profile' },
     ]
   },
   {
     id: 'team',
     label: 'Team & Support',
     items: [
-      { title: 'Team', icon: UsersRound, path: '/organizer/team' },
-      { title: 'Projects', icon: ClipboardList, path: '/organizer/projects', notificationKey: 'projects' },
-      { title: 'Support', icon: HelpCircle, path: '/organizer/support', notificationKey: 'support' },
+      { title: 'Team', icon: UsersRound, path: '/organizer/team', tip: 'Add team members with specific permissions' },
+      { title: 'Projects', icon: ClipboardList, path: '/organizer/projects', notificationKey: 'projects', tip: 'Organize tasks and track event preparation' },
+      { title: 'Support', icon: HelpCircle, path: '/organizer/support', notificationKey: 'support', tip: 'Get help from our support team' },
     ]
   },
   {
     id: 'settings',
     label: 'Settings',
     items: [
-      { title: 'Profile', icon: Settings, path: '/organizer/profile' },
-      { title: 'Bank Account', icon: DollarSign, path: '/organizer/bank-account' },
-      { title: 'KYC Verification', icon: Settings, path: '/organizer/kyc' },
-      { title: 'Stripe Connect', icon: Settings, path: '/organizer/stripe-connect' },
-      { title: 'Tax Documents', icon: Settings, path: '/organizer/tax-documents' },
+      { title: 'Profile', icon: Settings, path: '/organizer/profile', tip: 'Update your organizer name, logo, and bio' },
+      { title: 'Bank Account', icon: DollarSign, path: '/organizer/bank-account', tip: 'Add bank details to receive payouts' },
+      { title: 'KYC Verification', icon: Settings, path: '/organizer/kyc', tip: 'Verify your identity to unlock payouts' },
+      { title: 'Stripe Connect', icon: Settings, path: '/organizer/stripe-connect', tip: 'Connect Stripe for international payments' },
+      { title: 'Tax Documents', icon: Settings, path: '/organizer/tax-documents', tip: 'Download tax statements and receipts' },
     ]
   },
 ];
@@ -117,7 +117,8 @@ export function OrganizerLayout({ children }) {
       key={item.path}
       to={item.path}
       onClick={() => handleNavClick(item)}
-      className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
+      title={item.tip} // Native tooltip on hover
+      className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
         isActive(item.path)
           ? 'bg-[#2969FF] text-white'
           : 'text-[#0F0F0F]/70 hover:bg-[#F4F6FA]'

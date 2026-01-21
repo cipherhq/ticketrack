@@ -184,10 +184,10 @@ const EventCard = ({ event, showDistance = false }) => {
           <Calendar size={14} />
           <span>{formatDate(event.start_date)}</span>
         </div>
-        <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
-          <MapPin size={14} />
-          <span className="line-clamp-1">
-            {event.is_virtual ? 'Virtual Event' : (event.venue_name || event.city || 'Location TBA')}
+        <div className="flex items-start gap-1 text-gray-500 text-sm mb-3">
+          <MapPin size={14} className="mt-0.5 flex-shrink-0" />
+          <span className="line-clamp-2">
+            {event.is_virtual ? 'Virtual Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}
           </span>
         </div>
         <div className="mt-auto flex items-center justify-between">
@@ -263,10 +263,10 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
                 <Calendar size={14} />
                 <span>{new Date(event.start_date).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               </div>
-              <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
-                <MapPin size={14} />
-                <span className="line-clamp-1">
-                  {event.is_virtual ? 'Virtual Event' : (event.venue_name || event.city || 'Location TBA')}
+              <div className="flex items-start gap-1 text-gray-500 text-sm mb-3">
+                <MapPin size={14} className="mt-0.5 flex-shrink-0" />
+                <span className="line-clamp-2">
+                  {event.is_virtual ? 'Virtual Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}
                 </span>
               </div>
               <div className="mt-auto flex items-center justify-between">

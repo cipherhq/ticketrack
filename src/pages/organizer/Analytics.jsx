@@ -11,11 +11,12 @@ import {
 } from '../../components/ui/select';
 import { 
   TrendingUp, TrendingDown, Users, DollarSign, Percent, BarChart3, 
-  Loader2, Calendar, Ticket, Eye, Download, RefreshCw
+  Loader2, Calendar, Ticket, Eye, Download, RefreshCw, HelpCircle
 } from 'lucide-react';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, getUserDefaultCurrency } from '@/config/currencies';
+import { HelpTip } from '@/components/HelpTip';
 
 export function Analytics() {
   const { organizer } = useOrganizer();
@@ -405,7 +406,10 @@ export function Analytics() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Analytics</h2>
+          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+            Analytics
+            <HelpTip>See your sales trends, revenue breakdown, and top-performing events. Use these insights to optimize your pricing and marketing strategies.</HelpTip>
+          </h2>
           <p className="text-[#0F0F0F]/60 mt-1">Track your event performance and revenue</p>
         </div>
         <div className="flex items-center gap-3">

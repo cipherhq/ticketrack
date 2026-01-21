@@ -639,8 +639,7 @@ export function WebEventBrowse() {
                         <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <span className="line-clamp-2">
-                            {event.venue_name || event.city || 'Location TBA'}
-                            {event.venue_name && event.city && ` • ${event.city}`}
+                            {event.is_virtual ? 'Virtual Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}
                           </span>
                           {event.distance && event.distance !== Infinity && (
                             <span className="text-[#2969FF] font-medium block mt-0.5">

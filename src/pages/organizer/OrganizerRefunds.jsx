@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Loader2, RotateCcw, CheckCircle, XCircle, AlertCircle, Search, Filter, Eye, MessageSquare, CreditCard, Zap } from 'lucide-react';
+import { Loader2, RotateCcw, CheckCircle, XCircle, AlertCircle, Search, Filter, Eye, MessageSquare, CreditCard, Zap, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HelpTip } from '@/components/HelpTip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -291,7 +292,10 @@ export function OrganizerRefunds() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F0F0F]">Refund Requests</h1>
+          <h1 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+            Refund Requests
+            <HelpTip>Attendees can request refunds for tickets. Review each request and approve or reject. Approved refunds are processed automatically.</HelpTip>
+          </h1>
           <p className="text-[#0F0F0F]/60 mt-1">Review and manage refund requests from attendees</p>
         </div>
         <Button variant="outline" onClick={loadRefunds} className="rounded-xl">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone } from 'lucide-react'
+import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 import {
@@ -238,6 +238,13 @@ export function WebLayout() {
                       My Tickets
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      onClick={() => navigate('/my-groups')}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      My Groups
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       onClick={() => navigate('/profile', { state: { tab: 'saved' } })}
                       className="cursor-pointer rounded-lg"
                     >
@@ -316,6 +323,16 @@ export function WebLayout() {
                 className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
               >
                 My Tickets
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/my-groups')
+                  setMobileMenuOpen(false)
+                }}
+                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg flex items-center gap-2"
+              >
+                <Users className="w-4 h-4" />
+                My Groups
               </button>
               <button
                 onClick={() => {

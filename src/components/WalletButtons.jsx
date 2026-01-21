@@ -29,7 +29,7 @@ const GoogleWalletIcon = ({ className }) => (
   </svg>
 )
 
-export function WalletButtons({ ticket, event, size = 'default', className = '' }) {
+export function WalletButtons({ ticket, event, size = 'default', className = '', singleButton = false }) {
   const [loading, setLoading] = useState(null) // 'apple' | 'google' | 'calendar'
   const [success, setSuccess] = useState(null)
   const [error, setError] = useState(null)
@@ -80,6 +80,67 @@ export function WalletButtons({ ticket, event, size = 'default', className = '' 
   const showApple = isIOS()
   const showGoogle = isAndroid()
   const showBoth = !showApple && !showGoogle // Desktop shows both
+
+  // Single button mode - shows one wallet button based on device
+  if (singleButton) {
+    const platform = showApple ? 'apple' : showGoogle ? 'google' : 'apple' // Default to Apple on desktop
+    const platformName = showApple ? 'Apple' : showGoogle ? 'Google' : 'Apple'
+    const Icon = showApple || (!showApple && !showGoogle) ? AppleWalletIcon : GoogleWalletIcon
+    const isApple = platform === 'apple'
+
+    return (
+      <div className={`flex flex-wrap gap-2 ${className}`}>
+        <Button
+          variant="outline"
+          size={size}
+          onClick={() => handleAddToWallet(platform)}
+          disabled={loading !== null}
+          className={`${buttonClass} ${isApple ? 'bg-black text-white border-black hover:bg-gray-800 hover:text-white' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'}`}
+        >
+          {loading === platform ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : success === platform ? (
+            <Check className="w-4 h-4 mr-2 text-green-400" />
+          ) : (
+            <Icon className="w-4 h-4 mr-2" />
+          )}
+          {isSmall ? 'Wallet' : `Add to ${platformName} Wallet`}
+        </Button>
+        
+        <Button
+          variant="outline"
+          size={size}
+          onClick={() => handleAddToWallet('calendar')}
+          disabled={loading !== null}
+          className={buttonClass}
+        >
+          {loading === 'calendar' ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : success === 'calendar' ? (
+            <Check className="w-4 h-4 mr-2 text-green-500" />
+          ) : (
+            <Calendar className="w-4 h-4 mr-2" />
+          )}
+          {isSmall ? 'Calendar' : 'Add to Calendar'}
+        </Button>
+
+        {error && (
+          <div className={`w-full flex items-center gap-2 text-sm mt-1 ${
+            error.includes('coming soon') ? 'text-amber-600' : 'text-red-600'
+          }`}>
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span className="text-xs">{error}</span>
+          </div>
+        )}
+        {success && (
+          <div className="w-full flex items-center gap-2 text-xs text-green-600 mt-1">
+            <Check className="w-3 h-3" />
+            {success === 'calendar' ? 'Added to calendar!' : `Added to ${platformName} Wallet!`}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>

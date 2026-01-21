@@ -5,6 +5,16 @@ import { supabase } from '@/lib/supabase';
  * Handles group purchase sessions where friends buy tickets together
  */
 
+// Generate a random 6-character group code
+function generateGroupCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude confusing chars like O, 0, I, 1
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 // Create a new group session
 export async function createGroupSession(eventId, groupName = null, durationMinutes = 60) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -12,22 +22,96 @@ export async function createGroupSession(eventId, groupName = null, durationMinu
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('full_name, email')
     .eq('id', user.id)
     .single();
 
-  const { data, error } = await supabase.rpc('create_group_session', {
-    p_event_id: eventId,
-    p_host_user_id: user.id,
-    p_host_name: profile?.full_name || user.email?.split('@')[0] || 'Host',
-    p_group_name: groupName,
-    p_duration_minutes: durationMinutes
-  });
+  const hostName = profile?.full_name || user.email?.split('@')[0] || 'Host';
+  const hostEmail = profile?.email || user.email;
 
-  if (error) throw error;
-  if (!data.success) throw new Error(data.error);
+  // First, try the RPC function
+  try {
+    const { data, error } = await supabase.rpc('create_group_session', {
+      p_event_id: eventId,
+      p_host_user_id: user.id,
+      p_host_name: hostName,
+      p_group_name: groupName,
+      p_duration_minutes: durationMinutes
+    });
 
-  return data;
+    if (!error && data?.success) {
+      return data;
+    }
+    if (data && !data.success) {
+      throw new Error(data.error);
+    }
+    // If RPC fails, fall through to direct table approach
+    console.log('RPC not available, using direct table approach');
+  } catch (rpcError) {
+    console.log('RPC create_group_session not available:', rpcError.message);
+  }
+
+  // Fallback: Direct table operations
+  const expiresAt = new Date(Date.now() + durationMinutes * 60 * 1000);
+  
+  // Generate unique code
+  let code = generateGroupCode();
+  let attempts = 0;
+  while (attempts < 5) {
+    const { data: existing } = await supabase
+      .from('group_buy_sessions')
+      .select('id')
+      .eq('code', code)
+      .maybeSingle();
+    
+    if (!existing) break;
+    code = generateGroupCode();
+    attempts++;
+  }
+
+  // Create session
+  const { data: session, error: sessionError } = await supabase
+    .from('group_buy_sessions')
+    .insert({
+      code,
+      name: groupName,
+      event_id: eventId,
+      host_user_id: user.id,
+      host_name: hostName,
+      expires_at: expiresAt.toISOString(),
+      duration_minutes: durationMinutes,
+      status: 'active',
+      max_members: 20,
+      member_count: 1
+    })
+    .select()
+    .single();
+
+  if (sessionError) throw sessionError;
+
+  // Add host as first member
+  const { data: member, error: memberError } = await supabase
+    .from('group_buy_members')
+    .insert({
+      session_id: session.id,
+      user_id: user.id,
+      email: hostEmail,
+      name: hostName,
+      is_host: true,
+      status: 'joined',
+      joined_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (memberError) throw memberError;
+
+  return {
+    success: true,
+    session_id: session.id,
+    code: session.code,
+    member_id: member.id
+  };
 }
 
 // Join an existing group session
@@ -41,17 +125,93 @@ export async function joinGroupSession(code) {
     .eq('id', user.id)
     .single();
 
-  const { data, error } = await supabase.rpc('join_group_session', {
-    p_code: code.toUpperCase(),
-    p_user_id: user.id,
-    p_user_name: profile?.full_name || user.email?.split('@')[0] || 'Guest',
-    p_user_email: profile?.email || user.email
-  });
+  const userName = profile?.full_name || user.email?.split('@')[0] || 'Guest';
+  const userEmail = profile?.email || user.email;
 
-  if (error) throw error;
-  if (!data.success) throw new Error(data.error);
+  // First, try the RPC function
+  try {
+    const { data, error } = await supabase.rpc('join_group_session', {
+      p_code: code.toUpperCase(),
+      p_user_id: user.id,
+      p_user_name: userName,
+      p_user_email: userEmail
+    });
 
-  return data;
+    if (!error && data?.success) {
+      return data;
+    }
+    if (data && !data.success) {
+      throw new Error(data.error);
+    }
+    // If RPC fails, fall through to direct table approach
+    console.log('RPC not available, using direct table approach');
+  } catch (rpcError) {
+    console.log('RPC join_group_session not available:', rpcError.message);
+  }
+
+  // Fallback: Direct table operations
+  // Find the session
+  const { data: session, error: sessionError } = await supabase
+    .from('group_buy_sessions')
+    .select('*')
+    .eq('code', code.toUpperCase())
+    .eq('status', 'active')
+    .maybeSingle();
+
+  if (sessionError) throw sessionError;
+  if (!session) throw new Error('Group not found or expired');
+
+  // Check if already a member
+  const { data: existingMember } = await supabase
+    .from('group_buy_members')
+    .select('*')
+    .eq('session_id', session.id)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (existingMember) {
+    // Update existing member if they dropped
+    if (existingMember.status === 'dropped') {
+      await supabase
+        .from('group_buy_members')
+        .update({ status: 'joined', last_active_at: new Date().toISOString() })
+        .eq('id', existingMember.id);
+    }
+    return {
+      success: true,
+      session_id: session.id,
+      member_id: existingMember.id,
+      rejoined: true
+    };
+  }
+
+  // Check if session is full
+  if (session.member_count >= session.max_members) {
+    throw new Error('This group is full');
+  }
+
+  // Add new member
+  const { data: newMember, error: insertError } = await supabase
+    .from('group_buy_members')
+    .insert({
+      session_id: session.id,
+      user_id: user.id,
+      email: userEmail,
+      name: userName,
+      status: 'joined',
+      joined_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (insertError) throw insertError;
+
+  return {
+    success: true,
+    session_id: session.id,
+    member_id: newMember.id,
+    event_id: session.event_id
+  };
 }
 
 // Get session details
@@ -60,7 +220,7 @@ export async function getGroupSession(sessionId) {
     .from('group_buy_sessions')
     .select(`
       *,
-      event:events(id, title, slug, start_date, end_date, venue_name, city, image_url, currency),
+      event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, currency, is_virtual),
       members:group_buy_members(
         id, user_id, name, email, is_host, status, 
         selected_tickets, total_amount, joined_at, completed_at
@@ -75,20 +235,31 @@ export async function getGroupSession(sessionId) {
 
 // Get session by code
 export async function getGroupSessionByCode(code) {
+  console.log('Fetching group session by code:', code.toUpperCase());
+  
   const { data, error } = await supabase
     .from('group_buy_sessions')
     .select(`
       *,
-      event:events(id, title, slug, start_date, end_date, venue_name, city, image_url, currency),
+      event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, currency, is_virtual),
       members:group_buy_members(
         id, user_id, name, email, is_host, status, 
         selected_tickets, total_amount, joined_at, completed_at
       )
     `)
     .eq('code', code.toUpperCase())
-    .single();
+    .maybeSingle(); // Use maybeSingle to avoid error when not found
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching group session:', error);
+    throw error;
+  }
+  
+  if (!data) {
+    throw new Error('Group not found. Please check the code and try again.');
+  }
+  
+  console.log('Found group session:', data);
   return data;
 }
 

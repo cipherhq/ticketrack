@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, Users, Calendar, TrendingUp, Plus, Eye, Download, Link2, ShoppingCart, Loader2, Zap, X, Heart, Ticket } from 'lucide-react';
+import { DollarSign, Users, Calendar, TrendingUp, Plus, Eye, Download, Link2, ShoppingCart, Loader2, Zap, X, Heart, Ticket, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact, getUserDefaultCurrency, getDefaultCurrency } from '@/config/currencies';
 import { TaxDocuments } from '@/components/TaxDocuments';
+import { HelpTip } from '@/components/HelpTip';
 
 export function OrganizerHome() {
   const navigate = useNavigate();
@@ -515,6 +516,7 @@ export function OrganizerHome() {
             <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
               <Ticket className="w-5 h-5 text-green-600" />
               Free Events Overview
+              <HelpTip>Track RSVPs and donations for your free events. Free events are a great way to build your audience!</HelpTip>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -559,7 +561,10 @@ export function OrganizerHome() {
       {/* Quick Actions */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Quick Actions</CardTitle>
+          <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+            Quick Actions
+            <HelpTip>Common tasks to manage your events and sales</HelpTip>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -683,7 +688,10 @@ export function OrganizerHome() {
       <Card className="border-[#0F0F0F]/10 rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-[#0F0F0F]">Event Promoters & Affiliates</CardTitle>
+            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+              Event Promoters & Affiliates
+              <HelpTip>Invite promoters to sell tickets and earn commission. Great for expanding your reach!</HelpTip>
+            </CardTitle>
             <Link to="/organizer/promoters" className="text-[#2969FF] text-sm hover:underline">
               Manage All
             </Link>

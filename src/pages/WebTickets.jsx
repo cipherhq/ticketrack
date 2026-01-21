@@ -1,7 +1,7 @@
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send, Copy, Wallet } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send, Copy, Wallet, Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -196,7 +196,7 @@ export function WebTickets() {
     const subject = encodeURIComponent(`Your Ticket for ${ticket.event?.title}`)
     const venueDisplay = ticket.event?.is_virtual 
       ? 'Virtual Event (Online)' 
-      : [ticket.event?.venue_name, ticket.event?.city].filter(Boolean).join(', ') || 'Venue TBA'
+      : [ticket.event?.venue_name, ticket.event?.venue_address, ticket.event?.city].filter(Boolean).join(', ') || 'Venue TBA'
     const body = encodeURIComponent(
       `Here are your ticket details:\n\n` +
       `Event: ${ticket.event?.title}\n` +
@@ -765,10 +765,12 @@ export function WebTickets() {
                     Virtual Event (Online)
                   </p>
                 ) : (
-                  <p className="text-[#0F0F0F] text-sm flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {[ticket.event?.venue_name, ticket.event?.venue_address, ticket.event?.city].filter(Boolean).join(', ') || 'Venue TBA'}
-                  </p>
+                  <div className="text-[#0F0F0F] text-sm flex items-start gap-1">
+                    <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <span className="break-words">
+                      {[ticket.event?.venue_name, ticket.event?.venue_address, ticket.event?.city].filter(Boolean).join(', ') || 'Venue TBA'}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -839,26 +841,10 @@ export function WebTickets() {
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#0F0F0F]/10">
               <Button 
                 size="sm" 
-                variant="outline" 
-                className="rounded-xl border-[#0F0F0F]/10 flex items-center gap-2 text-xs"
-                onClick={() => downloadTicket(ticket)}
-              >
-                <Download className="w-3 h-3" />Image
-              </Button>
-              <Button 
-                size="sm" 
                 className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl flex items-center gap-2 text-xs"
                 onClick={() => downloadTicketPDF(ticket, ticket.event, ticket.ticket_type)}
               >
                 <Download className="w-3 h-3" />PDF Ticket
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="rounded-xl border-[#0F0F0F]/10 flex items-center gap-2 text-xs"
-                onClick={() => emailTicket(ticket)}
-              >
-                <Mail className="w-3 h-3" />Email
               </Button>
               <Button 
                 size="sm" 
@@ -869,8 +855,8 @@ export function WebTickets() {
                 <Share2 className="w-3 h-3" />Share
               </Button>
               
-              {/* Wallet Buttons - Add to Apple/Google Wallet */}
-              <WalletButtons ticket={ticket} event={ticket.event} size="sm" />
+              {/* Smart Wallet Button - Shows Apple/Google based on device */}
+              <WalletButtons ticket={ticket} event={ticket.event} size="sm" singleButton={true} />
               {ticket.transfer_count === 0 && (
               <Button 
                 size="sm" 
@@ -981,11 +967,21 @@ export function WebTickets() {
         <Button variant="ghost" className="mb-4 text-[#0F0F0F]/60 hover:text-[#0F0F0F] -ml-2" onClick={() => navigate('/profile')}>
           <ArrowLeft className="w-4 h-4 mr-2" />Back to Profile
         </Button>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-[#2969FF]/10 rounded-xl flex items-center justify-center">
-            <Ticket className="w-6 h-6 text-[#2969FF]" />
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-[#2969FF]/10 rounded-xl flex items-center justify-center">
+              <Ticket className="w-6 h-6 text-[#2969FF]" />
+            </div>
+            <h1 className="text-4xl font-bold text-[#0F0F0F]">My Tickets</h1>
           </div>
-          <h1 className="text-4xl font-bold text-[#0F0F0F]">My Tickets</h1>
+          <Button 
+            variant="outline" 
+            className="rounded-xl border-purple-200 text-purple-600 hover:bg-purple-50"
+            onClick={() => navigate('/my-groups')}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            My Groups
+          </Button>
         </div>
         <p className="text-[#0F0F0F]/60">View and manage all your event tickets in one place</p>
       </div>

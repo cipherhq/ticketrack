@@ -102,6 +102,31 @@ CREATE TABLE IF NOT EXISTS group_buy_messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Group Buy Invitations
+-- Track email/SMS invitations sent to friends
+CREATE TABLE IF NOT EXISTS group_buy_invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID NOT NULL REFERENCES group_buy_sessions(id) ON DELETE CASCADE,
+  
+  -- Invite target (email OR phone)
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  
+  -- Inviter info
+  inviter_name VARCHAR(100),
+  message TEXT,
+  
+  -- Status
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
+  expires_at TIMESTAMPTZ,
+  
+  -- Tracking
+  sent_at TIMESTAMPTZ DEFAULT NOW(),
+  accepted_at TIMESTAMPTZ,
+  
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Event Group Buy Settings
 -- Organizer controls for group buying on their events
 CREATE TABLE IF NOT EXISTS event_group_buy_settings (

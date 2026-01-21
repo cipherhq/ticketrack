@@ -97,6 +97,10 @@ export function AttendeeProfile() {
   // Following state
   const [followedOrganizers, setFollowedOrganizers] = useState([])
   
+  // Groups state
+  const [groups, setGroups] = useState({ active: [], completed: [], expired: [] })
+  const [loadingGroups, setLoadingGroups] = useState(false)
+  
   // Payment methods state
   const [paymentMethods, setPaymentMethods] = useState([])
   const [deletingPaymentMethod, setDeletingPaymentMethod] = useState(null)
@@ -138,6 +142,7 @@ export function AttendeeProfile() {
     loadFollowedOrganizers()
     loadPaymentMethods()
     loadOrders()
+    loadGroups()
   }, [user, navigate])
 
   const loadProfileData = async () => {
@@ -171,7 +176,7 @@ export function AttendeeProfile() {
         .from('tickets')
         .select(`
           *,
-          event:events(id, title, slug, start_date, venue_name, city, image_url),
+          event:events(id, title, slug, start_date, venue_name, venue_address, city, image_url, is_virtual),
           ticket_type:ticket_types(name, price)
         `)
         .eq('user_id', user.id)
@@ -241,6 +246,59 @@ export function AttendeeProfile() {
       setStats(prev => ({ ...prev, following: prev.following - 1 }))
     } catch (error) {
       console.error('Error unfollowing organizer:', error)
+    }
+  }
+
+  // Load group buy sessions
+  const loadGroups = async () => {
+    if (!user) return
+    try {
+      setLoadingGroups(true)
+      
+      const { data: memberships, error } = await supabase
+        .from('group_buy_members')
+        .select(`
+          *,
+          session:group_buy_sessions(
+            *,
+            event:events(id, title, slug, start_date, venue_name, venue_address, city, image_url, is_virtual)
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.warn('Group buy tables may not exist:', error.message)
+        setGroups({ active: [], completed: [], expired: [] })
+        return
+      }
+
+      // Categorize groups
+      const active = []
+      const completed = []
+      const expired = []
+
+      memberships?.forEach(m => {
+        if (!m.session) return
+        
+        const isExpired = new Date(m.session.expires_at) < new Date()
+        const isCompleted = m.status === 'completed' || m.session.status === 'completed'
+
+        if (isCompleted) {
+          completed.push(m)
+        } else if (isExpired || m.session.status === 'expired') {
+          expired.push(m)
+        } else if (m.session.status === 'active') {
+          active.push(m)
+        }
+      })
+
+      setGroups({ active, completed, expired })
+    } catch (error) {
+      console.error('Error loading groups:', error)
+      setGroups({ active: [], completed: [], expired: [] })
+    } finally {
+      setLoadingGroups(false)
     }
   }
 
@@ -742,6 +800,9 @@ export function AttendeeProfile() {
               <TabsTrigger value="orders" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Orders</TabsTrigger>
               <TabsTrigger value="saved" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Saved</TabsTrigger>
               <TabsTrigger value="following" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Following</TabsTrigger>
+              <TabsTrigger value="groups" className="rounded-lg data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+                <Users className="w-4 h-4 mr-1" />Groups
+              </TabsTrigger>
               <TabsTrigger value="settings" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Settings</TabsTrigger>
               <TabsTrigger value="earnings" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">
                 <DollarSign className="w-4 h-4 mr-1" />Earnings
@@ -1139,7 +1200,7 @@ export function AttendeeProfile() {
                               <div className="cursor-pointer" onClick={() => navigate(`/events/${event.slug || event.id}`)}>
                                 <h3 className="font-semibold text-[#0F0F0F] mb-1 hover:text-[#2969FF]">{event.title}</h3>
                                 <p className="text-sm text-[#0F0F0F]/60 mb-2">
-                                  {formatDate(event.start_date)} • {event.venue_name || event.city}
+                                  {formatDate(event.start_date)} • {[event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}
                                 </p>
                                 <div className="flex gap-2">
                                   <Badge className={!isPast ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
@@ -1239,6 +1300,189 @@ export function AttendeeProfile() {
                       </Card>
                     )
                   })}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Groups Tab */}
+            <TabsContent value="groups">
+              {loadingGroups ? (
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardContent className="flex items-center justify-center py-16">
+                    <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                  </CardContent>
+                </Card>
+              ) : (groups.active.length + groups.completed.length + groups.expired.length) === 0 ? (
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-4">
+                      <Users className="w-10 h-10 text-purple-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No groups yet</h3>
+                    <p className="text-[#0F0F0F]/60 mb-6 text-center max-w-md">
+                      Group Buy lets you coordinate ticket purchases with friends. Start a group from any event page!
+                    </p>
+                    <Button onClick={() => navigate('/events')} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl">
+                      Browse Events
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  {/* Active Groups */}
+                  {groups.active.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        Active Groups ({groups.active.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {groups.active.map(m => (
+                          <Card key={m.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+                            <div className="flex">
+                              <div 
+                                className="w-24 h-24 sm:w-32 sm:h-32 bg-cover bg-center flex-shrink-0"
+                                style={{ backgroundImage: m.session?.event?.image_url ? `url(${m.session.event.image_url})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                              />
+                              <CardContent className="flex-1 p-4">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-semibold text-[#0F0F0F] truncate">{m.session?.name || 'Group Session'}</h4>
+                                      {m.is_host && <Badge variant="outline" className="text-xs">Host</Badge>}
+                                    </div>
+                                    <p className="text-sm text-[#0F0F0F]/60 truncate">{m.session?.event?.title}</p>
+                                  </div>
+                                  <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
+                                </div>
+                                <div className="flex items-center gap-4 mt-2 text-xs text-[#0F0F0F]/60">
+                                  <span className="flex items-center gap-1">
+                                    <Users className="w-3 h-3" />
+                                    {m.session?.member_count || 1} member{(m.session?.member_count || 1) !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                                <div className="flex gap-2 mt-3">
+                                  <Button
+                                    size="sm"
+                                    className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs"
+                                    onClick={() => navigate(`/group/${m.session?.code}`)}
+                                  >
+                                    Open Group
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-lg text-xs"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(`${window.location.origin}/group/${m.session?.code}`)
+                                      alert('Link copied!')
+                                    }}
+                                  >
+                                    <Share2 className="w-3 h-3 mr-1" />
+                                    Share
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Completed Groups */}
+                  {groups.completed.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-green-600">
+                        <CheckCircle className="w-4 h-4" />
+                        Completed ({groups.completed.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {groups.completed.map(m => (
+                          <Card key={m.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+                            <div className="flex">
+                              <div 
+                                className="w-24 h-24 bg-cover bg-center flex-shrink-0 opacity-75"
+                                style={{ backgroundImage: m.session?.event?.image_url ? `url(${m.session.event.image_url})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                              />
+                              <CardContent className="flex-1 p-4">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <h4 className="font-semibold text-[#0F0F0F] truncate">{m.session?.name || 'Group Session'}</h4>
+                                    <p className="text-sm text-[#0F0F0F]/60 truncate">{m.session?.event?.title}</p>
+                                  </div>
+                                  <Badge className="bg-green-100 text-green-700 border-0">Purchased</Badge>
+                                </div>
+                              </CardContent>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Expired Groups */}
+                  {groups.expired.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 text-[#0F0F0F]/40">
+                        Expired ({groups.expired.length})
+                      </h3>
+                      <div className="space-y-3">
+                        {groups.expired.map(m => (
+                          <Card key={m.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden opacity-60">
+                            <div className="flex">
+                              <div 
+                                className="w-24 h-24 bg-cover bg-center flex-shrink-0 grayscale"
+                                style={{ backgroundImage: m.session?.event?.image_url ? `url(${m.session.event.image_url})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                              />
+                              <CardContent className="flex-1 p-4">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <h4 className="font-semibold text-[#0F0F0F] truncate">{m.session?.name || 'Group Session'}</h4>
+                                    <p className="text-sm text-[#0F0F0F]/60 truncate">{m.session?.event?.title}</p>
+                                  </div>
+                                  <Badge className="bg-gray-100 text-gray-600 border-0">Expired</Badge>
+                                </div>
+                              </CardContent>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* How it Works */}
+                  <Card className="rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100/50 border-purple-200">
+                    <CardContent className="p-6">
+                      <h3 className="font-semibold mb-4 flex items-center gap-2">
+                        <Users className="w-5 h-5 text-purple-600" />
+                        How Group Buy Works
+                      </h3>
+                      <div className="grid gap-3 text-sm">
+                        <div className="flex gap-3">
+                          <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+                          <div>
+                            <p className="font-medium">Start a Group</p>
+                            <p className="text-[#0F0F0F]/60">Click "Buy with Friends" on any event</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+                          <div>
+                            <p className="font-medium">Invite Friends</p>
+                            <p className="text-[#0F0F0F]/60">Share link via email, SMS, or WhatsApp</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+                          <div>
+                            <p className="font-medium">Everyone Pays for Their Own</p>
+                            <p className="text-[#0F0F0F]/60">No collecting money from friends!</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
             </TabsContent>

@@ -22,7 +22,9 @@ import {
   UserPlus,
   Banknote,
   AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
+import { HelpTip } from '@/components/HelpTip';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -445,7 +447,10 @@ export function PromoterManagement() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Event Promoters</h2>
+          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+            Event Promoters
+            <HelpTip>Promoters earn commission by selling tickets with unique links. Set commission rates per event and track each promoter's sales. Great for influencers and partners!</HelpTip>
+          </h2>
           <p className="text-[#0F0F0F]/60 mt-1">Invite affiliates and track their performance</p>
         </div>
         <div className="flex items-center gap-2">

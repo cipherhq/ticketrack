@@ -422,7 +422,7 @@ export function EmailCampaigns() {
     if (formData.eventId) {
       const { data: event } = await supabase
         .from('events')
-        .select('title, start_date, venue_name, city')
+        .select('title, start_date, venue_name, venue_address, city')
         .eq('id', formData.eventId)
         .single();
       
@@ -432,7 +432,7 @@ export function EmailCampaigns() {
           event_date: new Date(event.start_date).toLocaleDateString('en-US', {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
           }),
-          event_venue: event.venue_name || event.city || 'TBA',
+          event_venue: [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'TBA',
           event_link: `${window.location.origin}/e/${formData.eventId}`
         };
       }

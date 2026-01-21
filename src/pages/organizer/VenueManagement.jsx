@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   MapPin, Plus, Settings, Edit, Eye, Trash2,
-  Users, Layout, Building2
+  Users, Layout, Building2, HelpCircle
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useOrganizer } from '@/contexts/OrganizerContext'
 import { supabase } from '@/lib/supabase'
+import { HelpTip } from '@/components/HelpTip'
 
 export function VenueManagement() {
   const navigate = useNavigate()
@@ -196,7 +197,10 @@ export function VenueManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#0F0F0F]">Venue Management</h1>
+          <h1 className="text-3xl font-bold text-[#0F0F0F] flex items-center gap-2">
+            Venue Management
+            <HelpTip>Create venue layouts with seating sections, standing areas, and amenities. Link layouts to events for seat selection ticketing.</HelpTip>
+          </h1>
           <p className="text-[#0F0F0F]/60 mt-1">
             Manage your venues and create interactive layouts
           </p>
@@ -399,17 +403,69 @@ export function VenueManagement() {
             <div>
               <h4 className="text-sm font-medium text-blue-900">Sample Venue Available</h4>
               <p className="text-sm text-blue-700 mt-1">
-                We've created a sample "Tech Conference Center" with a complete layout to demonstrate the system.
-                Use it to explore the layout designer features.
+                Try our sample "Tech Conference Center" with a complete layout to see how the venue designer works.
+                Perfect for learning the layout features before creating your own venues.
               </p>
               <Button
                 variant="outline"
                 size="sm"
                 className="mt-2"
-                onClick={() => {
-                  const sampleVenue = venues.find(v => v.name === 'Tech Conference Center')
+                onClick={async () => {
+                  // Check if sample already exists
+                  let sampleVenue = venues.find(v => v.name === 'Tech Conference Center (Sample)')
+                  
+                  if (!sampleVenue && organizer?.id) {
+                    // Create sample venue
+                    const { data: newVenue, error } = await supabase
+                      .from('venues')
+                      .insert({
+                        organizer_id: organizer.id,
+                        name: 'Tech Conference Center (Sample)',
+                        address: '123 Innovation Drive, Tech City',
+                        capacity: 500,
+                        venue_type: 'indoor',
+                        description: 'A sample venue to help you learn the layout designer. Feel free to modify or delete it!'
+                      })
+                      .select()
+                      .single()
+                    
+                    if (error) {
+                      console.error('Failed to create sample venue:', error)
+                      alert('Could not create sample venue. Please try creating a venue manually.')
+                      return
+                    }
+                    
+                    // Create sample layout
+                    if (newVenue) {
+                      const { data: layout } = await supabase
+                        .from('venue_layouts')
+                        .insert({
+                          venue_id: newVenue.id,
+                          name: 'Main Conference Layout',
+                          is_active: true,
+                          canvas_width: 1200,
+                          canvas_height: 800
+                        })
+                        .select()
+                        .single()
+                      
+                      if (layout) {
+                        // Add sample sections
+                        await supabase.from('layout_sections').insert([
+                          { layout_id: layout.id, name: 'Main Stage', section_type: 'stage', x: 100, y: 50, width: 400, height: 150, color: '#3b82f6' },
+                          { layout_id: layout.id, name: 'VIP Seating', section_type: 'seating', x: 100, y: 250, width: 200, height: 200, capacity: 50, color: '#f59e0b' },
+                          { layout_id: layout.id, name: 'General Admission', section_type: 'seating', x: 350, y: 250, width: 250, height: 250, capacity: 200, color: '#10b981' },
+                          { layout_id: layout.id, name: 'Bar Area', section_type: 'amenity', x: 650, y: 50, width: 150, height: 100, color: '#8b5cf6' },
+                          { layout_id: layout.id, name: 'Registration', section_type: 'entrance', x: 100, y: 550, width: 200, height: 80, color: '#ec4899' }
+                        ])
+                      }
+                      
+                      sampleVenue = newVenue
+                    }
+                  }
+                  
                   if (sampleVenue) {
-                    navigate(`/organizer/venues/${sampleVenue.id}/layouts`)
+                    navigate(`/organizer/venue-layout/${sampleVenue.id}`)
                   }
                 }}
               >

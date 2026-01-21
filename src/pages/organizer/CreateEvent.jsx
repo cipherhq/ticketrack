@@ -22,6 +22,7 @@ import ReactQuill from 'react-quill';
 import { EventAccessSettings } from '@/components/EventAccessSettings';
 import { CustomFormBuilder } from '@/components/CustomFormBuilder';
 import { generateRecurringDates } from '@/utils/recurringDates';
+import { HelpTip } from '@/components/HelpTip';
 import 'react-quill/dist/quill.snow.css';
 
 

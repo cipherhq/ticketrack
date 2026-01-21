@@ -57,6 +57,7 @@ const WebPricing = lazy(() => import('./pages/WebPricing').then(m => ({ default:
 const WebPrivacy = lazy(() => import('./pages/WebPrivacy').then(m => ({ default: m.WebPrivacy })));
 const WebCookies = lazy(() => import('./pages/WebCookies').then(m => ({ default: m.WebCookies })));
 const GroupBuyJoin = lazy(() => import('./pages/GroupBuyJoin').then(m => ({ default: m.GroupBuyJoin })));
+const MyGroups = lazy(() => import('./pages/MyGroups').then(m => ({ default: m.MyGroups })));
 const WebTerms = lazy(() => import('./pages/WebTerms').then(m => ({ default: m.WebTerms })));
 const WebTrustSafety = lazy(() => import('./pages/WebTrustSafety').then(m => ({ default: m.WebTrustSafety })));
 const WebRefundPolicy = lazy(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })));
@@ -187,6 +188,11 @@ function App() {
                 <Route path="/group" element={
                   <Suspense fallback={<PageLoader />}>
                     <GroupBuyJoin />
+                  </Suspense>
+                } />
+                <Route path="/my-groups" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <MyGroups />
                   </Suspense>
                 } />
                 <Route path="/waitlist/purchase" element={

@@ -28,25 +28,31 @@ export function GroupBuyJoin() {
 
   // Auto-join if code is in URL
   useEffect(() => {
-    if (code && user) {
-      handleJoinWithCode(code)
-    } else if (code) {
-      // Load session preview for non-logged-in users
+    if (code) {
+      // Always load preview first, then user can click to join
       loadSessionPreview(code)
     }
-  }, [code, user])
+  }, [code])
 
   const loadSessionPreview = async (groupCode) => {
+    console.log('=== loadSessionPreview started for:', groupCode)
     try {
       setLoading(true)
+      setError(null)
       const sessionData = await getGroupSessionByCode(groupCode)
+      console.log('=== Session data received:', sessionData)
+      if (!sessionData) {
+        throw new Error('Group not found')
+      }
+      console.log('=== Setting session and step to preview')
       setSession(sessionData)
       setStep('preview')
+      setLoading(false)
+      console.log('=== State updates complete')
     } catch (err) {
-      console.error('Error loading group:', err)
-      setError('Group not found or expired')
+      console.error('=== Error loading group:', err)
+      setError(err.message || 'Group not found or expired')
       setStep('enter-code')
-    } finally {
       setLoading(false)
     }
   }
@@ -101,8 +107,11 @@ export function GroupBuyJoin() {
     })
   }
 
+  // Debug logging
+  console.log('=== Render state:', { step, loading, joining, hasSession: !!session, error })
+
   // Loading state
-  if (loading || step === 'loading') {
+  if (loading && step === 'loading') {
     return (
       <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
         <Card className="max-w-md w-full rounded-2xl">

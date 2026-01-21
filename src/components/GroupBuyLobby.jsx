@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext'
+import { GroupInviteModal } from './GroupInviteModal'
 import {
   getGroupSession,
   getMyMembership,
@@ -42,6 +43,7 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
   const [error, setError] = useState(null)
   const [timeRemaining, setTimeRemaining] = useState('')
   const [showChat, setShowChat] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
   const [copied, setCopied] = useState(false)
   const messagesEndRef = useRef(null)
 
@@ -118,21 +120,8 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleShare = async () => {
-    const link = getShareableLink(session.code)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Join ${session.name}`,
-          text: `Join my group to buy tickets for ${session.event?.title}!`,
-          url: link
-        })
-      } catch (err) {
-        handleCopyLink()
-      }
-    } else {
-      handleCopyLink()
-    }
+  const handleShare = () => {
+    setShowInviteModal(true)
   }
 
   const handleSendMessage = async (e) => {
@@ -439,6 +428,14 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
           Leave group
         </button>
       )}
+
+      {/* Invite Modal */}
+      <GroupInviteModal
+        open={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        session={session}
+        userName={myMembership?.name || user?.user_metadata?.full_name || 'Friend'}
+      />
     </div>
   )
 }

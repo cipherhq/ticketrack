@@ -1,7 +1,7 @@
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle, Heart, Users, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle, Heart, Users, ChevronDown, ChevronRight, DollarSign, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -18,6 +18,7 @@ import { useOrganizer } from '../../contexts/OrganizerContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Pagination, usePagination } from '@/components/ui/pagination';
+import { HelpTip, OnboardingBanner } from '@/components/HelpTip';
 
 const MANUAL_ISSUE_TYPES = [
   { value: 'complimentary', label: 'Complimentary' },
@@ -720,10 +721,13 @@ export function EventManagement() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Event Management</h2>
+          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+            Event Management
+            <HelpTip>Create events, set ticket prices, and manage sales. Events can be one-time, recurring (weekly/monthly), or virtual online events.</HelpTip>
+          </h2>
           <p className="text-[#0F0F0F]/60 mt-1">Create and manage your events</p>
         </div>
-        <Button onClick={() => navigate('/organizer/create-event')} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
+        <Button onClick={() => navigate('/organizer/create-event')} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl" title="Create a new event with tickets">
           <Plus className="w-5 h-5 mr-2" />Create Event
         </Button>
       </div>

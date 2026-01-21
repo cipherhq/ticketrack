@@ -1,8 +1,9 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Search, Mail, Download, Filter, MoreVertical, Loader2, Users, CheckCircle, Clock, Calendar, RefreshCw, Eye, ChevronUp, ChevronDown, Ticket } from 'lucide-react';
+import { Search, Mail, Download, Filter, MoreVertical, Loader2, Users, CheckCircle, Clock, Calendar, RefreshCw, Eye, ChevronUp, ChevronDown, Ticket, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { HelpTip } from '@/components/HelpTip';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -365,7 +366,7 @@ export function ManageAttendees() {
         attendeeName: attendee.name || 'Valued Guest',
         eventTitle: event?.title || 'Event',
         eventDate: eventDate,
-        venueName: event?.is_virtual ? 'Virtual Event' : (event?.venue_name || 'TBA'),
+        venueName: event?.is_virtual ? 'Virtual Event' : [event?.venue_name, event?.venue_address, event?.city].filter(Boolean).join(', ') || 'TBA',
         city: event?.city || '',
         ticketType: ticketType?.name || 'General Admission',
         ticketCode: ticketData.ticket_code,
@@ -487,7 +488,10 @@ export function ManageAttendees() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Manage Attendees</h2>
+          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+            Manage Attendees
+            <HelpTip>View all ticket holders, resend tickets, and export attendee lists. You can filter by event, check-in status, and search by name or email.</HelpTip>
+          </h2>
           <p className="text-[#0F0F0F]/60 mt-1">View and manage all your event attendees</p>
         </div>
         <div className="flex items-center gap-3">

@@ -483,10 +483,12 @@ export function WebSearch() {
                               <Calendar className="w-4 h-4" />
                               {formatEventDate(event.start_date)}
                             </div>
-                            {(event.venue_name || event.city) && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-4 h-4" />
-                                {event.venue_name || event.city}
+                            {(event.venue_name || event.venue_address || event.city) && (
+                              <div className="flex items-start gap-1">
+                                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                <span className="line-clamp-2">
+                                  {event.is_virtual ? 'Virtual Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}
+                                </span>
                               </div>
                             )}
                           </div>

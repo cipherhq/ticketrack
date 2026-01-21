@@ -590,9 +590,11 @@ export function AdminEvents() {
                   </div>
                   <p className="text-[#0F0F0F]/60 mb-2">{selectedEvent.description || 'No description'}</p>
                   <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {selectedEvent.venue_name || selectedEvent.city || 'TBD'}
+                    <span className="flex items-start gap-1">
+                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span className="break-words">
+                        {selectedEvent.is_virtual ? 'Virtual Event' : [selectedEvent.venue_name, selectedEvent.venue_address, selectedEvent.city].filter(Boolean).join(', ') || 'TBD'}
+                      </span>
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />

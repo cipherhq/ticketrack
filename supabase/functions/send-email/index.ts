@@ -73,6 +73,9 @@ const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; from
   new_follower: { auth: 'USER_AUTH', rateKey: 'standard' },
   following_organizer: { auth: 'USER_AUTH', rateKey: 'standard' },
   birthday_wish: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  group_invite: { auth: 'USER_AUTH', rateKey: 'standard' },
+  group_member_joined: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  group_purchase_complete: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   // Organizer auth emails
   organizer_welcome: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   new_ticket_sale: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
@@ -333,6 +336,10 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
 </body>
 </html>`
   }),
+  // GROUP BUY
+  group_invite: d => ({ subject: `👥 ${d.inviterName} invited you to buy tickets for ${d.eventTitle}!`, html: baseTemplate(`<div class="highlight"><strong>You're Invited!</strong></div><h2>Join the Group</h2><p>${d.inviterName} invited you to join their group to buy tickets for:</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Group</span><span class="value">${d.groupName || 'Group Session'}</span></div><div class="row"><span class="label">Code</span><span class="value" style="font-family:monospace;font-size:18px;color:${BRAND_COLOR}">${d.groupCode}</span></div></div>${d.message ? `<div style="background:#f8fafc;padding:12px;border-radius:8px;margin:16px 0;font-style:italic">"${d.message}"</div>` : ''}<div class="btn-wrap"><a href="${d.groupLink}" class="btn">Join Group</a></div><p style="font-size:13px;color:#6b7280;margin-top:16px">This invite expires ${formatDate(d.expiresAt)}</p>`, `${d.inviterName} invited you to their group!`) }),
+  group_member_joined: d => ({ subject: `👥 ${d.memberName} joined your group for ${d.eventTitle}`, html: baseTemplate(`<h2>New Member Joined!</h2><p>Hi ${d.hostName},</p><p><strong>${d.memberName}</strong> joined your group session for <strong>${d.eventTitle}</strong>.</p><div class="card"><div class="row"><span class="label">Group</span><span class="value">${d.groupName || 'Your Group'}</span></div><div class="row"><span class="label">Members</span><span class="value">${d.memberCount}</span></div><div class="row"><span class="label">Time Left</span><span class="value">${d.timeRemaining}</span></div></div><div class="btn-wrap"><a href="${d.groupLink}" class="btn">View Group</a></div>`) }),
+  group_purchase_complete: d => ({ subject: `🎉 Group Purchase Complete - ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>All Set!</strong></div><h2>Group Purchase Complete</h2><p>Hi ${d.memberName},</p><p>Everyone in your group has completed their purchase!</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Group Members</span><span class="value">${d.memberCount}</span></div><div class="row"><span class="label">Total Tickets</span><span class="value">${d.totalTickets}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/tickets" class="btn">View My Tickets</a></div>`) }),
 }
 
 // Send email

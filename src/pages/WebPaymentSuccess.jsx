@@ -329,7 +329,7 @@ export function WebPaymentSuccess() {
       `Event: ${event.title}\n` +
       `Date: ${formatDate(event.start_date)}\n` +
       `Time: ${formatTime(event.start_date)}\n` +
-      `Venue: ${event.is_virtual ? 'Online Event' : [event.venue_name, event.city].filter(Boolean).join(', ') || 'Venue TBA'}\n\n` +
+      `Venue: ${event.is_virtual ? 'Online Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Venue TBA'}\n\n` +
       `Number of tickets: ${tickets?.length || 0}\n` +
       `Order Number: ${order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}\n\n` +
       `Please show your QR code at the venue entrance.\n\n` +
@@ -462,9 +462,9 @@ export function WebPaymentSuccess() {
                       <span>Virtual Event (Online)</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>{[event.venue_name, event.city].filter(Boolean).join(', ') || 'Venue TBA'}</span>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span className="break-words">{[event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Venue TBA'}</span>
                     </div>
                   )}
                 </div>

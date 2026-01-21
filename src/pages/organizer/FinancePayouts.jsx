@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   DollarSign, Clock, CheckCircle, Plus, CreditCard, Building2, 
-  Download, Calendar, Loader2, FileText 
+  Download, Calendar, Loader2, FileText, HelpCircle 
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { HelpTip } from '@/components/HelpTip';
 
 export function FinancePayouts() {
   const navigate = useNavigate();
@@ -253,7 +254,10 @@ Status,${payout.status}
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Finance & Payouts</h2>
+          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+            Finance & Payouts
+            <HelpTip>Payouts are processed automatically after each event. Funds are held in escrow until the event date, then paid out to your bank account within 3-5 business days.</HelpTip>
+          </h2>
           <p className="text-[#0F0F0F]/60 mt-1">Track your earnings and payout schedule</p>
         </div>
         <div className="flex gap-2">

@@ -171,11 +171,11 @@ export async function generateTicketPDF(ticket, event) {
   // Show full address if available, otherwise fallback to venue name + city
   let venue
   if (event.venue_address) {
-    venue = `${event.venue_name ? event.venue_name + ', ' : ''}${event.venue_address}`
+    venue = [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ')
   } else {
-    venue = `${event.venue_name || 'Venue'}${event.city ? ', ' + event.city : ''}`
+    venue = [event.venue_name, event.city].filter(Boolean).join(', ') || 'Venue TBA'
   }
-  const displayVenue = venue.length > 35 ? venue.substring(0, 35) + '...' : venue
+  const displayVenue = venue.length > 50 ? venue.substring(0, 50) + '...' : venue
   pdf.text(displayVenue, contentX, currentY)
   currentY += 14
 
@@ -399,11 +399,11 @@ export async function generateTicketPDFBase64(ticket, event) {
   // Show full address if available, otherwise fallback to venue name + city
   let venue
   if (event.venue_address) {
-    venue = `${event.venue_name ? event.venue_name + ', ' : ''}${event.venue_address}`
+    venue = [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ')
   } else {
-    venue = `${event.venue_name || 'Venue'}${event.city ? ', ' + event.city : ''}`
+    venue = [event.venue_name, event.city].filter(Boolean).join(', ') || 'Venue TBA'
   }
-  const displayVenue = venue.length > 35 ? venue.substring(0, 35) + '...' : venue
+  const displayVenue = venue.length > 50 ? venue.substring(0, 50) + '...' : venue
   pdf.text(displayVenue, contentX, currentY)
   currentY += 14
 
@@ -681,8 +681,8 @@ export async function generateMultiTicketPDFBase64(tickets, event) {
     pdf.setFont('helvetica', 'normal')
     pdf.setFontSize(9)
     pdf.setTextColor(230, 230, 230)
-    const venue = `${event.venue_name || 'Venue'}, ${event.city || 'City'}`
-    const displayVenue = venue.length > 35 ? venue.substring(0, 35) + '...' : venue
+    const venue = [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Venue TBA'
+    const displayVenue = venue.length > 50 ? venue.substring(0, 50) + '...' : venue
     pdf.text(displayVenue, contentX, currentY)
     currentY += 14
 

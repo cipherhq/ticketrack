@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Search, QrCode, UserCheck, Calendar, Users, CheckCircle, 
   Loader2, X, Undo2, History, Smartphone, RefreshCw,
-  AlertCircle, Clock, ChevronDown, Volume2, VolumeX
+  AlertCircle, Clock, ChevronDown, Volume2, VolumeX, HelpCircle
 } from 'lucide-react';
 import jsQR from 'jsqr';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { HelpTip, OnboardingBanner } from '@/components/HelpTip';
 
 // Generate unique device ID for multi-session tracking
 const getDeviceId = () => {
@@ -631,7 +632,10 @@ export function CheckInByEvents() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Check-In</h2>
+          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+            Check-In
+            <HelpTip>Scan QR codes or enter ticket codes to check in attendees. Works on multiple devices at once - perfect for events with multiple entry points!</HelpTip>
+          </h2>
           <p className="text-[#0F0F0F]/60 mt-1">
             Manage attendee check-ins • Device: {deviceId.current.slice(-8)}
           </p>

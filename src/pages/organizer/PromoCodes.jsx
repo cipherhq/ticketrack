@@ -17,7 +17,9 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
+  HelpCircle,
 } from 'lucide-react';
+import { HelpTip } from '@/components/HelpTip';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -337,7 +339,10 @@ export function PromoCodes() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Promo Codes</h2>
+          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+            Promo Codes
+            <HelpTip>Create discount codes to boost sales. Share codes on social media or with partners. You can set percentage or fixed discounts, usage limits, and expiration dates.</HelpTip>
+          </h2>
           <p className="text-[#0F0F0F]/60 mt-1">Create and manage discount codes for your events</p>
         </div>
         <div className="flex items-center gap-2">

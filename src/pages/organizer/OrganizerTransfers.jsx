@@ -9,10 +9,11 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from '@/components/ui/table'
 import { 
-  Search, ArrowRightLeft, Download, RefreshCw, Loader2, Eye, Copy, CheckCircle, ChevronLeft, ChevronRight
+  Search, ArrowRightLeft, Download, RefreshCw, Loader2, Eye, Copy, CheckCircle, ChevronLeft, ChevronRight, HelpCircle
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { HelpTip } from '@/components/HelpTip'
 
 const PAGE_SIZE = 20
 
@@ -198,7 +199,10 @@ export function OrganizerTransfers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Ticket Transfers</h1>
+          <h1 className="text-2xl font-bold text-[#0F0F0F] flex items-center gap-2">
+            Ticket Transfers
+            <HelpTip>Attendees can transfer tickets to friends or family. View all transfer history for your events here.</HelpTip>
+          </h1>
           <p className="text-[#0F0F0F]/60">Track ticket transfers for your events</p>
         </div>
         <div className="flex items-center gap-3">
