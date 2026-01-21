@@ -65,11 +65,14 @@ export function CheckInByEvents() {
   
   // QR Scanner
   const [scanning, setScanning] = useState(false);
+  const [scannerProcessing, setScannerProcessing] = useState(false); // Full-screen processing overlay
+  const [lastScannedCode, setLastScannedCode] = useState(''); // Prevent duplicate scans
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const canvasRef = useRef(null);
   const scanningRef = useRef(false); // Use ref to track scanning state in animation loop
   const animationFrameRef = useRef(null);
+  const processingTimeoutRef = useRef(null);
 
   // Load events on mount
   useEffect(() => {
@@ -231,21 +234,47 @@ export function CheckInByEvents() {
     }
   };
 
-  const performCheckIn = async (ticketCodeOrId, isUndo = false) => {
+  const performCheckIn = async (ticketCodeOrId, isUndo = false, fromScanner = false) => {
     setProcessing(true);
     setCheckInResult(null);
+    
+    // Show full-screen processing overlay for scanner
+    if (fromScanner) {
+      setScannerProcessing(true);
+    }
 
     // Clean up the input
     const cleanCode = ticketCodeOrId?.trim()?.toUpperCase();
     
     if (!cleanCode) {
       playSound('error');
+      vibrateDevice('error');
       setCheckInResult({
         success: false,
         message: 'Please enter a valid ticket code.',
       });
       setProcessing(false);
+      setScannerProcessing(false);
       return;
+    }
+
+    // Prevent duplicate scans within 3 seconds
+    if (fromScanner && cleanCode === lastScannedCode) {
+      console.log('Duplicate scan ignored:', cleanCode);
+      setProcessing(false);
+      setScannerProcessing(false);
+      // Resume scanning after short delay
+      setTimeout(() => {
+        if (scanDialogOpen) startQRScanner();
+      }, 500);
+      return;
+    }
+
+    if (fromScanner) {
+      setLastScannedCode(cleanCode);
+      // Clear last scanned code after 3 seconds
+      if (processingTimeoutRef.current) clearTimeout(processingTimeoutRef.current);
+      processingTimeoutRef.current = setTimeout(() => setLastScannedCode(''), 3000);
     }
 
     console.log('Attempting check-in for:', cleanCode);
@@ -275,19 +304,23 @@ export function CheckInByEvents() {
       if (findError) {
         console.error('Database error:', findError);
         playSound('error');
+        vibrateDevice('error');
         setCheckInResult({
           success: false,
           message: 'Database error. Please try again.',
         });
+        setScannerProcessing(false);
         return;
       }
 
       if (!ticket) {
         playSound('error');
+        vibrateDevice('error');
         setCheckInResult({
           success: false,
           message: `Ticket "${cleanCode}" not found. Please check the code and try again.`,
         });
+        setScannerProcessing(false);
         return;
       }
 
@@ -295,11 +328,13 @@ export function CheckInByEvents() {
       const validStatuses = ['completed', 'free', 'paid', 'complimentary'];
       if (!validStatuses.includes(ticket.payment_status)) {
         playSound('error');
+        vibrateDevice('error');
         setCheckInResult({
           success: false,
           message: `This ticket has status "${ticket.payment_status}" and cannot be checked in.`,
           attendeeName: ticket.attendee_name,
         });
+        setScannerProcessing(false);
         return;
       }
 
@@ -313,11 +348,13 @@ export function CheckInByEvents() {
           .single();
         
         playSound('error');
+        vibrateDevice('error');
         setCheckInResult({
           success: false,
           message: `This ticket is for "${ticketEvent?.title || 'a different event'}". Please select the correct event.`,
           attendeeName: ticket.attendee_name,
         });
+        setScannerProcessing(false);
         return;
       }
 
@@ -331,23 +368,27 @@ export function CheckInByEvents() {
 
       if (eventError || !eventData) {
         playSound('error');
+        vibrateDevice('error');
         setCheckInResult({
           success: false,
           message: 'You do not have permission to check in tickets for this event.',
           attendeeName: ticket.attendee_name,
         });
+        setScannerProcessing(false);
         return;
       }
 
       // Check current status
       if (!isUndo && ticket.is_checked_in) {
         playSound('warning');
+        vibrateDevice('warning');
         setCheckInResult({
           success: false,
           message: 'This ticket has already been checked in.',
           attendeeName: ticket.attendee_name,
           alreadyCheckedIn: true,
         });
+        setScannerProcessing(false);
         return;
       }
 
@@ -357,6 +398,7 @@ export function CheckInByEvents() {
           message: 'This ticket is not checked in.',
           attendeeName: ticket.attendee_name,
         });
+        setScannerProcessing(false);
         return;
       }
 
@@ -379,6 +421,7 @@ export function CheckInByEvents() {
       }
 
       playSound(isUndo ? 'undo' : 'success');
+      vibrateDevice('success');
       setCheckInResult({
         success: true,
         message: isUndo ? 'Check-in reversed successfully!' : `✓ ${ticket.attendee_name} checked in!`,
@@ -393,9 +436,21 @@ export function CheckInByEvents() {
       // Clear manual input
       setTicketCode('');
 
+      // Auto-resume scanning after 1.5 seconds for continuous check-in
+      if (fromScanner && scanDialogOpen) {
+        setTimeout(() => {
+          setScannerProcessing(false);
+          setCheckInResult(null);
+          startQRScanner();
+        }, 1500);
+      } else {
+        setScannerProcessing(false);
+      }
+
     } catch (error) {
       console.error('Check-in error:', error);
       playSound('error');
+      vibrateDevice('error');
       
       let errorMessage = 'An error occurred. Please try again.';
       if (error.message?.includes('permission') || error.code === '42501') {
@@ -408,8 +463,31 @@ export function CheckInByEvents() {
         success: false,
         message: errorMessage,
       });
+      setScannerProcessing(false);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  // Vibrate device for haptic feedback
+  const vibrateDevice = (type) => {
+    if (!navigator.vibrate) return;
+    try {
+      switch (type) {
+        case 'success':
+          navigator.vibrate([100, 50, 100]); // Double pulse
+          break;
+        case 'error':
+          navigator.vibrate([300]); // Long vibration
+          break;
+        case 'warning':
+          navigator.vibrate([100, 100, 100]); // Triple short
+          break;
+        default:
+          navigator.vibrate(50);
+      }
+    } catch (e) {
+      // Vibration not supported
     }
   };
 
@@ -489,8 +567,8 @@ export function CheckInByEvents() {
             console.log('BarcodeDetector failed, falling back to jsQR');
           }
         }
-        
-        const scanFrame = async () => {
+          
+          const scanFrame = async () => {
           // Use ref to check scanning state (closure-safe)
           if (!scanningRef.current || !videoRef.current) return;
           
@@ -541,7 +619,7 @@ export function CheckInByEvents() {
           // If we found a code, process it
           if (detectedCode) {
             stopQRScanner();
-            performCheckIn(detectedCode);
+            performCheckIn(detectedCode, false, true); // fromScanner = true
             return;
           }
           
@@ -992,7 +1070,11 @@ export function CheckInByEvents() {
 
       {/* QR Scanner Dialog */}
       <Dialog open={scanDialogOpen} onOpenChange={(open) => {
-        if (!open) stopQRScanner();
+        if (!open) {
+          stopQRScanner();
+          setScannerProcessing(false);
+          setCheckInResult(null);
+        }
         setScanDialogOpen(open);
       }}>
         <DialogContent className="rounded-2xl max-w-md">
@@ -1003,22 +1085,56 @@ export function CheckInByEvents() {
             </DialogDescription>
           </DialogHeader>
           
-          {checkInResult && (
-            <div className={`p-4 rounded-xl flex items-start gap-3 ${
-              checkInResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          {/* Processing Overlay - Full screen within dialog */}
+          {scannerProcessing && (
+            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full border-4 border-[#2969FF]/20 border-t-[#2969FF] animate-spin" />
+                <QrCode className="w-8 h-8 text-[#2969FF] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <p className="mt-4 text-lg font-medium text-[#0F0F0F]">Processing...</p>
+              <p className="text-sm text-[#0F0F0F]/60 mt-1">Verifying ticket</p>
+            </div>
+          )}
+          
+          {/* Check-in Result Banner */}
+          {checkInResult && !scannerProcessing && (
+            <div className={`p-4 rounded-xl flex items-start gap-3 transition-all ${
+              checkInResult.success 
+                ? 'bg-green-50 border-2 border-green-400' 
+                : checkInResult.alreadyCheckedIn
+                  ? 'bg-yellow-50 border-2 border-yellow-400'
+                  : 'bg-red-50 border-2 border-red-400'
             }`}>
               {checkInResult.success ? (
-                <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+              ) : checkInResult.alreadyCheckedIn ? (
+                <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-6 h-6 text-white" />
+                </div>
               ) : (
-                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <X className="w-6 h-6 text-white" />
+                </div>
               )}
-              <div>
-                <p className={`font-medium ${checkInResult.success ? 'text-green-800' : 'text-red-800'}`}>
+              <div className="flex-1">
+                <p className={`font-semibold text-lg ${
+                  checkInResult.success ? 'text-green-800' : 
+                  checkInResult.alreadyCheckedIn ? 'text-yellow-800' : 'text-red-800'
+                }`}>
+                  {checkInResult.success ? 'Success!' : checkInResult.alreadyCheckedIn ? 'Already Checked In' : 'Error'}
+                </p>
+                <p className={`text-sm ${
+                  checkInResult.success ? 'text-green-700' : 
+                  checkInResult.alreadyCheckedIn ? 'text-yellow-700' : 'text-red-700'
+                }`}>
                   {checkInResult.message}
                 </p>
-                {checkInResult.attendeeName && (
-                  <p className={`text-sm mt-1 ${checkInResult.success ? 'text-green-700' : 'text-red-700'}`}>
-                    {checkInResult.attendeeName}
+                {checkInResult.success && (
+                  <p className="text-xs text-green-600 mt-2">
+                    Resuming scanner in a moment...
                   </p>
                 )}
               </div>
@@ -1045,6 +1161,12 @@ export function CheckInByEvents() {
                     <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#2969FF] animate-scan" />
                   </div>
                 </div>
+                {/* Ready to scan indicator */}
+                <div className="absolute bottom-4 left-0 right-0 text-center">
+                  <span className="bg-[#2969FF] text-white text-xs px-3 py-1 rounded-full">
+                    📷 Ready to scan
+                  </span>
+                </div>
               </>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-white">
@@ -1060,59 +1182,121 @@ export function CheckInByEvents() {
             )}
           </div>
 
-          {scanning && (
+          <div className="flex gap-2">
+            {scanning ? (
+              <Button
+                variant="outline"
+                onClick={stopQRScanner}
+                className="flex-1 rounded-xl"
+              >
+                Stop Scanner
+              </Button>
+            ) : (
+              <Button
+                onClick={startQRScanner}
+                className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
+              >
+                <QrCode className="w-4 h-4 mr-2" />
+                Start Scanner
+              </Button>
+            )}
             <Button
               variant="outline"
-              onClick={stopQRScanner}
-              className="w-full rounded-xl"
+              onClick={() => {
+                stopQRScanner();
+                setScanDialogOpen(false);
+                setManualCheckInDialog(true);
+              }}
+              className="rounded-xl"
             >
-              Stop Scanner
+              Enter Manually
             </Button>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Manual Check-In Dialog */}
-      <Dialog open={manualCheckInDialog} onOpenChange={setManualCheckInDialog}>
+      <Dialog open={manualCheckInDialog} onOpenChange={(open) => {
+        if (!open) {
+          setTicketCode('');
+          setCheckInResult(null);
+        }
+        setManualCheckInDialog(open);
+      }}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-[#0F0F0F]">Manual Check-In</DialogTitle>
             <DialogDescription>
-              Enter the ticket code to check in an attendee
+              Enter the ticket code (e.g., TRABCD12) to check in an attendee
             </DialogDescription>
           </DialogHeader>
 
-          {checkInResult && (
-            <div className={`p-4 rounded-xl flex items-start gap-3 ${
-              checkInResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          {/* Processing Overlay */}
+          {processing && (
+            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full border-4 border-[#2969FF]/20 border-t-[#2969FF] animate-spin" />
+                <UserCheck className="w-6 h-6 text-[#2969FF] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              </div>
+              <p className="mt-4 text-lg font-medium text-[#0F0F0F]">Checking In...</p>
+              <p className="text-sm text-[#0F0F0F]/60 mt-1">Verifying ticket code</p>
+            </div>
+          )}
+
+          {/* Result Banner */}
+          {checkInResult && !processing && (
+            <div className={`p-4 rounded-xl flex items-start gap-3 transition-all ${
+              checkInResult.success 
+                ? 'bg-green-50 border-2 border-green-400' 
+                : checkInResult.alreadyCheckedIn
+                  ? 'bg-yellow-50 border-2 border-yellow-400'
+                  : 'bg-red-50 border-2 border-red-400'
             }`}>
               {checkInResult.success ? (
-                <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+              ) : checkInResult.alreadyCheckedIn ? (
+                <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-6 h-6 text-white" />
+                </div>
               ) : (
-                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <X className="w-6 h-6 text-white" />
+                </div>
               )}
-              <div>
-                <p className={`font-medium ${checkInResult.success ? 'text-green-800' : 'text-red-800'}`}>
+              <div className="flex-1">
+                <p className={`font-semibold ${
+                  checkInResult.success ? 'text-green-800' : 
+                  checkInResult.alreadyCheckedIn ? 'text-yellow-800' : 'text-red-800'
+                }`}>
+                  {checkInResult.success ? 'Success!' : checkInResult.alreadyCheckedIn ? 'Already Checked In' : 'Error'}
+                </p>
+                <p className={`text-sm ${
+                  checkInResult.success ? 'text-green-700' : 
+                  checkInResult.alreadyCheckedIn ? 'text-yellow-700' : 'text-red-700'
+                }`}>
                   {checkInResult.message}
                 </p>
-                {checkInResult.attendeeName && (
-                  <p className={`text-sm mt-1 ${checkInResult.success ? 'text-green-700' : 'text-red-700'}`}>
-                    {checkInResult.attendeeName}
-                  </p>
-                )}
               </div>
             </div>
           )}
 
           <div className="space-y-4">
-            <Input
-              placeholder="Enter Ticket Code (e.g., TKT-ABC123)"
-              value={ticketCode}
-              onChange={(e) => setTicketCode(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.key === 'Enter' && handleManualCheckIn()}
-              className="rounded-xl border-[#0F0F0F]/10 h-12 font-mono"
-              autoFocus
-            />
+            <div>
+              <Input
+                placeholder="Enter Ticket Code (e.g., TRABCD12)"
+                value={ticketCode}
+                onChange={(e) => setTicketCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && !processing && handleManualCheckIn()}
+                className="rounded-xl border-[#0F0F0F]/10 h-14 font-mono text-lg text-center tracking-widest"
+                autoFocus
+                disabled={processing}
+              />
+              <p className="text-xs text-[#0F0F0F]/40 text-center mt-2">
+                Enter the 8-character code from the ticket
+              </p>
+            </div>
             <div className="flex gap-3">
               <Button
                 variant="outline"
@@ -1122,6 +1306,7 @@ export function CheckInByEvents() {
                   setCheckInResult(null);
                 }}
                 className="rounded-xl border-[#0F0F0F]/10 flex-1"
+                disabled={processing}
               >
                 Close
               </Button>
@@ -1130,17 +1315,26 @@ export function CheckInByEvents() {
                 disabled={!ticketCode.trim() || processing}
                 className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl flex-1"
               >
-                {processing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Check In
-                  </>
-                )}
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Check In
+              </Button>
+            </div>
+            
+            {/* Quick switch to scanner */}
+            <div className="text-center">
+              <Button
+                variant="link"
+                onClick={() => {
+                  setManualCheckInDialog(false);
+                  setTicketCode('');
+                  setCheckInResult(null);
+                  setScanDialogOpen(true);
+                }}
+                className="text-[#2969FF] text-sm"
+                disabled={processing}
+              >
+                <QrCode className="w-4 h-4 mr-1" />
+                Switch to QR Scanner
               </Button>
             </div>
           </div>
