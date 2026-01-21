@@ -35,22 +35,18 @@ export function GroupBuyJoin() {
   }, [code])
 
   const loadSessionPreview = async (groupCode) => {
-    console.log('=== loadSessionPreview started for:', groupCode)
     try {
       setLoading(true)
       setError(null)
       const sessionData = await getGroupSessionByCode(groupCode)
-      console.log('=== Session data received:', sessionData)
       if (!sessionData) {
         throw new Error('Group not found')
       }
-      console.log('=== Setting session and step to preview')
       setSession(sessionData)
       setStep('preview')
       setLoading(false)
-      console.log('=== State updates complete')
     } catch (err) {
-      console.error('=== Error loading group:', err)
+      console.warn('Error loading group:', err.message)
       setError(err.message || 'Group not found or expired')
       setStep('enter-code')
       setLoading(false)
@@ -106,9 +102,6 @@ export function GroupBuyJoin() {
       }
     })
   }
-
-  // Debug logging
-  console.log('=== Render state:', { step, loading, joining, hasSession: !!session, error })
 
   // Loading state
   if (loading && step === 'loading') {

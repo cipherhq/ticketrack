@@ -30,19 +30,17 @@ export function AuthCallback() {
 
         // If we have tokens in the hash, set the session explicitly
         if (accessToken && refreshToken) {
-          console.log('Setting session from URL tokens...')
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           })
           
           if (error) {
-            console.error('Error setting session:', error)
+            console.warn('Session set error:', error.message)
             throw error
           }
           
           if (data.session) {
-            console.log('Session set successfully')
             setStatus('success')
             setMessage('Your email has been verified successfully!')
             setTimeout(() => navigate('/', { replace: true }), 2000)
@@ -54,12 +52,11 @@ export function AuthCallback() {
         const { data, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('Error getting session:', error)
+          console.warn('Session retrieval error:', error.message)
           throw error
         }
         
         if (data.session) {
-          console.log('Existing session found')
           setStatus('success')
           setMessage('Welcome back!')
           setTimeout(() => navigate('/', { replace: true }), 2000)

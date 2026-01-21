@@ -97,6 +97,7 @@ const AccountDeleted = lazyWithRetry(() => import('./pages/AccountDeleted').then
 const AcceptTeamInvitation = lazyWithRetry(() => import('./pages/AcceptTeamInvitation').then(m => ({ default: m.AcceptTeamInvitation })), 'AcceptTeamInvitation');
 const TeamDashboard = lazyWithRetry(() => import('./pages/TeamDashboard').then(m => ({ default: m.TeamDashboard })), 'TeamDashboard');
 const CreateEvent = lazyWithRetry(() => import('./pages/organizer/CreateEvent').then(m => ({ default: m.CreateEvent })), 'CreateEvent');
+const NotFound = lazyWithRetry(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })), 'NotFound');
 import { OrganizerProvider } from './contexts/OrganizerContext';
 
 // Heavy routes - lazy loaded with retry (admin, organizer, promoter, finance)
@@ -346,6 +347,13 @@ function App() {
                   </Suspense>
                 } />
               </Route>
+
+              {/* 404 Catch-all Route */}
+              <Route path="*" element={
+                <Suspense fallback={<PageLoader />}>
+                  <NotFound />
+                </Suspense>
+              } />
             </Routes>
             <CookieConsent />
             <Toaster />

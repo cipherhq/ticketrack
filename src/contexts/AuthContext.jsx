@@ -140,9 +140,6 @@ export function AuthProvider({ children }) {
       // Supabase might create the user but fail to send email silently
       if (data?.user && !data?.session) {
         // User created but not confirmed - email should have been sent
-        // If SMTP is misconfigured, this might fail silently
-        console.log('User created, verification email should be sent')
-        
         // Send welcome email to new user
         try {
           await supabase.functions.invoke('send-email', {
@@ -155,10 +152,8 @@ export function AuthProvider({ children }) {
               }
             }
           })
-          console.log('Welcome email sent to new user')
         } catch (emailErr) {
-          console.error('Failed to send welcome email:', emailErr)
-          // Don't fail signup if welcome email fails
+          console.warn('Welcome email may not have been sent:', emailErr?.message)
         }
       }
 
@@ -257,7 +252,6 @@ export function AuthProvider({ children }) {
       // Use signInWithOtp for both signup and login
       // This sends a 6-digit OTP code, not a magic link
       // For signup, this works even if the user hasn't verified yet
-      console.log(`[Email OTP] Sending OTP to ${email}, isSignup: ${isSignup}`)
       
       const { error } = await supabase.auth.signInWithOtp({
         email: emailResult.value,
@@ -278,7 +272,6 @@ export function AuthProvider({ children }) {
         throw new Error(error.message || 'Failed to send email OTP')
       }
 
-      console.log('[Email OTP] OTP sent successfully')
       setOtpSent(true)
       return { success: true, message: 'Verification code sent to your email' }
     } catch (error) {
@@ -297,7 +290,6 @@ export function AuthProvider({ children }) {
     try {
       // signInWithOtp always uses type 'email' regardless of signup or login
       // The type is determined by how the OTP was sent, not by when the account was created
-      console.log(`[Email OTP] Verifying OTP for ${email}, token: ${otpResult.value.substring(0, 2)}...`)
       
       const { data, error } = await supabase.auth.verifyOtp({
         email: emailResult.value,
@@ -316,7 +308,6 @@ export function AuthProvider({ children }) {
         throw new Error(error.message || AUTH_ERRORS.OTP_INVALID)
       }
 
-      console.log('[Email OTP] Verification successful, user:', data.user?.id)
       setOtpSent(false)
       setPendingUser(null)
       return { success: true, user: data.user }
@@ -330,7 +321,6 @@ export function AuthProvider({ children }) {
     const phoneResult = validatePhone(phone)
     if (!phoneResult.valid) throw new Error(phoneResult.error)
 
-    console.log("Sending OTP to:", phoneResult.value, "Type:", type)
     try {
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: { phone: phoneResult.value, type }
