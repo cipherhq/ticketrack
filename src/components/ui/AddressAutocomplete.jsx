@@ -69,12 +69,28 @@ export function AddressAutocomplete({
           lng: place.geometry?.location?.lng(),
           city: '',
           country: '',
+          streetNumber: '',
+          streetName: '',
+          postalCode: '',
+          subpremise: '', // For flat/unit numbers
         };
 
-        // Extract city and country from address components
+        // Extract detailed address components (important for UK addresses)
         if (place.address_components) {
           place.address_components.forEach(component => {
-            if (component.types.includes('locality')) {
+            if (component.types.includes('subpremise')) {
+              placeData.subpremise = component.long_name; // Flat/Unit number
+            }
+            if (component.types.includes('street_number')) {
+              placeData.streetNumber = component.long_name;
+            }
+            if (component.types.includes('route')) {
+              placeData.streetName = component.long_name;
+            }
+            if (component.types.includes('postal_code')) {
+              placeData.postalCode = component.long_name;
+            }
+            if (component.types.includes('locality') || component.types.includes('postal_town')) {
               placeData.city = component.long_name;
             }
             if (component.types.includes('administrative_area_level_1') && !placeData.city) {
@@ -82,8 +98,25 @@ export function AddressAutocomplete({
             }
             if (component.types.includes('country')) {
               placeData.country = component.long_name;
+              placeData.countryCode = component.short_name;
             }
           });
+        }
+
+        // For UK addresses, build a more complete address if the venue name is just a postcode
+        let displayAddress = place.formatted_address;
+        
+        // If country is UK and we have street details, ensure they're visible
+        if (placeData.countryCode === 'GB' && placeData.streetNumber && placeData.streetName) {
+          // Build address with house number first for UK
+          const houseAddress = placeData.subpremise 
+            ? `${placeData.subpremise}, ${placeData.streetNumber} ${placeData.streetName}`
+            : `${placeData.streetNumber} ${placeData.streetName}`;
+          
+          // If formatted_address doesn't start with the house number, prepend it
+          if (!displayAddress.startsWith(placeData.streetNumber) && !displayAddress.includes(houseAddress)) {
+            displayAddress = `${houseAddress}, ${displayAddress}`;
+          }
         }
 
         // Generate Google Maps link
@@ -91,7 +124,8 @@ export function AddressAutocomplete({
           placeData.googleMapLink = `https://www.google.com/maps/search/?api=1&query=${placeData.lat},${placeData.lng}&query_place_id=${placeData.placeId}`;
         }
 
-        onChange(place.formatted_address);
+        placeData.address = displayAddress;
+        onChange(displayAddress);
         onPlaceSelect?.(placeData);
       }
     });
