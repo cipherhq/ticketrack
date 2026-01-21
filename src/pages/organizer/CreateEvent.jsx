@@ -203,24 +203,21 @@ Write a compelling 2-3 paragraph description that:
 Respond ONLY with the description text, no quotes or extra formatting. Use HTML tags like <p>, <strong>, <ul>, <li> for formatting.`;
 
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: systemPrompt }],
-          temperature: 0.7,
-          max_tokens: 1024
-        })
+      // Call AI via Supabase Edge Function (secure - API key on server)
+      const { data, error } = await supabase.functions.invoke('ai-compose', {
+        body: {
+          prompt: systemPrompt,
+          context: {
+            organizerName: organizer?.business_name || 'Event Organizer',
+            eventName: formData.title || 'Your Event'
+          }
+        }
       });
       
-      if (!response.ok) throw new Error("API request failed");
+      if (error) throw error;
       
-      const data = await response.json();
-      const generatedText = data.choices?.[0]?.message?.content || "";
+      // The Edge Function returns { subject, body } but we just need the body for description
+      const generatedText = data?.body || data?.content || "";
       
       if (generatedText) {
         handleInputChange("description", generatedText);
@@ -230,7 +227,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         throw new Error("No content generated");
       }
     } catch (error) {
-      console.error("AI generation error:", error);
+      console.warn("AI generation error:", error?.message);
       setAiError("Failed to generate description. Please try again.");
     } finally {
       setAiGenerating(false);

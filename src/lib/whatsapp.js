@@ -1,25 +1,15 @@
 // WhatsApp Cloud API Service for Ticketrack
-const WHATSAPP_API_URL = 'https://graph.facebook.com/v21.0';
+// Uses Supabase Edge Function for secure API key handling
+import { supabase } from './supabase';
 
 export async function sendWhatsAppMessage(to, message) {
-  const phoneId = import.meta.env.VITE_WHATSAPP_PHONE_ID;
-  const token = import.meta.env.VITE_WHATSAPP_TOKEN;
-  if (!phoneId || !token) throw new Error('WhatsApp credentials not configured');
-
-  const formattedPhone = to.replace(/[\s+\-]/g, '');
-  const response = await fetch(`${WHATSAPP_API_URL}/${phoneId}/messages`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: formattedPhone,
-      type: 'text',
-      text: { preview_url: false, body: message }
-    })
+  const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+    body: { to, message }
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error?.message || 'Failed to send');
+  
+  if (error) throw new Error(error.message || 'Failed to send WhatsApp message');
+  if (!data?.success) throw new Error(data?.error || 'Failed to send');
+  
   return data;
 }
 

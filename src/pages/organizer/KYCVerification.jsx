@@ -26,7 +26,7 @@ import {
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 
-const PAYSTACK_SECRET_KEY = import.meta.env.VITE_PAYSTACK_SECRET_KEY;
+// Paystack BVN verification is handled securely via Edge Function
 
 const verificationLevels = [
   {
@@ -273,26 +273,21 @@ export function KYCVerification() {
     setError('');
 
     try {
-      // Call Paystack BVN Match API
-      const response = await fetch('https://api.paystack.co/bvn/match', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Call BVN verification via secure Edge Function
+      const { data: result, error: verifyError } = await supabase.functions.invoke('verify-bvn', {
+        body: {
           bvn: bvnForm.bvn,
-          account_number: '',
-          bank_code: '',
-          first_name: bvnForm.firstName,
-          last_name: bvnForm.lastName,
-        }),
+          firstName: bvnForm.firstName,
+          lastName: bvnForm.lastName,
+        },
       });
 
-      const result = await response.json();
+      if (verifyError) {
+        throw new Error(verifyError.message || 'BVN verification failed');
+      }
 
-      if (!response.ok) {
-        throw new Error(result.message || 'BVN verification failed');
+      if (!result?.success) {
+        throw new Error(result?.error || 'BVN verification failed');
       }
 
       // BVN verified successfully
