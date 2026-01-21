@@ -1,39 +1,82 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { Loader2, CheckCircle2, XCircle, Mail } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 
 export function AuthCallback() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [status, setStatus] = useState('loading') // 'loading' | 'success' | 'error'
   const [message, setMessage] = useState('')
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // Get the hash fragment from the URL (contains access_token, etc.)
+        const hashParams = new URLSearchParams(location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        const errorCode = hashParams.get('error')
+        const errorDescription = hashParams.get('error_description')
+
+        // Check for error in URL
+        if (errorCode) {
+          console.error('Auth callback error:', errorCode, errorDescription)
+          throw new Error(errorDescription || 'Verification failed')
+        }
+
+        // If we have tokens in the hash, set the session explicitly
+        if (accessToken && refreshToken) {
+          console.log('Setting session from URL tokens...')
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          
+          if (error) {
+            console.error('Error setting session:', error)
+            throw error
+          }
+          
+          if (data.session) {
+            console.log('Session set successfully')
+            setStatus('success')
+            setMessage('Your email has been verified successfully!')
+            setTimeout(() => navigate('/', { replace: true }), 2000)
+            return
+          }
+        }
+
+        // Fallback: Try to get existing session
         const { data, error } = await supabase.auth.getSession()
         
-        if (error) throw error
+        if (error) {
+          console.error('Error getting session:', error)
+          throw error
+        }
         
         if (data.session) {
+          console.log('Existing session found')
           setStatus('success')
-          setMessage('Your email has been verified successfully!')
-          // Wait 3 seconds to show the success message, then redirect to profile
-          setTimeout(() => navigate('/profile', { replace: true }), 3000)
+          setMessage('Welcome back!')
+          setTimeout(() => navigate('/', { replace: true }), 2000)
         } else {
-          throw new Error('No session found')
+          // No session and no tokens - this might be an expired or invalid link
+          console.warn('No session found and no tokens in URL')
+          throw new Error('Verification link expired or invalid. Please try signing in again.')
         }
       } catch (error) {
+        console.error('Auth callback failed:', error)
         setStatus('error')
-        setMessage('Verification failed. Please try again.')
+        setMessage(error.message || 'Verification failed. Please try again.')
       }
     }
 
     handleAuthCallback()
-  }, [navigate])
+  }, [navigate, location])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA] px-4 py-12">
@@ -58,7 +101,7 @@ export function AuthCallback() {
                 </div>
                 <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Email Verified!</h2>
                 <p className="text-[#0F0F0F] font-medium mb-4">{message}</p>
-                <p className="text-[#0F0F0F]/60 text-sm mb-6">Redirecting you to your profile...</p>
+                <p className="text-[#0F0F0F]/60 text-sm mb-6">Redirecting you to the home page...</p>
                 <div className="flex justify-center">
                   <Loader2 className="w-5 h-5 animate-spin text-[#2969FF]" />
                 </div>
@@ -71,12 +114,21 @@ export function AuthCallback() {
                 </div>
                 <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Verification Failed</h2>
                 <p className="text-[#0F0F0F] font-medium mb-6">{message}</p>
-                <Button
-                  onClick={() => navigate('/login')}
-                  className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
-                >
-                  Back to Login
-                </Button>
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => navigate('/login')}
+                    className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/')}
+                    className="w-full rounded-xl"
+                  >
+                    Go to Home
+                  </Button>
+                </div>
               </>
             )}
           </CardContent>

@@ -101,7 +101,7 @@ export function AuthProvider({ children }) {
             marketing_consent: marketingConsent, // GDPR: Store marketing consent
             marketing_consent_date: marketingConsent ? new Date().toISOString() : null,
           },
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       })
 
@@ -178,7 +178,7 @@ export function AuthProvider({ children }) {
         type: 'signup',
         email: emailResult.value,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       })
 
@@ -262,7 +262,7 @@ export function AuthProvider({ children }) {
       const { error } = await supabase.auth.signInWithOtp({
         email: emailResult.value,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           // Explicitly request OTP code instead of magic link
           shouldCreateUser: !isSignup, // For signup, user already exists, so set to false
         }
