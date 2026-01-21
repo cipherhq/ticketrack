@@ -134,6 +134,8 @@ export function CreateEvent() {
     allowTransfers: false,
     maxTransfers: 2,
     transferFee: 0,
+    // Email Notification Settings
+    notifyOrganizerOnSale: true, // Organizer receives email for each purchase/RSVP
     // Scheduled Publishing
     publishOption: 'now',
     publishDate: '',
@@ -334,6 +336,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               allowTransfers: event.allow_transfers === true,
               maxTransfers: event.max_transfers || 2,
               transferFee: event.transfer_fee || 0,
+              notifyOrganizerOnSale: event.notify_organizer_on_sale !== false, // Default true
             });
             if (event.image_url) {
               setBannerPreview(event.image_url);
@@ -1164,6 +1167,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         allow_transfers: formData.allowTransfers,
         max_transfers: parseInt(formData.maxTransfers) || 2,
         transfer_fee: parseFloat(formData.transferFee) || 0,
+        notify_organizer_on_sale: formData.notifyOrganizerOnSale,
         status: formData.publishOption === 'schedule' ? 'scheduled' : formData.publishOption === 'draft' ? 'draft' : 'published',
         publish_at: formData.publishOption === 'schedule' && formData.publishDate 
           ? `${formData.publishDate}T${formData.publishTime || '00:00'}:00` 
@@ -2857,6 +2861,38 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               </Card>
                 </>
               )}
+
+              {/* Email Notification Settings */}
+              <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-5 h-5 text-[#0F0F0F]/60" />
+                    <div>
+                      <h3 className="font-semibold text-[#0F0F0F]">Email Notifications</h3>
+                      <p className="text-sm text-[#0F0F0F]/60">Control email notifications for this event</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-[#0F0F0F]/10">
+                    <div>
+                      <Label className="font-medium">Notify me on ticket sales/RSVPs</Label>
+                      <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                        Receive an email notification for each ticket purchase or RSVP
+                      </p>
+                    </div>
+                    <Checkbox
+                      checked={formData.notifyOrganizerOnSale}
+                      onCheckedChange={(checked) => handleInputChange('notifyOrganizerOnSale', checked)}
+                      className="h-6 w-6"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl text-sm text-amber-700">
+                    <Info className="w-4 h-4" />
+                    High-volume events may generate many emails. Disable if you prefer to check orders in your dashboard instead.
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Custom Form Section */}
               <Card className="border-0 rounded-2xl shadow-sm">

@@ -574,7 +574,8 @@ export function WebFreeRSVP() {
         const organizerEmail = eventWithOrganizer?.organizers?.email || 
                                eventWithOrganizer?.organizers?.profiles?.email
         
-        if (organizerEmail) {
+        // Only send if organizer notifications are enabled
+        if (organizerEmail && event.notify_organizer_on_sale !== false) {
           sendConfirmationEmail({
             type: "new_ticket_sale",
             to: organizerEmail,
@@ -594,11 +595,9 @@ export function WebFreeRSVP() {
               appUrl: window.location.origin
             }
           })
-          console.log('Organizer notification sent for RSVP')
         }
       } catch (orgEmailErr) {
-        console.error('Failed to send organizer notification:', orgEmailErr)
-        // Don't fail the RSVP if organizer notification fails
+        console.warn('Organizer notification failed:', orgEmailErr?.message)
       }
 
       // Navigate to success
@@ -876,7 +875,8 @@ export function WebFreeRSVP() {
         const organizerEmail = eventWithOrganizer?.organizers?.email || 
                                eventWithOrganizer?.organizers?.profiles?.email
         
-        if (organizerEmail) {
+        // Only send if organizer notifications are enabled
+        if (organizerEmail && event.notify_organizer_on_sale !== false) {
           sendConfirmationEmail({
             type: "new_ticket_sale",
             to: organizerEmail,
@@ -898,7 +898,7 @@ export function WebFreeRSVP() {
           })
         }
       } catch (orgEmailErr) {
-        console.error('Failed to send organizer notification:', orgEmailErr)
+        console.warn('Organizer notification failed:', orgEmailErr?.message)
       }
 
       navigate('/payment-success', {
@@ -1017,7 +1017,8 @@ export function WebFreeRSVP() {
         const organizerEmail = eventWithOrganizer?.organizers?.email || 
                                eventWithOrganizer?.organizers?.profiles?.email
         
-        if (organizerEmail) {
+        // Only send if organizer notifications are enabled
+        if (organizerEmail && event.notify_organizer_on_sale !== false) {
           sendConfirmationEmail({
             type: "new_ticket_sale",
             to: organizerEmail,
@@ -1039,7 +1040,7 @@ export function WebFreeRSVP() {
           })
         }
       } catch (orgEmailErr) {
-        console.error('Failed to send organizer notification:', orgEmailErr)
+        console.warn('Organizer notification failed:', orgEmailErr?.message)
       }
 
       navigate('/payment-success', {

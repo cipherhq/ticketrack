@@ -875,9 +875,9 @@ export function WebCheckout() {
           }]
         })
 
-        // Send notification to organizer
+        // Send notification to organizer (if enabled)
         const organizerEmail = event.organizer?.email || event.organizer?.business_email
-        if (organizerEmail) {
+        if (organizerEmail && event.notify_organizer_on_sale !== false) {
           sendConfirmationEmail({
             type: "new_ticket_sale",
             to: organizerEmail,

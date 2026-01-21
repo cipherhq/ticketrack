@@ -214,9 +214,9 @@ export function WebPaymentSuccess() {
           })
           console.log('Attendee confirmation email sent')
 
-          // Send notification to organizer
+          // Send notification to organizer (if enabled)
           const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email
-          if (organizerEmail) {
+          if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
             await supabase.functions.invoke('send-email', {
               body: {
                 type: 'new_ticket_sale',
@@ -238,10 +238,9 @@ export function WebPaymentSuccess() {
                 }
               }
             })
-            console.log('Organizer notification email sent')
           }
         } catch (emailErr) {
-          console.error('Email error:', emailErr)
+          console.warn('Email error:', emailErr?.message)
         }
       } else {
         // Order already completed, just load tickets with order data

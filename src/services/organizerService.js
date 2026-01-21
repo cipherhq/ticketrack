@@ -264,7 +264,18 @@ export async function duplicateEvent(eventId) {
 // TICKET TYPE FUNCTIONS
 // =====================================================
 
-export async function createTicketTypes(eventId, ticketTypes) {
+export async function createTicketTypes(eventId, ticketTypes, currency = null) {
+  // If no currency provided, fetch it from the event
+  let ticketCurrency = currency;
+  if (!ticketCurrency) {
+    const { data: event } = await supabase
+      .from('events')
+      .select('currency')
+      .eq('id', eventId)
+      .single();
+    ticketCurrency = event?.currency || 'GBP'; // Default to GBP if not set
+  }
+  
   const ticketsToInsert = ticketTypes.map((ticket, index) => ({
     event_id: eventId,
     name: ticket.name,
@@ -272,7 +283,7 @@ export async function createTicketTypes(eventId, ticketTypes) {
     price: parseFloat(ticket.price) || 0,
     quantity_available: parseInt(ticket.quantity) || 0,
     quantity_sold: 0,
-    currency: 'NGN',
+    currency: ticket.currency || ticketCurrency,
     is_active: true,
     sort_order: index,
     is_refundable: ticket.isRefundable !== false,
