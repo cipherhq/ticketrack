@@ -103,20 +103,48 @@ export function AddressAutocomplete({
           });
         }
 
-        // For UK addresses, build a more complete address if the venue name is just a postcode
+        // For UK addresses, build a complete address with house number and flat/apt
         let displayAddress = place.formatted_address;
         
-        // If country is UK and we have street details, ensure they're visible
-        if (placeData.countryCode === 'GB' && placeData.streetNumber && placeData.streetName) {
-          // Build address with house number first for UK
-          const houseAddress = placeData.subpremise 
-            ? `${placeData.subpremise}, ${placeData.streetNumber} ${placeData.streetName}`
-            : `${placeData.streetNumber} ${placeData.streetName}`;
+        // UK address format: Flat X, House Number, Street Name, City, Postcode
+        if (placeData.countryCode === 'GB') {
+          const addressParts = [];
           
-          // If formatted_address doesn't start with the house number, prepend it
-          if (!displayAddress.startsWith(placeData.streetNumber) && !displayAddress.includes(houseAddress)) {
-            displayAddress = `${houseAddress}, ${displayAddress}`;
+          // Add flat/apartment number first if exists
+          if (placeData.subpremise) {
+            addressParts.push(placeData.subpremise);
           }
+          
+          // Add house number and street
+          if (placeData.streetNumber && placeData.streetName) {
+            addressParts.push(`${placeData.streetNumber} ${placeData.streetName}`);
+          } else if (placeData.streetName) {
+            addressParts.push(placeData.streetName);
+          }
+          
+          // Add city
+          if (placeData.city) {
+            addressParts.push(placeData.city);
+          }
+          
+          // Add postcode
+          if (placeData.postalCode) {
+            addressParts.push(placeData.postalCode);
+          }
+          
+          // Use our built address if we have street details, otherwise use Google's
+          if (addressParts.length >= 2) {
+            displayAddress = addressParts.join(', ');
+          }
+          
+          // Store the full structured address
+          placeData.fullUKAddress = {
+            flatNumber: placeData.subpremise || '',
+            houseNumber: placeData.streetNumber || '',
+            street: placeData.streetName || '',
+            city: placeData.city || '',
+            postcode: placeData.postalCode || '',
+          };
         }
 
         // Generate Google Maps link
