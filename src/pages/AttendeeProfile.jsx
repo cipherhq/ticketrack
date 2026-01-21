@@ -630,7 +630,7 @@ export function AttendeeProfile() {
 
   // Handle account deletion
   const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== 'DELETE') return
+    if (deleteConfirmText.toUpperCase() !== 'DELETE') return
 
     setDeleting(true)
     try {
@@ -2010,7 +2010,7 @@ export function AttendeeProfile() {
                 <li>Affiliate earnings (unpaid balance will be forfeited)</li>
               </ul>
               <div className="pt-2">
-                <Label className="text-[#0F0F0F]">Type DELETE to confirm</Label>
+                <Label className="text-[#0F0F0F]">Type "delete" to confirm</Label>
                 <Input 
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
@@ -2024,7 +2024,7 @@ export function AttendeeProfile() {
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <Button
               onClick={handleDeleteAccount}
-              disabled={deleteConfirmText !== 'DELETE' || deleting}
+              disabled={deleteConfirmText.toUpperCase() !== 'DELETE' || deleting}
               className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
             >
               {deleting ? (
