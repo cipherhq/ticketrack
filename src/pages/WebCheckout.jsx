@@ -875,10 +875,11 @@ export function WebCheckout() {
         })
 
         // Send notification to organizer
-        if (event.organizer?.email) {
+        const organizerEmail = event.organizer?.email || event.organizer?.business_email
+        if (organizerEmail) {
           sendConfirmationEmail({
             type: "new_ticket_sale",
-            to: event.organizer.email,
+            to: organizerEmail,
             data: {
               eventTitle: event.title,
               eventId: event.id,
@@ -888,6 +889,7 @@ export function WebCheckout() {
               buyerEmail: formData.email,
               buyerPhone: formData.phone || null,
               amount: finalTotal,
+              currency: event.currency || 'GBP',
               isFree: false,
               totalSold: event.tickets_sold || 0,
               totalCapacity: event.capacity || 0,

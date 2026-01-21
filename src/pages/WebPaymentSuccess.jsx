@@ -83,7 +83,7 @@ export function WebPaymentSuccess() {
       // Fetch order with event and order items
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, is_free, organizer:organizers(id, business_name, logo_url), event_sponsors(*)), order_items(*, ticket_types(name, price))') 
+        .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*)), order_items(*, ticket_types(name, price))') 
         .eq('id', orderId)
         .single()
 
@@ -188,6 +188,9 @@ export function WebPaymentSuccess() {
             console.error('PDF generation failed:', pdfErr)
           }
           
+          // Full venue address for email
+          const fullVenue = [eventData?.venue_name, eventData?.venue_address, eventData?.city, eventData?.country].filter(Boolean).join(', ') || 'TBA'
+          
           await supabase.functions.invoke('send-email', {
             body: {
               type: 'ticket_purchase',
@@ -196,13 +199,13 @@ export function WebPaymentSuccess() {
                 attendeeName: orderData.buyer_name,
                 eventTitle: eventData?.title,
                 eventDate: eventData?.start_date,
-                venueName: eventData?.venue_name || 'TBA',
+                venueName: fullVenue,
                 city: eventData?.city || '',
                 ticketType: ticketTypes,
                 quantity: totalQty,
                 orderNumber: orderData.order_number,
                 totalAmount: orderData.total_amount,
-                currency: orderData.currency,
+                currency: orderData.currency || eventData?.currency || 'GBP',
                 isFree: parseFloat(orderData.total_amount) === 0,
                 appUrl: window.location.origin
               },
@@ -212,11 +215,12 @@ export function WebPaymentSuccess() {
           console.log('Attendee confirmation email sent')
 
           // Send notification to organizer
-          if (eventData?.organizer?.email) {
+          const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email
+          if (organizerEmail) {
             await supabase.functions.invoke('send-email', {
               body: {
                 type: 'new_ticket_sale',
-                to: eventData.organizer.email,
+                to: organizerEmail,
                 data: {
                   eventTitle: eventData?.title,
                   eventId: eventData?.id,
@@ -226,6 +230,7 @@ export function WebPaymentSuccess() {
                   buyerEmail: orderData.buyer_email,
                   buyerPhone: orderData.buyer_phone || null,
                   amount: orderData.total_amount,
+                  currency: orderData.currency || eventData?.currency || 'GBP',
                   isFree: parseFloat(orderData.total_amount) === 0,
                   totalSold: eventData?.tickets_sold || 0,
                   totalCapacity: eventData?.capacity || 0,
