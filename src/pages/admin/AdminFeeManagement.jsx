@@ -87,6 +87,8 @@ export function AdminFeeManagement() {
       service_fee_fixed_per_ticket: country.service_fee_fixed_per_ticket || 0,
       service_fee_cap: country.service_fee_cap || '',
       donation_fee_percentage: country.donation_fee_percentage || 5,
+      donation_processing_fee_pct: country.donation_processing_fee_pct || 2.9,
+      donation_processing_fee_fixed: country.donation_processing_fee_fixed || 0.30,
       transfer_fee_percentage: country.transfer_fee_percentage || 10,
       processing_fee_fixed_per_order: country.processing_fee_fixed_per_order || 0,
       stripe_processing_fee_pct: country.stripe_processing_fee_pct || 2.9,
@@ -110,6 +112,8 @@ export function AdminFeeManagement() {
           service_fee_fixed_per_ticket: parseFloat(editingCountry.service_fee_fixed_per_ticket) || 0,
           service_fee_cap: editingCountry.service_fee_cap ? parseFloat(editingCountry.service_fee_cap) : null,
           donation_fee_percentage: parseFloat(editingCountry.donation_fee_percentage) || 5,
+          donation_processing_fee_pct: parseFloat(editingCountry.donation_processing_fee_pct) || 2.9,
+          donation_processing_fee_fixed: parseFloat(editingCountry.donation_processing_fee_fixed) || 0.30,
           transfer_fee_percentage: parseFloat(editingCountry.transfer_fee_percentage) || 10,
           processing_fee_fixed_per_order: parseFloat(editingCountry.processing_fee_fixed_per_order) || 0,
           stripe_processing_fee_pct: parseFloat(editingCountry.stripe_processing_fee_pct) || 2.9,
@@ -449,17 +453,40 @@ export function AdminFeeManagement() {
                   Donation Fees (Free Events)
                 </h3>
                 <p className="text-sm text-[#0F0F0F]/60">
-                  Platform fee charged on donations for free events. This is deducted before payout to organizers.
+                  Fees charged on donations for free events. Platform fee is deducted before payout. 
+                  <br />Processing fees can be passed to donor or absorbed by organizer.
                 </p>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Donation Fee (%)</Label>
+                    <Label>Platform Fee (%)</Label>
                     <Input type="number" step="0.1" min="0" max="30" value={editingCountry.donation_fee_percentage}
                       onChange={(e) => setEditingCountry({...editingCountry, donation_fee_percentage: e.target.value})}
                       className="rounded-xl mt-1" />
-                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Percentage of donation amount</p>
+                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Ticketrack revenue from donations</p>
                   </div>
+                  <div>
+                    <Label>Processing Fee (%)</Label>
+                    <Input type="number" step="0.1" min="0" max="10" value={editingCountry.donation_processing_fee_pct}
+                      onChange={(e) => setEditingCountry({...editingCountry, donation_processing_fee_pct: e.target.value})}
+                      className="rounded-xl mt-1" />
+                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Payment processor fee %</p>
+                  </div>
+                  <div>
+                    <Label>Processing Fixed ({getCurrencySymbol(editingCountry.default_currency)})</Label>
+                    <Input type="number" step="0.01" min="0" value={editingCountry.donation_processing_fee_fixed}
+                      onChange={(e) => setEditingCountry({...editingCountry, donation_processing_fee_fixed: e.target.value})}
+                      className="rounded-xl mt-1" />
+                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Fixed fee per donation</p>
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-pink-50 border border-pink-200 rounded-lg mt-2">
+                  <p className="text-xs text-pink-700">
+                    <strong>How it works:</strong> Organizers choose if they absorb fees or pass to donors.
+                    <br />• <strong>Absorb:</strong> Fees deducted from donation (organizer gets less)
+                    <br />• <strong>Pass to donor:</strong> Fees added on top (donor pays more)
+                  </p>
                 </div>
               </div>
 

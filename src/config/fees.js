@@ -18,7 +18,8 @@ export const getCountryFees = async () => {
     .select(`
       code, default_currency, 
       service_fee_percentage, service_fee_fixed_per_ticket, service_fee_cap,
-      donation_fee_percentage, transfer_fee_percentage,
+      donation_fee_percentage, donation_processing_fee_pct, donation_processing_fee_fixed,
+      transfer_fee_percentage,
       processing_fee_fixed_per_order,
       stripe_processing_fee_pct, stripe_processing_fee_fixed,
       paystack_processing_fee_pct, paystack_processing_fee_fixed,
@@ -43,6 +44,8 @@ export const getCountryFees = async () => {
         serviceFeeCap: country.service_fee_cap ? parseFloat(country.service_fee_cap) : null,
         // Donation fees (for free events)
         donationFeePercent: parseFloat(country.donation_fee_percentage || 5) / 100,
+        donationProcessingPercent: parseFloat(country.donation_processing_fee_pct || 2.9) / 100,
+        donationProcessingFixed: parseFloat(country.donation_processing_fee_fixed || 0.30),
         // Transfer fees (for ticket transfers)
         transferFeePercent: parseFloat(country.transfer_fee_percentage || 10) / 100,
         // Processing fees (pass-through)
@@ -79,6 +82,8 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 1.79,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    donationProcessingPercent: 0.029,
+    donationProcessingFixed: 0.30,
     transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0.029,
@@ -95,6 +100,8 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 0.59,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    donationProcessingPercent: 0.014, // 1.4% + 20p for UK donations
+    donationProcessingFixed: 0.20,
     transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0, // Included in service fee
@@ -111,6 +118,8 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 0.59,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    donationProcessingPercent: 0.014, // 1.4% + €0.25
+    donationProcessingFixed: 0.25,
     transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0, // Included in service fee
@@ -127,6 +136,8 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 1.19,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    donationProcessingPercent: 0.017, // 1.7% + A$0.30
+    donationProcessingFixed: 0.30,
     transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0, // Included in service fee
@@ -143,6 +154,8 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 1.79,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    donationProcessingPercent: 0.029, // 2.9% + C$0.30
+    donationProcessingFixed: 0.30,
     transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0.029,
@@ -159,6 +172,8 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 300,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    donationProcessingPercent: 0.015, // 1.5% + ₦100
+    donationProcessingFixed: 100,
     transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0,
@@ -175,6 +190,8 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 5.00,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    donationProcessingPercent: 0.019, // 1.9%
+    donationProcessingFixed: 0,
     transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0,
@@ -191,6 +208,8 @@ export const getDefaultFees = () => ({
     serviceFeeFixedPerTicket: 20,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
+    donationProcessingPercent: 0.029, // 2.9%
+    donationProcessingFixed: 0,
     transferFeePercent: 0.10,
     processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0,
@@ -207,7 +226,9 @@ export const DEFAULT_FEES = {
   serviceFeePercent: 0.037,        // 3.7%
   serviceFeeFixedPerTicket: 1.79,  // $1.79
   serviceFeeCap: null,
-  donationFeePercent: 0.05,
+  donationFeePercent: 0.05,        // 5%
+  donationProcessingPercent: 0.029, // 2.9%
+  donationProcessingFixed: 0.30,   // $0.30
   transferFeePercent: 0.10,
   processingFeeFixedPerOrder: 0,
   stripeProcessingPercent: 0.029,  // 2.9%
@@ -304,20 +325,44 @@ export const calculateFees = (ticketSubtotal, ticketCount, fees, paymentProvider
 };
 
 /**
- * Calculate platform fee for donations on free events
+ * Calculate fees for donations on free events
  * @param {number} donationAmount - The donation amount
  * @param {object} fees - Fee config from getFeesByCurrency
- * @returns {object} { platformFee, netDonation, feePercent }
+ * @param {boolean} donorPaysFee - Whether the donor pays the processing fee
+ * @returns {object} { platformFee, processingFee, totalFee, netDonation, donorPays, feePercent }
  */
-export const calculateDonationFee = (donationAmount, fees) => {
-  const feePercent = fees?.donationFeePercent ?? 0.05; // Default 5%
-  const platformFee = Math.round(donationAmount * feePercent * 100) / 100;
-  const netDonation = Math.round((donationAmount - platformFee) * 100) / 100;
+export const calculateDonationFee = (donationAmount, fees, donorPaysFee = false) => {
+  // Platform fee (Ticketrack revenue) - always from the donation amount
+  const platformFeePercent = fees?.donationFeePercent ?? 0.05; // Default 5%
+  const platformFee = Math.round(donationAmount * platformFeePercent * 100) / 100;
+  
+  // Processing fee (payment processor)
+  const processingPercent = fees?.donationProcessingPercent ?? 0.029; // Default 2.9%
+  const processingFixed = fees?.donationProcessingFixed ?? 0.30;
+  const processingFee = Math.round((donationAmount * processingPercent + processingFixed) * 100) / 100;
+  
+  // Total fee (platform + processing)
+  const totalFee = Math.round((platformFee + processingFee) * 100) / 100;
+  
+  // Net donation (what organizer receives after platform fee)
+  // If donor pays fee: organizer gets donation - platformFee
+  // If organizer absorbs: organizer gets donation - totalFee
+  const netDonation = donorPaysFee 
+    ? Math.round((donationAmount - platformFee) * 100) / 100
+    : Math.round((donationAmount - totalFee) * 100) / 100;
+  
+  // What the donor actually pays
+  const donorPays = donorPaysFee 
+    ? Math.round((donationAmount + totalFee) * 100) / 100
+    : donationAmount;
   
   return {
     platformFee,
+    processingFee,
+    totalFee,
     netDonation,
-    feePercent: Math.round(feePercent * 100) // Return as percentage (e.g., 5)
+    donorPays,
+    feePercent: Math.round((platformFeePercent + processingPercent) * 100) // Combined percentage
   };
 };
 

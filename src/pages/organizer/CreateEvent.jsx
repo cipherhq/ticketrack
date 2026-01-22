@@ -122,6 +122,7 @@ export function CreateEvent() {
     acceptsDonations: false,
     donationAmounts: [500, 1000, 2500],
     allowCustomDonation: true,
+    donationFeeHandling: 'absorb', // absorb = organizer pays from donation, pass_to_attendee = donor pays on top
     // Terms
     agreedToTerms: false,
     // Event Access/Visibility
@@ -335,6 +336,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               acceptsDonations: event.accepts_donations || false,
               donationAmounts: event.donation_amounts || [500, 1000, 2500],
               allowCustomDonation: event.allow_custom_donation !== false,
+              donationFeeHandling: event.donation_fee_handling || 'absorb',
               slug: event.slug || "",
               agreedToTerms: true,
               allowTransfers: event.allow_transfers === true,
@@ -1156,6 +1158,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         accepts_donations: formData.acceptsDonations,
         donation_amounts: formData.donationAmounts,
         allow_custom_donation: formData.allowCustomDonation,
+        donation_fee_handling: formData.donationFeeHandling,
         total_capacity: parseInt(formData.venueCapacity) || totalCapacity,
         max_tickets_per_order: parseInt(formData.maxTicketsPerOrder) || 10,
         image_url: imageUrl,
@@ -2570,6 +2573,44 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                           <Label htmlFor="allowCustomDonation" className="text-sm cursor-pointer">
                             Allow custom donation amount
                           </Label>
+                        </div>
+                        
+                        {/* Donation Fee Handling */}
+                        <div className="mt-4 p-3 bg-white rounded-lg border border-green-500/30">
+                          <Label className="text-sm font-medium mb-2 block">Who pays donation processing fees?</Label>
+                          <p className="text-xs text-[#0F0F0F]/50 mb-3">
+                            Processing fees include platform fee and payment processing
+                          </p>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleInputChange('donationFeeHandling', 'absorb')}
+                              className={`flex-1 p-3 rounded-lg border-2 text-sm transition-all ${
+                                formData.donationFeeHandling === 'absorb'
+                                  ? 'border-green-500 bg-green-50 text-green-700'
+                                  : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'
+                              }`}
+                            >
+                              <div className="font-medium">I'll absorb fees</div>
+                              <div className="text-xs mt-1 text-[#0F0F0F]/50">
+                                Fees deducted from donation
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleInputChange('donationFeeHandling', 'pass_to_attendee')}
+                              className={`flex-1 p-3 rounded-lg border-2 text-sm transition-all ${
+                                formData.donationFeeHandling === 'pass_to_attendee'
+                                  ? 'border-green-500 bg-green-50 text-green-700'
+                                  : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'
+                              }`}
+                            >
+                              <div className="font-medium">Donor pays fees</div>
+                              <div className="text-xs mt-1 text-[#0F0F0F]/50">
+                                Fees added on top
+                              </div>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

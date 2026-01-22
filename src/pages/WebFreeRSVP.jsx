@@ -253,6 +253,8 @@ export function WebFreeRSVP() {
   // Donation state
   const [donationAmount, setDonationAmount] = useState(0)
   const [customDonation, setCustomDonation] = useState('')
+  const [donationFee, setDonationFee] = useState(0)
+  const [donationFeePercent, setDonationFeePercent] = useState(0.05) // Default 5%
   
   // UI state
   const [loading, setLoading] = useState(false)
@@ -272,6 +274,10 @@ export function WebFreeRSVP() {
   const donationOptions = event?.donation_amounts || []
   const allowCustomDonation = event?.allow_custom_donation !== false
   const actualDonation = customDonation ? parseInt(customDonation) || 0 : donationAmount
+  
+  // Donation fee handling - check if donor pays the fee or organizer absorbs it
+  const donorPaysFee = event?.donation_fee_handling === 'pass_to_attendee'
+  const donationTotal = donorPaysFee ? actualDonation + donationFee : actualDonation
 
   // Redirect if no event or not logged in
   useEffect(() => {
@@ -284,6 +290,28 @@ export function WebFreeRSVP() {
       return
     }
   }, [event, user, navigate, location.pathname])
+
+  // Load donation fee percentage and calculate fee when donation changes
+  useEffect(() => {
+    async function loadDonationFee() {
+      if (!event?.currency || actualDonation <= 0) {
+        setDonationFee(0)
+        return
+      }
+      
+      try {
+        const feePercent = await getDonationFeePercent(event.currency)
+        setDonationFeePercent(feePercent)
+        const calculatedFee = Math.round(actualDonation * feePercent * 100) / 100
+        setDonationFee(calculatedFee)
+      } catch (err) {
+        console.warn('Error loading donation fee:', err)
+        // Default to 5%
+        setDonationFee(Math.round(actualDonation * 0.05 * 100) / 100)
+      }
+    }
+    loadDonationFee()
+  }, [event?.currency, actualDonation])
 
   // Load user profile
   useEffect(() => {
@@ -656,10 +684,16 @@ export function WebFreeRSVP() {
       const currency = event?.currency || getDefaultCurrency(event?.country_code || event?.country)
       const paymentProvider = getPaymentProvider(currency)
 
-      // Fetch configurable donation fee from database (admin can change this)
-      const donationFeePercent = await getDonationFeePercent(currency)
-      const calculatedPlatformFee = Math.round(actualDonation * donationFeePercent * 100) / 100
-      const netDonation = actualDonation - calculatedPlatformFee
+      // Calculate the platform fee (from pre-calculated state)
+      const calculatedPlatformFee = donationFee
+      
+      // Check if organizer absorbs fee or donor pays
+      const organizerAbsorbsFee = event?.donation_fee_handling !== 'pass_to_attendee'
+      
+      // Total amount to charge:
+      // - If donor pays: donation + fee
+      // - If organizer absorbs: just the donation (fee deducted from their payout)
+      const chargeAmount = organizerAbsorbsFee ? actualDonation : donationTotal
 
       // Create pending order with donation
       const { data: order, error: orderError } = await supabase
@@ -669,11 +703,12 @@ export function WebFreeRSVP() {
           event_id: event.id,
           order_number: `DON${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
-          subtotal: actualDonation,
-          platform_fee: calculatedPlatformFee,
+          subtotal: actualDonation, // The donation amount before any fee
+          platform_fee: calculatedPlatformFee, // Always store the fee for payout calculation
+          platform_fee_absorbed: organizerAbsorbsFee, // Track if organizer absorbs the fee
           tax_amount: 0,
           discount_amount: 0,
-          total_amount: actualDonation,
+          total_amount: chargeAmount, // What the donor actually pays
           currency: currency,
           payment_method: 'card',
           payment_provider: paymentProvider,
@@ -700,7 +735,7 @@ export function WebFreeRSVP() {
               successUrl: `${window.location.origin}/payment-success?order_id=${order.id}&reference=${paymentRef}`,
               cancelUrl: `${window.location.origin}/event/${event.slug}`,
               isDonation: true,
-              donationAmount: actualDonation
+              donationAmount: chargeAmount // Charge the correct total
             }
           })
 
@@ -727,7 +762,7 @@ export function WebFreeRSVP() {
           const handler = window.PaystackPop.setup({
             key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
             email: formData.email,
-            amount: actualDonation * 100,
+            amount: chargeAmount * 100, // Charge the correct total
             currency: currency,
             ref: paymentRef,
             metadata: {
@@ -736,6 +771,7 @@ export function WebFreeRSVP() {
               event_name: event.title,
               type: 'donation',
               is_donation: true,
+              fee_absorbed: organizerAbsorbsFee,
               custom_fields: [
                 { display_name: "Donor Name", variable_name: "donor_name", value: `${formData.firstName} ${formData.lastName}` },
                 { display_name: "Type", variable_name: "type", value: "Event Donation" }
@@ -1244,7 +1280,10 @@ export function WebFreeRSVP() {
                   <Label className="text-[#0F0F0F] font-medium mb-2 block flex items-center gap-2">
                     <span>💝</span> Support This Event (Optional)
                   </Label>
-                  <p className="text-sm text-[#0F0F0F]/60 mb-3">Your donation helps make this event possible</p>
+                  <p className="text-sm text-[#0F0F0F]/60 mb-3">
+                    Your donation helps make this event possible
+                    {donorPaysFee && <span className="text-[#0F0F0F]/40"> (processing fee will be added)</span>}
+                  </p>
                   
                   <div className="flex flex-wrap gap-2 mb-3">
                     <button
@@ -1339,12 +1378,24 @@ export function WebFreeRSVP() {
                 </div>
                 
                 {actualDonation > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-600 flex items-center gap-1">💝 Donation</span>
-                    <span className="text-green-600 font-medium">
-                      {formatPrice(actualDonation, event?.currency)}
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-green-600 flex items-center gap-1">💝 Donation</span>
+                      <span className="text-green-600 font-medium">
+                        {formatPrice(actualDonation, event?.currency)}
+                      </span>
+                    </div>
+                    {donorPaysFee && donationFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#0F0F0F]/60 flex items-center gap-1">
+                          Processing Fee ({(donationFeePercent * 100).toFixed(1)}%)
+                        </span>
+                        <span className="text-[#0F0F0F]/60">
+                          {formatPrice(donationFee, event?.currency)}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -1353,7 +1404,7 @@ export function WebFreeRSVP() {
               <div className="flex justify-between font-bold text-lg">
                 <span className="text-[#0F0F0F]">Total</span>
                 <span className={actualDonation > 0 ? "text-green-600" : "text-[#0F0F0F]"}>
-                  {actualDonation > 0 ? formatPrice(actualDonation, event?.currency) : 'Free'}
+                  {actualDonation > 0 ? formatPrice(donationTotal, event?.currency) : 'Free'}
                 </span>
               </div>
 
@@ -1371,7 +1422,7 @@ export function WebFreeRSVP() {
                 ) : atLimit ? (
                   <>Registration Limit Reached</>
                 ) : actualDonation > 0 ? (
-                  <><CheckCircle className="w-5 h-5 mr-2" />RSVP & Donate {formatPrice(actualDonation, event?.currency)}</>
+                  <><CheckCircle className="w-5 h-5 mr-2" />RSVP & Donate {formatPrice(donationTotal, event?.currency)}</>
                 ) : (
                   <><CheckCircle className="w-5 h-5 mr-2" />Complete Registration</>
                 )}
