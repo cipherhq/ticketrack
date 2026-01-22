@@ -70,34 +70,147 @@ export const getFeesByCurrency = async (currencyCode = 'NGN') => {
   return allFees[currencyCode] || getDefaultFees().NGN;
 };
 
-// Default fees fallback
+// Default fees fallback (Eventbrite-style structure)
 export const getDefaultFees = () => ({
-  NGN: {
-    countryCode: 'NG',
-    serviceFeePercent: 0.05,
-    serviceFeeFixedPerTicket: 200,
+  // USA - 3.7% + $1.79 + 2.9% processing
+  USD: {
+    countryCode: 'US',
+    serviceFeePercent: 0.037,
+    serviceFeeFixedPerTicket: 1.79,
     serviceFeeCap: null,
     donationFeePercent: 0.05,
     transferFeePercent: 0.10,
-    processingFeeFixedPerOrder: 100,
+    processingFeeFixedPerOrder: 0,
     stripeProcessingPercent: 0.029,
     stripeProcessingFixed: 0.30,
+    paystackProcessingPercent: 0,
+    paystackProcessingFixed: 0,
+    payoutFee: 0,
+    minPayout: 50
+  },
+  // UK - 6.95% + £0.59 (processing included)
+  GBP: {
+    countryCode: 'GB',
+    serviceFeePercent: 0.0695,
+    serviceFeeFixedPerTicket: 0.59,
+    serviceFeeCap: null,
+    donationFeePercent: 0.05,
+    transferFeePercent: 0.10,
+    processingFeeFixedPerOrder: 0,
+    stripeProcessingPercent: 0, // Included in service fee
+    stripeProcessingFixed: 0,
+    paystackProcessingPercent: 0,
+    paystackProcessingFixed: 0,
+    payoutFee: 0,
+    minPayout: 50
+  },
+  // EU - 6.95% + €0.59 (processing included)
+  EUR: {
+    countryCode: 'EU',
+    serviceFeePercent: 0.0695,
+    serviceFeeFixedPerTicket: 0.59,
+    serviceFeeCap: null,
+    donationFeePercent: 0.05,
+    transferFeePercent: 0.10,
+    processingFeeFixedPerOrder: 0,
+    stripeProcessingPercent: 0, // Included in service fee
+    stripeProcessingFixed: 0,
+    paystackProcessingPercent: 0,
+    paystackProcessingFixed: 0,
+    payoutFee: 0,
+    minPayout: 50
+  },
+  // Australia - 5.35% + $1.19 AUD (processing included)
+  AUD: {
+    countryCode: 'AU',
+    serviceFeePercent: 0.0535,
+    serviceFeeFixedPerTicket: 1.19,
+    serviceFeeCap: null,
+    donationFeePercent: 0.05,
+    transferFeePercent: 0.10,
+    processingFeeFixedPerOrder: 0,
+    stripeProcessingPercent: 0, // Included in service fee
+    stripeProcessingFixed: 0,
+    paystackProcessingPercent: 0,
+    paystackProcessingFixed: 0,
+    payoutFee: 0,
+    minPayout: 50
+  },
+  // Canada - 3.7% + $1.79 CAD + 2.9% processing
+  CAD: {
+    countryCode: 'CA',
+    serviceFeePercent: 0.037,
+    serviceFeeFixedPerTicket: 1.79,
+    serviceFeeCap: null,
+    donationFeePercent: 0.05,
+    transferFeePercent: 0.10,
+    processingFeeFixedPerOrder: 0,
+    stripeProcessingPercent: 0.029,
+    stripeProcessingFixed: 0.30,
+    paystackProcessingPercent: 0,
+    paystackProcessingFixed: 0,
+    payoutFee: 0,
+    minPayout: 50
+  },
+  // Nigeria - 5% + ₦300 + 1.5% Paystack
+  NGN: {
+    countryCode: 'NG',
+    serviceFeePercent: 0.05,
+    serviceFeeFixedPerTicket: 300,
+    serviceFeeCap: null,
+    donationFeePercent: 0.05,
+    transferFeePercent: 0.10,
+    processingFeeFixedPerOrder: 0,
+    stripeProcessingPercent: 0,
+    stripeProcessingFixed: 0,
     paystackProcessingPercent: 0.015,
     paystackProcessingFixed: 100,
     payoutFee: 50,
     minPayout: 5000
+  },
+  // Ghana - 5% + GHS 5 + 1.5% Paystack
+  GHS: {
+    countryCode: 'GH',
+    serviceFeePercent: 0.05,
+    serviceFeeFixedPerTicket: 5.00,
+    serviceFeeCap: null,
+    donationFeePercent: 0.05,
+    transferFeePercent: 0.10,
+    processingFeeFixedPerOrder: 0,
+    stripeProcessingPercent: 0,
+    stripeProcessingFixed: 0,
+    paystackProcessingPercent: 0.015,
+    paystackProcessingFixed: 2,
+    payoutFee: 1,
+    minPayout: 100
+  },
+  // South Africa - 5% + R20 (processing included)
+  ZAR: {
+    countryCode: 'ZA',
+    serviceFeePercent: 0.05,
+    serviceFeeFixedPerTicket: 20,
+    serviceFeeCap: null,
+    donationFeePercent: 0.05,
+    transferFeePercent: 0.10,
+    processingFeeFixedPerOrder: 0,
+    stripeProcessingPercent: 0,
+    stripeProcessingFixed: 0,
+    paystackProcessingPercent: 0,
+    paystackProcessingFixed: 0,
+    payoutFee: 5,
+    minPayout: 500
   }
 });
 
-// Synchronous default for initial render (before async fetch)
+// Synchronous default for initial render (USA as default)
 export const DEFAULT_FEES = {
-  serviceFeePercent: 0.05,
-  serviceFeeFixedPerTicket: 0,
+  serviceFeePercent: 0.037,        // 3.7%
+  serviceFeeFixedPerTicket: 1.79,  // $1.79
   serviceFeeCap: null,
   donationFeePercent: 0.05,
   transferFeePercent: 0.10,
   processingFeeFixedPerOrder: 0,
-  stripeProcessingPercent: 0.029,
+  stripeProcessingPercent: 0.029,  // 2.9%
   stripeProcessingFixed: 0.30,
   paystackProcessingPercent: 0.015,
   paystackProcessingFixed: 100
