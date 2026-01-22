@@ -453,56 +453,56 @@ export function OrganizerHome() {
         </div>
       )}
 
-      {/* Revenue by Currency */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Revenue by Currency - Mobile optimized grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {Object.entries(stats.salesByCurrency || {}).map(([currency, amount]) => (
-          <Card key={currency} className="border-[#0F0F0F]/10 rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[#0F0F0F]/60 mb-2">{currency} Sales</p>
-                  <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-1">
+          <Card key={currency} className="border-[#0F0F0F]/10 rounded-xl sm:rounded-2xl">
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[#0F0F0F]/60 text-xs sm:text-sm mb-1 sm:mb-2">{currency} Sales</p>
+                  <h2 className="text-lg sm:text-2xl font-semibold text-[#0F0F0F] mb-0.5 sm:mb-1 truncate">
                     {formatPrice(amount, currency)}
                   </h2>
-                  <p className="text-sm text-green-600">Net: {formatPrice(amount - (stats.feesByCurrency?.[currency] || 0), currency)}</p>
+                  <p className="text-xs sm:text-sm text-green-600 truncate">Net: {formatPrice(amount - (stats.feesByCurrency?.[currency] || 0), currency)}</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-[#2969FF]" />
+                <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-[#2969FF]/10 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-[#2969FF]" />
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[#0F0F0F]/60 mb-2">Tickets Sold</p>
-                <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-1">
+        <Card className="border-[#0F0F0F]/10 rounded-xl sm:rounded-2xl">
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[#0F0F0F]/60 text-xs sm:text-sm mb-1 sm:mb-2">Tickets Sold</p>
+                <h2 className="text-lg sm:text-2xl font-semibold text-[#0F0F0F] mb-0.5 sm:mb-1">
                   {stats.totalAttendees.toLocaleString()}
                 </h2>
-                <p className="text-sm text-green-600">All events</p>
+                <p className="text-xs sm:text-sm text-green-600">All events</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-600" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+                <Users className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[#0F0F0F]/60 mb-2">Total Events</p>
-                <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-1">
+        <Card className="border-[#0F0F0F]/10 rounded-xl sm:rounded-2xl">
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[#0F0F0F]/60 text-xs sm:text-sm mb-1 sm:mb-2">Total Events</p>
+                <h2 className="text-lg sm:text-2xl font-semibold text-[#0F0F0F] mb-0.5 sm:mb-1">
                   {stats.totalEvents}
                 </h2>
-                <p className="text-sm text-green-600">Created</p>
+                <p className="text-xs sm:text-sm text-green-600">Created</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-orange-600" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -511,22 +511,22 @@ export function OrganizerHome() {
 
       {/* Free Events Stats */}
       {freeEventStats.freeEvents > 0 && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50">
-          <CardHeader>
-            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
-              <Ticket className="w-5 h-5 text-green-600" />
+        <Card className="border-[#0F0F0F]/10 rounded-xl sm:rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50">
+          <CardHeader className="p-3 sm:p-6 pb-0 sm:pb-0">
+            <CardTitle className="text-[#0F0F0F] flex items-center gap-2 text-sm sm:text-base">
+              <Ticket className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
               Free Events Overview
               <HelpTip>Track RSVPs and donations for your free events. Free events are a great way to build your audience!</HelpTip>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl bg-white/80 border border-green-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-[#0F0F0F]/60">Free Events</span>
+          <CardContent className="p-3 sm:p-6 pt-3 sm:pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+              <div className="p-2 sm:p-4 rounded-lg sm:rounded-xl bg-white/80 border border-green-100">
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                  <span className="text-xs sm:text-sm text-[#0F0F0F]/60">Free Events</span>
                 </div>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{freeEventStats.freeEvents}</p>
+                <p className="text-lg sm:text-2xl font-semibold text-[#0F0F0F]">{freeEventStats.freeEvents}</p>
               </div>
               <div className="p-4 rounded-xl bg-white/80 border border-green-100">
                 <div className="flex items-center gap-2 mb-2">
