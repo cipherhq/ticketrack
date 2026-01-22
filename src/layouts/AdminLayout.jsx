@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Shield, Calendar, DollarSign, RefreshCw,
   MessageSquare, Users, Menu, X, Building, UserCheck,
   Mail, Send, Bell, TrendingUp, LogOut, Loader2, Settings,
-  Clock, Home, FolderOpen, Receipt, ChevronDown, Globe,
+  Clock, Home, FolderOpen, Receipt, ChevronDown, Globe, Megaphone,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ const navGroups = [
     items: [
       { icon: Calendar, label: 'Events', path: '/admin/events' },
       { icon: FolderOpen, label: 'Categories', path: '/admin/categories' },
+      { icon: Megaphone, label: 'Adverts', path: '/admin/adverts' },
     ]
   },
   {
