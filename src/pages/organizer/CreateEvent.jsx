@@ -23,6 +23,7 @@ import { EventAccessSettings } from '@/components/EventAccessSettings';
 import { CustomFormBuilder } from '@/components/CustomFormBuilder';
 import { generateRecurringDates } from '@/utils/recurringDates';
 import { HelpTip } from '@/components/HelpTip';
+import { StripeConnectEducationModal } from '@/components/StripeConnectEducationModal';
 import 'react-quill/dist/quill.snow.css';
 
 
@@ -56,6 +57,7 @@ export function CreateEvent() {
   const [urlStatus, setUrlStatus] = useState({ checking: false, available: null, message: "" });
   const [categories, setCategories] = useState([]);
   const [savingCountry, setSavingCountry] = useState(false);
+  const [showStripeConnectModal, setShowStripeConnectModal] = useState(false);
   const urlCheckTimeout = useRef(null);
 
   // Refs for file inputs
@@ -1553,7 +1555,23 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         }
       }
 
-      navigate('/organizer/events');
+      // Check if we should show Stripe Connect education modal
+      // Only show for new events (not edits), eligible countries, and if not already set up
+      const stripeConnectCountries = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'AT', 'CH'];
+      const shouldShowConnectModal = 
+        !isEditMode && 
+        organizer?.country_code &&
+        stripeConnectCountries.includes(organizer.country_code) &&
+        !organizer?.stripe_connect_id &&
+        organizer?.stripe_connect_status !== 'active' &&
+        !localStorage.getItem('stripe_connect_reminder') &&
+        !localStorage.getItem('stripe_connect_dismissed');
+
+      if (shouldShowConnectModal) {
+        setShowStripeConnectModal(true);
+      } else {
+        navigate('/organizer/events');
+      }
     } catch (err) {
       console.error('Error saving event:', err);
       setError(err.message || 'Failed to save event');
@@ -3190,6 +3208,16 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           </div>
         </div>
       )}
+
+      {/* Stripe Connect Education Modal */}
+      <StripeConnectEducationModal
+        open={showStripeConnectModal}
+        onClose={() => {
+          setShowStripeConnectModal(false);
+          navigate('/organizer/events');
+        }}
+        organizerCountry={organizer?.country_code}
+      />
     </div>
   );
 }
