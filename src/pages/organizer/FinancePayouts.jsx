@@ -48,10 +48,12 @@ export function FinancePayouts() {
           start_date,
           parent_event_id,
           is_recurring,
+          fee_handling,
           orders (
             id,
             subtotal,
             platform_fee,
+            platform_fee_absorbed,
             total_amount,
             status,
             created_at,
@@ -117,10 +119,17 @@ export function FinancePayouts() {
         if (orders.length === 0) return;
         
         const grossRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
-        const netAmount = orders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
+        const subtotalAmount = orders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
         const platformFeeTotal = orders.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
         
-        if (netAmount === 0) return;
+        // If organizer absorbed the fee (fee_handling = 'absorb'), deduct platform fee from their payout
+        // Otherwise, they receive the full subtotal (attendee paid the fee)
+        const organizerAbsorbsFee = event.fee_handling === 'absorb';
+        const netAmount = organizerAbsorbsFee 
+          ? subtotalAmount - platformFeeTotal 
+          : subtotalAmount;
+        
+        if (netAmount <= 0) return;
         
         const eventEndDate = new Date(event.end_date);
         const payoutDate = new Date(eventEndDate.getTime() + 24 * 60 * 60 * 1000);
@@ -147,9 +156,10 @@ export function FinancePayouts() {
             id: event.id,
             currency,
             event: eventDisplayName,
-            grossAmount: grossRevenue,
+            grossAmount: subtotalAmount, // Ticket price before any fees
             platformFee: platformFeeTotal,
-            netAmount: netAmount,
+            feeAbsorbed: organizerAbsorbsFee, // Track if fee was absorbed
+            netAmount: netAmount, // Amount after deducting absorbed fee
             eventEndDate: event.end_date,
             payoutDate: payoutDate.toISOString(),
             status: 'Scheduled',

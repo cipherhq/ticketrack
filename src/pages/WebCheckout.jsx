@@ -586,7 +586,15 @@ export function WebCheckout() {
 
   const ticketCount = Object.values(selectedTickets).reduce((sum, qty) => sum + (qty || 0), 0)
   const feeProvider = ["NGN", "GHS"].includes(event?.currency) ? "paystack" : "stripe"
-  const { displayFee: serviceFee } = calculateFees(totalAmount, ticketCount, fees, feeProvider)
+  const { displayFee: calculatedFee, serviceFee: platformFee, processingFee } = calculateFees(totalAmount, ticketCount, fees, feeProvider)
+  
+  // Check if organizer is absorbing the fee
+  const organizerAbsorbsFee = event?.fee_handling === 'absorb'
+  // If organizer absorbs, attendee sees no fee; otherwise show calculated fee
+  const serviceFee = organizerAbsorbsFee ? 0 : calculatedFee
+  // Store the actual fee for payout calculations (always calculated, even if not shown to attendee)
+  const actualPlatformFee = calculatedFee
+  
   const discountAmount = promoApplied?.discountAmount || 0
   const finalTotal = totalAmount + serviceFee - discountAmount
 
@@ -969,7 +977,8 @@ export function WebCheckout() {
           order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
           subtotal: totalAmount,
-          platform_fee: serviceFee,
+          platform_fee: actualPlatformFee, // Always store actual fee for payout calculation
+          platform_fee_absorbed: organizerAbsorbsFee, // Track if organizer absorbed the fee
           tax_amount: 0,
           discount_amount: discountAmount,
           promo_code_id: promoApplied?.id || null,
@@ -1093,7 +1102,8 @@ export function WebCheckout() {
           order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
           subtotal: totalAmount,
-          platform_fee: serviceFee,
+          platform_fee: actualPlatformFee, // Always store actual fee for payout calculation
+          platform_fee_absorbed: organizerAbsorbsFee, // Track if organizer absorbed the fee
           tax_amount: 0,
           discount_amount: discountAmount,
           promo_code_id: promoApplied?.id || null,
@@ -1171,7 +1181,8 @@ export function WebCheckout() {
           order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
           status: 'pending',
           subtotal: totalAmount,
-          platform_fee: serviceFee,
+          platform_fee: actualPlatformFee, // Always store actual fee for payout calculation
+          platform_fee_absorbed: organizerAbsorbsFee, // Track if organizer absorbed the fee
           tax_amount: 0,
           discount_amount: discountAmount,
           promo_code_id: promoApplied?.id || null,
@@ -1252,7 +1263,8 @@ export function WebCheckout() {
             order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
             status: 'pending',
             subtotal: totalAmount,
-            platform_fee: serviceFee,
+            platform_fee: actualPlatformFee, // Always store actual fee for payout calculation
+            platform_fee_absorbed: organizerAbsorbsFee, // Track if organizer absorbed the fee
             tax_amount: 0,
             discount_amount: discountAmount,
             promo_code_id: promoApplied?.id || null,

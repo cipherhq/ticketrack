@@ -474,13 +474,18 @@ export function WebEventDetails() {
   }, 0)
 
   // Calculate service fee (percentage + fixed per ticket, with cap)
-  const serviceFee = (() => {
+  const calculatedFee = (() => {
     let fee = (totalAmount * fees.serviceFeePercent) + (fees.serviceFeeFixedPerTicket * totalTickets);
     if (fees.serviceFeeCap && fee > fees.serviceFeeCap) {
       fee = fees.serviceFeeCap;
     }
     return Math.round(fee * 100) / 100;
   })();
+  
+  // Check if organizer is absorbing the fee
+  const organizerAbsorbsFee = event?.fee_handling === 'absorb';
+  // If organizer absorbs, attendee sees no fee; otherwise show calculated fee
+  const serviceFee = organizerAbsorbsFee ? 0 : calculatedFee;
   
   const totalWithFees = totalAmount + serviceFee;
 
