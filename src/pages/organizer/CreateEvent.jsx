@@ -24,6 +24,7 @@ import { CustomFormBuilder } from '@/components/CustomFormBuilder';
 import { generateRecurringDates } from '@/utils/recurringDates';
 import { HelpTip } from '@/components/HelpTip';
 import { StripeConnectEducationModal } from '@/components/StripeConnectEducationModal';
+import { PaystackFlutterwaveEducationModal } from '@/components/PaystackFlutterwaveEducationModal';
 import 'react-quill/dist/quill.snow.css';
 
 
@@ -58,6 +59,7 @@ export function CreateEvent() {
   const [categories, setCategories] = useState([]);
   const [savingCountry, setSavingCountry] = useState(false);
   const [showStripeConnectModal, setShowStripeConnectModal] = useState(false);
+  const [showPaystackFlutterwaveModal, setShowPaystackFlutterwaveModal] = useState(false);
   const urlCheckTimeout = useRef(null);
 
   // Refs for file inputs
@@ -1555,24 +1557,40 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         }
       }
 
-      // Check if we should show Stripe Connect education modal
-      // Only show for events with payments (paid tickets or donations), eligible countries, and if not already set up
+      // Check if we should show payment education modals
+      // Only show for events with payments (paid tickets or donations), and if not already dismissed
       const stripeConnectCountries = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'AT', 'CH'];
+      const paystackFlutterwaveCountries = ['NG', 'GH', 'KE', 'ZA']; // Nigeria, Ghana, Kenya, South Africa
+      
       const hasPaidTickets = formData.tickets?.some(t => parseFloat(t.price) > 0);
       const hasDonations = formData.acceptsDonations === true;
       const hasPayments = hasPaidTickets || hasDonations;
-      const shouldShowConnectModal = 
+      const countryCode = organizer?.country_code;
+
+      // Stripe Connect modal for US/UK/EU countries
+      const shouldShowStripeConnectModal = 
         !isEditMode && 
-        hasPayments && // Show for paid events OR free events with donations
-        organizer?.country_code &&
-        stripeConnectCountries.includes(organizer.country_code) &&
+        hasPayments &&
+        countryCode &&
+        stripeConnectCountries.includes(countryCode) &&
         !organizer?.stripe_connect_id &&
         organizer?.stripe_connect_status !== 'active' &&
         !localStorage.getItem('stripe_connect_reminder') &&
         !localStorage.getItem('stripe_connect_dismissed');
 
-      if (shouldShowConnectModal) {
+      // Paystack/Flutterwave modal for African countries
+      const shouldShowPaystackFlutterwaveModal = 
+        !isEditMode && 
+        hasPayments &&
+        countryCode &&
+        paystackFlutterwaveCountries.includes(countryCode) &&
+        !localStorage.getItem('paystack_flutterwave_reminder') &&
+        !localStorage.getItem('paystack_flutterwave_dismissed');
+
+      if (shouldShowStripeConnectModal) {
         setShowStripeConnectModal(true);
+      } else if (shouldShowPaystackFlutterwaveModal) {
+        setShowPaystackFlutterwaveModal(true);
       } else {
         navigate('/organizer/events');
       }
@@ -3213,11 +3231,21 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         </div>
       )}
 
-      {/* Stripe Connect Education Modal */}
+      {/* Stripe Connect Education Modal (US/UK/EU) */}
       <StripeConnectEducationModal
         open={showStripeConnectModal}
         onClose={() => {
           setShowStripeConnectModal(false);
+          navigate('/organizer/events');
+        }}
+        organizerCountry={organizer?.country_code}
+      />
+
+      {/* Paystack/Flutterwave Education Modal (Nigeria/Ghana/Kenya/SA) */}
+      <PaystackFlutterwaveEducationModal
+        open={showPaystackFlutterwaveModal}
+        onClose={() => {
+          setShowPaystackFlutterwaveModal(false);
           navigate('/organizer/events');
         }}
         organizerCountry={organizer?.country_code}
