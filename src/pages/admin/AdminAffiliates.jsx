@@ -147,8 +147,8 @@ export function AdminAffiliates() {
     setDetailsDialogOpen(true);
   };
 
-  const formatCurrency = (amount) => {
-    return formatPrice(amount || 0, 'NGN');
+  const formatCurrency = (amount, currency = 'USD') => {
+    return formatPrice(amount || 0, currency);
   };
 
   const getStatusBadge = (affiliate) => {

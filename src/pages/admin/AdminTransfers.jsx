@@ -19,7 +19,7 @@ export function AdminTransfers() {
   const [transfers, setTransfers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [stats, setStats] = useState({ total: 0, paid: 0, free: 0, totalFees: 0 })
+  const [stats, setStats] = useState({ total: 0, paid: 0, free: 0, feesByCurrency: {} })
   const [detailModal, setDetailModal] = useState({ open: false, transfer: null })
   const [copied, setCopied] = useState('')
   const [page, setPage] = useState(0)
@@ -44,17 +44,24 @@ export function AdminTransfers() {
         .select('*', { count: 'exact', head: true })
         .eq('payment_status', 'paid')
       
+      // Get fees with currency
       const { data: feeData } = await supabase
         .from('ticket_transfers')
-        .select('fee_amount')
+        .select('fee_amount, currency')
       
-      const totalFees = (feeData || []).reduce((sum, t) => sum + (parseFloat(t.fee_amount) || 0), 0)
+      // Group fees by currency
+      const feesByCurrency = {};
+      (feeData || []).forEach(t => {
+        const currency = t.currency || 'NGN';
+        if (!feesByCurrency[currency]) feesByCurrency[currency] = 0;
+        feesByCurrency[currency] += parseFloat(t.fee_amount) || 0;
+      });
       
       setStats({ 
         total: total || 0, 
         paid: paid || 0, 
         free: (total || 0) - (paid || 0), 
-        totalFees 
+        feesByCurrency 
       })
     } catch (err) {
       console.error('Error loading stats:', err)
@@ -239,7 +246,11 @@ export function AdminTransfers() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Fees Collected</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.totalFees, 'NGN')}</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">
+                  {Object.entries(stats.feesByCurrency || {}).filter(([_, amt]) => amt > 0).length > 0
+                    ? Object.entries(stats.feesByCurrency).filter(([_, amt]) => amt > 0).map(([curr, amt]) => formatPrice(amt, curr)).join(' + ')
+                    : formatPrice(0, 'USD')}
+                </p>
               </div>
               <Badge className="bg-amber-100 text-amber-700 border-0">Revenue</Badge>
             </div>

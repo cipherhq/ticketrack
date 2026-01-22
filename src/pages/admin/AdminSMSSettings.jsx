@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { getBalance } from '@/lib/termii';
+import { formatPrice, currencies } from '@/config/currencies';
 
 export function AdminSMSSettings() {
   const { admin, logAdminAction } = useAdmin();
@@ -188,7 +189,7 @@ export function AdminSMSSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Your Cost</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">₦{parseFloat(config.cost_per_sms).toFixed(2)}</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(parseFloat(config.cost_per_sms), config.currency)}</p>
                 <p className="text-xs text-[#0F0F0F]/40">per SMS</p>
               </div>
               <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
@@ -203,7 +204,7 @@ export function AdminSMSSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Selling Price</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">₦{parseFloat(config.selling_price).toFixed(2)}</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(parseFloat(config.selling_price), config.currency)}</p>
                 <p className="text-xs text-[#0F0F0F]/40">per SMS</p>
               </div>
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -218,7 +219,7 @@ export function AdminSMSSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Profit</p>
-                <p className="text-2xl font-bold text-green-600">₦{profitPerSms.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-green-600">{formatPrice(profitPerSms, config.currency)}</p>
                 <p className="text-xs text-[#0F0F0F]/40">per SMS</p>
               </div>
               <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
@@ -258,7 +259,7 @@ export function AdminSMSSettings() {
         <CardContent className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="cost_per_sms">Your Cost per SMS (₦)</Label>
+              <Label htmlFor="cost_per_sms">Your Cost per SMS ({currencies[config.currency]?.symbol || config.currency})</Label>
               <Input
                 id="cost_per_sms"
                 type="number"
@@ -273,7 +274,7 @@ export function AdminSMSSettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="selling_price">Selling Price per SMS (₦)</Label>
+              <Label htmlFor="selling_price">Selling Price per SMS ({currencies[config.currency]?.symbol || config.currency})</Label>
               <Input
                 id="selling_price"
                 type="number"
@@ -294,15 +295,15 @@ export function AdminSMSSettings() {
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <p className="text-green-600">1,000 SMS</p>
-                <p className="font-bold text-green-800">₦{(profitPerSms * 1000).toLocaleString()} profit</p>
+                <p className="font-bold text-green-800">{formatPrice(profitPerSms * 1000, config.currency)} profit</p>
               </div>
               <div>
                 <p className="text-green-600">10,000 SMS</p>
-                <p className="font-bold text-green-800">₦{(profitPerSms * 10000).toLocaleString()} profit</p>
+                <p className="font-bold text-green-800">{formatPrice(profitPerSms * 10000, config.currency)} profit</p>
               </div>
               <div>
                 <p className="text-green-600">100,000 SMS</p>
-                <p className="font-bold text-green-800">₦{(profitPerSms * 100000).toLocaleString()} profit</p>
+                <p className="font-bold text-green-800">{formatPrice(profitPerSms * 100000, config.currency)} profit</p>
               </div>
             </div>
           </div>
@@ -324,7 +325,7 @@ export function AdminSMSSettings() {
             </div>
             {balance !== null && (
               <Badge className="bg-green-100 text-green-700 gap-1">
-                <Wallet className="w-3 h-3" /> Balance: ₦{parseFloat(balance).toLocaleString()}
+                <Wallet className="w-3 h-3" /> Balance: {formatPrice(parseFloat(balance), config.currency)}
               </Badge>
             )}
           </div>

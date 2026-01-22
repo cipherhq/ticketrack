@@ -151,15 +151,32 @@ export function AdminPayouts() {
     return matchesSearch && matchesStatus;
   });
 
+  // Group amounts by currency for each status
+  const groupByCurrency = (filteredPayouts) => {
+    const byCurrency = {};
+    filteredPayouts.forEach(p => {
+      const currency = p.currency || 'NGN';
+      if (!byCurrency[currency]) byCurrency[currency] = 0;
+      byCurrency[currency] += parseFloat(p.net_amount) || 0;
+    });
+    return byCurrency;
+  };
+
+  const formatMultiCurrency = (byCurrency) => {
+    const entries = Object.entries(byCurrency).filter(([_, amt]) => amt > 0);
+    if (entries.length === 0) return formatPrice(0, 'USD');
+    return entries.map(([curr, amt]) => formatPrice(amt, curr)).join(' + ');
+  };
+
   const stats = {
     pending: payouts.filter((p) => p.status === 'pending').length,
-    pendingAmount: payouts.filter((p) => p.status === 'pending').reduce((sum, p) => sum + (parseFloat(p.net_amount) || 0), 0),
+    pendingByCurrency: groupByCurrency(payouts.filter((p) => p.status === 'pending')),
     processing: payouts.filter((p) => p.status === 'processing').length,
-    processingAmount: payouts.filter((p) => p.status === 'processing').reduce((sum, p) => sum + (parseFloat(p.net_amount) || 0), 0),
+    processingByCurrency: groupByCurrency(payouts.filter((p) => p.status === 'processing')),
     completed: payouts.filter((p) => p.status === 'completed').length,
-    completedAmount: payouts.filter((p) => p.status === 'completed').reduce((sum, p) => sum + (parseFloat(p.net_amount) || 0), 0),
+    completedByCurrency: groupByCurrency(payouts.filter((p) => p.status === 'completed')),
     failed: payouts.filter((p) => p.status === 'failed' || p.status === 'rejected').length,
-    failedAmount: payouts.filter((p) => p.status === 'failed' || p.status === 'rejected').reduce((sum, p) => sum + (parseFloat(p.net_amount) || 0), 0),
+    failedByCurrency: groupByCurrency(payouts.filter((p) => p.status === 'failed' || p.status === 'rejected')),
   };
 
   if (loading) {
@@ -199,7 +216,7 @@ export function AdminPayouts() {
               <div>
                 <p className="text-[#0F0F0F]/60 mb-1">Pending Payouts</p>
                 <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.pending}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.pendingAmount, 'NGN')}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatMultiCurrency(stats.pendingByCurrency)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-yellow-500" />
@@ -214,7 +231,7 @@ export function AdminPayouts() {
               <div>
                 <p className="text-[#0F0F0F]/60 mb-1">Processing</p>
                 <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.processing}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.processingAmount, 'NGN')}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatMultiCurrency(stats.processingByCurrency)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-[#2969FF]" />
@@ -229,7 +246,7 @@ export function AdminPayouts() {
               <div>
                 <p className="text-[#0F0F0F]/60 mb-1">Completed</p>
                 <h3 className="text-2xl font-semibold text-green-600">{stats.completed}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.completedAmount, 'NGN')}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatMultiCurrency(stats.completedByCurrency)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-500" />
@@ -244,7 +261,7 @@ export function AdminPayouts() {
               <div>
                 <p className="text-[#0F0F0F]/60 mb-1">Failed</p>
                 <h3 className="text-2xl font-semibold text-red-600">{stats.failed}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatCurrency(stats.failedAmount, 'NGN')}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatMultiCurrency(stats.failedByCurrency)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
                 <AlertCircle className="w-5 h-5 text-red-500" />
