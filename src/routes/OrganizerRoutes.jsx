@@ -27,6 +27,7 @@ import { OrganizerOrders } from "@/pages/organizer/OrganizerOrders";
 import { OrganizerRefunds } from '@/pages/organizer/OrganizerRefunds';
 import { OrganizerTransfers } from '@/pages/organizer/OrganizerTransfers';
 import { StripeConnect } from '@/pages/organizer/StripeConnect';
+import { PaystackFlutterwaveConnect } from '@/pages/organizer/PaystackFlutterwaveConnect';
 import { OrganizerSupport } from '@/pages/organizer/OrganizerSupport';
 import { TeamManagement } from "@/pages/organizer/TeamManagement";
 import { ProjectManager } from "@/pages/organizer/ProjectManager";
@@ -86,6 +87,8 @@ export function OrganizerRoutes() {
           <Route path="/refunds" element={<OrganizerRefunds />} />
           <Route path="/transfers" element={<OrganizerTransfers />} />
           <Route path="/stripe-connect" element={<StripeConnect />} />
+          <Route path="/paystack-connect" element={<PaystackFlutterwaveConnect />} />
+          <Route path="/flutterwave-connect" element={<PaystackFlutterwaveConnect />} />
           <Route path="/support" element={<OrganizerSupport />} />
           <Route path="/team" element={<TeamManagement />} />
           <Route path="/projects" element={<ProjectManager />} />

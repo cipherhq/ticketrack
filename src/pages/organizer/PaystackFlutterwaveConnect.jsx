@@ -1,0 +1,586 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  CreditCard, CheckCircle, AlertCircle, Loader2, 
+  Shield, DollarSign, Zap, ArrowRight, XCircle,
+  Building2, Clock, Wallet, Banknote, RefreshCw
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { useOrganizer } from '@/contexts/OrganizerContext';
+import { supabase } from '@/lib/supabase';
+import { HelpTip } from '@/components/HelpTip';
+
+// Nigerian banks list
+const NIGERIAN_BANKS = [
+  { code: '044', name: 'Access Bank' },
+  { code: '023', name: 'Citibank Nigeria' },
+  { code: '050', name: 'Ecobank Nigeria' },
+  { code: '070', name: 'Fidelity Bank' },
+  { code: '011', name: 'First Bank of Nigeria' },
+  { code: '214', name: 'First City Monument Bank' },
+  { code: '058', name: 'Guaranty Trust Bank' },
+  { code: '030', name: 'Heritage Bank' },
+  { code: '301', name: 'Jaiz Bank' },
+  { code: '082', name: 'Keystone Bank' },
+  { code: '526', name: 'Parallex Bank' },
+  { code: '076', name: 'Polaris Bank' },
+  { code: '101', name: 'Providus Bank' },
+  { code: '221', name: 'Stanbic IBTC Bank' },
+  { code: '068', name: 'Standard Chartered Bank' },
+  { code: '232', name: 'Sterling Bank' },
+  { code: '100', name: 'Suntrust Bank' },
+  { code: '032', name: 'Union Bank of Nigeria' },
+  { code: '033', name: 'United Bank for Africa' },
+  { code: '215', name: 'Unity Bank' },
+  { code: '035', name: 'Wema Bank' },
+  { code: '057', name: 'Zenith Bank' },
+  { code: '999992', name: 'Opay' },
+  { code: '999991', name: 'PalmPay' },
+  { code: '999993', name: 'Kuda Bank' },
+  { code: '999994', name: 'Moniepoint' },
+];
+
+// Ghanaian banks list
+const GHANAIAN_BANKS = [
+  { code: 'GH010100', name: 'GCB Bank' },
+  { code: 'GH020100', name: 'Barclays Bank Ghana' },
+  { code: 'GH030100', name: 'Standard Chartered Bank Ghana' },
+  { code: 'GH040100', name: 'Ghana Commercial Bank' },
+  { code: 'GH050100', name: 'National Investment Bank' },
+  { code: 'GH060100', name: 'Agricultural Development Bank' },
+  { code: 'GH070100', name: 'Prudential Bank' },
+  { code: 'GH080100', name: 'Ecobank Ghana' },
+  { code: 'GH090100', name: 'Access Bank Ghana' },
+  { code: 'GH100100', name: 'Zenith Bank Ghana' },
+  { code: 'GH110100', name: 'Fidelity Bank Ghana' },
+  { code: 'GH120100', name: 'UBA Ghana' },
+  { code: 'GH130100', name: 'Stanbic Bank Ghana' },
+  { code: 'GH140100', name: 'First Atlantic Bank' },
+  { code: 'GH150100', name: 'Republic Bank Ghana' },
+];
+
+// Status badge component
+const StatusBadge = ({ status }) => {
+  const statusConfig = {
+    not_started: { label: 'Not Connected', color: 'bg-gray-100 text-gray-700', icon: XCircle },
+    pending: { label: 'Setup Incomplete', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
+    active: { label: 'Connected', color: 'bg-green-100 text-green-700', icon: CheckCircle },
+    restricted: { label: 'Restricted', color: 'bg-red-100 text-red-700', icon: AlertCircle },
+    disabled: { label: 'Disabled', color: 'bg-red-100 text-red-700', icon: XCircle },
+  };
+
+  const config = statusConfig[status] || statusConfig.not_started;
+  const Icon = config.icon;
+
+  return (
+    <Badge className={`${config.color} flex items-center gap-1`}>
+      <Icon className="w-3 h-3" />
+      {config.label}
+    </Badge>
+  );
+};
+
+export function PaystackFlutterwaveConnect() {
+  const navigate = useNavigate();
+  const { organizer, refreshOrganizer } = useOrganizer();
+  
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [verifyingAccount, setVerifyingAccount] = useState(false);
+  const [accountVerified, setAccountVerified] = useState(false);
+  const [accountName, setAccountName] = useState('');
+  
+  // Form state
+  const [bankCode, setBankCode] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  
+  // Determine which provider to use based on country
+  const isNigeria = organizer?.country_code === 'NG';
+  const isGhana = organizer?.country_code === 'GH';
+  const isEligible = isNigeria || isGhana;
+  const provider = isNigeria ? 'Paystack' : 'Flutterwave';
+  const banks = isNigeria ? NIGERIAN_BANKS : GHANAIAN_BANKS;
+  const currency = isNigeria ? '₦' : 'GH₵';
+  
+  // Get current subaccount status
+  const paystackStatus = organizer?.paystack_subaccount_status || 'not_started';
+  const flutterwaveStatus = organizer?.flutterwave_subaccount_status || 'not_started';
+  const currentStatus = isNigeria ? paystackStatus : flutterwaveStatus;
+  const isConnected = currentStatus === 'active';
+  const subaccountId = isNigeria ? organizer?.paystack_subaccount_id : organizer?.flutterwave_subaccount_id;
+
+  useEffect(() => {
+    if (organizer?.id) {
+      setBusinessName(organizer.business_name || '');
+      setLoading(false);
+    }
+  }, [organizer?.id]);
+
+  // Verify bank account
+  const verifyBankAccount = async () => {
+    if (!bankCode || !accountNumber || accountNumber.length < 10) {
+      setError('Please enter a valid bank and account number');
+      return;
+    }
+
+    setVerifyingAccount(true);
+    setError('');
+    setAccountVerified(false);
+    setAccountName('');
+
+    try {
+      if (isNigeria) {
+        // Verify with Paystack
+        const { data, error: fnError } = await supabase.functions.invoke('verify-bank-account', {
+          body: { bankCode, accountNumber, provider: 'paystack' }
+        });
+
+        if (fnError || !data?.success) {
+          throw new Error(data?.error || 'Failed to verify account');
+        }
+
+        setAccountName(data.accountName);
+        setAccountVerified(true);
+      } else {
+        // For Ghana/other countries, skip verification (Flutterwave doesn't have easy verification)
+        setAccountVerified(true);
+        setAccountName(businessName);
+      }
+    } catch (err) {
+      console.error('Verification error:', err);
+      setError(err.message || 'Failed to verify bank account');
+    } finally {
+      setVerifyingAccount(false);
+    }
+  };
+
+  // Create subaccount
+  const createSubaccount = async () => {
+    if (!accountVerified && isNigeria) {
+      setError('Please verify your bank account first');
+      return;
+    }
+
+    setConnecting(true);
+    setError('');
+
+    try {
+      const endpoint = isNigeria ? 'create-paystack-subaccount' : 'create-flutterwave-subaccount';
+      
+      const { data, error: fnError } = await supabase.functions.invoke(endpoint, {
+        body: {
+          organizerId: organizer.id,
+          bankCode,
+          accountNumber,
+          businessName: businessName || organizer.business_name,
+        }
+      });
+
+      if (fnError || !data?.success) {
+        throw new Error(data?.error || 'Failed to create subaccount');
+      }
+
+      setSuccess(`${provider} subaccount created successfully! You can now receive direct payments.`);
+      setShowSetupModal(false);
+      refreshOrganizer?.();
+    } catch (err) {
+      console.error('Subaccount error:', err);
+      setError(err.message || 'Failed to create subaccount');
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
+      </div>
+    );
+  }
+
+  if (!isEligible) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[#0F0F0F]">Direct Payments</h1>
+            <p className="text-[#0F0F0F]/60">Receive payments directly to your bank account</p>
+          </div>
+        </div>
+
+        <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-[#0F0F0F] mb-2">Not Available in Your Region</h2>
+            <p className="text-[#0F0F0F]/60 max-w-md mx-auto">
+              Direct payments via Paystack/Flutterwave are currently only available for organizers in Nigeria and Ghana.
+              Your region uses our standard payout system.
+            </p>
+            <Button onClick={() => navigate('/organizer/finance')} className="mt-6">
+              View Payout Options
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F0F0F] flex items-center gap-2">
+            {provider} Direct Payments
+            <StatusBadge status={currentStatus} />
+          </h1>
+          <p className="text-[#0F0F0F]/60">
+            Receive payments directly to your bank account with {provider}
+          </p>
+        </div>
+        <HelpTip content={`${provider} Direct Payments allows attendee payments to go directly to your bank account, minus the platform fee. This is faster and more transparent than waiting for manual payouts.`} />
+      </div>
+
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+          <p className="text-green-800">{success}</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
+      {/* Connected State */}
+      {isConnected ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Status Card */}
+          <Card className="border-green-200 bg-green-50/50 rounded-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-800">
+                <CheckCircle className="w-5 h-5" />
+                Connected to {provider}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-green-200/50">
+                <span className="text-green-700">Status</span>
+                <StatusBadge status="active" />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-green-200/50">
+                <span className="text-green-700">Subaccount ID</span>
+                <span className="font-mono text-sm text-green-800">{subaccountId?.slice(0, 15)}...</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-green-700">Direct Payouts</span>
+                <Badge className="bg-green-100 text-green-700">Enabled</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* How It Works */}
+          <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-[#00C3F7]" />
+                How It Works
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#00C3F7]/10 flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="w-4 h-4 text-[#00C3F7]" />
+                </div>
+                <div>
+                  <p className="font-medium text-[#0F0F0F]">Attendee Pays</p>
+                  <p className="text-sm text-[#0F0F0F]/60">Payment processed securely via {provider}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#00C3F7]/10 flex items-center justify-center flex-shrink-0">
+                  <ArrowRight className="w-4 h-4 text-[#00C3F7]" />
+                </div>
+                <div>
+                  <p className="font-medium text-[#0F0F0F]">Automatic Split</p>
+                  <p className="text-sm text-[#0F0F0F]/60">Platform fee deducted automatically</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <Banknote className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-green-600">You Get Paid!</p>
+                  <p className="text-sm text-[#0F0F0F]/60">Money goes directly to your bank</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Fee Breakdown */}
+          <Card className="border-[#0F0F0F]/10 rounded-xl md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-green-600" />
+                Example Fee Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-green-50 rounded-xl p-4">
+                <div className="grid gap-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Ticket Price</span>
+                    <span className="font-medium">{currency}10,000</span>
+                  </div>
+                  <div className="flex justify-between text-[#0F0F0F]/60">
+                    <span>Payment Processing (~1.5%)</span>
+                    <span>-{currency}150</span>
+                  </div>
+                  <div className="flex justify-between text-[#0F0F0F]/60">
+                    <span>Platform Fee (~5%)</span>
+                    <span>-{currency}500</span>
+                  </div>
+                  <div className="border-t border-green-200 pt-2 mt-2 flex justify-between">
+                    <span className="font-semibold">You Receive</span>
+                    <span className="font-bold text-green-600 text-lg">{currency}9,350</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        /* Not Connected State */
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Benefits Card */}
+          <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-[#00C3F7]" />
+                Why Connect {provider}?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-[#0F0F0F]">Direct Bank Deposits</p>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Money goes straight to your bank account
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-[#0F0F0F]">Faster Settlements</p>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    {isNigeria ? 'Next-day' : 'T+1'} settlement to your bank
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-[#0F0F0F]">Transparent Fees</p>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Know exactly what you earn from each sale
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-[#0F0F0F]">No Manual Payouts</p>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    No need to request payouts - it's automatic
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Setup Card */}
+          <Card className="border-[#00C3F7]/30 bg-gradient-to-br from-[#00C3F7]/5 to-white rounded-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#00C3F7]">
+                <Building2 className="w-5 h-5" />
+                Get Started
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-[#0F0F0F]/60">
+                Connect your bank account to start receiving direct payments. 
+                Setup takes less than 2 minutes.
+              </p>
+              
+              <div className="bg-white border border-[#0F0F0F]/10 rounded-xl p-4">
+                <h4 className="font-medium text-[#0F0F0F] mb-2">You'll need:</h4>
+                <ul className="space-y-2 text-sm text-[#0F0F0F]/60">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    Your bank account number
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    Your bank name
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    Business name (optional)
+                  </li>
+                </ul>
+              </div>
+
+              <Button 
+                onClick={() => setShowSetupModal(true)}
+                className="w-full bg-[#00C3F7] hover:bg-[#0BA4DB] text-white py-6"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Connect {provider}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Setup Modal */}
+      <Dialog open={showSetupModal} onOpenChange={setShowSetupModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-[#00C3F7]" />
+              Connect Your Bank Account
+            </DialogTitle>
+            <DialogDescription>
+              Enter your bank details to receive direct payments via {provider}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Business Name</Label>
+              <Input
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Your business name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bank</Label>
+              <Select value={bankCode} onValueChange={setBankCode}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your bank" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {banks.map((bank) => (
+                    <SelectItem key={bank.code} value={bank.code}>
+                      {bank.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Account Number</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={accountNumber}
+                  onChange={(e) => {
+                    setAccountNumber(e.target.value.replace(/\D/g, ''));
+                    setAccountVerified(false);
+                  }}
+                  placeholder="0000000000"
+                  maxLength={10}
+                  className="flex-1"
+                />
+                {isNigeria && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={verifyBankAccount}
+                    disabled={verifyingAccount || !bankCode || accountNumber.length < 10}
+                  >
+                    {verifyingAccount ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Verify'
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {accountVerified && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800">Account Verified</p>
+                  <p className="text-sm text-green-700">{accountName}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              <strong>Note:</strong> A small platform fee (~5%) will be automatically deducted from each transaction. The rest goes directly to your bank.
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSetupModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={createSubaccount}
+              disabled={connecting || (!accountVerified && isNigeria) || !bankCode || accountNumber.length < 10}
+              className="bg-[#00C3F7] hover:bg-[#0BA4DB]"
+            >
+              {connecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Connect {provider}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

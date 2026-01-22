@@ -38,7 +38,9 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
 
   const handleSetup = () => {
     onClose();
-    navigate('/organizer/finance?tab=payouts');
+    // Navigate to the appropriate connect page based on country
+    const isNigeria = organizerCountry === 'NG';
+    navigate(isNigeria ? '/organizer/paystack-connect' : '/organizer/flutterwave-connect');
   };
 
   const handleDismiss = () => {
@@ -214,7 +216,7 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
               className="flex-1 bg-[#00C3F7] hover:bg-[#0BA4DB] text-white py-6"
             >
               <Building2 className="w-4 h-4 mr-2" />
-              Set Up Bank Account
+              Connect {isNigeria ? 'Paystack' : 'Flutterwave'}
             </Button>
             <Button
               variant="outline"
