@@ -4,7 +4,7 @@ import {
   Loader2, Search, Filter, ChevronDown, ChevronUp, ChevronRight,
   RefreshCw, Calendar, Banknote, User, Link2, Globe, 
   FileText, Download, Settings, Percent, PieChart, BarChart3,
-  History, CreditCard, Receipt, Wallet
+  History, CreditCard, Receipt, Wallet, Megaphone, Eye, MousePointer
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ const financeNavItems = [
       { id: 'revenue-overview', label: 'Overview', icon: BarChart3 },
       { id: 'revenue-country', label: 'By Country', icon: Globe },
       { id: 'revenue-category', label: 'By Category', icon: PieChart },
+      { id: 'ad-revenue', label: 'Ad Revenue', icon: Megaphone },
     ]
   },
   {
@@ -99,6 +100,19 @@ export function AdminFinance() {
     revenueByCountry: [],   // [{ country: 'NG', countryName: 'Nigeria', currency: 'NGN', revenue: 5000 }]
     revenueByCategory: []   // [{ category: 'Music', byCurrency: { NGN: 3000, GBP: 100 } }]
   });
+  
+  // Ad Revenue state
+  const [adRevenue, setAdRevenue] = useState({
+    ads: [],
+    revenueByCurrency: {},  // { NGN: 50000, GBP: 500, USD: 1000 }
+    paidByCurrency: {},     // { NGN: 30000, GBP: 300 }
+    unpaidByCurrency: {},   // { NGN: 20000, GBP: 200 }
+    totalClicks: 0,
+    totalImpressions: 0,
+    byPosition: {},    // { top: { NGN: 5000 }, bottom: { NGN: 3000 } }
+    byMonth: [],       // [{ month: 'Jan 2026', byCurrency: { NGN: 5000 } }]
+    byAdvertiser: [],  // [{ name: 'Company', revenue: 10000, currency: 'NGN', ads: 3 }]
+  });
   const [expandedEvents, setExpandedEvents] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending');
@@ -120,6 +134,7 @@ export function AdminFinance() {
       if (activeSection === 'event-payouts') await loadEventPayouts();
       else if (activeSection === 'affiliate-payouts') await loadAffiliatePayouts();
       else if (activeSection === 'payout-history') await loadPayoutHistory();
+      else if (activeSection === 'ad-revenue') await loadAdRevenue();
       else if (activeSection.startsWith('revenue')) await loadPlatformRevenue();
     } catch (error) { console.error('Error loading data:', error); }
     finally { setLoading(false); }
@@ -338,6 +353,124 @@ export function AdminFinance() {
     });
 
     setPlatformStats({ revenueByCurrency, paidOutByCurrency, pendingByCurrency, revenueByMonth, revenueByCountry, revenueByCategory });
+  };
+
+  const loadAdRevenue = async () => {
+    const { data: ads, error } = await supabase
+      .from('platform_adverts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Calculate totals by currency
+    const revenueByCurrency = {};
+    const paidByCurrency = {};
+    const unpaidByCurrency = {};
+    let totalClicks = 0;
+    let totalImpressions = 0;
+    const byPosition = { top: {}, bottom: {}, left: {}, right: {} };
+    const byMonthMap = {};
+    const byAdvertiserMap = {};
+
+    (ads || []).forEach(ad => {
+      const adPrice = parseFloat(ad.price) || 0;
+      const currency = ad.currency || 'NGN';
+      
+      // Revenue by currency
+      revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + adPrice;
+      
+      // Payment status by currency
+      if (ad.payment_status === 'paid') {
+        paidByCurrency[currency] = (paidByCurrency[currency] || 0) + adPrice;
+      } else {
+        unpaidByCurrency[currency] = (unpaidByCurrency[currency] || 0) + adPrice;
+      }
+
+      // Clicks and impressions
+      totalClicks += ad.clicks || 0;
+      totalImpressions += ad.impressions || 0;
+
+      // By position (grouped by currency)
+      if (ad.position && byPosition[ad.position]) {
+        byPosition[ad.position][currency] = (byPosition[ad.position][currency] || 0) + adPrice;
+      }
+
+      // By month (based on start_date, grouped by currency)
+      if (ad.start_date) {
+        const monthKey = new Date(ad.start_date).toLocaleString('default', { month: 'short', year: 'numeric' });
+        if (!byMonthMap[monthKey]) byMonthMap[monthKey] = {};
+        byMonthMap[monthKey][currency] = (byMonthMap[monthKey][currency] || 0) + adPrice;
+      }
+
+      // By advertiser
+      const advertiserName = ad.advertiser_name || 'Unknown';
+      if (!byAdvertiserMap[advertiserName]) {
+        byAdvertiserMap[advertiserName] = { name: advertiserName, byCurrency: {}, ads: 0, clicks: 0, impressions: 0 };
+      }
+      byAdvertiserMap[advertiserName].byCurrency[currency] = (byAdvertiserMap[advertiserName].byCurrency[currency] || 0) + adPrice;
+      byAdvertiserMap[advertiserName].ads += 1;
+      byAdvertiserMap[advertiserName].clicks += ad.clicks || 0;
+      byAdvertiserMap[advertiserName].impressions += ad.impressions || 0;
+    });
+
+    // Convert maps to arrays
+    const byMonth = Object.entries(byMonthMap)
+      .map(([month, byCurrency]) => ({ month, byCurrency }))
+      .sort((a, b) => {
+        const dateA = new Date(a.month);
+        const dateB = new Date(b.month);
+        return dateA - dateB;
+      });
+
+    const byAdvertiser = Object.values(byAdvertiserMap)
+      .map(a => ({
+        ...a,
+        totalRevenue: Object.values(a.byCurrency).reduce((s, v) => s + v, 0)
+      }))
+      .sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    // Filter ads based on status filter
+    let filteredAds = ads || [];
+    if (statusFilter === 'pending') {
+      filteredAds = filteredAds.filter(ad => ad.payment_status !== 'paid');
+    } else if (statusFilter === 'paid') {
+      filteredAds = filteredAds.filter(ad => ad.payment_status === 'paid');
+    }
+
+    setAdRevenue({
+      ads: filteredAds,
+      revenueByCurrency,
+      paidByCurrency,
+      unpaidByCurrency,
+      totalClicks,
+      totalImpressions,
+      byPosition,
+      byMonth,
+      byAdvertiser,
+    });
+  };
+
+  const markAdAsPaid = async (adId) => {
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('platform_adverts')
+        .update({ 
+          payment_status: 'paid',
+          paid_at: new Date().toISOString()
+        })
+        .eq('id', adId);
+
+      if (error) throw error;
+
+      await logAdminAction('mark_ad_paid', { ad_id: adId });
+      await loadAdRevenue();
+    } catch (error) {
+      console.error('Error marking ad as paid:', error);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const toggleEventExpanded = (eventId) => { setExpandedEvents(prev => ({ ...prev, [eventId]: !prev[eventId] })); };
@@ -939,6 +1072,264 @@ export function AdminFinance() {
     </div>
   );
 
+  const renderAdRevenue = () => {
+    // Helper to get currency color
+    const getCurrencyColor = (currency) => {
+      const colors = {
+        'NGN': 'bg-green-100 text-green-700',
+        'GBP': 'bg-blue-100 text-blue-700',
+        'USD': 'bg-purple-100 text-purple-700',
+        'CAD': 'bg-red-100 text-red-700',
+        'GHS': 'bg-yellow-100 text-yellow-700',
+        'EUR': 'bg-indigo-100 text-indigo-700',
+      };
+      return colors[currency] || 'bg-gray-100 text-gray-700';
+    };
+
+    return (
+      <div className="space-y-4">
+        {loading ? (
+          <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
+        ) : (
+          <>
+            {/* Stats Cards - Revenue by Currency */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Total Revenue */}
+              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-green-600" />
+                    </div>
+                    <p className="text-sm text-[#0F0F0F]/60">Total Ad Revenue</p>
+                  </div>
+                  <div className="space-y-1">
+                    {Object.entries(adRevenue.revenueByCurrency || {}).map(([currency, amount]) => (
+                      <div key={currency} className="flex items-center justify-between">
+                        <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
+                        <p className="font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                      </div>
+                    ))}
+                    {Object.keys(adRevenue.revenueByCurrency || {}).length === 0 && (
+                      <p className="text-[#0F0F0F]/40 text-sm">No revenue yet</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Paid Revenue */}
+              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+                    <p className="text-sm text-[#0F0F0F]/60">Paid</p>
+                  </div>
+                  <div className="space-y-1">
+                    {Object.entries(adRevenue.paidByCurrency || {}).map(([currency, amount]) => (
+                      <div key={currency} className="flex items-center justify-between">
+                        <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
+                        <p className="font-bold text-green-600">{formatPrice(amount, currency)}</p>
+                      </div>
+                    ))}
+                    {Object.keys(adRevenue.paidByCurrency || {}).length === 0 && (
+                      <p className="text-[#0F0F0F]/40 text-sm">No paid ads yet</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Unpaid Revenue */}
+              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <p className="text-sm text-[#0F0F0F]/60">Unpaid</p>
+                  </div>
+                  <div className="space-y-1">
+                    {Object.entries(adRevenue.unpaidByCurrency || {}).map(([currency, amount]) => (
+                      <div key={currency} className="flex items-center justify-between">
+                        <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
+                        <p className="font-bold text-yellow-600">{formatPrice(amount, currency)}</p>
+                      </div>
+                    ))}
+                    {Object.keys(adRevenue.unpaidByCurrency || {}).length === 0 && (
+                      <p className="text-[#0F0F0F]/40 text-sm">All ads are paid!</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Performance Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-[#0F0F0F]/60">Total Impressions</p>
+                      <p className="text-2xl font-bold text-[#0F0F0F]">{(adRevenue.totalImpressions || 0).toLocaleString()}</p>
+                    </div>
+                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                      <Eye className="w-5 h-5 text-purple-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-[#0F0F0F]/60">Total Clicks</p>
+                      <p className="text-2xl font-bold text-[#0F0F0F]">{(adRevenue.totalClicks || 0).toLocaleString()}</p>
+                    </div>
+                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                      <MousePointer className="w-5 h-5 text-orange-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Revenue by Position */}
+            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Megaphone className="w-5 h-5" />Revenue by Position</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Object.entries(adRevenue.byPosition || {}).map(([position, byCurrency]) => (
+                    <div key={position} className="p-4 bg-[#F4F6FA] rounded-xl">
+                      <p className="text-sm text-[#0F0F0F]/60 capitalize mb-2">{position} Banner</p>
+                      {Object.entries(byCurrency || {}).length > 0 ? (
+                        Object.entries(byCurrency).map(([currency, amount]) => (
+                          <div key={currency} className="flex items-center justify-between text-sm">
+                            <Badge className={`${getCurrencyColor(currency)} text-xs`}>{currency}</Badge>
+                            <span className="font-bold">{formatPrice(amount, currency)}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[#0F0F0F]/40 text-sm">No revenue</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Revenue by Month */}
+            {(adRevenue.byMonth || []).length > 0 && (
+              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Calendar className="w-5 h-5" />Monthly Ad Revenue</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                    {adRevenue.byMonth.map((item, idx) => (
+                      <div key={idx} className="p-3 bg-[#F4F6FA] rounded-xl">
+                        <p className="text-xs text-[#0F0F0F]/60 mb-2">{item.month}</p>
+                        {Object.entries(item.byCurrency || {}).map(([currency, amount]) => (
+                          <div key={currency} className="flex items-center justify-between text-sm">
+                            <Badge className={`${getCurrencyColor(currency)} text-xs`}>{currency}</Badge>
+                            <span className="font-bold">{formatPrice(amount, currency)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Top Advertisers */}
+            {(adRevenue.byAdvertiser || []).length > 0 && (
+              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" />Top Advertisers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {adRevenue.byAdvertiser.slice(0, 10).map((advertiser, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                        <div>
+                          <p className="font-semibold text-[#0F0F0F]">{advertiser.name}</p>
+                          <p className="text-xs text-[#0F0F0F]/60">{advertiser.ads} ads · {advertiser.clicks} clicks · {advertiser.impressions} views</p>
+                        </div>
+                        <div className="text-right">
+                          {Object.entries(advertiser.byCurrency || {}).map(([currency, amount]) => (
+                            <p key={currency} className="font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Ad List */}
+            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Receipt className="w-5 h-5" />All Ads</CardTitle>
+                <CardDescription>Click "Mark Paid" when advertiser has paid</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(adRevenue.ads || []).length === 0 ? (
+                  <p className="text-center text-[#0F0F0F]/60 py-8">No ads found</p>
+                ) : (
+                  <div className="space-y-3">
+                    {adRevenue.ads.map((ad) => (
+                      <div key={ad.id} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                        <div className="flex items-center gap-4">
+                          {ad.image_url && (
+                            <img 
+                              src={ad.image_url} 
+                              alt={ad.advertiser_name} 
+                              className="w-16 h-10 object-cover rounded-lg"
+                            />
+                          )}
+                          <div>
+                            <p className="font-semibold text-[#0F0F0F]">{ad.advertiser_name || 'Unknown'}</p>
+                            <div className="flex items-center gap-2 text-xs text-[#0F0F0F]/60">
+                              <span className="capitalize">{ad.position}</span>
+                              <span>·</span>
+                              <span>{new Date(ad.start_date).toLocaleDateString()} - {new Date(ad.end_date).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-bold text-[#0F0F0F]">{formatPrice(ad.price || 0, ad.currency || 'NGN')}</p>
+                            <p className="text-xs text-[#0F0F0F]/60">{ad.clicks || 0} clicks · {ad.impressions || 0} views</p>
+                          </div>
+                          {ad.payment_status === 'paid' ? (
+                            <Badge className="bg-green-100 text-green-700">Paid</Badge>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              onClick={() => markAdAsPaid(ad.id)}
+                              disabled={processing}
+                              className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-lg"
+                            >
+                              {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Mark Paid'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+    );
+  };
+
   const renderReports = () => (
     <div className="space-y-4">
       <Card className="border-yellow-200 bg-yellow-50 rounded-2xl">
@@ -976,6 +1367,7 @@ export function AdminFinance() {
       case 'revenue-overview': return renderRevenueOverview();
       case 'revenue-country': return renderRevenueByCountry();
       case 'revenue-category': return renderRevenueByCategory();
+      case 'ad-revenue': return renderAdRevenue();
       case 'financial-summary':
       case 'tax-reports':
       case 'export-data': return renderReports();

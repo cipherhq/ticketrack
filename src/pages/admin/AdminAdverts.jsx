@@ -4,8 +4,12 @@ import {
   Plus, Edit2, Trash2, Eye, EyeOff, Upload, X, 
   Image as ImageIcon, Video, ExternalLink, BarChart3,
   Monitor, Smartphone, Calendar, DollarSign, MousePointer,
-  TrendingUp
+  TrendingUp, CheckCircle, Clock
 } from 'lucide-react';
+import { formatPrice, currencies } from '@/config/currencies';
+
+// Helper to get currency symbol
+const getCurrencySymbol = (code) => currencies[code]?.symbol || code;
 
 const AD_POSITIONS = [
   { 
@@ -60,7 +64,11 @@ export default function AdminAdverts() {
     totalAds: 0,
     activeAds: 0,
     totalClicks: 0,
-    totalImpressions: 0
+    totalImpressions: 0,
+    totalRevenue: 0,
+    paidRevenue: 0,
+    unpaidRevenue: 0,
+    primaryCurrency: 'NGN'
   });
 
   const [formData, setFormData] = useState({
@@ -70,9 +78,11 @@ export default function AdminAdverts() {
     media_type: 'image',
     link_url: '',
     price: '',
+    currency: 'NGN',
     start_date: '',
     end_date: '',
-    is_active: true
+    is_active: true,
+    payment_status: 'pending'
   });
 
   useEffect(() => {
@@ -97,11 +107,30 @@ export default function AdminAdverts() {
         return ad.is_active && now >= start && now <= end;
       });
       
+      // Calculate revenue stats
+      const totalRevenue = data.reduce((sum, ad) => sum + (parseFloat(ad.price) || 0), 0);
+      const paidRevenue = data
+        .filter(ad => ad.payment_status === 'paid')
+        .reduce((sum, ad) => sum + (parseFloat(ad.price) || 0), 0);
+      const unpaidRevenue = totalRevenue - paidRevenue;
+      
+      // Find primary currency (most common)
+      const currencyCounts = {};
+      data.forEach(ad => {
+        const curr = ad.currency || 'NGN';
+        currencyCounts[curr] = (currencyCounts[curr] || 0) + 1;
+      });
+      const primaryCurrency = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'NGN';
+
       setStats({
         totalAds: data.length,
         activeAds: activeAds.length,
         totalClicks: data.reduce((sum, ad) => sum + (ad.clicks || 0), 0),
-        totalImpressions: data.reduce((sum, ad) => sum + (ad.impressions || 0), 0)
+        totalImpressions: data.reduce((sum, ad) => sum + (ad.impressions || 0), 0),
+        totalRevenue,
+        paidRevenue,
+        unpaidRevenue,
+        primaryCurrency
       });
     }
     setLoading(false);
@@ -207,9 +236,11 @@ export default function AdminAdverts() {
       media_type: 'image',
       link_url: '',
       price: '',
+      currency: 'NGN',
       start_date: '',
       end_date: '',
-      is_active: true
+      is_active: true,
+      payment_status: 'pending'
     });
     setPreviewUrl('');
     setEditingAd(null);
@@ -224,9 +255,11 @@ export default function AdminAdverts() {
       media_type: ad.media_type || 'image',
       link_url: ad.link_url || '',
       price: ad.price?.toString() || '',
+      currency: ad.currency || 'NGN',
       start_date: ad.start_date?.split('T')[0] || '',
       end_date: ad.end_date?.split('T')[0] || '',
-      is_active: ad.is_active
+      is_active: ad.is_active,
+      payment_status: ad.payment_status || 'pending'
     });
     setPreviewUrl(ad.image_url);
     setShowModal(true);
@@ -291,7 +324,7 @@ export default function AdminAdverts() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
         <div className="bg-white p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -316,11 +349,44 @@ export default function AdminAdverts() {
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <DollarSign className="text-emerald-600" size={20} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Total Revenue</p>
+              <p className="text-xl font-bold">{formatPrice(stats.totalRevenue, stats.primaryCurrency)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <CheckCircle className="text-green-600" size={20} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Paid</p>
+              <p className="text-xl font-bold text-green-600">{formatPrice(stats.paidRevenue, stats.primaryCurrency)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <Clock className="text-yellow-600" size={20} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Unpaid</p>
+              <p className="text-xl font-bold text-yellow-600">{formatPrice(stats.unpaidRevenue, stats.primaryCurrency)}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm">
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <TrendingUp className="text-purple-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Impressions</p>
+              <p className="text-sm text-gray-500">Impressions</p>
               <p className="text-xl font-bold">{stats.totalImpressions.toLocaleString()}</p>
             </div>
           </div>
@@ -331,7 +397,7 @@ export default function AdminAdverts() {
               <MousePointer className="text-orange-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Clicks</p>
+              <p className="text-sm text-gray-500">Clicks</p>
               <p className="text-xl font-bold">{stats.totalClicks.toLocaleString()}</p>
             </div>
           </div>
@@ -363,8 +429,10 @@ export default function AdminAdverts() {
               <th className="text-left p-4 font-medium text-gray-600">Preview</th>
               <th className="text-left p-4 font-medium text-gray-600">Advertiser</th>
               <th className="text-left p-4 font-medium text-gray-600">Position</th>
+              <th className="text-left p-4 font-medium text-gray-600">Price</th>
               <th className="text-left p-4 font-medium text-gray-600">Duration</th>
               <th className="text-left p-4 font-medium text-gray-600">Performance</th>
+              <th className="text-left p-4 font-medium text-gray-600">Payment</th>
               <th className="text-left p-4 font-medium text-gray-600">Status</th>
               <th className="text-left p-4 font-medium text-gray-600">Actions</th>
             </tr>
@@ -372,7 +440,7 @@ export default function AdminAdverts() {
           <tbody>
             {ads.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
+                <td colSpan={9} className="p-8 text-center text-gray-500">
                   No advertisements yet. Click "Add New Ad" to create one.
                 </td>
               </tr>
@@ -414,6 +482,9 @@ export default function AdminAdverts() {
                       </div>
                     </td>
                     <td className="p-4">
+                      <p className="font-medium">{formatPrice(ad.price || 0, ad.currency || 'NGN')}</p>
+                    </td>
+                    <td className="p-4">
                       <div className="text-sm">
                         <p>{new Date(ad.start_date).toLocaleDateString()}</p>
                         <p className="text-gray-500">to {new Date(ad.end_date).toLocaleDateString()}</p>
@@ -425,6 +496,15 @@ export default function AdminAdverts() {
                         <p><span className="text-gray-500">Clicks:</span> {(ad.clicks || 0).toLocaleString()}</p>
                         <p><span className="text-gray-500">CTR:</span> {calculateCTR(ad.clicks, ad.impressions)}%</p>
                       </div>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        ad.payment_status === 'paid' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {ad.payment_status === 'paid' ? 'Paid' : 'Pending'}
+                      </span>
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
@@ -575,18 +655,66 @@ export default function AdminAdverts() {
                 />
               </div>
 
-              {/* Price */}
+              {/* Price and Currency */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Price</label>
+                  <input
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Currency</label>
+                  <select
+                    value={formData.currency}
+                    onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="NGN">NGN (₦)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="CAD">CAD (C$)</option>
+                    <option value="GHS">GHS (₵)</option>
+                    <option value="EUR">EUR (€)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Payment Status */}
               <div>
-                <label className="block text-sm font-medium mb-2">Price (₦)</label>
-                <input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                />
+                <label className="block text-sm font-medium mb-2">Payment Status</label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, payment_status: 'pending' }))}
+                    className={`flex-1 px-4 py-2 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
+                      formData.payment_status === 'pending' 
+                        ? 'border-yellow-500 bg-yellow-50 text-yellow-700' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Clock size={16} />
+                    Pending
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, payment_status: 'paid' }))}
+                    className={`flex-1 px-4 py-2 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
+                      formData.payment_status === 'paid' 
+                        ? 'border-green-500 bg-green-50 text-green-700' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <CheckCircle size={16} />
+                    Paid
+                  </button>
+                </div>
               </div>
 
               {/* Date Range */}
