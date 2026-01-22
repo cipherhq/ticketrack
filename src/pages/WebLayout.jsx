@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone, Users } from 'lucide-react'
+import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone, Users, Calendar, BookOpen, DollarSign, UserCircle, Grid3X3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 import {
@@ -302,145 +302,140 @@ export function WebLayout() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - Compact Design */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-[#0F0F0F]/10">
-            <div className="px-4 py-4 space-y-4">
+          <div className="md:hidden bg-white border-t border-[#0F0F0F]/10 max-h-[85vh] overflow-y-auto">
+            <div className="px-4 py-3">
+              {/* Create Event CTA - Always visible */}
               <button
                 onClick={() => {
-                  navigate('/events')
+                  navigate('/create-event')
                   setMobileMenuOpen(false)
                 }}
-                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
+                className="w-full mb-4 py-3 px-4 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl font-medium flex items-center justify-center gap-2 touch-manipulation"
               >
-                Browse Events
+                <Plus className="w-5 h-5" />
+                Create Event
               </button>
-              <button
-                onClick={() => {
-                  navigate('/profile', { state: { tab: 'tickets' } })
-                  setMobileMenuOpen(false)
-                }}
-                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
-              >
-                My Tickets
-              </button>
-              <button
-                onClick={() => {
-                  navigate('/my-groups')
-                  setMobileMenuOpen(false)
-                }}
-                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg flex items-center gap-2"
-              >
-                <Users className="w-4 h-4" />
-                My Groups
-              </button>
-              <button
-                onClick={() => {
-                  navigate('/search')
-                  setMobileMenuOpen(false)
-                }}
-                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
-              >
-                Search
-              </button>
-              <button
-                onClick={() => {
-                  navigate('/blog')
-                  setMobileMenuOpen(false)
-                }}
-                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
-              >
-                Blog
-              </button>
-              <button
-                onClick={() => {
-                  navigate('/pricing')
-                  setMobileMenuOpen(false)
-                }}
-                className="block w-full text-left py-3 px-2 text-[#0F0F0F] min-h-[44px] touch-manipulation active:bg-[#F4F6FA] rounded-lg"
-              >
-                Pricing
-              </button>
+
+              {/* Quick Actions Grid */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                <button
+                  onClick={() => { navigate('/events'); setMobileMenuOpen(false); }}
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-[#F4F6FA] active:bg-[#F4F6FA] touch-manipulation"
+                >
+                  <Calendar className="w-5 h-5 text-[#2969FF]" />
+                  <span className="text-xs text-[#0F0F0F]">Events</span>
+                </button>
+                <button
+                  onClick={() => { navigate('/search'); setMobileMenuOpen(false); }}
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-[#F4F6FA] active:bg-[#F4F6FA] touch-manipulation"
+                >
+                  <Search className="w-5 h-5 text-[#2969FF]" />
+                  <span className="text-xs text-[#0F0F0F]">Search</span>
+                </button>
+                <button
+                  onClick={() => { navigate('/profile', { state: { tab: 'tickets' } }); setMobileMenuOpen(false); }}
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-[#F4F6FA] active:bg-[#F4F6FA] touch-manipulation"
+                >
+                  <Ticket className="w-5 h-5 text-[#2969FF]" />
+                  <span className="text-xs text-[#0F0F0F]">Tickets</span>
+                </button>
+                <button
+                  onClick={() => { navigate('/my-groups'); setMobileMenuOpen(false); }}
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-[#F4F6FA] active:bg-[#F4F6FA] touch-manipulation"
+                >
+                  <Users className="w-5 h-5 text-[#2969FF]" />
+                  <span className="text-xs text-[#0F0F0F]">Groups</span>
+                </button>
+              </div>
+
+              {/* Secondary Links */}
+              <div className="flex gap-4 py-2 border-t border-[#0F0F0F]/10 text-sm">
+                <button
+                  onClick={() => { navigate('/blog'); setMobileMenuOpen(false); }}
+                  className="flex items-center gap-1.5 text-[#0F0F0F]/70 hover:text-[#0F0F0F]"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Blog
+                </button>
+                <button
+                  onClick={() => { navigate('/pricing'); setMobileMenuOpen(false); }}
+                  className="flex items-center gap-1.5 text-[#0F0F0F]/70 hover:text-[#0F0F0F]"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Pricing
+                </button>
+              </div>
               
-              <div className="pt-4 border-t border-[#0F0F0F]/10">
+              {/* User Section */}
+              <div className="pt-3 mt-2 border-t border-[#0F0F0F]/10">
                 {isLoggedIn ? (
-                  <>
-                    <div className="flex items-center gap-3 mb-4">
-                      <Avatar className="w-10 h-10">
+                  <div className="space-y-2">
+                    {/* User Info Row */}
+                    <div className="flex items-center gap-3 py-2">
+                      <Avatar className="w-9 h-9">
                         <AvatarImage src={currentUser.profileImage} />
-                        <AvatarFallback className="bg-[#2969FF] text-white">
+                        <AvatarFallback className="bg-[#2969FF] text-white text-sm">
                           {getInitials()}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="text-sm font-medium text-[#0F0F0F]">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#0F0F0F] truncate">
                           {currentUser.firstName} {currentUser.lastName}
                         </p>
-                        <p className="text-xs text-[#0F0F0F]/60">{currentUser.email}</p>
+                        <p className="text-xs text-[#0F0F0F]/60 truncate">{currentUser.email}</p>
                       </div>
                     </div>
                     
-                    {isOrganizer && (
+                    {/* Dashboard Links */}
+                    <div className="flex flex-wrap gap-2">
+                      {isOrganizer && (
+                        <button
+                          onClick={() => { navigate('/organizer'); setMobileMenuOpen(false); }}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-[#F4F6FA] rounded-lg text-sm text-[#0F0F0F] hover:bg-[#2969FF]/10"
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          Organizer
+                        </button>
+                      )}
+                      {isPromoter && (
+                        <button
+                          onClick={() => { navigate('/promoter'); setMobileMenuOpen(false); }}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-[#F4F6FA] rounded-lg text-sm text-[#0F0F0F] hover:bg-[#2969FF]/10"
+                        >
+                          <Megaphone className="w-4 h-4" />
+                          Promoter
+                        </button>
+                      )}
                       <button
-                        onClick={() => {
-                          navigate('/organizer')
-                          setMobileMenuOpen(false)
-                        }}
-                        className="block w-full text-left py-2 text-[#0F0F0F]"
+                        onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-[#F4F6FA] rounded-lg text-sm text-[#0F0F0F] hover:bg-[#2969FF]/10"
                       >
-                        Organizer Dashboard
+                        <UserCircle className="w-4 h-4" />
+                        Profile
                       </button>
-                    )}
-                    
-                    {isPromoter && (
                       <button
-                        onClick={() => {
-                          navigate('/promoter')
-                          setMobileMenuOpen(false)
-                        }}
-                        className="block w-full text-left py-2 text-[#0F0F0F]"
+                        onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50"
                       >
-                        Promoter Dashboard
+                        <LogOut className="w-4 h-4" />
+                        Logout
                       </button>
-                    )}
-                    
-                    <button
-                      onClick={() => {
-                        navigate('/profile')
-                        setMobileMenuOpen(false)
-                      }}
-                      className="block w-full text-left py-2 text-[#0F0F0F]"
-                    >
-                      My Profile
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleSignOut()
-                        setMobileMenuOpen(false)
-                      }}
-                      className="block w-full text-left py-2 text-red-600"
-                    >
-                      Logout
-                    </button>
-                  </>
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        navigate('/login')
-                        setMobileMenuOpen(false)
-                      }}
-                      className="flex-1 rounded-xl"
+                      onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}
+                      className="flex-1 rounded-xl h-11"
                     >
                       Login
                     </Button>
                     <Button
-                      onClick={() => {
-                        navigate('/signup')
-                        setMobileMenuOpen(false)
-                      }}
-                      className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
+                      onClick={() => { navigate('/signup'); setMobileMenuOpen(false); }}
+                      className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-11"
                     >
                       Sign Up
                     </Button>
