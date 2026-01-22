@@ -1618,21 +1618,22 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-[#0F0F0F]/10">
-          <div className="flex overflow-x-auto">
-            {tabs.map((tab) => (
+        {/* Tabs - Horizontally scrollable on mobile */}
+        <div className="border-b border-[#0F0F0F]/10 -mx-4 sm:mx-0 px-4 sm:px-0">
+          <div className="flex overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {tabs.map((tab, index) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
+                className={`flex items-center gap-1.5 px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
                   activeTab === tab.id
                     ? 'border-[#2969FF] text-[#2969FF]'
                     : 'border-transparent text-[#0F0F0F]/60 hover:text-[#0F0F0F]'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
+                <tab.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{['Details', 'Date', 'Venue', 'Tickets', 'Media'][index]}</span>
               </button>
             ))}
           </div>
