@@ -1556,10 +1556,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       }
 
       // Check if we should show Stripe Connect education modal
-      // Only show for new events (not edits), eligible countries, and if not already set up
+      // Only show for new PAID events (not edits), eligible countries, and if not already set up
       const stripeConnectCountries = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'AT', 'CH'];
+      const hasPaidTickets = formData.tickets?.some(t => parseFloat(t.price) > 0);
       const shouldShowConnectModal = 
         !isEditMode && 
+        hasPaidTickets && // Only show for paid events
         organizer?.country_code &&
         stripeConnectCountries.includes(organizer.country_code) &&
         !organizer?.stripe_connect_id &&
