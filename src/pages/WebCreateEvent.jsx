@@ -24,13 +24,7 @@ const eventTypes = [
 
 const seatingTypes = ['Standing', 'Seated', 'Mixed'];
 
-const timezones = [
-  { value: 'Africa/Lagos', label: 'Africa/Lagos (WAT)' },
-  { value: 'Africa/Accra', label: 'Africa/Accra (GMT)' },
-  { value: 'Africa/Johannesburg', label: 'Africa/Johannesburg (SAST)' },
-  { value: 'Africa/Nairobi', label: 'Africa/Nairobi (EAT)' },
-  { value: 'Africa/Cairo', label: 'Africa/Cairo (EET)' },
-];
+import { timezones, getUserTimezone, getTimezonesByRegion } from '@/utils/timezones';
 
 export function WebCreateEvent() {
   const navigate = useNavigate();
@@ -95,7 +89,7 @@ export function WebCreateEvent() {
     endDate: '',
     endTime: '',
     gateOpeningTime: '',
-    timezone: 'Africa/Lagos',
+    timezone: getUserTimezone(),
     isMultiDay: false,
     isRecurring: false,
     recurringPattern: '',
@@ -805,8 +799,12 @@ export function WebCreateEvent() {
                       onChange={(e) => handleInputChange('timezone', e.target.value)}
                       className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
                     >
-                      {timezones.map((tz) => (
-                        <option key={tz.value} value={tz.value}>{tz.label}</option>
+                      {Object.entries(getTimezonesByRegion()).map(([region, tzList]) => (
+                        <optgroup key={region} label={region}>
+                          {tzList.map((tz) => (
+                            <option key={tz.value} value={tz.value}>{tz.label}</option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                   </div>

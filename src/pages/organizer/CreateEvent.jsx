@@ -30,17 +30,7 @@ import 'react-quill/dist/quill.snow.css';
 
 const seatingTypes = ['Standing', 'Seated', 'Mixed'];
 
-const timezones = [
-  { value: "Africa/Lagos", label: "Nigeria (WAT - UTC+1)" },
-  { value: "Africa/Accra", label: "Ghana (GMT - UTC+0)" },
-  { value: "Africa/Nairobi", label: "Kenya (EAT - UTC+3)" },
-  { value: "Africa/Johannesburg", label: "South Africa (SAST - UTC+2)" },
-  { value: "Europe/London", label: "United Kingdom (GMT/BST)" },
-  { value: "America/New_York", label: "US Eastern (EST - UTC-5)" },
-  { value: "America/Chicago", label: "US Central (CST - UTC-6)" },
-  { value: "America/Los_Angeles", label: "US Pacific (PST - UTC-8)" },
-  { value: "America/Toronto", label: "Canada (EST - UTC-5)" },
-];
+import { timezones, getUserTimezone, getTimezonesByRegion } from '@/utils/timezones';
 
 export function CreateEvent() {
   const { id } = useParams();
@@ -83,7 +73,7 @@ export function CreateEvent() {
     endDate: '',
     endTime: '',
     gateOpeningTime: '',
-    timezone: 'Africa/Lagos',
+    timezone: getUserTimezone(),
     isMultiDay: false,
     eventDays: [],
     isRecurring: false,
@@ -1879,8 +1869,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     onChange={(e) => handleInputChange('timezone', e.target.value)}
                     className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
                   >
-                    {timezones.map((tz) => (
-                      <option key={tz.value} value={tz.value}>{tz.label}</option>
+                    {Object.entries(getTimezonesByRegion()).map(([region, tzList]) => (
+                      <optgroup key={region} label={region}>
+                        {tzList.map((tz) => (
+                          <option key={tz.value} value={tz.value}>{tz.label}</option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>
