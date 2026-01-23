@@ -21,6 +21,7 @@ import {
   Image,
   ExternalLink,
   Plus,
+  Heart,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -100,22 +101,35 @@ export function AdminEvents() {
 
       if (error) throw error;
 
-      // Get ticket stats for each event
+      // Get ticket stats and engagement stats for each event
       const eventsWithStats = await Promise.all(
         (data || []).map(async (event) => {
-          const { data: tickets } = await supabase
-            .from('tickets')
-            .select('quantity, total_price')
-            .eq('event_id', event.id)
-            .eq('payment_status', 'completed');
+          const [ticketsRes, viewsRes, savesRes] = await Promise.all([
+            supabase
+              .from('tickets')
+              .select('quantity, total_price')
+              .eq('event_id', event.id)
+              .eq('payment_status', 'completed'),
+            supabase
+              .from('user_event_interactions')
+              .select('id', { count: 'exact', head: true })
+              .eq('event_id', event.id)
+              .eq('interaction_type', 'view'),
+            supabase
+              .from('saved_events')
+              .select('id', { count: 'exact', head: true })
+              .eq('event_id', event.id)
+          ]);
 
-          const ticketsSold = tickets?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
-          const revenue = tickets?.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0) || 0;
+          const ticketsSold = ticketsRes.data?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
+          const revenue = ticketsRes.data?.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0) || 0;
 
           return {
             ...event,
             ticketsSold,
             revenue,
+            views: viewsRes.count || 0,
+            saves: savesRes.count || 0,
           };
         })
       );
@@ -462,6 +476,7 @@ export function AdminEvents() {
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Organizer</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Date</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Tickets Sold</th>
+                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Engagement</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Revenue</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
                   <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
@@ -495,6 +510,16 @@ export function AdminEvents() {
                     </td>
                     <td className="py-4 px-4">
                       <p className="text-[#0F0F0F]/80">{event.ticketsSold.toLocaleString()}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="flex items-center gap-1 text-purple-600">
+                          <Eye className="w-3 h-3" /> {event.views || 0}
+                        </span>
+                        <span className="flex items-center gap-1 text-red-500">
+                          <Heart className="w-3 h-3" /> {event.saves || 0}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-4 px-4">
                       <p className="text-[#0F0F0F] font-medium">{formatCurrency(event.revenue)}</p>
@@ -605,7 +630,7 @@ export function AdminEvents() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="p-4 bg-blue-50 rounded-xl text-center">
                   <Ticket className="w-6 h-6 text-[#2969FF] mx-auto mb-2" />
                   <p className="text-2xl font-semibold text-[#2969FF]">{selectedEvent.ticketsSold}</p>
@@ -627,6 +652,28 @@ export function AdminEvents() {
                     {selectedEvent.capacity ? Math.round((selectedEvent.ticketsSold / selectedEvent.capacity) * 100) : 0}%
                   </p>
                   <p className="text-sm text-[#0F0F0F]/60">Fill Rate</p>
+                </div>
+              </div>
+
+              {/* Engagement Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-purple-50 rounded-xl flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <Eye className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-purple-600">{(selectedEvent.views || 0).toLocaleString()}</p>
+                    <p className="text-xs text-purple-600/60">Page Views</p>
+                  </div>
+                </div>
+                <div className="p-3 bg-red-50 rounded-xl flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                    <Heart className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-red-500">{(selectedEvent.saves || 0).toLocaleString()}</p>
+                    <p className="text-xs text-red-500/60">Saved by Users</p>
+                  </div>
                 </div>
               </div>
 

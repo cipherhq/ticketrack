@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Users, AlertTriangle, DollarSign, TrendingUp, Clock, ShoppingCart, Loader2, RefreshCw } from 'lucide-react';
+import { Calendar, Users, AlertTriangle, DollarSign, TrendingUp, Clock, ShoppingCart, Loader2, RefreshCw, Eye, Heart, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 
@@ -22,6 +23,14 @@ export function AdminDashboard() {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [topAffiliates, setTopAffiliates] = useState([]);
+  const [engagementStats, setEngagementStats] = useState({
+    totalViews: 0,
+    totalLikes: 0,
+    totalShares: 0,
+    viewsToday: 0,
+    likesToday: 0,
+  });
+  const [trendingEvents, setTrendingEvents] = useState([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -34,11 +43,131 @@ export function AdminDashboard() {
         loadStats(),
         loadRecentActivity(),
         loadTopAffiliates(),
+        loadEngagementStats(),
+        loadTrendingEvents(),
       ]);
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadEngagementStats = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
+
+      // Get total counts by type
+      const { data: viewData } = await supabase
+        .from('user_event_interactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('interaction_type', 'view');
+
+      const { data: likeData } = await supabase
+        .from('user_event_interactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('interaction_type', 'like');
+
+      const { data: shareData } = await supabase
+        .from('user_event_interactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('interaction_type', 'share');
+
+      // Today's counts
+      const { count: viewsToday } = await supabase
+        .from('user_event_interactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('interaction_type', 'view')
+        .gte('created_at', todayISO);
+
+      const { count: likesToday } = await supabase
+        .from('user_event_interactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('interaction_type', 'like')
+        .gte('created_at', todayISO);
+
+      // Get saved events count
+      const { count: totalSaved } = await supabase
+        .from('saved_events')
+        .select('id', { count: 'exact', head: true });
+
+      setEngagementStats({
+        totalViews: viewData || 0,
+        totalLikes: totalSaved || 0,
+        totalShares: shareData || 0,
+        viewsToday: viewsToday || 0,
+        likesToday: likesToday || 0,
+      });
+    } catch (error) {
+      console.error('Error loading engagement stats:', error);
+    }
+  };
+
+  const loadTrendingEvents = async () => {
+    try {
+      // Get most viewed events in the last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: interactions } = await supabase
+        .from('user_event_interactions')
+        .select('event_id')
+        .eq('interaction_type', 'view')
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      if (!interactions || interactions.length === 0) {
+        setTrendingEvents([]);
+        return;
+      }
+
+      // Count views per event
+      const viewCounts = {};
+      interactions.forEach(i => {
+        viewCounts[i.event_id] = (viewCounts[i.event_id] || 0) + 1;
+      });
+
+      // Sort by views and get top 5
+      const topEventIds = Object.entries(viewCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([id]) => id);
+
+      if (topEventIds.length === 0) {
+        setTrendingEvents([]);
+        return;
+      }
+
+      // Fetch event details
+      const { data: events } = await supabase
+        .from('events')
+        .select('id, title, slug, image_url, start_date')
+        .in('id', topEventIds);
+
+      // Add view counts and sort
+      const eventsWithViews = (events || []).map(event => ({
+        ...event,
+        views: viewCounts[event.id] || 0
+      })).sort((a, b) => b.views - a.views);
+
+      // Get save counts for these events
+      const { data: saveCounts } = await supabase
+        .from('saved_events')
+        .select('event_id')
+        .in('event_id', topEventIds);
+
+      const saveCountMap = {};
+      (saveCounts || []).forEach(s => {
+        saveCountMap[s.event_id] = (saveCountMap[s.event_id] || 0) + 1;
+      });
+
+      setTrendingEvents(eventsWithViews.map(e => ({
+        ...e,
+        saves: saveCountMap[e.id] || 0
+      })));
+    } catch (error) {
+      console.error('Error loading trending events:', error);
     }
   };
 
@@ -373,6 +502,100 @@ export function AdminDashboard() {
                 <span className="text-[#2969FF] font-semibold">{stats.openTickets}</span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Engagement Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-500" />
+              Discovery Feed Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="p-4 rounded-xl bg-purple-50 text-center">
+                <Eye className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-purple-600">{engagementStats.totalViews.toLocaleString()}</p>
+                <p className="text-xs text-purple-600/60">Total Views</p>
+              </div>
+              <div className="p-4 rounded-xl bg-red-50 text-center">
+                <Heart className="w-6 h-6 text-red-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-red-500">{engagementStats.totalLikes.toLocaleString()}</p>
+                <p className="text-xs text-red-500/60">Saved Events</p>
+              </div>
+              <div className="p-4 rounded-xl bg-blue-50 text-center">
+                <TrendingUp className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-blue-500">{engagementStats.totalShares.toLocaleString()}</p>
+                <p className="text-xs text-blue-500/60">Total Shares</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-[#F4F6FA]">
+                <span className="text-sm text-[#0F0F0F]">Event Views Today</span>
+                <Badge variant="outline" className="bg-purple-50 text-purple-600">
+                  {engagementStats.viewsToday}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-[#F4F6FA]">
+                <span className="text-sm text-[#0F0F0F]">Events Saved Today</span>
+                <Badge variant="outline" className="bg-red-50 text-red-500">
+                  {engagementStats.likesToday}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-orange-500" />
+              Trending Events (Last 7 Days)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {trendingEvents.length > 0 ? (
+              <div className="space-y-3">
+                {trendingEvents.map((event, index) => (
+                  <div key={event.id} className="flex items-center gap-3 p-3 rounded-xl bg-[#F4F6FA]">
+                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm">
+                      #{index + 1}
+                    </div>
+                    <img 
+                      src={event.image_url || 'https://via.placeholder.com/40'} 
+                      alt="" 
+                      className="w-10 h-10 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <Link 
+                        to={`/e/${event.slug || event.id}`}
+                        className="text-sm font-medium text-[#0F0F0F] hover:text-[#2969FF] line-clamp-1"
+                      >
+                        {event.title}
+                      </Link>
+                      <div className="flex items-center gap-3 text-xs text-[#0F0F0F]/60">
+                        <span className="flex items-center gap-1">
+                          <Eye className="w-3 h-3" /> {event.views}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3 h-3" /> {event.saves}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-[#0F0F0F]/60">
+                <TrendingUp className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                <p>No trending data yet</p>
+                <p className="text-xs mt-1">Views will appear here once users start browsing</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
