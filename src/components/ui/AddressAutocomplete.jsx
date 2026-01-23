@@ -164,9 +164,10 @@ export function AddressAutocomplete({
 
     try {
       // Create the PlaceAutocompleteElement
+      // Note: Google limits to 15 region codes max
       const placeAutocomplete = new window.google.maps.places.PlaceAutocompleteElement({
         includedPrimaryTypes: ['establishment', 'geocode'],
-        includedRegionCodes: ['ng', 'gh', 'ke', 'za', 'us', 'gb', 'ca', 'rw', 'tz', 'ug', 'eg', 'et', 'sn', 'ci', 'cm', 'ma'],
+        includedRegionCodes: ['ng', 'gh', 'ke', 'za', 'us', 'gb', 'ca', 'rw', 'tz', 'ug', 'eg', 'et', 'sn', 'ci', 'cm'],
       });
 
       // Style the element
