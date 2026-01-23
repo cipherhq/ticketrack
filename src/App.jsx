@@ -83,6 +83,7 @@ const WebPrivacy = lazyWithRetry(() => import('./pages/WebPrivacy').then(m => ({
 const WebCookies = lazyWithRetry(() => import('./pages/WebCookies').then(m => ({ default: m.WebCookies })), 'WebCookies');
 const GroupBuyJoin = lazyWithRetry(() => import('./pages/GroupBuyJoin').then(m => ({ default: m.GroupBuyJoin })), 'GroupBuyJoin');
 const MyGroups = lazyWithRetry(() => import('./pages/MyGroups').then(m => ({ default: m.MyGroups })), 'MyGroups');
+const PayYourShare = lazyWithRetry(() => import('./pages/PayYourShare').then(m => ({ default: m.PayYourShare })), 'PayYourShare');
 const WebTerms = lazyWithRetry(() => import('./pages/WebTerms').then(m => ({ default: m.WebTerms })), 'WebTerms');
 const WebTrustSafety = lazyWithRetry(() => import('./pages/WebTrustSafety').then(m => ({ default: m.WebTrustSafety })), 'WebTrustSafety');
 const WebRefundPolicy = lazyWithRetry(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })), 'WebRefundPolicy');
@@ -238,6 +239,11 @@ function App() {
                 <Route path="/my-groups" element={
                   <Suspense fallback={<PageLoader />}>
                     <MyGroups />
+                  </Suspense>
+                } />
+                <Route path="/pay-share/:token" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <PayYourShare />
                   </Suspense>
                 } />
                 <Route path="/waitlist/purchase" element={
