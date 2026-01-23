@@ -93,6 +93,7 @@ const WebBlogPost = lazyWithRetry(() => import('./pages/WebBlogPost').then(m => 
 const AttendeeProfile = lazyWithRetry(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })), 'AttendeeProfile');
 const OrganizerPublicProfile = lazyWithRetry(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })), 'OrganizerPublicProfile');
 const ForgotPassword = lazyWithRetry(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })), 'ForgotPassword');
+const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })), 'ResetPassword');
 const AccountDeleted = lazyWithRetry(() => import('./pages/AccountDeleted').then(m => ({ default: m.AccountDeleted })), 'AccountDeleted');
 const AcceptTeamInvitation = lazyWithRetry(() => import('./pages/AcceptTeamInvitation').then(m => ({ default: m.AcceptTeamInvitation })), 'AcceptTeamInvitation');
 const TeamDashboard = lazyWithRetry(() => import('./pages/TeamDashboard').then(m => ({ default: m.TeamDashboard })), 'TeamDashboard');
@@ -189,6 +190,11 @@ function App() {
               <Route path="/forgot-password" element={
                 <Suspense fallback={<PageLoader />}>
                   <ForgotPassword />
+                </Suspense>
+              } />
+              <Route path="/reset-password" element={
+                <Suspense fallback={<PageLoader />}>
+                  <ResetPassword />
                 </Suspense>
               } />
               <Route path="/auth/callback" element={<AuthCallback />} />
