@@ -469,9 +469,16 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (formData.title && /[^a-zA-Z0-9\s\-',.!?&()]/.test(formData.title)) {
         errors.push("Event title contains invalid special characters");
       }
+      if (!formData.slug?.trim()) errors.push("Custom event URL is required");
+      if (formData.slug && formData.slug.length < 3) errors.push("Custom event URL must be at least 3 characters");
+      if (urlStatus.available === false) errors.push("Custom event URL is already taken");
       if (!formData.eventType) errors.push("Event type is required");
       if (!formData.category) errors.push("Category is required");
-      if (!formData.description?.trim()) errors.push("Description is required");
+      if (!formData.description?.trim()) {
+        errors.push("Description is required");
+      } else if (formData.description.trim().length < 25) {
+        errors.push("Description must be at least 25 characters");
+      }
       
       // Visibility validation
       if (formData.visibility === 'password' && !formData.accessPassword?.trim()) {
@@ -575,6 +582,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     const errors = validateCurrentTab();
     if (errors.length > 0) {
       setError(errors.join(". "));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setError("");
@@ -605,7 +613,11 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (urlStatus.available === false) errors.push("Custom event URL is already taken");
       if (!formData.eventType) errors.push("Event type is required");
       if (!formData.category) errors.push("Category is required");
-      if (!formData.description?.trim()) errors.push("Description is required");
+      if (!formData.description?.trim()) {
+        errors.push("Description is required");
+      } else if (formData.description.trim().length < 25) {
+        errors.push("Description must be at least 25 characters");
+      }
       if (formData.visibility === 'password' && !formData.accessPassword?.trim()) {
         errors.push("Access password is required for password-protected events");
       }
@@ -665,6 +677,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     
     if (allErrors.length > 0) {
       setError(allErrors[0]); // Show first error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       // Stay on current tab or go to first tab with errors
       return;
     }

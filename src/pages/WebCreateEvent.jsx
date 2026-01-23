@@ -152,7 +152,54 @@ export function WebCreateEvent() {
   const isLastTab = currentTabIndex === tabs.length - 1;
   const isFirstTab = currentTabIndex === 0;
 
+  // Validate current tab before proceeding
+  const validateCurrentTab = () => {
+    const errors = [];
+    
+    if (activeTab === 'details') {
+      if (!formData.title?.trim()) errors.push("Event title is required");
+      if (!formData.eventType) errors.push("Event type is required");
+      if (!formData.description?.trim()) {
+        errors.push("Description is required");
+      } else if (formData.description.trim().length < 25) {
+        errors.push("Description must be at least 25 characters");
+      }
+      if (formData.custom_url && urlStatus.available === false) {
+        errors.push("Custom event URL is already taken");
+      }
+    }
+    
+    if (activeTab === 'datetime') {
+      if (!formData.startDate) errors.push("Start date is required");
+      if (!formData.startTime) errors.push("Start time is required");
+      if (!formData.endTime) errors.push("End time is required");
+    }
+    
+    if (activeTab === 'venue') {
+      if (!formData.venueName?.trim()) errors.push("Venue name is required");
+      if (!formData.venueAddress?.trim()) errors.push("Venue address is required");
+    }
+    
+    if (activeTab === 'ticketing') {
+      const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0);
+      if (!formData.isFreeEvent && validTickets.length === 0) {
+        errors.push("At least one ticket type is required");
+      }
+    }
+    
+    return errors;
+  };
+
   const goToNextTab = () => {
+    const errors = validateCurrentTab();
+    if (errors.length > 0) {
+      setError(errors.join(". "));
+      setTabErrors({ [activeTab]: true });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    setError("");
+    setTabErrors({});
     if (!isLastTab) {
       setActiveTab(tabs[currentTabIndex + 1].id);
       window.scrollTo({ top: 0, behavior: 'smooth' });
