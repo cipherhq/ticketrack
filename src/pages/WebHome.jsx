@@ -7,8 +7,9 @@ import { getPlatformStats } from '@/services/settings';
 import { 
   Search, MapPin, Calendar, ChevronRight, ChevronLeft, Star, 
   Download, Shield, CreditCard, Headphones, TrendingUp, Clock,
-  Heart, Users, Ticket, Globe, X, ChevronDown, Monitor
+  Heart, Users, Ticket, Globe, X, ChevronDown, Monitor, Sparkles
 } from 'lucide-react';
+import { ForYouFeed } from '@/components/ForYouFeed';
 
 // Category images mapping
 const categoryImages = {
@@ -640,6 +641,13 @@ export function WebHome() {
               </div>
             </div>
           </section>
+
+          {/* For You - Personalized Recommendations */}
+          {user && (
+            <section className="py-8">
+              <ForYouFeed limit={8} showHeader={true} />
+            </section>
+          )}
 
           {/* Event Sections */}
           <EventSection 
