@@ -155,12 +155,14 @@ export function WebCreateEvent() {
   const goToNextTab = () => {
     if (!isLastTab) {
       setActiveTab(tabs[currentTabIndex + 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const goToPrevTab = () => {
     if (!isFirstTab) {
       setActiveTab(tabs[currentTabIndex - 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -425,6 +427,7 @@ export function WebCreateEvent() {
     if (!formData.isFreeEvent && validTickets.length === 0) {
       setError('Please add at least one ticket type');
       setActiveTab('ticketing');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -450,6 +453,7 @@ export function WebCreateEvent() {
       const firstErrorTab = Object.keys(errors)[0];
       setActiveTab(firstErrorTab);
       setError(Object.values(errors).join(". "));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -587,7 +591,10 @@ export function WebCreateEvent() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
                     activeTab === tab.id
                       ? 'border-[#2969FF] text-[#2969FF]'

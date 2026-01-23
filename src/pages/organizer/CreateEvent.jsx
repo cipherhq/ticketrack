@@ -580,12 +580,14 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     setError("");
     if (!isLastTab) {
       setActiveTab(tabs[currentTabIndex + 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const goToPrevTab = () => {
     if (!isFirstTab) {
       setActiveTab(tabs[currentTabIndex - 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -648,7 +650,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     if (targetIndex <= currentTabIndex) {
       setActiveTab(targetTabId);
       setError("");
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     
@@ -670,7 +672,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     // All validations passed, go to target tab
     setError("");
     setActiveTab(targetTabId);
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
 
@@ -1071,7 +1073,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       const firstErrorTab = Object.keys(errors)[0];
       setActiveTab(firstErrorTab);
       setError(Object.values(errors).join(". "));
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
