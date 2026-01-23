@@ -433,6 +433,9 @@ export function WebCreateEvent() {
     if (!formData.title || !formData.eventType || !formData.description) {
       errors.details = "Missing title, event type, or description";
     }
+    if (formData.custom_url && urlStatus.available === false) {
+      errors.details = "Custom event URL is already taken - please choose a different one";
+    }
     if (!formData.startDate || !formData.startTime) {
       errors.datetime = "Missing start date or time";
     }
@@ -626,15 +629,24 @@ export function WebCreateEvent() {
                       placeholder="my-awesome-event"
                       value={formData.custom_url}
                       onChange={(e) => handleInputChange("custom_url", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0 flex-1"
+                      className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
                     />
+                    <button
+                      type="button"
+                      onClick={() => checkUrlAvailability(formData.custom_url)}
+                      disabled={urlStatus.checking || !formData.custom_url || formData.custom_url.length < 3}
+                      className="h-12 px-4 rounded-xl bg-[#0F0F0F]/5 hover:bg-[#0F0F0F]/10 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {urlStatus.checking ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Check'}
+                    </button>
                   </div>
                   <div className="flex items-center gap-2">
-                  {urlStatus.checking && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
-                  {urlStatus.available === true && <span className="text-xs text-green-600">✓ {urlStatus.message}</span>}
-                  {urlStatus.available === false && <span className="text-xs text-red-600">✗ {urlStatus.message}</span>}
-                  {!urlStatus.checking && urlStatus.available === null && <span className="text-xs text-[#0F0F0F]/40">Leave blank to auto-generate from title</span>}
-                </div>
+                    {urlStatus.checking && <span className="text-xs text-blue-500">Checking availability...</span>}
+                    {urlStatus.available === true && <span className="text-xs text-green-600">✓ {urlStatus.message}</span>}
+                    {urlStatus.available === false && <span className="text-xs text-red-600">✗ {urlStatus.message} - please choose a different URL</span>}
+                    {!urlStatus.checking && urlStatus.available === null && formData.custom_url?.length >= 3 && <span className="text-xs text-[#0F0F0F]/40">Click "Check" to verify availability</span>}
+                    {!urlStatus.checking && urlStatus.available === null && (!formData.custom_url || formData.custom_url.length < 3) && <span className="text-xs text-[#0F0F0F]/40">Leave blank to auto-generate from title</span>}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

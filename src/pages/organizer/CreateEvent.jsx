@@ -598,6 +598,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (formData.title && /[^a-zA-Z0-9\s\-',.!?&()]/.test(formData.title)) {
         errors.push("Event title contains invalid special characters");
       }
+      if (!formData.slug?.trim()) errors.push("Custom event URL is required");
+      if (formData.slug && formData.slug.length < 3) errors.push("Custom event URL must be at least 3 characters");
+      if (urlStatus.available === false) errors.push("Custom event URL is already taken");
       if (!formData.eventType) errors.push("Event type is required");
       if (!formData.category) errors.push("Category is required");
       if (!formData.description?.trim()) errors.push("Description is required");
@@ -1661,14 +1664,23 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     placeholder="my-awesome-event"
                     value={formData.slug}
                     onChange={(e) => handleInputChange("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
-                    className="h-12 rounded-xl bg-[#F4F6FA] border-0 flex-1"
+                    className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
                   />
+                  <button
+                    type="button"
+                    onClick={() => checkUrlAvailability(formData.slug)}
+                    disabled={urlStatus.checking || !formData.slug || formData.slug.length < 3}
+                    className="h-12 px-4 rounded-xl bg-[#0F0F0F]/5 hover:bg-[#0F0F0F]/10 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {urlStatus.checking ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Check'}
+                  </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  {urlStatus.checking && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
+                  {urlStatus.checking && <span className="text-xs text-blue-500">Checking availability...</span>}
                   {urlStatus.available === true && <span className="text-xs text-green-600">✓ {urlStatus.message}</span>}
-                  {urlStatus.available === false && <span className="text-xs text-red-600">✗ {urlStatus.message}</span>}
-                  {!urlStatus.checking && urlStatus.available === null && <span className="text-xs text-[#0F0F0F]/40">Required - this will be your shareable event link</span>}
+                  {urlStatus.available === false && <span className="text-xs text-red-600">✗ {urlStatus.message} - please choose a different URL</span>}
+                  {!urlStatus.checking && urlStatus.available === null && formData.slug?.length >= 3 && <span className="text-xs text-[#0F0F0F]/40">Click "Check" to verify availability</span>}
+                  {!urlStatus.checking && urlStatus.available === null && (!formData.slug || formData.slug.length < 3) && <span className="text-xs text-[#0F0F0F]/40">Required - this will be your shareable event link (min 3 characters)</span>}
                 </div>
               </div>
 
