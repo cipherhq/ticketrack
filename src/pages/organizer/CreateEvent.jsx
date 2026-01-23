@@ -1862,13 +1862,15 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Gate Opening Time <span className="text-red-500">*</span></Label>
+                  <Label>Gate Opening Time</Label>
                   <Input
                     type="time"
                     value={formData.gateOpeningTime}
                     onChange={(e) => handleInputChange('gateOpeningTime', e.target.value)}
                     className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                    placeholder="Optional"
                   />
+                  <p className="text-xs text-[#0F0F0F]/40">Optional - when gates open for attendees</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Timezone <span className="text-red-500">*</span></Label>
