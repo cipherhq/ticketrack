@@ -23,6 +23,14 @@ export function AddressAutocomplete({
   // Load Google Maps script
   useEffect(() => {
     const loadGoogleMaps = async () => {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      
+      if (!apiKey) {
+        console.error('Google Maps API key is missing');
+        setIsLoading(false);
+        return;
+      }
+
       // Check if Google Maps is already loaded with the new API
       if (window.google?.maps?.importLibrary) {
         try {
@@ -35,52 +43,54 @@ export function AddressAutocomplete({
         }
       }
 
-      // Check if script is already loading
-      if (document.querySelector('script[src*="maps.googleapis.com"]')) {
-        // Wait for it to load
-        const checkLoaded = setInterval(async () => {
-          if (window.google?.maps?.importLibrary) {
-            clearInterval(checkLoaded);
-            try {
-              await window.google.maps.importLibrary('places');
-              setIsLoaded(true);
-              setIsLoading(false);
-            } catch (error) {
-              console.error('Failed to load Places library:', error);
-              setIsLoading(false);
-            }
-          }
-        }, 100);
-        
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          clearInterval(checkLoaded);
-          if (!isLoaded) {
+      // Check if an old-style script exists (without loading=async)
+      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+      if (existingScript) {
+        // Check if it has importLibrary (new API)
+        if (window.google?.maps?.importLibrary) {
+          try {
+            await window.google.maps.importLibrary('places');
+            setIsLoaded(true);
             setIsLoading(false);
+            return;
+          } catch (error) {
+            console.error('Failed to load Places library from existing script:', error);
           }
-        }, 10000);
-        return;
+        }
+        
+        // Old script without importLibrary - remove it and load new one
+        console.log('Removing old Google Maps script, loading new version with async');
+        existingScript.remove();
+        delete window.google;
       }
 
-      // Load Google Maps script with the new API
+      // Load Google Maps script with the new Dynamic Library Import API
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&loading=async`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
       script.async = true;
       script.defer = true;
       
       script.onload = async () => {
-        try {
-          await window.google.maps.importLibrary('places');
-          setIsLoaded(true);
-          setIsLoading(false);
-        } catch (error) {
-          console.error('Failed to load Places library:', error);
+        // Wait a moment for the API to initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (window.google?.maps?.importLibrary) {
+          try {
+            await window.google.maps.importLibrary('places');
+            setIsLoaded(true);
+            setIsLoading(false);
+          } catch (error) {
+            console.error('Failed to load Places library:', error);
+            setIsLoading(false);
+          }
+        } else {
+          console.error('Google Maps loaded but importLibrary not available');
           setIsLoading(false);
         }
       };
       
       script.onerror = () => {
-        console.error('Failed to load Google Maps');
+        console.error('Failed to load Google Maps script');
         setIsLoading(false);
       };
 
