@@ -196,7 +196,8 @@ export function WebCreateEvent() {
         setUrlStatus({ checking: false, available: true, message: "Available!" });
       }
     } catch (err) {
-      setUrlStatus({ checking: false, available: null, message: "" });
+      console.error("Error checking URL availability:", err);
+      setUrlStatus({ checking: false, available: null, message: "Error checking availability" });
     }
   };
 

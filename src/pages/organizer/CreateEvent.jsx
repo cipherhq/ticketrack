@@ -693,12 +693,19 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     }
     setUrlStatus({ checking: true, available: null, message: "Checking..." });
     try {
-      const { data, error } = await supabase
+      // Build query - exclude current event if editing
+      let query = supabase
         .from("events")
         .select("id")
         .eq("slug", url)
-        .neq("id", eventId || "00000000-0000-0000-0000-000000000000")
         .limit(1);
+      
+      // In edit mode, exclude the current event from the check
+      if (isEditMode && id) {
+        query = query.neq("id", id);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       if (data && data.length > 0) {
         setUrlStatus({ checking: false, available: false, message: "URL already taken" });
@@ -706,7 +713,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         setUrlStatus({ checking: false, available: true, message: "Available!" });
       }
     } catch (err) {
-      setUrlStatus({ checking: false, available: null, message: "" });
+      console.error("Error checking URL availability:", err);
+      setUrlStatus({ checking: false, available: null, message: "Error checking availability" });
     }
   };
 
