@@ -410,8 +410,8 @@ export function AuthProvider({ children }) {
       console.log('[Auth] Sending password reset email to:', emailResult.value)
       
       // Always use production URL for password reset to ensure consistent experience
-      // Must match Supabase Site URL setting (with www)
-      const productionUrl = 'https://www.ticketrack.com'
+      // Must match Supabase Site URL setting
+      const productionUrl = 'https://ticketrack.com'
       const { data, error } = await supabase.auth.resetPasswordForEmail(emailResult.value, {
         redirectTo: `${productionUrl}/reset-password`,
       })
