@@ -3,29 +3,68 @@
  * Uses IANA timezone format with friendly city/country labels
  */
 
-// Timezone list for supported countries: UK, US, Canada, Nigeria, Ghana
+// Comprehensive timezone list with city/country format
 export const timezones = [
   // Africa
   { value: 'Africa/Lagos', label: 'Lagos, Nigeria', region: 'Africa' },
   { value: 'Africa/Accra', label: 'Accra, Ghana', region: 'Africa' },
+  { value: 'Africa/Nairobi', label: 'Nairobi, Kenya', region: 'Africa' },
+  { value: 'Africa/Johannesburg', label: 'Johannesburg, South Africa', region: 'Africa' },
+  { value: 'Africa/Cairo', label: 'Cairo, Egypt', region: 'Africa' },
+  { value: 'Africa/Casablanca', label: 'Casablanca, Morocco', region: 'Africa' },
+  { value: 'Africa/Dar_es_Salaam', label: 'Dar es Salaam, Tanzania', region: 'Africa' },
+  { value: 'Africa/Kampala', label: 'Kampala, Uganda', region: 'Africa' },
+  { value: 'Africa/Kigali', label: 'Kigali, Rwanda', region: 'Africa' },
+  { value: 'Africa/Addis_Ababa', label: 'Addis Ababa, Ethiopia', region: 'Africa' },
+  { value: 'Africa/Dakar', label: 'Dakar, Senegal', region: 'Africa' },
+  { value: 'Africa/Abidjan', label: 'Abidjan, Ivory Coast', region: 'Africa' },
+  { value: 'Africa/Douala', label: 'Douala, Cameroon', region: 'Africa' },
   
-  // UK
+  // Americas
+  { value: 'America/New_York', label: 'New York, USA', region: 'Americas' },
+  { value: 'America/Chicago', label: 'Chicago, USA', region: 'Americas' },
+  { value: 'America/Denver', label: 'Denver, USA', region: 'Americas' },
+  { value: 'America/Los_Angeles', label: 'Los Angeles, USA', region: 'Americas' },
+  { value: 'America/Toronto', label: 'Toronto, Canada', region: 'Americas' },
+  { value: 'America/Vancouver', label: 'Vancouver, Canada', region: 'Americas' },
+  { value: 'America/Mexico_City', label: 'Mexico City, Mexico', region: 'Americas' },
+  { value: 'America/Sao_Paulo', label: 'São Paulo, Brazil', region: 'Americas' },
+  { value: 'America/Buenos_Aires', label: 'Buenos Aires, Argentina', region: 'Americas' },
+  { value: 'America/Bogota', label: 'Bogotá, Colombia', region: 'Americas' },
+  { value: 'America/Lima', label: 'Lima, Peru', region: 'Americas' },
+  
+  // Europe
   { value: 'Europe/London', label: 'London, UK', region: 'Europe' },
+  { value: 'Europe/Paris', label: 'Paris, France', region: 'Europe' },
+  { value: 'Europe/Berlin', label: 'Berlin, Germany', region: 'Europe' },
+  { value: 'Europe/Madrid', label: 'Madrid, Spain', region: 'Europe' },
+  { value: 'Europe/Rome', label: 'Rome, Italy', region: 'Europe' },
+  { value: 'Europe/Amsterdam', label: 'Amsterdam, Netherlands', region: 'Europe' },
+  { value: 'Europe/Brussels', label: 'Brussels, Belgium', region: 'Europe' },
+  { value: 'Europe/Dublin', label: 'Dublin, Ireland', region: 'Europe' },
+  { value: 'Europe/Zurich', label: 'Zurich, Switzerland', region: 'Europe' },
+  { value: 'Europe/Stockholm', label: 'Stockholm, Sweden', region: 'Europe' },
+  { value: 'Europe/Warsaw', label: 'Warsaw, Poland', region: 'Europe' },
+  { value: 'Europe/Moscow', label: 'Moscow, Russia', region: 'Europe' },
   
-  // USA
-  { value: 'America/New_York', label: 'New York, USA (Eastern)', region: 'Americas' },
-  { value: 'America/Chicago', label: 'Chicago, USA (Central)', region: 'Americas' },
-  { value: 'America/Denver', label: 'Denver, USA (Mountain)', region: 'Americas' },
-  { value: 'America/Los_Angeles', label: 'Los Angeles, USA (Pacific)', region: 'Americas' },
-  { value: 'America/Anchorage', label: 'Anchorage, USA (Alaska)', region: 'Americas' },
-  { value: 'Pacific/Honolulu', label: 'Honolulu, USA (Hawaii)', region: 'Americas' },
+  // Asia
+  { value: 'Asia/Dubai', label: 'Dubai, UAE', region: 'Asia' },
+  { value: 'Asia/Riyadh', label: 'Riyadh, Saudi Arabia', region: 'Asia' },
+  { value: 'Asia/Kolkata', label: 'Mumbai, India', region: 'Asia' },
+  { value: 'Asia/Singapore', label: 'Singapore', region: 'Asia' },
+  { value: 'Asia/Hong_Kong', label: 'Hong Kong', region: 'Asia' },
+  { value: 'Asia/Tokyo', label: 'Tokyo, Japan', region: 'Asia' },
+  { value: 'Asia/Seoul', label: 'Seoul, South Korea', region: 'Asia' },
+  { value: 'Asia/Shanghai', label: 'Shanghai, China', region: 'Asia' },
+  { value: 'Asia/Jakarta', label: 'Jakarta, Indonesia', region: 'Asia' },
+  { value: 'Asia/Bangkok', label: 'Bangkok, Thailand', region: 'Asia' },
+  { value: 'Asia/Kuala_Lumpur', label: 'Kuala Lumpur, Malaysia', region: 'Asia' },
   
-  // Canada
-  { value: 'America/Toronto', label: 'Toronto, Canada (Eastern)', region: 'Americas' },
-  { value: 'America/Vancouver', label: 'Vancouver, Canada (Pacific)', region: 'Americas' },
-  { value: 'America/Edmonton', label: 'Edmonton, Canada (Mountain)', region: 'Americas' },
-  { value: 'America/Winnipeg', label: 'Winnipeg, Canada (Central)', region: 'Americas' },
-  { value: 'America/Halifax', label: 'Halifax, Canada (Atlantic)', region: 'Americas' },
+  // Oceania
+  { value: 'Australia/Sydney', label: 'Sydney, Australia', region: 'Oceania' },
+  { value: 'Australia/Melbourne', label: 'Melbourne, Australia', region: 'Oceania' },
+  { value: 'Australia/Perth', label: 'Perth, Australia', region: 'Oceania' },
+  { value: 'Pacific/Auckland', label: 'Auckland, New Zealand', region: 'Oceania' },
 ];
 
 /**
@@ -53,45 +92,11 @@ export function findMatchingTimezone(detectedTimezone) {
     return directMatch.value;
   }
 
-  // Map common timezones to our supported list
-  const timezoneMapping = {
-    // US timezone aliases
-    'America/Detroit': 'America/New_York',
-    'America/Indiana/Indianapolis': 'America/New_York',
-    'America/Phoenix': 'America/Denver',
-    'America/Boise': 'America/Denver',
-    // Canada timezone aliases
-    'America/Montreal': 'America/Toronto',
-    'America/Calgary': 'America/Edmonton',
-    // UK aliases
-    'Europe/Belfast': 'Europe/London',
-    'Europe/Dublin': 'Europe/London',
-    // Africa aliases
-    'Africa/Abidjan': 'Africa/Accra',
-    'Africa/Bamako': 'Africa/Accra',
-    'Africa/Banjul': 'Africa/Accra',
-    'Africa/Conakry': 'Africa/Accra',
-    'Africa/Dakar': 'Africa/Accra',
-    'Africa/Freetown': 'Africa/Accra',
-    'Africa/Lome': 'Africa/Accra',
-    'Africa/Nouakchott': 'Africa/Accra',
-    'Africa/Ouagadougou': 'Africa/Accra',
-  };
-
-  if (timezoneMapping[detectedTimezone]) {
-    return timezoneMapping[detectedTimezone];
-  }
-
   // Try to match by region (e.g., America/Detroit -> America/New_York)
   const region = detectedTimezone.split('/')[0];
-  if (region === 'America') {
-    return 'America/New_York'; // Default US timezone
-  }
-  if (region === 'Europe') {
-    return 'Europe/London'; // Default UK timezone
-  }
-  if (region === 'Africa') {
-    return 'Africa/Lagos'; // Default Nigeria timezone
+  const regionMatch = timezones.find(tz => tz.value.startsWith(region));
+  if (regionMatch) {
+    return regionMatch.value;
   }
 
   // Default to Lagos for Africa-focused platform

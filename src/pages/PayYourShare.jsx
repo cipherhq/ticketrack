@@ -4,6 +4,7 @@ import { Calendar, MapPin, Users, Clock, CreditCard, Loader2, CheckCircle2, Aler
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/config/currencies';
+import { getPaymentProvider, getProviderInfo } from '@/config/payments';
 import { getShareByToken, recordSharePayment, getTimeRemaining, formatShareStatus } from '@/services/splitPayment';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,6 +51,145 @@ export function PayYourShare() {
     }
   };
 
+  // Determine payment provider based on currency
+  const paymentProvider = shareData?.split_payment?.currency 
+    ? getPaymentProvider(shareData.split_payment.currency) 
+    : 'paystack';
+  const providerInfo = getProviderInfo(shareData?.split_payment?.currency || 'NGN');
+
+  // Handle Paystack payment (NGN, GHS, KES, ZAR)
+  const handlePaystackPayment = async (share, splitPayment, event) => {
+    if (!window.PaystackPop) {
+      toast.error('Payment system not loaded. Please refresh the page.');
+      setPaying(false);
+      return;
+    }
+
+    const handler = window.PaystackPop.setup({
+      key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+      email: share.email,
+      amount: Math.round(share.share_amount * 100), // Convert to kobo/pesewas
+      currency: splitPayment.currency,
+      ref: `SPLIT-${share.id}-${Date.now()}`,
+      metadata: {
+        type: 'split_payment',
+        share_id: share.id,
+        split_payment_id: splitPayment.id,
+        event_id: event.id,
+        payer_name: share.name,
+        payer_email: share.email
+      },
+      callback: async (response) => {
+        await handlePaymentSuccess(share.id, response.reference, 'paystack');
+      },
+      onClose: () => {
+        setPaying(false);
+      }
+    });
+
+    handler.openIframe();
+  };
+
+  // Handle Flutterwave payment (backup for African currencies)
+  const handleFlutterwavePayment = async (share, splitPayment, event) => {
+    try {
+      // Create a split payment checkout via edge function
+      const { data, error } = await supabase.functions.invoke('create-split-flutterwave-checkout', {
+        body: {
+          shareId: share.id,
+          splitPaymentId: splitPayment.id,
+          email: share.email,
+          name: share.name,
+          amount: share.share_amount,
+          currency: splitPayment.currency,
+          eventTitle: event.title,
+          successUrl: `${window.location.origin}/pay-share/${token}?status=success`,
+          cancelUrl: `${window.location.origin}/pay-share/${token}?status=cancelled`
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Failed to create payment link');
+      }
+    } catch (err) {
+      console.error('Flutterwave error:', err);
+      toast.error('Failed to initialize payment. Please try again.');
+      setPaying(false);
+    }
+  };
+
+  // Handle Stripe payment (USD, GBP, EUR, CAD, AUD)
+  const handleStripePayment = async (share, splitPayment, event) => {
+    try {
+      // Create a Stripe checkout session via edge function
+      const { data, error } = await supabase.functions.invoke('create-split-stripe-checkout', {
+        body: {
+          shareId: share.id,
+          splitPaymentId: splitPayment.id,
+          email: share.email,
+          name: share.name,
+          amount: share.share_amount,
+          currency: splitPayment.currency,
+          eventTitle: event.title,
+          successUrl: `${window.location.origin}/pay-share/${token}?status=success`,
+          cancelUrl: `${window.location.origin}/pay-share/${token}?status=cancelled`
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Failed to create Stripe checkout session');
+      }
+    } catch (err) {
+      console.error('Stripe error:', err);
+      toast.error('Failed to initialize payment. Please try again.');
+      setPaying(false);
+    }
+  };
+
+  // Handle successful payment callback
+  const handlePaymentSuccess = async (shareId, reference, provider) => {
+    try {
+      const result = await recordSharePayment(shareId, reference, provider);
+
+      if (result.all_paid) {
+        toast.success('All shares paid! Tickets will be issued shortly.');
+      } else {
+        toast.success('Payment successful! Waiting for others to pay.');
+      }
+
+      await loadShareData();
+    } catch (err) {
+      console.error('Error recording payment:', err);
+      toast.error('Payment recorded but there was an error. Please contact support.');
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  // Check for payment redirect status on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    
+    if (status === 'success') {
+      toast.success('Payment successful! Updating status...');
+      // Clear the URL params
+      window.history.replaceState({}, '', `/pay-share/${token}`);
+      loadShareData();
+    } else if (status === 'cancelled') {
+      toast.info('Payment was cancelled');
+      window.history.replaceState({}, '', `/pay-share/${token}`);
+    }
+  }, [token]);
+
   const handlePayment = async () => {
     if (!shareData) return;
     
@@ -72,51 +212,21 @@ export function PayYourShare() {
     setPaying(true);
 
     try {
-      // Initialize Paystack payment
-      const handler = window.PaystackPop.setup({
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-        email: share.email,
-        amount: Math.round(share.share_amount * 100), // Convert to kobo
-        currency: splitPayment.currency,
-        ref: `SPLIT-${share.id}-${Date.now()}`,
-        metadata: {
-          type: 'split_payment',
-          share_id: share.id,
-          split_payment_id: splitPayment.id,
-          event_id: event.id,
-          payer_name: share.name,
-          payer_email: share.email
-        },
-        callback: async (response) => {
-          try {
-            // Record the payment
-            const result = await recordSharePayment(
-              share.id,
-              response.reference,
-              'paystack'
-            );
-
-            if (result.all_paid) {
-              toast.success('All shares paid! Tickets will be issued shortly.');
-            } else {
-              toast.success('Payment successful! Waiting for others to pay.');
-            }
-
-            // Reload to show updated status
-            await loadShareData();
-          } catch (err) {
-            console.error('Error recording payment:', err);
-            toast.error('Payment recorded but there was an error. Please contact support.');
-          } finally {
-            setPaying(false);
-          }
-        },
-        onClose: () => {
-          setPaying(false);
-        }
-      });
-
-      handler.openIframe();
+      // Route to appropriate payment provider based on currency
+      const provider = getPaymentProvider(splitPayment.currency);
+      
+      switch (provider) {
+        case 'stripe':
+          await handleStripePayment(share, splitPayment, event);
+          break;
+        case 'flutterwave':
+          await handleFlutterwavePayment(share, splitPayment, event);
+          break;
+        case 'paystack':
+        default:
+          await handlePaystackPayment(share, splitPayment, event);
+          break;
+      }
     } catch (err) {
       console.error('Payment error:', err);
       toast.error('Failed to initialize payment');
@@ -307,7 +417,7 @@ export function PayYourShare() {
 
         {/* Info */}
         <p className="text-center text-xs text-[#0F0F0F]/50">
-          Secure payment powered by Paystack. Tickets will be issued once all {splitPayment?.member_count} members have paid.
+          Secure payment powered by {providerInfo.name}. Tickets will be issued once all {splitPayment?.member_count} members have paid.
         </p>
       </div>
     </div>
