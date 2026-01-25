@@ -32,7 +32,25 @@ export function WebEventDetails() {
   const [waitlistPosition, setWaitlistPosition] = useState(null)
   const [error, setError] = useState(null)
   
-  const [selectedTickets, setSelectedTickets] = useState(location.state?.selectedTickets || {})
+  // Restore selected tickets from state or sessionStorage (for login redirect)
+  const [selectedTickets, setSelectedTickets] = useState(() => {
+    if (location.state?.selectedTickets) {
+      return location.state.selectedTickets
+    }
+    // Try to restore from sessionStorage
+    try {
+      const stored = sessionStorage.getItem(`pending_tickets_${id}`)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        // Clear it after restoring
+        sessionStorage.removeItem(`pending_tickets_${id}`)
+        return parsed
+      }
+    } catch (e) {
+      console.error('Error restoring tickets from session:', e)
+    }
+    return {}
+  })
   const [isFavorite, setIsFavorite] = useState(false)
   const [savingFavorite, setSavingFavorite] = useState(false)
   const [childEvents, setChildEvents] = useState([])
@@ -528,12 +546,24 @@ export function WebEventDetails() {
     
     // Paid events require login first
     if (!user) {
+      // Save tickets to sessionStorage as backup in case state is lost
+      try {
+        sessionStorage.setItem(`pending_tickets_${id}`, JSON.stringify(selectedTickets))
+      } catch (e) {
+        console.error('Error saving tickets to session:', e)
+      }
       navigate("/login", { state: { from: location.pathname, selectedTickets } })
       return
     }
     
     // Paid event - need tickets selected, go to checkout
     if (totalTickets > 0) {
+      // Clear any pending tickets from sessionStorage
+      try {
+        sessionStorage.removeItem(`pending_tickets_${id}`)
+      } catch (e) {
+        // Ignore
+      }
       navigate('/checkout', { 
         state: { 
           event: checkoutEvent,

@@ -13,6 +13,144 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
+// Helper function to handle completed split payments
+async function handleSplitPaymentCompleted(supabase: any, splitPaymentId: string) {
+  try {
+    // Get split payment details
+    const { data: splitPayment } = await supabase
+      .from("group_split_payments")
+      .select(`
+        *,
+        event:events(*),
+        session:group_buy_sessions(*)
+      `)
+      .eq("id", splitPaymentId)
+      .single();
+
+    if (!splitPayment || splitPayment.order_id) {
+      // Already processed or not found
+      return;
+    }
+
+    // Get all shares
+    const { data: shares } = await supabase
+      .from("group_split_shares")
+      .select("*")
+      .eq("split_payment_id", splitPaymentId);
+
+    if (!shares || shares.length === 0) return;
+
+    // Create order for the group
+    const orderNumber = `GRP-${Date.now().toString(36).toUpperCase()}`;
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        order_number: orderNumber,
+        event_id: splitPayment.event_id,
+        user_id: splitPayment.initiated_by,
+        status: "completed",
+        total_amount: splitPayment.grand_total,
+        currency: splitPayment.currency,
+        payment_provider: "split_payment",
+        payment_reference: splitPaymentId,
+        paid_at: new Date().toISOString(),
+        buyer_email: shares[0].email,
+        is_group_order: true,
+      })
+      .select()
+      .single();
+
+    if (orderError || !order) {
+      console.error("Error creating order for split payment:", orderError);
+      return;
+    }
+
+    // Create order items from ticket selection
+    const ticketSelection = splitPayment.ticket_selection || [];
+    const orderItems = ticketSelection.map((ticket: any) => ({
+      order_id: order.id,
+      ticket_type_id: ticket.ticket_type_id,
+      quantity: ticket.quantity,
+      unit_price: ticket.price,
+      subtotal: ticket.price * ticket.quantity,
+    }));
+
+    await supabase.from("order_items").insert(orderItems);
+
+    // Create tickets for each share holder
+    const ticketInserts: any[] = [];
+    let ticketIndex = 0;
+
+    for (const item of ticketSelection) {
+      const ticketsPerMember = Math.floor(item.quantity / shares.length);
+      let remainder = item.quantity % shares.length;
+
+      for (const share of shares) {
+        const numTickets = ticketsPerMember + (remainder > 0 ? 1 : 0);
+        remainder = Math.max(0, remainder - 1);
+
+        for (let i = 0; i < numTickets; i++) {
+          ticketInserts.push({
+            order_id: order.id,
+            event_id: splitPayment.event_id,
+            ticket_type_id: item.ticket_type_id,
+            user_id: share.user_id,
+            attendee_email: share.email,
+            attendee_name: share.name,
+            status: "valid",
+            qr_code: `TKT-${order.id.slice(0, 8)}-${Date.now()}-${ticketIndex++}`,
+            payment_status: "completed",
+            total_price: item.price,
+          });
+        }
+      }
+    }
+
+    if (ticketInserts.length > 0) {
+      await supabase.from("tickets").insert(ticketInserts);
+    }
+
+    // Update ticket quantities
+    for (const item of ticketSelection) {
+      await supabase.rpc("decrement_ticket_quantity", {
+        p_ticket_type_id: item.ticket_type_id,
+        p_quantity: item.quantity,
+      });
+    }
+
+    // Update split payment with order reference
+    await supabase
+      .from("group_split_payments")
+      .update({
+        order_id: order.id,
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", splitPaymentId);
+
+    // Send confirmation emails to all members
+    for (const share of shares) {
+      await supabase.functions.invoke("send-email", {
+        body: {
+          type: "split_payment_complete",
+          to: share.email,
+          data: {
+            name: share.name,
+            eventTitle: splitPayment.event?.title,
+            orderNumber: order.order_number,
+            shareAmount: share.share_amount,
+            currency: splitPayment.currency,
+          },
+        },
+      });
+    }
+
+    safeLog.info(`Split payment ${splitPaymentId} completed, order ${order.id} created`);
+  } catch (error) {
+    console.error("Error handling split payment completion:", error);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -66,8 +204,31 @@ serve(async (req) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
       const orderId = session.metadata?.order_id;
+      const paymentType = session.metadata?.type;
 
-      if (orderId) {
+      // Handle split payment
+      if (paymentType === "split_payment") {
+        const shareId = session.metadata?.share_id;
+        const splitPaymentId = session.metadata?.split_payment_id;
+
+        if (shareId) {
+          // Record the share payment
+          const { data: shareResult, error: shareError } = await supabase.rpc("record_share_payment", {
+            p_share_id: shareId,
+            p_payment_reference: session.payment_intent || session.id,
+            p_payment_method: "stripe"
+          });
+
+          if (shareError) {
+            console.error("Error recording split payment:", shareError);
+          } else if (shareResult?.all_paid) {
+            // All shares paid - create the order and tickets
+            await handleSplitPaymentCompleted(supabase, splitPaymentId);
+          }
+
+          safeLog.info(`Split payment share ${shareId} completed via Stripe`);
+        }
+      } else if (orderId) {
         // Update order status
         await supabase
           .from("orders")

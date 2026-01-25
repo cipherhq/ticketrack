@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Globe, DollarSign, ToggleLeft, Loader2, Plus, Edit2, Trash2, Save, X, Check, CreditCard, Palette, FileText, Gauge, Eye, EyeOff, Zap } from 'lucide-react';
+import { Settings, Globe, DollarSign, ToggleLeft, Loader2, Plus, Edit2, Trash2, Save, X, Check, CreditCard, Palette, FileText, Gauge, Eye, EyeOff, Zap, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,19 @@ export function AdminSettings() {
   const [limits, setLimits] = useState([]);
   const [platformSettings, setPlatformSettings] = useState([]);
   const [savedKey, setSavedKey] = useState(null);
+  const [fastPayoutSettings, setFastPayoutSettings] = useState({
+    enabled: true,
+    fee_percentage: 0.005,
+    min_ticket_sales_percentage: 50,
+    cap_bronze: 70,
+    cap_silver: 80,
+    cap_gold: 90,
+    cap_trusted: 95,
+    require_kyc: true,
+    require_bank_verified: true,
+    max_requests_per_event: 3,
+    cooldown_hours: 24
+  });
   
   // Modal states
   const [currencyModal, setCurrencyModal] = useState({ open: false, data: null });
@@ -45,7 +58,7 @@ export function AdminSettings() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [currencyRes, countryRes, featureRes, cfRes, gatewayRes, brandingRes, legalRes, limitsRes, platformSettingsRes] = await Promise.all([
+      const [currencyRes, countryRes, featureRes, cfRes, gatewayRes, brandingRes, legalRes, limitsRes, platformSettingsRes, fastPayoutRes] = await Promise.all([
         supabase.from('currencies').select('*').order('sort_order'),
         supabase.from('countries').select('*').order('name'),
         supabase.from('features').select('*').order('category, name'),
@@ -55,6 +68,7 @@ export function AdminSettings() {
         supabase.from('legal_documents').select('*').order('applies_to'),
         supabase.from('platform_limits').select('*').order('country_code, limit_key'),
         supabase.from('platform_settings').select('*').order('category, key'),
+        supabase.from('fast_payout_settings').select('*').limit(1).single(),
       ]);
       
       setCurrencies(currencyRes.data || []);
@@ -66,6 +80,9 @@ export function AdminSettings() {
       setLegalDocs(legalRes.data || []);
       setLimits(limitsRes.data || []);
       setPlatformSettings(platformSettingsRes.data || []);
+      if (fastPayoutRes.data) {
+        setFastPayoutSettings(fastPayoutRes.data);
+      }
       
       if (countryRes.data?.length > 0) {
         setSelectedCountry(countryRes.data[0].code);
@@ -242,6 +259,26 @@ export function AdminSettings() {
     return secret.substring(0, 4) + '••••••••' + secret.substring(secret.length - 4);
   };
 
+  // Fast Payout handlers
+  const saveFastPayoutSettings = async () => {
+    setSaving(true);
+    try {
+      const { id, created_at, ...updateData } = fastPayoutSettings;
+      updateData.updated_at = new Date().toISOString();
+      
+      if (id) {
+        await supabase.from('fast_payout_settings').update(updateData).eq('id', id);
+      } else {
+        await supabase.from('fast_payout_settings').insert(updateData);
+      }
+      loadAllData();
+    } catch (error) {
+      console.error('Error saving fast payout settings:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -284,6 +321,9 @@ export function AdminSettings() {
           </TabsTrigger>
           <TabsTrigger value="connect" className="rounded-lg data-[state=active]:bg-white">
             <Zap className="w-4 h-4 mr-2" /> Stripe Connect
+          </TabsTrigger>
+          <TabsTrigger value="fastpayout" className="rounded-lg data-[state=active]:bg-white">
+            <Banknote className="w-4 h-4 mr-2" /> Fast Payout
           </TabsTrigger>
         </TabsList>
 
@@ -1003,6 +1043,232 @@ export function AdminSettings() {
                   <li>Customer payments go directly to the organizer's Stripe (minus platform fee)</li>
                   <li>Payouts to bank accounts are triggered automatically after events end</li>
                   <li>Organizers can process refunds directly from their dashboard</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* FAST PAYOUT TAB */}
+        <TabsContent value="fastpayout" className="mt-6">
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Banknote className="w-5 h-5 text-amber-600" />
+                  Fast Payout Settings
+                </CardTitle>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                  Configure early payout options for organizers
+                </p>
+              </div>
+              <Button 
+                onClick={saveFastPayoutSettings} 
+                disabled={saving}
+                className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                Save Changes
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Enable/Disable */}
+              <div className="flex items-center justify-between p-4 bg-amber-50 rounded-xl">
+                <div>
+                  <Label className="text-base font-medium">Enable Fast Payout</Label>
+                  <p className="text-sm text-[#0F0F0F]/60">Allow organizers to request early payouts</p>
+                </div>
+                <Switch
+                  checked={fastPayoutSettings.enabled}
+                  onCheckedChange={(checked) => setFastPayoutSettings(prev => ({ ...prev, enabled: checked }))}
+                />
+              </div>
+
+              {/* Fee Percentage */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-sm font-medium">Processing Fee (%)</Label>
+                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Fee charged for fast payout (e.g., 0.5 = 0.5%)</p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="10"
+                      value={(fastPayoutSettings.fee_percentage * 100).toFixed(1)}
+                      onChange={(e) => setFastPayoutSettings(prev => ({ 
+                        ...prev, 
+                        fee_percentage: parseFloat(e.target.value) / 100 || 0.005 
+                      }))}
+                      className="rounded-xl w-24"
+                    />
+                    <span className="text-[#0F0F0F]/60">%</span>
+                    <Badge variant="outline" className="ml-2">
+                      Current: {(fastPayoutSettings.fee_percentage * 100).toFixed(1)}%
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Minimum Ticket Sales (%)</Label>
+                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Required ticket sales to be eligible</p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="5"
+                      min="0"
+                      max="100"
+                      value={fastPayoutSettings.min_ticket_sales_percentage}
+                      onChange={(e) => setFastPayoutSettings(prev => ({ 
+                        ...prev, 
+                        min_ticket_sales_percentage: parseFloat(e.target.value) || 50 
+                      }))}
+                      className="rounded-xl w-24"
+                    />
+                    <span className="text-[#0F0F0F]/60">%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payout Caps */}
+              <div>
+                <Label className="text-base font-medium mb-3 block">Payout Caps by Trust Level</Label>
+                <p className="text-xs text-[#0F0F0F]/60 mb-4">Maximum percentage of available earnings organizers can withdraw early</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-amber-600" />
+                      <span className="text-sm font-medium">Bronze</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fastPayoutSettings.cap_bronze}
+                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_bronze: parseFloat(e.target.value) || 70 }))}
+                        className="rounded-lg w-16 h-8 text-center"
+                      />
+                      <span className="text-sm text-[#0F0F0F]/60">%</span>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-gray-400" />
+                      <span className="text-sm font-medium">Silver</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fastPayoutSettings.cap_silver}
+                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_silver: parseFloat(e.target.value) || 80 }))}
+                        className="rounded-lg w-16 h-8 text-center"
+                      />
+                      <span className="text-sm text-[#0F0F0F]/60">%</span>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                      <span className="text-sm font-medium">Gold</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fastPayoutSettings.cap_gold}
+                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_gold: parseFloat(e.target.value) || 90 }))}
+                        className="rounded-lg w-16 h-8 text-center"
+                      />
+                      <span className="text-sm text-[#0F0F0F]/60">%</span>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      <span className="text-sm font-medium">Trusted</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={fastPayoutSettings.cap_trusted}
+                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_trusted: parseFloat(e.target.value) || 95 }))}
+                        className="rounded-lg w-16 h-8 text-center"
+                      />
+                      <span className="text-sm text-[#0F0F0F]/60">%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Requirements */}
+              <div>
+                <Label className="text-base font-medium mb-3 block">Requirements</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                    <div>
+                      <span className="text-sm font-medium">Require KYC Verification</span>
+                      <p className="text-xs text-[#0F0F0F]/60">Organizer must complete KYC before fast payout</p>
+                    </div>
+                    <Switch
+                      checked={fastPayoutSettings.require_kyc}
+                      onCheckedChange={(checked) => setFastPayoutSettings(prev => ({ ...prev, require_kyc: checked }))}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                    <div>
+                      <span className="text-sm font-medium">Require Bank Verified</span>
+                      <p className="text-xs text-[#0F0F0F]/60">Bank account must be verified</p>
+                    </div>
+                    <Switch
+                      checked={fastPayoutSettings.require_bank_verified}
+                      onCheckedChange={(checked) => setFastPayoutSettings(prev => ({ ...prev, require_bank_verified: checked }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Limits */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-sm font-medium">Max Requests Per Event</Label>
+                  <p className="text-xs text-[#0F0F0F]/60 mb-2">How many times can organizer request fast payout per event</p>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={fastPayoutSettings.max_requests_per_event}
+                    onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, max_requests_per_event: parseInt(e.target.value) || 3 }))}
+                    className="rounded-xl w-24"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Cooldown Period (hours)</Label>
+                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Minimum hours between fast payout requests</p>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="168"
+                    value={fastPayoutSettings.cooldown_hours}
+                    onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cooldown_hours: parseInt(e.target.value) || 24 }))}
+                    className="rounded-xl w-24"
+                  />
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <h4 className="font-medium text-amber-900 mb-2">How Fast Payout Works</h4>
+                <ul className="text-sm text-amber-800 space-y-1">
+                  <li>• Organizers can request early payout when {fastPayoutSettings.min_ticket_sales_percentage}% of tickets are sold</li>
+                  <li>• A {(fastPayoutSettings.fee_percentage * 100).toFixed(1)}% fee is deducted from the payout amount</li>
+                  <li>• Payout caps protect against refund liability (remaining % held as buffer)</li>
+                  <li>• Only non-subaccount organizers are eligible (subaccounts get instant payouts)</li>
                 </ul>
               </div>
             </CardContent>

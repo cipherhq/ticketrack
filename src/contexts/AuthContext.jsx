@@ -414,17 +414,26 @@ export function AuthProvider({ children }) {
     if (!emailResult.valid) throw new Error(emailResult.error)
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(emailResult.value, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      console.log('[Auth] Sending password reset email to:', emailResult.value)
+      
+      // Always use production URL for password reset to ensure consistent experience
+      // Must match Supabase Site URL setting
+      const productionUrl = 'https://ticketrack.com'
+      const { data, error } = await supabase.auth.resetPasswordForEmail(emailResult.value, {
+        redirectTo: `${productionUrl}/reset-password`,
       })
 
       if (error) {
+        console.error('[Auth] Password reset error:', error)
         if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
+        if (error.message) throw new Error(error.message)
         throw new Error(AUTH_ERRORS.UNKNOWN)
       }
 
+      console.log('[Auth] Password reset email sent successfully')
       return { success: true, message: 'If an account exists, you will receive a password reset email' }
     } catch (error) {
+      console.error('[Auth] Password reset exception:', error)
       if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
       throw error
     }

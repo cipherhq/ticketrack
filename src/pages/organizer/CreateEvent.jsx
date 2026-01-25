@@ -30,17 +30,7 @@ import 'react-quill/dist/quill.snow.css';
 
 const seatingTypes = ['Standing', 'Seated', 'Mixed'];
 
-const timezones = [
-  { value: "Africa/Lagos", label: "Nigeria (WAT - UTC+1)" },
-  { value: "Africa/Accra", label: "Ghana (GMT - UTC+0)" },
-  { value: "Africa/Nairobi", label: "Kenya (EAT - UTC+3)" },
-  { value: "Africa/Johannesburg", label: "South Africa (SAST - UTC+2)" },
-  { value: "Europe/London", label: "United Kingdom (GMT/BST)" },
-  { value: "America/New_York", label: "US Eastern (EST - UTC-5)" },
-  { value: "America/Chicago", label: "US Central (CST - UTC-6)" },
-  { value: "America/Los_Angeles", label: "US Pacific (PST - UTC-8)" },
-  { value: "America/Toronto", label: "Canada (EST - UTC-5)" },
-];
+import { timezones, getUserTimezone, getTimezonesByRegion } from '@/utils/timezones';
 
 export function CreateEvent() {
   const { id } = useParams();
@@ -97,7 +87,7 @@ export function CreateEvent() {
     endDate: '',
     endTime: '',
     gateOpeningTime: '',
-    timezone: 'Africa/Lagos',
+    timezone: getUserTimezone(),
     isMultiDay: false,
     eventDays: [],
     isRecurring: false,
@@ -493,9 +483,16 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (formData.title && /[^a-zA-Z0-9\s\-',.!?&()]/.test(formData.title)) {
         errors.push("Event title contains invalid special characters");
       }
+      if (!formData.slug?.trim()) errors.push("Custom event URL is required");
+      if (formData.slug && formData.slug.length < 3) errors.push("Custom event URL must be at least 3 characters");
+      if (urlStatus.available === false) errors.push("Custom event URL is already taken");
       if (!formData.eventType) errors.push("Event type is required");
       if (!formData.category) errors.push("Category is required");
-      if (!formData.description?.trim()) errors.push("Description is required");
+      if (!formData.description?.trim()) {
+        errors.push("Description is required");
+      } else if (formData.description.trim().length < 25) {
+        errors.push("Description must be at least 25 characters");
+      }
       
       // Visibility validation
       if (formData.visibility === 'password' && !formData.accessPassword?.trim()) {
@@ -604,12 +601,14 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     setError("");
     if (!isLastTab) {
       setActiveTab(tabs[currentTabIndex + 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const goToPrevTab = () => {
     if (!isFirstTab) {
       setActiveTab(tabs[currentTabIndex - 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -622,9 +621,16 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (formData.title && /[^a-zA-Z0-9\s\-',.!?&()]/.test(formData.title)) {
         errors.push("Event title contains invalid special characters");
       }
+      if (!formData.slug?.trim()) errors.push("Custom event URL is required");
+      if (formData.slug && formData.slug.length < 3) errors.push("Custom event URL must be at least 3 characters");
+      if (urlStatus.available === false) errors.push("Custom event URL is already taken");
       if (!formData.eventType) errors.push("Event type is required");
       if (!formData.category) errors.push("Category is required");
-      if (!formData.description?.trim()) errors.push("Description is required");
+      if (!formData.description?.trim()) {
+        errors.push("Description is required");
+      } else if (formData.description.trim().length < 25) {
+        errors.push("Description must be at least 25 characters");
+      }
       if (formData.visibility === 'password' && !formData.accessPassword?.trim()) {
         errors.push("Access password is required for password-protected events");
       }
@@ -669,7 +675,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     if (targetIndex <= currentTabIndex) {
       setActiveTab(targetTabId);
       setError("");
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     
@@ -691,7 +697,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     // All validations passed, go to target tab
     setError("");
     setActiveTab(targetTabId);
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
 
@@ -714,12 +720,19 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     }
     setUrlStatus({ checking: true, available: null, message: "Checking..." });
     try {
-      const { data, error } = await supabase
+      // Build query - exclude current event if editing
+      let query = supabase
         .from("events")
         .select("id")
         .eq("slug", url)
-        .neq("id", eventId || "00000000-0000-0000-0000-000000000000")
         .limit(1);
+      
+      // In edit mode, exclude the current event from the check
+      if (isEditMode && id) {
+        query = query.neq("id", id);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       if (data && data.length > 0) {
         setUrlStatus({ checking: false, available: false, message: "URL already taken" });
@@ -727,7 +740,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         setUrlStatus({ checking: false, available: true, message: "Available!" });
       }
     } catch (err) {
-      setUrlStatus({ checking: false, available: null, message: "" });
+      console.error("Error checking URL availability:", err);
+      setUrlStatus({ checking: false, available: null, message: "Error checking availability" });
     }
   };
 
@@ -1690,7 +1704,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     placeholder="my-awesome-event"
                     value={formData.slug}
                     onChange={(e) => handleInputChange("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
-                    className="h-12 rounded-xl bg-[#F4F6FA] border-0 flex-1"
+                    className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
                   />
                   <Button
                     type="button"
@@ -1715,7 +1729,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   )}
                   {urlStatus.available === false && (
                     <span className="text-xs text-red-600 flex items-center gap-1">
-                      <XCircle className="w-3 h-3" /> {urlStatus.message}
+                      <XCircle className="w-3 h-3" /> {urlStatus.message} - please choose a different URL
                     </span>
                   )}
                   {!urlStatus.checking && urlStatus.available === null && (
@@ -1904,13 +1918,15 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Gate Opening Time <span className="text-red-500">*</span></Label>
+                  <Label>Gate Opening Time</Label>
                   <Input
                     type="time"
                     value={formData.gateOpeningTime}
                     onChange={(e) => handleInputChange('gateOpeningTime', e.target.value)}
                     className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                    placeholder="Optional"
                   />
+                  <p className="text-xs text-[#0F0F0F]/40">Optional - when gates open for attendees</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Timezone <span className="text-red-500">*</span></Label>
@@ -1919,8 +1935,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     onChange={(e) => handleInputChange('timezone', e.target.value)}
                     className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
                   >
-                    {timezones.map((tz) => (
-                      <option key={tz.value} value={tz.value}>{tz.label}</option>
+                    {Object.entries(getTimezonesByRegion()).map(([region, tzList]) => (
+                      <optgroup key={region} label={region}>
+                        {tzList.map((tz) => (
+                          <option key={tz.value} value={tz.value}>{tz.label}</option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>

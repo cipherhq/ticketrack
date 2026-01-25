@@ -4,14 +4,32 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   DollarSign, Clock, CheckCircle, Plus, CreditCard, Building2, 
-  Download, Calendar, Loader2, FileText, HelpCircle 
+  Download, Calendar, Loader2, FileText, HelpCircle, Zap, AlertCircle, Info
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '../../components/ui/dialog';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { HelpTip } from '@/components/HelpTip';
+import { 
+  checkFastPayoutEligibility, 
+  requestFastPayout, 
+  getFastPayoutHistory,
+  formatFastPayoutStatus,
+  calculateFastPayoutFee 
+} from '@/services/fastPayout';
+import { toast } from 'sonner';
 
 export function FinancePayouts() {
   const navigate = useNavigate();
@@ -24,12 +42,80 @@ export function FinancePayouts() {
   });
   const [upcomingPayouts, setUpcomingPayouts] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
+  
+  // Fast Payout state
+  const [fastPayoutEligibility, setFastPayoutEligibility] = useState(null);
+  const [fastPayoutHistory, setFastPayoutHistory] = useState([]);
+  const [fastPayoutDialog, setFastPayoutDialog] = useState(false);
+  const [fastPayoutAmount, setFastPayoutAmount] = useState('');
+  const [fastPayoutProcessing, setFastPayoutProcessing] = useState(false);
+  const [fastPayoutFee, setFastPayoutFee] = useState({ gross: 0, fee: 0, net: 0 });
 
   useEffect(() => {
     if (organizer?.id) {
       loadPayoutData();
+      loadFastPayoutData();
     }
   }, [organizer?.id]);
+
+  // Update fee calculation when amount changes
+  useEffect(() => {
+    const amount = parseFloat(fastPayoutAmount) || 0;
+    if (amount > 0 && fastPayoutEligibility?.fee_percentage) {
+      setFastPayoutFee(calculateFastPayoutFee(amount, fastPayoutEligibility.fee_percentage));
+    } else {
+      setFastPayoutFee({ gross: 0, fee: 0, net: 0 });
+    }
+  }, [fastPayoutAmount, fastPayoutEligibility]);
+
+  const loadFastPayoutData = async () => {
+    try {
+      // Check eligibility
+      const eligibility = await checkFastPayoutEligibility(organizer.id);
+      setFastPayoutEligibility(eligibility);
+      
+      // Load history
+      const history = await getFastPayoutHistory(organizer.id);
+      setFastPayoutHistory(history);
+    } catch (err) {
+      console.error('Error loading fast payout data:', err);
+    }
+  };
+
+  const handleFastPayoutRequest = async () => {
+    const amount = parseFloat(fastPayoutAmount);
+    
+    if (!amount || amount <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    
+    if (amount > fastPayoutEligibility?.max_payout) {
+      toast.error(`Maximum payout is ${formatPrice(fastPayoutEligibility.max_payout, fastPayoutEligibility.currency)}`);
+      return;
+    }
+    
+    setFastPayoutProcessing(true);
+    try {
+      const result = await requestFastPayout(organizer.id, amount);
+      
+      if (result.success) {
+        toast.success(`Fast payout of ${formatPrice(result.data.net_amount, result.data.currency)} initiated!`);
+        setFastPayoutDialog(false);
+        setFastPayoutAmount('');
+        // Reload data
+        loadPayoutData();
+        loadFastPayoutData();
+      } else {
+        toast.error(result.error || 'Failed to process fast payout');
+      }
+    } catch (err) {
+      console.error('Fast payout error:', err);
+      toast.error(err.message || 'Failed to process fast payout');
+    } finally {
+      setFastPayoutProcessing(false);
+    }
+  };
 
   const loadPayoutData = async () => {
     setLoading(true);
@@ -317,6 +403,67 @@ Status,${payout.status}
         </Card>
       </div>
 
+      {/* Fast Payout Card */}
+      {fastPayoutEligibility?.eligible && (
+        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <Zap className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-[#0F0F0F] mb-1 flex items-center gap-2">
+                    Fast Payout Available
+                    <Badge className="bg-amber-100 text-amber-700 text-xs">0.5% fee</Badge>
+                  </h3>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Get your earnings now instead of waiting. Up to {formatPrice(fastPayoutEligibility.max_payout, fastPayoutEligibility.currency)} available.
+                  </p>
+                  <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                    {fastPayoutEligibility.sales_percentage?.toFixed(0)}% tickets sold • {fastPayoutEligibility.cap_percentage}% payout cap
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => {
+                  setFastPayoutAmount(fastPayoutEligibility.max_payout.toString());
+                  setFastPayoutDialog(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white rounded-xl whitespace-nowrap"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Request Fast Payout
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Not Eligible Info */}
+      {fastPayoutEligibility && !fastPayoutEligibility.eligible && (
+        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gray-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-gray-200 flex items-center justify-center flex-shrink-0">
+                <Zap className="w-5 h-5 text-gray-400" />
+              </div>
+              <div>
+                <h3 className="font-medium text-[#0F0F0F] mb-1">Fast Payout</h3>
+                <p className="text-sm text-[#0F0F0F]/60">
+                  {fastPayoutEligibility.reason || 'Not currently available'}
+                </p>
+                {fastPayoutEligibility.sales_percentage !== undefined && (
+                  <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                    Current sales: {fastPayoutEligibility.sales_percentage?.toFixed(0)}% • Required: {fastPayoutEligibility.required_percentage}%
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Payout Info Card */}
       <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50/50">
         <CardContent className="p-6">
@@ -334,6 +481,52 @@ Status,${payout.status}
           </div>
         </CardContent>
       </Card>
+
+      {/* Fast Payout History */}
+      {fastPayoutHistory.length > 0 && (
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-500" />
+              Fast Payout History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {fastPayoutHistory.slice(0, 5).map((payout) => {
+                const status = formatFastPayoutStatus(payout.status);
+                return (
+                  <div key={payout.id} className="p-4 rounded-xl bg-[#F4F6FA]">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-[#0F0F0F] mb-1">
+                          {payout.event?.title || 'Fast Payout'}
+                        </h4>
+                        <p className="text-sm text-[#0F0F0F]/60">
+                          {formatDate(payout.requested_at)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-amber-600 font-medium">
+                            {formatPrice(payout.net_amount, payout.currency)}
+                          </p>
+                          <p className="text-xs text-[#0F0F0F]/40">
+                            Fee: {formatPrice(payout.fee_amount, payout.currency)}
+                          </p>
+                        </div>
+                        <Badge className={`bg-${status.color}-100 text-${status.color}-700`}>
+                          {status.label}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Upcoming Payouts */}
       {upcomingPayouts.length > 0 && (
@@ -439,6 +632,107 @@ Status,${payout.status}
           )}
         </CardContent>
       </Card>
+
+      {/* Fast Payout Dialog */}
+      <Dialog open={fastPayoutDialog} onOpenChange={setFastPayoutDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-500" />
+              Request Fast Payout
+            </DialogTitle>
+            <DialogDescription>
+              Get your earnings now with a small 0.5% processing fee.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Available Amount */}
+            <div className="bg-amber-50 rounded-xl p-4">
+              <div className="text-sm text-[#0F0F0F]/60 mb-1">Available for Fast Payout</div>
+              <div className="text-2xl font-bold text-amber-600">
+                {formatPrice(fastPayoutEligibility?.max_payout || 0, fastPayoutEligibility?.currency)}
+              </div>
+              <div className="text-xs text-[#0F0F0F]/40 mt-1">
+                {fastPayoutEligibility?.cap_percentage}% of available earnings
+              </div>
+            </div>
+
+            {/* Amount Input */}
+            <div className="space-y-2">
+              <Label>Amount to withdraw</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40">
+                  {fastPayoutEligibility?.currency || 'NGN'}
+                </span>
+                <Input
+                  type="number"
+                  value={fastPayoutAmount}
+                  onChange={(e) => setFastPayoutAmount(e.target.value)}
+                  placeholder="0.00"
+                  max={fastPayoutEligibility?.max_payout}
+                  className="pl-14 h-12 rounded-xl text-lg"
+                />
+              </div>
+              <Button
+                variant="link"
+                className="text-xs text-amber-600 p-0 h-auto"
+                onClick={() => setFastPayoutAmount(fastPayoutEligibility?.max_payout?.toString() || '')}
+              >
+                Use maximum amount
+              </Button>
+            </div>
+
+            {/* Fee Breakdown */}
+            {fastPayoutFee.gross > 0 && (
+              <div className="border rounded-xl p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#0F0F0F]/60">Amount</span>
+                  <span>{formatPrice(fastPayoutFee.gross, fastPayoutEligibility?.currency)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#0F0F0F]/60">Processing Fee (0.5%)</span>
+                  <span className="text-red-500">-{formatPrice(fastPayoutFee.fee, fastPayoutEligibility?.currency)}</span>
+                </div>
+                <div className="border-t pt-2 flex justify-between font-semibold">
+                  <span>You'll Receive</span>
+                  <span className="text-green-600">{formatPrice(fastPayoutFee.net, fastPayoutEligibility?.currency)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="flex items-start gap-2 text-xs text-[#0F0F0F]/50 bg-blue-50 p-3 rounded-lg">
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>
+                Funds will be sent to your registered bank account within minutes. 
+                The remaining {100 - (fastPayoutEligibility?.cap_percentage || 70)}% is held as a buffer for potential refunds.
+              </span>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setFastPayoutDialog(false)}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleFastPayoutRequest}
+              disabled={fastPayoutProcessing || !fastPayoutAmount || parseFloat(fastPayoutAmount) <= 0}
+              className="bg-amber-500 hover:bg-amber-600 text-white rounded-xl"
+            >
+              {fastPayoutProcessing ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
+              ) : (
+                <><Zap className="w-4 h-4 mr-2" />Confirm Fast Payout</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

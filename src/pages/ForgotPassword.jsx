@@ -30,10 +30,19 @@ export function ForgotPassword() {
     setLoading(true)
 
     try {
-      await resetPassword(email)
+      const result = await resetPassword(email)
+      console.log('[ForgotPassword] Reset result:', result)
       setStep('submitted')
     } catch (err) {
-      setError(err.message)
+      console.error('[ForgotPassword] Error:', err)
+      // Show more helpful error messages
+      if (err.message.includes('rate') || err.message.includes('limit')) {
+        setError('Too many requests. Please wait a few minutes before trying again.')
+      } else if (err.message.includes('network') || err.message.includes('fetch')) {
+        setError('Network error. Please check your connection and try again.')
+      } else {
+        setError(err.message || 'Failed to send reset email. Please try again.')
+      }
     } finally {
       setLoading(false)
     }

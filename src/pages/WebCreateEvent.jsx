@@ -24,13 +24,7 @@ const eventTypes = [
 
 const seatingTypes = ['Standing', 'Seated', 'Mixed'];
 
-const timezones = [
-  { value: 'Africa/Lagos', label: 'Africa/Lagos (WAT)' },
-  { value: 'Africa/Accra', label: 'Africa/Accra (GMT)' },
-  { value: 'Africa/Johannesburg', label: 'Africa/Johannesburg (SAST)' },
-  { value: 'Africa/Nairobi', label: 'Africa/Nairobi (EAT)' },
-  { value: 'Africa/Cairo', label: 'Africa/Cairo (EET)' },
-];
+import { timezones, getUserTimezone, getTimezonesByRegion } from '@/utils/timezones';
 
 export function WebCreateEvent() {
   const navigate = useNavigate();
@@ -108,7 +102,7 @@ export function WebCreateEvent() {
     endDate: '',
     endTime: '',
     gateOpeningTime: '',
-    timezone: 'Africa/Lagos',
+    timezone: getUserTimezone(),
     isMultiDay: false,
     isRecurring: false,
     recurringPattern: '',
@@ -171,15 +165,64 @@ export function WebCreateEvent() {
   const isLastTab = currentTabIndex === tabs.length - 1;
   const isFirstTab = currentTabIndex === 0;
 
+  // Validate current tab before proceeding
+  const validateCurrentTab = () => {
+    const errors = [];
+    
+    if (activeTab === 'details') {
+      if (!formData.title?.trim()) errors.push("Event title is required");
+      if (!formData.eventType) errors.push("Event type is required");
+      if (!formData.description?.trim()) {
+        errors.push("Description is required");
+      } else if (formData.description.trim().length < 25) {
+        errors.push("Description must be at least 25 characters");
+      }
+      if (formData.custom_url && urlStatus.available === false) {
+        errors.push("Custom event URL is already taken");
+      }
+    }
+    
+    if (activeTab === 'datetime') {
+      if (!formData.startDate) errors.push("Start date is required");
+      if (!formData.startTime) errors.push("Start time is required");
+      if (!formData.endTime) errors.push("End time is required");
+    }
+    
+    if (activeTab === 'venue') {
+      if (!formData.venueName?.trim()) errors.push("Venue name is required");
+      if (!formData.venueAddress?.trim()) errors.push("Venue address is required");
+    }
+    
+    if (activeTab === 'ticketing') {
+      const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0);
+      if (!formData.isFreeEvent && validTickets.length === 0) {
+        errors.push("At least one ticket type is required");
+      }
+    }
+    
+    return errors;
+  };
+
   const goToNextTab = () => {
+    const errors = validateCurrentTab();
+    if (errors.length > 0) {
+      setError(errors.join(". "));
+      setTabErrors({ [activeTab]: true });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    setError("");
+    setTabErrors({});
     if (!isLastTab) {
       setActiveTab(tabs[currentTabIndex + 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const goToPrevTab = () => {
     if (!isFirstTab) {
       setActiveTab(tabs[currentTabIndex - 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -215,7 +258,8 @@ export function WebCreateEvent() {
         setUrlStatus({ checking: false, available: true, message: "Available!" });
       }
     } catch (err) {
-      setUrlStatus({ checking: false, available: null, message: "" });
+      console.error("Error checking URL availability:", err);
+      setUrlStatus({ checking: false, available: null, message: "Error checking availability" });
     }
   };
 
@@ -450,6 +494,7 @@ export function WebCreateEvent() {
     if (!formData.isFreeEvent && validTickets.length === 0) {
       showError('Please add at least one ticket type');
       setActiveTab('ticketing');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -458,6 +503,9 @@ export function WebCreateEvent() {
     const errors = {};
     if (!formData.title || !formData.eventType || !formData.description) {
       errors.details = "Missing title, event type, or description";
+    }
+    if (formData.custom_url && urlStatus.available === false) {
+      errors.details = "Custom event URL is already taken - please choose a different one";
     }
     if (!formData.startDate || !formData.startTime) {
       errors.datetime = "Missing start date or time";
@@ -609,7 +657,10 @@ export function WebCreateEvent() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
                     activeTab === tab.id
                       ? 'border-[#2969FF] text-[#2969FF]'
@@ -653,7 +704,7 @@ export function WebCreateEvent() {
                       placeholder="my-awesome-event"
                       value={formData.custom_url}
                       onChange={(e) => handleInputChange("custom_url", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0 flex-1"
+                      className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
                     />
                     <Button
                       type="button"
@@ -678,7 +729,7 @@ export function WebCreateEvent() {
                     )}
                     {urlStatus.available === false && (
                       <span className="text-xs text-red-600 flex items-center gap-1">
-                        <XCircle className="w-3 h-3" /> {urlStatus.message}
+                        <XCircle className="w-3 h-3" /> {urlStatus.message} - please choose a different URL
                       </span>
                     )}
                     {!urlStatus.checking && urlStatus.available === null && (
@@ -832,13 +883,15 @@ export function WebCreateEvent() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Gate Opening Time <span className="text-red-500">*</span></Label>
+                    <Label>Gate Opening Time</Label>
                     <Input
                       type="time"
                       value={formData.gateOpeningTime}
                       onChange={(e) => handleInputChange('gateOpeningTime', e.target.value)}
                       className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                      placeholder="Optional"
                     />
+                    <p className="text-xs text-[#0F0F0F]/40">Optional - when gates open for attendees</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Timezone <span className="text-red-500">*</span></Label>
@@ -847,8 +900,12 @@ export function WebCreateEvent() {
                       onChange={(e) => handleInputChange('timezone', e.target.value)}
                       className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
                     >
-                      {timezones.map((tz) => (
-                        <option key={tz.value} value={tz.value}>{tz.label}</option>
+                      {Object.entries(getTimezonesByRegion()).map(([region, tzList]) => (
+                        <optgroup key={region} label={region}>
+                          {tzList.map((tz) => (
+                            <option key={tz.value} value={tz.value}>{tz.label}</option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                   </div>

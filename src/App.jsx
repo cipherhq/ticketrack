@@ -83,6 +83,7 @@ const WebPrivacy = lazyWithRetry(() => import('./pages/WebPrivacy').then(m => ({
 const WebCookies = lazyWithRetry(() => import('./pages/WebCookies').then(m => ({ default: m.WebCookies })), 'WebCookies');
 const GroupBuyJoin = lazyWithRetry(() => import('./pages/GroupBuyJoin').then(m => ({ default: m.GroupBuyJoin })), 'GroupBuyJoin');
 const MyGroups = lazyWithRetry(() => import('./pages/MyGroups').then(m => ({ default: m.MyGroups })), 'MyGroups');
+const PayYourShare = lazyWithRetry(() => import('./pages/PayYourShare').then(m => ({ default: m.PayYourShare })), 'PayYourShare');
 const WebTerms = lazyWithRetry(() => import('./pages/WebTerms').then(m => ({ default: m.WebTerms })), 'WebTerms');
 const WebTrustSafety = lazyWithRetry(() => import('./pages/WebTrustSafety').then(m => ({ default: m.WebTrustSafety })), 'WebTrustSafety');
 const WebRefundPolicy = lazyWithRetry(() => import('./pages/WebRefundPolicy').then(m => ({ default: m.WebRefundPolicy })), 'WebRefundPolicy');
@@ -93,6 +94,7 @@ const WebBlogPost = lazyWithRetry(() => import('./pages/WebBlogPost').then(m => 
 const AttendeeProfile = lazyWithRetry(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })), 'AttendeeProfile');
 const OrganizerPublicProfile = lazyWithRetry(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })), 'OrganizerPublicProfile');
 const ForgotPassword = lazyWithRetry(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })), 'ForgotPassword');
+const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })), 'ResetPassword');
 const AccountDeleted = lazyWithRetry(() => import('./pages/AccountDeleted').then(m => ({ default: m.AccountDeleted })), 'AccountDeleted');
 const AccountRecovery = lazyWithRetry(() => import('./pages/AccountRecovery').then(m => ({ default: m.AccountRecovery })), 'AccountRecovery');
 const AcceptTeamInvitation = lazyWithRetry(() => import('./pages/AcceptTeamInvitation').then(m => ({ default: m.AcceptTeamInvitation })), 'AcceptTeamInvitation');
@@ -192,6 +194,11 @@ function App() {
                   <ForgotPassword />
                 </Suspense>
               } />
+              <Route path="/reset-password" element={
+                <Suspense fallback={<PageLoader />}>
+                  <ResetPassword />
+                </Suspense>
+              } />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/account-deleted" element={
                 <Suspense fallback={<PageLoader />}>
@@ -238,6 +245,11 @@ function App() {
                 <Route path="/my-groups" element={
                   <Suspense fallback={<PageLoader />}>
                     <MyGroups />
+                  </Suspense>
+                } />
+                <Route path="/pay-share/:token" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <PayYourShare />
                   </Suspense>
                 } />
                 <Route path="/waitlist/purchase" element={
