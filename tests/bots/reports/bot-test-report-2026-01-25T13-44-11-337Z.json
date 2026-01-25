@@ -1,0 +1,309 @@
+{
+  "startTime": "2026-01-25T13:43:40.408Z",
+  "endTime": "2026-01-25T13:44:11.336Z",
+  "duration": 30.928,
+  "summary": {
+    "total": 11,
+    "passed": 10,
+    "failed": 1,
+    "skipped": 0
+  },
+  "tests": [
+    {
+      "bot": "OrganizerBot",
+      "name": "Login",
+      "description": "Log in as organizer or register new account",
+      "status": "passed",
+      "startTime": "2026-01-25T13:43:41.168Z",
+      "endTime": "2026-01-25T13:43:45.572Z",
+      "duration": 4.404,
+      "steps": [
+        {
+          "step": "Navigated to login page",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:42.304Z"
+        },
+        {
+          "step": "Entered email",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:42.371Z"
+        },
+        {
+          "step": "Entered password",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:42.524Z"
+        },
+        {
+          "step": "Clicked login button",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:42.562Z"
+        },
+        {
+          "step": "Logged in - redirected to: http://localhost:5173/profile",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:45.572Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Create Event",
+      "description": "Create a new event with ticket types",
+      "status": "failed",
+      "startTime": "2026-01-25T13:43:45.573Z",
+      "endTime": "2026-01-25T13:44:03.443Z",
+      "duration": 17.87,
+      "steps": [
+        {
+          "step": "Navigated to create event page",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:46.198Z"
+        },
+        {
+          "step": "Entered event title",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:46.229Z"
+        },
+        {
+          "step": "Clicked Next button",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:46.266Z"
+        },
+        {
+          "step": "Adding ticket type",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:48.346Z"
+        }
+      ],
+      "errors": [
+        {
+          "message": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Save\"), button:has-text(\"Create\"), button:has-text(\"Publish\")').first()\n",
+          "stack": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Save\"), button:has-text(\"Create\"), button:has-text(\"Publish\")').first()\n\n    at OrganizerBot.testCreateEvent (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:328:23)\n    at async OrganizerBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:691:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:44:03.443Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-create-event-1769348643362.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-create-event-1769348643362.png",
+        "tests/bots/screenshots/OrganizerBot-create-event-1769348643362.png"
+      ]
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "View Events",
+      "description": "View list of events",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:03.443Z",
+      "endTime": "2026-01-25T13:44:06.072Z",
+      "duration": 2.629,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:04.058Z"
+        },
+        {
+          "step": "Events list is visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:06.072Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Analytics Dashboard",
+      "description": "View analytics and reports",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:06.073Z",
+      "endTime": "2026-01-25T13:44:06.727Z",
+      "duration": 0.654,
+      "steps": [
+        {
+          "step": "Navigated to analytics page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:06.702Z"
+        },
+        {
+          "step": "Analytics page loaded (may be empty)",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:06.727Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Communication Hub",
+      "description": "Access communication features",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:06.727Z",
+      "endTime": "2026-01-25T13:44:07.390Z",
+      "duration": 0.663,
+      "steps": [
+        {
+          "step": "Navigated to communications page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:07.365Z"
+        },
+        {
+          "step": "Email option available",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:07.390Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Contact Management",
+      "description": "View and manage contacts",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:07.390Z",
+      "endTime": "2026-01-25T13:44:08.037Z",
+      "duration": 0.647,
+      "steps": [
+        {
+          "step": "Navigated to contacts page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:08.019Z"
+        },
+        {
+          "step": "Contacts list visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:08.037Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Payouts & Finance",
+      "description": "View payout settings and history",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:08.037Z",
+      "endTime": "2026-01-25T13:44:08.690Z",
+      "duration": 0.653,
+      "steps": [
+        {
+          "step": "Navigated to payouts page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:08.674Z"
+        },
+        {
+          "step": "Bank account section visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:08.690Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Profile Settings",
+      "description": "View and update organizer profile",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:08.690Z",
+      "endTime": "2026-01-25T13:44:09.332Z",
+      "duration": 0.642,
+      "steps": [
+        {
+          "step": "Navigated to profile page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:09.316Z"
+        },
+        {
+          "step": "Email field visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:09.331Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Promo Codes",
+      "description": "View and create promo codes",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:09.332Z",
+      "endTime": "2026-01-25T13:44:09.974Z",
+      "duration": 0.642,
+      "steps": [
+        {
+          "step": "Navigated to promo codes page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:09.958Z"
+        },
+        {
+          "step": "Promo codes list visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:09.974Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Team Management",
+      "description": "View and manage team members",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:09.974Z",
+      "endTime": "2026-01-25T13:44:10.622Z",
+      "duration": 0.648,
+      "steps": [
+        {
+          "step": "Navigated to team page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:10.601Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Check-in Management",
+      "description": "Access check-in features",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:10.622Z",
+      "endTime": "2026-01-25T13:44:11.266Z",
+      "duration": 0.644,
+      "steps": [
+        {
+          "step": "Navigated to check-in page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:11.245Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    }
+  ],
+  "issues": [
+    {
+      "bot": "OrganizerBot",
+      "test": "Create Event",
+      "errors": [
+        {
+          "message": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Save\"), button:has-text(\"Create\"), button:has-text(\"Publish\")').first()\n",
+          "stack": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Save\"), button:has-text(\"Create\"), button:has-text(\"Publish\")').first()\n\n    at OrganizerBot.testCreateEvent (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:328:23)\n    at async OrganizerBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:691:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:44:03.443Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-create-event-1769348643362.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-create-event-1769348643362.png",
+        "tests/bots/screenshots/OrganizerBot-create-event-1769348643362.png"
+      ]
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { uploadOrganizerLogo } from '@/services/organizerService';
+import { validateOrganizerPhoneForUpdate } from '@/lib/phoneValidation';
 
 export function OrganizerProfile() {
   const { organizer, refreshOrganizer } = useOrganizer();
@@ -109,6 +110,16 @@ export function OrganizerProfile() {
     setError('');
 
     try {
+      // Check if phone number is already used by another organizer
+      if (formData.phone && formData.phone.trim() !== (organizer?.phone || '')) {
+        const phoneCheck = await validateOrganizerPhoneForUpdate(formData.phone.trim(), organizer.id);
+        if (!phoneCheck.valid) {
+          setError(phoneCheck.error);
+          setSaving(false);
+          return;
+        }
+      }
+
       const { error: updateError } = await supabase
         .from('organizers')
         .update({

@@ -51,7 +51,7 @@ Set in Supabase Dashboard → Project Settings → Edge Functions → Environmen
 ```bash
 # Option 1: Use npx (no installation needed)
 npx supabase login
-npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase link --project-ref bkvbvggngttrizbchygy
 npx supabase functions deploy send-birthday-emails
 npx supabase functions deploy send-email
 

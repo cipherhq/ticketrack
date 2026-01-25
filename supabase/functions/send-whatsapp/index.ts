@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v21.0';
 const WHATSAPP_PHONE_ID = Deno.env.get('WHATSAPP_PHONE_ID');
@@ -22,7 +23,15 @@ serve(async (req) => {
       );
     }
 
-    const { to, message, type = 'text', template } = await req.json();
+    const { 
+      to, 
+      message, 
+      type = 'text', 
+      template,
+      organizer_id, // Optional: if provided, will deduct credits
+      campaign_id,  // Optional: for logging
+      deduct_credits = false // Whether to deduct credits on this call
+    } = await req.json();
 
     if (!to) {
       return new Response(
@@ -32,7 +41,49 @@ serve(async (req) => {
     }
 
     // Format phone number (remove spaces, dashes, plus signs)
-    const formattedPhone = to.replace(/[\s+\-]/g, '');
+    let formattedPhone = to.replace(/[\s+\-\(\)\.]/g, '');
+    
+    // Handle Nigerian numbers
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '234' + formattedPhone.substring(1);
+    }
+
+    // Initialize Supabase client if credit deduction is needed
+    let supabase: any = null;
+    if (deduct_credits && organizer_id) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Get channel pricing
+      const { data: pricing } = await supabase
+        .from('communication_channel_pricing')
+        .select('credits_per_message')
+        .eq('channel', 'whatsapp_marketing')
+        .single();
+      
+      const creditsPerMessage = pricing?.credits_per_message || 100;
+
+      // Check balance
+      const { data: creditBalance } = await supabase
+        .from('communication_credit_balances')
+        .select('balance, bonus_balance')
+        .eq('organizer_id', organizer_id)
+        .single();
+      
+      const totalCredits = (creditBalance?.balance || 0) + (creditBalance?.bonus_balance || 0);
+
+      if (totalCredits < creditsPerMessage) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Insufficient message credits for WhatsApp', 
+            credits_needed: creditsPerMessage, 
+            credits_available: totalCredits 
+          }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     let body: any;
 
@@ -66,6 +117,8 @@ serve(async (req) => {
       };
     }
 
+    console.log('Sending WhatsApp message to:', formattedPhone);
+
     const response = await fetch(`${WHATSAPP_API_URL}/${WHATSAPP_PHONE_ID}/messages`, {
       method: 'POST',
       headers: {
@@ -84,6 +137,28 @@ serve(async (req) => {
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Deduct credits after successful send
+    if (deduct_credits && organizer_id && supabase) {
+      const { data: pricing } = await supabase
+        .from('communication_channel_pricing')
+        .select('credits_per_message')
+        .eq('channel', 'whatsapp_marketing')
+        .single();
+      
+      const creditsPerMessage = pricing?.credits_per_message || 100;
+
+      await supabase.rpc('deduct_communication_credits', {
+        p_organizer_id: organizer_id,
+        p_amount: creditsPerMessage,
+        p_channel: 'whatsapp_marketing',
+        p_campaign_id: campaign_id || null,
+        p_message_count: 1,
+        p_description: `WhatsApp message to ${formattedPhone}`
+      });
+    }
+
+    console.log('WhatsApp message sent successfully:', data.messages?.[0]?.id);
 
     return new Response(
       JSON.stringify({ success: true, messageId: data.messages?.[0]?.id }),

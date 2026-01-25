@@ -36,24 +36,25 @@ serve(async (req) => {
     const body = await req.text();
     const signature = req.headers.get("x-paystack-signature");
 
-    // Verify webhook signature (check both NG and GH secret keys)
-    const paystackSecretNG = Deno.env.get("PAYSTACK_SECRET_KEY_NG");
-    const paystackSecretGH = Deno.env.get("PAYSTACK_SECRET_KEY_GH");
+    // Verify webhook signature (check all possible secret key names)
+    const paystackSecrets = [
+      Deno.env.get("PAYSTACK_SECRET_KEY"),
+      Deno.env.get("PAYSTACK_SECRET_KEY_NG"),
+      Deno.env.get("PAYSTACK_SECRET_KEY_GH"),
+    ].filter(Boolean);
 
     let isValidSignature = false;
 
-    if (signature && paystackSecretNG) {
-      const hash = createHmac("sha512", paystackSecretNG)
-        .update(body)
-        .toString();
-      if (hash === signature) isValidSignature = true;
-    }
-
-    if (!isValidSignature && signature && paystackSecretGH) {
-      const hash = createHmac("sha512", paystackSecretGH)
-        .update(body)
-        .toString();
-      if (hash === signature) isValidSignature = true;
+    for (const secret of paystackSecrets) {
+      if (signature && secret) {
+        const hash = createHmac("sha512", secret)
+          .update(body)
+          .toString();
+        if (hash === signature) {
+          isValidSignature = true;
+          break;
+        }
+      }
     }
 
     // In development, allow unsigned webhooks
@@ -124,6 +125,12 @@ async function handleChargeSuccess(supabase: any, data: any) {
   
   safeLog.info(`Processing charge.success for reference: ${reference}`);
 
+  // Check if this is a credit purchase
+  if (metadata?.type === 'credit_purchase') {
+    await handleCreditPurchase(supabase, data);
+    return;
+  }
+
   // Find the order by payment reference
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -167,6 +174,105 @@ async function handleChargeSuccess(supabase: any, data: any) {
   });
 
   safeLog.info(`Order ${order.id} marked as completed`);
+}
+
+async function handleCreditPurchase(supabase: any, data: any) {
+  const { reference, amount, metadata, currency } = data;
+  const { organizer_id, transaction_id, credits, bonus_credits, package_id } = metadata;
+
+  safeLog.info(`Processing credit purchase for organizer: ${organizer_id}`);
+
+  // Add credits using the database function
+  const { data: txId, error: addError } = await supabase.rpc('add_communication_credits', {
+    p_organizer_id: organizer_id,
+    p_credits: parseInt(credits),
+    p_bonus_credits: parseInt(bonus_credits || 0),
+    p_package_id: package_id || null,
+    p_amount_paid: amount / 100,
+    p_currency: currency || 'NGN',
+    p_payment_provider: 'paystack',
+    p_payment_reference: reference,
+    p_description: `Credit purchase via Paystack`,
+  });
+
+  if (addError) {
+    safeLog.error('Failed to add credits:', addError);
+    return;
+  }
+
+  // Update the original transaction record if exists
+  if (transaction_id) {
+    const { data: balance } = await supabase
+      .from('communication_credit_balances')
+      .select('balance, bonus_balance')
+      .eq('organizer_id', organizer_id)
+      .single();
+
+    await supabase
+      .from('communication_credit_transactions')
+      .update({
+        balance_after: balance?.balance || 0,
+        bonus_balance_after: balance?.bonus_balance || 0,
+        payment_reference: reference,
+        metadata: { status: 'completed', paid_at: new Date().toISOString() },
+      })
+      .eq('id', transaction_id);
+  }
+
+  // Get organizer for email notification
+  const { data: organizer } = await supabase
+    .from('organizers')
+    .select('business_name, user_id')
+    .eq('id', organizer_id)
+    .single();
+
+  if (organizer?.user_id) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', organizer.user_id)
+      .single();
+
+    if (profile?.email) {
+      // Get new balance
+      const { data: balance } = await supabase
+        .from('communication_credit_balances')
+        .select('balance, bonus_balance')
+        .eq('organizer_id', organizer_id)
+        .single();
+
+      await supabase.functions.invoke('send-email', {
+        body: {
+          type: 'sms_units_purchased', // Reusing existing template
+          to: profile.email,
+          data: {
+            organizerName: organizer.business_name,
+            units: parseInt(credits) + parseInt(bonus_credits || 0),
+            amount: amount / 100,
+            currency: currency || 'NGN',
+            newBalance: (balance?.balance || 0) + (balance?.bonus_balance || 0),
+          },
+        },
+      });
+    }
+  }
+
+  // Log audit
+  await supabase.from('admin_audit_logs').insert({
+    action: 'credit_purchase_completed',
+    entity_type: 'credit_purchase',
+    entity_id: transaction_id || reference,
+    details: {
+      reference,
+      organizer_id,
+      credits: parseInt(credits),
+      bonus_credits: parseInt(bonus_credits || 0),
+      amount: amount / 100,
+      currency: currency || 'NGN',
+    },
+  });
+
+  safeLog.info(`Credit purchase completed: ${credits} + ${bonus_credits || 0} credits for ${organizer_id}`);
 }
 
 async function handleTransferSuccess(supabase: any, data: any) {

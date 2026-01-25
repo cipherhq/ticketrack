@@ -1,0 +1,307 @@
+{
+  "startTime": "2026-01-25T13:44:40.008Z",
+  "endTime": "2026-01-25T13:45:05.767Z",
+  "duration": 25.759,
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0
+  },
+  "tests": [
+    {
+      "bot": "OrganizerBot",
+      "name": "Login",
+      "description": "Log in as organizer or register new account",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:40.456Z",
+      "endTime": "2026-01-25T13:44:44.672Z",
+      "duration": 4.216,
+      "steps": [
+        {
+          "step": "Navigated to login page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:41.425Z"
+        },
+        {
+          "step": "Entered email",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:41.478Z"
+        },
+        {
+          "step": "Entered password",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:41.622Z"
+        },
+        {
+          "step": "Clicked login button",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:41.661Z"
+        },
+        {
+          "step": "Logged in - redirected to: http://localhost:5173/profile",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:44.672Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Create Event",
+      "description": "Create a new event with ticket types",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:44.673Z",
+      "endTime": "2026-01-25T13:44:57.982Z",
+      "duration": 13.309,
+      "steps": [
+        {
+          "step": "Navigated to create event page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:45.297Z"
+        },
+        {
+          "step": "Entered event title",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:45.333Z"
+        },
+        {
+          "step": "Clicked Next button",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:45.392Z"
+        },
+        {
+          "step": "Clicked Next",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:48.405Z"
+        },
+        {
+          "step": "Clicked Next",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:49.924Z"
+        },
+        {
+          "step": "Clicked Next",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:51.445Z"
+        },
+        {
+          "step": "Clicked Next",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:52.962Z"
+        },
+        {
+          "step": "Clicked Next",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:54.478Z"
+        },
+        {
+          "step": "Event created with ID: create",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:57.982Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "View Events",
+      "description": "View list of events",
+      "status": "passed",
+      "startTime": "2026-01-25T13:44:57.982Z",
+      "endTime": "2026-01-25T13:45:00.609Z",
+      "duration": 2.627,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:44:58.594Z"
+        },
+        {
+          "step": "Events list is visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:00.609Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Analytics Dashboard",
+      "description": "View analytics and reports",
+      "status": "passed",
+      "startTime": "2026-01-25T13:45:00.609Z",
+      "endTime": "2026-01-25T13:45:01.273Z",
+      "duration": 0.664,
+      "steps": [
+        {
+          "step": "Navigated to analytics page",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:01.256Z"
+        },
+        {
+          "step": "Analytics page loaded (may be empty)",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:01.273Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Communication Hub",
+      "description": "Access communication features",
+      "status": "passed",
+      "startTime": "2026-01-25T13:45:01.273Z",
+      "endTime": "2026-01-25T13:45:01.917Z",
+      "duration": 0.644,
+      "steps": [
+        {
+          "step": "Navigated to communications page",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:01.889Z"
+        },
+        {
+          "step": "Email option available",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:01.917Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Contact Management",
+      "description": "View and manage contacts",
+      "status": "passed",
+      "startTime": "2026-01-25T13:45:01.918Z",
+      "endTime": "2026-01-25T13:45:02.543Z",
+      "duration": 0.625,
+      "steps": [
+        {
+          "step": "Navigated to contacts page",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:02.518Z"
+        },
+        {
+          "step": "Contacts list visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:02.543Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Payouts & Finance",
+      "description": "View payout settings and history",
+      "status": "passed",
+      "startTime": "2026-01-25T13:45:02.544Z",
+      "endTime": "2026-01-25T13:45:03.175Z",
+      "duration": 0.631,
+      "steps": [
+        {
+          "step": "Navigated to payouts page",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:03.147Z"
+        },
+        {
+          "step": "Bank account section visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:03.174Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Profile Settings",
+      "description": "View and update organizer profile",
+      "status": "passed",
+      "startTime": "2026-01-25T13:45:03.175Z",
+      "endTime": "2026-01-25T13:45:03.796Z",
+      "duration": 0.621,
+      "steps": [
+        {
+          "step": "Navigated to profile page",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:03.777Z"
+        },
+        {
+          "step": "Email field visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:03.796Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Promo Codes",
+      "description": "View and create promo codes",
+      "status": "passed",
+      "startTime": "2026-01-25T13:45:03.796Z",
+      "endTime": "2026-01-25T13:45:04.428Z",
+      "duration": 0.632,
+      "steps": [
+        {
+          "step": "Navigated to promo codes page",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:04.412Z"
+        },
+        {
+          "step": "Promo codes list visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:04.428Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Team Management",
+      "description": "View and manage team members",
+      "status": "passed",
+      "startTime": "2026-01-25T13:45:04.428Z",
+      "endTime": "2026-01-25T13:45:05.064Z",
+      "duration": 0.636,
+      "steps": [
+        {
+          "step": "Navigated to team page",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:05.048Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Check-in Management",
+      "description": "Access check-in features",
+      "status": "passed",
+      "startTime": "2026-01-25T13:45:05.064Z",
+      "endTime": "2026-01-25T13:45:05.702Z",
+      "duration": 0.638,
+      "steps": [
+        {
+          "step": "Navigated to check-in page",
+          "success": true,
+          "timestamp": "2026-01-25T13:45:05.676Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    }
+  ],
+  "issues": []
+}

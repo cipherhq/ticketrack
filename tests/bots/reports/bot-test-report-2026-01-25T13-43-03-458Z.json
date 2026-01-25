@@ -1,0 +1,320 @@
+{
+  "startTime": "2026-01-25T13:42:33.688Z",
+  "endTime": "2026-01-25T13:43:03.457Z",
+  "duration": 29.769,
+  "summary": {
+    "total": 11,
+    "passed": 9,
+    "failed": 2,
+    "skipped": 0
+  },
+  "tests": [
+    {
+      "bot": "OrganizerBot",
+      "name": "Login",
+      "description": "Log in as organizer or register new account",
+      "status": "passed",
+      "startTime": "2026-01-25T13:42:34.225Z",
+      "endTime": "2026-01-25T13:42:38.590Z",
+      "duration": 4.365,
+      "steps": [
+        {
+          "step": "Navigated to login page",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:35.320Z"
+        },
+        {
+          "step": "Entered email",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:35.443Z"
+        },
+        {
+          "step": "Entered password",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:35.518Z"
+        },
+        {
+          "step": "Clicked login button",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:35.583Z"
+        },
+        {
+          "step": "Logged in - redirected to: http://localhost:5173/profile",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:38.590Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Create Event",
+      "description": "Create a new event with ticket types",
+      "status": "failed",
+      "startTime": "2026-01-25T13:42:38.590Z",
+      "endTime": "2026-01-25T13:42:55.216Z",
+      "duration": 16.626,
+      "steps": [
+        {
+          "step": "Navigated to create event page",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:39.251Z"
+        },
+        {
+          "step": "Entered event title",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:40.088Z"
+        }
+      ],
+      "errors": [
+        {
+          "message": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Next\"), button:has-text(\"Continue\"), button:has-text(\"Create\"), button[type=\"submit\"]').first()\n    - locator resolved to <button class=\"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-10 py-2 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white px-8 rounded-xl\">Next</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    29 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n",
+          "stack": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Next\"), button:has-text(\"Continue\"), button:has-text(\"Create\"), button[type=\"submit\"]').first()\n    - locator resolved to <button class=\"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-10 py-2 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white px-8 rounded-xl\">Next</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    29 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n\n    at OrganizerBot.testCreateEvent (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:285:24)\n    at async OrganizerBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:683:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:42:55.216Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-create-event-1769348575122.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-create-event-1769348575122.png",
+        "tests/bots/screenshots/OrganizerBot-create-event-1769348575122.png"
+      ]
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "View Events",
+      "description": "View list of events",
+      "status": "passed",
+      "startTime": "2026-01-25T13:42:55.216Z",
+      "endTime": "2026-01-25T13:42:57.855Z",
+      "duration": 2.639,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:55.834Z"
+        },
+        {
+          "step": "Events list is visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:57.855Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Analytics Dashboard",
+      "description": "View analytics and reports",
+      "status": "passed",
+      "startTime": "2026-01-25T13:42:57.855Z",
+      "endTime": "2026-01-25T13:42:58.548Z",
+      "duration": 0.693,
+      "steps": [
+        {
+          "step": "Navigated to analytics page",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:58.529Z"
+        },
+        {
+          "step": "Analytics page loaded (may be empty)",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:58.548Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Communication Hub",
+      "description": "Access communication features",
+      "status": "passed",
+      "startTime": "2026-01-25T13:42:58.549Z",
+      "endTime": "2026-01-25T13:42:59.252Z",
+      "duration": 0.703,
+      "steps": [
+        {
+          "step": "Navigated to communications page",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:59.231Z"
+        },
+        {
+          "step": "Email option available",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:59.252Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Contact Management",
+      "description": "View and manage contacts",
+      "status": "failed",
+      "startTime": "2026-01-25T13:42:59.252Z",
+      "endTime": "2026-01-25T13:43:00.079Z",
+      "duration": 0.827,
+      "steps": [
+        {
+          "step": "Navigated to contacts page",
+          "success": true,
+          "timestamp": "2026-01-25T13:42:59.985Z"
+        }
+      ],
+      "errors": [
+        {
+          "message": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Import\"), text=/import/i\". Did you mean to CSS.escape it?\nCall log:\n    - checking visibility of button:has-text(\"Import\"), text=/import/i >> nth=0\n",
+          "stack": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Import\"), text=/import/i\". Did you mean to CSS.escape it?\nCall log:\n    - checking visibility of button:has-text(\"Import\"), text=/import/i >> nth=0\n\n    at OrganizerBot.testContacts (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:487:102)\n    at async OrganizerBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:689:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:43:00.079Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-contacts-1769348580009.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-contacts-1769348580009.png",
+        "tests/bots/screenshots/OrganizerBot-contacts-1769348580009.png"
+      ]
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Payouts & Finance",
+      "description": "View payout settings and history",
+      "status": "passed",
+      "startTime": "2026-01-25T13:43:00.080Z",
+      "endTime": "2026-01-25T13:43:00.781Z",
+      "duration": 0.701,
+      "steps": [
+        {
+          "step": "Navigated to payouts page",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:00.763Z"
+        },
+        {
+          "step": "Bank account section visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:00.781Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Profile Settings",
+      "description": "View and update organizer profile",
+      "status": "passed",
+      "startTime": "2026-01-25T13:43:00.781Z",
+      "endTime": "2026-01-25T13:43:01.433Z",
+      "duration": 0.652,
+      "steps": [
+        {
+          "step": "Navigated to profile page",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:01.415Z"
+        },
+        {
+          "step": "Email field visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:01.433Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Promo Codes",
+      "description": "View and create promo codes",
+      "status": "passed",
+      "startTime": "2026-01-25T13:43:01.433Z",
+      "endTime": "2026-01-25T13:43:02.092Z",
+      "duration": 0.659,
+      "steps": [
+        {
+          "step": "Navigated to promo codes page",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:02.071Z"
+        },
+        {
+          "step": "Promo codes list visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:02.092Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Team Management",
+      "description": "View and manage team members",
+      "status": "passed",
+      "startTime": "2026-01-25T13:43:02.092Z",
+      "endTime": "2026-01-25T13:43:02.731Z",
+      "duration": 0.639,
+      "steps": [
+        {
+          "step": "Navigated to team page",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:02.716Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Check-in Management",
+      "description": "Access check-in features",
+      "status": "passed",
+      "startTime": "2026-01-25T13:43:02.732Z",
+      "endTime": "2026-01-25T13:43:03.382Z",
+      "duration": 0.65,
+      "steps": [
+        {
+          "step": "Navigated to check-in page",
+          "success": true,
+          "timestamp": "2026-01-25T13:43:03.362Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    }
+  ],
+  "issues": [
+    {
+      "bot": "OrganizerBot",
+      "test": "Create Event",
+      "errors": [
+        {
+          "message": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Next\"), button:has-text(\"Continue\"), button:has-text(\"Create\"), button[type=\"submit\"]').first()\n    - locator resolved to <button class=\"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-10 py-2 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white px-8 rounded-xl\">Next</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    29 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n",
+          "stack": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"Next\"), button:has-text(\"Continue\"), button:has-text(\"Create\"), button[type=\"submit\"]').first()\n    - locator resolved to <button class=\"inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow h-10 py-2 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white px-8 rounded-xl\">Next</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    29 × waiting for element to be visible, enabled and stable\n       - element is visible, enabled and stable\n       - scrolling into view if needed\n       - done scrolling\n       - <div class=\"flex flex-col lg:flex-row items-start lg:items-center gap-4\">…</div> from <div class=\"fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl\">…</div> subtree intercepts pointer events\n     - retrying click action\n       - waiting 500ms\n\n    at OrganizerBot.testCreateEvent (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:285:24)\n    at async OrganizerBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:683:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:42:55.216Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-create-event-1769348575122.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-create-event-1769348575122.png",
+        "tests/bots/screenshots/OrganizerBot-create-event-1769348575122.png"
+      ]
+    },
+    {
+      "bot": "OrganizerBot",
+      "test": "Contact Management",
+      "errors": [
+        {
+          "message": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Import\"), text=/import/i\". Did you mean to CSS.escape it?\nCall log:\n    - checking visibility of button:has-text(\"Import\"), text=/import/i >> nth=0\n",
+          "stack": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Import\"), text=/import/i\". Did you mean to CSS.escape it?\nCall log:\n    - checking visibility of button:has-text(\"Import\"), text=/import/i >> nth=0\n\n    at OrganizerBot.testContacts (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:487:102)\n    at async OrganizerBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:689:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:43:00.079Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-contacts-1769348580009.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-contacts-1769348580009.png",
+        "tests/bots/screenshots/OrganizerBot-contacts-1769348580009.png"
+      ]
+    }
+  ]
+}

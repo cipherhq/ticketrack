@@ -172,12 +172,48 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { organizer_id, audience_type, event_id, message, campaign_name } = await req.json();
+    const { organizer_id, audience_type, event_id, message, campaign_name, recipients: customRecipients, phone, name } = await req.json();
 
     // Validation
-    if (!organizer_id || !audience_type || !message) {
+    if (!organizer_id || !message) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: organizer_id, audience_type, message' }), 
+        JSON.stringify({ error: 'Missing required fields: organizer_id, message' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Support single recipient mode (for individual sends)
+    if (phone) {
+      // Single recipient - skip wallet check for now, just send
+      const smsConfigs = await supabase
+        .from('platform_sms_config')
+        .select('*')
+        .eq('is_active', true);
+      
+      const provider = smsConfigs.data?.[0];
+      if (!provider) {
+        return new Response(
+          JSON.stringify({ error: 'SMS service not configured' }), 
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      let result;
+      if (provider.provider === 'twilio') {
+        result = await sendTwilioSMS(phone, message, provider.api_key, provider.secret_key, provider.sender_id);
+      } else {
+        result = await sendTermiiSMS(phone, message, provider.api_key, provider.sender_id || 'Ticketrack');
+      }
+      
+      return new Response(
+        JSON.stringify({ success: result.success, error: result.error, messageId: result.messageId }), 
+        { status: result.success ? 200 : 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (!audience_type && !customRecipients) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: audience_type or recipients' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -322,26 +358,36 @@ serve(async (req) => {
       );
     }
 
+    // Get channel pricing (credits per SMS)
+    const { data: pricing } = await supabase
+      .from('communication_channel_pricing')
+      .select('credits_per_message')
+      .eq('channel', 'sms')
+      .single();
+    
+    const creditsPerSms = pricing?.credits_per_message || 5; // Default 5 credits per SMS
+    
     // Calculate credits needed
     const messageLength = message.length;
     const smsSegments = Math.ceil(messageLength / 160) || 1;
-    const creditsNeeded = recipients.length * smsSegments;
+    const creditsNeeded = recipients.length * smsSegments * creditsPerSms;
 
-    // Check wallet balance
-    const { data: wallet } = await supabase
-      .from('organizer_sms_wallet')
-      .select('balance, total_used')
+    // Check unified credit balance
+    const { data: creditBalance } = await supabase
+      .from('communication_credit_balances')
+      .select('balance, bonus_balance')
       .eq('organizer_id', organizer_id)
       .single();
     
-    const currentBalance = wallet?.balance || 0;
+    const totalCredits = (creditBalance?.balance || 0) + (creditBalance?.bonus_balance || 0);
 
-    if (currentBalance < creditsNeeded) {
+    if (totalCredits < creditsNeeded) {
       return new Response(
         JSON.stringify({ 
-          error: 'Insufficient SMS credits', 
+          error: 'Insufficient message credits', 
           credits_needed: creditsNeeded, 
-          credits_available: currentBalance 
+          credits_available: totalCredits,
+          credits_per_sms: creditsPerSms
         }), 
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -417,27 +463,28 @@ serve(async (req) => {
       await supabase.from('sms_logs').insert(results.logs);
     }
 
-    // Deduct credits
-    const newBalance = currentBalance - creditsNeeded;
-    await supabase
-      .from('organizer_sms_wallet')
-      .update({ 
-        balance: newBalance, 
-        total_used: (wallet?.total_used || 0) + creditsNeeded, 
-        updated_at: new Date().toISOString() 
-      })
-      .eq('organizer_id', organizer_id);
-
-    // Log credit usage
-    await supabase.from('sms_credit_usage').insert({
-      organizer_id,
-      credits_used: creditsNeeded,
-      sms_count: recipients.length * smsSegments,
-      recipient_count: recipients.length,
-      event_id: event_id || null,
-      balance_before: currentBalance,
-      balance_after: newBalance,
+    // Deduct credits using unified credit system
+    const { data: deductResult, error: deductError } = await supabase.rpc('deduct_communication_credits', {
+      p_organizer_id: organizer_id,
+      p_amount: creditsNeeded,
+      p_channel: 'sms',
+      p_campaign_id: campaign?.id || null,
+      p_message_count: recipients.length * smsSegments,
+      p_description: `SMS campaign to ${recipients.length} recipients`
     });
+
+    if (deductError) {
+      console.error('Failed to deduct credits:', deductError);
+    }
+    
+    // Get updated balance for response
+    const { data: updatedBalance } = await supabase
+      .from('communication_credit_balances')
+      .select('balance, bonus_balance')
+      .eq('organizer_id', organizer_id)
+      .single();
+    
+    const newBalance = (updatedBalance?.balance || 0) + (updatedBalance?.bonus_balance || 0);
 
     // Update campaign status
     if (campaign) {

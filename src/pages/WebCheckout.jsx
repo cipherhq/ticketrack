@@ -408,7 +408,8 @@ export function WebCheckout() {
     email: user?.email || '', 
     phone: '', 
     firstName: '',
-    lastName: ''
+    lastName: '',
+    communicationConsent: true // Default to true - user can uncheck if they don't want communications
   })
   const [buyingForSelf, setBuyingForSelf] = useState(true)
   const [customFields, setCustomFields] = useState([])
@@ -758,7 +759,11 @@ export function WebCheckout() {
           payment_status: 'completed',
           payment_method: paymentProvider || 'paystack',
           order_id: orderId,
-          status: 'active'
+          status: 'active',
+          metadata: {
+            communication_consent: formData.communicationConsent,
+            consent_timestamp: new Date().toISOString()
+          }
         })
       }
     }
@@ -1770,7 +1775,22 @@ const formatDate = (dateString) => {
                 )}
               </Button>
 
-              <p className="text-xs text-center text-[#0F0F0F]/40">By purchasing, you agree to our Terms of Service</p>
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.communicationConsent}
+                    onChange={(e) => setFormData(f => ({ ...f, communicationConsent: e.target.checked }))}
+                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#2969FF] focus:ring-[#2969FF]"
+                  />
+                  <span className="text-xs text-[#0F0F0F]/60">
+                    I agree to receive event updates, reminders, and promotional messages from the organizer via email, SMS, and WhatsApp. You can unsubscribe anytime.
+                  </span>
+                </label>
+                <p className="text-xs text-center text-[#0F0F0F]/40">
+                  By purchasing, you agree to our <a href="/terms" className="underline hover:text-[#2969FF]">Terms of Service</a> and <a href="/privacy" className="underline hover:text-[#2969FF]">Privacy Policy</a>
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

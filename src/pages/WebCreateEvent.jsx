@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   X, Calendar, Clock, MapPin, Ticket, Image as ImageIcon,
   Plus, Trash2, Upload, Loader2, DollarSign, Info, ExternalLink,
-  Users, Pencil, ArrowLeft,
+  Users, Pencil, ArrowLeft, CheckCircle, XCircle,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -40,6 +40,19 @@ export function WebCreateEvent() {
   const [error, setError] = useState('');
   const [urlManuallyEdited, setUrlManuallyEdited] = useState(false);
   const [tabErrors, setTabErrors] = useState({});
+  const errorRef = useRef(null);
+  
+  // Helper function to set error and scroll to show it
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => {
+      if (errorRef.current) {
+        errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
+  };
   const [urlStatus, setUrlStatus] = useState({ checking: false, available: null, message: "" });
   const urlCheckTimeout = useRef(null);
   const ticketingSectionRef = useRef(null);
@@ -208,11 +221,18 @@ export function WebCreateEvent() {
 
   const handleInputChange = (field, value) => {
     // Auto-populate custom_url from title
-    if (field === "title" && !urlManuallyEdited) {
-      const slug = generateSlug(value);
-      setFormData(prev => ({ ...prev, title: value, custom_url: slug }));
-      clearTimeout(urlCheckTimeout.current);
-      urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(slug), 500);
+    if (field === "title") {
+      // Remove special characters from title (only allow letters, numbers, spaces, hyphens, apostrophes)
+      const sanitizedTitle = value.replace(/[^a-zA-Z0-9\s\-']/g, '');
+      
+      if (!urlManuallyEdited) {
+        const slug = generateSlug(sanitizedTitle);
+        setFormData(prev => ({ ...prev, title: sanitizedTitle, custom_url: slug }));
+        clearTimeout(urlCheckTimeout.current);
+        urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(slug), 500);
+      } else {
+        setFormData(prev => ({ ...prev, title: sanitizedTitle }));
+      }
       return;
     }
     if (field === "custom_url") {
@@ -422,13 +442,13 @@ export function WebCreateEvent() {
   // Submit
   const handleSubmit = async () => {
     if (!user?.id) {
-      setError('Please log in to create an event');
+      showError('Please log in to create an event');
       return;
     }
 
     const validTickets = formData.isFreeEvent ? [] : tickets.filter(t => t.name && t.price && t.quantity);
     if (!formData.isFreeEvent && validTickets.length === 0) {
-      setError('Please add at least one ticket type');
+      showError('Please add at least one ticket type');
       setActiveTab('ticketing');
       return;
     }
@@ -451,7 +471,7 @@ export function WebCreateEvent() {
     if (Object.keys(errors).length > 0) {
       const firstErrorTab = Object.keys(errors)[0];
       setActiveTab(firstErrorTab);
-      setError(Object.values(errors).join(". "));
+      showError(Object.values(errors).join(". "));
       return;
     }
 
@@ -550,7 +570,7 @@ export function WebCreateEvent() {
       navigate('/organizer/events');
     } catch (err) {
       console.error('Error creating event:', err);
-      setError(err.message || 'Failed to create event');
+      showError(err.message || 'Failed to create event');
     } finally {
       setSaving(false);
     }
@@ -606,8 +626,9 @@ export function WebCreateEvent() {
           {/* Content */}
           <div className="p-6">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2">
-                <Info className="w-5 h-5" />{error}
+              <div ref={errorRef} className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2">
+                <Info className="w-5 h-5 flex-shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
@@ -634,13 +655,36 @@ export function WebCreateEvent() {
                       onChange={(e) => handleInputChange("custom_url", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
                       className="h-12 rounded-xl bg-[#F4F6FA] border-0 flex-1"
                     />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => checkUrlAvailability(formData.custom_url)}
+                      disabled={urlStatus.checking || !formData.custom_url || formData.custom_url.length < 3}
+                      className="h-12 px-4 rounded-xl whitespace-nowrap"
+                    >
+                      {urlStatus.checking ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        'Check'
+                      )}
+                    </Button>
                   </div>
                   <div className="flex items-center gap-2">
-                  {urlStatus.checking && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
-                  {urlStatus.available === true && <span className="text-xs text-green-600">✓ {urlStatus.message}</span>}
-                  {urlStatus.available === false && <span className="text-xs text-red-600">✗ {urlStatus.message}</span>}
-                  {!urlStatus.checking && urlStatus.available === null && <span className="text-xs text-[#0F0F0F]/40">Leave blank to auto-generate from title</span>}
-                </div>
+                    {urlStatus.available === true && (
+                      <span className="text-xs text-green-600 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" /> {urlStatus.message}
+                      </span>
+                    )}
+                    {urlStatus.available === false && (
+                      <span className="text-xs text-red-600 flex items-center gap-1">
+                        <XCircle className="w-3 h-3" /> {urlStatus.message}
+                      </span>
+                    )}
+                    {!urlStatus.checking && urlStatus.available === null && (
+                      <span className="text-xs text-[#0F0F0F]/40">Leave blank to auto-generate from title</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { validatePhoneForUpdate } from '@/lib/phoneValidation'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -131,6 +132,10 @@ export function AttendeeProfile() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
 
+  // Communication preferences state
+  const [commPrefs, setCommPrefs] = useState([])
+  const [loadingCommPrefs, setLoadingCommPrefs] = useState(false)
+
   useEffect(() => {
     if (!user) {
       navigate('/login')
@@ -143,9 +148,88 @@ export function AttendeeProfile() {
     loadPaymentMethods()
     loadOrders()
     loadGroups()
+    loadCommunicationPreferences()
   }, [user, navigate])
 
+  // Load communication preferences (contacts linked to this user)
+  const loadCommunicationPreferences = async () => {
+    if (!user) return
+    setLoadingCommPrefs(true)
+    try {
+      // Find contacts linked to this user's email
+      const { data: contacts, error } = await supabase
+        .from('contacts')
+        .select(`
+          id,
+          organizer_id,
+          email_opt_in,
+          sms_opt_in,
+          whatsapp_opt_in,
+          organizer:organizers(id, business_name, logo_url)
+        `)
+        .eq('email', user.email)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setCommPrefs(contacts || [])
+    } catch (error) {
+      console.error('Error loading communication preferences:', error)
+    } finally {
+      setLoadingCommPrefs(false)
+    }
+  }
+
+  // Toggle communication preference for a specific organizer
+  const toggleCommPref = async (contactId, channel) => {
+    try {
+      const contact = commPrefs.find(c => c.id === contactId)
+      if (!contact) return
+
+      const fieldName = `${channel}_opt_in`
+      const currentValue = contact[fieldName]
+      const newValue = currentValue === false ? true : false
+
+      const { error } = await supabase
+        .from('contacts')
+        .update({ [fieldName]: newValue })
+        .eq('id', contactId)
+
+      if (error) throw error
+
+      setCommPrefs(prev => prev.map(c => 
+        c.id === contactId ? { ...c, [fieldName]: newValue } : c
+      ))
+    } catch (error) {
+      console.error('Error updating communication preference:', error)
+      alert('Failed to update preference. Please try again.')
+    }
+  }
+
+  // Opt out of all communications from all organizers
+  const optOutAll = async (channel) => {
+    try {
+      const fieldName = `${channel}_opt_in`
+      
+      const { error } = await supabase
+        .from('contacts')
+        .update({ [fieldName]: false })
+        .eq('email', user.email)
+
+      if (error) throw error
+
+      setCommPrefs(prev => prev.map(c => ({ ...c, [fieldName]: false })))
+      alert(`Successfully opted out of all ${channel.toUpperCase()} communications`)
+    } catch (error) {
+      console.error('Error opting out:', error)
+      alert('Failed to update preferences. Please try again.')
+    }
+  }
+
   const loadProfileData = async () => {
+    if (!user?.id) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       // Load profile
@@ -153,7 +237,7 @@ export function AttendeeProfile() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle() // Use maybeSingle to not throw error if no profile exists
 
       if (profileData) {
         setProfile(profileData)
@@ -385,13 +469,13 @@ export function AttendeeProfile() {
 
   // Load affiliate earnings data
   const loadEarnings = async () => {
-    if (!user) return
+    if (!user?.id) return
     try {
       const { data: profileData } = await supabase
         .from('profiles')
         .select('referral_code, affiliate_balance, total_referral_earnings, referral_count, affiliate_status')
         .eq('id', user.id)
-        .single()
+        .maybeSingle() // Use maybeSingle to handle missing profile gracefully
 
       const { data: pendingData } = await supabase
         .from('referral_earnings')
@@ -533,6 +617,16 @@ export function AttendeeProfile() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // Check if phone number is already used by another user
+      if (editForm.phone && editForm.phone !== profile?.phone) {
+        const phoneCheck = await validatePhoneForUpdate(editForm.phone, user.id)
+        if (!phoneCheck.valid) {
+          alert(phoneCheck.error)
+          setSaving(false)
+          return
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -1656,6 +1750,122 @@ export function AttendeeProfile() {
                   </CardContent>
                 </Card>
 
+                {/* Communication Preferences Card */}
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                      <Mail className="w-5 h-5 text-[#2969FF]" />
+                      Communication Preferences
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-[#0F0F0F]/70">
+                      Control how event organizers can contact you. Opt out of specific channels while still receiving important ticket confirmations.
+                    </p>
+
+                    {/* Quick opt-out buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-xl text-red-500 border-red-200 hover:bg-red-50"
+                        onClick={() => optOutAll('email')}
+                      >
+                        <Mail className="w-4 h-4 mr-1" />
+                        Opt out all Email
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-xl text-red-500 border-red-200 hover:bg-red-50"
+                        onClick={() => optOutAll('sms')}
+                      >
+                        <Phone className="w-4 h-4 mr-1" />
+                        Opt out all SMS
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-xl text-red-500 border-red-200 hover:bg-red-50"
+                        onClick={() => optOutAll('whatsapp')}
+                      >
+                        <Phone className="w-4 h-4 mr-1" />
+                        Opt out all WhatsApp
+                      </Button>
+                    </div>
+
+                    {loadingCommPrefs ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
+                      </div>
+                    ) : commPrefs.length === 0 ? (
+                      <div className="text-center py-6 text-[#0F0F0F]/50">
+                        <Mail className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                        <p>No organizer communications yet</p>
+                        <p className="text-sm">Your preferences will appear here after attending events</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {commPrefs.map((contact) => (
+                          <div key={contact.id} className="p-4 bg-[#F4F6FA] rounded-xl">
+                            <div className="flex items-center gap-3 mb-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={contact.organizer?.logo_url} />
+                                <AvatarFallback className="bg-[#2969FF]/10 text-[#2969FF]">
+                                  {contact.organizer?.business_name?.[0] || 'O'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-[#0F0F0F]">{contact.organizer?.business_name || 'Unknown Organizer'}</p>
+                                <p className="text-xs text-[#0F0F0F]/50">Communication channels</p>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => toggleCommPref(contact.id, 'email')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                                  contact.email_opt_in !== false
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                }`}
+                              >
+                                <Mail className="w-3.5 h-3.5" />
+                                Email {contact.email_opt_in !== false ? '✓' : '✗'}
+                              </button>
+                              <button
+                                onClick={() => toggleCommPref(contact.id, 'sms')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                                  contact.sms_opt_in !== false
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                }`}
+                              >
+                                <Phone className="w-3.5 h-3.5" />
+                                SMS {contact.sms_opt_in !== false ? '✓' : '✗'}
+                              </button>
+                              <button
+                                onClick={() => toggleCommPref(contact.id, 'whatsapp')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                                  contact.whatsapp_opt_in !== false
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                }`}
+                              >
+                                <Phone className="w-3.5 h-3.5" />
+                                WhatsApp {contact.whatsapp_opt_in !== false ? '✓' : '✗'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-[#0F0F0F]/50">
+                      Note: You will still receive transactional messages like ticket confirmations and important event updates regardless of these settings.
+                    </p>
+                  </CardContent>
+                </Card>
+
                 {/* GDPR Privacy Rights Card */}
                 <Card className="border-[#0F0F0F]/10 rounded-2xl">
                   <CardHeader>
@@ -1674,8 +1884,8 @@ export function AttendeeProfile() {
                     {/* Marketing Preferences */}
                     <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
                       <div>
-                        <p className="font-medium text-[#0F0F0F]">Marketing Emails</p>
-                        <p className="text-sm text-[#0F0F0F]/60">Receive event recommendations and offers</p>
+                        <p className="font-medium text-[#0F0F0F]">Platform Marketing</p>
+                        <p className="text-sm text-[#0F0F0F]/60">Receive Ticketrack recommendations and offers</p>
                       </div>
                       <button
                         onClick={async () => {

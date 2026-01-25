@@ -22,21 +22,17 @@ supabase functions deploy send-birthday-emails
 
 ## Test the Function (After Deployment)
 
-Replace `YOUR_SERVICE_ROLE_KEY` with your actual service role key from Supabase Dashboard → Project Settings → API:
-
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
-  -H "apikey: YOUR_SERVICE_ROLE_KEY" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI" \
+  -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI" \
   https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-birthday-emails
 ```
 
 ## Set Up Daily Cron Job
 
 Run this SQL in Supabase Dashboard → SQL Editor:
-
-**IMPORTANT**: Replace `YOUR_SERVICE_ROLE_KEY` with your actual service role key!
 
 ```sql
 -- Step 1: Enable extensions
@@ -53,8 +49,8 @@ SELECT cron.schedule(
       url := 'https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-birthday-emails',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY',
-        'apikey', 'YOUR_SERVICE_ROLE_KEY'
+        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI',
+        'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI'
       ),
       body := '{}'::jsonb
     ) AS request_id;

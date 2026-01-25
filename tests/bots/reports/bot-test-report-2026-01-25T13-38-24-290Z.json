@@ -1,0 +1,264 @@
+{
+  "startTime": "2026-01-25T13:38:09.523Z",
+  "endTime": "2026-01-25T13:38:24.289Z",
+  "duration": 14.766,
+  "summary": {
+    "total": 10,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 1
+  },
+  "tests": [
+    {
+      "bot": "UserBot",
+      "name": "Homepage",
+      "description": "Visit and verify homepage loads correctly",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:09.968Z",
+      "endTime": "2026-01-25T13:38:10.975Z",
+      "duration": 1.007,
+      "steps": [
+        {
+          "step": "Navigated to homepage",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:10.892Z"
+        },
+        {
+          "step": "Logo visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:10.975Z"
+        },
+        {
+          "step": "Navigation visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:10.975Z"
+        },
+        {
+          "step": "Main content visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:10.975Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Event Discovery",
+      "description": "Browse and search for events",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:10.976Z",
+      "endTime": "2026-01-25T13:38:13.906Z",
+      "duration": 2.93,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:11.582Z"
+        },
+        {
+          "step": "Events are displayed",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:13.905Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "View Event Details",
+      "description": "Open and view event details page",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:13.906Z",
+      "endTime": "2026-01-25T13:38:15.530Z",
+      "duration": 1.624,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:14.516Z"
+        },
+        {
+          "step": "Clicked on event",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:15.507Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "User Login",
+      "description": "Log in as user",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:15.530Z",
+      "endTime": "2026-01-25T13:38:19.254Z",
+      "duration": 3.724,
+      "steps": [
+        {
+          "step": "Navigated to login page",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:16.153Z"
+        },
+        {
+          "step": "Entered email",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:16.190Z"
+        },
+        {
+          "step": "Entered password",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:16.200Z"
+        },
+        {
+          "step": "Clicked login",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:16.251Z"
+        },
+        {
+          "step": "Login successful",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:19.254Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Ticket Purchase",
+      "description": "Complete a ticket purchase flow",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:38:19.255Z",
+      "endTime": "2026-01-25T13:38:20.427Z",
+      "duration": 1.172,
+      "steps": [
+        {
+          "step": "Browsing events",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:19.873Z"
+        },
+        {
+          "step": "Opened event details",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:20.414Z"
+        },
+        {
+          "step": "No buy button found",
+          "success": false,
+          "timestamp": "2026-01-25T13:38:20.427Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "My Tickets",
+      "description": "View purchased tickets",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:20.429Z",
+      "endTime": "2026-01-25T13:38:21.079Z",
+      "duration": 0.65,
+      "steps": [
+        {
+          "step": "Navigated to my tickets page",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:21.053Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "User Profile",
+      "description": "View and update user profile",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:21.080Z",
+      "endTime": "2026-01-25T13:38:21.711Z",
+      "duration": 0.631,
+      "steps": [
+        {
+          "step": "Navigated to profile page",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:21.682Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Wallet Pass",
+      "description": "Check wallet pass availability",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:21.712Z",
+      "endTime": "2026-01-25T13:38:22.345Z",
+      "duration": 0.633,
+      "steps": [
+        {
+          "step": "Navigated to my tickets",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:22.325Z"
+        },
+        {
+          "step": "No wallet options found (may need purchased ticket)",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:22.345Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Follow Organizer",
+      "description": "Follow an event organizer",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:22.346Z",
+      "endTime": "2026-01-25T13:38:23.546Z",
+      "duration": 1.2,
+      "steps": [
+        {
+          "step": "Opened event details",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:23.541Z"
+        },
+        {
+          "step": "Follow button not found on this page",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:23.546Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Ticket Transfer",
+      "description": "Check ticket transfer feature",
+      "status": "passed",
+      "startTime": "2026-01-25T13:38:23.546Z",
+      "endTime": "2026-01-25T13:38:24.185Z",
+      "duration": 0.639,
+      "steps": [
+        {
+          "step": "Navigated to my tickets",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:24.156Z"
+        },
+        {
+          "step": "No transfer option found (may need ticket first)",
+          "success": true,
+          "timestamp": "2026-01-25T13:38:24.185Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    }
+  ],
+  "issues": []
+}

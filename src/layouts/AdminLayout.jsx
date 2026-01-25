@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Shield, Calendar, DollarSign, RefreshCw,
   MessageSquare, Users, Menu, X, Building, UserCheck,
   Mail, Send, Bell, TrendingUp, LogOut, Loader2, Settings,
-  Clock, Home, FolderOpen, Receipt, ChevronDown, Globe, Megaphone,
+  Clock, Home, FolderOpen, Receipt, ChevronDown, Globe, Megaphone, CreditCard,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
@@ -57,6 +57,7 @@ const navGroups = [
       { icon: RefreshCw, label: 'Refunds', path: '/admin/refunds', notificationKey: 'refundsPending' },
       { icon: Settings, label: 'Refund Settings', path: '/admin/refund-settings' },
       { icon: ArrowRightLeft, label: 'Transfers', path: '/admin/transfers' },
+      { icon: CreditCard, label: 'Payment Connections', path: '/admin/payment-connections' },
       { icon: DollarSign, label: 'Fee Management', path: '/admin/fees' },
     ]
   },

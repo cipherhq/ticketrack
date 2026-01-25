@@ -152,6 +152,37 @@ serve(async (req) => {
       );
     }
 
+    // Send confirmation email
+    try {
+      await supabase.functions.invoke("send-email", {
+        body: {
+          type: "paystack_subaccount_activated",
+          to: organizer.business_email,
+          data: {
+            organizerName: organizer.business_name,
+            bankName: paystackData.data.settlement_bank,
+            accountNumber: paystackData.data.account_number,
+            platformFeePercent: platformFeePercentage,
+          },
+        },
+      });
+    } catch (emailError) {
+      console.error("Failed to send confirmation email:", emailError);
+      // Don't fail the whole request if email fails
+    }
+
+    // Log audit event
+    await supabase.from("admin_audit_logs").insert({
+      action: "paystack_subaccount_created",
+      entity_type: "organizer",
+      entity_id: organizerId,
+      details: {
+        subaccountCode,
+        businessName: paystackData.data.business_name,
+        bank: paystackData.data.settlement_bank,
+      },
+    });
+
     return new Response(
       JSON.stringify({
         success: true,

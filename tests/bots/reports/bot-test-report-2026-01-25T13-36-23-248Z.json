@@ -1,0 +1,286 @@
+{
+  "startTime": "2026-01-25T13:36:09.037Z",
+  "endTime": "2026-01-25T13:36:23.247Z",
+  "duration": 14.21,
+  "summary": {
+    "total": 10,
+    "passed": 8,
+    "failed": 1,
+    "skipped": 1
+  },
+  "tests": [
+    {
+      "bot": "UserBot",
+      "name": "Homepage",
+      "description": "Visit and verify homepage loads correctly",
+      "status": "passed",
+      "startTime": "2026-01-25T13:36:09.371Z",
+      "endTime": "2026-01-25T13:36:10.376Z",
+      "duration": 1.005,
+      "steps": [
+        {
+          "step": "Navigated to homepage",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:10.335Z"
+        },
+        {
+          "step": "Logo visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:10.376Z"
+        },
+        {
+          "step": "Navigation visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:10.376Z"
+        },
+        {
+          "step": "Main content visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:10.376Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Event Discovery",
+      "description": "Browse and search for events",
+      "status": "passed",
+      "startTime": "2026-01-25T13:36:10.376Z",
+      "endTime": "2026-01-25T13:36:13.226Z",
+      "duration": 2.85,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:10.983Z"
+        },
+        {
+          "step": "Events are displayed",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:13.226Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "View Event Details",
+      "description": "Open and view event details page",
+      "status": "passed",
+      "startTime": "2026-01-25T13:36:13.227Z",
+      "endTime": "2026-01-25T13:36:14.495Z",
+      "duration": 1.268,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:13.838Z"
+        },
+        {
+          "step": "Clicked on event",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:14.479Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "User Login",
+      "description": "Log in as user",
+      "status": "passed",
+      "startTime": "2026-01-25T13:36:14.495Z",
+      "endTime": "2026-01-25T13:36:18.191Z",
+      "duration": 3.696,
+      "steps": [
+        {
+          "step": "Navigated to login page",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:15.095Z"
+        },
+        {
+          "step": "Entered email",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:15.130Z"
+        },
+        {
+          "step": "Entered password",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:15.141Z"
+        },
+        {
+          "step": "Clicked login",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:15.188Z"
+        },
+        {
+          "step": "Login successful",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:18.191Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Ticket Purchase",
+      "description": "Complete a ticket purchase flow",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:36:18.192Z",
+      "endTime": "2026-01-25T13:36:19.387Z",
+      "duration": 1.195,
+      "steps": [
+        {
+          "step": "Browsing events",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:18.805Z"
+        },
+        {
+          "step": "Opened event details",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:19.377Z"
+        },
+        {
+          "step": "No buy button found",
+          "success": false,
+          "timestamp": "2026-01-25T13:36:19.386Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "My Tickets",
+      "description": "View purchased tickets",
+      "status": "passed",
+      "startTime": "2026-01-25T13:36:19.387Z",
+      "endTime": "2026-01-25T13:36:20.033Z",
+      "duration": 0.646,
+      "steps": [
+        {
+          "step": "Navigated to my tickets page",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:20.009Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "User Profile",
+      "description": "View and update user profile",
+      "status": "passed",
+      "startTime": "2026-01-25T13:36:20.033Z",
+      "endTime": "2026-01-25T13:36:20.657Z",
+      "duration": 0.624,
+      "steps": [
+        {
+          "step": "Navigated to profile page",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:20.631Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Wallet Pass",
+      "description": "Check wallet pass availability",
+      "status": "passed",
+      "startTime": "2026-01-25T13:36:20.657Z",
+      "endTime": "2026-01-25T13:36:21.284Z",
+      "duration": 0.627,
+      "steps": [
+        {
+          "step": "Navigated to my tickets",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:21.258Z"
+        },
+        {
+          "step": "No wallet options found (may need purchased ticket)",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:21.284Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Follow Organizer",
+      "description": "Follow an event organizer",
+      "status": "passed",
+      "startTime": "2026-01-25T13:36:21.284Z",
+      "endTime": "2026-01-25T13:36:22.458Z",
+      "duration": 1.174,
+      "steps": [
+        {
+          "step": "Opened event details",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:22.450Z"
+        },
+        {
+          "step": "Follow button not found on this page",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:22.458Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Ticket Transfer",
+      "description": "Check ticket transfer feature",
+      "status": "failed",
+      "startTime": "2026-01-25T13:36:22.458Z",
+      "endTime": "2026-01-25T13:36:23.164Z",
+      "duration": 0.706,
+      "steps": [
+        {
+          "step": "Navigated to my tickets",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:23.081Z"
+        }
+      ],
+      "errors": [
+        {
+          "message": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Transfer\"), text=/transfer/i\". Did you mean to CSS.escape it?\nCall log:\n\u001b[2m    - checking visibility of button:has-text(\"Transfer\"), text=/transfer/i >> nth=0\u001b[22m\n",
+          "stack": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Transfer\"), text=/transfer/i\". Did you mean to CSS.escape it?\nCall log:\n\u001b[2m    - checking visibility of button:has-text(\"Transfer\"), text=/transfer/i >> nth=0\u001b[22m\n\n    at UserBot.testTicketTransfer (/Users/bajideace/Desktop/ticketrack/tests/bots/user-bot.js:592:29)\n    at async UserBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/user-bot.js:632:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:109:7)",
+          "timestamp": "2026-01-25T13:36:23.164Z",
+          "screenshot": "tests/bots/screenshots/UserBot-ticket-transfer-1769348183087.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/UserBot-ticket-transfer-1769348183087.png",
+        "tests/bots/screenshots/UserBot-ticket-transfer-1769348183087.png"
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "bot": "UserBot",
+      "test": "Ticket Transfer",
+      "errors": [
+        {
+          "message": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Transfer\"), text=/transfer/i\". Did you mean to CSS.escape it?\nCall log:\n\u001b[2m    - checking visibility of button:has-text(\"Transfer\"), text=/transfer/i >> nth=0\u001b[22m\n",
+          "stack": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Transfer\"), text=/transfer/i\". Did you mean to CSS.escape it?\nCall log:\n\u001b[2m    - checking visibility of button:has-text(\"Transfer\"), text=/transfer/i >> nth=0\u001b[22m\n\n    at UserBot.testTicketTransfer (/Users/bajideace/Desktop/ticketrack/tests/bots/user-bot.js:592:29)\n    at async UserBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/user-bot.js:632:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:109:7)",
+          "timestamp": "2026-01-25T13:36:23.164Z",
+          "screenshot": "tests/bots/screenshots/UserBot-ticket-transfer-1769348183087.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/UserBot-ticket-transfer-1769348183087.png",
+        "tests/bots/screenshots/UserBot-ticket-transfer-1769348183087.png"
+      ]
+    }
+  ]
+}

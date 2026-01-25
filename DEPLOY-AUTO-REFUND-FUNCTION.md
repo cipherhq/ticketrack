@@ -31,7 +31,7 @@ After deploying, you can test it:
 ```bash
 # Test the function directly
 curl -X POST https://bkvbvggngttrizbchygy.supabase.co/functions/v1/auto-refund-on-cancellation \
-  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI" \
   -H "Content-Type: application/json" \
   -d '{"eventId":"test-event-id","reason":"Test"}'
 ```

@@ -138,16 +138,14 @@ A new edge function has been created at `supabase/functions/send-birthday-emails
          url := 'https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-birthday-emails',
          headers := jsonb_build_object(
            'Content-Type', 'application/json',
-           'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY',
-           'apikey', 'YOUR_SERVICE_ROLE_KEY'
+           'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI',
+           'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI'
          ),
          body := '{}'::jsonb
        ) AS request_id;
      $$
    );
    ```
-   
-   **Note**: Replace `YOUR_SERVICE_ROLE_KEY` with your actual service role key from Supabase Dashboard → Project Settings → API
    
 4. **Verify the cron job was created**:
    ```sql
@@ -161,22 +159,12 @@ A new edge function has been created at `supabase/functions/send-birthday-emails
          url := 'https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-birthday-emails',
        headers := jsonb_build_object(
          'Content-Type', 'application/json',
-         'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY',
-         'apikey', 'YOUR_SERVICE_ROLE_KEY'
+         'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI',
+         'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI'
        ),
        body := '{}'::jsonb
      ) AS request_id;
    ```
-   
-   **Your Project Details**:
-   - Project Reference: `bkvbvggngttrizbchygy`
-   - Supabase URL: `https://bkvbvggngttrizbchygy.supabase.co`
-   - Function URL: `https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-birthday-emails`
-   
-   **Where to find your service role key**:
-   - Go to Supabase Dashboard → Project Settings → API
-   - Copy the `service_role` key (⚠️ Keep this secret!)
-   - Replace `YOUR_SERVICE_ROLE_KEY` in the SQL above
 
 ### Option 2: Using External Cron Service
 

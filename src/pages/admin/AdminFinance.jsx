@@ -1330,17 +1330,513 @@ export function AdminFinance() {
     );
   };
 
-  const renderReports = () => (
-    <div className="space-y-4">
-      <Card className="border-yellow-200 bg-yellow-50 rounded-2xl">
-        <CardContent className="p-6 text-center">
-          <FileText className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-          <h3 className="font-semibold text-[#0F0F0F] mb-2">Coming Soon</h3>
-          <p className="text-sm text-[#0F0F0F]/60">Financial reports and export features are under development.</p>
+  // State for reports
+  const [reportData, setReportData] = useState({
+    loading: false,
+    dateRange: { start: '', end: '' },
+    transactions: [],
+    summary: {
+      totalRevenue: {},
+      totalPayouts: {},
+      totalPlatformFees: {},
+      transactionCount: 0,
+    }
+  });
+
+  const loadReportData = async (startDate, endDate) => {
+    setReportData(prev => ({ ...prev, loading: true }));
+    
+    try {
+      // Get all completed orders in date range
+      let query = supabase
+        .from('orders')
+        .select(`
+          id, total_amount, platform_fee, currency, status, created_at, payment_provider,
+          event:events(id, title, organizer_id, organizers(business_name))
+        `)
+        .eq('status', 'completed');
+      
+      if (startDate) query = query.gte('created_at', startDate);
+      if (endDate) query = query.lte('created_at', endDate + 'T23:59:59');
+      
+      const { data: orders } = await query.order('created_at', { ascending: false });
+
+      // Get payouts in date range
+      let payoutQuery = supabase
+        .from('payout_history')
+        .select('*');
+      
+      if (startDate) payoutQuery = payoutQuery.gte('created_at', startDate);
+      if (endDate) payoutQuery = payoutQuery.lte('created_at', endDate + 'T23:59:59');
+      
+      const { data: payouts } = await payoutQuery;
+
+      // Calculate summaries by currency
+      const totalRevenue = {};
+      const totalPlatformFees = {};
+      const totalPayouts = {};
+
+      (orders || []).forEach(order => {
+        const currency = order.currency || 'NGN';
+        totalRevenue[currency] = (totalRevenue[currency] || 0) + parseFloat(order.total_amount || 0);
+        totalPlatformFees[currency] = (totalPlatformFees[currency] || 0) + parseFloat(order.platform_fee || 0);
+      });
+
+      (payouts || []).forEach(payout => {
+        const currency = payout.currency || 'NGN';
+        totalPayouts[currency] = (totalPayouts[currency] || 0) + parseFloat(payout.amount || 0);
+      });
+
+      setReportData({
+        loading: false,
+        dateRange: { start: startDate || '', end: endDate || '' },
+        transactions: orders || [],
+        summary: {
+          totalRevenue,
+          totalPayouts,
+          totalPlatformFees,
+          transactionCount: (orders || []).length,
+        }
+      });
+    } catch (error) {
+      console.error('Error loading report data:', error);
+      setReportData(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const exportToCSV = (dataType) => {
+    let csvContent = '';
+    let filename = '';
+    
+    if (dataType === 'transactions') {
+      csvContent = 'Date,Order ID,Event,Organizer,Amount,Platform Fee,Currency,Payment Provider\n';
+      reportData.transactions.forEach(t => {
+        csvContent += `${t.created_at?.split('T')[0] || ''},${t.id},${t.event?.title?.replace(/,/g, ' ') || ''},${t.event?.organizers?.business_name?.replace(/,/g, ' ') || ''},${t.total_amount || 0},${t.platform_fee || 0},${t.currency || 'NGN'},${t.payment_provider || ''}\n`;
+      });
+      filename = `transactions_${reportData.dateRange.start || 'all'}_to_${reportData.dateRange.end || 'now'}.csv`;
+    } else if (dataType === 'summary') {
+      csvContent = 'Metric,Currency,Amount\n';
+      Object.entries(reportData.summary.totalRevenue).forEach(([currency, amount]) => {
+        csvContent += `Total Revenue,${currency},${amount}\n`;
+      });
+      Object.entries(reportData.summary.totalPlatformFees).forEach(([currency, amount]) => {
+        csvContent += `Platform Fees,${currency},${amount}\n`;
+      });
+      Object.entries(reportData.summary.totalPayouts).forEach(([currency, amount]) => {
+        csvContent += `Payouts,${currency},${amount}\n`;
+      });
+      csvContent += `Transaction Count,ALL,${reportData.summary.transactionCount}\n`;
+      filename = `financial_summary_${reportData.dateRange.start || 'all'}_to_${reportData.dateRange.end || 'now'}.csv`;
+    }
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const renderFinancialSummary = () => (
+    <div className="space-y-6">
+      {/* Date Range Selector */}
+      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-[#2969FF]" />
+            Financial Summary Report
+          </CardTitle>
+          <CardDescription>Generate financial reports for any date range</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="space-y-2">
+              <Label>Start Date</Label>
+              <Input 
+                type="date" 
+                value={reportData.dateRange.start}
+                onChange={(e) => setReportData(prev => ({ 
+                  ...prev, 
+                  dateRange: { ...prev.dateRange, start: e.target.value } 
+                }))}
+                className="rounded-xl w-44"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>End Date</Label>
+              <Input 
+                type="date" 
+                value={reportData.dateRange.end}
+                onChange={(e) => setReportData(prev => ({ 
+                  ...prev, 
+                  dateRange: { ...prev.dateRange, end: e.target.value } 
+                }))}
+                className="rounded-xl w-44"
+              />
+            </div>
+            <Button 
+              onClick={() => loadReportData(reportData.dateRange.start, reportData.dateRange.end)}
+              disabled={reportData.loading}
+              className="bg-[#2969FF] text-white rounded-xl"
+            >
+              {reportData.loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              Generate Report
+            </Button>
+          </div>
+
+          {/* Quick date presets */}
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" size="sm" className="rounded-lg"
+              onClick={() => {
+                const today = new Date();
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                loadReportData(startOfMonth.toISOString().split('T')[0], today.toISOString().split('T')[0]);
+              }}
+            >
+              This Month
+            </Button>
+            <Button 
+              variant="outline" size="sm" className="rounded-lg"
+              onClick={() => {
+                const today = new Date();
+                const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                loadReportData(startOfLastMonth.toISOString().split('T')[0], endOfLastMonth.toISOString().split('T')[0]);
+              }}
+            >
+              Last Month
+            </Button>
+            <Button 
+              variant="outline" size="sm" className="rounded-lg"
+              onClick={() => {
+                const today = new Date();
+                const startOfYear = new Date(today.getFullYear(), 0, 1);
+                loadReportData(startOfYear.toISOString().split('T')[0], today.toISOString().split('T')[0]);
+              }}
+            >
+              This Year
+            </Button>
+            <Button 
+              variant="outline" size="sm" className="rounded-lg"
+              onClick={() => loadReportData('', '')}
+            >
+              All Time
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary Cards */}
+      {reportData.summary.transactionCount > 0 && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-green-700">Total Revenue</p>
+                    <p className="text-xs text-green-600">{reportData.summary.transactionCount} transactions</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {Object.entries(reportData.summary.totalRevenue).map(([currency, amount]) => (
+                    <p key={currency} className="text-lg font-bold text-green-700">
+                      {formatPrice(amount, currency)}
+                    </p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-700">Platform Fees Earned</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {Object.entries(reportData.summary.totalPlatformFees).map(([currency, amount]) => (
+                    <p key={currency} className="text-lg font-bold text-blue-700">
+                      {formatPrice(amount, currency)}
+                    </p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <Banknote className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-purple-700">Total Payouts</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {Object.entries(reportData.summary.totalPayouts).length > 0 
+                    ? Object.entries(reportData.summary.totalPayouts).map(([currency, amount]) => (
+                        <p key={currency} className="text-lg font-bold text-purple-700">
+                          {formatPrice(amount, currency)}
+                        </p>
+                      ))
+                    : <p className="text-lg font-bold text-purple-700">No payouts</p>
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Export Buttons */}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => exportToCSV('summary')} className="rounded-xl">
+              <Download className="w-4 h-4 mr-2" />
+              Export Summary (CSV)
+            </Button>
+            <Button variant="outline" onClick={() => exportToCSV('transactions')} className="rounded-xl">
+              <Download className="w-4 h-4 mr-2" />
+              Export Transactions (CSV)
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const renderTaxReports = () => (
+    <div className="space-y-6">
+      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Percent className="w-5 h-5 text-amber-600" />
+            Tax Reports
+          </CardTitle>
+          <CardDescription>Generate reports for tax filing and compliance</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="space-y-2">
+              <Label>Tax Year</Label>
+              <Select 
+                value={reportData.dateRange.start?.slice(0, 4) || new Date().getFullYear().toString()}
+                onValueChange={(year) => {
+                  loadReportData(`${year}-01-01`, `${year}-12-31`);
+                }}
+              >
+                <SelectTrigger className="w-32 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2024, 2025, 2026].map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {reportData.summary.transactionCount > 0 && (
+            <div className="mt-6 space-y-4">
+              <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <h4 className="font-medium text-amber-800 mb-2">Tax Year Summary</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-amber-600">Gross Revenue</p>
+                    {Object.entries(reportData.summary.totalRevenue).map(([currency, amount]) => (
+                      <p key={currency} className="font-bold text-amber-800">{formatPrice(amount, currency)}</p>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-amber-600">Platform Commission</p>
+                    {Object.entries(reportData.summary.totalPlatformFees).map(([currency, amount]) => (
+                      <p key={currency} className="font-bold text-amber-800">{formatPrice(amount, currency)}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <Button variant="outline" onClick={() => exportToCSV('transactions')} className="rounded-xl">
+                <Download className="w-4 h-4 mr-2" />
+                Download Tax Report (CSV)
+              </Button>
+
+              <p className="text-xs text-[#0F0F0F]/50">
+                Note: This report includes all completed transactions. Consult with a tax professional for specific filing requirements in your jurisdiction.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
+
+  const renderExportData = () => (
+    <div className="space-y-6">
+      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="w-5 h-5 text-[#2969FF]" />
+            Export Data
+          </CardTitle>
+          <CardDescription>Download your platform data in various formats</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                    <Receipt className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">All Transactions</h4>
+                    <p className="text-xs text-[#0F0F0F]/60">Complete order history</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full rounded-lg"
+                  onClick={async () => {
+                    await loadReportData('', '');
+                    setTimeout(() => exportToCSV('transactions'), 500);
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Financial Summary</h4>
+                    <p className="text-xs text-[#0F0F0F]/60">Revenue & fees overview</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full rounded-lg"
+                  onClick={async () => {
+                    await loadReportData('', '');
+                    setTimeout(() => exportToCSV('summary'), 500);
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Organizers</h4>
+                    <p className="text-xs text-[#0F0F0F]/60">All registered organizers</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full rounded-lg"
+                  onClick={async () => {
+                    const { data: organizers } = await supabase
+                      .from('organizers')
+                      .select('id, business_name, business_email, country_code, created_at, is_verified')
+                      .order('created_at', { ascending: false });
+                    
+                    let csv = 'ID,Business Name,Email,Country,Created At,Verified\n';
+                    (organizers || []).forEach(o => {
+                      csv += `${o.id},"${o.business_name || ''}",${o.business_email || ''},${o.country_code || ''},${o.created_at?.split('T')[0] || ''},${o.is_verified ? 'Yes' : 'No'}\n`;
+                    });
+                    
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'organizers_export.csv';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Events</h4>
+                    <p className="text-xs text-[#0F0F0F]/60">All events data</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full rounded-lg"
+                  onClick={async () => {
+                    const { data: events } = await supabase
+                      .from('events')
+                      .select('id, title, start_date, city, country, currency, is_free, status, created_at')
+                      .order('created_at', { ascending: false });
+                    
+                    let csv = 'ID,Title,Date,City,Country,Currency,Is Free,Status,Created At\n';
+                    (events || []).forEach(e => {
+                      csv += `${e.id},"${(e.title || '').replace(/"/g, '""')}",${e.start_date?.split('T')[0] || ''},${e.city || ''},${e.country || ''},${e.currency || ''},${e.is_free ? 'Yes' : 'No'},${e.status || ''},${e.created_at?.split('T')[0] || ''}\n`;
+                    });
+                    
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'events_export.csv';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderReports = () => {
+    if (activeSection === 'financial-summary') return renderFinancialSummary();
+    if (activeSection === 'tax-reports') return renderTaxReports();
+    if (activeSection === 'export-data') return renderExportData();
+    return renderFinancialSummary();
+  };
 
   const renderSettings = () => (
     <div className="space-y-4">
@@ -1368,9 +1864,9 @@ export function AdminFinance() {
       case 'revenue-country': return renderRevenueByCountry();
       case 'revenue-category': return renderRevenueByCategory();
       case 'ad-revenue': return renderAdRevenue();
-      case 'financial-summary':
-      case 'tax-reports':
-      case 'export-data': return renderReports();
+      case 'financial-summary': return renderFinancialSummary();
+      case 'tax-reports': return renderTaxReports();
+      case 'export-data': return renderExportData();
       case 'platform-fees':
       case 'payout-rules': return renderSettings();
       default: return renderEventPayouts();

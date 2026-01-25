@@ -10,7 +10,7 @@ Instead of installing packages globally, use `npx` to run them:
 # Instead of: npm install -g supabase
 # Use:
 npx supabase login
-npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase link --project-ref bkvbvggngttrizbchygy
 npx supabase functions deploy send-birthday-emails
 ```
 

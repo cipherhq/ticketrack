@@ -7,7 +7,7 @@ import { OrganizerHome } from '@/pages/organizer/OrganizerHome';
 import { EventManagement } from '@/pages/organizer/EventManagement';
 import { CreateEvent } from '@/pages/organizer/CreateEvent';
 import { FinancePayouts } from '@/pages/organizer/FinancePayouts';
-import BuyWhatsAppCredits from "../pages/organizer/BuyWhatsAppCredits";
+// BuyWhatsAppCredits deprecated - now using unified CommunicationCredits
 import { OrganizerProfile } from '@/pages/organizer/OrganizerProfile';
 import { OrganizerCommunications } from '@/pages/organizer/OrganizerCommunications';
 import { ManageAttendees } from '@/pages/organizer/ManageAttendees';
@@ -21,8 +21,17 @@ import { AddBankAccount } from '@/pages/organizer/AddBankAccount';
 import { EmailCampaigns } from '@/pages/organizer/EmailCampaigns';
 import { WhatsAppBroadcast } from '@/pages/organizer/WhatsAppBroadcast';
 import { WhatsAppSettings } from '@/pages/organizer/WhatsAppSettings';
-import { SMSCredits } from '@/pages/organizer/SMSCredits';
+// SMSCredits deprecated - now using unified CommunicationCredits
 import { SMSCampaigns } from '@/pages/organizer/SMSCampaigns';
+import { CommunicationHub } from '@/pages/organizer/CommunicationHub';
+import { ContactManagement } from '@/pages/organizer/ContactManagement';
+import { CommunicationCredits } from '@/pages/organizer/CommunicationCredits';
+import { ContactImport } from '@/pages/organizer/ContactImport';
+import { CommunicationAutomations } from '@/pages/organizer/CommunicationAutomations';
+import { CommunicationAnalytics } from '@/pages/organizer/CommunicationAnalytics';
+import { SegmentBuilder } from '@/pages/organizer/SegmentBuilder';
+import { Inbox } from '@/pages/organizer/Inbox';
+import { DripCampaigns } from '@/pages/organizer/DripCampaigns';
 import { OrganizerOrders } from "@/pages/organizer/OrganizerOrders";
 import { OrganizerRefunds } from '@/pages/organizer/OrganizerRefunds';
 import { OrganizerTransfers } from '@/pages/organizer/OrganizerTransfers';
@@ -36,6 +45,7 @@ import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
 import { VenueLayoutDesigner } from '@/pages/organizer/VenueLayoutDesigner';
 import { VenueManagement } from '@/pages/organizer/VenueManagement';
 import { EventPlaceDesigner } from '@/pages/organizer/EventPlaceDesigner';
+import EventImport from '@/pages/organizer/EventImport';
 import { Loader2 } from 'lucide-react';
 
 export function OrganizerRoutes() {
@@ -65,6 +75,7 @@ export function OrganizerRoutes() {
           <Route path="/events/:id/edit" element={<CreateEvent />} />
           <Route path="/events/:id/attendees" element={<ManageAttendees />} />
           <Route path="/events/:id/post-event" element={<PostEventDashboard />} />
+          <Route path="/events/import" element={<EventImport />} />
           <Route path="/payouts" element={<FinancePayouts />} />
           <Route path="/profile" element={<OrganizerProfile />} />
           <Route path="/communications" element={<OrganizerCommunications />} />
@@ -80,10 +91,20 @@ export function OrganizerRoutes() {
           <Route path="/email" element={<EmailCampaigns />} />
           <Route path="/whatsapp" element={<WhatsAppBroadcast />} />
           <Route path="/whatsapp-settings" element={<WhatsAppSettings />} />
-          <Route path="/sms-credits" element={<SMSCredits />} />
+          <Route path="/sms-credits" element={<Navigate to="/organizer/credits" replace />} />
           <Route path="/orders" element={<OrganizerOrders />} />
-          <Route path="/whatsapp-credits" element={<BuyWhatsAppCredits />} />
+          <Route path="/whatsapp-credits" element={<Navigate to="/organizer/credits" replace />} />
           <Route path="/sms" element={<SMSCampaigns />} />
+          <Route path="/hub" element={<CommunicationHub />} />
+          <Route path="/inbox" element={<Inbox />} />
+          <Route path="/contacts" element={<ContactManagement />} />
+          <Route path="/contacts/import" element={<ContactImport />} />
+          <Route path="/credits" element={<CommunicationCredits />} />
+          <Route path="/automations" element={<CommunicationAutomations />} />
+          <Route path="/drip" element={<DripCampaigns />} />
+          <Route path="/analytics" element={<CommunicationAnalytics />} />
+          <Route path="/segments" element={<SegmentBuilder />} />
+          <Route path="/segments/:id" element={<SegmentBuilder />} />
           <Route path="/refunds" element={<OrganizerRefunds />} />
           <Route path="/transfers" element={<OrganizerTransfers />} />
           <Route path="/stripe-connect" element={<StripeConnect />} />

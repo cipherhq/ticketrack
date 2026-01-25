@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Calendar, Users, BarChart3,
   DollarSign, Tag, UserPlus,
   Settings, LogOut, Menu, X, ChevronDown, Bell,
-  QrCode, Building, RotateCcw, HelpCircle, Home, Receipt, ArrowRightLeft, ClipboardList, UsersRound
+  QrCode, Building, RotateCcw, HelpCircle, Home, Receipt, ArrowRightLeft, ClipboardList, UsersRound, Zap, Coins
 } from 'lucide-react';
 import { useOrganizer } from '../contexts/OrganizerContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,11 +46,12 @@ const menuGroups = [
     id: 'marketing',
     label: 'Marketing',
     items: [
+      { title: 'Communication Hub', icon: LayoutDashboard, path: '/organizer/hub', tip: 'Unified email, SMS, and WhatsApp campaigns' },
+      { title: 'Contacts', icon: Users, path: '/organizer/contacts', tip: 'Manage your audience contacts and segments' },
+      { title: 'Automations', icon: Zap, path: '/organizer/automations', tip: 'Event reminders and automated messages' },
+      { title: 'Message Credits', icon: Coins, path: '/organizer/credits', tip: 'Buy credits for SMS and WhatsApp' },
       { title: 'Promo Codes', icon: Tag, path: '/organizer/promo-codes', tip: 'Create discount codes to boost ticket sales' },
       { title: 'Promoters', icon: Users, path: '/organizer/promoters', tip: 'Invite promoters to sell tickets and earn commission' },
-      { title: 'Communications', icon: Tag, path: '/organizer/communications', tip: 'Send email campaigns to attendees and followers' },
-      { title: 'Send SMS', icon: Tag, path: '/organizer/sms', tip: 'Send text message updates to attendees' },
-      { title: 'SMS Credits', icon: Tag, path: '/organizer/sms-credits', tip: 'Purchase SMS credits for messaging' },
       { title: 'Followers', icon: UserPlus, path: '/organizer/followers', notificationKey: 'followers', tip: 'See who follows your organizer profile' },
     ]
   },
@@ -71,6 +72,7 @@ const menuGroups = [
       { title: 'Bank Account', icon: DollarSign, path: '/organizer/bank-account', tip: 'Add bank details to receive payouts' },
       { title: 'KYC Verification', icon: Settings, path: '/organizer/kyc', tip: 'Verify your identity to unlock payouts' },
       { title: 'Stripe Connect', icon: Settings, path: '/organizer/stripe-connect', tip: 'Connect Stripe for international payments' },
+      { title: 'Direct Payments', icon: Zap, path: '/organizer/paystack-connect', tip: 'Connect Paystack/Flutterwave for direct African payments', countries: ['NG', 'GH', 'KE', 'ZA'] },
       { title: 'Tax Documents', icon: Settings, path: '/organizer/tax-documents', tip: 'Download tax statements and receipts' },
     ]
   },
@@ -191,7 +193,9 @@ export function OrganizerLayout({ children }) {
             </button>
             {!collapsedGroups[group.id] && (
               <div className="mt-1 space-y-0.5">
-                {group.items.map(renderNavItem)}
+                {group.items
+                  .filter(item => !item.countries || item.countries.includes(organizer?.country_code))
+                  .map(renderNavItem)}
               </div>
             )}
           </div>

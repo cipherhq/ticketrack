@@ -821,14 +821,24 @@ export function WebAuth() {
                     <p className="text-sm text-amber-700 mb-3">
                       Please check your credentials and try again.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => navigate('/forgot-password', { state: { email: formData.email } })}
-                      className="text-sm text-[#2969FF] hover:underline font-medium flex items-center gap-1"
-                    >
-                      <Lock className="w-4 h-4" />
-                      Forgot your password?
-                    </button>
+                    <div className="flex items-center justify-between w-full">
+                      <button
+                        type="button"
+                        onClick={() => navigate('/account-recovery')}
+                        className="text-sm text-muted-foreground hover:text-[#2969FF] hover:underline flex items-center gap-1"
+                      >
+                        <Phone className="w-4 h-4" />
+                        Lost phone access?
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/forgot-password', { state: { email: formData.email } })}
+                        className="text-sm text-[#2969FF] hover:underline font-medium flex items-center gap-1"
+                      >
+                        <Lock className="w-4 h-4" />
+                        Forgot password?
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1028,7 +1038,10 @@ export function WebAuth() {
 
               {/* Forgot password link - email login only */}
               {isLogin && loginMethod === "email" && (
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-between">
+                  <button type="button" onClick={() => navigate("/account-recovery")} className="text-sm text-muted-foreground hover:text-[#2969FF] hover:underline">
+                    Lost access to phone?
+                  </button>
                   <button type="button" onClick={() => navigate("/forgot-password")} className="text-sm text-[#2969FF] hover:underline">
                     Forgot Password?
                   </button>

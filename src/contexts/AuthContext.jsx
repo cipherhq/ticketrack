@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { validateEmail, validatePassword, validatePhone, validateFirstName, validateLastName, validateOTP } from '@/utils/validation'
+import { validatePhoneForRegistration, normalizePhone } from '@/lib/phoneValidation'
 
 const AuthContext = createContext({})
 
@@ -86,6 +87,12 @@ export function AuthProvider({ children }) {
       let formattedPhoneForStorage = phoneResult.value
       if (formattedPhoneForStorage.startsWith('+')) {
         formattedPhoneForStorage = formattedPhoneForStorage.substring(1)
+      }
+      
+      // Check if phone number is already registered
+      const phoneUniqueCheck = await validatePhoneForRegistration(formattedPhoneForStorage)
+      if (!phoneUniqueCheck.valid) {
+        throw new Error(phoneUniqueCheck.error)
       }
       
       const { data, error } = await supabase.auth.signUp({

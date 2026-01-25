@@ -94,6 +94,7 @@ const AttendeeProfile = lazyWithRetry(() => import('./pages/AttendeeProfile').th
 const OrganizerPublicProfile = lazyWithRetry(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })), 'OrganizerPublicProfile');
 const ForgotPassword = lazyWithRetry(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })), 'ForgotPassword');
 const AccountDeleted = lazyWithRetry(() => import('./pages/AccountDeleted').then(m => ({ default: m.AccountDeleted })), 'AccountDeleted');
+const AccountRecovery = lazyWithRetry(() => import('./pages/AccountRecovery').then(m => ({ default: m.AccountRecovery })), 'AccountRecovery');
 const AcceptTeamInvitation = lazyWithRetry(() => import('./pages/AcceptTeamInvitation').then(m => ({ default: m.AcceptTeamInvitation })), 'AcceptTeamInvitation');
 const TeamDashboard = lazyWithRetry(() => import('./pages/TeamDashboard').then(m => ({ default: m.TeamDashboard })), 'TeamDashboard');
 const CreateEvent = lazyWithRetry(() => import('./pages/organizer/CreateEvent').then(m => ({ default: m.CreateEvent })), 'CreateEvent');
@@ -195,6 +196,11 @@ function App() {
               <Route path="/account-deleted" element={
                 <Suspense fallback={<PageLoader />}>
                   <AccountDeleted />
+                </Suspense>
+              } />
+              <Route path="/account-recovery" element={
+                <Suspense fallback={<PageLoader />}>
+                  <AccountRecovery />
                 </Suspense>
               } />
               <Route path="/accept-invite" element={

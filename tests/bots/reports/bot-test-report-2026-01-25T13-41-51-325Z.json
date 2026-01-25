@@ -1,0 +1,254 @@
+{
+  "startTime": "2026-01-25T13:41:45.480Z",
+  "endTime": "2026-01-25T13:41:51.324Z",
+  "duration": 5.844,
+  "summary": {
+    "total": 11,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 10
+  },
+  "tests": [
+    {
+      "bot": "OrganizerBot",
+      "name": "Login",
+      "description": "Log in as organizer or register new account",
+      "status": "failed",
+      "startTime": "2026-01-25T13:41:46.474Z",
+      "endTime": "2026-01-25T13:41:51.265Z",
+      "duration": 4.791,
+      "steps": [
+        {
+          "step": "Navigated to login page",
+          "success": true,
+          "timestamp": "2026-01-25T13:41:47.833Z"
+        },
+        {
+          "step": "Entered email",
+          "success": true,
+          "timestamp": "2026-01-25T13:41:48.018Z"
+        },
+        {
+          "step": "Entered password",
+          "success": true,
+          "timestamp": "2026-01-25T13:41:48.093Z"
+        },
+        {
+          "step": "Clicked login button",
+          "success": true,
+          "timestamp": "2026-01-25T13:41:48.150Z"
+        }
+      ],
+      "errors": [
+        {
+          "message": "Login did not redirect to dashboard",
+          "stack": "Error: Login did not redirect to dashboard\n    at OrganizerBot.testLogin (file:///Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:119:13)\n    at runNextTicks (node:internal/process/task_queues:64:5)\n    at process.processImmediate (node:internal/timers:472:9)\n    at async OrganizerBot.runAllTests (file:///Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:651:7)\n    at async runBots (file:///Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:41:51.264Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-login-1769348511163.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-login-1769348511163.png",
+        "tests/bots/screenshots/OrganizerBot-login-1769348511163.png"
+      ]
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Create Event",
+      "description": "Create a new event with ticket types",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.265Z",
+      "endTime": "2026-01-25T13:41:51.265Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.265Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "View Events",
+      "description": "View list of events",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.265Z",
+      "endTime": "2026-01-25T13:41:51.266Z",
+      "duration": 0.001,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.266Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Analytics Dashboard",
+      "description": "View analytics and reports",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.266Z",
+      "endTime": "2026-01-25T13:41:51.266Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.266Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Communication Hub",
+      "description": "Access communication features",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.266Z",
+      "endTime": "2026-01-25T13:41:51.266Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.266Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Contact Management",
+      "description": "View and manage contacts",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.266Z",
+      "endTime": "2026-01-25T13:41:51.266Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.266Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Payouts & Finance",
+      "description": "View payout settings and history",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.266Z",
+      "endTime": "2026-01-25T13:41:51.266Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.266Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Profile Settings",
+      "description": "View and update organizer profile",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.266Z",
+      "endTime": "2026-01-25T13:41:51.266Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.266Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Promo Codes",
+      "description": "View and create promo codes",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.267Z",
+      "endTime": "2026-01-25T13:41:51.267Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.267Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Team Management",
+      "description": "View and manage team members",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.267Z",
+      "endTime": "2026-01-25T13:41:51.267Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.267Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Check-in Management",
+      "description": "Access check-in features",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:41:51.267Z",
+      "endTime": "2026-01-25T13:41:51.268Z",
+      "duration": 0.001,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:41:51.268Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    }
+  ],
+  "issues": [
+    {
+      "bot": "OrganizerBot",
+      "test": "Login",
+      "errors": [
+        {
+          "message": "Login did not redirect to dashboard",
+          "stack": "Error: Login did not redirect to dashboard\n    at OrganizerBot.testLogin (file:///Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:119:13)\n    at runNextTicks (node:internal/process/task_queues:64:5)\n    at process.processImmediate (node:internal/timers:472:9)\n    at async OrganizerBot.runAllTests (file:///Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:651:7)\n    at async runBots (file:///Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:41:51.264Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-login-1769348511163.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-login-1769348511163.png",
+        "tests/bots/screenshots/OrganizerBot-login-1769348511163.png"
+      ]
+    }
+  ]
+}

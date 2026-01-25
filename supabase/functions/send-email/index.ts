@@ -49,6 +49,9 @@ const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; from
   payout_processed: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   stripe_connect_activated: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   stripe_connect_payout_initiated: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  paystack_subaccount_activated: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  flutterwave_subaccount_activated: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  payment_connection_disconnected: { auth: 'ADMIN_AUTH', rateKey: 'standard' },
   kyc_verified: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   kyc_action_required: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   kyc_rejected: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
@@ -205,6 +208,12 @@ async function checkRateLimit(supabase: any, userId: string | null, type: string
 // GDPR: Marketing email types that need unsubscribe link
 const MARKETING_EMAIL_TYPES = ['bulk_campaign', 'post_event_thank_you', 'post_event_feedback', 'post_event_next_event', 'event_draft_reminder', 'new_follower', 'following_organizer', 'birthday_wish', 'admin_broadcast']
 
+// Email types that should have open/click tracking
+const TRACKABLE_EMAIL_TYPES = ['bulk_campaign', 'post_event_thank_you', 'post_event_feedback', 'post_event_next_event', 'admin_broadcast', 'event_reminder', 'event_reminder_24h', 'event_reminder_1h', 'waitlist_available']
+
+// Tracking endpoint URL
+const TRACKING_URL = `${SUPABASE_URL}/functions/v1/email-tracking`
+
 // Templates
 function baseTemplate(content: string, preheader = '', isMarketing = false): string {
   const unsubscribeFooter = isMarketing 
@@ -265,6 +274,9 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   kyc_action_required: d => ({ subject: `Action Required - Verification`, html: baseTemplate(`<div class="highlight"><strong>Action Required</strong></div><h2>Verification Needed</h2><p>Hi ${d.organizerName},</p><p>${d.message || 'We need additional info.'}</p><div class="btn-wrap"><a href="${APP_URL}/organizer/kyc" class="btn">Complete</a></div>`) }),
   kyc_rejected: d => ({ subject: `Verification Update`, html: baseTemplate(`<div class="warning"><strong>Could Not Complete</strong></div><h2>Verification Update</h2><p>Hi ${d.organizerName},</p><p>${d.reason || 'Please try again with valid documents.'}</p><div class="btn-wrap"><a href="${APP_URL}/organizer/kyc" class="btn">Try Again</a></div>`) }),
   stripe_connect_activated: d => ({ subject: `Stripe Connect Activated!`, html: baseTemplate(`<div class="success"><strong>Stripe Connect Active</strong></div><h2>Direct Payouts Ready</h2><p>Hi ${d.organizerName},</p><div class="card"><div class="row"><span class="label">Payout Speed</span><span class="value">2-3 days</span></div><div class="row"><span class="label">Platform Fee</span><span class="value">${d.platformFeePercent || '5'}%</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/stripe-connect" class="btn">Dashboard</a></div>`) }),
+  paystack_subaccount_activated: d => ({ subject: `Paystack Direct Payments Activated!`, html: baseTemplate(`<div class="success"><strong>Paystack Connected</strong></div><h2>Direct Payouts Ready</h2><p>Hi ${d.organizerName},</p><p>Your Paystack subaccount is now active. Payment from ticket sales will be deposited directly into your bank account.</p><div class="card"><div class="row"><span class="label">Bank</span><span class="value">${d.bankName || 'Connected'}</span></div><div class="row"><span class="label">Account</span><span class="value">${maskBank(d.accountNumber || '')}</span></div><div class="row"><span class="label">Settlement</span><span class="value">Next-day</span></div><div class="row"><span class="label">Platform Fee</span><span class="value">${d.platformFeePercent || '5'}%</span></div></div><div class="highlight"><strong>How It Works:</strong><ul style="margin:8px 0 0;padding-left:20px"><li>Attendees pay for tickets</li><li>Paystack splits the payment automatically</li><li>Your share goes directly to your bank</li></ul></div><div class="btn-wrap"><a href="${APP_URL}/organizer/paystack-connect" class="btn">View Dashboard</a></div>`) }),
+  flutterwave_subaccount_activated: d => ({ subject: `Flutterwave Direct Payments Activated!`, html: baseTemplate(`<div class="success"><strong>Flutterwave Connected</strong></div><h2>Direct Payouts Ready</h2><p>Hi ${d.organizerName},</p><p>Your Flutterwave subaccount is now active. Payment from ticket sales will be deposited directly into your bank account.</p><div class="card"><div class="row"><span class="label">Bank</span><span class="value">${d.bankName || 'Connected'}</span></div><div class="row"><span class="label">Account</span><span class="value">${maskBank(d.accountNumber || '')}</span></div><div class="row"><span class="label">Settlement</span><span class="value">T+1 to T+2</span></div><div class="row"><span class="label">Platform Fee</span><span class="value">${d.platformFeePercent || '5'}%</span></div></div><div class="highlight"><strong>How It Works:</strong><ul style="margin:8px 0 0;padding-left:20px"><li>Attendees pay for tickets</li><li>Flutterwave splits the payment automatically</li><li>Your share goes directly to your bank</li></ul></div><div class="btn-wrap"><a href="${APP_URL}/organizer/flutterwave-connect" class="btn">View Dashboard</a></div>`) }),
+  payment_connection_disconnected: d => ({ subject: `Payment Connection Disconnected - Action Required`, html: baseTemplate(`<div class="warning"><strong>Payment Connection Removed</strong></div><h2>Your ${d.provider} Connection Was Disconnected</h2><p>Hi ${d.organizerName},</p><p>Your <strong>${d.provider}</strong> payment connection has been disconnected from your account.</p><div class="card"><div class="row"><span class="label">Provider</span><span class="value">${d.provider}</span></div><div class="row"><span class="label">Disconnected</span><span class="value">${formatDateTime(d.disconnectedAt || new Date().toISOString())}</span></div>${d.reason ? `<div class="row"><span class="label">Reason</span><span class="value">${d.reason}</span></div>` : ''}</div><p>To continue receiving direct payments, you'll need to reconnect your account.</p><div class="btn-wrap"><a href="${APP_URL}/organizer/paystack-connect" class="btn">Reconnect</a></div><p style="font-size:14px;color:#666">If you didn't request this change, please contact support immediately.</p>`) }),
   new_ticket_sale: d => ({ subject: `💰 New Sale: ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>New sale!</strong></div><h2>You Made a Sale!</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType} x ${d.quantity}</span></div><div class="row"><span class="label">Buyer</span><span class="value">${d.buyerName}</span></div><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:18px">${d.isFree ? 'FREE' : formatCurrency(d.amount, d.currency)}</span></div></div><p><strong>Sold:</strong> ${d.totalSold} / ${d.totalCapacity}</p><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}" class="btn">Dashboard</a></div>`) }),
   daily_sales_summary: d => ({ subject: `Daily Sales - ${d.date}`, html: baseTemplate(`<h2>Daily Summary</h2><p>Performance on ${d.date}:</p><div class="card"><div class="row"><span class="label">Revenue</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.totalRevenue, d.currency)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Orders</span><span class="value">${d.ordersCount}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/analytics" class="btn">Analytics</a></div>`) }),
   low_ticket_alert: d => ({ subject: `⚠️ Low Tickets: ${d.eventTitle}`, html: baseTemplate(`<div class="highlight"><strong>Running Low!</strong></div><h2>${d.eventTitle}</h2><div class="card"><div class="row"><span class="label">${d.ticketType}</span><span class="value" style="color:#dc3545">${d.remaining} left</span></div><div class="row"><span class="label">Sold</span><span class="value">${d.sold}/${d.total}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/tickets" class="btn">Manage</a></div>`) }),
@@ -342,22 +354,118 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   group_purchase_complete: d => ({ subject: `🎉 Group Purchase Complete - ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>All Set!</strong></div><h2>Group Purchase Complete</h2><p>Hi ${d.memberName},</p><p>Everyone in your group has completed their purchase!</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Group Members</span><span class="value">${d.memberCount}</span></div><div class="row"><span class="label">Total Tickets</span><span class="value">${d.totalTickets}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/tickets" class="btn">View My Tickets</a></div>`) }),
 }
 
+// ============================================================================
+// EMAIL TRACKING FUNCTIONS
+// ============================================================================
+
+// Generate a unique tracking ID
+function generateTrackingId(campaignId?: string, messageId?: string, recipientEmail?: string): string {
+  const hash = simpleHash(recipientEmail || Date.now().toString())
+  if (campaignId && messageId) {
+    return `${campaignId}_${messageId}_${hash}`
+  } else if (messageId) {
+    return `${messageId}_${hash}`
+  }
+  return `${Date.now()}_${hash}`
+}
+
+function simpleHash(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  return Math.abs(hash).toString(36).substring(0, 8)
+}
+
+// Inject tracking pixel into HTML
+function injectTrackingPixel(html: string, trackingId: string): string {
+  const pixelUrl = `${TRACKING_URL}?t=${encodeURIComponent(trackingId)}`
+  const pixelTag = `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none;width:1px;height:1px;border:0" />`
+  
+  // Insert before </body> or at end of HTML
+  if (html.includes('</body>')) {
+    return html.replace('</body>', `${pixelTag}</body>`)
+  } else if (html.includes('</html>')) {
+    return html.replace('</html>', `${pixelTag}</html>`)
+  }
+  return html + pixelTag
+}
+
+// Wrap links for click tracking
+function wrapLinksForTracking(html: string, trackingId: string): string {
+  // Regex to find all <a> tags with href
+  const linkRegex = /<a\s+([^>]*?)href\s*=\s*["']([^"']+)["']([^>]*)>/gi
+  
+  let position = 0
+  return html.replace(linkRegex, (match, before, url, after) => {
+    position++
+    
+    // Skip internal anchors, mailto, tel, and unsubscribe links
+    if (url.startsWith('#') || 
+        url.startsWith('mailto:') || 
+        url.startsWith('tel:') ||
+        url.includes('unsubscribe') ||
+        url.includes('/profile?tab=settings')) {
+      return match
+    }
+    
+    // Create tracking URL
+    const trackedUrl = `${TRACKING_URL}?t=${encodeURIComponent(trackingId)}&r=${encodeURIComponent(url)}`
+    return `<a ${before}href="${trackedUrl}"${after}>`
+  })
+}
+
+// Process HTML for tracking
+function addEmailTracking(html: string, trackingId: string, enableClickTracking: boolean = true): string {
+  let trackedHtml = html
+  
+  // Add click tracking to links
+  if (enableClickTracking) {
+    trackedHtml = wrapLinksForTracking(trackedHtml, trackingId)
+  }
+  
+  // Add tracking pixel for opens
+  trackedHtml = injectTrackingPixel(trackedHtml, trackingId)
+  
+  return trackedHtml
+}
+
+// ============================================================================
+// SEND EMAIL FUNCTION
+// ============================================================================
+
 // Send email
 async function sendEmail(supabase: any, req: any) {
   if (!RESEND_API_KEY) return { success: false, error: 'RESEND_API_KEY not configured' }
   const template = templates[req.type]
   if (!template) return { success: false, error: `Unknown type: ${req.type}` }
-  const { subject, html } = template(req.data)
+  let { subject, html } = template(req.data)
   const to = Array.isArray(req.to) ? req.to : [req.to]
   const perm = EMAIL_PERMISSIONS[req.type]
   const from = perm?.fromEmail || FROM_EMAIL
   let logId: string | undefined
+  let messageId: string | undefined
+  
   if (!req.skipLogging) {
     try {
       const { data } = await supabase.from('communication_logs').insert({ channel: 'email', template_key: req.type, recipient_email: to[0], recipient_user_id: req.userId || null, event_id: req.eventId || null, subject, status: 'queued', provider: 'resend', metadata: { recipientCount: to.length } }).select('id').single()
       logId = data?.id
+      messageId = data?.id
     } catch (e) { console.error('Log error:', e) }
   }
+  
+  // Add email tracking for trackable email types
+  const shouldTrack = TRACKABLE_EMAIL_TYPES.includes(req.type) || req.enableTracking === true
+  let trackingId: string | undefined
+  
+  if (shouldTrack && !req.skipTracking) {
+    trackingId = generateTrackingId(req.campaignId, messageId, to[0])
+    html = addEmailTracking(html, trackingId, true)
+    console.log(`Email tracking enabled: ${trackingId}`)
+  }
+  
   try {
     // Build email payload
     const emailPayload: any = { from, to, subject, html, attachments: req.attachments }
@@ -377,8 +485,15 @@ async function sendEmail(supabase: any, req: any) {
       if (logId) await supabase.from('communication_logs').update({ status: 'failed', error_message: result.message }).eq('id', logId)
       return { success: false, error: result.message || 'Failed', logId }
     }
-    if (logId) await supabase.from('communication_logs').update({ status: 'sent', provider_message_id: result.id, sent_at: new Date().toISOString() }).eq('id', logId)
-    return { success: true, messageId: result.id, logId }
+    if (logId) {
+      await supabase.from('communication_logs').update({ 
+        status: 'sent', 
+        provider_message_id: result.id, 
+        sent_at: new Date().toISOString(),
+        metadata: { trackingId, tracked: shouldTrack }
+      }).eq('id', logId)
+    }
+    return { success: true, messageId: result.id, logId, trackingId }
   } catch (e: any) {
     if (logId) await supabase.from('communication_logs').update({ status: 'failed', error_message: e.message }).eq('id', logId)
     return { success: false, error: e.message, logId }

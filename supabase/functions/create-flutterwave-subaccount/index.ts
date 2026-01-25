@@ -6,6 +6,45 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Format phone number for Flutterwave (requires country code prefix)
+function formatPhoneForFlutterwave(phone: string | null, countryCode: string): string {
+  if (!phone) {
+    // Return default based on country
+    const defaults: Record<string, string> = {
+      NG: "+2348000000000",
+      GH: "+233200000000",
+      KE: "+254700000000",
+      ZA: "+27600000000",
+    };
+    return defaults[countryCode] || "+2348000000000";
+  }
+
+  // Clean the phone number
+  let cleaned = phone.replace(/[\s\-\(\)\.]/g, "");
+  
+  // Country code prefixes
+  const prefixes: Record<string, string> = {
+    NG: "234",
+    GH: "233",
+    KE: "254",
+    ZA: "27",
+  };
+  const prefix = prefixes[countryCode] || "234";
+
+  // If starts with 0, replace with country prefix
+  if (cleaned.startsWith("0")) {
+    cleaned = prefix + cleaned.substring(1);
+  }
+  // If doesn't start with + or country code, add it
+  else if (!cleaned.startsWith("+") && !cleaned.startsWith(prefix)) {
+    cleaned = prefix + cleaned;
+  }
+  // Remove + if present for consistency, then add back
+  cleaned = cleaned.replace(/^\+/, "");
+  
+  return "+" + cleaned;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -53,7 +92,7 @@ serve(async (req) => {
     // Verify organizer belongs to user
     const { data: organizer, error: orgError } = await supabase
       .from("organizers")
-      .select("id, user_id, business_name, business_email, country_code, flutterwave_subaccount_id")
+      .select("id, user_id, business_name, business_email, business_phone, country_code, flutterwave_subaccount_id")
       .eq("id", organizerId)
       .eq("user_id", user.id)
       .single();
@@ -116,8 +155,8 @@ serve(async (req) => {
         business_name: businessName || organizer.business_name,
         business_email: organizer.business_email,
         business_contact: organizer.business_email,
-        business_contact_mobile: "+2340000000000", // Placeholder, update if you have phone
-        business_mobile: "+2340000000000",
+        business_contact_mobile: formatPhoneForFlutterwave(organizer.business_phone, organizer.country_code),
+        business_mobile: formatPhoneForFlutterwave(organizer.business_phone, organizer.country_code),
         country: countryMap[organizer.country_code] || "NG",
         split_type: "percentage",
         split_value: platformFeePercentage, // Platform takes this percentage
@@ -163,6 +202,37 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Send confirmation email
+    try {
+      await supabase.functions.invoke("send-email", {
+        body: {
+          type: "flutterwave_subaccount_activated",
+          to: organizer.business_email,
+          data: {
+            organizerName: organizer.business_name,
+            bankName: flutterwaveData.data.account_bank,
+            accountNumber: flutterwaveData.data.account_number,
+            platformFeePercent: platformFeePercentage,
+          },
+        },
+      });
+    } catch (emailError) {
+      console.error("Failed to send confirmation email:", emailError);
+      // Don't fail the whole request if email fails
+    }
+
+    // Log audit event
+    await supabase.from("admin_audit_logs").insert({
+      action: "flutterwave_subaccount_created",
+      entity_type: "organizer",
+      entity_id: organizerId,
+      details: {
+        subaccountId,
+        businessName: flutterwaveData.data.business_name,
+        bank: flutterwaveData.data.account_bank,
+      },
+    });
 
     return new Response(
       JSON.stringify({

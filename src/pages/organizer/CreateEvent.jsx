@@ -4,7 +4,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   X, Calendar, Clock, MapPin, Ticket, Image as ImageIcon,
   Plus, Trash2, Upload, Loader2, DollarSign, Info, ExternalLink,
-  Users, Pencil, Shield, Monitor, Sparkles,
+  Users, Pencil, Shield, Monitor, Sparkles, CheckCircle, XCircle,
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -53,6 +53,20 @@ export function CreateEvent() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [tabErrors, setTabErrors] = useState({});
+  const errorRef = useRef(null);
+  
+  // Helper function to set error and scroll to show it
+  const showError = (message) => {
+    setError(message);
+    // Scroll to top of modal content to show error
+    setTimeout(() => {
+      if (errorRef.current) {
+        errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
+  };
   const [fieldErrors, setFieldErrors] = useState({});
   const [urlManuallyEdited, setUrlManuallyEdited] = useState(false);
   const [urlStatus, setUrlStatus] = useState({ checking: false, available: null, message: "" });
@@ -418,10 +432,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             }
             }
           }
-        } catch (err) {
-          console.error("Error loading event:", err);
-          setError("Failed to load event data");
-        } finally {
+} catch (err) {
+      console.error("Error loading event:", err);
+      showError("Failed to load event data");
+    } finally {
           setLoadingEvent(false);
         }
       }
@@ -584,7 +598,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
   const goToNextTab = () => {
     const errors = validateCurrentTab();
     if (errors.length > 0) {
-      setError(errors.join(". "));
+      showError(errors.join(". "));
       return;
     }
     setError("");
@@ -669,7 +683,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     }
     
     if (allErrors.length > 0) {
-      setError(allErrors[0]); // Show first error
+      showError(allErrors[0]); // Show first error
       // Stay on current tab or go to first tab with errors
       return;
     }
@@ -736,7 +750,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       }
     } catch (err) {
       console.error("Error saving country:", err);
-      setError("Failed to save country. Please try again.");
+      showError("Failed to save country. Please try again.");
     } finally {
       setSavingCountry(false);
     }
@@ -744,14 +758,19 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
   const handleInputChange = (field, value) => {
     // Auto-populate slug from title
-    if (field === "title" && !urlManuallyEdited) {
-      // Remove special characters from title (allow letters, numbers, spaces, hyphens, apostrophes, commas, periods)
-      const sanitizedTitle = value.replace(/[^a-zA-Z0-9\s\-',.!?&()]/g, '');
-      const slug = generateSlug(sanitizedTitle);
-      setFormData(prev => ({ ...prev, title: sanitizedTitle, slug: slug }));
-      // Debounce URL check
-      clearTimeout(urlCheckTimeout.current);
-      urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(slug), 500);
+    if (field === "title") {
+      // Remove special characters from title (only allow letters, numbers, spaces, hyphens, apostrophes)
+      const sanitizedTitle = value.replace(/[^a-zA-Z0-9\s\-']/g, '');
+      
+      if (!urlManuallyEdited) {
+        const slug = generateSlug(sanitizedTitle);
+        setFormData(prev => ({ ...prev, title: sanitizedTitle, slug: slug }));
+        // Debounce URL check
+        clearTimeout(urlCheckTimeout.current);
+        urlCheckTimeout.current = setTimeout(() => checkUrlAvailability(slug), 500);
+      } else {
+        setFormData(prev => ({ ...prev, title: sanitizedTitle }));
+      }
       return;
     }
     // Check URL when slug changes
@@ -1034,13 +1053,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     }
 
     if (!organizer?.id) {
-      setError('Organizer profile not found');
+      showError('Organizer profile not found');
       return;
     }
 
     const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0 && (formData.isFree || parseFloat(t.price) > 0));
     if (!formData.isFree && validTickets.length === 0) {
-      setError('Please add at least one ticket type');
+      showError('Please add at least one ticket type');
       setActiveTab('ticketing');
       return;
     }
@@ -1069,8 +1088,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     if (Object.keys(errors).length > 0) {
       const firstErrorTab = Object.keys(errors)[0];
       setActiveTab(firstErrorTab);
-      setError(Object.values(errors).join(". "));
-      window.scrollTo(0, 0);
+      showError(Object.values(errors).join(". "));
       return;
     }
 
@@ -1599,7 +1617,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       }
     } catch (err) {
       console.error('Error saving event:', err);
-      setError(err.message || 'Failed to save event');
+      showError(err.message || 'Failed to save event');
     } finally {
       setSaving(false);
     }
@@ -1645,8 +1663,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2">
-              <Info className="w-5 h-5" />{error}
+            <div ref={errorRef} className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2">
+              <Info className="w-5 h-5 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -1673,12 +1692,35 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     onChange={(e) => handleInputChange("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
                     className="h-12 rounded-xl bg-[#F4F6FA] border-0 flex-1"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => checkUrlAvailability(formData.slug)}
+                    disabled={urlStatus.checking || !formData.slug || formData.slug.length < 3}
+                    className="h-12 px-4 rounded-xl whitespace-nowrap"
+                  >
+                    {urlStatus.checking ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Check'
+                    )}
+                  </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                  {urlStatus.checking && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
-                  {urlStatus.available === true && <span className="text-xs text-green-600">✓ {urlStatus.message}</span>}
-                  {urlStatus.available === false && <span className="text-xs text-red-600">✗ {urlStatus.message}</span>}
-                  {!urlStatus.checking && urlStatus.available === null && <span className="text-xs text-[#0F0F0F]/40">Required - this will be your shareable event link</span>}
+                  {urlStatus.available === true && (
+                    <span className="text-xs text-green-600 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> {urlStatus.message}
+                    </span>
+                  )}
+                  {urlStatus.available === false && (
+                    <span className="text-xs text-red-600 flex items-center gap-1">
+                      <XCircle className="w-3 h-3" /> {urlStatus.message}
+                    </span>
+                  )}
+                  {!urlStatus.checking && urlStatus.available === null && (
+                    <span className="text-xs text-[#0F0F0F]/40">Required - this will be your shareable event link</span>
+                  )}
                 </div>
               </div>
 

@@ -35,12 +35,10 @@ Verify these are set:
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
-  -H "apikey: YOUR_SERVICE_ROLE_KEY" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI" \
+  -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI" \
   https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-birthday-emails
 ```
-
-Replace `YOUR_SERVICE_ROLE_KEY` with your actual key from Supabase Dashboard → Project Settings → API
 
 **Expected Response**:
 ```json
@@ -61,7 +59,7 @@ Replace `YOUR_SERVICE_ROLE_KEY` with your actual key from Supabase Dashboard →
 Once the function is deployed and tested, set up the daily cron job:
 
 1. Go to Supabase Dashboard → SQL Editor
-2. Run this SQL (replace `YOUR_SERVICE_ROLE_KEY`):
+2. Run this SQL:
 
 ```sql
 -- Enable extensions (if not already enabled)
@@ -78,8 +76,8 @@ SELECT cron.schedule(
       url := 'https://bkvbvggngttrizbchygy.supabase.co/functions/v1/send-birthday-emails',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY',
-        'apikey', 'YOUR_SERVICE_ROLE_KEY'
+        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI',
+        'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmJ2Z2duZ3R0cml6YmNoeWd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDUyNzMyMSwiZXhwIjoyMDgwMTAzMzIxfQ.HuxKaRzcMeX0gxz1f3f7-SsSFbbIRWShAk9Eog6rRBI'
       ),
       body := '{}'::jsonb
     ) AS request_id;

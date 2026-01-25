@@ -1,0 +1,525 @@
+{
+  "startTime": "2026-01-25T13:35:23.462Z",
+  "endTime": "2026-01-25T13:36:02.307Z",
+  "duration": 38.845,
+  "summary": {
+    "total": 21,
+    "passed": 8,
+    "failed": 2,
+    "skipped": 11
+  },
+  "tests": [
+    {
+      "bot": "OrganizerBot",
+      "name": "Login",
+      "description": "Log in as organizer or register new account",
+      "status": "failed",
+      "startTime": "2026-01-25T13:35:25.367Z",
+      "endTime": "2026-01-25T13:35:34.311Z",
+      "duration": 8.944,
+      "steps": [
+        {
+          "step": "Navigated to login page",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:27.466Z"
+        },
+        {
+          "step": "Entered email",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:28.018Z"
+        },
+        {
+          "step": "Entered password",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:30.251Z"
+        },
+        {
+          "step": "Clicked login button",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:30.806Z"
+        }
+      ],
+      "errors": [
+        {
+          "message": "Login did not redirect to dashboard",
+          "stack": "Error: Login did not redirect to dashboard\n    at OrganizerBot.testLogin (file:///Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:119:13)\n    at async OrganizerBot.runAllTests (file:///Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:651:7)\n    at async runBots (file:///Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:35:34.311Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-login-1769348133818.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-login-1769348133818.png",
+        "tests/bots/screenshots/OrganizerBot-login-1769348133818.png"
+      ]
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Create Event",
+      "description": "Create a new event with ticket types",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.312Z",
+      "endTime": "2026-01-25T13:35:34.312Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.312Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "View Events",
+      "description": "View list of events",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.312Z",
+      "endTime": "2026-01-25T13:35:34.312Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.312Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Analytics Dashboard",
+      "description": "View analytics and reports",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.313Z",
+      "endTime": "2026-01-25T13:35:34.313Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.313Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Communication Hub",
+      "description": "Access communication features",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.313Z",
+      "endTime": "2026-01-25T13:35:34.313Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.313Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Contact Management",
+      "description": "View and manage contacts",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.313Z",
+      "endTime": "2026-01-25T13:35:34.313Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.313Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Payouts & Finance",
+      "description": "View payout settings and history",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.314Z",
+      "endTime": "2026-01-25T13:35:34.314Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.314Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Profile Settings",
+      "description": "View and update organizer profile",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.314Z",
+      "endTime": "2026-01-25T13:35:34.314Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.314Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Promo Codes",
+      "description": "View and create promo codes",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.314Z",
+      "endTime": "2026-01-25T13:35:34.315Z",
+      "duration": 0.001,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.314Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Team Management",
+      "description": "View and manage team members",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.315Z",
+      "endTime": "2026-01-25T13:35:34.315Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.315Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "OrganizerBot",
+      "name": "Check-in Management",
+      "description": "Access check-in features",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:34.315Z",
+      "endTime": "2026-01-25T13:35:34.315Z",
+      "duration": 0,
+      "steps": [
+        {
+          "step": "Not logged in, skipping test",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:34.315Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Homepage",
+      "description": "Visit and verify homepage loads correctly",
+      "status": "passed",
+      "startTime": "2026-01-25T13:35:36.039Z",
+      "endTime": "2026-01-25T13:35:37.959Z",
+      "duration": 1.92,
+      "steps": [
+        {
+          "step": "Navigated to homepage",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:37.918Z"
+        },
+        {
+          "step": "Logo visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:37.958Z"
+        },
+        {
+          "step": "Navigation visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:37.959Z"
+        },
+        {
+          "step": "Main content visible",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:37.959Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Event Discovery",
+      "description": "Browse and search for events",
+      "status": "passed",
+      "startTime": "2026-01-25T13:35:37.959Z",
+      "endTime": "2026-01-25T13:35:41.484Z",
+      "duration": 3.525,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:39.450Z"
+        },
+        {
+          "step": "Events are displayed",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:41.484Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "View Event Details",
+      "description": "Open and view event details page",
+      "status": "passed",
+      "startTime": "2026-01-25T13:35:41.484Z",
+      "endTime": "2026-01-25T13:35:44.094Z",
+      "duration": 2.61,
+      "steps": [
+        {
+          "step": "Navigated to events page",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:42.916Z"
+        },
+        {
+          "step": "Clicked on event",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:44.078Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "User Login",
+      "description": "Log in as user",
+      "status": "passed",
+      "startTime": "2026-01-25T13:35:44.094Z",
+      "endTime": "2026-01-25T13:35:50.145Z",
+      "duration": 6.051,
+      "steps": [
+        {
+          "step": "Navigated to login page",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:45.542Z"
+        },
+        {
+          "step": "Entered email",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:46.070Z"
+        },
+        {
+          "step": "Entered password",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:46.591Z"
+        },
+        {
+          "step": "Clicked login",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:47.143Z"
+        },
+        {
+          "step": "Login successful",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:50.144Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Ticket Purchase",
+      "description": "Complete a ticket purchase flow",
+      "status": "skipped",
+      "startTime": "2026-01-25T13:35:50.145Z",
+      "endTime": "2026-01-25T13:35:52.811Z",
+      "duration": 2.666,
+      "steps": [
+        {
+          "step": "Browsing events",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:51.618Z"
+        },
+        {
+          "step": "Opened event details",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:52.803Z"
+        },
+        {
+          "step": "No buy button found",
+          "success": false,
+          "timestamp": "2026-01-25T13:35:52.811Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "My Tickets",
+      "description": "View purchased tickets",
+      "status": "passed",
+      "startTime": "2026-01-25T13:35:52.811Z",
+      "endTime": "2026-01-25T13:35:54.262Z",
+      "duration": 1.451,
+      "steps": [
+        {
+          "step": "Navigated to my tickets page",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:54.235Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "User Profile",
+      "description": "View and update user profile",
+      "status": "passed",
+      "startTime": "2026-01-25T13:35:54.262Z",
+      "endTime": "2026-01-25T13:35:55.669Z",
+      "duration": 1.407,
+      "steps": [
+        {
+          "step": "Navigated to profile page",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:55.645Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Wallet Pass",
+      "description": "Check wallet pass availability",
+      "status": "passed",
+      "startTime": "2026-01-25T13:35:55.670Z",
+      "endTime": "2026-01-25T13:35:57.077Z",
+      "duration": 1.407,
+      "steps": [
+        {
+          "step": "Navigated to my tickets",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:57.051Z"
+        },
+        {
+          "step": "No wallet options found (may need purchased ticket)",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:57.077Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Follow Organizer",
+      "description": "Follow an event organizer",
+      "status": "passed",
+      "startTime": "2026-01-25T13:35:57.078Z",
+      "endTime": "2026-01-25T13:35:59.621Z",
+      "duration": 2.543,
+      "steps": [
+        {
+          "step": "Opened event details",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:59.611Z"
+        },
+        {
+          "step": "Follow button not found on this page",
+          "success": true,
+          "timestamp": "2026-01-25T13:35:59.621Z"
+        }
+      ],
+      "errors": [],
+      "screenshots": []
+    },
+    {
+      "bot": "UserBot",
+      "name": "Ticket Transfer",
+      "description": "Check ticket transfer feature",
+      "status": "failed",
+      "startTime": "2026-01-25T13:35:59.622Z",
+      "endTime": "2026-01-25T13:36:01.931Z",
+      "duration": 2.309,
+      "steps": [
+        {
+          "step": "Navigated to my tickets",
+          "success": true,
+          "timestamp": "2026-01-25T13:36:01.051Z"
+        }
+      ],
+      "errors": [
+        {
+          "message": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Transfer\"), text=/transfer/i\". Did you mean to CSS.escape it?\nCall log:\n\u001b[2m    - checking visibility of button:has-text(\"Transfer\"), text=/transfer/i >> nth=0\u001b[22m\n",
+          "stack": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Transfer\"), text=/transfer/i\". Did you mean to CSS.escape it?\nCall log:\n\u001b[2m    - checking visibility of button:has-text(\"Transfer\"), text=/transfer/i >> nth=0\u001b[22m\n\n    at UserBot.testTicketTransfer (/Users/bajideace/Desktop/ticketrack/tests/bots/user-bot.js:592:29)\n    at async UserBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/user-bot.js:632:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:109:7)",
+          "timestamp": "2026-01-25T13:36:01.931Z",
+          "screenshot": "tests/bots/screenshots/UserBot-ticket-transfer-1769348161059.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/UserBot-ticket-transfer-1769348161059.png",
+        "tests/bots/screenshots/UserBot-ticket-transfer-1769348161059.png"
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "bot": "OrganizerBot",
+      "test": "Login",
+      "errors": [
+        {
+          "message": "Login did not redirect to dashboard",
+          "stack": "Error: Login did not redirect to dashboard\n    at OrganizerBot.testLogin (file:///Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:119:13)\n    at async OrganizerBot.runAllTests (file:///Users/bajideace/Desktop/ticketrack/tests/bots/organizer-bot.js:651:7)\n    at async runBots (file:///Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:99:7)",
+          "timestamp": "2026-01-25T13:35:34.311Z",
+          "screenshot": "tests/bots/screenshots/OrganizerBot-login-1769348133818.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/OrganizerBot-login-1769348133818.png",
+        "tests/bots/screenshots/OrganizerBot-login-1769348133818.png"
+      ]
+    },
+    {
+      "bot": "UserBot",
+      "test": "Ticket Transfer",
+      "errors": [
+        {
+          "message": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Transfer\"), text=/transfer/i\". Did you mean to CSS.escape it?\nCall log:\n\u001b[2m    - checking visibility of button:has-text(\"Transfer\"), text=/transfer/i >> nth=0\u001b[22m\n",
+          "stack": "locator.isVisible: Unexpected token \"=\" while parsing css selector \"button:has-text(\"Transfer\"), text=/transfer/i\". Did you mean to CSS.escape it?\nCall log:\n\u001b[2m    - checking visibility of button:has-text(\"Transfer\"), text=/transfer/i >> nth=0\u001b[22m\n\n    at UserBot.testTicketTransfer (/Users/bajideace/Desktop/ticketrack/tests/bots/user-bot.js:592:29)\n    at async UserBot.runAllTests (/Users/bajideace/Desktop/ticketrack/tests/bots/user-bot.js:632:7)\n    at async runBots (/Users/bajideace/Desktop/ticketrack/tests/bots/run-bots.js:109:7)",
+          "timestamp": "2026-01-25T13:36:01.931Z",
+          "screenshot": "tests/bots/screenshots/UserBot-ticket-transfer-1769348161059.png"
+        }
+      ],
+      "screenshots": [
+        "tests/bots/screenshots/UserBot-ticket-transfer-1769348161059.png",
+        "tests/bots/screenshots/UserBot-ticket-transfer-1769348161059.png"
+      ]
+    }
+  ]
+}

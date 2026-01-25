@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { errorResponse, logError } from './_shared/errorHandler.ts';
+import { errorResponse, logError } from '../_shared/errorHandler.ts';
 
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 

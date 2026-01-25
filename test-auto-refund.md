@@ -11,7 +11,7 @@ npx supabase login
 npx supabase functions deploy auto-refund-on-cancellation
 
 # Or if you're using a linked project
-npx supabase functions deploy auto-refund-on-cancellation --project-ref YOUR_PROJECT_REF
+npx supabase functions deploy auto-refund-on-cancellation --project-ref bkvbvggngttrizbchygy
 ```
 
 ### Option 2: Deploy via Supabase Dashboard

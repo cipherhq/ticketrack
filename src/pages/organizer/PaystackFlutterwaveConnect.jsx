@@ -72,6 +72,67 @@ const GHANAIAN_BANKS = [
   { code: 'GH150100', name: 'Republic Bank Ghana' },
 ];
 
+// Kenyan banks list
+const KENYAN_BANKS = [
+  { code: 'KE001', name: 'Kenya Commercial Bank' },
+  { code: 'KE002', name: 'Standard Chartered Bank Kenya' },
+  { code: 'KE003', name: 'Barclays Bank of Kenya' },
+  { code: 'KE004', name: 'Bank of India (Kenya)' },
+  { code: 'KE005', name: 'Bank of Baroda (Kenya)' },
+  { code: 'KE007', name: 'Commercial Bank of Africa' },
+  { code: 'KE010', name: 'Prime Bank' },
+  { code: 'KE011', name: 'Co-operative Bank of Kenya' },
+  { code: 'KE012', name: 'National Bank of Kenya' },
+  { code: 'KE014', name: 'Oriental Commercial Bank' },
+  { code: 'KE016', name: 'Citibank N.A. Kenya' },
+  { code: 'KE018', name: 'Middle East Bank Kenya' },
+  { code: 'KE019', name: 'Bank of Africa Kenya' },
+  { code: 'KE023', name: 'Consolidated Bank of Kenya' },
+  { code: 'KE025', name: 'Credit Bank' },
+  { code: 'KE026', name: 'Transnational Bank' },
+  { code: 'KE030', name: 'Chase Bank Kenya' },
+  { code: 'KE031', name: 'Stanbic Bank Kenya' },
+  { code: 'KE035', name: 'African Banking Corporation' },
+  { code: 'KE039', name: 'Imperial Bank Kenya' },
+  { code: 'KE041', name: 'NIC Bank' },
+  { code: 'KE043', name: 'Giro Commercial Bank' },
+  { code: 'KE049', name: 'Equatorial Commercial Bank' },
+  { code: 'KE051', name: 'Paramount Universal Bank' },
+  { code: 'KE054', name: 'Jamii Bora Bank' },
+  { code: 'KE055', name: 'Guaranty Trust Bank Kenya' },
+  { code: 'KE057', name: 'I&M Bank' },
+  { code: 'KE061', name: 'Housing Finance Company' },
+  { code: 'KE063', name: 'Diamond Trust Bank' },
+  { code: 'KE066', name: 'Equity Bank' },
+  { code: 'KE068', name: 'Family Bank' },
+  { code: 'KE070', name: 'Gulf African Bank' },
+  { code: 'KE072', name: 'First Community Bank' },
+  { code: 'KE074', name: 'DIB Bank Kenya' },
+  { code: 'KE076', name: 'UBA Kenya' },
+  { code: 'KE078', name: 'Sidian Bank' },
+  { code: 'KE079', name: 'M-Pesa' },
+];
+
+// South African banks list
+const SOUTH_AFRICAN_BANKS = [
+  { code: 'ZA001', name: 'ABSA Bank' },
+  { code: 'ZA002', name: 'Standard Bank' },
+  { code: 'ZA003', name: 'First National Bank (FNB)' },
+  { code: 'ZA004', name: 'Nedbank' },
+  { code: 'ZA005', name: 'Capitec Bank' },
+  { code: 'ZA006', name: 'Investec Bank' },
+  { code: 'ZA007', name: 'African Bank' },
+  { code: 'ZA008', name: 'Bidvest Bank' },
+  { code: 'ZA009', name: 'Discovery Bank' },
+  { code: 'ZA010', name: 'Grindrod Bank' },
+  { code: 'ZA011', name: 'Mercantile Bank' },
+  { code: 'ZA012', name: 'Sasfin Bank' },
+  { code: 'ZA013', name: 'TymeBank' },
+  { code: 'ZA014', name: 'Bank Zero' },
+  { code: 'ZA015', name: 'Ubank' },
+  { code: 'ZA016', name: 'Old Mutual' },
+];
+
 // Status badge component
 const StatusBadge = ({ status }) => {
   const statusConfig = {
@@ -114,10 +175,32 @@ export function PaystackFlutterwaveConnect() {
   // Determine which provider to use based on country
   const isNigeria = organizer?.country_code === 'NG';
   const isGhana = organizer?.country_code === 'GH';
-  const isEligible = isNigeria || isGhana;
+  const isKenya = organizer?.country_code === 'KE';
+  const isSouthAfrica = organizer?.country_code === 'ZA';
+  const isEligible = isNigeria || isGhana || isKenya || isSouthAfrica;
+  
+  // Nigeria uses Paystack, other countries use Flutterwave
   const provider = isNigeria ? 'Paystack' : 'Flutterwave';
-  const banks = isNigeria ? NIGERIAN_BANKS : GHANAIAN_BANKS;
-  const currency = isNigeria ? '₦' : 'GH₵';
+  
+  // Get appropriate bank list based on country
+  const getBanks = () => {
+    if (isNigeria) return NIGERIAN_BANKS;
+    if (isGhana) return GHANAIAN_BANKS;
+    if (isKenya) return KENYAN_BANKS;
+    if (isSouthAfrica) return SOUTH_AFRICAN_BANKS;
+    return [];
+  };
+  const banks = getBanks();
+  
+  // Get currency symbol based on country
+  const getCurrency = () => {
+    if (isNigeria) return '₦';
+    if (isGhana) return 'GH₵';
+    if (isKenya) return 'KSh';
+    if (isSouthAfrica) return 'R';
+    return '$';
+  };
+  const currency = getCurrency();
   
   // Get current subaccount status
   const paystackStatus = organizer?.paystack_subaccount_status || 'not_started';
@@ -159,7 +242,7 @@ export function PaystackFlutterwaveConnect() {
         setAccountName(data.accountName);
         setAccountVerified(true);
       } else {
-        // For Ghana/other countries, skip verification (Flutterwave doesn't have easy verification)
+        // For Ghana, Kenya, South Africa - skip verification (Flutterwave doesn't have easy verification)
         setAccountVerified(true);
         setAccountName(businessName);
       }
@@ -231,7 +314,7 @@ export function PaystackFlutterwaveConnect() {
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-[#0F0F0F] mb-2">Not Available in Your Region</h2>
             <p className="text-[#0F0F0F]/60 max-w-md mx-auto">
-              Direct payments via Paystack/Flutterwave are currently only available for organizers in Nigeria and Ghana.
+              Direct payments via Paystack/Flutterwave are currently only available for organizers in Nigeria, Ghana, Kenya, and South Africa.
               Your region uses our standard payout system.
             </p>
             <Button onClick={() => navigate('/organizer/finance')} className="mt-6">
@@ -393,12 +476,12 @@ export function PaystackFlutterwaveConnect() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-[#0F0F0F]">Faster Settlements</p>
                   <p className="text-sm text-[#0F0F0F]/60">
-                    {isNigeria ? 'Next-day' : 'T+1'} settlement to your bank
+                    {isNigeria ? 'Next-day' : 'T+1 to T+2'} settlement to your bank
                   </p>
                 </div>
               </div>
