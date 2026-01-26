@@ -108,14 +108,18 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
       if (eventIds.length > 0) {
         const oneDayAgo = new Date()
         oneDayAgo.setDate(oneDayAgo.getDate() - 1)
-        const { data: orders } = await supabase
+        const { data: orders, error: ordersError } = await supabase
           .from('orders')
-          .select('id, order_number, total_amount, currency, created_at, event_id, user:users(full_name)')
+          .select('id, order_number, total_amount, currency, created_at, event_id, buyer_name, buyer_email')
           .in('event_id', eventIds)
           .in('status', ['completed', 'confirmed', 'paid'])
           .gte('created_at', oneDayAgo.toISOString())
           .order('created_at', { ascending: false })
           .limit(10)
+
+        if (ordersError) {
+          console.log('Error fetching orders for notifications:', ordersError.message)
+        }
 
         orders?.forEach(order => {
           items.push({
@@ -123,7 +127,7 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
             type: 'order',
             icon: Receipt,
             title: 'New Order',
-            message: `${order.user?.full_name || 'Someone'} purchased tickets for ${eventMap[order.event_id] || 'an event'}`,
+            message: `${order.buyer_name || order.buyer_email || 'Someone'} purchased tickets for ${eventMap[order.event_id] || 'an event'}`,
             amount: order.total_amount,
             currency: order.currency,
             time: order.created_at,
@@ -548,12 +552,16 @@ export function useOrganizerNotifications(organizerId) {
         // Fetch new orders (since last viewed or last 24 hours)
         if (eventIds.length > 0) {
           const sinceTime = ordersLastViewed || new Date(Date.now() - 24 * 60 * 60 * 1000)
-          const { count } = await supabase
+          const { count, error: ordersError } = await supabase
             .from('orders')
             .select('*', { count: 'exact', head: true })
             .in('event_id', eventIds)
             .in('status', ['completed', 'confirmed', 'paid'])
             .gte('created_at', sinceTime.toISOString())
+
+          if (ordersError) {
+            console.log('Error counting orders:', ordersError.message)
+          }
           ordersCount = count || 0
         }
 
