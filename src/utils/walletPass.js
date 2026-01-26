@@ -378,19 +378,42 @@ export async function getAppleWalletPass(ticketId) {
         window.location.href = data.passUrl
         return { success: true }
       }
+      
+      // If backend returns fallback flag or error, use client-side generation
+      if (data?.fallback || error) {
+        console.log('Backend not configured or unavailable, using client-side generation')
+        // Client-side generation should always work (no certificates needed)
+        return await generateClientSideApplePass(ticketData, ticketData.event)
+      }
     } catch (backendError) {
       console.log('Backend pass generation not available, using client-side generation')
+      // Client-side generation should always work
+      return await generateClientSideApplePass(ticketData, ticketData.event)
     }
 
-    // Fallback to client-side generation
-    return await generateClientSideApplePass(ticketData, ticketData.event)
+    // Fallback to client-side generation (shouldn't reach here, but just in case)
+    try {
+      return await generateClientSideApplePass(ticketData, ticketData.event)
+    } catch (clientError) {
+      console.error('Client-side generation also failed:', clientError)
+      return { 
+        success: false, 
+        error: clientError.message,
+        fallback: true
+      }
+    }
     
   } catch (error) {
     console.error('Apple Wallet pass error:', error)
-    return { 
-      success: false, 
-      error: error.message,
-      fallback: true
+    // Try client-side generation as last resort
+    try {
+      return await generateClientSideApplePass(ticketData, ticketData.event)
+    } catch (clientError) {
+      return { 
+        success: false, 
+        error: error.message,
+        fallback: true
+      }
     }
   }
 }

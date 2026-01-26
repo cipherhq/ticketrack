@@ -52,17 +52,26 @@ export function WalletButtons({ ticket, event, size = 'default', className = '',
 
       if (platform === 'calendar') {
         setSuccess('calendar')
-      } else if (result.fallback) {
-        // Wallet not configured - show a helpful message but don't auto-fallback to calendar
-        setError(result.message || `${platform === 'apple' ? 'Apple' : 'Google'} Wallet coming soon! Use "Add to Calendar" for now.`)
       } else if (result.success) {
         setSuccess(platform)
+      } else if (result.fallback && platform === 'apple') {
+        // For Apple Wallet, client-side generation should always work
+        // If we get here, something went wrong - show error but don't say "coming soon"
+        setError(result.error || 'Failed to generate Apple Wallet pass. Please try again or use "Add to Calendar".')
+      } else if (result.fallback) {
+        // For Google Wallet, if not configured, show coming soon
+        setError(result.message || `${platform === 'apple' ? 'Apple' : 'Google'} Wallet coming soon! Use "Add to Calendar" for now.`)
       } else {
         setError(result.error || 'Failed to add to wallet')
       }
     } catch (err) {
       console.error('Wallet error:', err)
-      setError(err.message || 'Something went wrong. Try "Add to Calendar" instead.')
+      // For Apple Wallet, client-side generation should work, so don't show "coming soon"
+      if (platform === 'apple') {
+        setError('Failed to generate Apple Wallet pass. Please try again or use "Add to Calendar".')
+      } else {
+        setError(err.message || 'Something went wrong. Try "Add to Calendar" instead.')
+      }
     } finally {
       setLoading(null)
       // Clear success/error message after 5 seconds
