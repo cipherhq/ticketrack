@@ -218,7 +218,7 @@ function loadJSZip() {
     }
     
     const script = document.createElement('script')
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+    script.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'
     script.onload = () => {
       if (window.JSZip) {
         resolve(window.JSZip)
