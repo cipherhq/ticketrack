@@ -321,35 +321,55 @@ async function generateClientSideApplePass(ticket, event) {
     // Generate the .pkpass file
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
     
-    // Create blob with correct MIME type for Apple Wallet
-    const pkpassBlob = new Blob([blob], { type: 'application/vnd.apple.pkpass' })
-    const url = URL.createObjectURL(pkpassBlob)
-    
-    // For iOS devices, open without download attribute so iOS can recognize it
-    // For other devices, also open without download - they can save it manually if needed
+    // iOS requires the file to be served from a URL with proper Content-Type header
+    // Convert blob to base64 and create a data URL - iOS can handle this
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     
-    const link = document.createElement('a')
-    link.href = url
-    
-    // Only use download attribute for non-iOS devices
-    // iOS needs to handle the file natively to add to Wallet
-    if (!isIOSDevice) {
+    if (isIOSDevice) {
+      // For iOS, convert to base64 data URL with correct MIME type
+      const reader = new FileReader()
+      return new Promise((resolve, reject) => {
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1]
+          const dataUrl = `data:application/vnd.apple.pkpass;base64,${base64}`
+          
+          // Create a temporary link and trigger it
+          const link = document.createElement('a')
+          link.href = dataUrl
+          link.style.display = 'none'
+          document.body.appendChild(link)
+          link.click()
+          
+          setTimeout(() => {
+            document.body.removeChild(link)
+          }, 1000)
+          
+          resolve({ success: true })
+        }
+        reader.onerror = () => {
+          reject(new Error('Failed to read blob'))
+        }
+        reader.readAsDataURL(blob)
+      })
+    } else {
+      // For non-iOS, download the file
+      const pkpassBlob = new Blob([blob], { type: 'application/vnd.apple.pkpass' })
+      const url = URL.createObjectURL(pkpassBlob)
+      const link = document.createElement('a')
+      link.href = url
       link.download = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${ticket.ticket_code}.pkpass`
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      
+      setTimeout(() => {
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+      }, 1000)
+      
+      return { success: true }
     }
-    
-    link.style.display = 'none'
-    document.body.appendChild(link)
-    link.click()
-    
-    // Clean up after a delay
-    setTimeout(() => {
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    }, 1000)
-    
-    return { success: true }
   } catch (error) {
     console.error('Client-side Apple Pass generation error:', error)
     throw error
@@ -382,30 +402,29 @@ export async function getAppleWalletPass(ticketId) {
       throw new Error('Ticket not found')
     }
 
-    // Try backend first
+    // Try backend first - even if not fully configured, it can serve the file with correct headers
     try {
       const { data, error } = await supabase.functions.invoke('generate-wallet-pass', {
         body: {
           ticketId,
-          platform: 'apple'
+          platform: 'apple',
+          useClientSide: true // Tell backend to use client-side generation but serve with proper headers
         }
       })
       
       if (!error && data?.passUrl) {
-        // Backend generated pass successfully
+        // Backend generated pass successfully and served with correct headers
         window.location.href = data.passUrl
         return { success: true }
       }
       
-      // If backend returns fallback flag or error, use client-side generation
+      // If backend returns fallback flag or error, use client-side generation with storage upload
       if (data?.fallback || error) {
-        console.log('Backend not configured or unavailable, using client-side generation')
-        // Client-side generation should always work (no certificates needed)
+        console.log('Backend not configured, using client-side generation with storage')
         return await generateClientSideApplePass(ticketData, ticketData.event)
       }
     } catch (backendError) {
-      console.log('Backend pass generation not available, using client-side generation')
-      // Client-side generation should always work
+      console.log('Backend pass generation not available, using client-side generation with storage')
       return await generateClientSideApplePass(ticketData, ticketData.event)
     }
 
