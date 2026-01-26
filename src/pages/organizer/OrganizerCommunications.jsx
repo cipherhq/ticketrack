@@ -191,7 +191,7 @@ export function OrganizerCommunications() {
         .from('tickets')
         .select('id', { count: 'exact', head: true })
         .eq('event_id', form.eventId)
-        .eq('payment_status', 'completed');
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
       count = c || 0;
     } else if (form.recipientType === 'followers') {
       const { count: c } = await supabase
@@ -344,7 +344,7 @@ export function OrganizerCommunications() {
         .from('tickets')
         .select('attendee_email, attendee_name, ticket_types(name)')
         .eq('event_id', form.eventId)
-        .eq('payment_status', 'completed');
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
       
       recipients = (data || []).map(t => ({
         email: t.attendee_email,

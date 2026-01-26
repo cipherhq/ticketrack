@@ -123,7 +123,7 @@ export function Analytics() {
       .from('tickets')
       .select('total_price, quantity, created_at, event_id')
       .in('event_id', eventIds)
-      .eq('payment_status', 'completed')
+      .in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
       .gte('created_at', startDate.toISOString());
 
     // Group by currency
@@ -159,7 +159,7 @@ export function Analytics() {
       .from('tickets')
       .select('id, currency')
       .in('event_id', eventIds)
-      .eq('payment_status', 'completed')
+      .in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
       .eq('is_checked_in', true);
 
     const totalAttendees = checkedIn?.length || 0;
@@ -207,7 +207,7 @@ export function Analytics() {
       .from('tickets')
       .select('total_price, quantity, created_at')
       .in('event_id', eventIds)
-      .eq('payment_status', 'completed')
+      .in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
       .gte('created_at', startDate.toISOString());
 
     tickets?.forEach(ticket => {
@@ -307,7 +307,7 @@ export function Analytics() {
       .from('tickets')
       .select('total_price, created_at, event_id')
       .in('event_id', eventIds)
-      .eq('payment_status', 'completed')
+      .in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
       .gte('created_at', startDate.toISOString());
 
     tickets?.forEach(ticket => {

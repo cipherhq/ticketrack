@@ -67,7 +67,7 @@ export function PostEventDashboard() {
   }
 
   const loadSummary = async (eventData) => {
-    const { data: tickets } = await supabase.from('tickets').select('*').eq('event_id', id).eq('payment_status', 'completed')
+    const { data: tickets } = await supabase.from('tickets').select('*').eq('event_id', id).in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
     const { data: orders } = await supabase.from('orders').select('*').eq('event_id', id).eq('status', 'completed')
     const { data: refunds } = await supabase.from('refund_requests').select('*').eq('event_id', id)
     
@@ -89,7 +89,7 @@ export function PostEventDashboard() {
   const loadInsights = async () => {
     const { data: tickets } = await supabase.from('tickets')
       .select('*, user:profiles(country_code), ticket_type:ticket_types(name)')
-      .eq('event_id', id).eq('payment_status', 'completed')
+      .eq('event_id', id).in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
     const { data: orders } = await supabase.from('orders').select('*').eq('event_id', id).eq('status', 'completed')
 
     const locationMap = {}
@@ -114,7 +114,7 @@ export function PostEventDashboard() {
   const loadAttendees = async () => {
     const { data } = await supabase.from('tickets')
       .select('attendee_name, attendee_email, is_checked_in, quantity, user:profiles(country_code)')
-      .eq('event_id', id).eq('payment_status', 'completed')
+      .eq('event_id', id).in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
     setAttendees(data || [])
   }
 

@@ -167,7 +167,7 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
         weekAgo.setDate(weekAgo.getDate() - 7)
         const { data: followers } = await supabase
           .from('followers')
-          .select('id, created_at, user:users(full_name)')
+          .select('id, created_at, profiles:user_id(full_name)')
           .eq('organizer_id', organizerId)
           .gte('created_at', weekAgo.toISOString())
           .order('created_at', { ascending: false })
@@ -179,7 +179,7 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
             type: 'follower',
             icon: UserPlus,
             title: 'New Follower',
-            message: `${follower.user?.full_name || 'Someone'} started following you`,
+            message: `${follower.profiles?.full_name || 'Someone'} started following you`,
             time: follower.created_at,
             path: '/organizer/followers',
             notificationKey: 'followers'

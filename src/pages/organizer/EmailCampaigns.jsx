@@ -218,7 +218,7 @@ export function EmailCampaigns() {
         .from('tickets')
         .select('id', { count: 'exact', head: true })
         .eq('event_id', formData.eventId)
-        .eq('payment_status', 'completed');
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
       count = attendeeCount || 0;
     } else if (formData.recipientType === 'all_attendees') {
       // Get all events for this organizer
@@ -233,7 +233,7 @@ export function EmailCampaigns() {
           .from('tickets')
           .select('id', { count: 'exact', head: true })
           .in('event_id', eventIds)
-          .eq('payment_status', 'completed');
+          .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
         count = attendeeCount || 0;
       }
     }
@@ -381,7 +381,7 @@ export function EmailCampaigns() {
         .from('tickets')
         .select('attendee_email, attendee_name, ticket_types(name)')
         .eq('event_id', formData.eventId)
-        .eq('payment_status', 'completed');
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
       recipients = attendees?.map(a => ({
         email: a.attendee_email,
         name: a.attendee_name,
@@ -399,7 +399,7 @@ export function EmailCampaigns() {
           .from('tickets')
           .select('attendee_email, attendee_name, ticket_types(name)')
           .in('event_id', eventIds)
-          .eq('payment_status', 'completed');
+          .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
         recipients = attendees?.map(a => ({
           email: a.attendee_email,
           name: a.attendee_name,

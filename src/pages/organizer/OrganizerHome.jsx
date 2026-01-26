@@ -129,7 +129,7 @@ export function OrganizerHome() {
         .from('tickets')
         .select('quantity, total_price, event_id')
         .in('event_id', eventIds)
-        .eq('payment_status', 'completed');
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
 
       if (!ticketsError && tickets) {
         totalTickets = tickets.reduce((sum, t) => sum + (t.quantity || 1), 0);

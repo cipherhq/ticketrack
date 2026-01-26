@@ -672,7 +672,7 @@ export function CommunicationHub() {
         .from('tickets')
         .select('attendee_email, attendee_phone')
         .eq('event_id', form.eventId)
-        .eq('payment_status', 'completed');
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
 
       emailCount = (data || []).filter(t => t.attendee_email).length;
       smsCount = (data || []).filter(t => t.attendee_phone).length;
@@ -727,7 +727,7 @@ export function CommunicationHub() {
         .from('tickets')
         .select('id, attendee_name, attendee_email, attendee_phone, ticket_type_name')
         .eq('event_id', form.eventId)
-        .eq('payment_status', 'completed');
+        .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
 
       (data || []).forEach(t => {
         if (channel === 'email' && t.attendee_email) {

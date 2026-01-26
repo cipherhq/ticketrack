@@ -133,7 +133,7 @@ export function SMSCampaigns() {
           .from('tickets')
           .select('id', { count: 'exact', head: true })
           .in('event_id', eventIds)
-          .eq('payment_status', 'completed')
+          .in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
           .not('attendee_phone', 'is', null);
         
         attendeesCount = count || 0;

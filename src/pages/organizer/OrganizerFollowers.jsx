@@ -81,7 +81,7 @@ export function OrganizerFollowers() {
               .select('id, total_amount, created_at, checked_in_at, event_id')
               .eq('user_id', follower.user_id)
               .in('event_id', eventIds)
-              .eq('payment_status', 'completed');
+              .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
 
             eventsAttended = tickets?.filter(t => t.checked_in_at)?.length || 0;
             
