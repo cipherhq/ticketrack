@@ -701,17 +701,18 @@ export function WebCreateEvent() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-[#0F0F0F]/60 whitespace-nowrap">ticketrack.com/e/</span>
                     <Input
-                      placeholder="my-awesome-event"
+                      placeholder={formData.title?.trim() ? "my-awesome-event" : "Enter event title first"}
                       value={formData.custom_url}
                       onChange={(e) => handleInputChange("custom_url", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
-                      className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
+                      disabled={!formData.title?.trim()}
+                      className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${!formData.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''} ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => checkUrlAvailability(formData.custom_url)}
-                      disabled={urlStatus.checking || !formData.custom_url || formData.custom_url.length < 3}
+                      disabled={urlStatus.checking || !formData.custom_url || formData.custom_url.length < 3 || !formData.title?.trim()}
                       className="h-12 px-4 rounded-xl whitespace-nowrap"
                     >
                       {urlStatus.checking ? (
@@ -722,17 +723,22 @@ export function WebCreateEvent() {
                     </Button>
                   </div>
                   <div className="flex items-center gap-2">
-                    {urlStatus.available === true && (
+                    {!formData.title?.trim() && (
+                      <span className="text-xs text-amber-600 flex items-center gap-1">
+                        <Info className="w-3 h-3" /> Please enter an event title first - the URL will be auto-generated
+                      </span>
+                    )}
+                    {formData.title?.trim() && urlStatus.available === true && (
                       <span className="text-xs text-green-600 flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" /> {urlStatus.message}
                       </span>
                     )}
-                    {urlStatus.available === false && (
+                    {formData.title?.trim() && urlStatus.available === false && (
                       <span className="text-xs text-red-600 flex items-center gap-1">
                         <XCircle className="w-3 h-3" /> {urlStatus.message} - please choose a different URL
                       </span>
                     )}
-                    {!urlStatus.checking && urlStatus.available === null && (
+                    {formData.title?.trim() && !urlStatus.checking && urlStatus.available === null && (
                       <span className="text-xs text-[#0F0F0F]/40">Leave blank to auto-generate from title</span>
                     )}
                   </div>

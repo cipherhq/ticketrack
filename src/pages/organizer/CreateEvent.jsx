@@ -61,6 +61,7 @@ export function CreateEvent() {
   const [urlManuallyEdited, setUrlManuallyEdited] = useState(false);
   const [urlStatus, setUrlStatus] = useState({ checking: false, available: null, message: "" });
   const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [savingCountry, setSavingCountry] = useState(false);
   const [showStripeConnectModal, setShowStripeConnectModal] = useState(false);
   const [showPaystackFlutterwaveModal, setShowPaystackFlutterwaveModal] = useState(false);
@@ -249,11 +250,15 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
   // Load categories from database
   useEffect(() => {
     const loadCategories = async () => {
+      setLoadingCategories(true);
       try {
         const data = await getCategories();
         setCategories(data || []);
       } catch (err) {
         console.error("Error loading categories:", err);
+        setCategories([]);
+      } finally {
+        setLoadingCategories(false);
       }
     };
     loadCategories();
@@ -1701,17 +1706,18 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-[#0F0F0F]/60 whitespace-nowrap">ticketrack.com/e/</span>
                   <Input
-                    placeholder="my-awesome-event"
+                    placeholder={formData.title?.trim() ? "my-awesome-event" : "Enter event title first"}
                     value={formData.slug}
                     onChange={(e) => handleInputChange("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
-                    className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
+                    disabled={!formData.title?.trim()}
+                    className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${!formData.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''} ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => checkUrlAvailability(formData.slug)}
-                    disabled={urlStatus.checking || !formData.slug || formData.slug.length < 3}
+                    disabled={urlStatus.checking || !formData.slug || formData.slug.length < 3 || !formData.title?.trim()}
                     className="h-12 px-4 rounded-xl whitespace-nowrap"
                   >
                     {urlStatus.checking ? (
@@ -1722,17 +1728,22 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                  {urlStatus.available === true && (
+                  {!formData.title?.trim() && (
+                    <span className="text-xs text-amber-600 flex items-center gap-1">
+                      <Info className="w-3 h-3" /> Please enter an event title first - the URL will be auto-generated
+                    </span>
+                  )}
+                  {formData.title?.trim() && urlStatus.available === true && (
                     <span className="text-xs text-green-600 flex items-center gap-1">
                       <CheckCircle className="w-3 h-3" /> {urlStatus.message}
                     </span>
                   )}
-                  {urlStatus.available === false && (
+                  {formData.title?.trim() && urlStatus.available === false && (
                     <span className="text-xs text-red-600 flex items-center gap-1">
                       <XCircle className="w-3 h-3" /> {urlStatus.message} - please choose a different URL
                     </span>
                   )}
-                  {!urlStatus.checking && urlStatus.available === null && (
+                  {formData.title?.trim() && !urlStatus.checking && urlStatus.available === null && (
                     <span className="text-xs text-[#0F0F0F]/40">Required - this will be your shareable event link</span>
                   )}
                 </div>
@@ -1740,22 +1751,43 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
               <div className="space-y-2">
                 <Label>Event Category <span className="text-red-500">*</span></Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => handleInputChange('eventType', category.name)}
-                      className={`p-3 rounded-xl border text-center transition-all ${
-                        formData.eventType === category.name
-                          ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
-                          : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
-                      }`}
-                    >
-                      {category.icon} {category.name}
-                    </button>
-                  ))}
-                </div>
+                {loadingCategories ? (
+                  <div className="flex items-center justify-center p-8 border border-[#0F0F0F]/10 rounded-xl bg-[#F4F6FA]">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#2969FF] mr-2" />
+                    <span className="text-sm text-[#0F0F0F]/60">Loading categories...</span>
+                  </div>
+                ) : categories.length === 0 ? (
+                  <div className="space-y-3">
+                    <div className="p-4 border border-amber-200 rounded-xl bg-amber-50">
+                      <p className="text-sm text-amber-800">
+                        No categories available. Please contact support or use the text input below.
+                      </p>
+                    </div>
+                    <Input
+                      placeholder="Enter event category manually"
+                      value={formData.eventType}
+                      onChange={(e) => handleInputChange('eventType', e.target.value)}
+                      className="h-12 rounded-xl bg-[#F4F6FA]"
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {categories.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => handleInputChange('eventType', category.name)}
+                        className={`p-3 rounded-xl border text-center transition-all ${
+                          formData.eventType === category.name
+                            ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
+                            : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                        }`}
+                      >
+                        {category.icon} {category.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
