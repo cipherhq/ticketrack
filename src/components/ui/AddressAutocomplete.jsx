@@ -102,13 +102,11 @@ export function AddressAutocomplete({
 
   // Handle place selection
   const handlePlaceSelect = useCallback(async (event) => {
-    const { placePrediction } = event;
-    
-    if (!placePrediction) return;
+    const place = event.place;
+
+    if (!place) return;
 
     try {
-      const place = placePrediction.toPlace();
-      
       // Fetch the fields we need
       await place.fetchFields({
         fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'],
@@ -117,7 +115,7 @@ export function AddressAutocomplete({
       const placeData = {
         address: place.formattedAddress || '',
         name: place.displayName || '',
-        placeId: placePrediction.placeId || placePrediction.place_id || '',
+        placeId: place.id || '',
         lat: place.location?.lat() || null,
         lng: place.location?.lng() || null,
         city: '',
@@ -190,7 +188,7 @@ export function AddressAutocomplete({
       placeAutocomplete.placeholder = placeholder;
 
       // Add event listener for place selection
-      placeAutocomplete.addEventListener('gmp-select', handlePlaceSelect);
+      placeAutocomplete.addEventListener('gmp-placeselect', handlePlaceSelect);
 
       // Clear the container and append the element
       containerRef.current.innerHTML = '';
@@ -203,7 +201,7 @@ export function AddressAutocomplete({
 
     return () => {
       if (autocompleteElementRef.current) {
-        autocompleteElementRef.current.removeEventListener('gmp-select', handlePlaceSelect);
+        autocompleteElementRef.current.removeEventListener('gmp-placeselect', handlePlaceSelect);
         autocompleteElementRef.current = null;
       }
     };
