@@ -110,7 +110,7 @@ export function ManageAttendees() {
         ticket_types (id, name)
       `)
       .in('event_id', eventIds)
-      .eq('payment_status', 'completed')
+      .in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
       .order('created_at', { ascending: false });
 
     if (ticketsError) throw ticketsError;

@@ -517,7 +517,7 @@ export function WebFreeRSVP() {
           unit_price: 0,
           total_price: 0,
           payment_reference: 'FREE',
-          payment_status: 'free',
+          payment_status: 'completed',
           payment_method: 'free',
           status: 'active'
         })
@@ -975,7 +975,7 @@ export function WebFreeRSVP() {
           unit_price: 0,
           total_price: 0,
           payment_reference: 'FREE',
-          payment_status: 'free',
+          payment_status: 'completed',
           payment_method: 'free',
           status: 'active'
         })
