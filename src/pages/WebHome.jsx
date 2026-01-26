@@ -194,7 +194,11 @@ const EventCard = ({ event, showDistance = false }) => {
         </div>
         <div className="mt-auto flex items-center justify-between">
           <span className="text-sm text-gray-500">From</span>
-          <span className="font-bold text-blue-600">{event.is_free ? 'Free' : formatPrice(event.min_price, event.currency)}</span>
+          <span className="font-bold text-blue-600">
+            {event.is_free || event.min_price === 0 || event.min_price === null 
+              ? 'Free' 
+              : formatPrice(event.min_price, event.currency || 'USD')}
+          </span>
         </div>
       </div>
     </Link>
@@ -273,7 +277,11 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
               </div>
               <div className="mt-auto flex items-center justify-between">
                 <span className="text-sm text-gray-500">From</span>
-                <span className="font-bold text-blue-600">{event.is_free ? 'Free' : formatPrice(event.min_price, event.currency)}</span>
+                <span className="font-bold text-blue-600">
+                  {event.is_free || event.min_price === 0 || event.min_price === null 
+                    ? 'Free' 
+                    : formatPrice(event.min_price, event.currency || 'USD')}
+                </span>
               </div>
             </div>
           </Link>
@@ -408,7 +416,18 @@ export function WebHome() {
       // Compute min_price and low stock status from ticket_types for each event
       const eventsWithPrices = allEvents?.map(event => {
         const prices = event.ticket_types?.map(t => t.price).filter(p => p !== null && p !== undefined) || [];
-        const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+        let minPrice = prices.length > 0 ? Math.min(...prices) : null;
+        
+        // If event is marked as free, ensure min_price is 0
+        if (event.is_free) {
+          minPrice = 0;
+        }
+        
+        // If no ticket types and not explicitly free, set to null (will show as "Free" or "Price TBA")
+        if (minPrice === null && (!event.ticket_types || event.ticket_types.length === 0)) {
+          // If event is not marked as free but has no ticket types, treat as free
+          minPrice = 0;
+        }
         
         // Calculate total remaining tickets and check if low stock
         let totalRemaining = 0;

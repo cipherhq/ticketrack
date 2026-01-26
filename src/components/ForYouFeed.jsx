@@ -114,9 +114,9 @@ function FeedEventCard({ event, onSaveToggle }) {
         {/* Price Badge */}
         <div className="absolute bottom-3 left-3">
           <Badge className="bg-white/95 text-[#0F0F0F] font-semibold">
-            {event.min_price > 0 
-              ? `From ${formatPrice(event.min_price, event.currency)}`
-              : 'Free'
+            {event.is_free || event.min_price === 0 || event.min_price === null || event.min_price === undefined
+              ? 'Free'
+              : `From ${formatPrice(event.min_price, event.currency || 'USD')}`
             }
           </Badge>
         </div>
