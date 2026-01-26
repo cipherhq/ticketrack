@@ -1343,15 +1343,51 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               is_required: field.is_required,
               display_order: index,
             }));
-          
+
           if (customFieldsToInsert.length > 0) {
             const { error: customFieldsError } = await supabase
               .from('event_custom_fields')
               .insert(customFieldsToInsert);
-            
+
             if (customFieldsError) {
               console.error('Error creating custom fields:', customFieldsError);
             }
+          }
+        }
+
+        // Create invite codes for invite_only events
+        if (formData.visibility === 'invite_only' && formData.accessSettings?.inviteCodes?.length > 0) {
+          const inviteCodesToInsert = formData.accessSettings.inviteCodes.map(code => ({
+            event_id: savedEvent.id,
+            code: code.code?.toUpperCase() || code.toUpperCase(),
+            name: code.name || null,
+            max_uses: code.maxUses || null,
+            expires_at: code.expiresAt || null,
+            is_active: true,
+          }));
+
+          const { error: inviteCodesError } = await supabase
+            .from('event_invite_codes')
+            .insert(inviteCodesToInsert);
+
+          if (inviteCodesError) {
+            console.error('Error creating invite codes:', inviteCodesError);
+          }
+        }
+
+        // Create email whitelist for email_whitelist events
+        if (formData.visibility === 'email_whitelist' && formData.accessSettings?.emailWhitelist?.length > 0) {
+          const emailsToInsert = formData.accessSettings.emailWhitelist.map(entry => ({
+            event_id: savedEvent.id,
+            email: (entry.email || entry).toLowerCase().trim(),
+          }));
+
+          const { error: emailWhitelistError } = await supabase
+            .from('event_email_whitelist')
+            .insert(emailsToInsert);
+
+          if (emailWhitelistError) {
+            console.error('Error creating email whitelist:', emailWhitelistError);
           }
         }
 
