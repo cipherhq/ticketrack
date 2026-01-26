@@ -1,7 +1,7 @@
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle, Heart, Users, ChevronDown, ChevronRight, DollarSign, HelpCircle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle, Heart, Users, ChevronDown, ChevronRight, DollarSign, HelpCircle, Mail, Send, Key, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -80,6 +80,15 @@ export function EventManagement() {
   const [expandedRecurringEvents, setExpandedRecurringEvents] = useState({});
   const [childEventsData, setChildEventsData] = useState({});
   const [loadingChildEvents, setLoadingChildEvents] = useState({});
+
+  // Access management modal state
+  const [accessModal, setAccessModal] = useState({ open: false, event: null });
+  const [accessCodes, setAccessCodes] = useState([]);
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [newAccessCode, setNewAccessCode] = useState({ code: '', name: '', maxUses: '' });
+  const [newPassword, setNewPassword] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   useEffect(() => {
     if (organizer?.id) {
@@ -695,6 +704,202 @@ export function EventManagement() {
     }
   };
 
+  // Access Management Functions
+  const openAccessModal = async (event) => {
+    setAccessModal({ open: true, event });
+    setNewAccessCode({ code: '', name: '', maxUses: '' });
+    setNewPassword(event.access_password || '');
+    setInviteEmail('');
+
+    if (event.visibility === 'invite_only') {
+      await loadAccessCodes(event.id);
+    }
+  };
+
+  const closeAccessModal = () => {
+    setAccessModal({ open: false, event: null });
+    setAccessCodes([]);
+    setNewAccessCode({ code: '', name: '', maxUses: '' });
+    setNewPassword('');
+    setInviteEmail('');
+  };
+
+  const loadAccessCodes = async (eventId) => {
+    setAccessLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('event_invite_codes')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAccessCodes(data || []);
+    } catch (err) {
+      console.error('Error loading access codes:', err);
+    } finally {
+      setAccessLoading(false);
+    }
+  };
+
+  const generateRandomCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewAccessCode(prev => ({ ...prev, code }));
+  };
+
+  const addAccessCode = async () => {
+    if (!newAccessCode.code.trim()) {
+      generateRandomCode();
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('event_invite_codes')
+        .insert({
+          event_id: accessModal.event.id,
+          code: newAccessCode.code.toUpperCase().trim(),
+          name: newAccessCode.name.trim() || null,
+          max_uses: newAccessCode.maxUses ? parseInt(newAccessCode.maxUses) : null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setAccessCodes(prev => [data, ...prev]);
+      setNewAccessCode({ code: '', name: '', maxUses: '' });
+    } catch (err) {
+      console.error('Error adding code:', err);
+      alert('Failed to add code. It may already exist.');
+    }
+  };
+
+  const deleteAccessCode = async (codeId) => {
+    try {
+      const { error } = await supabase
+        .from('event_invite_codes')
+        .delete()
+        .eq('id', codeId);
+
+      if (error) throw error;
+      setAccessCodes(prev => prev.filter(c => c.id !== codeId));
+    } catch (err) {
+      console.error('Error deleting code:', err);
+    }
+  };
+
+  const toggleCodeActive = async (codeId, currentStatus) => {
+    try {
+      const { error } = await supabase
+        .from('event_invite_codes')
+        .update({ is_active: !currentStatus })
+        .eq('id', codeId);
+
+      if (error) throw error;
+      setAccessCodes(prev => prev.map(c => c.id === codeId ? { ...c, is_active: !currentStatus } : c));
+    } catch (err) {
+      console.error('Error toggling code:', err);
+    }
+  };
+
+  const updateEventPassword = async () => {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ access_password: newPassword.trim() })
+        .eq('id', accessModal.event.id);
+
+      if (error) throw error;
+      setEvents(prev => prev.map(e => e.id === accessModal.event.id ? { ...e, access_password: newPassword.trim() } : e));
+      alert('Password updated successfully!');
+    } catch (err) {
+      console.error('Error updating password:', err);
+      alert('Failed to update password');
+    }
+  };
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPassword(password);
+  };
+
+  const sendInviteEmail = async () => {
+    if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    setSendingInvite(true);
+    try {
+      // Get or create a code for this invite
+      let codeToSend = accessCodes.find(c => c.is_active && (!c.max_uses || c.current_uses < c.max_uses));
+
+      if (!codeToSend) {
+        // Create a new code for this invite
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let newCode = '';
+        for (let i = 0; i < 8; i++) {
+          newCode += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        const { data, error } = await supabase
+          .from('event_invite_codes')
+          .insert({
+            event_id: accessModal.event.id,
+            code: newCode,
+            name: `Email invite - ${inviteEmail}`,
+            max_uses: 1,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        codeToSend = data;
+        setAccessCodes(prev => [data, ...prev]);
+      }
+
+      // Send the invite email
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: {
+          type: 'event_invite',
+          to: inviteEmail.trim().toLowerCase(),
+          data: {
+            eventTitle: accessModal.event.title,
+            eventDate: accessModal.event.start_date,
+            eventVenue: accessModal.event.venue_name,
+            eventCity: accessModal.event.city,
+            inviteCode: codeToSend.code,
+            eventUrl: `${window.location.origin}/e/${accessModal.event.slug || accessModal.event.id}`,
+            organizerName: organizer?.business_name || 'The organizer',
+          }
+        }
+      });
+
+      if (emailError) throw emailError;
+
+      alert(`Invite sent to ${inviteEmail}!`);
+      setInviteEmail('');
+    } catch (err) {
+      console.error('Error sending invite:', err);
+      alert('Failed to send invite. Please try again.');
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied to clipboard!');
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'No date set';
     return new Date(dateString).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
@@ -906,6 +1111,12 @@ export function EventManagement() {
                               <DropdownMenuItem onClick={() => handleReuseTemplate(event)}><Copy className="w-4 h-4 mr-2" />Reuse Event Template</DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
+                            {(event.visibility === 'invite_only' || event.visibility === 'password') && (
+                              <DropdownMenuItem onClick={() => openAccessModal(event)}>
+                                <Shield className="w-4 h-4 mr-2" />
+                                {event.visibility === 'invite_only' ? 'Manage Invite Codes' : 'Manage Password'}
+                              </DropdownMenuItem>
+                            )}
                             {canIssue && <DropdownMenuItem onClick={() => openIssueTicketModal(event)}><Ticket className="w-4 h-4 mr-2" />Issue Tickets</DropdownMenuItem>}
                             <DropdownMenuItem onClick={() => navigate(`/organizer/events/${event.id}/attendees`)}>View Attendees</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => navigate(`/organizer/analytics?event=${event.id}`)}>View Analytics</DropdownMenuItem>
@@ -1084,6 +1295,240 @@ export function EventManagement() {
                 </Button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Access Management Modal */}
+      {accessModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-semibold text-[#0F0F0F]">
+                  {accessModal.event?.visibility === 'invite_only' ? 'Manage Invite Codes' : 'Manage Event Password'}
+                </h3>
+                <p className="text-sm text-[#0F0F0F]/60 mt-1">{accessModal.event?.title}</p>
+              </div>
+              <button onClick={closeAccessModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-[#0F0F0F]/60" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Password Protected Event */}
+              {accessModal.event?.visibility === 'password' && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-4">
+                    <Lock className="w-5 h-5" />
+                    <span className="text-sm">Attendees must enter this password to access your event</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-[#0F0F0F]">Event Password</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter event password"
+                        className="flex-1 h-12 rounded-xl bg-[#F4F6FA] border-0 font-mono"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={generateRandomPassword}
+                        className="h-12 rounded-xl"
+                        title="Generate random password"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => copyToClipboard(newPassword)}
+                        className="h-12 rounded-xl"
+                        title="Copy password"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={updateEventPassword}
+                    className="w-full h-12 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    Update Password
+                  </Button>
+                </div>
+              )}
+
+              {/* Invite Code Event */}
+              {accessModal.event?.visibility === 'invite_only' && (
+                <div className="space-y-6">
+                  {/* Send Invite by Email */}
+                  <div className="p-4 bg-blue-50 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2 text-blue-700">
+                      <Mail className="w-5 h-5" />
+                      <span className="font-medium">Send Invite by Email</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="Enter email address"
+                        className="flex-1 h-10 rounded-lg bg-white border border-blue-200"
+                      />
+                      <Button
+                        onClick={sendInviteEmail}
+                        disabled={sendingInvite}
+                        className="h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                      >
+                        {sendingInvite ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-blue-600">A unique invite code will be generated and sent to this email</p>
+                  </div>
+
+                  {/* Add New Code */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-[#0F0F0F]">Create New Invite Code</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        value={newAccessCode.code}
+                        onChange={(e) => setNewAccessCode(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                        placeholder="Code (e.g., VIP2024)"
+                        className="flex-1 h-10 rounded-lg bg-[#F4F6FA] border-0 font-mono uppercase"
+                        maxLength={20}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={generateRandomCode}
+                        className="h-10 rounded-lg"
+                        title="Generate random code"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="text"
+                        value={newAccessCode.name}
+                        onChange={(e) => setNewAccessCode(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Label (optional)"
+                        className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                      />
+                      <Input
+                        type="number"
+                        value={newAccessCode.maxUses}
+                        onChange={(e) => setNewAccessCode(prev => ({ ...prev, maxUses: e.target.value }))}
+                        placeholder="Max uses (unlimited)"
+                        className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                        min="1"
+                      />
+                    </div>
+                    <Button
+                      onClick={addAccessCode}
+                      className="w-full h-10 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-lg"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Code
+                    </Button>
+                  </div>
+
+                  {/* Existing Codes */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-[#0F0F0F]">
+                      Existing Codes ({accessCodes.length})
+                    </Label>
+
+                    {accessLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
+                      </div>
+                    ) : accessCodes.length === 0 ? (
+                      <div className="text-center py-8 text-[#0F0F0F]/40">
+                        <Ticket className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                        <p>No invite codes yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {accessCodes.map((code) => (
+                          <div
+                            key={code.id}
+                            className={`p-3 rounded-lg border ${
+                              code.is_active ? 'bg-[#F4F6FA] border-transparent' : 'bg-gray-100 border-gray-200 opacity-60'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-medium text-[#0F0F0F]">{code.code}</span>
+                                  {code.name && (
+                                    <Badge className="bg-purple-100 text-purple-700 text-xs">{code.name}</Badge>
+                                  )}
+                                  {!code.is_active && (
+                                    <Badge className="bg-gray-200 text-gray-600 text-xs">Disabled</Badge>
+                                  )}
+                                </div>
+                                <div className="text-xs text-[#0F0F0F]/50 mt-1">
+                                  Used: {code.current_uses || 0}
+                                  {code.max_uses && ` / ${code.max_uses}`}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => copyToClipboard(code.code)}
+                                  className="h-8 w-8 rounded-lg"
+                                  title="Copy code"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => toggleCodeActive(code.id, code.is_active)}
+                                  className={`h-8 w-8 rounded-lg ${code.is_active ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}`}
+                                  title={code.is_active ? 'Disable code' : 'Enable code'}
+                                >
+                                  {code.is_active ? <X className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => deleteAccessCode(code.id)}
+                                  className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50"
+                                  title="Delete code"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100">
+              <Button
+                onClick={closeAccessModal}
+                variant="outline"
+                className="w-full h-12 rounded-xl"
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}

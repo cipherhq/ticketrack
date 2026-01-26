@@ -111,13 +111,13 @@ export function AddressAutocomplete({
       
       // Fetch the fields we need
       await place.fetchFields({
-        fields: ['displayName', 'formattedAddress', 'location', 'addressComponents', 'id'],
+        fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'],
       });
 
       const placeData = {
         address: place.formattedAddress || '',
         name: place.displayName || '',
-        placeId: place.id || '',
+        placeId: placePrediction.placeId || placePrediction.place_id || '',
         lat: place.location?.lat() || null,
         lng: place.location?.lng() || null,
         city: '',
