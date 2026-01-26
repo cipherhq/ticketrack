@@ -123,6 +123,15 @@ export function AdminSettings() {
     setSaving(true);
     try {
       const { data: countryData } = countryModal;
+      
+      // Ensure service_fee_fixed_per_ticket is set (for Fee Management and Pricing Page)
+      // Also keep service_fee_fixed for backward compatibility
+      if (countryData.service_fee_fixed_per_ticket !== undefined) {
+        countryData.service_fee_fixed = countryData.service_fee_fixed_per_ticket;
+      } else if (countryData.service_fee_fixed !== undefined) {
+        countryData.service_fee_fixed_per_ticket = countryData.service_fee_fixed;
+      }
+      
       if (countryModal.isNew) {
         await supabase.from('countries').insert(countryData);
         const featureInserts = features.map(f => ({
@@ -448,7 +457,7 @@ export function AdminSettings() {
                         </div>
                         <div className="p-3 bg-white rounded-lg">
                           <p className="text-xs text-[#0F0F0F]/60">Service Fee (Fixed)</p>
-                          <p className="font-semibold text-[#0F0F0F]">{currency?.symbol}{country.service_fee_fixed || 0}</p>
+                          <p className="font-semibold text-[#0F0F0F]">{currency?.symbol}{country.service_fee_fixed_per_ticket || country.service_fee_fixed || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -1335,9 +1344,9 @@ export function AdminSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Country Modal - UPDATED: Only 2 fee fields */}
+      {/* Country Modal - UPDATED: Only 2 fee fields (for Pricing Page) */}
       <Dialog open={countryModal.open} onOpenChange={(open) => !open && setCountryModal({ open: false, data: null })}>
-        <DialogContent className="rounded-2xl max-w-2xl">
+        <DialogContent className="rounded-2xl max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{countryModal.isNew ? 'Add Country' : 'Edit Country'}</DialogTitle>
           </DialogHeader>
@@ -1395,28 +1404,45 @@ export function AdminSettings() {
                 </div>
               </div>
               
-              {/* UPDATED: Only 2 fee fields */}
+              {/* UPDATED: Only 2 fee fields (for Pricing Page) - Uses service_fee_fixed_per_ticket to match Fee Management */}
               <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">Fee Configuration (Displayed on Pricing Page)</h4>
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="font-medium">Fee Configuration (Displayed on Pricing Page)</h4>
+                  <a 
+                    href="/admin/fees" 
+                    className="text-xs text-[#2969FF] hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.href = '/admin/fees';
+                    }}
+                  >
+                    View Full Fee Management →
+                  </a>
+                </div>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl mb-4">
+                  <p className="text-xs text-blue-800">
+                    <strong>Note:</strong> These are the two fees shown on the pricing page. For comprehensive fee management (processing fees, caps, etc.), use the <strong>Fee Management</strong> page.
+                  </p>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Service Fee (%)</Label>
                     <Input 
                       type="number"
                       step="0.1"
-                      value={countryModal.data.service_fee_percentage} 
+                      value={countryModal.data.service_fee_percentage || 0} 
                       onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, service_fee_percentage: parseFloat(e.target.value) || 0 }}))}
                       className="rounded-xl mt-1"
                     />
                     <p className="text-xs text-[#0F0F0F]/50 mt-1">Percentage fee per ticket</p>
                   </div>
                   <div>
-                    <Label>Service Fee (Fixed)</Label>
+                    <Label>Service Fee (Fixed per Ticket)</Label>
                     <Input 
                       type="number"
                       step="0.01"
-                      value={countryModal.data.service_fee_fixed} 
-                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, service_fee_fixed: parseFloat(e.target.value) || 0 }}))}
+                      value={countryModal.data.service_fee_fixed_per_ticket || countryModal.data.service_fee_fixed || 0} 
+                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, service_fee_fixed_per_ticket: parseFloat(e.target.value) || 0, service_fee_fixed: parseFloat(e.target.value) || 0 }}))}
                       className="rounded-xl mt-1"
                     />
                     <p className="text-xs text-[#0F0F0F]/50 mt-1">Fixed amount per ticket (in local currency)</p>
