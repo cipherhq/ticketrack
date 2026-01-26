@@ -320,16 +320,34 @@ async function generateClientSideApplePass(ticket, event) {
 
     // Generate the .pkpass file
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
-    const url = URL.createObjectURL(blob)
     
-    // Trigger download
+    // Create blob with correct MIME type for Apple Wallet
+    const pkpassBlob = new Blob([blob], { type: 'application/vnd.apple.pkpass' })
+    const url = URL.createObjectURL(pkpassBlob)
+    
+    // For iOS devices, open without download attribute so iOS can recognize it
+    // For other devices, also open without download - they can save it manually if needed
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    
     const link = document.createElement('a')
     link.href = url
-    link.download = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${ticket.ticket_code}.pkpass`
+    
+    // Only use download attribute for non-iOS devices
+    // iOS needs to handle the file natively to add to Wallet
+    if (!isIOSDevice) {
+      link.download = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${ticket.ticket_code}.pkpass`
+    }
+    
+    link.style.display = 'none'
     document.body.appendChild(link)
     link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    
+    // Clean up after a delay
+    setTimeout(() => {
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }, 1000)
     
     return { success: true }
   } catch (error) {
