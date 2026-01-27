@@ -287,7 +287,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   bank_account_verified: d => ({ subject: `✅ Bank verified on ${BRAND_NAME}`, html: baseTemplate(`<div class="success"><strong>Bank Account Verified!</strong></div><h2>Ready for Payouts</h2><p>Hi ${d.organizerName},</p><p>Your bank is now active.</p><div class="card"><div class="row"><span class="label">Bank</span><span class="value">${d.bankName}</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:#10b981">Active</span></div></div>`) }),
   bank_change_confirmation: d => ({ subject: `⚠️ Confirm bank change - ${BRAND_NAME}`, html: securityTemplate(`<h2>Confirm Bank Change</h2><p>Hi ${d.organizerName},</p><p>Confirm this change:</p><div class="box"><div class="row"><span>Action</span><span>${d.changeType}</span></div><div class="row"><span>Bank</span><span>${d.bankName}</span></div></div><div class="btn-wrap"><a href="${d.confirmationUrl}" class="btn">Confirm</a><a href="${d.cancelUrl}" class="btn-secondary">Cancel</a></div>`, 'Confirm bank change') }),
   // TICKETS
-  ticket_purchase: d => ({ subject: `Tickets for ${d.eventTitle} - Confirmed!`, html: baseTemplate(`
+  ticket_purchase: d => ({ subject: `Your Tickets for ${d.eventTitle || 'Your Event'}`, html: baseTemplate(`
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td align="center" style="padding-bottom: 20px;">
@@ -299,7 +299,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                       </tr>
                     </table>
                     <h2 style="margin: 24px 0 8px 0; font-size: 24px; font-weight: 700; color: #1a1a2e;">Payment Confirmed</h2>
-                    <p style="margin: 0; font-size: 16px; color: #6b7280;">Your tickets have been secured</p>
+                    <p style="margin: 0; font-size: 16px; color: #6b7280;">Hi ${d.attendeeName || 'there'}, your tickets have been secured!</p>
                   </td>
                 </tr>
               </table>
@@ -307,19 +307,26 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                 <tr>
                   <td align="center" style="padding: 20px;">
                     <p style="margin: 0 0 4px 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Order Reference</p>
-                    <p style="margin: 0; font-size: 22px; font-weight: 700; color: #6366f1; font-family: monospace;">${d.orderNumber}</p>
+                    <p style="margin: 0; font-size: 22px; font-weight: 700; color: #6366f1; font-family: monospace;">${d.orderNumber || 'N/A'}</p>
                   </td>
                 </tr>
               </table>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #faf5ff; border-radius: 8px; border: 1px solid #e9d5ff; margin-bottom: 20px;">
                 <tr>
                   <td style="padding: 24px;">
-                    <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #1a1a2e;">${d.eventTitle}</h3>
-                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Date:</strong> ${formatDate(d.eventDate)}</p>
-                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Time:</strong> ${formatTime(d.eventDate)}</p>
+                    <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #1a1a2e;">${d.eventTitle || 'Event'}</h3>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Date:</strong> ${d.eventDate ? formatDate(d.eventDate) : 'TBA'}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Time:</strong> ${d.eventDate ? formatTime(d.eventDate) : 'TBA'}</p>
                     <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Venue:</strong> ${d.venueName || 'TBA'}</p>
-                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Ticket:</strong> ${d.ticketType} x ${d.quantity}</p>
-                    <p style="margin: 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Total:</strong> ${d.isFree ? 'FREE' : formatCurrency(d.totalAmount, d.currency)}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Ticket:</strong> ${d.ticketType || 'General'} x ${d.quantity || 1}</p>
+                    <p style="margin: 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Total:</strong> ${d.isFree ? 'FREE' : formatCurrency(d.totalAmount || 0, d.currency || 'NGN')}</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #fef9c3; border-radius: 8px; border: 1px solid #fde047; margin-bottom: 20px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="margin: 0; font-size: 14px; color: #854d0e;">Your PDF ticket is attached to this email. You can also view and download your tickets anytime from the app.</p>
                   </td>
                 </tr>
               </table>
@@ -335,7 +342,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                     </table>
                   </td>
                 </tr>
-              </table>`, `Tickets for ${d.eventTitle} confirmed!`) }),
+              </table>`, `Your tickets for ${d.eventTitle || 'your event'} are confirmed!`) }),
   ticket_cancelled: d => ({ subject: `Ticket Cancelled - ${d.eventTitle}`, html: baseTemplate(`<h2>Ticket Cancelled</h2><p>Hi ${d.attendeeName},</p><p>Your ticket for <strong>${d.eventTitle}</strong> was cancelled.</p>${d.refundAmount ? `<div class="success"><strong>Refund of ${formatCurrency(d.refundAmount, d.currency)} processing.</strong></div>` : ''}`) }),
   ticket_refunded: d => ({ subject: `Refund Processed - ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>Refund Complete!</strong></div><h2>Your Refund</h2><p>Hi ${d.attendeeName},</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(d.refundAmount, d.currency)}</span></div><div class="row"><span class="label">Order</span><span class="value">${d.orderNumber}</span></div></div><p style="font-size:14px;color:#666">5-10 business days to arrive.</p>`) }),
   ticket_transfer_sent: d => ({ subject: `Ticket Transferred - ${d.eventTitle}`, html: baseTemplate(`<h2>Ticket Transfer Sent</h2><p>Hi ${d.senderName},</p><p>You transferred a ticket to <strong>${d.recipientName}</strong>.</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType}</span></div><div class="row"><span class="label">To</span><span class="value">${d.recipientName} (${d.recipientEmail})</span></div></div>`) }),
@@ -389,7 +396,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                 <tr>
                   <td align="center" style="padding: 24px;">
                     <p style="margin: 0 0 4px 0; font-size: 12px; color: #059669; text-transform: uppercase;">Sale Amount</p>
-                    <p style="margin: 0; font-size: 32px; font-weight: 700; color: #047857;">${d.isFree ? 'FREE' : formatCurrency(d.amount, d.currency)}</p>
+                    <p style="margin: 0; font-size: 32px; font-weight: 700; color: #047857;">${d.isFree ? 'FREE' : formatCurrency(d.amount || 0, d.currency || 'NGN')}</p>
                   </td>
                 </tr>
               </table>
@@ -400,10 +407,11 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8fafc; border-radius: 8px;">
                 <tr>
                   <td style="padding: 20px;">
-                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Event:</strong> ${d.eventTitle}</p>
-                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Ticket:</strong> ${d.ticketType} x ${d.quantity}</p>
-                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Buyer:</strong> ${d.buyerName}</p>
-                    <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Email:</strong> ${d.buyerEmail || 'N/A'}</p>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Event:</strong> ${d.eventTitle || 'Event'}</p>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Ticket:</strong> ${d.ticketType || 'General'} x ${d.quantity || 1}</p>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Buyer:</strong> ${d.buyerName || 'Guest'}</p>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Email:</strong> ${d.buyerEmail || 'N/A'}</p>
+                    ${d.buyerPhone ? `<p style="margin: 0; font-size: 14px; color: #374151;"><strong>Phone:</strong> ${d.buyerPhone}</p>` : ''}
                   </td>
                 </tr>
               </table>
