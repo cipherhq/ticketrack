@@ -215,17 +215,55 @@ const TRACKABLE_EMAIL_TYPES = ['bulk_campaign', 'post_event_thank_you', 'post_ev
 // Tracking endpoint URL
 const TRACKING_URL = `${SUPABASE_URL}/functions/v1/email-tracking`
 
-// Templates
+// Templates - Table-based for maximum email client compatibility
 function baseTemplate(content: string, preheader = '', isMarketing = false): string {
-  const unsubscribeFooter = isMarketing 
-    ? `<p style="margin-top:16px"><a href="${APP_URL}/profile?tab=settings" style="color:#2969FF;text-decoration:underline">Manage email preferences</a> · <a href="${APP_URL}/profile?tab=settings" style="color:#6b7280;text-decoration:underline">Unsubscribe</a></p>` 
+  const unsubscribeFooter = isMarketing
+    ? `<p style="margin-top:16px"><a href="${APP_URL}/profile?tab=settings" style="color:#6366f1;text-decoration:underline">Manage email preferences</a> &middot; <a href="${APP_URL}/profile?tab=settings" style="color:#6b7280;text-decoration:underline">Unsubscribe</a></p>`
     : ''
-  
-  const gdprNotice = isMarketing 
-    ? `<p style="margin-top:16px;font-size:11px;color:#9ca3af">You're receiving this because you opted in to marketing emails. ${BRAND_NAME} Ltd, support@ticketrack.com</p>` 
+
+  const gdprNotice = isMarketing
+    ? `<p style="margin-top:16px;font-size:11px;color:#9ca3af">You're receiving this because you opted in to marketing emails. ${BRAND_NAME} Ltd, support@ticketrack.com</p>`
     : ''
-  
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>body{margin:0;padding:0;background:#f4f6fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif}.wrap{width:100%;background:#f4f6fa;padding:40px 0}.container{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)}.header{background:linear-gradient(135deg,${BRAND_COLOR} 0%,#1a4fd8 100%);padding:32px 24px;text-align:center}.header h1{color:#fff;margin:0;font-size:28px;font-weight:800}.header p{color:rgba(255,255,255,.9);font-size:14px;margin:8px 0 0}.content{padding:40px 32px}.content h2{color:#0f0f0f;font-size:24px;font-weight:700;margin:0 0 16px}.content p{color:#4a4a4a;font-size:16px;line-height:1.7;margin:0 0 16px}.btn-wrap{text-align:center;margin:32px 0}.btn{display:inline-block;background:linear-gradient(135deg,${BRAND_COLOR} 0%,#1a4fd8 100%);color:#fff!important;padding:16px 40px;text-decoration:none;border-radius:12px;font-weight:600}.card{background:#f8f9fc;border-radius:16px;padding:20px;margin:24px 0;border:1px solid #e8eaf0}.card h3{color:${BRAND_COLOR};margin:0 0 16px;font-size:18px}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e8eaf0}.row:last-child{border-bottom:none}.row .label{color:#6b7280;font-size:14px}.row .value{color:#0f0f0f;font-weight:600;font-size:14px}.highlight{background:#fef9e7;padding:20px;border-radius:12px;margin:24px 0;border-left:4px solid #f59e0b}.success{background:#ecfdf5;padding:20px;border-radius:12px;margin:24px 0;border-left:4px solid #10b981}.warning{background:#fef2f2;padding:20px;border-radius:12px;margin:24px 0;border-left:4px solid #ef4444}.footer{background:#f8f9fc;padding:32px;text-align:center;border-top:1px solid #e8eaf0}.footer p{color:#6b7280;font-size:12px;margin:0}</style></head><body><div style="display:none">${preheader}</div><div class="wrap"><table class="container" width="100%" cellspacing="0" cellpadding="0"><tr><td class="header"><h1>${BRAND_NAME}</h1><p>Your Gateway to Amazing Events</p></td></tr><tr><td class="content">${content}</td></tr><tr><td class="footer"><p>&copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.</p>${unsubscribeFooter}${gdprNotice}</td></tr></table></div></body></html>`
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${BRAND_NAME}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f7; font-family: Arial, Helvetica, sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden">${preheader}</div>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f7;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td align="center" style="background-color: #6366f1; padding: 32px 40px;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff;">${BRAND_NAME}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 40px 30px 40px;">
+              ${content}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                ${BRAND_NAME} Technologies Ltd | Lagos, Nigeria<br>
+                &copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.
+              </p>
+              ${unsubscribeFooter}
+              ${gdprNotice}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
 }
 
 function securityTemplate(content: string, preheader = ''): string {
@@ -249,7 +287,55 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   bank_account_verified: d => ({ subject: `✅ Bank verified on ${BRAND_NAME}`, html: baseTemplate(`<div class="success"><strong>Bank Account Verified!</strong></div><h2>Ready for Payouts</h2><p>Hi ${d.organizerName},</p><p>Your bank is now active.</p><div class="card"><div class="row"><span class="label">Bank</span><span class="value">${d.bankName}</span></div><div class="row"><span class="label">Status</span><span class="value" style="color:#10b981">Active</span></div></div>`) }),
   bank_change_confirmation: d => ({ subject: `⚠️ Confirm bank change - ${BRAND_NAME}`, html: securityTemplate(`<h2>Confirm Bank Change</h2><p>Hi ${d.organizerName},</p><p>Confirm this change:</p><div class="box"><div class="row"><span>Action</span><span>${d.changeType}</span></div><div class="row"><span>Bank</span><span>${d.bankName}</span></div></div><div class="btn-wrap"><a href="${d.confirmationUrl}" class="btn">Confirm</a><a href="${d.cancelUrl}" class="btn-secondary">Cancel</a></div>`, 'Confirm bank change') }),
   // TICKETS
-  ticket_purchase: d => ({ subject: `Tickets for ${d.eventTitle} - Confirmed!`, html: baseTemplate(`<div class="success"><strong>Booking Confirmed!</strong></div><h2>You're going to ${d.eventTitle}!</h2><p>Hi ${d.attendeeName},</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Time</span><span class="value">${formatTime(d.eventDate)}</span></div><div class="row"><span class="label">Venue</span><span class="value">${d.venueName || 'TBA'}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType} x ${d.quantity}</span></div><div class="row"><span class="label">Order</span><span class="value">${d.orderNumber}</span></div><div class="row"><span class="label">Total</span><span class="value">${d.isFree ? 'FREE' : formatCurrency(d.totalAmount, d.currency)}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/tickets" class="btn">View Tickets</a></div>`, `Tickets for ${d.eventTitle} confirmed!`) }),
+  ticket_purchase: d => ({ subject: `Tickets for ${d.eventTitle} - Confirmed!`, html: baseTemplate(`
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td align="center" style="padding-bottom: 20px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="center" style="width: 64px; height: 64px; background-color: #10b981; border-radius: 32px;">
+                          <span style="font-size: 28px; color: #ffffff; line-height: 64px;">&#10003;</span>
+                        </td>
+                      </tr>
+                    </table>
+                    <h2 style="margin: 24px 0 8px 0; font-size: 24px; font-weight: 700; color: #1a1a2e;">Payment Confirmed</h2>
+                    <p style="margin: 0; font-size: 16px; color: #6b7280;">Your tickets have been secured</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8fafc; border-radius: 8px; margin-bottom: 20px;">
+                <tr>
+                  <td align="center" style="padding: 20px;">
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Order Reference</p>
+                    <p style="margin: 0; font-size: 22px; font-weight: 700; color: #6366f1; font-family: monospace;">${d.orderNumber}</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #faf5ff; border-radius: 8px; border: 1px solid #e9d5ff; margin-bottom: 20px;">
+                <tr>
+                  <td style="padding: 24px;">
+                    <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #1a1a2e;">${d.eventTitle}</h3>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Date:</strong> ${formatDate(d.eventDate)}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Time:</strong> ${formatTime(d.eventDate)}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Venue:</strong> ${d.venueName || 'TBA'}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Ticket:</strong> ${d.ticketType} x ${d.quantity}</p>
+                    <p style="margin: 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Total:</strong> ${d.isFree ? 'FREE' : formatCurrency(d.totalAmount, d.currency)}</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="center" style="background-color: #6366f1; border-radius: 8px;">
+                          <a href="${APP_URL}/tickets" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">View My Tickets</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>`, `Tickets for ${d.eventTitle} confirmed!`) }),
   ticket_cancelled: d => ({ subject: `Ticket Cancelled - ${d.eventTitle}`, html: baseTemplate(`<h2>Ticket Cancelled</h2><p>Hi ${d.attendeeName},</p><p>Your ticket for <strong>${d.eventTitle}</strong> was cancelled.</p>${d.refundAmount ? `<div class="success"><strong>Refund of ${formatCurrency(d.refundAmount, d.currency)} processing.</strong></div>` : ''}`) }),
   ticket_refunded: d => ({ subject: `Refund Processed - ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>Refund Complete!</strong></div><h2>Your Refund</h2><p>Hi ${d.attendeeName},</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(d.refundAmount, d.currency)}</span></div><div class="row"><span class="label">Order</span><span class="value">${d.orderNumber}</span></div></div><p style="font-size:14px;color:#666">5-10 business days to arrive.</p>`) }),
   ticket_transfer_sent: d => ({ subject: `Ticket Transferred - ${d.eventTitle}`, html: baseTemplate(`<h2>Ticket Transfer Sent</h2><p>Hi ${d.senderName},</p><p>You transferred a ticket to <strong>${d.recipientName}</strong>.</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType}</span></div><div class="row"><span class="label">To</span><span class="value">${d.recipientName} (${d.recipientEmail})</span></div></div>`) }),
@@ -278,7 +364,76 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   paystack_subaccount_activated: d => ({ subject: `Paystack Direct Payments Activated!`, html: baseTemplate(`<div class="success"><strong>Paystack Connected</strong></div><h2>Direct Payouts Ready</h2><p>Hi ${d.organizerName},</p><p>Your Paystack subaccount is now active. Payment from ticket sales will be deposited directly into your bank account.</p><div class="card"><div class="row"><span class="label">Bank</span><span class="value">${d.bankName || 'Connected'}</span></div><div class="row"><span class="label">Account</span><span class="value">${maskBank(d.accountNumber || '')}</span></div><div class="row"><span class="label">Settlement</span><span class="value">Next-day</span></div><div class="row"><span class="label">Platform Fee</span><span class="value">${d.platformFeePercent || '5'}%</span></div></div><div class="highlight"><strong>How It Works:</strong><ul style="margin:8px 0 0;padding-left:20px"><li>Attendees pay for tickets</li><li>Paystack splits the payment automatically</li><li>Your share goes directly to your bank</li></ul></div><div class="btn-wrap"><a href="${APP_URL}/organizer/paystack-connect" class="btn">View Dashboard</a></div>`) }),
   flutterwave_subaccount_activated: d => ({ subject: `Flutterwave Direct Payments Activated!`, html: baseTemplate(`<div class="success"><strong>Flutterwave Connected</strong></div><h2>Direct Payouts Ready</h2><p>Hi ${d.organizerName},</p><p>Your Flutterwave subaccount is now active. Payment from ticket sales will be deposited directly into your bank account.</p><div class="card"><div class="row"><span class="label">Bank</span><span class="value">${d.bankName || 'Connected'}</span></div><div class="row"><span class="label">Account</span><span class="value">${maskBank(d.accountNumber || '')}</span></div><div class="row"><span class="label">Settlement</span><span class="value">T+1 to T+2</span></div><div class="row"><span class="label">Platform Fee</span><span class="value">${d.platformFeePercent || '5'}%</span></div></div><div class="highlight"><strong>How It Works:</strong><ul style="margin:8px 0 0;padding-left:20px"><li>Attendees pay for tickets</li><li>Flutterwave splits the payment automatically</li><li>Your share goes directly to your bank</li></ul></div><div class="btn-wrap"><a href="${APP_URL}/organizer/flutterwave-connect" class="btn">View Dashboard</a></div>`) }),
   payment_connection_disconnected: d => ({ subject: `Payment Connection Disconnected - Action Required`, html: baseTemplate(`<div class="warning"><strong>Payment Connection Removed</strong></div><h2>Your ${d.provider} Connection Was Disconnected</h2><p>Hi ${d.organizerName},</p><p>Your <strong>${d.provider}</strong> payment connection has been disconnected from your account.</p><div class="card"><div class="row"><span class="label">Provider</span><span class="value">${d.provider}</span></div><div class="row"><span class="label">Disconnected</span><span class="value">${formatDateTime(d.disconnectedAt || new Date().toISOString())}</span></div>${d.reason ? `<div class="row"><span class="label">Reason</span><span class="value">${d.reason}</span></div>` : ''}</div><p>To continue receiving direct payments, you'll need to reconnect your account.</p><div class="btn-wrap"><a href="${APP_URL}/organizer/paystack-connect" class="btn">Reconnect</a></div><p style="font-size:14px;color:#666">If you didn't request this change, please contact support immediately.</p>`) }),
-  new_ticket_sale: d => ({ subject: `💰 New Sale: ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>New sale!</strong></div><h2>You Made a Sale!</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType} x ${d.quantity}</span></div><div class="row"><span class="label">Buyer</span><span class="value">${d.buyerName}</span></div><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:18px">${d.isFree ? 'FREE' : formatCurrency(d.amount, d.currency)}</span></div></div><p><strong>Sold:</strong> ${d.totalSold} / ${d.totalCapacity}</p><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}" class="btn">Dashboard</a></div>`) }),
+  new_ticket_sale: d => ({ subject: `New Sale: ${d.eventTitle}`, html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f7; font-family: Arial, sans-serif;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f7;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td align="center" style="background-color: #10b981; padding: 32px 40px;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff;">${BRAND_NAME}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 40px 40px 20px 40px;">
+              <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #1a1a2e;">New Ticket Sale</h2>
+              <p style="margin: 0; font-size: 16px; color: #6b7280;">Someone just purchased tickets to your event</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #ecfdf5; border-radius: 8px; border: 2px solid #10b981;">
+                <tr>
+                  <td align="center" style="padding: 24px;">
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #059669; text-transform: uppercase;">Sale Amount</p>
+                    <p style="margin: 0; font-size: 32px; font-weight: 700; color: #047857;">${d.isFree ? 'FREE' : formatCurrency(d.amount, d.currency)}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8fafc; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Event:</strong> ${d.eventTitle}</p>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Ticket:</strong> ${d.ticketType} x ${d.quantity}</p>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;"><strong>Buyer:</strong> ${d.buyerName}</p>
+                    <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Email:</strong> ${d.buyerEmail || 'N/A'}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 0 40px 40px 40px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="center" style="background-color: #6366f1; border-radius: 8px;">
+                    <a href="${APP_URL}/organizer/events/${d.eventId}" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">View Dashboard</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                ${BRAND_NAME} Technologies Ltd | Lagos, Nigeria<br>
+                &copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>` }),
   daily_sales_summary: d => ({ subject: `Daily Sales - ${d.date}`, html: baseTemplate(`<h2>Daily Summary</h2><p>Performance on ${d.date}:</p><div class="card"><div class="row"><span class="label">Revenue</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.totalRevenue, d.currency)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Orders</span><span class="value">${d.ordersCount}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/analytics" class="btn">Analytics</a></div>`) }),
   low_ticket_alert: d => ({ subject: `⚠️ Low Tickets: ${d.eventTitle}`, html: baseTemplate(`<div class="highlight"><strong>Running Low!</strong></div><h2>${d.eventTitle}</h2><div class="card"><div class="row"><span class="label">${d.ticketType}</span><span class="value" style="color:#dc3545">${d.remaining} left</span></div><div class="row"><span class="label">Sold</span><span class="value">${d.sold}/${d.total}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/tickets" class="btn">Manage</a></div>`) }),
   event_published: d => ({ subject: `✅ Published: ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>Live!</strong></div><h2>${d.eventTitle}</h2><p>Your event is visible.</p><div class="card"><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Link</span><span class="value"><a href="${d.eventUrl}">${d.eventUrl}</a></span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}" class="btn">Manage</a></div>`) }),
