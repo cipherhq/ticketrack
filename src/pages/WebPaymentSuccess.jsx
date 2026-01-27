@@ -33,9 +33,18 @@ const sendConfirmationEmail = async (emailData) => {
   }
 }
 
-// Send confirmation email for Paystack payments (inline popup flow)
-const sendPaystackConfirmationEmail = async (order, event, tickets) => {
+// Send confirmation email with PDF ticket attachment
+const sendTicketEmailWithPDF = async (order, event, tickets) => {
   try {
+    if (!order?.buyer_email || !event?.title || !tickets?.length) {
+      console.error('Missing required data for PDF email:', {
+        hasEmail: !!order?.buyer_email,
+        hasEvent: !!event?.title,
+        ticketCount: tickets?.length
+      })
+      return
+    }
+
     // Get ticket type names
     const ticketTypeNames = tickets
       .map(t => t.ticket_type_name || 'Ticket')
@@ -54,7 +63,7 @@ const sendPaystackConfirmationEmail = async (order, event, tickets) => {
     const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, event)
 
     // Send confirmation email with PDF attachment
-    await sendConfirmationEmail({
+    const result = await sendConfirmationEmail({
       type: "ticket_purchase",
       to: order.buyer_email,
       data: {
@@ -67,7 +76,7 @@ const sendPaystackConfirmationEmail = async (order, event, tickets) => {
         quantity: tickets.length,
         orderNumber: order.order_number || `ORD-${order.id?.slice(0, 8).toUpperCase()}`,
         totalAmount: order.total_amount,
-        currency: order.currency || event.currency || 'NGN',
+        currency: order.currency || event.currency || 'GBP',
         isFree: parseFloat(order.total_amount) === 0,
         appUrl: window.location.origin
       },
@@ -78,9 +87,13 @@ const sendPaystackConfirmationEmail = async (order, event, tickets) => {
       }]
     })
 
-    console.log('Paystack confirmation email sent successfully')
+    if (result.success) {
+      console.log('PDF ticket email sent successfully to:', order.buyer_email)
+    } else {
+      console.error('PDF ticket email failed:', result.error)
+    }
   } catch (err) {
-    console.error('Failed to send Paystack confirmation email:', err)
+    console.error('Failed to send PDF ticket email:', err)
   }
 }
 
@@ -112,11 +125,11 @@ export function WebPaymentSuccess() {
       searchString: window.location.search
     })
 
-    // If we have location state (from Paystack inline), send confirmation email
+    // If we have location state (from Paystack inline), send confirmation email with PDF
     if (location.state?.order && location.state?.event && location.state?.tickets) {
       if (!isProcessingRef.current) {
         isProcessingRef.current = true
-        sendPaystackConfirmationEmail(location.state.order, location.state.event, location.state.tickets)
+        sendTicketEmailWithPDF(location.state.order, location.state.event, location.state.tickets)
       }
       return
     }
@@ -297,10 +310,14 @@ export function WebPaymentSuccess() {
         // Mark waitlist as purchased if applicable
         await handleWaitlistCompletion(orderData)
 
-        // NOTE: Confirmation email is now sent from the edge function (complete-stripe-order)
-        // This ensures reliable delivery without depending on frontend PDF generation
-        // The edge function sends the email without PDF attachment
-        console.log('Order completed. Confirmation email sent by edge function.')
+        // Send confirmation email with PDF ticket attachment
+        // This is sent from frontend because PDF generation requires browser APIs
+        if (finalEvent?.title && ticketsWithOrder.length > 0) {
+          console.log('[WebPaymentSuccess] Sending PDF ticket email...')
+          await sendTicketEmailWithPDF(finalOrder, finalEvent, ticketsWithOrder)
+        } else {
+          console.warn('[WebPaymentSuccess] Cannot send PDF email - missing event or tickets')
+        }
       } else {
         console.error('Order completion failed:', result?.error)
         navigate('/tickets')
