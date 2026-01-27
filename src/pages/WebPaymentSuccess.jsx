@@ -267,57 +267,10 @@ export function WebPaymentSuccess() {
         // Mark waitlist as purchased if applicable
         await handleWaitlistCompletion(orderData)
 
-        // Generate PDF tickets and send confirmation email with attachment
-        if (ticketsData.length > 0 && finalEvent) {
-          try {
-            // Prepare ticket data for PDF generation
-            const ticketsForPdf = ticketsData.map(t => ({
-              ticket_code: t.ticket_code,
-              attendee_name: t.attendee_name || finalOrder.buyer_name,
-              attendee_email: t.attendee_email || finalOrder.buyer_email,
-              ticket_type_name: t.ticket_type_name || 'General'
-            }))
-
-            // Generate PDF (this requires browser - runs client-side)
-            const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, finalEvent)
-
-            // Get ticket type names from order items
-            const ticketTypeNames = ticketsData
-              .map(t => t.ticket_type_name)
-              .filter((v, i, a) => a.indexOf(v) === i) // unique values
-              .join(', ') || 'Ticket'
-
-            // Send confirmation email with PDF attachment
-            await sendConfirmationEmail({
-              type: "ticket_purchase",
-              to: finalOrder.buyer_email,
-              data: {
-                attendeeName: finalOrder.buyer_name,
-                eventTitle: finalEvent.title,
-                eventDate: finalEvent.start_date,
-                venueName: [finalEvent.venue_name, finalEvent.venue_address, finalEvent.city].filter(Boolean).join(', ') || 'TBA',
-                city: finalEvent.city || '',
-                ticketType: ticketTypeNames,
-                quantity: ticketsData.length,
-                orderNumber: finalOrder.order_number,
-                totalAmount: finalOrder.total_amount,
-                currency: finalOrder.currency || finalEvent.currency || 'GBP',
-                isFree: parseFloat(finalOrder.total_amount) === 0,
-                appUrl: window.location.origin
-              },
-              attachments: [{
-                filename: pdfData.filename,
-                content: pdfData.base64,
-                type: 'application/pdf'
-              }]
-            })
-
-            console.log('Confirmation email with PDF sent successfully')
-          } catch (pdfErr) {
-            console.error('PDF generation or email failed:', pdfErr)
-            // Fallback: Email was already sent by edge function without PDF
-          }
-        }
+        // NOTE: Confirmation email is now sent from the edge function (complete-stripe-order)
+        // This ensures reliable delivery without depending on frontend PDF generation
+        // The edge function sends the email without PDF attachment
+        console.log('Order completed. Confirmation email sent by edge function.')
       } else {
         console.error('Order completion failed:', result?.error)
         navigate('/tickets')

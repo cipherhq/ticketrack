@@ -290,23 +290,56 @@ serve(async (req) => {
       }
     }
 
-    // Send organizer notification email only
-    // NOTE: Attendee confirmation email with PDF attachment is sent by the frontend
-    // (WebPaymentSuccess.jsx) after this function returns, because PDF generation
-    // requires browser DOM (jsPDF) which isn't available in Deno edge functions.
+    // Send emails: attendee confirmation + organizer notification
     try {
       const eventData = order.events;
       const ticketTypes = order.order_items?.map((i: any) => i.ticket_types?.name || "Ticket").join(", ") || "Ticket";
       const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
+      const venueName = [eventData?.venue_name, eventData?.venue_address, eventData?.city].filter(Boolean).join(", ") || "TBA";
 
-      // Send notification to organizer (use fetch with service role key for auth)
+      // 1. Send confirmation to attendee (without PDF - frontend may send PDF version later)
+      if (order.buyer_email) {
+        const attendeeEmailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            type: "ticket_purchase",
+            to: order.buyer_email,
+            data: {
+              attendeeName: order.buyer_name,
+              eventTitle: eventData?.title,
+              eventDate: eventData?.start_date,
+              venueName: venueName,
+              city: eventData?.city || "",
+              ticketType: ticketTypes,
+              quantity: totalQty,
+              orderNumber: order.order_number,
+              totalAmount: order.total_amount,
+              currency: order.currency || eventData?.currency || "GBP",
+              isFree: parseFloat(order.total_amount) === 0,
+              appUrl: "https://ticketrack.com",
+            },
+          }),
+        });
+        const attendeeResult = await attendeeEmailResponse.json();
+        if (attendeeResult.success) {
+          console.log("[complete-stripe-order] Attendee confirmation email sent to:", order.buyer_email);
+        } else {
+          console.error("[complete-stripe-order] Attendee email failed:", attendeeResult.error);
+        }
+      }
+
+      // 2. Send notification to organizer
       const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email;
       if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
         const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseKey}`, // Service role key
+            "Authorization": `Bearer ${supabaseKey}`,
           },
           body: JSON.stringify({
             type: "new_ticket_sale",
@@ -330,7 +363,7 @@ serve(async (req) => {
         if (emailResult.success) {
           console.log("[complete-stripe-order] Organizer notification email sent");
         } else {
-          console.error("[complete-stripe-order] Email failed:", emailResult.error);
+          console.error("[complete-stripe-order] Organizer email failed:", emailResult.error);
         }
       }
     } catch (emailError) {
