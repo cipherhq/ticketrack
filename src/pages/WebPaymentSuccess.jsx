@@ -10,8 +10,79 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { QRCodeSVG } from 'qrcode.react'
-// PDF generation now handled by edge function
+import { generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { WalletButtons } from '@/components/WalletButtons'
+
+// Send confirmation email via Edge Function
+const sendConfirmationEmail = async (emailData) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify(emailData)
+    })
+    const result = await response.json()
+    if (!result.success) console.error("Email send failed:", result.error)
+    return result
+  } catch (err) {
+    console.error("Email send error:", err)
+    return { success: false, error: err.message }
+  }
+}
+
+// Send confirmation email for Paystack payments (inline popup flow)
+const sendPaystackConfirmationEmail = async (order, event, tickets) => {
+  try {
+    // Get ticket type names
+    const ticketTypeNames = tickets
+      .map(t => t.ticket_type_name || 'Ticket')
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .join(', ') || 'Ticket'
+
+    // Generate PDF tickets
+    const { generateMultiTicketPDFBase64 } = await import('@/utils/ticketGenerator')
+    const ticketsForPdf = tickets.map(t => ({
+      ticket_code: t.ticket_code,
+      attendee_name: t.attendee_name || order.buyer_name,
+      attendee_email: t.attendee_email || order.buyer_email,
+      ticket_type_name: t.ticket_type_name || 'General'
+    }))
+
+    const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, event)
+
+    // Send confirmation email with PDF attachment
+    await sendConfirmationEmail({
+      type: "ticket_purchase",
+      to: order.buyer_email,
+      data: {
+        attendeeName: order.buyer_name,
+        eventTitle: event.title,
+        eventDate: event.start_date,
+        venueName: [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'TBA',
+        city: event.city || '',
+        ticketType: ticketTypeNames,
+        quantity: tickets.length,
+        orderNumber: order.order_number || `ORD-${order.id?.slice(0, 8).toUpperCase()}`,
+        totalAmount: order.total_amount,
+        currency: order.currency || event.currency || 'NGN',
+        isFree: parseFloat(order.total_amount) === 0,
+        appUrl: window.location.origin
+      },
+      attachments: [{
+        filename: pdfData.filename,
+        content: pdfData.base64,
+        type: 'application/pdf'
+      }]
+    })
+
+    console.log('Paystack confirmation email sent successfully')
+  } catch (err) {
+    console.error('Failed to send Paystack confirmation email:', err)
+  }
+}
 
 
 export function WebPaymentSuccess() {
@@ -31,16 +102,25 @@ export function WebPaymentSuccess() {
     const orderId = searchParams.get('order_id')
     const sessionId = searchParams.get('session_id')
     const provider = searchParams.get('provider')
-    
-    if (location.state?.order || isProcessingRef.current) return
+
+    // If we have location state (from Paystack inline), send confirmation email
+    if (location.state?.order && location.state?.event && location.state?.tickets) {
+      if (!isProcessingRef.current) {
+        isProcessingRef.current = true
+        sendPaystackConfirmationEmail(location.state.order, location.state.event, location.state.tickets)
+      }
+      return
+    }
+
+    if (isProcessingRef.current) return
     isProcessingRef.current = true
-    
+
     if (orderId && provider === 'paypal') {
       handlePayPalReturn(orderId)
     } else if (orderId || sessionId) {
       loadStripeOrder(orderId)
     } else if (!location.state?.order && !location.state?.event) {
-      navigate('/events')
+      navigate('/tickets')
     }
   }, [searchParams])
 
@@ -106,7 +186,7 @@ export function WebPaymentSuccess() {
             .eq('order_id', orderId)
           setTickets(ticketsData || [])
         } else {
-          navigate('/events')
+          navigate('/tickets')
           return
         }
       } else if (result?.success) {
@@ -121,8 +201,11 @@ export function WebPaymentSuccess() {
           .eq('id', orderId)
           .single()
 
-        setOrder(fullOrder || orderData)
-        setEvent(fullOrder?.events || orderData?.events)
+        const finalOrder = fullOrder || orderData
+        const finalEvent = fullOrder?.events || orderData?.events
+
+        setOrder(finalOrder)
+        setEvent(finalEvent)
 
         // Attach order data to tickets for donation display
         const ticketsWithOrder = ticketsData.map(ticket => ({
@@ -139,9 +222,61 @@ export function WebPaymentSuccess() {
 
         // Mark waitlist as purchased if applicable
         await handleWaitlistCompletion(orderData)
+
+        // Generate PDF tickets and send confirmation email with attachment
+        if (ticketsData.length > 0 && finalEvent) {
+          try {
+            // Prepare ticket data for PDF generation
+            const ticketsForPdf = ticketsData.map(t => ({
+              ticket_code: t.ticket_code,
+              attendee_name: t.attendee_name || finalOrder.buyer_name,
+              attendee_email: t.attendee_email || finalOrder.buyer_email,
+              ticket_type_name: t.ticket_type_name || 'General'
+            }))
+
+            // Generate PDF (this requires browser - runs client-side)
+            const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, finalEvent)
+
+            // Get ticket type names from order items
+            const ticketTypeNames = ticketsData
+              .map(t => t.ticket_type_name)
+              .filter((v, i, a) => a.indexOf(v) === i) // unique values
+              .join(', ') || 'Ticket'
+
+            // Send confirmation email with PDF attachment
+            await sendConfirmationEmail({
+              type: "ticket_purchase",
+              to: finalOrder.buyer_email,
+              data: {
+                attendeeName: finalOrder.buyer_name,
+                eventTitle: finalEvent.title,
+                eventDate: finalEvent.start_date,
+                venueName: [finalEvent.venue_name, finalEvent.venue_address, finalEvent.city].filter(Boolean).join(', ') || 'TBA',
+                city: finalEvent.city || '',
+                ticketType: ticketTypeNames,
+                quantity: ticketsData.length,
+                orderNumber: finalOrder.order_number,
+                totalAmount: finalOrder.total_amount,
+                currency: finalOrder.currency || finalEvent.currency || 'GBP',
+                isFree: parseFloat(finalOrder.total_amount) === 0,
+                appUrl: window.location.origin
+              },
+              attachments: [{
+                filename: pdfData.filename,
+                content: pdfData.base64,
+                type: 'application/pdf'
+              }]
+            })
+
+            console.log('Confirmation email with PDF sent successfully')
+          } catch (pdfErr) {
+            console.error('PDF generation or email failed:', pdfErr)
+            // Fallback: Email was already sent by edge function without PDF
+          }
+        }
       } else {
         console.error('Order completion failed:', result?.error)
-        navigate('/events')
+        navigate('/tickets')
         return
       }
     } catch (err) {
