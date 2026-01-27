@@ -21,11 +21,31 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    console.log(`[complete-stripe-order] URL exists: ${!!supabaseUrl}, Key exists: ${!!supabaseKey}, Key length: ${supabaseKey?.length || 0}`);
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("[complete-stripe-order] Missing environment variables");
+      return new Response(
+        JSON.stringify({ success: false, error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { orderId, sessionId } = await req.json();
+    const body = await req.json();
+    console.log(`[complete-stripe-order] Received body:`, JSON.stringify(body));
+    let { orderId, sessionId } = body;
+
+    // Sanitize orderId - trim whitespace and ensure it's a string
+    if (orderId) {
+      orderId = String(orderId).trim();
+    }
+
+    console.log(`[complete-stripe-order] Sanitized orderId: "${orderId}", type: ${typeof orderId}, length: ${orderId?.length}`);
 
     if (!orderId) {
       return new Response(
@@ -34,29 +54,70 @@ serve(async (req) => {
       );
     }
 
+    // Validate UUID format (basic check)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(orderId)) {
+      console.error(`[complete-stripe-order] Invalid orderId format: ${orderId}`);
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid orderId format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log(`[complete-stripe-order] Starting order completion: ${orderId}, session: ${sessionId}`);
 
-    // Get order with related data
-    const { data: order, error: orderError } = await supabase
+    // First, get the basic order data (simple query that should always work with service role)
+    const { data: baseOrder, error: baseError } = await supabase
       .from("orders")
-      .select(`
-        *,
-        events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, currency, notify_organizer_on_sale, organizer:organizers(id, email, business_email, business_name)),
-        order_items(*, ticket_types(id, name, price))
-      `)
+      .select("*")
       .eq("id", orderId)
       .single();
 
-    if (orderError || !order) {
-      console.error("[complete-stripe-order] Order not found:", orderError);
+    console.log(`[complete-stripe-order] Base order query: found=${!!baseOrder}, error=${baseError?.message || 'none'}`);
+
+    if (baseError || !baseOrder) {
+      console.error("[complete-stripe-order] Base order not found:", JSON.stringify({
+        orderId,
+        error: baseError?.message,
+        errorCode: baseError?.code,
+        errorDetails: baseError?.details
+      }));
       return new Response(
-        JSON.stringify({ success: false, error: "Order not found" }),
+        JSON.stringify({ success: false, error: "Order not found", details: baseError?.message }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Log user_id for debugging ticket visibility issues
-    console.log(`[complete-stripe-order] Order ${orderId} has user_id: ${order.user_id}, buyer_email: ${order.buyer_email}`);
+    // Build order object with related data - fetch separately to avoid join issues
+    let order: any = { ...baseOrder };
+
+    // Fetch event data
+    const { data: eventData } = await supabase
+      .from("events")
+      .select("id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, currency, notify_organizer_on_sale, organizer_id")
+      .eq("id", baseOrder.event_id)
+      .single();
+
+    if (eventData) {
+      // Fetch organizer data
+      const { data: organizerData } = await supabase
+        .from("organizers")
+        .select("id, email, business_email, business_name")
+        .eq("id", eventData.organizer_id)
+        .single();
+
+      order.events = { ...eventData, organizer: organizerData };
+    }
+
+    // Fetch order items with ticket types
+    const { data: orderItems } = await supabase
+      .from("order_items")
+      .select("*, ticket_types(id, name, price)")
+      .eq("order_id", orderId);
+
+    order.order_items = orderItems || [];
+
+    console.log(`[complete-stripe-order] Order ${orderId} assembled: user_id=${order.user_id}, items=${order.order_items?.length || 0}`);
 
     // If already completed, just return the tickets
     if (order.status === "completed") {
