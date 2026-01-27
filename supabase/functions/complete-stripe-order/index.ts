@@ -122,35 +122,78 @@ serve(async (req) => {
     // Build order object with related data - fetch separately to avoid join issues
     let order: any = { ...baseOrder };
 
-    console.log(`[complete-stripe-order] Fetching event for event_id: ${baseOrder.event_id}`);
+    // If order has no event_id, try to get it from Stripe session metadata
+    let eventId = baseOrder.event_id;
+    if (!eventId && sessionId) {
+      console.log(`[complete-stripe-order] Order has no event_id, trying to get from Stripe session metadata`);
+      try {
+        const { data: gatewayConfig } = await supabase
+          .from("payment_gateway_config")
+          .select("secret_key_encrypted")
+          .eq("provider", "stripe")
+          .eq("is_active", true)
+          .limit(1)
+          .single();
+
+        if (gatewayConfig?.secret_key_encrypted) {
+          const stripe = new Stripe(gatewayConfig.secret_key_encrypted, {
+            apiVersion: "2023-10-16",
+          });
+          const session = await stripe.checkout.sessions.retrieve(sessionId);
+          if (session.metadata?.event_id) {
+            eventId = session.metadata.event_id;
+            console.log(`[complete-stripe-order] Got event_id from Stripe metadata: ${eventId}`);
+            // Update the order with the event_id
+            await supabase.from("orders").update({ event_id: eventId }).eq("id", orderId);
+            order.event_id = eventId;
+          }
+        }
+      } catch (stripeErr) {
+        console.error(`[complete-stripe-order] Error getting event_id from Stripe:`, stripeErr);
+      }
+    }
+
+    console.log(`[complete-stripe-order] Fetching event for event_id: ${eventId}`);
 
     // Fetch event data
-    if (baseOrder.event_id) {
+    if (eventId) {
       const { data: eventData, error: eventError } = await supabase
         .from("events")
         .select("id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, currency, notify_organizer_on_sale, organizer_id")
-        .eq("id", baseOrder.event_id)
+        .eq("id", eventId)
         .single();
 
+      console.log(`[complete-stripe-order] Event query result: found=${!!eventData}, error=${eventError?.message || 'none'}, code=${eventError?.code || 'none'}`);
+
       if (eventError) {
-        console.error(`[complete-stripe-order] Event fetch error:`, eventError.message);
+        console.error(`[complete-stripe-order] Event fetch error:`, JSON.stringify({
+          message: eventError.message,
+          code: eventError.code,
+          details: eventError.details,
+          hint: eventError.hint
+        }));
       }
 
       if (eventData) {
-        console.log(`[complete-stripe-order] Event found: ${eventData.title}`);
+        console.log(`[complete-stripe-order] Event found: "${eventData.title}", organizer_id: ${eventData.organizer_id}`);
         // Fetch organizer data
-        const { data: organizerData } = await supabase
+        const { data: organizerData, error: orgError } = await supabase
           .from("organizers")
           .select("id, email, business_email, business_name")
           .eq("id", eventData.organizer_id)
           .single();
 
+        if (orgError) {
+          console.error(`[complete-stripe-order] Organizer fetch error:`, orgError.message);
+        }
+        console.log(`[complete-stripe-order] Organizer found: ${organizerData?.business_name || 'none'}`);
+
         order.events = { ...eventData, organizer: organizerData };
       } else {
-        console.error(`[complete-stripe-order] No event found for event_id: ${baseOrder.event_id}`);
+        console.error(`[complete-stripe-order] No event found for event_id: ${eventId}`);
       }
     } else {
-      console.error(`[complete-stripe-order] Order has no event_id!`);
+      console.error(`[complete-stripe-order] Order has no event_id and could not retrieve from Stripe!`);
     }
 
     // Fetch order items with ticket types
@@ -314,73 +357,87 @@ serve(async (req) => {
       const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
       const venueName = [eventData?.venue_name, eventData?.venue_address, eventData?.city].filter(Boolean).join(", ") || "TBA";
 
-      // 1. Send confirmation to attendee (without PDF - frontend may send PDF version later)
-      if (order.buyer_email) {
-        const attendeeEmailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({
-            type: "ticket_purchase",
-            to: order.buyer_email,
-            data: {
-              attendeeName: order.buyer_name,
-              eventTitle: eventData?.title,
-              eventDate: eventData?.start_date,
-              venueName: venueName,
-              city: eventData?.city || "",
-              ticketType: ticketTypes,
-              quantity: totalQty,
-              orderNumber: order.order_number,
-              totalAmount: order.total_amount,
-              currency: order.currency || eventData?.currency || "GBP",
-              isFree: parseFloat(order.total_amount) === 0,
-              appUrl: "https://ticketrack.com",
-            },
-          }),
-        });
-        const attendeeResult = await attendeeEmailResponse.json();
-        if (attendeeResult.success) {
-          console.log("[complete-stripe-order] Attendee confirmation email sent to:", order.buyer_email);
-        } else {
-          console.error("[complete-stripe-order] Attendee email failed:", attendeeResult.error);
-        }
-      }
+      // Only send emails if we have event data (to avoid "undefined" emails)
+      if (!eventData?.title) {
+        console.error("[complete-stripe-order] Skipping emails - event data missing. Event title:", eventData?.title);
+        console.error("[complete-stripe-order] Full order.events:", JSON.stringify(order.events));
+      } else {
+        // 1. Send confirmation to attendee (without PDF - users can download from app via "View Tickets" link in email)
+        if (order.buyer_email) {
+          console.log(`[complete-stripe-order] Sending attendee email with data:`, JSON.stringify({
+            eventTitle: eventData.title,
+            eventDate: eventData.start_date,
+            venueName,
+            ticketType: ticketTypes,
+            quantity: totalQty
+          }));
 
-      // 2. Send notification to organizer
-      const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email;
-      if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
-        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({
-            type: "new_ticket_sale",
-            to: organizerEmail,
-            data: {
-              eventTitle: eventData?.title,
-              eventId: eventData?.id,
-              ticketType: ticketTypes,
-              quantity: totalQty,
-              buyerName: order.buyer_name,
-              buyerEmail: order.buyer_email,
-              buyerPhone: order.buyer_phone || null,
-              amount: order.total_amount,
-              currency: order.currency || eventData?.currency || "GBP",
-              isFree: parseFloat(order.total_amount) === 0,
-              appUrl: "https://ticketrack.com",
+          const attendeeEmailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
             },
-          }),
-        });
-        const emailResult = await emailResponse.json();
-        if (emailResult.success) {
-          console.log("[complete-stripe-order] Organizer notification email sent");
-        } else {
-          console.error("[complete-stripe-order] Organizer email failed:", emailResult.error);
+            body: JSON.stringify({
+              type: "ticket_purchase",
+              to: order.buyer_email,
+              data: {
+                attendeeName: order.buyer_name || "Guest",
+                eventTitle: eventData.title,
+                eventDate: eventData.start_date,
+                venueName: venueName,
+                city: eventData.city || "",
+                ticketType: ticketTypes,
+                quantity: totalQty,
+                orderNumber: order.order_number,
+                totalAmount: order.total_amount,
+                currency: order.currency || eventData.currency || "GBP",
+                isFree: parseFloat(order.total_amount) === 0,
+                appUrl: "https://ticketrack.com",
+              },
+            }),
+          });
+          const attendeeResult = await attendeeEmailResponse.json();
+          if (attendeeResult.success) {
+            console.log("[complete-stripe-order] Attendee confirmation email sent to:", order.buyer_email);
+          } else {
+            console.error("[complete-stripe-order] Attendee email failed:", attendeeResult.error);
+          }
+        }
+
+        // 2. Send notification to organizer
+        const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email;
+        if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
+          const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              type: "new_ticket_sale",
+              to: organizerEmail,
+              data: {
+                eventTitle: eventData.title,
+                eventId: eventData.id,
+                ticketType: ticketTypes,
+                quantity: totalQty,
+                buyerName: order.buyer_name,
+                buyerEmail: order.buyer_email,
+                buyerPhone: order.buyer_phone || null,
+                amount: order.total_amount,
+                currency: order.currency || eventData.currency || "GBP",
+                isFree: parseFloat(order.total_amount) === 0,
+                appUrl: "https://ticketrack.com",
+              },
+            }),
+          });
+          const emailResult = await emailResponse.json();
+          if (emailResult.success) {
+            console.log("[complete-stripe-order] Organizer notification email sent");
+          } else {
+            console.error("[complete-stripe-order] Organizer email failed:", emailResult.error);
+          }
         }
       }
     } catch (emailError) {
