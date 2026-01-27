@@ -723,6 +723,25 @@ export function WebFreeRSVP() {
 
       if (orderError) throw orderError
 
+      // Create order_items for webhook/edge function ticket creation
+      // For free events with donations, we need order_items so complete-stripe-order can create tickets
+      const { data: freeTicketType } = await supabase
+        .from('ticket_types')
+        .select('id')
+        .eq('event_id', event.id)
+        .eq('is_active', true)
+        .order('price', { ascending: true })
+        .limit(1)
+        .single()
+
+      await supabase.from('order_items').insert({
+        order_id: order.id,
+        ticket_type_id: freeTicketType?.id || null,
+        quantity: quantity,
+        unit_price: 0,
+        subtotal: 0
+      })
+
       const paymentRef = `DON-${order.id.slice(0, 8).toUpperCase()}-${Date.now()}`
 
       // Use appropriate payment provider based on currency
@@ -732,7 +751,7 @@ export function WebFreeRSVP() {
           const { data: checkoutData, error: stripeError } = await supabase.functions.invoke('create-stripe-checkout', {
             body: {
               orderId: order.id,
-              successUrl: `${window.location.origin}/payment-success?order_id=${order.id}&reference=${paymentRef}`,
+              successUrl: `${window.location.origin}/payment-success`,
               cancelUrl: `${window.location.origin}/event/${event.slug}`,
               isDonation: true,
               donationAmount: chargeAmount // Charge the correct total

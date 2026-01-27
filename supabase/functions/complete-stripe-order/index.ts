@@ -34,7 +34,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Completing order: ${orderId}, session: ${sessionId}`);
+    console.log(`[complete-stripe-order] Starting order completion: ${orderId}, session: ${sessionId}`);
 
     // Get order with related data
     const { data: order, error: orderError } = await supabase
@@ -48,26 +48,37 @@ serve(async (req) => {
       .single();
 
     if (orderError || !order) {
-      console.error("Order not found:", orderError);
+      console.error("[complete-stripe-order] Order not found:", orderError);
       return new Response(
         JSON.stringify({ success: false, error: "Order not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Log user_id for debugging ticket visibility issues
+    console.log(`[complete-stripe-order] Order ${orderId} has user_id: ${order.user_id}, buyer_email: ${order.buyer_email}`);
+
     // If already completed, just return the tickets
     if (order.status === "completed") {
+      console.log(`[complete-stripe-order] Order ${orderId} already completed, returning existing tickets`);
+
       const { data: existingTickets } = await supabase
         .from("tickets")
-        .select("*")
+        .select("*, ticket_types(name)")
         .eq("order_id", orderId);
+
+      // Add ticket_type_name to tickets for frontend PDF generation
+      const ticketsWithTypeName = (existingTickets || []).map(t => ({
+        ...t,
+        ticket_type_name: t.ticket_types?.name || "Ticket"
+      }));
 
       return new Response(
         JSON.stringify({
           success: true,
           message: "Order already completed",
           order: { ...order, status: "completed" },
-          tickets: existingTickets || []
+          tickets: ticketsWithTypeName
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -161,50 +172,40 @@ serve(async (req) => {
           .select();
 
         if (ticketError) {
-          console.error("Error creating tickets:", ticketError);
+          console.error("[complete-stripe-order] Error creating tickets:", ticketError);
+          console.error("[complete-stripe-order] Tickets attempted:", JSON.stringify(ticketsToCreate.slice(0, 2)));
         } else {
-          tickets = newTickets || [];
-          console.log(`Created ${tickets.length} tickets`);
+          // Add ticket_type_name to tickets for frontend PDF generation
+          const ticketTypeMap = new Map(
+            order.order_items?.map((i: any) => [i.ticket_type_id, i.ticket_types?.name || "Ticket"]) || []
+          );
+          tickets = (newTickets || []).map(t => ({
+            ...t,
+            ticket_type_name: ticketTypeMap.get(t.ticket_type_id) || "Ticket"
+          }));
+          console.log(`[complete-stripe-order] Created ${tickets.length} tickets for user_id: ${order.user_id}`);
 
-          // Decrement ticket quantities
+          // Decrement ticket quantities (skip if ticket_type_id is null - free events)
           for (const item of order.order_items) {
-            await supabase.rpc("decrement_ticket_quantity", {
-              p_ticket_type_id: item.ticket_type_id,
-              p_quantity: item.quantity,
-            });
+            if (item.ticket_type_id) {
+              await supabase.rpc("decrement_ticket_quantity", {
+                p_ticket_type_id: item.ticket_type_id,
+                p_quantity: item.quantity,
+              });
+            }
           }
         }
       }
     }
 
-    // Send confirmation email
+    // Send organizer notification email only
+    // NOTE: Attendee confirmation email with PDF attachment is sent by the frontend
+    // (WebPaymentSuccess.jsx) after this function returns, because PDF generation
+    // requires browser DOM (jsPDF) which isn't available in Deno edge functions.
     try {
       const eventData = order.events;
       const ticketTypes = order.order_items?.map((i: any) => i.ticket_types?.name || "Ticket").join(", ") || "Ticket";
       const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
-      const fullVenue = [eventData?.venue_name, eventData?.venue_address, eventData?.city, eventData?.country].filter(Boolean).join(", ") || "TBA";
-
-      await supabase.functions.invoke("send-email", {
-        body: {
-          type: "ticket_purchase",
-          to: order.buyer_email,
-          data: {
-            attendeeName: order.buyer_name,
-            eventTitle: eventData?.title,
-            eventDate: eventData?.start_date,
-            venueName: fullVenue,
-            city: eventData?.city || "",
-            ticketType: ticketTypes,
-            quantity: totalQty,
-            orderNumber: order.order_number,
-            totalAmount: order.total_amount,
-            currency: order.currency || eventData?.currency || "GBP",
-            isFree: parseFloat(order.total_amount) === 0,
-            appUrl: "https://ticketrack.com",
-          },
-        },
-      });
-      console.log("Confirmation email sent");
 
       // Send notification to organizer
       const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email;
@@ -228,10 +229,13 @@ serve(async (req) => {
             },
           },
         });
+        console.log("[complete-stripe-order] Organizer notification email sent");
       }
     } catch (emailError) {
-      console.error("Email error:", emailError);
+      console.error("[complete-stripe-order] Email error:", emailError);
     }
+
+    console.log(`[complete-stripe-order] Order ${orderId} completed successfully. Tickets: ${tickets.length}`);
 
     return new Response(
       JSON.stringify({
@@ -242,7 +246,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Complete order error:", error);
+    console.error("[complete-stripe-order] Error:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
