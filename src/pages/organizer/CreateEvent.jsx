@@ -573,6 +573,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     
     if (activeTab === "venue") {
       // Venue name is optional
+      console.log('[CreateEvent] Validating venue tab, venueAddress:', formData.venueAddress);
       if (!formData.venueAddress?.trim()) errors.push("Venue address is required");
     }
     
@@ -923,17 +924,22 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
   // Handle place selection from Google Maps autocomplete
   const handlePlaceSelect = (place) => {
-    setFormData(prev => ({
-      ...prev,
-      venueAddress: place.address,
-      // Don't overwrite venue name with address - keep it separate
-      // venueName should be manually entered by the organizer
-      googleMapLink: place.googleMapLink || '',
-      city: place.city || prev.city,
-      country: place.country || prev.country,
-      venueLat: place.lat || null,
-      venueLng: place.lng || null,
-    }));
+    console.log('[CreateEvent] handlePlaceSelect called with:', place);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        venueAddress: place.address,
+        // Don't overwrite venue name with address - keep it separate
+        // venueName should be manually entered by the organizer
+        googleMapLink: place.googleMapLink || '',
+        city: place.city || prev.city,
+        country: place.country || prev.country,
+        venueLat: place.lat || null,
+        venueLng: place.lng || null,
+      };
+      console.log('[CreateEvent] Setting venueAddress to:', newData.venueAddress);
+      return newData;
+    });
   };
 
   // Banner Image Functions

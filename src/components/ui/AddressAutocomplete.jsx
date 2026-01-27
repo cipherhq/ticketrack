@@ -102,15 +102,21 @@ export function AddressAutocomplete({
 
   // Handle place selection
   const handlePlaceSelect = useCallback(async (event) => {
+    console.log('[AddressAutocomplete] gmp-placeselect event fired:', event);
     const place = event.place;
 
-    if (!place) return;
+    if (!place) {
+      console.error('[AddressAutocomplete] No place in event');
+      return;
+    }
 
     try {
+      console.log('[AddressAutocomplete] Fetching place fields...');
       // Fetch the fields we need
       await place.fetchFields({
         fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'],
       });
+      console.log('[AddressAutocomplete] Place fields fetched:', place.formattedAddress);
 
       const placeData = {
         address: place.formattedAddress || '',
@@ -143,11 +149,16 @@ export function AddressAutocomplete({
         placeData.googleMapLink = `https://www.google.com/maps/search/?api=1&query=${placeData.lat},${placeData.lng}&query_place_id=${placeData.placeId}`;
       }
 
+      console.log('[AddressAutocomplete] Updating values:', {
+        formattedAddress: place.formattedAddress,
+        placeData
+      });
       setInputValue(place.formattedAddress || '');
       onChange(place.formattedAddress || '');
       onPlaceSelect?.(placeData);
+      console.log('[AddressAutocomplete] Callbacks called successfully');
     } catch (error) {
-      console.error('Error fetching place details:', error);
+      console.error('[AddressAutocomplete] Error fetching place details:', error);
     }
   }, [onChange, onPlaceSelect]);
 
