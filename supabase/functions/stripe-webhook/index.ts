@@ -13,6 +13,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
+// Helper to send emails with service role authentication
+async function sendEmailWithServiceRole(body: any): Promise<{ success: boolean; error?: string }> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("[sendEmail] Missing environment variables");
+    return { success: false, error: "Missing configuration" };
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("[sendEmail] Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Helper function to handle completed split payments
 async function handleSplitPaymentCompleted(supabase: any, splitPaymentId: string) {
   try {
@@ -130,17 +158,15 @@ async function handleSplitPaymentCompleted(supabase: any, splitPaymentId: string
 
     // Send confirmation emails to all members
     for (const share of shares) {
-      await supabase.functions.invoke("send-email", {
-        body: {
-          type: "split_payment_complete",
-          to: share.email,
-          data: {
-            name: share.name,
-            eventTitle: splitPayment.event?.title,
-            orderNumber: order.order_number,
-            shareAmount: share.share_amount,
-            currency: splitPayment.currency,
-          },
+      await sendEmailWithServiceRole({
+        type: "split_payment_complete",
+        to: share.email,
+        data: {
+          name: share.name,
+          eventTitle: splitPayment.event?.title,
+          orderNumber: order.order_number,
+          shareAmount: share.share_amount,
+          currency: splitPayment.currency,
         },
       });
     }
@@ -349,18 +375,16 @@ serve(async (req) => {
           .single();
 
         if (profile?.email) {
-          await supabase.functions.invoke("send-email", {
-            body: {
-              type: "stripe_connect_payout_completed",
-              to: profile.email,
-              data: {
-                organizerName: organizer.business_name,
-                eventTitle: payoutRecord.events?.title || "Event",
-                amount: (payout.amount / 100).toFixed(2),
-                currency: payout.currency.toUpperCase(),
-                arrivalDate: new Date().toLocaleDateString(),
-                payoutId: payout.id,
-              },
+          await sendEmailWithServiceRole({
+            type: "stripe_connect_payout_completed",
+            to: profile.email,
+            data: {
+              organizerName: organizer.business_name,
+              eventTitle: payoutRecord.events?.title || "Event",
+              amount: (payout.amount / 100).toFixed(2),
+              currency: payout.currency.toUpperCase(),
+              arrivalDate: new Date().toLocaleDateString(),
+              payoutId: payout.id,
             },
           });
         }

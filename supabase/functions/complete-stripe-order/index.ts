@@ -299,11 +299,16 @@ serve(async (req) => {
       const ticketTypes = order.order_items?.map((i: any) => i.ticket_types?.name || "Ticket").join(", ") || "Ticket";
       const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
 
-      // Send notification to organizer
+      // Send notification to organizer (use fetch with service role key for auth)
       const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email;
       if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
-        await supabase.functions.invoke("send-email", {
-          body: {
+        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`, // Service role key
+          },
+          body: JSON.stringify({
             type: "new_ticket_sale",
             to: organizerEmail,
             data: {
@@ -319,9 +324,14 @@ serve(async (req) => {
               isFree: parseFloat(order.total_amount) === 0,
               appUrl: "https://ticketrack.com",
             },
-          },
+          }),
         });
-        console.log("[complete-stripe-order] Organizer notification email sent");
+        const emailResult = await emailResponse.json();
+        if (emailResult.success) {
+          console.log("[complete-stripe-order] Organizer notification email sent");
+        } else {
+          console.error("[complete-stripe-order] Email failed:", emailResult.error);
+        }
       }
     } catch (emailError) {
       console.error("[complete-stripe-order] Email error:", emailError);

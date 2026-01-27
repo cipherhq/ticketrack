@@ -22,6 +22,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, verif-hash",
 };
 
+// Helper to send emails with service role authentication
+async function sendEmailWithServiceRole(body: any): Promise<{ success: boolean; error?: string }> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("[sendEmail] Missing environment variables");
+    return { success: false, error: "Missing configuration" };
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("[sendEmail] Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -238,17 +266,15 @@ async function generateTickets(supabase: any, order: any) {
 
 async function sendConfirmationEmail(supabase: any, order: any) {
   try {
-    await supabase.functions.invoke("send-email", {
-      body: {
-        type: order.is_donation ? "donation_receipt" : "order_confirmation",
-        to: order.buyer_email,
-        data: {
-          buyerName: order.buyer_name,
-          orderNumber: order.order_number,
-          eventTitle: order.events?.title,
-          totalAmount: order.total_amount,
-          currency: order.currency,
-        },
+    await sendEmailWithServiceRole({
+      type: order.is_donation ? "donation_receipt" : "order_confirmation",
+      to: order.buyer_email,
+      data: {
+        buyerName: order.buyer_name,
+        orderNumber: order.order_number,
+        eventTitle: order.events?.title,
+        totalAmount: order.total_amount,
+        currency: order.currency,
       },
     });
   } catch (error) {

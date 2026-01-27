@@ -30,7 +30,7 @@ const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; from
   welcome: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   email_verification: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   password_reset: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
-  ticket_purchase: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
+  ticket_purchase: { auth: 'USER_AUTH', rateKey: 'standard' }, // Allow logged-in users to send their own purchase confirmations
   ticket_cancelled: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   ticket_refunded: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   event_cancelled: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },

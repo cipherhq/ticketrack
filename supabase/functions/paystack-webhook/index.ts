@@ -22,6 +22,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-paystack-signature",
 };
 
+// Helper to send emails with service role authentication
+async function sendEmailWithServiceRole(body: any): Promise<{ success: boolean; error?: string }> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("[sendEmail] Missing environment variables");
+    return { success: false, error: "Missing configuration" };
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("[sendEmail] Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -249,23 +277,21 @@ async function handleChargeSuccess(supabase: any, data: any) {
   if (organizerEmail) {
     try {
       const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
-      await supabase.functions.invoke("send-email", {
-        body: {
-          type: "new_ticket_sale",
-          to: organizerEmail,
-          data: {
-            eventTitle: order.events?.title,
-            eventId: order.event_id,
-            ticketType: "Ticket",
-            quantity: totalQty,
-            buyerName: order.buyer_name,
-            buyerEmail: order.buyer_email,
-            buyerPhone: order.buyer_phone || null,
-            amount: order.total_amount,
-            currency: order.currency || "NGN",
-            isFree: parseFloat(order.total_amount) === 0,
-            appUrl: "https://ticketrack.com",
-          },
+      await sendEmailWithServiceRole({
+        type: "new_ticket_sale",
+        to: organizerEmail,
+        data: {
+          eventTitle: order.events?.title,
+          eventId: order.event_id,
+          ticketType: "Ticket",
+          quantity: totalQty,
+          buyerName: order.buyer_name,
+          buyerEmail: order.buyer_email,
+          buyerPhone: order.buyer_phone || null,
+          amount: order.total_amount,
+          currency: order.currency || "NGN",
+          isFree: parseFloat(order.total_amount) === 0,
+          appUrl: "https://ticketrack.com",
         },
       });
     } catch (emailErr) {
@@ -341,17 +367,15 @@ async function handleCreditPurchase(supabase: any, data: any) {
         .eq('organizer_id', organizer_id)
         .single();
 
-      await supabase.functions.invoke('send-email', {
-        body: {
-          type: 'sms_units_purchased',
-          to: profile.email,
-          data: {
-            organizerName: organizer.business_name,
-            units: parseInt(credits) + parseInt(bonus_credits || 0),
-            amount: amount / 100,
-            currency: currency || 'NGN',
-            newBalance: (balance?.balance || 0) + (balance?.bonus_balance || 0),
-          },
+      await sendEmailWithServiceRole({
+        type: 'sms_units_purchased',
+        to: profile.email,
+        data: {
+          organizerName: organizer.business_name,
+          units: parseInt(credits) + parseInt(bonus_credits || 0),
+          amount: amount / 100,
+          currency: currency || 'NGN',
+          newBalance: (balance?.balance || 0) + (balance?.bonus_balance || 0),
         },
       });
     }
@@ -521,17 +545,15 @@ async function handleSplitPaymentCompleted(supabase: any, splitPaymentId: string
 
     // Send confirmation emails to all members
     for (const share of shares) {
-      await supabase.functions.invoke("send-email", {
-        body: {
-          type: "split_payment_complete",
-          to: share.email,
-          data: {
-            name: share.name,
-            eventTitle: splitPayment.event?.title,
-            orderNumber: order.order_number,
-            shareAmount: share.share_amount,
-            currency: splitPayment.currency,
-          },
+      await sendEmailWithServiceRole({
+        type: "split_payment_complete",
+        to: share.email,
+        data: {
+          name: share.name,
+          eventTitle: splitPayment.event?.title,
+          orderNumber: order.order_number,
+          shareAmount: share.share_amount,
+          currency: splitPayment.currency,
         },
       });
     }
@@ -582,17 +604,15 @@ async function handleTransferSuccess(supabase: any, data: any) {
       .single();
 
     if (profile?.email) {
-      await supabase.functions.invoke("send-email", {
-        body: {
-          type: "paystack_payout_completed",
-          to: profile.email,
-          data: {
-            organizerName: payout.organizers.business_name,
-            amount: (amount / 100).toFixed(2),
-            currency: payout.currency,
-            reference: reference,
-            isDonation: payout.is_donation,
-          },
+      await sendEmailWithServiceRole({
+        type: "paystack_payout_completed",
+        to: profile.email,
+        data: {
+          organizerName: payout.organizers.business_name,
+          amount: (amount / 100).toFixed(2),
+          currency: payout.currency,
+          reference: reference,
+          isDonation: payout.is_donation,
         },
       });
     }
