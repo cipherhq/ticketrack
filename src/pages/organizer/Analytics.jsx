@@ -333,6 +333,7 @@ export function Analytics() {
         id,
         title,
         start_date,
+        currency,
         ticket_types (
           quantity_sold,
           price
@@ -343,7 +344,7 @@ export function Analytics() {
     const eventsWithRevenue = events?.map(event => {
       const ticketsSold = event.ticket_types?.reduce((sum, t) => sum + (t.quantity_sold || 0), 0) || 0;
       const revenue = event.ticket_types?.reduce((sum, t) => sum + ((t.quantity_sold || 0) * (t.price || 0)), 0) || 0;
-      return { ...event, ticketsSold, revenue };
+      return { ...event, ticketsSold, revenue, currency: event.currency || defaultCurrency };
     }) || [];
 
     const sorted = eventsWithRevenue.sort((a, b) => b.revenue - a.revenue).slice(0, 5);
@@ -382,14 +383,16 @@ export function Analytics() {
     link.click();
   };
 
-  const formatCurrency = (amount) => {
+  // Format currency with appropriate symbol based on the currency code
+  const formatCurrencyCompact = (amount, currency = defaultCurrency) => {
+    const symbol = { USD: '$', GBP: '£', EUR: '€', NGN: '₦', GHS: '₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' }[currency] || currency + ' ';
     if (amount >= 1000000) {
-      return `₦${(amount / 1000000).toFixed(1)}M`;
+      return `${symbol}${(amount / 1000000).toFixed(1)}M`;
     }
     if (amount >= 1000) {
-      return `₦${(amount / 1000).toFixed(0)}K`;
+      return `${symbol}${(amount / 1000).toFixed(0)}K`;
     }
-    return `₦${amount.toLocaleString()}`;
+    return `${symbol}${amount.toLocaleString()}`;
   };
 
   const maxSales = Math.max(...salesByDay.map(d => d.sales), 1);
@@ -501,7 +504,7 @@ export function Analytics() {
               </div>
               <div>
                 <p className="text-xs text-[#0F0F0F]/60">Platform Fees</p>
-                <p className="text-lg font-semibold text-[#0F0F0F]">{Object.entries(stats.platformFeesByCurrency || {}).map(([c, a]) => formatPrice(a, c)).join(" | ") || "₦0"}</p>
+                <p className="text-lg font-semibold text-[#0F0F0F]">{Object.entries(stats.platformFeesByCurrency || {}).map(([c, a]) => formatPrice(a, c)).join(" | ") || formatPrice(0, defaultCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -598,7 +601,7 @@ export function Analytics() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-[#0F0F0F]">{type.name}</span>
                       <span className="text-sm text-[#0F0F0F]/60">
-                        {type.sold} sold • {formatCurrency(type.revenue)}
+                        {type.sold} sold • {formatCurrencyCompact(type.revenue, defaultCurrency)}
                       </span>
                     </div>
                     <div className="w-full bg-[#F4F6FA] rounded-full h-3">
@@ -640,7 +643,7 @@ export function Analytics() {
                       <p className="text-sm text-[#0F0F0F]/60">{event.ticketsSold} tickets sold</p>
                     </div>
                   </div>
-                  <p className="text-lg font-semibold text-[#2969FF]">{formatCurrency(event.revenue)}</p>
+                  <p className="text-lg font-semibold text-[#2969FF]">{formatPrice(event.revenue, event.currency)}</p>
                 </div>
               ))}
             </div>
@@ -673,21 +676,21 @@ export function Analytics() {
                   {monthlyRevenue.map((row) => (
                     <tr key={`${row.month}-${row.year}`} className="border-b border-[#0F0F0F]/5">
                       <td className="py-3 px-4 text-[#0F0F0F]">{row.month} {row.year}</td>
-                      <td className="py-3 px-4 text-right text-[#0F0F0F]">{formatCurrency(row.gross)}</td>
-                      <td className="py-3 px-4 text-right text-[#0F0F0F]/60">{formatCurrency(row.platformFee)}</td>
-                      <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrency(row.net)}</td>
+                      <td className="py-3 px-4 text-right text-[#0F0F0F]">{formatCurrencyCompact(row.gross, defaultCurrency)}</td>
+                      <td className="py-3 px-4 text-right text-[#0F0F0F]/60">{formatCurrencyCompact(row.platformFee, defaultCurrency)}</td>
+                      <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrencyCompact(row.net, defaultCurrency)}</td>
                     </tr>
                   ))}
                   <tr className="bg-[#F4F6FA] font-medium">
                     <td className="py-3 px-4 text-[#0F0F0F]">Total</td>
                     <td className="py-3 px-4 text-right text-[#0F0F0F]">
-                      {formatCurrency(monthlyRevenue.reduce((s, r) => s + r.gross, 0))}
+                      {formatCurrencyCompact(monthlyRevenue.reduce((s, r) => s + r.gross, 0), defaultCurrency)}
                     </td>
                     <td className="py-3 px-4 text-right text-[#0F0F0F]/60">
-                      {formatCurrency(monthlyRevenue.reduce((s, r) => s + r.platformFee, 0))}
+                      {formatCurrencyCompact(monthlyRevenue.reduce((s, r) => s + r.platformFee, 0), defaultCurrency)}
                     </td>
                     <td className="py-3 px-4 text-right text-green-600">
-                      {formatCurrency(monthlyRevenue.reduce((s, r) => s + r.net, 0))}
+                      {formatCurrencyCompact(monthlyRevenue.reduce((s, r) => s + r.net, 0), defaultCurrency)}
                     </td>
                   </tr>
                 </tbody>

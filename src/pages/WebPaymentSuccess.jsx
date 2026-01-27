@@ -103,6 +103,15 @@ export function WebPaymentSuccess() {
     const sessionId = searchParams.get('session_id')
     const provider = searchParams.get('provider')
 
+    // Debug logging
+    console.log('[WebPaymentSuccess] URL params:', {
+      orderId,
+      sessionId,
+      provider,
+      fullUrl: window.location.href,
+      searchString: window.location.search
+    })
+
     // If we have location state (from Paystack inline), send confirmation email
     if (location.state?.order && location.state?.event && location.state?.tickets) {
       if (!isProcessingRef.current) {
@@ -117,9 +126,16 @@ export function WebPaymentSuccess() {
 
     if (orderId && provider === 'paypal') {
       handlePayPalReturn(orderId)
-    } else if (orderId || sessionId) {
+    } else if (orderId) {
+      // Have order_id - call with both
+      console.log('[WebPaymentSuccess] Calling loadStripeOrder with orderId:', orderId)
       loadStripeOrder(orderId)
+    } else if (sessionId) {
+      // Only have session_id (order_id missing from URL) - edge function will try to get it from Stripe
+      console.log('[WebPaymentSuccess] No orderId but have sessionId, calling loadStripeOrder')
+      loadStripeOrder(null)
     } else if (!location.state?.order && !location.state?.event) {
+      console.log('[WebPaymentSuccess] No order data, redirecting to /tickets')
       navigate('/tickets')
     }
   }, [searchParams])
@@ -159,16 +175,21 @@ export function WebPaymentSuccess() {
 
   const loadStripeOrder = async (orderId) => {
     setLoading(true)
+    console.log('[WebPaymentSuccess] loadStripeOrder called with:', { orderId, type: typeof orderId })
+
     try {
       const sessionId = searchParams.get('session_id')
+      console.log('[WebPaymentSuccess] Calling complete-stripe-order with:', { orderId, sessionId })
 
       // Use edge function to complete order (bypasses RLS, handles everything server-side)
       const { data: result, error: fnError } = await supabase.functions.invoke('complete-stripe-order', {
         body: { orderId, sessionId }
       })
 
+      console.log('[WebPaymentSuccess] Edge function response:', { result, fnError })
+
       if (fnError) {
-        console.error('Edge function error:', fnError)
+        console.error('Edge function error:', fnError, 'Result:', result)
         // Fallback to direct query if edge function fails
         const { data: orderData } = await supabase
           .from('orders')
@@ -298,7 +319,26 @@ export function WebPaymentSuccess() {
     )
   }
 
-  if (!order || !event) return null
+  if (!order || !event) {
+    // Show error state instead of blank page
+    if (error) {
+      return (
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h2 className="text-xl font-bold text-[#0F0F0F] mb-2">Something went wrong</h2>
+            <p className="text-[#0F0F0F]/60 mb-4">{error}</p>
+            <Button onClick={() => navigate('/tickets')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white">
+              View My Tickets
+            </Button>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', { 

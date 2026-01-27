@@ -47,9 +47,40 @@ serve(async (req) => {
 
     console.log(`[complete-stripe-order] Sanitized orderId: "${orderId}", type: ${typeof orderId}, length: ${orderId?.length}`);
 
+    // If no orderId but we have sessionId, try to get orderId from Stripe session metadata
+    if (!orderId && sessionId) {
+      console.log(`[complete-stripe-order] No orderId provided, trying to get from Stripe session: ${sessionId}`);
+      try {
+        // Get Stripe config
+        const { data: gatewayConfig } = await supabase
+          .from("payment_gateway_config")
+          .select("secret_key_encrypted")
+          .eq("provider", "stripe")
+          .eq("is_active", true)
+          .limit(1)
+          .single();
+
+        if (gatewayConfig?.secret_key_encrypted) {
+          const stripe = new Stripe(gatewayConfig.secret_key_encrypted, {
+            apiVersion: "2023-10-16",
+          });
+
+          const session = await stripe.checkout.sessions.retrieve(sessionId);
+          console.log(`[complete-stripe-order] Stripe session metadata:`, JSON.stringify(session.metadata));
+
+          if (session.metadata?.order_id) {
+            orderId = session.metadata.order_id;
+            console.log(`[complete-stripe-order] Got orderId from Stripe session: ${orderId}`);
+          }
+        }
+      } catch (stripeErr) {
+        console.error(`[complete-stripe-order] Error getting orderId from Stripe:`, stripeErr);
+      }
+    }
+
     if (!orderId) {
       return new Response(
-        JSON.stringify({ success: false, error: "Missing orderId" }),
+        JSON.stringify({ success: false, error: "Missing orderId - could not retrieve from URL or Stripe session" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
