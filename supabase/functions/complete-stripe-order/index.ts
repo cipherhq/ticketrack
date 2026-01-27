@@ -122,33 +122,50 @@ serve(async (req) => {
     // Build order object with related data - fetch separately to avoid join issues
     let order: any = { ...baseOrder };
 
-    // Fetch event data
-    const { data: eventData } = await supabase
-      .from("events")
-      .select("id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, currency, notify_organizer_on_sale, organizer_id")
-      .eq("id", baseOrder.event_id)
-      .single();
+    console.log(`[complete-stripe-order] Fetching event for event_id: ${baseOrder.event_id}`);
 
-    if (eventData) {
-      // Fetch organizer data
-      const { data: organizerData } = await supabase
-        .from("organizers")
-        .select("id, email, business_email, business_name")
-        .eq("id", eventData.organizer_id)
+    // Fetch event data
+    if (baseOrder.event_id) {
+      const { data: eventData, error: eventError } = await supabase
+        .from("events")
+        .select("id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, currency, notify_organizer_on_sale, organizer_id")
+        .eq("id", baseOrder.event_id)
         .single();
 
-      order.events = { ...eventData, organizer: organizerData };
+      if (eventError) {
+        console.error(`[complete-stripe-order] Event fetch error:`, eventError.message);
+      }
+
+      if (eventData) {
+        console.log(`[complete-stripe-order] Event found: ${eventData.title}`);
+        // Fetch organizer data
+        const { data: organizerData } = await supabase
+          .from("organizers")
+          .select("id, email, business_email, business_name")
+          .eq("id", eventData.organizer_id)
+          .single();
+
+        order.events = { ...eventData, organizer: organizerData };
+      } else {
+        console.error(`[complete-stripe-order] No event found for event_id: ${baseOrder.event_id}`);
+      }
+    } else {
+      console.error(`[complete-stripe-order] Order has no event_id!`);
     }
 
     // Fetch order items with ticket types
-    const { data: orderItems } = await supabase
+    const { data: orderItems, error: itemsError } = await supabase
       .from("order_items")
       .select("*, ticket_types(id, name, price)")
       .eq("order_id", orderId);
 
+    if (itemsError) {
+      console.error(`[complete-stripe-order] Order items fetch error:`, itemsError.message);
+    }
+
     order.order_items = orderItems || [];
 
-    console.log(`[complete-stripe-order] Order ${orderId} assembled: user_id=${order.user_id}, items=${order.order_items?.length || 0}`);
+    console.log(`[complete-stripe-order] Order ${orderId} assembled: user_id=${order.user_id}, event=${order.events?.title || 'MISSING'}, items=${order.order_items?.length || 0}`);
 
     // If already completed, just return the tickets
     if (order.status === "completed") {
