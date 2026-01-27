@@ -176,17 +176,17 @@ serve(async (req) => {
 
       if (eventData) {
         console.log(`[complete-stripe-order] Event found: "${eventData.title}", organizer_id: ${eventData.organizer_id}`);
-        // Fetch organizer data
+        // Fetch organizer data with profile email
         const { data: organizerData, error: orgError } = await supabase
           .from("organizers")
-          .select("id, email, business_email, business_name")
+          .select("id, business_email, business_name, user_id, profiles(email)")
           .eq("id", eventData.organizer_id)
           .single();
 
         if (orgError) {
           console.error(`[complete-stripe-order] Organizer fetch error:`, orgError.message);
         }
-        console.log(`[complete-stripe-order] Organizer found: ${organizerData?.business_name || 'none'}`);
+        console.log(`[complete-stripe-order] Organizer found: ${organizerData?.business_name || 'none'}, profile email: ${organizerData?.profiles?.email}, business_email: ${organizerData?.business_email}`);
 
         order.events = { ...eventData, organizer: organizerData };
       } else {
@@ -399,7 +399,9 @@ serve(async (req) => {
         }
 
         // 2. Send notification to organizer
-        const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email;
+        console.log(`[complete-stripe-order] Organizer data:`, JSON.stringify(eventData?.organizer));
+        const organizerEmail = eventData?.organizer?.profiles?.email || eventData?.organizer?.business_email;
+        console.log(`[complete-stripe-order] Organizer email resolved to: ${organizerEmail}, notify_organizer_on_sale: ${eventData?.notify_organizer_on_sale}`);
         if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
           const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
             method: "POST",
