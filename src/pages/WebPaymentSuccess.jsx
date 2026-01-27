@@ -237,16 +237,46 @@ export function WebPaymentSuccess() {
         // Edge function succeeded
         const orderData = result.order
         const ticketsData = result.tickets || []
+        console.log('[WebPaymentSuccess] Edge function order data:', orderData)
+        console.log('[WebPaymentSuccess] Edge function order.events:', orderData?.events)
 
-        // Fetch full event data for display
-        const { data: fullOrder } = await supabase
+        // Fetch full event data for display (may fail due to RLS, so we have fallback)
+        const { data: fullOrder, error: fullOrderError } = await supabase
           .from('orders')
           .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*))')
           .eq('id', orderId)
           .single()
 
+        if (fullOrderError) {
+          console.warn('[WebPaymentSuccess] fullOrder query failed (likely RLS):', fullOrderError.message)
+        }
+        console.log('[WebPaymentSuccess] fullOrder from DB:', fullOrder)
+
         const finalOrder = fullOrder || orderData
         const finalEvent = fullOrder?.events || orderData?.events
+
+        console.log('[WebPaymentSuccess] Final order:', finalOrder)
+        console.log('[WebPaymentSuccess] Final event:', finalEvent)
+
+        if (!finalEvent) {
+          console.error('[WebPaymentSuccess] No event data available!')
+          // Try to get event directly if missing
+          if (orderData?.event_id) {
+            const { data: eventDirect } = await supabase
+              .from('events')
+              .select('id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency')
+              .eq('id', orderData.event_id)
+              .single()
+            if (eventDirect) {
+              console.log('[WebPaymentSuccess] Got event directly:', eventDirect)
+              setOrder(finalOrder)
+              setEvent(eventDirect)
+              setTickets(ticketsData.map(t => ({ ...t, order: { id: orderData.id, order_number: orderData.order_number, total_amount: orderData.total_amount, is_donation: orderData.is_donation, currency: orderData.currency } })))
+              console.log('Order completed. Confirmation email sent by edge function.')
+              return
+            }
+          }
+        }
 
         setOrder(finalOrder)
         setEvent(finalEvent)
