@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { MapPin, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { MapPin, Loader2, X } from 'lucide-react';
 import { Input } from './input';
 
 export function AddressAutocomplete({
@@ -9,20 +9,11 @@ export function AddressAutocomplete({
   placeholder = "Search for venue address...",
   className = ""
 }) {
-  const containerRef = useRef(null);
-  const autocompleteElementRef = useRef(null);
+  const inputRef = useRef(null);
+  const autocompleteRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState(value || '');
-
-  // Use refs to hold the latest callbacks (avoids stale closure in event listener)
-  const onChangeRef = useRef(onChange);
-  const onPlaceSelectRef = useRef(onPlaceSelect);
-
-  useEffect(() => {
-    onChangeRef.current = onChange;
-    onPlaceSelectRef.current = onPlaceSelect;
-  }, [onChange, onPlaceSelect]);
 
   // Sync external value changes
   useEffect(() => {
@@ -33,71 +24,49 @@ export function AddressAutocomplete({
   useEffect(() => {
     const loadGoogleMaps = async () => {
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      
+
       if (!apiKey) {
         console.error('Google Maps API key is missing');
         setIsLoading(false);
         return;
       }
 
-      // Check if Google Maps is already loaded with the new API
-      if (window.google?.maps?.importLibrary) {
-        try {
-          await window.google.maps.importLibrary('places');
-          setIsLoaded(true);
-          setIsLoading(false);
-          return;
-        } catch (error) {
-          console.error('Failed to load Places library:', error);
-        }
+      // Check if Google Maps is already loaded
+      if (window.google?.maps?.places?.Autocomplete) {
+        setIsLoaded(true);
+        setIsLoading(false);
+        return;
       }
 
-      // Check if an old-style script exists (without loading=async)
+      // Check if script is already loading
       const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
       if (existingScript) {
-        // Check if it has importLibrary (new API)
-        if (window.google?.maps?.importLibrary) {
-          try {
-            await window.google.maps.importLibrary('places');
+        // Wait for it to load
+        const checkLoaded = setInterval(() => {
+          if (window.google?.maps?.places?.Autocomplete) {
+            clearInterval(checkLoaded);
             setIsLoaded(true);
             setIsLoading(false);
-            return;
-          } catch (error) {
-            console.error('Failed to load Places library from existing script:', error);
           }
-        }
-        
-        // Old script without importLibrary - remove it and load new one
-        console.log('Removing old Google Maps script, loading new version with async');
-        existingScript.remove();
-        delete window.google;
+        }, 100);
+        // Timeout after 10 seconds
+        setTimeout(() => clearInterval(checkLoaded), 10000);
+        return;
       }
 
-      // Load Google Maps script with the new Dynamic Library Import API
+      // Load Google Maps script with Places library
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
       script.async = true;
       script.defer = true;
-      
-      script.onload = async () => {
-        // Wait a moment for the API to initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        if (window.google?.maps?.importLibrary) {
-          try {
-            await window.google.maps.importLibrary('places');
-            setIsLoaded(true);
-            setIsLoading(false);
-          } catch (error) {
-            console.error('Failed to load Places library:', error);
-            setIsLoading(false);
-          }
-        } else {
-          console.error('Google Maps loaded but importLibrary not available');
-          setIsLoading(false);
+
+      script.onload = () => {
+        if (window.google?.maps?.places?.Autocomplete) {
+          setIsLoaded(true);
         }
+        setIsLoading(false);
       };
-      
+
       script.onerror = () => {
         console.error('Failed to load Google Maps script');
         setIsLoading(false);
@@ -109,124 +78,92 @@ export function AddressAutocomplete({
     loadGoogleMaps();
   }, []);
 
-  // Handle place selection
-  const handlePlaceSelect = useCallback(async (event) => {
-    console.log('[AddressAutocomplete] gmp-placeselect event fired:', event);
-    const place = event.place;
-
-    if (!place) {
-      console.error('[AddressAutocomplete] No place in event');
-      return;
-    }
-
-    try {
-      console.log('[AddressAutocomplete] Fetching place fields...');
-      // Fetch the fields we need
-      await place.fetchFields({
-        fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'],
-      });
-      console.log('[AddressAutocomplete] Place fields fetched:', place.formattedAddress);
-
-      const placeData = {
-        address: place.formattedAddress || '',
-        name: place.displayName || '',
-        placeId: place.id || '',
-        lat: place.location?.lat() || null,
-        lng: place.location?.lng() || null,
-        city: '',
-        country: '',
-      };
-
-      // Extract city and country from address components
-      if (place.addressComponents) {
-        place.addressComponents.forEach(component => {
-          const types = component.types || [];
-          if (types.includes('locality')) {
-            placeData.city = component.longText || component.long_name || '';
-          }
-          if (types.includes('administrative_area_level_1') && !placeData.city) {
-            placeData.city = component.longText || component.long_name || '';
-          }
-          if (types.includes('country')) {
-            placeData.country = component.longText || component.long_name || '';
-          }
-        });
-      }
-
-      // Generate Google Maps link
-      if (placeData.lat && placeData.lng) {
-        placeData.googleMapLink = `https://www.google.com/maps/search/?api=1&query=${placeData.lat},${placeData.lng}&query_place_id=${placeData.placeId}`;
-      }
-
-      console.log('[AddressAutocomplete] Updating values:', {
-        formattedAddress: place.formattedAddress,
-        placeData
-      });
-      setInputValue(place.formattedAddress || '');
-      // Use refs to ensure we call the latest callbacks
-      onChangeRef.current?.(place.formattedAddress || '');
-      onPlaceSelectRef.current?.(placeData);
-      console.log('[AddressAutocomplete] Callbacks called successfully');
-    } catch (error) {
-      console.error('[AddressAutocomplete] Error fetching place details:', error);
-    }
-  }, []); // No dependencies - we use refs for callbacks
-
-  // Initialize the PlaceAutocompleteElement
+  // Initialize Autocomplete when loaded and input is ready
   useEffect(() => {
-    if (!isLoaded || !containerRef.current) return;
-
-    // Check if element already exists
-    if (autocompleteElementRef.current) {
-      return;
-    }
+    if (!isLoaded || !inputRef.current || autocompleteRef.current) return;
 
     try {
-      // Create the PlaceAutocompleteElement
-      const placeAutocomplete = new window.google.maps.places.PlaceAutocompleteElement({
-        includedPrimaryTypes: ['establishment', 'geocode'],
-        includedRegionCodes: ['ng', 'gh', 'gb', 'us', 'ca'],
+      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ['establishment', 'geocode'],
+        fields: ['formatted_address', 'name', 'place_id', 'geometry', 'address_components'],
       });
 
-      // Style the element
-      placeAutocomplete.style.cssText = `
-        width: 100%;
-        --gmpac-input-height: 48px;
-        --gmpac-input-background: #F4F6FA;
-        --gmpac-input-border: none;
-        --gmpac-input-border-radius: 12px;
-        --gmpac-input-padding-left: 40px;
-        --gmpac-input-padding-right: 16px;
-        --gmpac-input-font-size: 14px;
-        --gmpac-input-color: #0F0F0F;
-        --gmpac-input-placeholder-color: rgba(15, 15, 15, 0.4);
-        --gmpac-list-background: white;
-        --gmpac-list-border-radius: 12px;
-        --gmpac-list-item-selected-background: #F4F6FA;
-      `;
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        console.log('[AddressAutocomplete] Place selected:', place);
 
-      // Set placeholder
-      placeAutocomplete.placeholder = placeholder;
+        if (!place.formatted_address && !place.name) {
+          console.log('[AddressAutocomplete] No place data, user may have pressed enter without selecting');
+          return;
+        }
 
-      // Add event listener for place selection
-      placeAutocomplete.addEventListener('gmp-placeselect', handlePlaceSelect);
+        const address = place.formatted_address || place.name || '';
 
-      // Clear the container and append the element
-      containerRef.current.innerHTML = '';
-      containerRef.current.appendChild(placeAutocomplete);
-      
-      autocompleteElementRef.current = placeAutocomplete;
+        const placeData = {
+          address: address,
+          name: place.name || '',
+          placeId: place.place_id || '',
+          lat: place.geometry?.location?.lat() || null,
+          lng: place.geometry?.location?.lng() || null,
+          city: '',
+          country: '',
+          googleMapLink: '',
+        };
+
+        // Extract city and country from address components
+        if (place.address_components) {
+          place.address_components.forEach(component => {
+            const types = component.types || [];
+            if (types.includes('locality')) {
+              placeData.city = component.long_name || '';
+            }
+            if (types.includes('administrative_area_level_1') && !placeData.city) {
+              placeData.city = component.long_name || '';
+            }
+            if (types.includes('country')) {
+              placeData.country = component.long_name || '';
+            }
+          });
+        }
+
+        // Generate Google Maps link
+        if (placeData.lat && placeData.lng) {
+          placeData.googleMapLink = `https://www.google.com/maps/search/?api=1&query=${placeData.lat},${placeData.lng}&query_place_id=${placeData.placeId}`;
+        }
+
+        console.log('[AddressAutocomplete] Calling callbacks with:', placeData);
+        setInputValue(address);
+        onChange?.(address);
+        onPlaceSelect?.(placeData);
+      });
+
+      autocompleteRef.current = autocomplete;
+      console.log('[AddressAutocomplete] Autocomplete initialized');
     } catch (error) {
-      console.error('Error initializing PlaceAutocompleteElement:', error);
+      console.error('[AddressAutocomplete] Error initializing Autocomplete:', error);
     }
 
     return () => {
-      if (autocompleteElementRef.current) {
-        autocompleteElementRef.current.removeEventListener('gmp-placeselect', handlePlaceSelect);
-        autocompleteElementRef.current = null;
+      if (autocompleteRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
       }
     };
-  }, [isLoaded, placeholder, handlePlaceSelect]); // handlePlaceSelect is stable since it uses refs
+  }, [isLoaded, onChange, onPlaceSelect]);
+
+  const handleInputChange = (e) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    onChange?.(newValue);
+  };
+
+  const clearInput = () => {
+    setInputValue('');
+    onChange?.('');
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -234,35 +171,32 @@ export function AddressAutocomplete({
         <Input
           placeholder="Loading maps..."
           disabled
-          className="h-12 rounded-xl bg-[#F4F6FA] border-0 pl-10"
+          className="h-12 rounded-xl bg-white border border-[#0F0F0F]/10 pl-10"
         />
         <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40 animate-spin" />
       </div>
     );
   }
 
-  if (!isLoaded) {
-    // Fallback to regular input if Google Maps fails to load
-    return (
-      <div className={`relative ${className}`}>
-        <Input
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-            onChange(e.target.value);
-          }}
-          placeholder={placeholder}
-          className="h-12 rounded-xl bg-[#F4F6FA] border-0 pl-10"
-        />
-        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-      </div>
-    );
-  }
-
   return (
     <div className={`relative ${className}`}>
-      <div ref={containerRef} className="w-full" />
-      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40 pointer-events-none z-10" />
+      <Input
+        ref={inputRef}
+        value={inputValue}
+        onChange={handleInputChange}
+        placeholder={placeholder}
+        className="h-12 rounded-xl bg-white border border-[#0F0F0F]/10 pl-10 pr-10"
+      />
+      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40 pointer-events-none" />
+      {inputValue && (
+        <button
+          type="button"
+          onClick={clearInput}
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40 hover:text-[#0F0F0F]/60 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 }
