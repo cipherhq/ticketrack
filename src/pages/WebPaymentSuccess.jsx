@@ -310,14 +310,8 @@ export function WebPaymentSuccess() {
         // Mark waitlist as purchased if applicable
         await handleWaitlistCompletion(orderData)
 
-        // Send confirmation email with PDF ticket attachment
-        // This is sent from frontend because PDF generation requires browser APIs
-        if (finalEvent?.title && ticketsWithOrder.length > 0) {
-          console.log('[WebPaymentSuccess] Sending PDF ticket email...')
-          await sendTicketEmailWithPDF(finalOrder, finalEvent, ticketsWithOrder)
-        } else {
-          console.warn('[WebPaymentSuccess] Cannot send PDF email - missing event or tickets')
-        }
+        // Confirmation email is sent by the edge function (complete-stripe-order)
+        console.log('[WebPaymentSuccess] Order completed - email sent by edge function')
       } else {
         console.error('Order completion failed:', result?.error)
         navigate('/tickets')

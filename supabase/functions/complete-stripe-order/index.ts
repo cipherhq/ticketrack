@@ -362,11 +362,43 @@ serve(async (req) => {
         console.error("[complete-stripe-order] Skipping emails - event data missing. Event title:", eventData?.title);
         console.error("[complete-stripe-order] Full order.events:", JSON.stringify(order.events));
       } else {
-        // NOTE: Attendee confirmation email with PDF is sent from frontend (WebPaymentSuccess)
-        // This edge function only sends the organizer notification
-        console.log("[complete-stripe-order] Attendee email will be sent from frontend with PDF attachment");
+        // 1. Send confirmation to attendee (without PDF - frontend will try to send with PDF)
+        if (order.buyer_email) {
+          console.log(`[complete-stripe-order] Sending attendee email to: ${order.buyer_email}`);
+          const attendeeEmailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              type: "ticket_purchase",
+              to: order.buyer_email,
+              data: {
+                attendeeName: order.buyer_name || "Guest",
+                eventTitle: eventData.title,
+                eventDate: eventData.start_date,
+                venueName: venueName,
+                city: eventData.city || "",
+                ticketType: ticketTypes,
+                quantity: totalQty,
+                orderNumber: order.order_number,
+                totalAmount: order.total_amount,
+                currency: order.currency || eventData.currency || "GBP",
+                isFree: parseFloat(order.total_amount) === 0,
+                appUrl: "https://ticketrack.com",
+              },
+            }),
+          });
+          const attendeeResult = await attendeeEmailResponse.json();
+          if (attendeeResult.success) {
+            console.log("[complete-stripe-order] Attendee confirmation email sent to:", order.buyer_email);
+          } else {
+            console.error("[complete-stripe-order] Attendee email failed:", attendeeResult.error);
+          }
+        }
 
-        // Send notification to organizer
+        // 2. Send notification to organizer
         const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email;
         if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
           const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
