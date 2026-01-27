@@ -207,9 +207,32 @@ export function WebPaymentSuccess() {
             .eq('order_id', orderId)
           setTickets(ticketsData || [])
         } else {
-          navigate('/tickets')
+          setError('Order not found. Please check your email for confirmation.')
           return
         }
+      } else if (result && !result.success) {
+        // Edge function returned { success: false, error: "..." }
+        console.error('Edge function returned error:', result.error)
+        setError(result.error || 'Failed to complete order')
+        // Still try fallback query
+        const { data: orderData } = await supabase
+          .from('orders')
+          .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*))')
+          .eq('id', orderId)
+          .single()
+
+        if (orderData) {
+          setOrder(orderData)
+          setEvent(orderData.events)
+          setError(null) // Clear error if we found the order
+
+          const { data: ticketsData } = await supabase
+            .from('tickets')
+            .select('*, order:orders(id, order_number, total_amount, is_donation, currency)')
+            .eq('order_id', orderId)
+          setTickets(ticketsData || [])
+        }
+        return
       } else if (result?.success) {
         // Edge function succeeded
         const orderData = result.order
