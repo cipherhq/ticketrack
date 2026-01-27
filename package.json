@@ -20,6 +20,7 @@
     "test:load": "k6 run tests/load/k6-load-test.js",
     "test:load:spike": "k6 run -e SCENARIO=spike tests/load/k6-load-test.js",
     "cleanup:auto-refund": "node scripts/cleanup-auto-refund-events.js",
+    "fix:orphaned-orders": "node scripts/fix-orders-without-tickets.js",
     "deploy:functions": "supabase functions deploy --no-verify-jwt",
     "deploy:function": "supabase functions deploy",
     "test:bots": "node tests/bots/run-bots.js",
