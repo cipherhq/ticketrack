@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { QRCodeSVG } from 'qrcode.react'
-import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
+// PDF generation now handled by edge function
 import { WalletButtons } from '@/components/WalletButtons'
 
 
@@ -80,186 +80,70 @@ export function WebPaymentSuccess() {
   const loadStripeOrder = async (orderId) => {
     setLoading(true)
     try {
-      // Fetch order with event and order items
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*)), order_items(*, ticket_types(name, price))') 
-        .eq('id', orderId)
-        .single()
+      const sessionId = searchParams.get('session_id')
 
-      if (orderError || !orderData) {
-        console.error('Order not found:', orderError)
+      // Use edge function to complete order (bypasses RLS, handles everything server-side)
+      const { data: result, error: fnError } = await supabase.functions.invoke('complete-stripe-order', {
+        body: { orderId, sessionId }
+      })
+
+      if (fnError) {
+        console.error('Edge function error:', fnError)
+        // Fallback to direct query if edge function fails
+        const { data: orderData } = await supabase
+          .from('orders')
+          .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*))')
+          .eq('id', orderId)
+          .single()
+
+        if (orderData) {
+          setOrder(orderData)
+          setEvent(orderData.events)
+
+          const { data: ticketsData } = await supabase
+            .from('tickets')
+            .select('*, order:orders(id, order_number, total_amount, is_donation, currency)')
+            .eq('order_id', orderId)
+          setTickets(ticketsData || [])
+        } else {
+          navigate('/events')
+          return
+        }
+      } else if (result?.success) {
+        // Edge function succeeded
+        const orderData = result.order
+        const ticketsData = result.tickets || []
+
+        // Fetch full event data for display
+        const { data: fullOrder } = await supabase
+          .from('orders')
+          .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*))')
+          .eq('id', orderId)
+          .single()
+
+        setOrder(fullOrder || orderData)
+        setEvent(fullOrder?.events || orderData?.events)
+
+        // Attach order data to tickets for donation display
+        const ticketsWithOrder = ticketsData.map(ticket => ({
+          ...ticket,
+          order: {
+            id: orderData.id,
+            order_number: orderData.order_number,
+            total_amount: orderData.total_amount,
+            is_donation: orderData.is_donation,
+            currency: orderData.currency
+          }
+        }))
+        setTickets(ticketsWithOrder)
+
+        // Mark waitlist as purchased if applicable
+        await handleWaitlistCompletion(orderData)
+      } else {
+        console.error('Order completion failed:', result?.error)
         navigate('/events')
         return
       }
-
-      // Check if order needs to be completed (Stripe redirect)
-      if (orderData.status === 'pending') {
-        console.log('Completing Stripe order:', orderId)
-        
-        // Update order status to completed
-        const { error: updateError } = await supabase.from('orders').update({ 
-          status: 'completed',
-          paid_at: new Date().toISOString()
-        }).eq('id', orderId)
-        
-        if (updateError) {
-          console.error('Failed to update order status:', updateError)
-        }
-        
-        // Create tickets from order_items
-        const ticketsToCreate = []
-        const orderItems = orderData.order_items || []
-        
-        for (const item of orderItems) {
-          for (let i = 0; i < item.quantity; i++) {
-            const ticketCode = 'TKT' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase()
-            ticketsToCreate.push({
-              event_id: orderData.event_id,
-              ticket_type_id: item.ticket_type_id,
-              user_id: orderData.user_id,
-              attendee_email: orderData.buyer_email,
-              attendee_name: orderData.buyer_name,
-              attendee_phone: orderData.buyer_phone || null,
-              ticket_code: ticketCode,
-              qr_code: ticketCode,
-              unit_price: item.unit_price,
-              total_price: item.unit_price,
-              payment_reference: orderData.payment_reference,
-              payment_status: 'completed',
-              payment_method: orderData.payment_method || 'stripe',
-              order_id: orderId,
-              status: 'active'
-            })
-          }
-        }
-
-        if (ticketsToCreate.length > 0) {
-          const { data: newTickets, error: ticketError } = await supabase
-            .from('tickets')
-            .insert(ticketsToCreate)
-            .select()
-
-          if (ticketError) {
-            console.error('Error creating tickets:', ticketError)
-          } else {
-            console.log('Tickets created:', newTickets?.length)
-            // Attach order data to tickets for donation display
-            const ticketsWithOrder = (newTickets || []).map(ticket => ({
-              ...ticket,
-              order: {
-                id: orderData.id,
-                order_number: orderData.order_number,
-                total_amount: orderData.total_amount,
-                is_donation: orderData.is_donation,
-                currency: orderData.currency
-              }
-            }))
-            setTickets(ticketsWithOrder)
-          }
-        }
-
-        // Send confirmation email with PDF attachment
-        try {
-          const eventData = orderData.events
-          const ticketTypes = orderItems.map(i => i.ticket_types?.name || 'Ticket').join(', ')
-          const totalQty = orderItems.reduce((sum, i) => sum + i.quantity, 0)
-          
-          // Generate PDF ticket
-          let pdfAttachment = null
-          try {
-            // Generate PDF for ALL tickets (multi-page PDF)
-            if (ticketsToCreate.length > 0) {
-              const ticketsForPdf = ticketsToCreate.map(t => ({
-                ticket_code: t.ticket_code,
-                attendee_name: orderData.buyer_name,
-                attendee_email: orderData.buyer_email,
-                ticket_type_name: t.ticket_type_name || orderItems.find(oi => oi.ticket_type_id === t.ticket_type_id)?.ticket_types?.name || 'Ticket'
-              }))
-              // Debug log removed for production security
-              const pdfData = await generateMultiTicketPDFBase64(ticketsForPdf, eventData)
-              pdfAttachment = [{
-                filename: pdfData.filename,
-                content: pdfData.base64,
-                type: 'application/pdf'
-              }]
-            }
-          } catch (pdfErr) {
-            console.error('PDF generation failed:', pdfErr)
-          }
-          
-          // Full venue address for email
-          const fullVenue = [eventData?.venue_name, eventData?.venue_address, eventData?.city, eventData?.country].filter(Boolean).join(', ') || 'TBA'
-          
-          await supabase.functions.invoke('send-email', {
-            body: {
-              type: 'ticket_purchase',
-              to: orderData.buyer_email,
-              data: {
-                attendeeName: orderData.buyer_name,
-                eventTitle: eventData?.title,
-                eventDate: eventData?.start_date,
-                venueName: fullVenue,
-                city: eventData?.city || '',
-                ticketType: ticketTypes,
-                quantity: totalQty,
-                orderNumber: orderData.order_number,
-                totalAmount: orderData.total_amount,
-                currency: orderData.currency || eventData?.currency || 'GBP',
-                isFree: parseFloat(orderData.total_amount) === 0,
-                appUrl: window.location.origin
-              },
-              ...(pdfAttachment && { attachments: pdfAttachment })
-            }
-          })
-          console.log('Attendee confirmation email sent')
-
-          // Send notification to organizer (if enabled)
-          const organizerEmail = eventData?.organizer?.email || eventData?.organizer?.business_email
-          if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
-            await supabase.functions.invoke('send-email', {
-              body: {
-                type: 'new_ticket_sale',
-                to: organizerEmail,
-                data: {
-                  eventTitle: eventData?.title,
-                  eventId: eventData?.id,
-                  ticketType: ticketTypes,
-                  quantity: totalQty,
-                  buyerName: orderData.buyer_name,
-                  buyerEmail: orderData.buyer_email,
-                  buyerPhone: orderData.buyer_phone || null,
-                  amount: orderData.total_amount,
-                  currency: orderData.currency || eventData?.currency || 'GBP',
-                  isFree: parseFloat(orderData.total_amount) === 0,
-                  totalSold: eventData?.tickets_sold || 0,
-                  totalCapacity: eventData?.capacity || 0,
-                  appUrl: window.location.origin
-                }
-              }
-            })
-          }
-        } catch (emailErr) {
-          console.warn('Email error:', emailErr?.message)
-        }
-      } else {
-        // Order already completed, just load tickets with order data
-        const { data: ticketsData } = await supabase
-          .from('tickets')
-          .select(`
-            *,
-            order:orders(id, order_number, total_amount, is_donation, currency)
-          `)
-          .eq('order_id', orderId)
-        
-        setTickets(ticketsData || [])
-      }
-
-      setOrder({ ...orderData, status: 'completed' })
-      setEvent(orderData.events)
-
-      // Mark waitlist as purchased if applicable
-      await handleWaitlistCompletion(orderData)
     } catch (err) {
       console.error('Error:', err)
       setError('Failed to process order')
