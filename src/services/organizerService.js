@@ -884,3 +884,66 @@ export const uploadEventImage = (organizerId, file) => uploadImage('event-images
 export const uploadOrganizerLogo = (organizerId, file) => uploadImage('organizer-logos', organizerId, file);
 export const uploadKycFile = (organizerId, file) => uploadImage('kyc-documents', organizerId, file);
 export const uploadSponsorLogo = (organizerId, file) => uploadImage('sponsor-logos', organizerId, file);
+
+// =====================================================
+// EVENT SPEAKERS FUNCTIONS
+// =====================================================
+
+export async function getEventSpeakers(eventId) {
+  const { data, error } = await supabase
+    .from('event_speakers')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('display_order', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function saveEventSpeakers(eventId, speakers) {
+  // Delete existing speakers for this event
+  await supabase
+    .from('event_speakers')
+    .delete()
+    .eq('event_id', eventId);
+
+  // If no speakers to save, return early
+  if (!speakers || speakers.length === 0) {
+    return [];
+  }
+
+  // Insert new speakers
+  const speakersToInsert = speakers.map((speaker, index) => ({
+    event_id: eventId,
+    name: speaker.name,
+    role: speaker.role || null,
+    bio: speaker.bio || null,
+    image_url: speaker.image_url || null,
+    social_links: speaker.social_links || {},
+    display_order: index,
+  }));
+
+  const { data, error } = await supabase
+    .from('event_speakers')
+    .insert(speakersToInsert)
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function uploadSpeakerImage(eventId, file) {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${eventId}/speakers/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage.from('event-images').upload(fileName, file);
+  if (uploadError) throw uploadError;
+
+  const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(fileName);
+  return publicUrl;
+}
+
+export async function deleteSpeaker(speakerId) {
+  const { error } = await supabase.from('event_speakers').delete().eq('id', speakerId);
+  if (error) throw error;
+}

@@ -4,7 +4,8 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   X, Calendar, Clock, MapPin, Ticket, Image as ImageIcon,
   Plus, Trash2, Upload, Loader2, DollarSign, Info, ExternalLink,
-  Users, Pencil, Shield, Monitor, Sparkles, CheckCircle, XCircle,
+  Users, Pencil, Shield, Monitor, Sparkles, CheckCircle, XCircle, Mic,
+  Twitter, Instagram, Linkedin, Globe,
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -15,7 +16,7 @@ import { Checkbox } from '../../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { AddressAutocomplete } from '../../components/ui/AddressAutocomplete';
 import { useOrganizer } from '../../contexts/OrganizerContext';
-import { createEvent, createTicketTypes, updateEvent } from '../../services/organizerService';
+import { createEvent, createTicketTypes, updateEvent, getEventSpeakers, saveEventSpeakers, uploadSpeakerImage } from '../../services/organizerService';
 import { getCategories } from '@/services/events';
 import { supabase } from '@/lib/supabase';
 import ReactQuill from 'react-quill';
@@ -172,6 +173,11 @@ export function CreateEvent() {
   const [eventImages, setEventImages] = useState([]);
   const [sponsorLogos, setSponsorLogos] = useState([]);
   const [loadingEvent, setLoadingEvent] = useState(false);
+
+  // Speakers State
+  const [speakers, setSpeakers] = useState([]);
+  const speakerImageInputRef = useRef(null);
+  const [uploadingSpeakerImage, setUploadingSpeakerImage] = useState(null); // Track which speaker is uploading
 
   // AI Compose states
   const [isAIComposeOpen, setIsAIComposeOpen] = useState(false);
@@ -425,6 +431,27 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             if (!customFieldsError && customFields && customFields.length > 0) {
               setFormData(prev => ({ ...prev, customFields: customFields }));
             }
+
+            // Load event speakers
+            try {
+              const speakersData = await getEventSpeakers(id);
+              if (speakersData && speakersData.length > 0) {
+                setSpeakers(speakersData.map(s => ({
+                  tempId: s.id, // Use actual ID as tempId for existing speakers
+                  dbId: s.id,
+                  name: s.name || '',
+                  role: s.role || '',
+                  bio: s.bio || '',
+                  image_url: s.image_url || '',
+                  imageFile: null,
+                  imagePreview: s.image_url || '',
+                  social_links: s.social_links || { twitter: '', instagram: '', linkedin: '', website: '' }
+                })));
+              }
+            } catch (speakersErr) {
+              console.warn('Error loading speakers:', speakersErr);
+              // Continue without speakers - table may not exist yet
+            }
             }
           }
 } catch (err) {
@@ -473,6 +500,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     { id: 'datetime', label: 'Date & Time', icon: Clock },
     { id: 'venue', label: 'Venue Details', icon: MapPin },
     { id: 'ticketing', label: 'Ticketing', icon: Ticket },
+    { id: 'speakers', label: 'Speakers', icon: Mic },
     { id: 'media', label: 'Media & Sponsors', icon: ImageIcon },
   ];
 
@@ -1070,6 +1098,70 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     setSponsorLogos(sponsorLogos.filter((_, i) => i !== index));
   };
 
+  // =====================================================
+  // SPEAKER MANAGEMENT FUNCTIONS
+  // =====================================================
+
+  const addSpeaker = () => {
+    setSpeakers([...speakers, {
+      tempId: Date.now(),
+      name: '',
+      role: '',
+      bio: '',
+      image_url: '',
+      imageFile: null,
+      imagePreview: '',
+      social_links: { twitter: '', instagram: '', linkedin: '', website: '' }
+    }]);
+  };
+
+  const removeSpeaker = (tempId) => {
+    setSpeakers(speakers.filter(s => s.tempId !== tempId));
+  };
+
+  const updateSpeaker = (tempId, field, value) => {
+    setSpeakers(speakers.map(s =>
+      s.tempId === tempId ? { ...s, [field]: value } : s
+    ));
+  };
+
+  const updateSpeakerSocialLink = (tempId, platform, value) => {
+    setSpeakers(speakers.map(s =>
+      s.tempId === tempId
+        ? { ...s, social_links: { ...s.social_links, [platform]: value } }
+        : s
+    ));
+  };
+
+  const handleSpeakerImageChange = async (tempId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB');
+      return;
+    }
+
+    // Set preview immediately
+    const preview = URL.createObjectURL(file);
+    setSpeakers(speakers.map(s =>
+      s.tempId === tempId
+        ? { ...s, imageFile: file, imagePreview: preview }
+        : s
+    ));
+
+    // Reset file input
+    if (e.target) e.target.value = '';
+  };
+
+  const removeSpeakerImage = (tempId) => {
+    setSpeakers(speakers.map(s =>
+      s.tempId === tempId
+        ? { ...s, imageFile: null, imagePreview: '', image_url: '' }
+        : s
+    ));
+  };
+
   // Submit
   const handleSubmit = async () => {
     // Prevent duplicate submissions
@@ -1613,6 +1705,59 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       // END SPONSOR SAVE
       // =====================================================
 
+      // =====================================================
+      // SAVE EVENT SPEAKERS
+      // =====================================================
+      if (speakers.length > 0) {
+        const eventId = savedEvent.id;
+        const validSpeakers = speakers.filter(s => s.name?.trim());
+
+        if (validSpeakers.length > 0) {
+          // Upload speaker images and prepare data
+          const speakersToSave = [];
+          for (const speaker of validSpeakers) {
+            let imageUrl = speaker.image_url;
+
+            // Upload new image if present
+            if (speaker.imageFile && speaker.imagePreview?.startsWith('blob:')) {
+              try {
+                imageUrl = await uploadSpeakerImage(eventId, speaker.imageFile);
+              } catch (uploadErr) {
+                console.error('Error uploading speaker image:', uploadErr);
+                // Continue with no image
+                imageUrl = null;
+              }
+            }
+
+            speakersToSave.push({
+              name: speaker.name.trim(),
+              role: speaker.role?.trim() || null,
+              bio: speaker.bio?.trim() || null,
+              image_url: imageUrl,
+              social_links: speaker.social_links || {},
+            });
+          }
+
+          // Save speakers to database
+          try {
+            await saveEventSpeakers(eventId, speakersToSave);
+          } catch (speakerErr) {
+            console.error('Error saving speakers:', speakerErr);
+            // Don't fail event creation if speakers fail
+          }
+        }
+      } else if (isEditMode && id) {
+        // In edit mode, if speakers array is empty, clear all speakers
+        try {
+          await saveEventSpeakers(id, []);
+        } catch (clearErr) {
+          console.error('Error clearing speakers:', clearErr);
+        }
+      }
+      // =====================================================
+      // END SPEAKER SAVE
+      // =====================================================
+
       // Send event published notification (only for new events, not edits)
       if (!isEditMode && savedEvent) {
         try {
@@ -1715,7 +1860,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               >
                 <tab.icon className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{['Details', 'Date', 'Venue', 'Tickets', 'Media'][index]}</span>
+                <span className="sm:hidden">{['Details', 'Date', 'Venue', 'Tickets', 'Speakers', 'Media'][index]}</span>
               </button>
             ))}
           </div>
@@ -3125,6 +3270,195 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           )}
 
           {/* Media & Sponsors Tab */}
+          {/* Speakers Tab */}
+          {activeTab === 'speakers' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-[#0F0F0F]">Speakers, Artists & Headliners</h3>
+                  <p className="text-sm text-[#0F0F0F]/60">Add speakers, performers, or headliners to showcase on your event page (optional)</p>
+                </div>
+                <Button onClick={addSpeaker} variant="outline" className="rounded-xl">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Speaker
+                </Button>
+              </div>
+
+              {speakers.length === 0 ? (
+                <div className="text-center py-16 bg-[#F4F6FA] rounded-xl border-2 border-dashed border-[#0F0F0F]/10">
+                  <Mic className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+                  <p className="text-[#0F0F0F]/60 text-lg mb-2">No speakers added yet</p>
+                  <p className="text-[#0F0F0F]/40 text-sm mb-4">Click "Add Speaker" to feature speakers, artists, or headliners on your event page</p>
+                  <Button onClick={addSpeaker} variant="outline" className="rounded-xl">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Your First Speaker
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {speakers.map((speaker, index) => (
+                    <Card key={speaker.tempId} className="border-[#0F0F0F]/10 rounded-xl overflow-hidden">
+                      <CardContent className="p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-[#2969FF] flex items-center gap-2">
+                            <Mic className="w-4 h-4" />
+                            Speaker {index + 1}
+                          </span>
+                          <button onClick={() => removeSpeaker(speaker.tempId)} className="text-red-500 hover:text-red-600">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Speaker Image & Basic Info */}
+                        <div className="flex flex-col md:flex-row gap-4">
+                          {/* Image Upload */}
+                          <div className="flex-shrink-0">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              onChange={(e) => handleSpeakerImageChange(speaker.tempId, e)}
+                              className="hidden"
+                              id={`speaker-image-${speaker.tempId}`}
+                            />
+                            <div className="w-32 h-32 rounded-xl border-2 border-dashed border-[#0F0F0F]/20 bg-[#F4F6FA] flex items-center justify-center overflow-hidden relative group">
+                              {(speaker.imagePreview || speaker.image_url) ? (
+                                <>
+                                  <img
+                                    src={speaker.imagePreview || speaker.image_url}
+                                    alt={speaker.name || 'Speaker'}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => document.getElementById(`speaker-image-${speaker.tempId}`)?.click()}
+                                      className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-100"
+                                    >
+                                      <Pencil className="w-4 h-4 text-[#0F0F0F]" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeSpeakerImage(speaker.tempId)}
+                                      className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600"
+                                    >
+                                      <X className="w-4 h-4 text-white" />
+                                    </button>
+                                  </div>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => document.getElementById(`speaker-image-${speaker.tempId}`)?.click()}
+                                  className="flex flex-col items-center justify-center text-[#0F0F0F]/40 hover:text-[#2969FF] transition-colors p-2"
+                                >
+                                  <Upload className="w-6 h-6 mb-1" />
+                                  <span className="text-xs text-center">Add Photo</span>
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-xs text-[#0F0F0F]/40 mt-1 text-center">Max 5MB</p>
+                          </div>
+
+                          {/* Name & Role */}
+                          <div className="flex-1 space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Name <span className="text-red-500">*</span></Label>
+                                <Input
+                                  placeholder="Speaker name"
+                                  value={speaker.name}
+                                  onChange={(e) => updateSpeaker(speaker.tempId, 'name', e.target.value)}
+                                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Role / Title</Label>
+                                <Input
+                                  placeholder="e.g., Keynote Speaker, DJ, Artist"
+                                  value={speaker.role}
+                                  onChange={(e) => updateSpeaker(speaker.tempId, 'role', e.target.value)}
+                                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Bio</Label>
+                              <Textarea
+                                placeholder="Brief bio or description..."
+                                value={speaker.bio}
+                                onChange={(e) => updateSpeaker(speaker.tempId, 'bio', e.target.value)}
+                                rows={3}
+                                className="rounded-xl bg-[#F4F6FA] border-0 resize-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Social Links */}
+                        <div className="border-t border-[#0F0F0F]/10 pt-4">
+                          <Label className="text-sm font-medium mb-3 block">Social Links (optional)</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="flex items-center gap-2">
+                              <Twitter className="w-4 h-4 text-[#1DA1F2] flex-shrink-0" />
+                              <Input
+                                placeholder="twitter.com/username"
+                                value={speaker.social_links?.twitter || ''}
+                                onChange={(e) => updateSpeakerSocialLink(speaker.tempId, 'twitter', e.target.value)}
+                                className="h-10 rounded-lg bg-[#F4F6FA] border-0 text-sm"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Instagram className="w-4 h-4 text-[#E4405F] flex-shrink-0" />
+                              <Input
+                                placeholder="instagram.com/username"
+                                value={speaker.social_links?.instagram || ''}
+                                onChange={(e) => updateSpeakerSocialLink(speaker.tempId, 'instagram', e.target.value)}
+                                className="h-10 rounded-lg bg-[#F4F6FA] border-0 text-sm"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Linkedin className="w-4 h-4 text-[#0A66C2] flex-shrink-0" />
+                              <Input
+                                placeholder="linkedin.com/in/username"
+                                value={speaker.social_links?.linkedin || ''}
+                                onChange={(e) => updateSpeakerSocialLink(speaker.tempId, 'linkedin', e.target.value)}
+                                className="h-10 rounded-lg bg-[#F4F6FA] border-0 text-sm"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Globe className="w-4 h-4 text-[#0F0F0F]/60 flex-shrink-0" />
+                              <Input
+                                placeholder="Website URL"
+                                value={speaker.social_links?.website || ''}
+                                onChange={(e) => updateSpeakerSocialLink(speaker.tempId, 'website', e.target.value)}
+                                className="h-10 rounded-lg bg-[#F4F6FA] border-0 text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {/* Add Another Speaker Button */}
+                  <button
+                    type="button"
+                    onClick={addSpeaker}
+                    className="w-full py-3 border-2 border-dashed border-[#2969FF]/30 rounded-xl text-[#2969FF] hover:bg-[#2969FF]/5 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add another speaker
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 p-3 bg-[#2969FF]/5 rounded-xl text-sm text-[#2969FF]">
+                <Info className="w-4 h-4 flex-shrink-0" />
+                Speakers will be displayed on your event details page. Adding speakers is optional.
+              </div>
+            </div>
+          )}
+
           {activeTab === 'media' && (
             <div className="space-y-6">
               <div className="space-y-2">

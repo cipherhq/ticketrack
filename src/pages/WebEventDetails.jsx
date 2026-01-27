@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { WaitlistDialog } from '@/components/WaitlistDialog'
 import { StartGroupModal } from '@/components/StartGroupModal'
 import { getWaitlistPosition } from '@/services/waitlist'
-import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail, UserPlus, UserCheck, Grid3x3, ChevronLeft, ChevronRight, UsersRound } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Share2, Heart, Minus, Plus, ArrowLeft, Loader2, CheckCircle, DoorOpen, Car, Camera, Video, UtensilsCrossed, Wine, Accessibility, AlertCircle, ExternalLink, Play, Monitor, Mail, UserPlus, UserCheck, Grid3x3, ChevronLeft, ChevronRight, UsersRound, Mic, Twitter, Instagram, Linkedin, Globe } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -67,6 +67,7 @@ export function WebEventDetails() {
   const [recurringViewMode, setRecurringViewMode] = useState('grid') // 'grid' or 'calendar'
   const [recurringPage, setRecurringPage] = useState(1)
   const [showGroupModal, setShowGroupModal] = useState(false) // Group Buy modal
+  const [speakers, setSpeakers] = useState([]) // Event speakers/artists
 
   // Function to load tickets for a specific event (for recurring events)
   const loadTicketsForEvent = async (eventId) => {
@@ -111,6 +112,22 @@ export function WebEventDetails() {
         
         // Fetch ticket types for this event
         await loadTicketsForEvent(eventData.id)
+
+        // Fetch event speakers
+        try {
+          const { data: speakersData, error: speakersError } = await supabase
+            .from('event_speakers')
+            .select('*')
+            .eq('event_id', eventData.id)
+            .order('display_order', { ascending: true })
+
+          if (!speakersError && speakersData) {
+            setSpeakers(speakersData)
+          }
+        } catch (speakersErr) {
+          console.warn('Error loading speakers:', speakersErr)
+          // Continue without speakers - table may not exist yet
+        }
       } catch (err) {
         console.error('Error loading event:', err)
         // Provide more helpful error messages
@@ -842,11 +859,105 @@ export function WebEventDetails() {
           {/* About */}
           <div>
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">About This Event</h2>
-            <div 
+            <div
               className="text-[#0F0F0F]/80 prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description || '', { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
             />
           </div>
+
+          {/* Speakers/Artists/Headliners */}
+          {speakers.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6 flex items-center gap-2">
+                  <Mic className="w-6 h-6 text-[#2969FF]" />
+                  Speakers & Artists
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {speakers.map((speaker) => (
+                    <Card key={speaker.id} className="border-[#0F0F0F]/10 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+                      <CardContent className="p-0">
+                        {/* Speaker Image */}
+                        <div className="aspect-square bg-gradient-to-br from-[#2969FF]/10 to-purple-500/10 flex items-center justify-center overflow-hidden">
+                          {speaker.image_url ? (
+                            <img
+                              src={speaker.image_url}
+                              alt={speaker.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none'
+                                e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg class="w-16 h-16 text-[#0F0F0F]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>`
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Users className="w-16 h-16 text-[#0F0F0F]/20" />
+                            </div>
+                          )}
+                        </div>
+                        {/* Speaker Info */}
+                        <div className="p-4">
+                          <h3 className="font-semibold text-[#0F0F0F] text-lg">{speaker.name}</h3>
+                          {speaker.role && (
+                            <p className="text-[#2969FF] text-sm font-medium">{speaker.role}</p>
+                          )}
+                          {speaker.bio && (
+                            <p className="text-[#0F0F0F]/60 text-sm mt-2 line-clamp-3">{speaker.bio}</p>
+                          )}
+                          {/* Social Links */}
+                          {speaker.social_links && Object.values(speaker.social_links).some(v => v) && (
+                            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#0F0F0F]/10">
+                              {speaker.social_links.twitter && (
+                                <a
+                                  href={speaker.social_links.twitter.startsWith('http') ? speaker.social_links.twitter : `https://${speaker.social_links.twitter}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#1DA1F2] hover:text-[#1DA1F2]/80 transition-colors"
+                                >
+                                  <Twitter className="w-4 h-4" />
+                                </a>
+                              )}
+                              {speaker.social_links.instagram && (
+                                <a
+                                  href={speaker.social_links.instagram.startsWith('http') ? speaker.social_links.instagram : `https://${speaker.social_links.instagram}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#E4405F] hover:text-[#E4405F]/80 transition-colors"
+                                >
+                                  <Instagram className="w-4 h-4" />
+                                </a>
+                              )}
+                              {speaker.social_links.linkedin && (
+                                <a
+                                  href={speaker.social_links.linkedin.startsWith('http') ? speaker.social_links.linkedin : `https://${speaker.social_links.linkedin}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#0A66C2] hover:text-[#0A66C2]/80 transition-colors"
+                                >
+                                  <Linkedin className="w-4 h-4" />
+                                </a>
+                              )}
+                              {speaker.social_links.website && (
+                                <a
+                                  href={speaker.social_links.website.startsWith('http') ? speaker.social_links.website : `https://${speaker.social_links.website}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#0F0F0F]/60 hover:text-[#0F0F0F] transition-colors"
+                                >
+                                  <Globe className="w-4 h-4" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Upcoming Dates - for recurring events */}
           {event.is_recurring && (
