@@ -2,18 +2,27 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { Input } from './input';
 
-export function AddressAutocomplete({ 
-  value, 
-  onChange, 
+export function AddressAutocomplete({
+  value,
+  onChange,
   onPlaceSelect,
   placeholder = "Search for venue address...",
-  className = "" 
+  className = ""
 }) {
   const containerRef = useRef(null);
   const autocompleteElementRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState(value || '');
+
+  // Use refs to hold the latest callbacks (avoids stale closure in event listener)
+  const onChangeRef = useRef(onChange);
+  const onPlaceSelectRef = useRef(onPlaceSelect);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onPlaceSelectRef.current = onPlaceSelect;
+  }, [onChange, onPlaceSelect]);
 
   // Sync external value changes
   useEffect(() => {
@@ -154,13 +163,14 @@ export function AddressAutocomplete({
         placeData
       });
       setInputValue(place.formattedAddress || '');
-      onChange(place.formattedAddress || '');
-      onPlaceSelect?.(placeData);
+      // Use refs to ensure we call the latest callbacks
+      onChangeRef.current?.(place.formattedAddress || '');
+      onPlaceSelectRef.current?.(placeData);
       console.log('[AddressAutocomplete] Callbacks called successfully');
     } catch (error) {
       console.error('[AddressAutocomplete] Error fetching place details:', error);
     }
-  }, [onChange, onPlaceSelect]);
+  }, []); // No dependencies - we use refs for callbacks
 
   // Initialize the PlaceAutocompleteElement
   useEffect(() => {
@@ -216,7 +226,7 @@ export function AddressAutocomplete({
         autocompleteElementRef.current = null;
       }
     };
-  }, [isLoaded, placeholder, handlePlaceSelect]);
+  }, [isLoaded, placeholder, handlePlaceSelect]); // handlePlaceSelect is stable since it uses refs
 
   if (isLoading) {
     return (
