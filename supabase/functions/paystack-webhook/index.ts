@@ -137,10 +137,14 @@ async function handleChargeSuccess(supabase: any, data: any) {
     return;
   }
 
-  // Find the order by payment reference
+  // Find the order by payment reference with order items
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("*, events(title, organizer_id)")
+    .select(`
+      *,
+      events(title, organizer_id, organizer:organizers(id, email, business_email, business_name)),
+      order_items(id, ticket_type_id, quantity, unit_price)
+    `)
     .eq("payment_reference", reference)
     .single();
 
@@ -156,7 +160,7 @@ async function handleChargeSuccess(supabase: any, data: any) {
   }
 
   // Update order status
-  await supabase
+  const { error: updateError } = await supabase
     .from("orders")
     .update({
       status: "completed",
@@ -164,6 +168,67 @@ async function handleChargeSuccess(supabase: any, data: any) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", order.id);
+
+  if (updateError) {
+    safeLog.error("Failed to update order status:", updateError);
+    return;
+  }
+
+  // Check if tickets already exist for this order
+  const { data: existingTickets } = await supabase
+    .from("tickets")
+    .select("id")
+    .eq("order_id", order.id);
+
+  // Create tickets if they don't exist and order has items
+  if ((!existingTickets || existingTickets.length === 0) && order.order_items?.length > 0) {
+    const ticketsToCreate: any[] = [];
+
+    for (const item of order.order_items) {
+      for (let i = 0; i < item.quantity; i++) {
+        const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() +
+                          Math.random().toString(36).substring(2, 8).toUpperCase();
+        ticketsToCreate.push({
+          event_id: order.event_id,
+          ticket_type_id: item.ticket_type_id,
+          user_id: order.user_id,
+          attendee_email: order.buyer_email,
+          attendee_name: order.buyer_name,
+          attendee_phone: order.buyer_phone || null,
+          ticket_code: ticketCode,
+          qr_code: ticketCode,
+          unit_price: item.unit_price,
+          total_price: item.unit_price,
+          payment_reference: order.payment_reference,
+          payment_status: "completed",
+          payment_method: order.payment_method || "paystack",
+          order_id: order.id,
+          status: "active",
+        });
+      }
+    }
+
+    if (ticketsToCreate.length > 0) {
+      const { data: newTickets, error: ticketError } = await supabase
+        .from("tickets")
+        .insert(ticketsToCreate)
+        .select();
+
+      if (ticketError) {
+        safeLog.error("Error creating tickets:", ticketError);
+      } else {
+        safeLog.info(`Created ${newTickets?.length || 0} tickets for order ${order.id}`);
+
+        // Decrement ticket quantities
+        for (const item of order.order_items) {
+          await supabase.rpc("decrement_ticket_quantity", {
+            p_ticket_type_id: item.ticket_type_id,
+            p_quantity: item.quantity,
+          });
+        }
+      }
+    }
+  }
 
   // Log the payment
   await supabase.from("admin_audit_logs").insert({
@@ -179,7 +244,36 @@ async function handleChargeSuccess(supabase: any, data: any) {
     },
   });
 
-  safeLog.info(`Order ${order.id} marked as completed`);
+  // Send organizer notification
+  const organizerEmail = order.events?.organizer?.email || order.events?.organizer?.business_email;
+  if (organizerEmail) {
+    try {
+      const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
+      await supabase.functions.invoke("send-email", {
+        body: {
+          type: "new_ticket_sale",
+          to: organizerEmail,
+          data: {
+            eventTitle: order.events?.title,
+            eventId: order.event_id,
+            ticketType: "Ticket",
+            quantity: totalQty,
+            buyerName: order.buyer_name,
+            buyerEmail: order.buyer_email,
+            buyerPhone: order.buyer_phone || null,
+            amount: order.total_amount,
+            currency: order.currency || "NGN",
+            isFree: parseFloat(order.total_amount) === 0,
+            appUrl: "https://ticketrack.com",
+          },
+        },
+      });
+    } catch (emailErr) {
+      safeLog.warn("Failed to send organizer notification:", emailErr);
+    }
+  }
+
+  safeLog.info(`Order ${order.id} completed with tickets created`);
 }
 
 async function handleCreditPurchase(supabase: any, data: any) {

@@ -167,6 +167,17 @@ async function handleChargeCompleted(supabase: any, data: any) {
 }
 
 async function generateTickets(supabase: any, order: any) {
+  // Check if tickets already exist
+  const { data: existingTickets } = await supabase
+    .from("tickets")
+    .select("id")
+    .eq("order_id", order.id);
+
+  if (existingTickets && existingTickets.length > 0) {
+    safeLog.debug(`Tickets already exist for order ${order.id}`);
+    return;
+  }
+
   // Get order items
   const { data: orderItems } = await supabase
     .from("order_items")
@@ -175,28 +186,54 @@ async function generateTickets(supabase: any, order: any) {
 
   if (!orderItems || orderItems.length === 0) return;
 
+  const ticketsToCreate: any[] = [];
+
   // Generate tickets for each item
   for (const item of orderItems) {
     for (let i = 0; i < item.quantity; i++) {
-      const ticketCode = `TKT-${order.order_number}-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      
-      await supabase.from("tickets").insert({
+      const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() +
+                        Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      ticketsToCreate.push({
         order_id: order.id,
-        order_item_id: item.id,
         event_id: order.event_id,
         ticket_type_id: item.ticket_type_id,
+        user_id: order.user_id,
         ticket_code: ticketCode,
-        status: "valid",
-        buyer_email: order.buyer_email,
-        buyer_name: order.buyer_name,
-        buyer_phone: order.buyer_phone,
-        price: item.unit_price,
-        currency: order.currency,
+        qr_code: ticketCode,
+        status: "active",
+        attendee_email: order.buyer_email,
+        attendee_name: order.buyer_name,
+        attendee_phone: order.buyer_phone || null,
+        unit_price: item.unit_price,
+        total_price: item.unit_price,
+        payment_reference: order.payment_reference,
+        payment_status: "completed",
+        payment_method: "flutterwave",
       });
     }
   }
 
-  safeLog.info(`Generated tickets for order ${order.id}`);
+  if (ticketsToCreate.length > 0) {
+    const { data: newTickets, error: ticketError } = await supabase
+      .from("tickets")
+      .insert(ticketsToCreate)
+      .select();
+
+    if (ticketError) {
+      safeLog.error("Error creating tickets:", ticketError);
+    } else {
+      safeLog.info(`Created ${newTickets?.length || 0} tickets for order ${order.id}`);
+
+      // Decrement ticket quantities
+      for (const item of orderItems) {
+        await supabase.rpc("decrement_ticket_quantity", {
+          p_ticket_type_id: item.ticket_type_id,
+          p_quantity: item.quantity,
+        });
+      }
+    }
+  }
 }
 
 async function sendConfirmationEmail(supabase: any, order: any) {

@@ -247,33 +247,53 @@ serve(async (req) => {
           .single();
 
         if (order) {
-          // Create tickets
-          const ticketInserts: any[] = [];
-          for (const item of order.order_items || []) {
-            for (let i = 0; i < item.quantity; i++) {
-              ticketInserts.push({
-                order_id: orderId,
-                event_id: order.event_id,
-                ticket_type_id: item.ticket_type_id,
-                user_id: order.user_id,
-                status: "valid",
-                qr_code: "TKT-" + orderId.slice(0, 8) + "-" + Date.now() + "-" + i,
-                payment_status: "completed",
-                total_price: item.unit_price,
-              });
+          // Check if tickets already exist
+          const { data: existingTickets } = await supabase
+            .from("tickets")
+            .select("id")
+            .eq("order_id", orderId);
+
+          // Only create tickets if they don't exist
+          if (!existingTickets || existingTickets.length === 0) {
+            const ticketInserts: any[] = [];
+            for (const item of order.order_items || []) {
+              for (let i = 0; i < item.quantity; i++) {
+                const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() +
+                                  Math.random().toString(36).substring(2, 8).toUpperCase();
+                ticketInserts.push({
+                  order_id: orderId,
+                  event_id: order.event_id,
+                  ticket_type_id: item.ticket_type_id,
+                  user_id: order.user_id,
+                  attendee_email: order.buyer_email,
+                  attendee_name: order.buyer_name,
+                  attendee_phone: order.buyer_phone || null,
+                  ticket_code: ticketCode,
+                  qr_code: ticketCode,
+                  unit_price: item.unit_price,
+                  total_price: item.unit_price,
+                  payment_reference: session.payment_intent,
+                  payment_status: "completed",
+                  payment_method: "stripe",
+                  status: "active",
+                });
+              }
             }
-          }
 
-          if (ticketInserts.length > 0) {
-            await supabase.from("tickets").insert(ticketInserts);
-          }
-
-          // Update ticket_types quantities
-          for (const item of order.order_items || []) {
-            await supabase.rpc("decrement_ticket_quantity", {
-              p_ticket_type_id: item.ticket_type_id,
-              p_quantity: item.quantity,
-            });
+            if (ticketInserts.length > 0) {
+              const { error: ticketError } = await supabase.from("tickets").insert(ticketInserts);
+              if (ticketError) {
+                console.error("Error creating tickets:", ticketError);
+              } else {
+                // Update ticket_types quantities
+                for (const item of order.order_items || []) {
+                  await supabase.rpc("decrement_ticket_quantity", {
+                    p_ticket_type_id: item.ticket_type_id,
+                    p_quantity: item.quantity,
+                  });
+                }
+              }
+            }
           }
         }
       }

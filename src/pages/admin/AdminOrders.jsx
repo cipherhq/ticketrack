@@ -396,7 +396,7 @@ export function AdminOrders() {
                     ))}
                   </div>
                 ) : (
-                  <h3 className="text-2xl font-semibold text-[#0F0F0F]">{formatPrice(stats.totalRevenue, 'NGN')}</h3>
+                  <h3 className="text-2xl font-semibold text-[#0F0F0F]/40">—</h3>
                 )}
               </div>
             </div>
@@ -419,7 +419,7 @@ export function AdminOrders() {
                     ))}
                   </div>
                 ) : (
-                  <h3 className="text-2xl font-semibold text-[#0F0F0F]">{formatPrice(stats.platformFees || 0, 'NGN')}</h3>
+                  <h3 className="text-2xl font-semibold text-[#0F0F0F]/40">—</h3>
                 )}
               </div>
             </div>

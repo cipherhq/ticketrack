@@ -1006,7 +1006,21 @@ export function WebCheckout() {
 
       console.log('Order created:', order)
 
+      // Create order items - required for webhook ticket creation
+      const orderItems = mappedTicketSummary.map(ticket => ({
+        order_id: order.id,
+        ticket_type_id: ticket.id,
+        quantity: ticket.quantity,
+        unit_price: ticket.price,
+        subtotal: ticket.subtotal
+      }));
+
+      await supabase.from('order_items').insert(orderItems);
+
       const paymentRef = `TKT-${order.id.slice(0, 8).toUpperCase()}-${Date.now()}`
+
+      // Save payment reference to order so webhook can find it
+      await supabase.from('orders').update({ payment_reference: paymentRef }).eq('id', order.id);
 
       // Get organizer subaccount info if available
       const organizer = event?.organizer
