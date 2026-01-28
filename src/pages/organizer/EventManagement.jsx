@@ -321,6 +321,10 @@ export function EventManagement() {
             buyer_name: fullName,
             buyer_email: issueForm.attendee_email.trim().toLowerCase(),
             buyer_phone: issueForm.attendee_phone.trim() || null,
+            subtotal: ticketPrice,
+            platform_fee: 0, // No platform fee for manual sales
+            processing_fee: 0, // No processing fee - organizer collected payment directly
+            organizer_amount: ticketPrice, // Organizer gets full amount
             total_amount: ticketPrice,
             currency: currency,
             status: 'completed',
