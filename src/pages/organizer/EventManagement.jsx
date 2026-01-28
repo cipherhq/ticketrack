@@ -969,15 +969,17 @@ export function EventManagement() {
                 const canIssue = canIssueTickets(event);
                 return (
                   <div key={event.id} className={`p-4 rounded-xl transition-colors ${
-                    event.isFree 
-                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100' 
+                    event.isFree
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100'
                       : 'bg-[#F4F6FA] hover:bg-[#F4F6FA]/80'
                   }`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex gap-4 flex-1">
-                        {event.image_url && <img src={event.image_url} alt={event.title} className="w-20 h-20 rounded-lg object-cover hidden sm:block" />}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <div className="flex items-start gap-3">
+                      {/* Event Image - hidden on mobile */}
+                      {event.image_url && <img src={event.image_url} alt={event.title} className="w-20 h-20 rounded-lg object-cover hidden sm:block flex-shrink-0" />}
+
+                      {/* Event Info - takes remaining space */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h4 className="font-medium text-[#0F0F0F] truncate">{event.title}</h4>
                             {getStatusBadge(event)}
                             {event.isFree && <Badge className="bg-green-100 text-green-700">Free</Badge>}
@@ -1098,12 +1100,13 @@ export function EventManagement() {
                           )}
                         </div>
                       )}
-                      <div className="flex items-center space-x-1">
-                        <Button variant="ghost" size="icon" onClick={() => navigate(`/e/${event.slug || event.id}`)} className="rounded-lg" title="View Public Page"><Eye className="w-4 h-4" /></Button>
+                      {/* Action Buttons - always visible */}
+                      <div className="flex items-center space-x-1 flex-shrink-0 ml-auto">
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/e/${event.slug || event.id}`)} className="rounded-lg hidden sm:flex" title="View Public Page"><Eye className="w-4 h-4" /></Button>
                         {isEditable ? (
-                          <Button variant="ghost" size="icon" onClick={() => navigate(`/organizer/events/${event.id}/edit`)} className="rounded-lg" title="Edit Event"><Edit className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => navigate(`/organizer/events/${event.id}/edit`)} className="rounded-lg hidden sm:flex" title="Edit Event"><Edit className="w-4 h-4" /></Button>
                         ) : (
-                          <Button variant="ghost" size="icon" onClick={() => handleReuseTemplate(event)} className="rounded-lg" title="Reuse Event Template"><Copy className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleReuseTemplate(event)} className="rounded-lg hidden sm:flex" title="Reuse Event Template"><Copy className="w-4 h-4" /></Button>
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-lg"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
