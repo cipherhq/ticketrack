@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle, DollarSign, Gift, Copy, ExternalLink, Share2, Banknote, TrendingUp, Lock, Trash2, Eye, EyeOff, AlertTriangle, CreditCard, Building, Users, Star, Receipt, X, Plus } from 'lucide-react'
+import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle, DollarSign, Gift, Copy, ExternalLink, Share2, Banknote, TrendingUp, Lock, Trash2, Eye, EyeOff, AlertTriangle, CreditCard, Building, Users, Star, Receipt, X, Plus, Send, Unlink } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -136,6 +136,10 @@ export function AttendeeProfile() {
   const [commPrefs, setCommPrefs] = useState([])
   const [loadingCommPrefs, setLoadingCommPrefs] = useState(false)
 
+  // Telegram linking state
+  const [linkingTelegram, setLinkingTelegram] = useState(false)
+  const [unlinkingTelegram, setUnlinkingTelegram] = useState(false)
+
   useEffect(() => {
     if (!user) {
       navigate('/login')
@@ -209,7 +213,7 @@ export function AttendeeProfile() {
   const optOutAll = async (channel) => {
     try {
       const fieldName = `${channel}_opt_in`
-      
+
       const { error } = await supabase
         .from('contacts')
         .update({ [fieldName]: false })
@@ -222,6 +226,65 @@ export function AttendeeProfile() {
     } catch (error) {
       console.error('Error opting out:', error)
       alert('Failed to update preferences. Please try again.')
+    }
+  }
+
+  // Link Telegram account
+  const linkTelegram = async () => {
+    setLinkingTelegram(true)
+    try {
+      // Create a link request token
+      const { data: token, error } = await supabase.rpc('create_telegram_link_request', {
+        p_user_id: user.id
+      })
+
+      if (error) throw error
+
+      // Open Telegram with the bot and token
+      const botUsername = 'Ticketrack_bot'
+      const telegramUrl = `https://t.me/${botUsername}?start=${token}`
+      window.open(telegramUrl, '_blank')
+
+      alert('Please complete the linking process in Telegram. Click "Confirm Link" when prompted.')
+    } catch (error) {
+      console.error('Error linking Telegram:', error)
+      alert('Failed to generate link. Please try again.')
+    } finally {
+      setLinkingTelegram(false)
+    }
+  }
+
+  // Unlink Telegram account
+  const unlinkTelegram = async () => {
+    if (!confirm('Are you sure you want to unlink your Telegram account? You will no longer receive notifications via Telegram.')) {
+      return
+    }
+
+    setUnlinkingTelegram(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          telegram_chat_id: null,
+          telegram_username: null,
+          telegram_linked_at: null
+        })
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      setProfile(prev => ({
+        ...prev,
+        telegram_chat_id: null,
+        telegram_username: null,
+        telegram_linked_at: null
+      }))
+      alert('Telegram account unlinked successfully')
+    } catch (error) {
+      console.error('Error unlinking Telegram:', error)
+      alert('Failed to unlink Telegram. Please try again.')
+    } finally {
+      setUnlinkingTelegram(false)
     }
   }
 
@@ -1862,6 +1925,86 @@ export function AttendeeProfile() {
 
                     <p className="text-xs text-[#0F0F0F]/50">
                       Note: You will still receive transactional messages like ticket confirmations and important event updates regardless of these settings.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Telegram Link Card */}
+                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                      <Send className="w-5 h-5 text-sky-500" />
+                      Telegram Notifications
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-[#0F0F0F]/70">
+                      Link your Telegram account to receive event reminders, ticket updates, and notifications directly in Telegram.
+                    </p>
+
+                    {profile?.telegram_chat_id ? (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-sky-100 rounded-full flex items-center justify-center">
+                              <Send className="w-5 h-5 text-sky-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-green-800">Telegram Connected</p>
+                              <p className="text-sm text-green-600">
+                                {profile.telegram_username ? `@${profile.telegram_username}` : 'Account linked'}
+                                {profile.telegram_linked_at && ` • Linked ${new Date(profile.telegram_linked_at).toLocaleDateString()}`}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-xl text-red-500 border-red-200 hover:bg-red-50"
+                            onClick={unlinkTelegram}
+                            disabled={unlinkingTelegram}
+                          >
+                            {unlinkingTelegram ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Unlink className="w-4 h-4 mr-1" />
+                                Unlink
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-sky-100 rounded-full flex items-center justify-center">
+                              <Send className="w-5 h-5 text-sky-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-[#0F0F0F]">Connect Telegram</p>
+                              <p className="text-sm text-[#0F0F0F]/60">Get instant notifications on your phone</p>
+                            </div>
+                          </div>
+                          <Button
+                            className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white"
+                            onClick={linkTelegram}
+                            disabled={linkingTelegram}
+                          >
+                            {linkingTelegram ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <Send className="w-4 h-4 mr-2" />
+                            )}
+                            Link Telegram
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-[#0F0F0F]/50">
+                      You'll be redirected to Telegram to complete the linking process. Make sure you have Telegram installed.
                     </p>
                   </CardContent>
                 </Card>
