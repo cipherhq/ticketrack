@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   MapPin, Plus, Settings, Edit, Eye, Trash2,
-  Users, Layout, Building2, HelpCircle
+  Users, Layout, Building2, HelpCircle, Activity, Wifi
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,22 +16,36 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useOrganizer } from '@/contexts/OrganizerContext'
 import { supabase } from '@/lib/supabase'
 import { HelpTip } from '@/components/HelpTip'
+import { useConfirm } from '@/hooks/useConfirm'
+import { toast } from 'sonner'
 
 export function VenueManagement() {
   const navigate = useNavigate()
   const { organizer } = useOrganizer()
+  const confirm = useConfirm()
 
   const [venues, setVenues] = useState([])
   const [layouts, setLayouts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreateVenue, setShowCreateVenue] = useState(false)
-  const [selectedVenue, setSelectedVenue] = useState(null)
+  const [showEditVenue, setShowEditVenue] = useState(false)
+  const [editingVenue, setEditingVenue] = useState(null)
 
   // Form state for creating venues
   const [venueForm, setVenueForm] = useState({
+    name: '',
+    address: '',
+    capacity: '',
+    venue_type: 'indoor',
+    iot_enabled: false
+  })
+
+  // Form state for editing venues
+  const [editForm, setEditForm] = useState({
     name: '',
     address: '',
     capacity: '',
@@ -89,7 +103,7 @@ export function VenueManagement() {
 
   const createVenue = async () => {
     if (!organizer?.id) {
-      alert('Please log in as an organizer to create venues')
+      toast.error('Please log in as an organizer to create venues')
       return
     }
 
@@ -112,7 +126,7 @@ export function VenueManagement() {
       if (error) {
         // Check if table doesn't exist
         if (error.code === '42P01' || error.message?.includes('does not exist')) {
-          alert('The venue database tables need to be set up first. Please run the SQL schema from database/iot_venue_schema.sql')
+          toast.error('The venue database tables need to be set up first. Please run the SQL schema from database/iot_venue_schema.sql')
           return
         }
         throw error
@@ -127,19 +141,70 @@ export function VenueManagement() {
         iot_enabled: false
       })
       setShowCreateVenue(false)
+      toast.success('Venue created successfully!')
 
       // Navigate to create first layout for this venue
       navigate(`/organizer/venues/${data.id}/layouts/create`)
     } catch (error) {
       console.error('Failed to create venue:', error)
-      alert('Failed to create venue: ' + error.message)
+      toast.error('Failed to create venue: ' + error.message)
+    }
+  }
+
+  // Open edit dialog with venue data
+  const openEditVenue = (venue) => {
+    setEditingVenue(venue)
+    setEditForm({
+      name: venue.name || '',
+      address: venue.address || '',
+      capacity: venue.capacity?.toString() || '',
+      venue_type: venue.venue_type || 'indoor',
+      iot_enabled: venue.iot_enabled || false
+    })
+    setShowEditVenue(true)
+  }
+
+  // Update venue
+  const updateVenue = async () => {
+    if (!editingVenue?.id) return
+
+    try {
+      const venueData = {
+        name: editForm.name,
+        address: editForm.address,
+        capacity: parseInt(editForm.capacity) || 100,
+        venue_type: editForm.venue_type,
+        iot_enabled: editForm.iot_enabled
+      }
+
+      const { data, error } = await supabase
+        .from('venues')
+        .update(venueData)
+        .eq('id', editingVenue.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Update local state
+      setVenues(prev => prev.map(v => v.id === editingVenue.id ? { ...v, ...data } : v))
+      setShowEditVenue(false)
+      setEditingVenue(null)
+      toast.success('Venue updated successfully!')
+    } catch (error) {
+      console.error('Failed to update venue:', error)
+      toast.error('Failed to update venue: ' + error.message)
     }
   }
 
   const deleteVenue = async (venueId) => {
-    if (!window.confirm('Are you sure you want to delete this venue? This will also delete all associated layouts.')) {
-      return
-    }
+    const confirmed = await confirm(
+      'Delete Venue?',
+      'This will permanently delete this venue and all associated layouts. This action cannot be undone.',
+      { variant: 'destructive', confirmText: 'Delete', cancelText: 'Cancel' }
+    )
+
+    if (!confirmed) return
 
     try {
       // First delete associated layouts
@@ -164,9 +229,10 @@ export function VenueManagement() {
       }
 
       setVenues(prev => prev.filter(v => v.id !== venueId))
+      toast.success('Venue deleted successfully')
     } catch (error) {
       console.error('Failed to delete venue:', error)
-      alert('Failed to delete venue: ' + error.message)
+      toast.error('Failed to delete venue: ' + error.message)
     }
   }
 
@@ -248,36 +314,128 @@ export function VenueManagement() {
                 </div>
                 <div>
                   <Label htmlFor="venueType">Type</Label>
-                  <select
-                    id="venueType"
-                    className="w-full px-3 py-2 border rounded-md"
+                  <Select
                     value={venueForm.venue_type}
-                    onChange={(e) => setVenueForm(prev => ({ ...prev, venue_type: e.target.value }))}
+                    onValueChange={(value) => setVenueForm(prev => ({ ...prev, venue_type: value }))}
                   >
-                    <option value="indoor">Indoor</option>
-                    <option value="outdoor">Outdoor</option>
-                    <option value="hybrid">Hybrid</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="indoor">Indoor</SelectItem>
+                      <SelectItem value="outdoor">Outdoor</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   id="iotEnabled"
-                  checked={false}
-                  disabled={true}
-                  title="IoT feature is currently disabled"
+                  checked={venueForm.iot_enabled}
+                  onChange={(e) => setVenueForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-[#2969FF] focus:ring-[#2969FF]"
                 />
-                <Label htmlFor="iotEnabled" className="flex items-center opacity-50">
-                  Enable IoT Smart Features (Disabled)
+                <Label htmlFor="iotEnabled" className="flex items-center gap-2 cursor-pointer">
+                  <Wifi className="w-4 h-4 text-[#2969FF]" />
+                  Enable IoT Smart Features
                 </Label>
               </div>
+              {venueForm.iot_enabled && (
+                <p className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+                  IoT features include real-time occupancy tracking, environmental monitoring, and smart sensor integration.
+                </p>
+              )}
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={() => setShowCreateVenue(false)}>
                   Cancel
                 </Button>
                 <Button onClick={createVenue} disabled={!venueForm.name || !venueForm.address}>
                   Create Venue
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Venue Dialog */}
+        <Dialog open={showEditVenue} onOpenChange={setShowEditVenue}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Venue</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="editVenueName">Venue Name</Label>
+                <Input
+                  id="editVenueName"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter venue name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="editVenueAddress">Address</Label>
+                <Textarea
+                  id="editVenueAddress"
+                  value={editForm.address}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="Enter full address"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editVenueCapacity">Capacity</Label>
+                  <Input
+                    id="editVenueCapacity"
+                    type="number"
+                    value={editForm.capacity}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, capacity: e.target.value }))}
+                    placeholder="100"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editVenueType">Type</Label>
+                  <Select
+                    value={editForm.venue_type}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, venue_type: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="indoor">Indoor</SelectItem>
+                      <SelectItem value="outdoor">Outdoor</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="editIotEnabled"
+                  checked={editForm.iot_enabled}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-[#2969FF] focus:ring-[#2969FF]"
+                />
+                <Label htmlFor="editIotEnabled" className="flex items-center gap-2 cursor-pointer">
+                  <Wifi className="w-4 h-4 text-[#2969FF]" />
+                  Enable IoT Smart Features
+                </Label>
+              </div>
+              {editForm.iot_enabled && (
+                <p className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+                  IoT features include real-time occupancy tracking, environmental monitoring, and smart sensor integration.
+                </p>
+              )}
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowEditVenue(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={updateVenue} disabled={!editForm.name || !editForm.address}>
+                  Save Changes
                 </Button>
               </div>
             </div>
@@ -309,7 +467,10 @@ export function VenueManagement() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle
+                        className="flex items-center gap-2 cursor-pointer hover:text-[#2969FF] transition-colors"
+                        onClick={() => navigate(`/organizer/venues/${venue.id}`)}
+                      >
                         <MapPin className="w-5 h-5 text-gray-400" />
                         {venue.name}
                       </CardTitle>
@@ -319,8 +480,9 @@ export function VenueManagement() {
                       <Badge variant="outline" className="capitalize">
                         {venue.venue_type}
                       </Badge>
-                      {false ? (
+                      {venue.iot_enabled ? (
                         <Badge variant="default" className="bg-green-100 text-green-800">
+                          <Wifi className="w-3 h-3 mr-1" />
                           IoT
                         </Badge>
                       ) : (
@@ -368,20 +530,48 @@ export function VenueManagement() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => navigate(`/organizer/venues/${venue.id}`)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Details
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => navigate(`/organizer/venues/${venue.id}/layouts`)}
                         >
                           <Layout className="w-4 h-4 mr-1" />
                           Layouts
                         </Button>
+                        {venue.iot_enabled && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate('/organizer/venues/iot')}
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                          >
+                            <Activity className="w-4 h-4 mr-1" />
+                            IoT
+                          </Button>
+                        )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteVenue(venue.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditVenue(venue)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteVenue(venue.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -431,7 +621,7 @@ export function VenueManagement() {
                     
                     if (error) {
                       console.error('Failed to create sample venue:', error)
-                      alert('Could not create sample venue. Please try creating a venue manually.')
+                      toast.error('Could not create sample venue. Please try creating a venue manually.')
                       return
                     }
                     
@@ -465,7 +655,7 @@ export function VenueManagement() {
                   }
                   
                   if (sampleVenue) {
-                    navigate(`/organizer/venue-layout/${sampleVenue.id}`)
+                    navigate(`/organizer/venues/${sampleVenue.id}/layouts`)
                   }
                 }}
               >
