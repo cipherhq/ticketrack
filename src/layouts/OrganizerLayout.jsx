@@ -20,7 +20,6 @@ const menuGroups = [
       { title: 'Dashboard', icon: LayoutDashboard, path: '/organizer', tip: 'Overview of your events, sales, and key metrics' },
       { title: 'Events', icon: Calendar, path: '/organizer/events', tip: 'Create, edit, and manage all your events' },
       { title: 'Venues', icon: Building, path: '/organizer/venues', tip: 'Design interactive seating layouts for your venues' },
-      { title: 'Event Place', icon: Home, path: '/organizer/event-place', tip: 'Visual floor plan designer for event layouts' },
     ]
   },
   {
