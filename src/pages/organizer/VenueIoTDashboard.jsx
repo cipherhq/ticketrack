@@ -388,7 +388,7 @@ export function VenueIoTDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{environmental.co2} ppm</div>
-                    <p className="text-xs text-muted-foreground">Good: <1000 ppm</p>
+                    <p className="text-xs text-muted-foreground">Good: &lt;1000 ppm</p>
                   </CardContent>
                 </Card>
 
@@ -399,7 +399,7 @@ export function VenueIoTDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{environmental.noise} dB</div>
-                    <p className="text-xs text-muted-foreground">Quiet: <50 dB</p>
+                    <p className="text-xs text-muted-foreground">Quiet: &lt;50 dB</p>
                   </CardContent>
                 </Card>
               </>
