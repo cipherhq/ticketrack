@@ -10,6 +10,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
+// Production logging guard - only log in development
+const IS_DEV = Deno.env.get('ENVIRONMENT') === 'development';
+const log = {
+  info: (...args: unknown[]) => IS_DEV && console.log(...args),
+  error: (...args: unknown[]) => console.error(...args), // Always log errors
+  debug: (...args: unknown[]) => IS_DEV && console.log(...args),
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -24,10 +32,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    console.log(`[complete-stripe-order] URL exists: ${!!supabaseUrl}, Key exists: ${!!supabaseKey}, Key length: ${supabaseKey?.length || 0}`);
+    log.info(`[complete-stripe-order] URL exists: ${!!supabaseUrl}, Key exists: ${!!supabaseKey}, Key length: ${supabaseKey?.length || 0}`);
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error("[complete-stripe-order] Missing environment variables");
+      log.error("[complete-stripe-order] Missing environment variables");
       return new Response(
         JSON.stringify({ success: false, error: "Server configuration error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -37,7 +45,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
-    console.log(`[complete-stripe-order] Received body:`, JSON.stringify(body));
+    log.info(`[complete-stripe-order] Received body:`, JSON.stringify(body));
     let { orderId, sessionId } = body;
 
     // Sanitize orderId - trim whitespace and ensure it's a string
@@ -45,11 +53,11 @@ serve(async (req) => {
       orderId = String(orderId).trim();
     }
 
-    console.log(`[complete-stripe-order] Sanitized orderId: "${orderId}", type: ${typeof orderId}, length: ${orderId?.length}`);
+    log.info(`[complete-stripe-order] Sanitized orderId: "${orderId}", type: ${typeof orderId}, length: ${orderId?.length}`);
 
     // If no orderId but we have sessionId, try to get orderId from Stripe session metadata
     if (!orderId && sessionId) {
-      console.log(`[complete-stripe-order] No orderId provided, trying to get from Stripe session: ${sessionId}`);
+      log.info(`[complete-stripe-order] No orderId provided, trying to get from Stripe session: ${sessionId}`);
       try {
         // Get Stripe config
         const { data: gatewayConfig } = await supabase
@@ -66,15 +74,15 @@ serve(async (req) => {
           });
 
           const session = await stripe.checkout.sessions.retrieve(sessionId);
-          console.log(`[complete-stripe-order] Stripe session metadata:`, JSON.stringify(session.metadata));
+          log.info(`[complete-stripe-order] Stripe session metadata:`, JSON.stringify(session.metadata));
 
           if (session.metadata?.order_id) {
             orderId = session.metadata.order_id;
-            console.log(`[complete-stripe-order] Got orderId from Stripe session: ${orderId}`);
+            log.info(`[complete-stripe-order] Got orderId from Stripe session: ${orderId}`);
           }
         }
       } catch (stripeErr) {
-        console.error(`[complete-stripe-order] Error getting orderId from Stripe:`, stripeErr);
+        log.error(`[complete-stripe-order] Error getting orderId from Stripe:`, stripeErr);
       }
     }
 
@@ -88,14 +96,14 @@ serve(async (req) => {
     // Validate UUID format (basic check)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(orderId)) {
-      console.error(`[complete-stripe-order] Invalid orderId format: ${orderId}`);
+      log.error(`[complete-stripe-order] Invalid orderId format: ${orderId}`);
       return new Response(
         JSON.stringify({ success: false, error: "Invalid orderId format" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[complete-stripe-order] Starting order completion: ${orderId}, session: ${sessionId}`);
+    log.info(`[complete-stripe-order] Starting order completion: ${orderId}, session: ${sessionId}`);
 
     // First, get the basic order data (simple query that should always work with service role)
     const { data: baseOrder, error: baseError } = await supabase
@@ -104,10 +112,10 @@ serve(async (req) => {
       .eq("id", orderId)
       .single();
 
-    console.log(`[complete-stripe-order] Base order query: found=${!!baseOrder}, error=${baseError?.message || 'none'}`);
+    log.info(`[complete-stripe-order] Base order query: found=${!!baseOrder}, error=${baseError?.message || 'none'}`);
 
     if (baseError || !baseOrder) {
-      console.error("[complete-stripe-order] Base order not found:", JSON.stringify({
+      log.error("[complete-stripe-order] Base order not found:", JSON.stringify({
         orderId,
         error: baseError?.message,
         errorCode: baseError?.code,
@@ -125,7 +133,7 @@ serve(async (req) => {
     // If order has no event_id, try to get it from Stripe session metadata
     let eventId = baseOrder.event_id;
     if (!eventId && sessionId) {
-      console.log(`[complete-stripe-order] Order has no event_id, trying to get from Stripe session metadata`);
+      log.info(`[complete-stripe-order] Order has no event_id, trying to get from Stripe session metadata`);
       try {
         const { data: gatewayConfig } = await supabase
           .from("payment_gateway_config")
@@ -142,31 +150,31 @@ serve(async (req) => {
           const session = await stripe.checkout.sessions.retrieve(sessionId);
           if (session.metadata?.event_id) {
             eventId = session.metadata.event_id;
-            console.log(`[complete-stripe-order] Got event_id from Stripe metadata: ${eventId}`);
+            log.info(`[complete-stripe-order] Got event_id from Stripe metadata: ${eventId}`);
             // Update the order with the event_id
             await supabase.from("orders").update({ event_id: eventId }).eq("id", orderId);
             order.event_id = eventId;
           }
         }
       } catch (stripeErr) {
-        console.error(`[complete-stripe-order] Error getting event_id from Stripe:`, stripeErr);
+        log.error(`[complete-stripe-order] Error getting event_id from Stripe:`, stripeErr);
       }
     }
 
-    console.log(`[complete-stripe-order] Fetching event for event_id: ${eventId}`);
+    log.info(`[complete-stripe-order] Fetching event for event_id: ${eventId}`);
 
     // Fetch event data
     if (eventId) {
       const { data: eventData, error: eventError } = await supabase
         .from("events")
-        .select("id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, currency, notify_organizer_on_sale, organizer_id")
+        .select("id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, currency, notify_organizer_on_sale, organizer_id")
         .eq("id", eventId)
         .single();
 
-      console.log(`[complete-stripe-order] Event query result: found=${!!eventData}, error=${eventError?.message || 'none'}, code=${eventError?.code || 'none'}`);
+      log.info(`[complete-stripe-order] Event query result: found=${!!eventData}, error=${eventError?.message || 'none'}, code=${eventError?.code || 'none'}`);
 
       if (eventError) {
-        console.error(`[complete-stripe-order] Event fetch error:`, JSON.stringify({
+        log.error(`[complete-stripe-order] Event fetch error:`, JSON.stringify({
           message: eventError.message,
           code: eventError.code,
           details: eventError.details,
@@ -175,7 +183,7 @@ serve(async (req) => {
       }
 
       if (eventData) {
-        console.log(`[complete-stripe-order] Event found: "${eventData.title}", organizer_id: ${eventData.organizer_id}`);
+        log.info(`[complete-stripe-order] Event found: "${eventData.title}", organizer_id: ${eventData.organizer_id}`);
         // Fetch organizer data with profile email
         const { data: organizerData, error: orgError } = await supabase
           .from("organizers")
@@ -184,16 +192,16 @@ serve(async (req) => {
           .single();
 
         if (orgError) {
-          console.error(`[complete-stripe-order] Organizer fetch error:`, orgError.message);
+          log.error(`[complete-stripe-order] Organizer fetch error:`, orgError.message);
         }
-        console.log(`[complete-stripe-order] Organizer found: ${organizerData?.business_name || 'none'}, profile email: ${organizerData?.profiles?.email}, business_email: ${organizerData?.business_email}`);
+        log.info(`[complete-stripe-order] Organizer found: ${organizerData?.business_name || 'none'}, profile email: ${organizerData?.profiles?.email}, business_email: ${organizerData?.business_email}`);
 
         order.events = { ...eventData, organizer: organizerData };
       } else {
-        console.error(`[complete-stripe-order] No event found for event_id: ${eventId}`);
+        log.error(`[complete-stripe-order] No event found for event_id: ${eventId}`);
       }
     } else {
-      console.error(`[complete-stripe-order] Order has no event_id and could not retrieve from Stripe!`);
+      log.error(`[complete-stripe-order] Order has no event_id and could not retrieve from Stripe!`);
     }
 
     // Fetch order items with ticket types
@@ -203,16 +211,16 @@ serve(async (req) => {
       .eq("order_id", orderId);
 
     if (itemsError) {
-      console.error(`[complete-stripe-order] Order items fetch error:`, itemsError.message);
+      log.error(`[complete-stripe-order] Order items fetch error:`, itemsError.message);
     }
 
     order.order_items = orderItems || [];
 
-    console.log(`[complete-stripe-order] Order ${orderId} assembled: user_id=${order.user_id}, event=${order.events?.title || 'MISSING'}, items=${order.order_items?.length || 0}`);
+    log.info(`[complete-stripe-order] Order ${orderId} assembled: user_id=${order.user_id}, event=${order.events?.title || 'MISSING'}, items=${order.order_items?.length || 0}`);
 
     // If already completed, just return the tickets
     if (order.status === "completed") {
-      console.log(`[complete-stripe-order] Order ${orderId} already completed, returning existing tickets`);
+      log.info(`[complete-stripe-order] Order ${orderId} already completed, returning existing tickets`);
 
       const { data: existingTickets } = await supabase
         .from("tickets")
@@ -263,7 +271,7 @@ serve(async (req) => {
           }
         }
       } catch (stripeError) {
-        console.error("Stripe verification error:", stripeError);
+        log.error("Stripe verification error:", stripeError);
         // Continue anyway - payment may have been verified by webhook
       }
     }
@@ -279,7 +287,7 @@ serve(async (req) => {
       .eq("status", "pending"); // Only update if still pending
 
     if (updateError) {
-      console.error("Failed to update order:", updateError);
+      log.error("Failed to update order:", updateError);
     }
 
     // Check if tickets already exist
@@ -324,8 +332,8 @@ serve(async (req) => {
           .select();
 
         if (ticketError) {
-          console.error("[complete-stripe-order] Error creating tickets:", ticketError);
-          console.error("[complete-stripe-order] Tickets attempted:", JSON.stringify(ticketsToCreate.slice(0, 2)));
+          log.error("[complete-stripe-order] Error creating tickets:", ticketError);
+          log.error("[complete-stripe-order] Tickets attempted:", JSON.stringify(ticketsToCreate.slice(0, 2)));
         } else {
           // Add ticket_type_name to tickets for frontend PDF generation
           const ticketTypeMap = new Map(
@@ -335,7 +343,7 @@ serve(async (req) => {
             ...t,
             ticket_type_name: ticketTypeMap.get(t.ticket_type_id) || "Ticket"
           }));
-          console.log(`[complete-stripe-order] Created ${tickets.length} tickets for user_id: ${order.user_id}`);
+          log.info(`[complete-stripe-order] Created ${tickets.length} tickets for user_id: ${order.user_id}`);
 
           // Decrement ticket quantities (skip if ticket_type_id is null - free events)
           for (const item of order.order_items) {
@@ -359,17 +367,17 @@ serve(async (req) => {
 
       // Only send emails if we have event data (to avoid "undefined" emails)
       if (!eventData?.title) {
-        console.error("[complete-stripe-order] Skipping emails - event data missing. Event title:", eventData?.title);
-        console.error("[complete-stripe-order] Full order.events:", JSON.stringify(order.events));
+        log.error("[complete-stripe-order] Skipping emails - event data missing. Event title:", eventData?.title);
+        log.error("[complete-stripe-order] Full order.events:", JSON.stringify(order.events));
       } else {
         // NOTE: Attendee email with PDF attachment is sent from frontend (WebPaymentSuccess.jsx)
         // This avoids duplicate emails and ensures PDF is attached
-        console.log(`[complete-stripe-order] Attendee email with PDF will be sent from frontend`);
+        log.info(`[complete-stripe-order] Attendee email with PDF will be sent from frontend`);
 
         // Send notification to organizer
-        console.log(`[complete-stripe-order] Organizer data:`, JSON.stringify(eventData?.organizer));
+        log.info(`[complete-stripe-order] Organizer data:`, JSON.stringify(eventData?.organizer));
         const organizerEmail = eventData?.organizer?.profiles?.email || eventData?.organizer?.business_email;
-        console.log(`[complete-stripe-order] Organizer email resolved to: ${organizerEmail}, notify_organizer_on_sale: ${eventData?.notify_organizer_on_sale}`);
+        log.info(`[complete-stripe-order] Organizer email resolved to: ${organizerEmail}, notify_organizer_on_sale: ${eventData?.notify_organizer_on_sale}`);
         if (organizerEmail && eventData?.notify_organizer_on_sale !== false) {
           const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
             method: "POST",
@@ -397,17 +405,17 @@ serve(async (req) => {
           });
           const emailResult = await emailResponse.json();
           if (emailResult.success) {
-            console.log("[complete-stripe-order] Organizer notification email sent");
+            log.info("[complete-stripe-order] Organizer notification email sent");
           } else {
-            console.error("[complete-stripe-order] Organizer email failed:", emailResult.error);
+            log.error("[complete-stripe-order] Organizer email failed:", emailResult.error);
           }
         }
       }
     } catch (emailError) {
-      console.error("[complete-stripe-order] Email error:", emailError);
+      log.error("[complete-stripe-order] Email error:", emailError);
     }
 
-    console.log(`[complete-stripe-order] Order ${orderId} completed successfully. Tickets: ${tickets.length}`);
+    log.info(`[complete-stripe-order] Order ${orderId} completed successfully. Tickets: ${tickets.length}`);
 
     return new Response(
       JSON.stringify({
@@ -418,7 +426,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("[complete-stripe-order] Error:", error);
+    log.error("[complete-stripe-order] Error:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

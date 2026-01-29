@@ -9,11 +9,26 @@ import { supabase } from '@/lib/supabase';
 // Send email via Edge Function
 const sendEmail = async (emailData) => {
   try {
+    // Try to use authenticated session token first for better security
+    let authToken = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) {
+      authToken = session.access_token
+    } else {
+      // Try refreshing the session
+      const { data: refreshData } = await supabase.auth.refreshSession()
+      if (refreshData?.session?.access_token) {
+        authToken = refreshData.session.access_token
+      }
+      // Fall back to anon key for public email endpoints if no session
+    }
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        "Authorization": `Bearer ${authToken}`
       },
       body: JSON.stringify(emailData)
     });

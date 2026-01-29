@@ -23,7 +23,7 @@ export function AdminAffiliateSettings() {
   });
   const [settings, setSettings] = useState({
     is_enabled: true,
-    commission_percent: 40,
+    commission_percent: 1.5,
     min_payout_ngn: 5000,
     min_payout_usd: 10,
     min_payout_gbp: 8,
@@ -58,7 +58,7 @@ export function AdminAffiliateSettings() {
       if (settingsData) {
         setSettings({
           is_enabled: settingsData.is_enabled ?? true,
-          commission_percent: settingsData.commission_percent || 40,
+          commission_percent: settingsData.commission_percent || 1.5,
           min_payout_ngn: settingsData.min_payout_ngn || settingsData.min_payout || 5000,
           min_payout_usd: settingsData.min_payout_usd || 10,
           min_payout_gbp: settingsData.min_payout_gbp || 8,
@@ -320,7 +320,7 @@ export function AdminAffiliateSettings() {
                 className="rounded-xl"
               />
               <p className="text-xs text-[#0F0F0F]/50">
-                If your platform fee is 5%, and commission is 40%, affiliates earn 2% of ticket price
+                Affiliates earn this % of the platform fees collected. E.g., if platform fee is ₦500 and commission is 1.5%, affiliate earns ₦7.50
               </p>
             </div>
 

@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import { DollarSign, Users, TrendingUp, AlertCircle, Save } from 'lucide-react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -157,10 +158,10 @@ export function PricingZones({ eventId, layoutId, sections, onPricingChange }) {
 
       if (error) throw error
 
-      alert('Pricing configuration saved successfully!')
+      toast.success('Pricing configuration saved successfully!')
     } catch (error) {
       console.error('Failed to save pricing:', error)
-      alert('Failed to save pricing: ' + error.message)
+      toast.error('Failed to save pricing: ' + error.message)
     } finally {
       setSaving(false)
     }

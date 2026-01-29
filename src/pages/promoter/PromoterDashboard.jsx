@@ -8,6 +8,7 @@ import { usePromoter } from '@/contexts/PromoterContext';
 import { supabase } from '@/lib/supabase';
 import { formatMultiCurrency, formatMultiCurrencyCompact } from '@/config/currencies';
 import { TaxDocuments } from '@/components/TaxDocuments';
+import { toast } from 'sonner';
 
 export function PromoterDashboard() {
   const { promoter, loading: promoterLoading } = usePromoter();
@@ -65,7 +66,10 @@ export function PromoterDashboard() {
       });
       setPaidByCurrency(paid);
 
-    } catch (error) { console.error('Error loading data:', error); }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Failed to load dashboard data. Please try refreshing.');
+    }
     finally { setLoading(false); }
   };
 

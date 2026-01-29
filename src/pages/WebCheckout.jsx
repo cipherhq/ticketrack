@@ -81,11 +81,25 @@ const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
 // Send confirmation email via Edge Function
 const sendConfirmationEmail = async (emailData) => {
   try {
+    // Get the current session to use the user's auth token if available
+    let { data: { session } } = await supabase.auth.getSession()
+
+    // If no session or token expired, try to refresh
+    if (!session?.access_token) {
+      const { data: refreshData } = await supabase.auth.refreshSession()
+      session = refreshData?.session
+    }
+
+    // Use session token if available. Anon key fallback is acceptable here because
+    // send-email is a public endpoint designed to send order confirmations post-purchase.
+    // The email data is validated server-side and doesn't expose sensitive operations.
+    const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        "Authorization": `Bearer ${authToken}`
       },
       body: JSON.stringify(emailData)
     })
@@ -197,7 +211,7 @@ const creditAffiliate = async (orderId, eventId, platformFee, currency, buyerId,
     if (!settings || !settings.is_enabled) return
 
     // Calculate commission (percentage of platform fee)
-    const commissionPercent = settings.commission_percent || 40
+    const commissionPercent = settings.commission_percent || 1.5
     const commissionAmount = (platformFee * commissionPercent) / 100
 
     if (commissionAmount <= 0) return
@@ -404,14 +418,65 @@ export function WebCheckout() {
   };
   
   const [paymentMethod, setPaymentMethod] = useState('card')
-  const [formData, setFormData] = useState({ 
-    email: user?.email || '', 
-    phone: '', 
+  const [formData, setFormData] = useState({
+    email: user?.email || '',
+    phone: '',
     firstName: '',
     lastName: '',
     communicationConsent: true // Default to true - user can uncheck if they don't want communications
   })
+  const [formErrors, setFormErrors] = useState({})
   const [buyingForSelf, setBuyingForSelf] = useState(true)
+
+  // Validation patterns
+  const validationPatterns = {
+    // Names: letters, hyphens, apostrophes, spaces (Unicode letters for international names)
+    name: /^[\p{L}\s'-]{1,50}$/u,
+    // Email: standard email format
+    email: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+    // Promo code: alphanumeric, hyphens, underscores only
+    promoCode: /^[A-Za-z0-9_-]{1,30}$/
+  }
+
+  // Validate a single field
+  const validateField = (field, value) => {
+    if (!value || value.trim() === '') {
+      return field === 'phone' ? null : 'This field is required'
+    }
+
+    switch (field) {
+      case 'firstName':
+      case 'lastName':
+        if (!validationPatterns.name.test(value.trim())) {
+          return 'Please enter a valid name (letters, hyphens, apostrophes only)'
+        }
+        break
+      case 'email':
+        if (!validationPatterns.email.test(value.trim())) {
+          return 'Please enter a valid email address'
+        }
+        break
+    }
+    return null
+  }
+
+  // Handle form input with validation
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    const error = validateField(field, value)
+    setFormErrors(prev => ({ ...prev, [field]: error }))
+  }
+
+  // Validate all required fields before payment
+  const validateForm = () => {
+    const errors = {}
+    errors.firstName = validateField('firstName', formData.firstName)
+    errors.lastName = validateField('lastName', formData.lastName)
+    errors.email = validateField('email', formData.email)
+
+    setFormErrors(errors)
+    return !errors.firstName && !errors.lastName && !errors.email
+  }
   const [customFields, setCustomFields] = useState([])
   const [customFieldResponses, setCustomFieldResponses] = useState({})
   
@@ -942,8 +1007,8 @@ export function WebCheckout() {
 
   // Handle Paystack payment
   const handlePaystackPayment = async () => {
-    if (!formData.email || !formData.firstName || !formData.lastName) {
-      setError('Please fill in all required fields')
+    if (!validateForm()) {
+      setError('Please correct the errors in the form')
       return
     }
 
@@ -1092,8 +1157,8 @@ export function WebCheckout() {
 
   // Handle Stripe payment (USD, GBP, EUR)
   const handleStripePayment = async () => {
-    if (!formData.email || !formData.firstName || !formData.lastName) {
-      setError('Please fill in all required fields');
+    if (!validateForm()) {
+      setError('Please correct the errors in the form');
       return;
     }
 
@@ -1172,8 +1237,8 @@ export function WebCheckout() {
 
   // Handle PayPal payment
   const handlePayPalPayment = async () => {
-    if (!formData.email || !formData.firstName || !formData.lastName) {
-      setError('Please fill in all required fields');
+    if (!validateForm()) {
+      setError('Please correct the errors in the form');
       return;
     }
 
@@ -1250,8 +1315,8 @@ export function WebCheckout() {
 
   // Handle Flutterwave payment (server-side like Stripe)
   const handleFlutterwavePayment = async (existingOrder = null) => {
-    if (!formData.email || !formData.firstName || !formData.lastName) {
-      setError('Please fill in all required fields');
+    if (!validateForm()) {
+      setError('Please correct the errors in the form');
       return;
     }
 
@@ -1393,13 +1458,19 @@ export function WebCheckout() {
   // Apply promo code
   const applyPromoCode = async () => {
     if (!promoCode.trim()) return
-    
+
+    // Validate promo code format (alphanumeric, hyphens, underscores only)
+    if (!validationPatterns.promoCode.test(promoCode.trim())) {
+      setPromoError('Invalid promo code format')
+      return
+    }
+
     setApplyingPromo(true)
     setPromoError('')
-    
+
     try {
       const code = promoCode.trim().toUpperCase()
-      
+
       // Find promo code in database
       const { data: promo, error } = await supabase
         .from('promo_codes')
@@ -1600,16 +1671,41 @@ const formatDate = (dateString) => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name *</Label>
-                      <Input id="firstName" placeholder="John" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
+                      <Input
+                        id="firstName"
+                        placeholder="John"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        className={`rounded-xl border-[#0F0F0F]/10 ${formErrors.firstName ? 'border-red-500' : ''}`}
+                        required
+                      />
+                      {formErrors.firstName && <p className="text-xs text-red-500">{formErrors.firstName}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastName">Last Name *</Label>
-                      <Input id="lastName" placeholder="Doe" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
+                      <Input
+                        id="lastName"
+                        placeholder="Doe"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        className={`rounded-xl border-[#0F0F0F]/10 ${formErrors.lastName ? 'border-red-500' : ''}`}
+                        required
+                      />
+                      {formErrors.lastName && <p className="text-xs text-red-500">{formErrors.lastName}</p>}
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address *</Label>
-                    <Input id="email" type="email" placeholder="their@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" required />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="their@email.com"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className={`rounded-xl border-[#0F0F0F]/10 ${formErrors.email ? 'border-red-500' : ''}`}
+                      required
+                    />
+                    {formErrors.email && <p className="text-xs text-red-500">{formErrors.email}</p>}
                     <p className="text-sm text-[#0F0F0F]/60">Tickets will be sent to this email</p>
                   </div>
 
@@ -1777,10 +1873,10 @@ const formatDate = (dateString) => {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6 text-lg"
-                onClick={handlePayment} 
-                disabled={loading || !formData.email || !formData.firstName || !formData.lastName}
+                onClick={handlePayment}
+                disabled={loading || !formData.email || !formData.firstName || !formData.lastName || formErrors.email || formErrors.firstName || formErrors.lastName}
               >
                 {loading ? (
                   <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</>

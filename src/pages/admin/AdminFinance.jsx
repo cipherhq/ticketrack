@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  DollarSign, Users, TrendingUp, Building2, CheckCircle, Clock, 
+import {
+  DollarSign, Users, TrendingUp, Building2, CheckCircle, Clock,
   Loader2, Search, Filter, ChevronDown, ChevronUp, ChevronRight,
-  RefreshCw, Calendar, Banknote, User, Link2, Globe, 
+  RefreshCw, Calendar, Banknote, User, Link2, Globe,
   FileText, Download, Settings, Percent, PieChart, BarChart3,
   History, CreditCard, Receipt, Wallet, Megaphone, Eye, MousePointer
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -511,7 +512,7 @@ export function AdminFinance() {
 
       setPaymentDialog({ open: false, type: null, recipient: null, event: null });
       loadData();
-    } catch (error) { console.error('Error processing payment:', error); alert('Failed to process payment.'); }
+    } catch (error) { console.error('Error processing payment:', error); toast.error('Failed to process payment.'); }
     finally { setProcessing(false); }
   };
 
@@ -540,7 +541,7 @@ export function AdminFinance() {
       }
       await logAdminAction('bulk_payout', 'event', event.id);
       loadData();
-    } catch (error) { console.error('Error:', error); alert('Failed to process payments.'); }
+    } catch (error) { console.error('Error:', error); toast.error('Failed to process payments.'); }
     finally { setProcessing(false); }
   };
 

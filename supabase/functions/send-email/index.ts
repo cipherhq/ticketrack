@@ -20,17 +20,29 @@ const APP_URL = 'https://ticketrack.com'
 // BCC support@ticketrack.com on ALL emails for record-keeping
 const BCC_ALL_EMAILS = true
 
-const ALLOWED_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com', 'http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:3000']
+// Production origins - localhost is only added in development
+const PRODUCTION_ORIGINS = ['https://ticketrack.com', 'https://ticketrack.vercel.app', 'https://www.ticketrack.com']
+const DEV_ORIGINS = ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:3000']
+const IS_DEVELOPMENT = Deno.env.get('ENVIRONMENT') === 'development' || Deno.env.get('SUPABASE_URL')?.includes('localhost')
+const ALLOWED_ORIGINS = IS_DEVELOPMENT ? [...PRODUCTION_ORIGINS, ...DEV_ORIGINS] : PRODUCTION_ORIGINS
+
+// Production logging guard - only log in development, always log errors
+const log = {
+  info: (...args: unknown[]) => IS_DEVELOPMENT && console.log(...args),
+  error: (...args: unknown[]) => console.error(...args), // Always log errors
+  debug: (...args: unknown[]) => IS_DEVELOPMENT && console.log(...args),
+}
 const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000, security: 100 }
 
 type AuthLevel = 'SYSTEM_ONLY' | 'USER_AUTH' | 'ORGANIZER_AUTH' | 'ADMIN_AUTH' | 'FINANCE_AUTH'
 
-const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; fromEmail?: string }> = {
+const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; fromEmail?: string; allowAnon?: boolean }> = {
   // System-only emails
   welcome: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   email_verification: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   password_reset: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
-  ticket_purchase: { auth: 'USER_AUTH', rateKey: 'standard' }, // Allow logged-in users to send their own purchase confirmations
+  ticket_purchase: { auth: 'USER_AUTH', rateKey: 'standard', allowAnon: true }, // Allow from frontend (triggered by legitimate purchases)
+  payment_link: { auth: 'USER_AUTH', rateKey: 'standard', allowAnon: true }, // Payment link sent by organizer
   ticket_cancelled: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   ticket_refunded: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   event_cancelled: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
@@ -148,7 +160,7 @@ async function getAuthContext(req: Request) {
     const { data: { user }, error } = await supabase.auth.getUser()
 
     if (error || !user) {
-      console.error('Auth error:', error?.message)
+      log.error('Auth error:', error?.message)
       return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
     }
 
@@ -161,9 +173,9 @@ async function getAuthContext(req: Request) {
     ])
 
     // Handle potential errors gracefully
-    if (profileError && profileError.code !== 'PGRST116') console.error('Profile fetch error:', profileError)
-    if (orgsError) console.error('Organizers fetch error:', orgsError)
-    if (finError && finError.code !== 'PGRST116') console.error('Finance user fetch error:', finError)
+    if (profileError && profileError.code !== 'PGRST116') log.error('Profile fetch error:', profileError)
+    if (orgsError) log.error('Organizers fetch error:', orgsError)
+    if (finError && finError.code !== 'PGRST116') log.error('Finance user fetch error:', finError)
 
     return {
       userId: user.id,
@@ -173,16 +185,17 @@ async function getAuthContext(req: Request) {
       isServiceRole: false
     }
   } catch (error) {
-    console.error('Auth context error:', error)
+    log.error('Auth context error:', error)
     return { userId: null, isAdmin: false, isFinance: false, organizerIds: [] as string[], isServiceRole: false }
   }
 }
 
 async function checkAuth(type: string, auth: any, req: any) {
-  const perm = EMAIL_PERMISSIONS[type]
+  const perm = EMAIL_PERMISSIONS[type] as any
   if (!perm) return { ok: false, err: `Unknown email type: ${type}` }
   if (perm.auth === 'SYSTEM_ONLY' && !auth.isServiceRole) return { ok: false, err: 'System only' }
-  if (perm.auth === 'USER_AUTH' && !auth.userId && !auth.isServiceRole) return { ok: false, err: 'Auth required' }
+  // Allow anon for specific email types (e.g., ticket_purchase triggered by legitimate payment flow)
+  if (perm.auth === 'USER_AUTH' && !auth.userId && !auth.isServiceRole && !perm.allowAnon) return { ok: false, err: 'Auth required' }
   if (perm.auth === 'ORGANIZER_AUTH' && !auth.isServiceRole && !auth.isAdmin) {
     if (!auth.userId) return { ok: false, err: 'Auth required' }
     if (req.organizerId && !auth.organizerIds.includes(req.organizerId)) return { ok: false, err: 'Not your organizer' }
@@ -218,7 +231,7 @@ const TRACKING_URL = `${SUPABASE_URL}/functions/v1/email-tracking`
 // Templates - Table-based for maximum email client compatibility
 function baseTemplate(content: string, preheader = '', isMarketing = false): string {
   const unsubscribeFooter = isMarketing
-    ? `<p style="margin-top:16px"><a href="${APP_URL}/profile?tab=settings" style="color:#6366f1;text-decoration:underline">Manage email preferences</a> &middot; <a href="${APP_URL}/profile?tab=settings" style="color:#6b7280;text-decoration:underline">Unsubscribe</a></p>`
+    ? `<p style="margin-top:16px"><a href="${APP_URL}/profile?tab=settings" style="color:#2969FF;text-decoration:underline">Manage email preferences</a> &middot; <a href="${APP_URL}/profile?tab=settings" style="color:#6b7280;text-decoration:underline">Unsubscribe</a></p>`
     : ''
 
   const gdprNotice = isMarketing
@@ -239,7 +252,7 @@ function baseTemplate(content: string, preheader = '', isMarketing = false): str
       <td align="center" style="padding: 40px 20px;">
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
           <tr>
-            <td align="center" style="background-color: #6366f1; padding: 32px 40px;">
+            <td align="center" style="background-color: #2969FF; padding: 32px 40px;">
               <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #ffffff;">${BRAND_NAME}</h1>
             </td>
           </tr>
@@ -307,7 +320,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                 <tr>
                   <td align="center" style="padding: 20px;">
                     <p style="margin: 0 0 4px 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Order Reference</p>
-                    <p style="margin: 0; font-size: 22px; font-weight: 700; color: #6366f1; font-family: monospace;">${d.orderNumber || 'N/A'}</p>
+                    <p style="margin: 0; font-size: 22px; font-weight: 700; color: #2969FF; font-family: monospace;">${d.orderNumber || 'N/A'}</p>
                   </td>
                 </tr>
               </table>
@@ -315,11 +328,11 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                 <tr>
                   <td style="padding: 24px;">
                     <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #1a1a2e;">${d.eventTitle || 'Event'}</h3>
-                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Date:</strong> ${d.eventDate ? formatDate(d.eventDate) : 'TBA'}</p>
-                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Time:</strong> ${d.eventDate ? formatTime(d.eventDate) : 'TBA'}</p>
-                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Venue:</strong> ${d.venueName || 'TBA'}</p>
-                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Ticket:</strong> ${d.ticketType || 'General'} x ${d.quantity || 1}</p>
-                    <p style="margin: 0; font-size: 14px; color: #374151;"><strong style="color: #6366f1;">Total:</strong> ${d.isFree ? 'FREE' : formatCurrency(d.totalAmount || 0, d.currency || 'NGN')}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #2969FF;">Date:</strong> ${d.eventDate ? formatDate(d.eventDate) : 'TBA'}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #2969FF;">Time:</strong> ${d.eventDate ? formatTime(d.eventDate) : 'TBA'}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #2969FF;">Venue:</strong> ${d.venueName || 'TBA'}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #2969FF;">Ticket:</strong> ${d.ticketType || 'General'} x ${d.quantity || 1}</p>
+                    <p style="margin: 0; font-size: 14px; color: #374151;"><strong style="color: #2969FF;">Total:</strong> ${d.isFree ? 'FREE' : formatCurrency(d.totalAmount || 0, d.currency || 'NGN')}</p>
                   </td>
                 </tr>
               </table>
@@ -335,7 +348,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                   <td align="center">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                       <tr>
-                        <td align="center" style="background-color: #6366f1; border-radius: 8px;">
+                        <td align="center" style="background-color: #2969FF; border-radius: 8px;">
                           <a href="${APP_URL}/tickets" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">View My Tickets</a>
                         </td>
                       </tr>
@@ -343,6 +356,60 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                   </td>
                 </tr>
               </table>`, `Your tickets for ${d.eventTitle || 'your event'} are confirmed!`) }),
+  payment_link: d => ({ subject: `Complete Your Payment - ${d.eventTitle || 'Your Event'}`, html: baseTemplate(`
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td align="center" style="padding-bottom: 20px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="center" style="width: 64px; height: 64px; background-color: #2969FF; border-radius: 32px;">
+                          <span style="font-size: 28px; color: #ffffff; line-height: 64px;">&#128179;</span>
+                        </td>
+                      </tr>
+                    </table>
+                    <h2 style="margin: 24px 0 8px 0; font-size: 24px; font-weight: 700; color: #1a1a2e;">Payment Request</h2>
+                    <p style="margin: 0; font-size: 16px; color: #6b7280;">Hi ${d.attendeeName || 'there'}, please complete your payment to secure your ticket.</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #faf5ff; border-radius: 8px; border: 1px solid #e9d5ff; margin-bottom: 20px;">
+                <tr>
+                  <td style="padding: 24px;">
+                    <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #1a1a2e;">${d.eventTitle || 'Event'}</h3>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #2969FF;">Date:</strong> ${d.eventDate ? formatDate(d.eventDate) : 'TBA'}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #2969FF;">Venue:</strong> ${d.venueName || 'TBA'}${d.city ? `, ${d.city}` : ''}</p>
+                    <p style="margin: 0 0 6px 0; font-size: 14px; color: #374151;"><strong style="color: #2969FF;">Ticket:</strong> ${d.ticketType || 'General'} x ${d.quantity || 1}</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd; margin-bottom: 20px;">
+                <tr>
+                  <td align="center" style="padding: 20px;">
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #0369a1; text-transform: uppercase; letter-spacing: 1px;">Amount Due</p>
+                    <p style="margin: 0; font-size: 28px; font-weight: 700; color: #0c4a6e;">${formatCurrency(d.totalAmount || 0, d.currency || 'NGN')}</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td align="center" style="padding-bottom: 20px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="center" style="background-color: #2969FF; border-radius: 8px;">
+                          <a href="${d.paymentLink}" style="display: inline-block; padding: 16px 48px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">Pay Now</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #fef9c3; border-radius: 8px; border: 1px solid #fde047;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <p style="margin: 0; font-size: 14px; color: #854d0e;">This payment link was sent by <strong>${d.organizerName || 'the event organizer'}</strong>. Your ticket will be issued immediately after payment is confirmed.</p>
+                  </td>
+                </tr>
+              </table>`, `Complete your payment for ${d.eventTitle || 'your event'}`) }),
   ticket_cancelled: d => ({ subject: `Ticket Cancelled - ${d.eventTitle}`, html: baseTemplate(`<h2>Ticket Cancelled</h2><p>Hi ${d.attendeeName},</p><p>Your ticket for <strong>${d.eventTitle}</strong> was cancelled.</p>${d.refundAmount ? `<div class="success"><strong>Refund of ${formatCurrency(d.refundAmount, d.currency)} processing.</strong></div>` : ''}`) }),
   ticket_refunded: d => ({ subject: `Refund Processed - ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>Refund Complete!</strong></div><h2>Your Refund</h2><p>Hi ${d.attendeeName},</p><div class="card"><div class="row"><span class="label">Amount</span><span class="value">${formatCurrency(d.refundAmount, d.currency)}</span></div><div class="row"><span class="label">Order</span><span class="value">${d.orderNumber}</span></div></div><p style="font-size:14px;color:#666">5-10 business days to arrive.</p>`) }),
   ticket_transfer_sent: d => ({ subject: `Ticket Transferred - ${d.eventTitle}`, html: baseTemplate(`<h2>Ticket Transfer Sent</h2><p>Hi ${d.senderName},</p><p>You transferred a ticket to <strong>${d.recipientName}</strong>.</p><div class="card"><h3>${d.eventTitle}</h3><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Ticket</span><span class="value">${d.ticketType}</span></div><div class="row"><span class="label">To</span><span class="value">${d.recipientName} (${d.recipientEmail})</span></div></div>`) }),
@@ -421,7 +488,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
             <td align="center" style="padding: 0 40px 40px 40px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td align="center" style="background-color: #6366f1; border-radius: 8px;">
+                  <td align="center" style="background-color: #2969FF; border-radius: 8px;">
                     <a href="${APP_URL}/organizer/events/${d.eventId}" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">View Dashboard</a>
                   </td>
                 </tr>
@@ -619,7 +686,7 @@ async function sendEmail(supabase: any, req: any) {
       const { data } = await supabase.from('communication_logs').insert({ channel: 'email', template_key: req.type, recipient_email: to[0], recipient_user_id: req.userId || null, event_id: req.eventId || null, subject, status: 'queued', provider: 'resend', metadata: { recipientCount: to.length } }).select('id').single()
       logId = data?.id
       messageId = data?.id
-    } catch (e) { console.error('Log error:', e) }
+    } catch (e) { log.error('Log error:', e) }
   }
   
   // Add email tracking for trackable email types
@@ -629,7 +696,7 @@ async function sendEmail(supabase: any, req: any) {
   if (shouldTrack && !req.skipTracking) {
     trackingId = generateTrackingId(req.campaignId, messageId, to[0])
     html = addEmailTracking(html, trackingId, true)
-    console.log(`Email tracking enabled: ${trackingId}`)
+    log.info(`Email tracking enabled: ${trackingId}`)
   }
   
   try {
@@ -722,7 +789,7 @@ Deno.serve(async (req) => {
     const result = await sendEmail(supabase, body)
     return new Response(JSON.stringify(result), { status: result.success ? 200 : 500, headers: cors })
   } catch (e: any) {
-    console.error('Handler error:', e)
+    log.error('Handler error:', e)
     return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: cors })
   }
 })

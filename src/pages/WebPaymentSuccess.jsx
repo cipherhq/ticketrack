@@ -16,11 +16,25 @@ import { WalletButtons } from '@/components/WalletButtons'
 // Send confirmation email via Edge Function
 const sendConfirmationEmail = async (emailData) => {
   try {
+    // Get the current session to use the user's auth token
+    let { data: { session } } = await supabase.auth.getSession()
+
+    // If no session or token expired, try to refresh
+    if (!session?.access_token) {
+      const { data: refreshData } = await supabase.auth.refreshSession()
+      session = refreshData?.session
+    }
+
+    // Use session token if available. Anon key fallback is acceptable here because
+    // send-email is a public endpoint for order confirmations. This page may be reached
+    // via payment provider redirect where session cookies aren't always preserved.
+    const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        "Authorization": `Bearer ${authToken}`
       },
       body: JSON.stringify(emailData)
     })
@@ -186,79 +200,131 @@ export function WebPaymentSuccess() {
     }
   }
 
-  const loadStripeOrder = async (orderId) => {
+  const loadStripeOrder = async (passedOrderId) => {
     setLoading(true)
-    console.log('[WebPaymentSuccess] loadStripeOrder called with:', { orderId, type: typeof orderId })
+    console.log('[WebPaymentSuccess] loadStripeOrder called with:', { passedOrderId, type: typeof passedOrderId })
 
     try {
       const sessionId = searchParams.get('session_id')
-      console.log('[WebPaymentSuccess] Calling complete-stripe-order with:', { orderId, sessionId })
+      console.log('[WebPaymentSuccess] Calling complete-stripe-order with:', { orderId: passedOrderId, sessionId })
 
       // Use edge function to complete order (bypasses RLS, handles everything server-side)
-      const { data: result, error: fnError } = await supabase.functions.invoke('complete-stripe-order', {
-        body: { orderId, sessionId }
-      })
+      // Using direct fetch instead of supabase.functions.invoke for better reliability
+      let result = null
+      let fnError = null
+
+      try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000)
+
+        // Anon key is appropriate here because this is a payment provider redirect callback.
+        // User session may not be available after redirect from Stripe/PayPal/Flutterwave.
+        // The edge function validates the order via the payment provider's session_id.
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/complete-stripe-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ orderId: passedOrderId, sessionId }),
+          signal: controller.signal
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('[WebPaymentSuccess] Edge function HTTP error:', response.status, errorText)
+          fnError = new Error(`HTTP ${response.status}: ${errorText}`)
+        } else {
+          result = await response.json()
+        }
+      } catch (invokeErr) {
+        if (invokeErr.name === 'AbortError') {
+          console.error('[WebPaymentSuccess] Edge function timed out after 30s')
+          fnError = new Error('Request timed out - please refresh the page')
+        } else {
+          console.error('[WebPaymentSuccess] Edge function invoke error:', invokeErr)
+          fnError = invokeErr
+        }
+      }
 
       console.log('[WebPaymentSuccess] Edge function response:', { result, fnError })
 
+      // Get orderId from result if we didn't have one (edge function gets it from Stripe session)
+      const orderId = passedOrderId || result?.order?.id
+
       if (fnError) {
         console.error('Edge function error:', fnError, 'Result:', result)
-        // Fallback to direct query if edge function fails
-        const { data: orderData } = await supabase
-          .from('orders')
-          .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*))')
-          .eq('id', orderId)
-          .single()
+        // Fallback to direct query if edge function fails - only if we have an orderId
+        if (orderId) {
+          const { data: orderData } = await supabase
+            .from('orders')
+            .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, business_email), event_sponsors(*))')
+            .eq('id', orderId)
+            .single()
 
-        if (orderData) {
-          setOrder(orderData)
-          setEvent(orderData.events)
+          if (orderData) {
+            setOrder(orderData)
+            setEvent(orderData.events)
 
-          const { data: ticketsData } = await supabase
-            .from('tickets')
-            .select('*, order:orders(id, order_number, total_amount, is_donation, currency)')
-            .eq('order_id', orderId)
-          setTickets(ticketsData || [])
-        } else {
-          setError('Order not found. Please check your email for confirmation.')
-          return
+            const { data: ticketsData } = await supabase
+              .from('tickets')
+              .select('*, order:orders(id, order_number, total_amount, is_donation, currency)')
+              .eq('order_id', orderId)
+            setTickets(ticketsData || [])
+            return
+          }
         }
+        setError('Order not found. Please check your email for confirmation.')
+        return
       } else if (result && !result.success) {
         // Edge function returned { success: false, error: "..." }
         console.error('Edge function returned error:', result.error)
-        setError(result.error || 'Failed to complete order')
-        // Still try fallback query
-        const { data: orderData } = await supabase
-          .from('orders')
-          .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*))')
-          .eq('id', orderId)
-          .single()
 
-        if (orderData) {
-          setOrder(orderData)
-          setEvent(orderData.events)
-          setError(null) // Clear error if we found the order
+        // Try fallback query if we have an orderId
+        if (orderId) {
+          const { data: orderData } = await supabase
+            .from('orders')
+            .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, business_email), event_sponsors(*))')
+            .eq('id', orderId)
+            .single()
 
-          const { data: ticketsData } = await supabase
-            .from('tickets')
-            .select('*, order:orders(id, order_number, total_amount, is_donation, currency)')
-            .eq('order_id', orderId)
-          setTickets(ticketsData || [])
+          if (orderData) {
+            setOrder(orderData)
+            setEvent(orderData.events)
+
+            const { data: ticketsData } = await supabase
+              .from('tickets')
+              .select('*, order:orders(id, order_number, total_amount, is_donation, currency)')
+              .eq('order_id', orderId)
+            setTickets(ticketsData || [])
+            return
+          }
         }
+
+        setError(result.error || 'Failed to complete order')
         return
       } else if (result?.success) {
         // Edge function succeeded
         const orderData = result.order
         const ticketsData = result.tickets || []
+        const resolvedOrderId = orderData?.id || orderId
         console.log('[WebPaymentSuccess] Edge function order data:', orderData)
         console.log('[WebPaymentSuccess] Edge function order.events:', orderData?.events)
 
         // Fetch full event data for display (may fail due to RLS, so we have fallback)
-        const { data: fullOrder, error: fullOrderError } = await supabase
-          .from('orders')
-          .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, email, business_email), event_sponsors(*))')
-          .eq('id', orderId)
-          .single()
+        let fullOrder = null
+        let fullOrderError = null
+        if (resolvedOrderId) {
+          const response = await supabase
+            .from('orders')
+            .select('*, events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, is_free, currency, organizer:organizers(id, business_name, logo_url, business_email), event_sponsors(*))')
+            .eq('id', resolvedOrderId)
+            .single()
+          fullOrder = response.data
+          fullOrderError = response.error
+        }
 
         if (fullOrderError) {
           console.warn('[WebPaymentSuccess] fullOrder query failed (likely RLS):', fullOrderError.message)
@@ -277,15 +343,21 @@ export function WebPaymentSuccess() {
           if (orderData?.event_id) {
             const { data: eventDirect } = await supabase
               .from('events')
-              .select('id, title, slug, start_date, end_date, venue_name, venue_address, city, country, image_url, is_virtual, streaming_url, is_free, currency')
+              .select('id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, is_free, currency')
               .eq('id', orderData.event_id)
               .single()
             if (eventDirect) {
               console.log('[WebPaymentSuccess] Got event directly:', eventDirect)
+              const ticketsWithOrderData = ticketsData.map(t => ({ ...t, order: { id: orderData.id, order_number: orderData.order_number, total_amount: orderData.total_amount, is_donation: orderData.is_donation, currency: orderData.currency } }))
               setOrder(finalOrder)
               setEvent(eventDirect)
-              setTickets(ticketsData.map(t => ({ ...t, order: { id: orderData.id, order_number: orderData.order_number, total_amount: orderData.total_amount, is_donation: orderData.is_donation, currency: orderData.currency } })))
-              console.log('Order completed. Confirmation email sent by edge function.')
+              setTickets(ticketsWithOrderData)
+
+              // Send confirmation email with PDF attachment
+              if (eventDirect.title && ticketsWithOrderData.length > 0) {
+                console.log('[WebPaymentSuccess] Sending PDF ticket email from frontend (fallback path)...')
+                await sendTicketEmailWithPDF(finalOrder, eventDirect, ticketsWithOrderData)
+              }
               return
             }
           }

@@ -6,6 +6,7 @@ import {
   Plus, Trash2, Upload, Loader2, DollarSign, Info, ExternalLink,
   Users, Pencil, ArrowLeft, CheckCircle, XCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -306,7 +307,7 @@ export function WebCreateEvent() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image must be less than 5MB');
+        toast.error('Image must be less than 5MB');
         return;
       }
       setBannerImage(file);
@@ -329,7 +330,7 @@ export function WebCreateEvent() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image must be less than 5MB');
+        toast.error('Image must be less than 5MB');
         return;
       }
       setVenueLayoutImage(file);
@@ -395,7 +396,7 @@ export function WebCreateEvent() {
   const handleEventImagesChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (eventImages.length + files.length > 10) {
-      alert('Maximum 10 images allowed');
+      toast.error('Maximum 10 images allowed');
       return;
     }
     const newImages = files.map(file => ({
@@ -413,7 +414,7 @@ export function WebCreateEvent() {
   const handleSponsorLogoChange = (e) => {
     const files = Array.from(e.target.files || []);
     if (sponsorLogos.length + files.length > 5) {
-      alert('Maximum 5 sponsor logos allowed');
+      toast.error('Maximum 5 sponsor logos allowed');
       return;
     }
     const newLogos = files.map(file => ({

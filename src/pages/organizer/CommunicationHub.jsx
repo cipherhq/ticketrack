@@ -39,6 +39,7 @@ const CHANNELS = [
   { id: 'email', name: 'Email', icon: Mail, color: 'text-blue-600', bgColor: 'bg-blue-100', description: 'Send rich HTML emails' },
   { id: 'sms', name: 'SMS', icon: Phone, color: 'text-green-600', bgColor: 'bg-green-100', description: 'Send text messages (credits required)' },
   { id: 'whatsapp', name: 'WhatsApp', icon: MessageSquare, color: 'text-emerald-600', bgColor: 'bg-emerald-100', description: 'Send WhatsApp messages (credits required)' },
+  { id: 'telegram', name: 'Telegram', icon: Send, color: 'text-sky-600', bgColor: 'bg-sky-100', description: 'Send Telegram messages (credits required)' },
 ];
 
 const AUDIENCE_TYPES = [
@@ -77,6 +78,16 @@ This is a friendly reminder that *{{event_name}}* is happening tomorrow!
 📍 *Venue:* {{event_venue}}
 
 Don't forget your ticket! See you there! 🎉`
+      },
+      telegram: {
+        message: `Hi {{attendee_name}}! 👋
+
+This is a friendly reminder that *{{event_name}}* is happening tomorrow!
+
+📅 *Date:* {{event_date}} at {{event_time}}
+📍 *Venue:* {{event_venue}}
+
+Don't forget your ticket! See you there! 🎉`
       }
     }
   },
@@ -98,6 +109,15 @@ Don't forget your ticket! See you there! 🎉`
         message: `Thank you for attending {{event_name}}! We hope you had a great time. Stay tuned for more events from {{organizer_name}}!`
       },
       whatsapp: {
+        message: `Hi {{attendee_name}}! 🙏
+
+Thank you for attending *{{event_name}}*! We hope you had an amazing time.
+
+Your support means the world to us. Stay tuned for more exciting events!
+
+- {{organizer_name}}`
+      },
+      telegram: {
         message: `Hi {{attendee_name}}! 🙏
 
 Thank you for attending *{{event_name}}*! We hope you had an amazing time.
@@ -138,6 +158,18 @@ Your support means the world to us. Stay tuned for more exciting events!
 
 Early bird tickets available now!
 🎟️ {{event_link}}`
+      },
+      telegram: {
+        message: `🎉 *New Event Announcement!*
+
+*{{event_name}}*
+
+📅 Date: {{event_date}}
+⏰ Time: {{event_time}}
+📍 Venue: {{event_venue}}
+
+Early bird tickets available now!
+🎟️ {{event_link}}`
       }
     }
   },
@@ -149,7 +181,8 @@ Early bird tickets available now!
     content: {
       email: { subject: '', body: '' },
       sms: { message: '' },
-      whatsapp: { message: '' }
+      whatsapp: { message: '' },
+      telegram: { message: '' }
     }
   }
 ];
@@ -211,7 +244,7 @@ export function CommunicationHub() {
     // Daily send counts for last 30 days
     dailySends: [],
     // Channel breakdown
-    channelBreakdown: { email: 0, sms: 0, whatsapp: 0 },
+    channelBreakdown: { email: 0, sms: 0, whatsapp: 0, telegram: 0 },
     // Delivery stats
     deliveryStats: { sent: 0, delivered: 0, failed: 0, pending: 0 },
     // Campaign performance
@@ -234,6 +267,7 @@ export function CommunicationHub() {
       email: { subject: '', body: '' },
       sms: { message: '' },
       whatsapp: { message: '' },
+      telegram: { message: '' },
     },
     scheduleFor: '',
   });
@@ -722,6 +756,17 @@ export function CommunicationHub() {
           recipients.push({ id: c.id, name: c.full_name, phone: c.phone });
         }
       });
+
+      // For Telegram, query profiles with linked Telegram accounts
+      if (channel === 'telegram') {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, telegram_chat_id')
+          .not('telegram_chat_id', 'is', null);
+        (profiles || []).forEach(p => {
+          recipients.push({ id: p.id, name: p.full_name, chatId: p.telegram_chat_id });
+        });
+      }
     } else if (form.audienceType === 'event_attendees' && form.eventId) {
       const { data } = await supabase
         .from('tickets')
@@ -736,10 +781,25 @@ export function CommunicationHub() {
           recipients.push({ id: t.id, name: t.attendee_name, phone: t.attendee_phone, ticket_type: t.ticket_type_name });
         }
       });
+
+      // For Telegram, find profiles with telegram linked who bought tickets for this event
+      if (channel === 'telegram') {
+        const { data: ticketProfiles } = await supabase
+          .from('tickets')
+          .select('user_id, attendee_name, profiles:user_id(telegram_chat_id)')
+          .eq('event_id', form.eventId)
+          .in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
+          .not('profiles.telegram_chat_id', 'is', null);
+        (ticketProfiles || []).forEach(t => {
+          if (t.profiles?.telegram_chat_id) {
+            recipients.push({ id: t.user_id, name: t.attendee_name, chatId: t.profiles.telegram_chat_id });
+          }
+        });
+      }
     } else if (form.audienceType === 'followers') {
       const { data } = await supabase
         .from('followers')
-        .select('profiles(id, full_name, email, phone)')
+        .select('profiles(id, full_name, email, phone, telegram_chat_id)')
         .eq('organizer_id', organizer.id);
 
       (data || []).forEach(f => {
@@ -747,6 +807,8 @@ export function CommunicationHub() {
           recipients.push({ id: f.profiles.id, name: f.profiles.full_name, email: f.profiles.email });
         } else if ((channel === 'sms' || channel === 'whatsapp') && f.profiles?.phone) {
           recipients.push({ id: f.profiles.id, name: f.profiles.full_name, phone: f.profiles.phone });
+        } else if (channel === 'telegram' && f.profiles?.telegram_chat_id) {
+          recipients.push({ id: f.profiles.id, name: f.profiles.full_name, chatId: f.profiles.telegram_chat_id });
         }
       });
     } else if (form.audienceType === 'segment' && form.segmentId) {
@@ -1136,6 +1198,66 @@ export function CommunicationHub() {
             
             console.log(`💬 WhatsApp campaign: ${successCount} sent, ${failCount} failed`);
           }
+
+          // Send Telegram messages
+          if (channel === 'telegram') {
+            let successCount = 0;
+            let failCount = 0;
+
+            console.log(`📨 Sending Telegram to ${recipients.length} recipients...`);
+
+            for (const recipient of recipients) {
+              try {
+                console.log(`  → Sending to chat ID: ${recipient.chatId}`);
+
+                // Replace variables in message
+                let personalizedMessage = form.content.telegram?.message || '';
+                personalizedMessage = personalizedMessage.replace(/\{\{attendee_name\}\}/g, recipient.name || 'there');
+                personalizedMessage = personalizedMessage.replace(/\{\{event_name\}\}/g, selectedEvent?.title || '');
+                personalizedMessage = personalizedMessage.replace(/\{\{event_date\}\}/g, selectedEvent?.start_date ? new Date(selectedEvent.start_date).toLocaleDateString() : '');
+                personalizedMessage = personalizedMessage.replace(/\{\{event_time\}\}/g, selectedEvent?.start_date ? new Date(selectedEvent.start_date).toLocaleTimeString() : '');
+                personalizedMessage = personalizedMessage.replace(/\{\{event_venue\}\}/g, selectedEvent?.venue_name || '');
+                personalizedMessage = personalizedMessage.replace(/\{\{event_link\}\}/g, selectedEvent?.id ? `${window.location.origin}/events/${selectedEvent.id}` : '');
+                personalizedMessage = personalizedMessage.replace(/\{\{organizer_name\}\}/g, organizer.business_name || '');
+
+                const { data: tgResult, error } = await supabase.functions.invoke('send-telegram', {
+                  body: {
+                    chatId: recipient.chatId,
+                    userId: recipient.id,
+                    organizerId: organizer.id,
+                    message: personalizedMessage,
+                    parseMode: 'Markdown',
+                  }
+                });
+
+                console.log(`  📨 Telegram Response for ${recipient.chatId}:`, tgResult, error);
+
+                if (error || tgResult?.error) {
+                  failCount++;
+                } else {
+                  console.log(`  ✅ Telegram sent to ${recipient.chatId}`);
+                  successCount++;
+                }
+
+                // Log to communication_messages
+                await supabase.from('communication_messages').insert({
+                  organizer_id: organizer.id,
+                  campaign_id: campaign.id,
+                  channel: 'telegram',
+                  recipient_metadata: { chat_id: recipient.chatId, user_id: recipient.id },
+                  content: { message: personalizedMessage },
+                  status: (error || tgResult?.error) ? 'failed' : 'sent',
+                  error_message: error?.message || tgResult?.error || null,
+                  delivered_at: (error || tgResult?.error) ? null : new Date().toISOString(),
+                });
+              } catch (err) {
+                console.error(`Error sending Telegram to ${recipient.chatId}:`, err);
+                failCount++;
+              }
+            }
+
+            console.log(`📨 Telegram campaign: ${successCount} sent, ${failCount} failed`);
+          }
         }
 
         // Update campaign status
@@ -1181,6 +1303,7 @@ export function CommunicationHub() {
         email: { subject: '', body: '' },
         sms: { message: '' },
         whatsapp: { message: '' },
+        telegram: { message: '' },
       },
       scheduleFor: '',
     });

@@ -1032,7 +1032,6 @@ export function EventManagement() {
                             )}
                           </div>
                         </div>
-                      </div>
                       {event.is_recurring && expandedRecurringEvents[event.id] && (
                         <div className="mt-4 ml-8 space-y-2 border-l-2 border-purple-200 pl-4">
                           {loadingChildEvents[event.id] ? (

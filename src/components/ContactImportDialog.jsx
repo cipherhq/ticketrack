@@ -4,6 +4,7 @@ import {
   ChevronRight, ChevronLeft, Download, RefreshCw, Users,
   Mail, Phone, Tag, Calendar, MapPin, DollarSign
 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
@@ -693,7 +694,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
       setStep('mapping');
     } catch (error) {
       console.error('Error parsing file:', error);
-      alert('Failed to parse file. Please ensure it\'s a valid CSV file.');
+      toast.error('Failed to parse file. Please ensure it\'s a valid CSV file.');
     }
   };
 
@@ -703,7 +704,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
 
   const executeImport = async () => {
     if (!consentConfirmed) {
-      alert('Please confirm that you have consent to contact these people.');
+      toast.error('Please confirm that you have consent to contact these people.');
       return;
     }
 
@@ -879,7 +880,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
       setStep('done');
     } catch (error) {
       console.error('Import error:', error);
-      alert('Import failed: ' + error.message);
+      toast.error('Import failed: ' + error.message);
     } finally {
       setImporting(false);
     }

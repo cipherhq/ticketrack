@@ -20,11 +20,25 @@ import { getDonationFeePercent } from '@/config/fees'
 // Send confirmation email via Edge Function
 const sendConfirmationEmail = async (emailData) => {
   try {
+    // Get the current session to use the user's auth token if available
+    let { data: { session } } = await supabase.auth.getSession()
+
+    // If no session or token expired, try to refresh
+    if (!session?.access_token) {
+      const { data: refreshData } = await supabase.auth.refreshSession()
+      session = refreshData?.session
+    }
+
+    // Use session token if available. Anon key fallback is acceptable here because
+    // send-email is a public endpoint for order confirmations. Even authenticated RSVPs
+    // may hit edge cases where session refresh fails but the email should still be sent.
+    const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        "Authorization": `Bearer ${authToken}`
       },
       body: JSON.stringify(emailData)
     })

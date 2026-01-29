@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  Shield, Users, Clock, AlertTriangle, CheckCircle, 
-  Eye, EyeOff, UserPlus, Edit2, Trash2, Key, 
+import {
+  Shield, Users, Clock, AlertTriangle, CheckCircle,
+  Eye, EyeOff, UserPlus, Edit2, Trash2, Key,
   Smartphone, MapPin, Activity, Ban, RefreshCw,
-  Calendar, User, Lock, Unlock, Settings, 
+  Calendar, User, Lock, Unlock, Settings,
   Phone, Mail, Globe, Monitor
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -282,7 +283,7 @@ export function AdminUserTypes() {
       await loadUsers();
     } catch (error) {
       console.error('Error assigning role:', error);
-      alert('Failed to assign role');
+      toast.error('Failed to assign role');
     }
   };
 
@@ -314,7 +315,7 @@ export function AdminUserTypes() {
       await loadUsers();
     } catch (error) {
       console.error('Error revoking role:', error);
-      alert('Failed to revoke role');
+      toast.error('Failed to revoke role');
     }
   };
 
@@ -333,7 +334,7 @@ export function AdminUserTypes() {
       await loadSessions();
     } catch (error) {
       console.error('Error terminating session:', error);
-      alert('Failed to terminate session');
+      toast.error('Failed to terminate session');
     }
   };
 
@@ -372,13 +373,13 @@ export function AdminUserTypes() {
 
       if (smsError || !smsResult?.success) {
         console.warn('SMS send warning:', smsError || smsResult?.error);
-        alert(`OTP generated: ${otp}\n\nNote: SMS delivery may be delayed. Please enter this code to continue.`);
+        toast.info(`OTP generated: ${otp}. Note: SMS delivery may be delayed.`);
       } else {
-        alert(`OTP sent to ${phoneNumber}. Please check your phone.`);
+        toast.success(`OTP sent to ${phoneNumber}. Please check your phone.`);
       }
     } catch (error) {
       console.error('Error generating OTP:', error);
-      alert('Failed to generate OTP');
+      toast.error('Failed to generate OTP');
     }
   };
 
@@ -846,9 +847,9 @@ export function AdminUserTypes() {
             <p className="text-sm text-[#0F0F0F]/60">
               Send a one-time password to this user's phone for verification.
             </p>
-            <Button 
+            <Button
               onClick={() => {
-                alert('OTP functionality requires Termii integration to be configured.');
+                toast.info('OTP functionality requires Termii integration to be configured.');
                 setOtpModal({ open: false, userId: null });
               }}
               className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl"
@@ -875,7 +876,7 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !selectedRole) {
-      alert('Please fill in email and select a role');
+      toast.error('Please fill in email and select a role');
       return;
     }
 
@@ -889,7 +890,7 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
         .single();
 
       if (findError || !profile) {
-        alert('User not found. They must have a Ticketrack account first.');
+        toast.error('User not found. They must have a Ticketrack account first.');
         setLoading(false);
         return;
       }
@@ -928,11 +929,11 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
         success: true
       });
 
-      alert('Admin user added successfully!');
+      toast.success('Admin user added successfully!');
       onSuccess();
     } catch (error) {
       console.error('Error adding user:', error);
-      alert('Failed to add admin user: ' + error.message);
+      toast.error('Failed to add admin user: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -1059,11 +1060,11 @@ function EditUserForm({ user: editUser, roles, onSuccess, onCancel }) {
         success: true
       });
 
-      alert('User updated successfully!');
+      toast.success('User updated successfully!');
       onSuccess();
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Failed to update user: ' + error.message);
+      toast.error('Failed to update user: ' + error.message);
     } finally {
       setLoading(false);
     }

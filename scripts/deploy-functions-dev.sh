@@ -1,0 +1,75 @@
+#!/bin/bash
+# Deploy all edge functions to DEV project
+
+PROJECT_REF="bnkxgyzvqpdctghrgmkr"
+
+FUNCTIONS=(
+  "ai-compose"
+  "ai-compose-email"
+  "auto-refund-on-cancellation"
+  "auto-trigger-payouts"
+  "capture-paypal-payment"
+  "create-credit-purchase"
+  "create-flutterwave-checkout"
+  "create-flutterwave-subaccount"
+  "create-paypal-checkout"
+  "create-paystack-subaccount"
+  "create-split-flutterwave-checkout"
+  "create-split-stripe-checkout"
+  "create-stripe-checkout"
+  "create-stripe-connect-account"
+  "create-stripe-identity-session"
+  "email-inbound-webhook"
+  "email-tracking"
+  "flutterwave-webhook"
+  "generate-wallet-pass"
+  "get-banks"
+  "get-stripe-connect-balance"
+  "import-external-events"
+  "iot-sensor-data"
+  "paystack-webhook"
+  "process-automation-jobs"
+  "process-drip-campaigns"
+  "process-fast-payout"
+  "process-refund"
+  "process-stripe-connect-refund"
+  "send-birthday-emails"
+  "send-bulk-email"
+  "send-communication-campaign"
+  "send-email"
+  "send-event-reminders"
+  "send-otp"
+  "send-push-notification"
+  "send-sms"
+  "send-split-reminder"
+  "send-telegram"
+  "send-whatsapp"
+  "sms-inbound-webhook"
+  "stripe-connect-webhook"
+  "stripe-identity-webhook"
+  "stripe-webhook"
+  "telegram-webhook"
+  "trigger-paystack-payout"
+  "trigger-stripe-connect-payout"
+  "verify-bank-account"
+  "verify-bvn"
+  "verify-credit-purchase"
+  "verify-otp"
+  "whatsapp-inbound-webhook"
+)
+
+echo "🚀 Deploying ${#FUNCTIONS[@]} functions to DEV project..."
+echo ""
+
+for func in "${FUNCTIONS[@]}"; do
+  echo "📦 Deploying $func..."
+  supabase functions deploy "$func" --project-ref "$PROJECT_REF"
+  if [ $? -eq 0 ]; then
+    echo "✅ $func deployed"
+  else
+    echo "❌ $func failed"
+  fi
+  echo ""
+done
+
+echo "🎉 Deployment complete!"

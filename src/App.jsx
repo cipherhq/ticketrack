@@ -23,6 +23,7 @@ import { SESSION_TIMEOUT_MS, SESSION_WARNING_MS } from './config/app';
 import { CookieConsent } from './components/CookieConsent';
 import { Toaster } from './components/ui/toaster';
 import { Loader2 } from 'lucide-react';
+import { ConfirmProvider } from './hooks/useConfirm';
 
 // Retry wrapper for lazy imports - handles chunk loading failures after deployments
 // If chunk fails to load (e.g., after deployment with new hashes), reload the page
@@ -64,6 +65,7 @@ import { WebHome } from './pages/WebHome';
 import { WebEventDetails } from './pages/WebEventDetails';
 import { WebCheckout } from './pages/WebCheckout';
 import { WebPaymentSuccess } from './pages/WebPaymentSuccess';
+import { WebPaymentLink } from './pages/WebPaymentLink';
 import { WebAuth } from './pages/WebAuth';
 import { AuthCallback } from './pages/AuthCallback';
 
@@ -127,6 +129,7 @@ function App() {
     <AuthProvider><FeatureFlagsProvider>
       <CartProvider>
         <ImpersonationProvider>
+          <ConfirmProvider>
           <SessionTimeoutProvider timeoutMs={SESSION_TIMEOUT_MS} warningMs={SESSION_WARNING_MS}>
           <Router>
             <ScrollToTop />
@@ -258,6 +261,7 @@ function App() {
                   </Suspense>
                 } />
                 <Route path="/checkout" element={<WebCheckout />} />
+                <Route path="/pay/:token" element={<WebPaymentLink />} />
                 <Route path="/free-rsvp" element={
                   <Suspense fallback={<PageLoader />}>
                     <WebFreeRSVP />
@@ -378,6 +382,7 @@ function App() {
             </Sentry.ErrorBoundary>
           </Router>
           </SessionTimeoutProvider>
+          </ConfirmProvider>
         </ImpersonationProvider>
       </CartProvider>
     </FeatureFlagsProvider></AuthProvider>

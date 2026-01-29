@@ -7,3 +7,5 @@ playwright-report/
 test-results/
 *.backup
 .vercel
+.env.development
+.env.production
