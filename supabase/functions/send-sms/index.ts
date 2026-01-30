@@ -8,6 +8,14 @@ const corsHeaders = {
 
 const TERMII_API_URL = 'https://api.ng.termii.com/api';
 const TWILIO_API_URL = 'https://api.twilio.com/2010-04-01';
+const AFRICASTALKING_SMS_URL = 'https://api.africastalking.com/version1/messaging';
+const AFRICASTALKING_SANDBOX_URL = 'https://api.sandbox.africastalking.com/version1/messaging';
+
+// Africa's Talking credentials
+const AT_API_KEY = Deno.env.get('AFRICASTALKING_API_KEY');
+const AT_USERNAME = Deno.env.get('AFRICASTALKING_USERNAME');
+const AT_SENDER_ID = Deno.env.get('AFRICASTALKING_SENDER_ID') || 'Ticketrack';
+const AT_ENVIRONMENT = Deno.env.get('AFRICASTALKING_ENVIRONMENT') || 'production';
 
 // Map phone prefixes to country codes
 const PHONE_PREFIX_TO_COUNTRY: Record<string, string> = {
@@ -122,16 +130,16 @@ async function sendTermiiSMS(
 }
 
 async function sendTwilioSMS(
-  to: string, 
-  message: string, 
-  accountSid: string, 
-  authToken: string, 
+  to: string,
+  message: string,
+  accountSid: string,
+  authToken: string,
   fromNumber: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const formattedTo = '+' + formatPhoneNumber(to);
     const credentials = btoa(`${accountSid}:${authToken}`);
-    
+
     const formData = new URLSearchParams();
     formData.append('To', formattedTo);
     formData.append('From', fromNumber);
@@ -148,16 +156,78 @@ async function sendTwilioSMS(
         body: formData.toString(),
       }
     );
-    
+
     const data = await response.json();
     console.log('Twilio response:', data);
-    
+
     if (response.ok && data.sid) {
       return { success: true, messageId: data.sid };
     }
     return { success: false, error: data.message || 'Failed to send SMS via Twilio' };
   } catch (error) {
     console.error('Twilio error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function sendAfricasTalkingSMS(
+  to: string,
+  message: string,
+  senderId?: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    if (!AT_API_KEY || !AT_USERNAME) {
+      return { success: false, error: "Africa's Talking not configured" };
+    }
+
+    let formattedPhone = formatPhoneNumber(to);
+    // Ensure + prefix for Africa's Talking
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+' + formattedPhone;
+    }
+
+    const apiUrl = AT_ENVIRONMENT === 'sandbox' ? AFRICASTALKING_SANDBOX_URL : AFRICASTALKING_SMS_URL;
+
+    const formData = new URLSearchParams();
+    formData.append('username', AT_USERNAME);
+    formData.append('to', formattedPhone);
+    formData.append('message', message);
+
+    const effectiveSenderId = senderId || AT_SENDER_ID;
+    if (effectiveSenderId && effectiveSenderId !== 'default') {
+      formData.append('from', effectiveSenderId);
+    }
+
+    console.log(`Sending SMS via Africa's Talking to: ${formattedPhone}`);
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'apiKey': AT_API_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: formData.toString(),
+    });
+
+    const data = await response.json();
+    console.log("Africa's Talking response:", data);
+
+    const messageData = data.SMSMessageData;
+    const recipients = messageData?.Recipients || [];
+    const firstRecipient = recipients[0];
+
+    if (firstRecipient && (firstRecipient.status === 'Success' || firstRecipient.statusCode === 101)) {
+      return {
+        success: true,
+        messageId: firstRecipient.messageId,
+      };
+    }
+
+    const errorMessage = firstRecipient?.status || messageData?.Message || 'Failed to send SMS';
+    return { success: false, error: errorMessage };
+  } catch (error) {
+    console.error("Africa's Talking error:", error);
     return { success: false, error: error.message };
   }
 }
@@ -418,23 +488,39 @@ serve(async (req) => {
     for (const recipient of recipients) {
       const country = detectCountryFromPhone(recipient.phone);
       const provider = providerByCountry[country] || defaultProvider;
-      
-      let result: { success: boolean; messageId?: string; error?: string };
 
-      if (provider.provider === 'twilio') {
+      let result: { success: boolean; messageId?: string; error?: string };
+      let providerUsed = provider.provider;
+
+      // Use Africa's Talking for Nigeria and Ghana if configured
+      if ((country === 'NG' || country === 'GH') && AT_API_KEY && AT_USERNAME) {
+        result = await sendAfricasTalkingSMS(
+          recipient.phone,
+          message,
+          provider.sender_id || AT_SENDER_ID
+        );
+        providerUsed = 'africastalking';
+      } else if (provider.provider === 'twilio') {
         result = await sendTwilioSMS(
-          recipient.phone, 
-          message, 
+          recipient.phone,
+          message,
           provider.api_key,      // Account SID
           provider.secret_key,   // Auth Token
           provider.sender_id     // From number
         );
+      } else if (provider.provider === 'africastalking') {
+        result = await sendAfricasTalkingSMS(
+          recipient.phone,
+          message,
+          provider.sender_id
+        );
+        providerUsed = 'africastalking';
       } else {
         // Default to Termii
         result = await sendTermiiSMS(
-          recipient.phone, 
-          message, 
-          provider.api_key, 
+          recipient.phone,
+          message,
+          provider.api_key,
           provider.sender_id || 'Ticketrack'
         );
       }
@@ -450,7 +536,7 @@ serve(async (req) => {
         status: result.success ? 'delivered' : 'failed',
         error_message: result.error || null,
         message_id: result.messageId || null,
-        provider: provider.provider,
+        provider: providerUsed,
         created_at: new Date().toISOString(),
       });
 
