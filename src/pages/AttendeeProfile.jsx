@@ -139,6 +139,7 @@ export function AttendeeProfile() {
   // Telegram linking state
   const [linkingTelegram, setLinkingTelegram] = useState(false)
   const [unlinkingTelegram, setUnlinkingTelegram] = useState(false)
+  const [telegramLinkUrl, setTelegramLinkUrl] = useState(null)
 
   useEffect(() => {
     if (!user) {
@@ -243,9 +244,9 @@ export function AttendeeProfile() {
       // Open Telegram with the bot and token
       const botUsername = 'Ticketrack_bot'
       const telegramUrl = `https://t.me/${botUsername}?start=${token}`
-      window.open(telegramUrl, '_blank')
 
-      alert('Please complete the linking process in Telegram. Click "Confirm Link" when prompted.')
+      // Show dialog with link for mobile Safari compatibility
+      setTelegramLinkUrl(telegramUrl)
     } catch (error) {
       console.error('Error linking Telegram:', error)
       alert('Failed to generate link. Please try again.')
@@ -2345,6 +2346,38 @@ export function AttendeeProfile() {
           </Tabs>
         </main>
       </div>
+
+      {/* Telegram Link Dialog */}
+      <AlertDialog open={!!telegramLinkUrl} onOpenChange={(open) => !open && setTelegramLinkUrl(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-sky-600">
+              <Send className="w-5 h-5" />
+              Link Telegram
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>Tap the button below to open Telegram and complete the linking process.</p>
+              <p className="text-sm text-[#0F0F0F]/60">
+                Click "Start" in Telegram, then tap "Confirm Link" when prompted.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <Button
+              className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white"
+              onClick={() => {
+                const url = telegramLinkUrl
+                setTelegramLinkUrl(null)
+                window.location.href = url
+              }}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Open Telegram
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Account Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
