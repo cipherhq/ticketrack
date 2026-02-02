@@ -6,6 +6,10 @@ import { toast } from 'sonner'
 
 const AuthContext = createContext({})
 
+// Session warning time - warn 5 minutes before expiry
+const SESSION_WARNING_MINUTES = 5
+const SESSION_WARNING_MS = SESSION_WARNING_MINUTES * 60 * 1000
+
 const AUTH_ERRORS = {
   INVALID_CREDENTIALS: 'Invalid email or password',
   EMAIL_NOT_VERIFIED: 'Please verify your email before signing in',
@@ -22,7 +26,84 @@ export function AuthProvider({ children }) {
   const [otpSent, setOtpSent] = useState(false)
   const [pendingUser, setPendingUser] = useState(null)
   const [sessionExpired, setSessionExpired] = useState(false)
+  const [sessionWarning, setSessionWarning] = useState(false)
   const hadSessionRef = useRef(false) // Track if user had a session before
+  const sessionWarningTimeoutRef = useRef(null) // Timeout for session warning
+  const sessionExpiryTimeoutRef = useRef(null) // Timeout for session expiry
+
+  // Clear existing session timers
+  const clearSessionTimers = () => {
+    if (sessionWarningTimeoutRef.current) {
+      clearTimeout(sessionWarningTimeoutRef.current)
+      sessionWarningTimeoutRef.current = null
+    }
+    if (sessionExpiryTimeoutRef.current) {
+      clearTimeout(sessionExpiryTimeoutRef.current)
+      sessionExpiryTimeoutRef.current = null
+    }
+  }
+
+  // Set up session expiry warning timers
+  const setupSessionTimers = (session) => {
+    clearSessionTimers()
+
+    if (!session?.expires_at) return
+
+    const expiresAt = session.expires_at * 1000 // Convert to milliseconds
+    const now = Date.now()
+    const timeUntilExpiry = expiresAt - now
+    const timeUntilWarning = timeUntilExpiry - SESSION_WARNING_MS
+
+    // Set up warning timer (5 minutes before expiry)
+    if (timeUntilWarning > 0) {
+      sessionWarningTimeoutRef.current = setTimeout(() => {
+        setSessionWarning(true)
+        toast.warning(
+          'Your session will expire in 5 minutes. Click to extend.',
+          {
+            duration: 60000, // Show for 1 minute
+            id: 'session-warning',
+            action: {
+              label: 'Extend Session',
+              onClick: () => extendSession(),
+            },
+          }
+        )
+      }, timeUntilWarning)
+    } else if (timeUntilExpiry > 60000) {
+      // Less than 5 minutes but more than 1 minute - warn immediately
+      setSessionWarning(true)
+      const minutesLeft = Math.ceil(timeUntilExpiry / 60000)
+      toast.warning(
+        `Your session will expire in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}. Click to extend.`,
+        {
+          duration: 30000,
+          id: 'session-warning',
+          action: {
+            label: 'Extend Session',
+            onClick: () => extendSession(),
+          },
+        }
+      )
+    }
+  }
+
+  // Extend/refresh the session
+  const extendSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (error) throw error
+
+      if (data?.session) {
+        setSessionWarning(false)
+        toast.success('Session extended successfully', { id: 'session-extended' })
+        setupSessionTimers(data.session)
+      }
+    } catch (err) {
+      console.error('Failed to extend session:', err)
+      toast.error('Failed to extend session. Please log in again.')
+    }
+  }
 
   useEffect(() => {
     let mounted = true
@@ -56,6 +137,7 @@ export function AuthProvider({ children }) {
           if (mounted) {
             if (refreshData?.session?.user) {
               hadSessionRef.current = true
+              setupSessionTimers(refreshData.session)
             }
             setUser(refreshData?.session?.user ?? null)
             setLoading(false)
@@ -66,6 +148,7 @@ export function AuthProvider({ children }) {
         if (mounted) {
           if (session?.user) {
             hadSessionRef.current = true
+            setupSessionTimers(session)
           }
           setUser(session?.user ?? null)
           setLoading(false)
@@ -97,26 +180,29 @@ export function AuthProvider({ children }) {
             setPendingUser(null)
             setOtpSent(false)
             setSessionExpired(false)
+            setSessionWarning(false)
+            setupSessionTimers(session)
           }
 
           // Handle specific auth events
           switch (event) {
             case 'SIGNED_OUT':
-              // Check if this was due to session expiration (user didn't manually sign out)
-              // We determine this by checking if user had a session and it's now gone
-              if (hadSessionRef.current && !session) {
-                // This could be manual sign out or session expiry
-                // The toast will only show for actual expiry (handled below in TOKEN_REFRESHED failure)
-              }
+              // Clear session timers
+              clearSessionTimers()
               // Clear any cached data
               setUser(null)
               setPendingUser(null)
               setOtpSent(false)
+              setSessionWarning(false)
               hadSessionRef.current = false
               break
             case 'TOKEN_REFRESHED':
               console.log('Token refreshed successfully')
               setSessionExpired(false)
+              setSessionWarning(false)
+              if (session) {
+                setupSessionTimers(session)
+              }
               break
             case 'USER_UPDATED':
               console.log('User updated')
@@ -125,6 +211,7 @@ export function AuthProvider({ children }) {
               // Initial session loaded
               if (session?.user) {
                 hadSessionRef.current = true
+                setupSessionTimers(session)
               }
               break
           }
@@ -168,6 +255,7 @@ export function AuthProvider({ children }) {
       mounted = false
       if (subscription) subscription.unsubscribe()
       clearInterval(sessionCheckInterval)
+      clearSessionTimers()
     }
   }, [])
 
@@ -584,7 +672,9 @@ export function AuthProvider({ children }) {
     otpSent,
     pendingUser,
     sessionExpired,
+    sessionWarning,
     clearSessionExpired,
+    extendSession,
   }
 
   return (
