@@ -164,20 +164,42 @@ export async function generateTicketPDF(ticket, event) {
   pdf.text(displayTitle, contentX, currentY)
   currentY += 14
 
-  // Venue
+  // Venue - show on up to 2 lines if needed
   pdf.setFont('helvetica', 'normal')
-  pdf.setFontSize(9)
   pdf.setTextColor(230, 230, 230)
-  // Show full address if available, otherwise fallback to venue name + city
   let venue
   if (event.venue_address) {
     venue = [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ')
   } else {
     venue = [event.venue_name, event.city].filter(Boolean).join(', ') || 'Venue TBA'
   }
-  const displayVenue = venue.length > 50 ? venue.substring(0, 50) + '...' : venue
-  pdf.text(displayVenue, contentX, currentY)
-  currentY += 14
+
+  const maxCharsPerLine = 55
+  if (venue.length > maxCharsPerLine) {
+    pdf.setFontSize(7)
+    const words = venue.split(' ')
+    let line1 = ''
+    let line2 = ''
+    for (const word of words) {
+      if ((line1 + ' ' + word).trim().length <= maxCharsPerLine) {
+        line1 = (line1 + ' ' + word).trim()
+      } else {
+        line2 = (line2 + ' ' + word).trim()
+      }
+    }
+    if (line2.length > maxCharsPerLine) {
+      line2 = line2.substring(0, maxCharsPerLine - 3) + '...'
+    }
+    pdf.text(line1, contentX, currentY)
+    if (line2) {
+      pdf.text(line2, contentX, currentY + 8)
+      currentY += 6
+    }
+  } else {
+    pdf.setFontSize(8)
+    pdf.text(venue, contentX, currentY)
+  }
+  currentY += 12
 
   // Date & Attendee columns
   const col1X = contentX
@@ -392,20 +414,42 @@ export async function generateTicketPDFBase64(ticket, event) {
   pdf.text(displayTitle, contentX, currentY)
   currentY += 14
 
-  // Venue
+  // Venue - show on up to 2 lines if needed
   pdf.setFont('helvetica', 'normal')
-  pdf.setFontSize(9)
   pdf.setTextColor(230, 230, 230)
-  // Show full address if available, otherwise fallback to venue name + city
   let venue
   if (event.venue_address) {
     venue = [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ')
   } else {
     venue = [event.venue_name, event.city].filter(Boolean).join(', ') || 'Venue TBA'
   }
-  const displayVenue = venue.length > 50 ? venue.substring(0, 50) + '...' : venue
-  pdf.text(displayVenue, contentX, currentY)
-  currentY += 14
+
+  const maxCharsPerLine = 55
+  if (venue.length > maxCharsPerLine) {
+    pdf.setFontSize(7)
+    const words = venue.split(' ')
+    let line1 = ''
+    let line2 = ''
+    for (const word of words) {
+      if ((line1 + ' ' + word).trim().length <= maxCharsPerLine) {
+        line1 = (line1 + ' ' + word).trim()
+      } else {
+        line2 = (line2 + ' ' + word).trim()
+      }
+    }
+    if (line2.length > maxCharsPerLine) {
+      line2 = line2.substring(0, maxCharsPerLine - 3) + '...'
+    }
+    pdf.text(line1, contentX, currentY)
+    if (line2) {
+      pdf.text(line2, contentX, currentY + 8)
+      currentY += 6
+    }
+  } else {
+    pdf.setFontSize(8)
+    pdf.text(venue, contentX, currentY)
+  }
+  currentY += 12
 
   // Date & Attendee columns
   const col1X = contentX
@@ -677,14 +721,37 @@ export async function generateMultiTicketPDFBase64(tickets, event) {
     pdf.text(displayTitle, contentX, currentY)
     currentY += 14
 
-    // Venue
+    // Venue - show on up to 2 lines if needed
     pdf.setFont('helvetica', 'normal')
-    pdf.setFontSize(9)
     pdf.setTextColor(230, 230, 230)
-    const venue = [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Venue TBA'
-    const displayVenue = venue.length > 50 ? venue.substring(0, 50) + '...' : venue
-    pdf.text(displayVenue, contentX, currentY)
-    currentY += 14
+    const venueMulti = [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Venue TBA'
+
+    const maxCharsLine = 55
+    if (venueMulti.length > maxCharsLine) {
+      pdf.setFontSize(7)
+      const wordsMulti = venueMulti.split(' ')
+      let ln1 = ''
+      let ln2 = ''
+      for (const w of wordsMulti) {
+        if ((ln1 + ' ' + w).trim().length <= maxCharsLine) {
+          ln1 = (ln1 + ' ' + w).trim()
+        } else {
+          ln2 = (ln2 + ' ' + w).trim()
+        }
+      }
+      if (ln2.length > maxCharsLine) {
+        ln2 = ln2.substring(0, maxCharsLine - 3) + '...'
+      }
+      pdf.text(ln1, contentX, currentY)
+      if (ln2) {
+        pdf.text(ln2, contentX, currentY + 8)
+        currentY += 6
+      }
+    } else {
+      pdf.setFontSize(8)
+      pdf.text(venueMulti, contentX, currentY)
+    }
+    currentY += 12
 
     // Date & Attendee columns
     const col1X = contentX
