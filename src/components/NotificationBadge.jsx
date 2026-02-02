@@ -284,7 +284,7 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-[#0F0F0F] text-sm">{notification.title}</p>
                 <p className="text-[#0F0F0F]/60 text-xs line-clamp-2">{notification.message}</p>
-                {notification.amount && (
+                {notification.amount > 0 && (
                   <p className="text-green-600 text-xs font-medium mt-1">
                     +{notification.currency || '₦'}{notification.amount.toLocaleString()}
                   </p>
@@ -467,7 +467,7 @@ export function PromoterNotificationDropdown({ promoterId, isOpen, onClose }) {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-[#0F0F0F] text-sm">{notification.title}</p>
                 <p className="text-[#0F0F0F]/60 text-xs line-clamp-2">{notification.message}</p>
-                {notification.amount && (
+                {notification.amount > 0 && (
                   <p className="text-green-600 text-xs font-medium mt-1">
                     +{notification.currency || '₦'}{notification.amount.toLocaleString()}
                   </p>
