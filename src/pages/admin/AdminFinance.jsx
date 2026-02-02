@@ -145,7 +145,13 @@ export function AdminFinance() {
     const now = new Date().toISOString();
     const { data: events, error } = await supabase.from('events').select(`
       id, title, slug, start_date, end_date, currency, payout_status, organizer_id,
-      organizers ( id, business_name, email, bank_accounts (id, bank_name, account_number_encrypted, account_name, is_default) ),
+      organizers (
+        id, business_name, email,
+        stripe_connect_id, stripe_connect_enabled, stripe_connect_payouts_enabled,
+        paystack_subaccount_id, paystack_subaccount_enabled, paystack_subaccount_payouts_enabled,
+        flutterwave_subaccount_id, flutterwave_subaccount_enabled, flutterwave_subaccount_payouts_enabled,
+        bank_accounts (id, bank_name, account_number_encrypted, account_name, is_default)
+      ),
       orders (id, total_amount, status, platform_fee)
     `).lt('end_date', now).order('end_date', { ascending: false });
 
@@ -686,26 +692,88 @@ export function AdminFinance() {
                     <h4 className="font-medium text-[#0F0F0F] mb-3 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-blue-600" />Organizer
                     </h4>
-                    <div className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
-                      <div>
-                        <p className="font-medium text-[#0F0F0F]">{event.organizers?.business_name}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">{event.organizers?.email}</p>
-                        {event.primaryBankAccount && (
-                          <p className="text-xs text-[#0F0F0F]/40 mt-1">
-                            {event.primaryBankAccount.bank_name} - ****{event.primaryBankAccount.account_number_encrypted?.slice(-4)}
+                    <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold text-[#0F0F0F] text-lg">{event.organizers?.business_name}</p>
+                          <p className="text-sm text-[#0F0F0F]/60">{event.organizers?.email}</p>
+                          {/* Payment Gateway Badges */}
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {event.organizers?.stripe_connect_enabled && (
+                              <Badge className={`text-xs ${event.organizers?.stripe_connect_payouts_enabled ? 'bg-purple-100 text-purple-800' : 'bg-purple-50 text-purple-600'}`}>
+                                Stripe Connect {event.organizers?.stripe_connect_payouts_enabled && '✓'}
+                              </Badge>
+                            )}
+                            {event.organizers?.paystack_subaccount_enabled && (
+                              <Badge className={`text-xs ${event.organizers?.paystack_subaccount_payouts_enabled ? 'bg-green-100 text-green-800' : 'bg-green-50 text-green-600'}`}>
+                                Paystack {event.organizers?.paystack_subaccount_payouts_enabled && '✓'}
+                              </Badge>
+                            )}
+                            {event.organizers?.flutterwave_subaccount_enabled && (
+                              <Badge className={`text-xs ${event.organizers?.flutterwave_subaccount_payouts_enabled ? 'bg-orange-100 text-orange-800' : 'bg-orange-50 text-orange-600'}`}>
+                                Flutterwave {event.organizers?.flutterwave_subaccount_payouts_enabled && '✓'}
+                              </Badge>
+                            )}
+                            {!event.organizers?.stripe_connect_enabled && !event.organizers?.paystack_subaccount_enabled && !event.organizers?.flutterwave_subaccount_enabled && (
+                              <Badge className="text-xs bg-gray-100 text-gray-600">Manual Payout</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold text-green-600 text-lg">{formatPrice(event.organizerNet, event.currency)}</p>
+                          {event.payout_status === 'paid' ? (
+                            <Badge className="bg-green-100 text-green-800">Paid</Badge>
+                          ) : (
+                            <Button size="sm" onClick={(e) => { e.stopPropagation(); openPaymentDialog('organizer', event, event); }} className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-lg">
+                              <Banknote className="w-4 h-4 mr-1" />Pay
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Auto-Payout Notice */}
+                      {(event.organizers?.stripe_connect_payouts_enabled || event.organizers?.paystack_subaccount_payouts_enabled || event.organizers?.flutterwave_subaccount_payouts_enabled) && (
+                        <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-xs text-blue-800">
+                            <span className="font-medium">Auto-Payout Enabled:</span> This organizer receives payouts automatically via{' '}
+                            {event.organizers?.stripe_connect_payouts_enabled && 'Stripe Connect'}
+                            {event.organizers?.paystack_subaccount_payouts_enabled && 'Paystack'}
+                            {event.organizers?.flutterwave_subaccount_payouts_enabled && 'Flutterwave'}
                           </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <p className="font-bold text-[#0F0F0F]">{formatPrice(event.organizerNet, event.currency)}</p>
-                        {event.payout_status === 'paid' ? (
-                          <Badge className="bg-green-100 text-green-800">Paid</Badge>
-                        ) : (
-                          <Button size="sm" onClick={(e) => { e.stopPropagation(); openPaymentDialog('organizer', event, event); }} className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-lg">
-                            <Banknote className="w-4 h-4 mr-1" />Pay
-                          </Button>
-                        )}
-                      </div>
+                        </div>
+                      )}
+
+                      {/* Bank Account Details */}
+                      {event.primaryBankAccount ? (
+                        <div className="border-t border-[#0F0F0F]/10 pt-3">
+                          <p className="text-xs text-[#0F0F0F]/60 mb-2 font-medium">Bank Account Details</p>
+                          <div className="p-3 bg-white rounded-lg border border-[#0F0F0F]/10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <p className="font-semibold text-[#0F0F0F]">{event.primaryBankAccount.bank_name}</p>
+                              {event.primaryBankAccount.is_default && (
+                                <Badge className="bg-[#2969FF] text-white text-xs">Primary</Badge>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-[#0F0F0F]/60">Account Name: </span>
+                                <span className="font-medium text-[#0F0F0F]">{event.primaryBankAccount.account_name || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="text-[#0F0F0F]/60">Account Number: </span>
+                                <span className="font-mono font-medium text-[#0F0F0F]">{event.primaryBankAccount.account_number_encrypted || 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border-t border-[#0F0F0F]/10 pt-3">
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-sm text-red-800 font-medium">No Bank Account</p>
+                            <p className="text-xs text-red-600">Organizer has not added bank details yet.</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

@@ -33,34 +33,42 @@ serve(async (req) => {
 
     switch (action) {
       case 'compose':
-        systemPrompt = `You are an expert email copywriter for an event ticketing platform called Ticketrack. 
+        systemPrompt = `You are an expert email copywriter for an event ticketing platform called Ticketrack.
 Write compelling, clear, and ${tone} emails.
 Always be concise and action-oriented.
 Use proper formatting with paragraphs.
 Do not use excessive exclamation marks.
 Include a clear call-to-action when appropriate.
+
+IMPORTANT: Use the ACTUAL event details provided in the context. DO NOT use placeholder variables like {{event_name}}, {{event_date}}, {{venue}}, etc.
+Write the real event name, date, venue directly in the content.
+The ONLY placeholder you may use is {{attendee_name}} for personalizing the recipient's name.
+
 Return JSON format: { "subject": "...", "body": "..." }`;
-        
+
         userPrompt = `Write an email for the following purpose:
 ${prompt}
 
 Recipient type: ${recipientType || 'attendees'}
 Tone: ${tone}
-${context ? `Context: ${JSON.stringify(context)}` : ''}
+${context ? `Event Details: ${JSON.stringify(context)}` : ''}
 
+IMPORTANT: Use the actual event details above in your email. Do NOT use placeholders like {{event_name}} - write the real values.
 Return only valid JSON with "subject" and "body" fields.`;
         break;
 
       case 'improve':
         systemPrompt = `You are an expert email editor. Improve the given email text to be more ${tone}, clear, and engaging.
 Maintain the original intent but enhance clarity and impact.
+IMPORTANT: If the email contains placeholder variables like {{event_name}}, replace them with actual values from the context if provided.
 Return JSON format: { "subject": "...", "body": "..." }`;
-        
+
         userPrompt = `Improve this email:
 Subject: ${existingText?.subject || ''}
 Body: ${existingText?.body || ''}
+${context ? `Event Details: ${JSON.stringify(context)}` : ''}
 
-Make it more ${tone}.
+Make it more ${tone}. Replace any {{placeholder}} variables with actual values from the event details above.
 Return only valid JSON with "subject" and "body" fields.`;
         break;
 

@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { validateEmail, validatePassword, validatePhone, validateFirstName, validateLastName, validateOTP } from '@/utils/validation'
 import { validatePhoneForRegistration, normalizePhone } from '@/lib/phoneValidation'
+import { toast } from 'sonner'
 
 const AuthContext = createContext({})
 
@@ -20,6 +21,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [otpSent, setOtpSent] = useState(false)
   const [pendingUser, setPendingUser] = useState(null)
+  const [sessionExpired, setSessionExpired] = useState(false)
+  const hadSessionRef = useRef(false) // Track if user had a session before
 
   useEffect(() => {
     let mounted = true
@@ -27,9 +30,43 @@ export function AuthProvider({ children }) {
 
     const initAuth = async () => {
       try {
+        // First try to get the existing session
         const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) console.warn('Session check failed:', error.message)
+
+        if (error) {
+          console.warn('Session check failed:', error.message)
+          // If session retrieval fails, try to refresh
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+          if (refreshError) {
+            console.warn('Session refresh failed:', refreshError.message)
+            if (mounted) {
+              // If user had a session before and now it's gone, session expired
+              if (hadSessionRef.current) {
+                setSessionExpired(true)
+                toast.error('Your session has expired. Please log in again.', {
+                  duration: 5000,
+                  id: 'session-expired',
+                })
+              }
+              setUser(null)
+              setLoading(false)
+            }
+            return
+          }
+          if (mounted) {
+            if (refreshData?.session?.user) {
+              hadSessionRef.current = true
+            }
+            setUser(refreshData?.session?.user ?? null)
+            setLoading(false)
+          }
+          return
+        }
+
         if (mounted) {
+          if (session?.user) {
+            hadSessionRef.current = true
+          }
           setUser(session?.user ?? null)
           setLoading(false)
         }
@@ -45,12 +82,51 @@ export function AuthProvider({ children }) {
     initAuth()
 
     try {
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log('Auth event:', event)
+
         if (mounted) {
+          // Track if user had a session
+          if (session?.user) {
+            hadSessionRef.current = true
+          }
+
           setUser(session?.user ?? null)
+
           if (session?.user) {
             setPendingUser(null)
             setOtpSent(false)
+            setSessionExpired(false)
+          }
+
+          // Handle specific auth events
+          switch (event) {
+            case 'SIGNED_OUT':
+              // Check if this was due to session expiration (user didn't manually sign out)
+              // We determine this by checking if user had a session and it's now gone
+              if (hadSessionRef.current && !session) {
+                // This could be manual sign out or session expiry
+                // The toast will only show for actual expiry (handled below in TOKEN_REFRESHED failure)
+              }
+              // Clear any cached data
+              setUser(null)
+              setPendingUser(null)
+              setOtpSent(false)
+              hadSessionRef.current = false
+              break
+            case 'TOKEN_REFRESHED':
+              console.log('Token refreshed successfully')
+              setSessionExpired(false)
+              break
+            case 'USER_UPDATED':
+              console.log('User updated')
+              break
+            case 'INITIAL_SESSION':
+              // Initial session loaded
+              if (session?.user) {
+                hadSessionRef.current = true
+              }
+              break
           }
         }
       })
@@ -59,9 +135,39 @@ export function AuthProvider({ children }) {
       console.warn('Auth listener error:', err)
     }
 
+    // Set up periodic session check (every 5 minutes)
+    const sessionCheckInterval = setInterval(async () => {
+      if (!hadSessionRef.current) return // Only check if user had a session
+
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error || !session) {
+          // Try to refresh
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+
+          if (refreshError || !refreshData?.session) {
+            // Session is truly expired
+            if (hadSessionRef.current && mounted) {
+              setSessionExpired(true)
+              setUser(null)
+              hadSessionRef.current = false
+              toast.error('Your session has expired. Please log in again.', {
+                duration: 5000,
+                id: 'session-expired',
+              })
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Session check error:', err)
+      }
+    }, 5 * 60 * 1000) // Check every 5 minutes
+
     return () => {
       mounted = false
       if (subscription) subscription.unsubscribe()
+      clearInterval(sessionCheckInterval)
     }
   }, [])
 
@@ -454,6 +560,11 @@ export function AuthProvider({ children }) {
 
   const isEmailVerified = user?.email_confirmed_at != null
 
+  // Clear session expired flag when user signs in
+  const clearSessionExpired = useCallback(() => {
+    setSessionExpired(false)
+  }, [])
+
   const value = {
     user,
     loading,
@@ -472,6 +583,8 @@ export function AuthProvider({ children }) {
     isEmailVerified,
     otpSent,
     pendingUser,
+    sessionExpired,
+    clearSessionExpired,
   }
 
   return (

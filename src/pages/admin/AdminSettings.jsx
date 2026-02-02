@@ -94,6 +94,33 @@ export function AdminSettings() {
     }
   };
 
+  // Helper to upsert platform settings (creates if not exists, updates if exists)
+  const savePlatformSetting = async (key, value, category = 'general', description = '') => {
+    const { error } = await supabase.from('platform_settings').upsert({
+      key,
+      value,
+      category,
+      description,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'key' });
+
+    if (error) {
+      console.error('Error saving platform setting:', error);
+      return false;
+    }
+
+    // Update local state
+    setPlatformSettings(prev => {
+      const exists = prev.find(s => s.key === key);
+      if (exists) {
+        return prev.map(s => s.key === key ? { ...s, value } : s);
+      }
+      return [...prev, { key, value, category, description }];
+    });
+
+    return true;
+  };
+
   // Currency handlers
   const saveCurrency = async () => {
     setSaving(true);
@@ -119,21 +146,30 @@ export function AdminSettings() {
   };
 
   // Country handlers
+  // Note: Fee fields are managed exclusively in Fee Management page to avoid conflicts
   const saveCountry = async () => {
     setSaving(true);
     try {
       const { data: countryData } = countryModal;
-      
-      // Ensure service_fee_fixed_per_ticket is set (for Fee Management and Pricing Page)
-      // Also keep service_fee_fixed for backward compatibility
-      if (countryData.service_fee_fixed_per_ticket !== undefined) {
-        countryData.service_fee_fixed = countryData.service_fee_fixed_per_ticket;
-      } else if (countryData.service_fee_fixed !== undefined) {
-        countryData.service_fee_fixed_per_ticket = countryData.service_fee_fixed;
-      }
-      
+
+      // Only save basic country fields - fees are managed in Fee Management
+      const basicFields = {
+        code: countryData.code,
+        name: countryData.name,
+        default_currency: countryData.default_currency,
+        payment_provider: countryData.payment_provider,
+        is_active: countryData.is_active
+      };
+
       if (countryModal.isNew) {
-        await supabase.from('countries').insert(countryData);
+        // For new countries, set default fees (can be customized in Fee Management)
+        const newCountryData = {
+          ...basicFields,
+          service_fee_percentage: 5,
+          service_fee_fixed_per_ticket: 0,
+          service_fee_fixed: 0
+        };
+        await supabase.from('countries').insert(newCountryData);
         const featureInserts = features.map(f => ({
           country_code: countryData.code,
           feature_id: f.id,
@@ -142,7 +178,8 @@ export function AdminSettings() {
         }));
         await supabase.from('country_features').insert(featureInserts);
       } else {
-        await supabase.from('countries').update(countryData).eq('code', countryData.code);
+        // For existing countries, only update basic fields (not fees)
+        await supabase.from('countries').update(basicFields).eq('code', countryData.code);
       }
       setCountryModal({ open: false, data: null });
       loadAllData();
@@ -393,20 +430,14 @@ export function AdminSettings() {
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Countries & Fee Configuration</CardTitle>
-              <Button 
-                onClick={() => setCountryModal({ 
-                  open: true, 
+              <Button
+                onClick={() => setCountryModal({
+                  open: true,
                   isNew: true,
-                  data: { 
-                    code: '', 
-                    name: '', 
+                  data: {
+                    code: '',
+                    name: '',
                     default_currency: 'NGN',
-                    platform_fee_percentage: 0,
-                    service_fee_percentage: 5,
-                    service_fee_fixed: 100,
-                    payment_processing_fee_percentage: 0,
-                    payout_fee: 0,
-                    min_payout_amount: 0,
                     payment_provider: 'paystack',
                     is_active: true
                   }
@@ -449,15 +480,24 @@ export function AdminSettings() {
                           </Button>
                         </div>
                       </div>
-                      {/* UPDATED: Only showing 2 fee fields */}
-                      <div className="grid grid-cols-2 gap-3">
+                      {/* Fee fields - read-only, managed in Fee Management */}
+                      <div className="grid grid-cols-3 gap-3">
                         <div className="p-3 bg-white rounded-lg">
                           <p className="text-xs text-[#0F0F0F]/60">Service Fee (%)</p>
-                          <p className="font-semibold text-[#0F0F0F]">{country.service_fee_percentage}%</p>
+                          <p className="font-semibold text-[#0F0F0F]">{country.service_fee_percentage || 0}%</p>
                         </div>
                         <div className="p-3 bg-white rounded-lg">
                           <p className="text-xs text-[#0F0F0F]/60">Service Fee (Fixed)</p>
                           <p className="font-semibold text-[#0F0F0F]">{currency?.symbol}{country.service_fee_fixed_per_ticket || country.service_fee_fixed || 0}</p>
+                        </div>
+                        <div className="p-3 bg-white rounded-lg flex items-center justify-center">
+                          <a
+                            href="/admin/fees"
+                            className="text-xs text-[#2969FF] hover:underline flex items-center gap-1"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            Edit in Fee Management
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -944,8 +984,7 @@ export function AdminSettings() {
                     checked={platformSettings.find(s => s.key === 'stripe_connect_enabled')?.value === 'true'}
                     onCheckedChange={async (checked) => {
                       const newValue = checked ? 'true' : 'false';
-                      setPlatformSettings(prev => prev.map(s => s.key === 'stripe_connect_enabled' ? { ...s, value: newValue } : s));
-                      await supabase.from('platform_settings').update({ value: newValue, updated_at: new Date().toISOString() }).eq('key', 'stripe_connect_enabled');
+                      await savePlatformSetting('stripe_connect_enabled', newValue, 'stripe_connect', 'Enable Stripe Connect for direct payouts');
                       setSavedKey('stripe_connect_enabled');
                       setTimeout(() => setSavedKey(null), 2000);
                     }}
@@ -970,7 +1009,7 @@ export function AdminSettings() {
                       setPlatformSettings(prev => prev.map(s => s.key === 'stripe_connect_platform_fee_percentage' ? { ...s, value: e.target.value } : s));
                     }}
                     onBlur={async (e) => {
-                      await supabase.from('platform_settings').update({ value: e.target.value, updated_at: new Date().toISOString() }).eq('key', 'stripe_connect_platform_fee_percentage');
+                      await savePlatformSetting('stripe_connect_platform_fee_percentage', e.target.value, 'stripe_connect', 'Platform fee percentage for Stripe Connect');
                       setSavedKey('stripe_connect_platform_fee_percentage');
                       setTimeout(() => setSavedKey(null), 2000);
                     }}
@@ -992,7 +1031,7 @@ export function AdminSettings() {
                       setPlatformSettings(prev => prev.map(s => s.key === 'stripe_connect_minimum_payout' ? { ...s, value: e.target.value } : s));
                     }}
                     onBlur={async (e) => {
-                      await supabase.from('platform_settings').update({ value: e.target.value, updated_at: new Date().toISOString() }).eq('key', 'stripe_connect_minimum_payout');
+                      await savePlatformSetting('stripe_connect_minimum_payout', e.target.value, 'stripe_connect', 'Minimum payout amount for Stripe Connect');
                       setSavedKey('stripe_connect_minimum_payout');
                       setTimeout(() => setSavedKey(null), 2000);
                     }}
@@ -1015,7 +1054,7 @@ export function AdminSettings() {
                       setPlatformSettings(prev => prev.map(s => s.key === 'stripe_connect_payout_delay_days' ? { ...s, value: e.target.value } : s));
                     }}
                     onBlur={async (e) => {
-                      await supabase.from('platform_settings').update({ value: e.target.value, updated_at: new Date().toISOString() }).eq('key', 'stripe_connect_payout_delay_days');
+                      await savePlatformSetting('stripe_connect_payout_delay_days', e.target.value, 'stripe_connect', 'Days delay before payout after event');
                       setSavedKey('stripe_connect_payout_delay_days');
                       setTimeout(() => setSavedKey(null), 2000);
                     }}
@@ -1034,7 +1073,7 @@ export function AdminSettings() {
                       setPlatformSettings(prev => prev.map(s => s.key === 'stripe_connect_countries' ? { ...s, value: e.target.value } : s));
                     }}
                     onBlur={async (e) => {
-                      await supabase.from('platform_settings').update({ value: e.target.value, updated_at: new Date().toISOString() }).eq('key', 'stripe_connect_countries');
+                      await savePlatformSetting('stripe_connect_countries', e.target.value, 'stripe_connect', 'Countries where Stripe Connect is available');
                       setSavedKey('stripe_connect_countries');
                       setTimeout(() => setSavedKey(null), 2000);
                     }}
@@ -1404,48 +1443,30 @@ export function AdminSettings() {
                 </div>
               </div>
               
-              {/* UPDATED: Only 2 fee fields (for Pricing Page) - Uses service_fee_fixed_per_ticket to match Fee Management */}
+              {/* Fee Configuration - Read-only, managed in Fee Management */}
               <div className="border-t pt-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h4 className="font-medium">Fee Configuration (Displayed on Pricing Page)</h4>
-                  <a 
-                    href="/admin/fees" 
-                    className="text-xs text-[#2969FF] hover:underline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.location.href = '/admin/fees';
-                    }}
-                  >
-                    View Full Fee Management →
-                  </a>
-                </div>
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl mb-4">
-                  <p className="text-xs text-blue-800">
-                    <strong>Note:</strong> These are the two fees shown on the pricing page. For comprehensive fee management (processing fees, caps, etc.), use the <strong>Fee Management</strong> page.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Service Fee (%)</Label>
-                    <Input 
-                      type="number"
-                      step="0.1"
-                      value={countryModal.data.service_fee_percentage || 0} 
-                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, service_fee_percentage: parseFloat(e.target.value) || 0 }}))}
-                      className="rounded-xl mt-1"
-                    />
-                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Percentage fee per ticket</p>
-                  </div>
-                  <div>
-                    <Label>Service Fee (Fixed per Ticket)</Label>
-                    <Input 
-                      type="number"
-                      step="0.01"
-                      value={countryModal.data.service_fee_fixed_per_ticket || countryModal.data.service_fee_fixed || 0} 
-                      onChange={(e) => setCountryModal(prev => ({ ...prev, data: { ...prev.data, service_fee_fixed_per_ticket: parseFloat(e.target.value) || 0, service_fee_fixed: parseFloat(e.target.value) || 0 }}))}
-                      className="rounded-xl mt-1"
-                    />
-                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Fixed amount per ticket (in local currency)</p>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium text-blue-900 mb-1">Fee Configuration</h4>
+                      <p className="text-sm text-blue-700">
+                        Fees are managed in the dedicated Fee Management page to avoid conflicts.
+                      </p>
+                      <div className="mt-3 flex items-center gap-4 text-sm text-blue-800">
+                        <span>Current: <strong>{countryModal.data.service_fee_percentage || 0}%</strong> + <strong>{countryModal.data.service_fee_fixed_per_ticket || countryModal.data.service_fee_fixed || 0}</strong> per ticket</span>
+                      </div>
+                    </div>
+                    <a
+                      href="/admin/fees"
+                      className="flex items-center gap-2 bg-[#2969FF] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2969FF]/90 transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.location.href = '/admin/fees';
+                      }}
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      Manage Fees
+                    </a>
                   </div>
                 </div>
               </div>

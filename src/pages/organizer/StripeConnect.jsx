@@ -197,18 +197,26 @@ export function StripeConnect() {
         },
       });
 
-      if (fnError) throw new Error(fnError.message);
-      if (data?.error) throw new Error(data.error);
+      // Handle function invocation error
+      if (fnError) {
+        console.error('Function error:', fnError);
+        throw new Error(fnError.message || 'Failed to connect to Stripe service');
+      }
+
+      // Handle error returned in response body
+      if (!data?.success && data?.error) {
+        throw new Error(data.error);
+      }
 
       if (data?.onboardingUrl) {
         // Redirect to Stripe onboarding
         window.location.href = data.onboardingUrl;
       } else {
-        throw new Error('Failed to get onboarding URL');
+        throw new Error('Failed to get Stripe onboarding URL');
       }
     } catch (err) {
       console.error('Error connecting Stripe:', err);
-      setError(err.message || 'Failed to connect Stripe account');
+      setError(err.message || 'Failed to connect Stripe account. Please try again or contact support.');
       setConnecting(false);
     }
   };
@@ -226,15 +234,25 @@ export function StripeConnect() {
         },
       });
 
-      if (fnError) throw new Error(fnError.message);
-      if (data?.error) throw new Error(data.error);
+      // Handle function invocation error
+      if (fnError) {
+        console.error('Function error:', fnError);
+        throw new Error(fnError.message || 'Failed to connect to Stripe service');
+      }
+
+      // Handle error returned in response body
+      if (!data?.success && data?.error) {
+        throw new Error(data.error);
+      }
 
       if (data?.onboardingUrl) {
         window.location.href = data.onboardingUrl;
+      } else {
+        throw new Error('Failed to get Stripe onboarding URL');
       }
     } catch (err) {
       console.error('Error resuming setup:', err);
-      setError(err.message || 'Failed to resume setup');
+      setError(err.message || 'Failed to resume setup. Please try again or contact support.');
       setConnecting(false);
     }
   };

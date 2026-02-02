@@ -337,12 +337,105 @@ export function ContactManagement() {
   const syncContacts = async () => {
     setSyncing(true);
     try {
-      // This would trigger a function to sync contacts from tickets/followers
-      // For now, just reload
+      // 1. Get all events for this organizer (including past events)
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select('id')
+        .eq('organizer_id', organizer.id);
+
+      if (eventsError) throw eventsError;
+
+      if (!events || events.length === 0) {
+        alert('No events found to sync contacts from');
+        setSyncing(false);
+        return;
+      }
+
+      const eventIds = events.map(e => e.id);
+
+      // 2. Get all tickets for these events (from tickets table where attendee data lives)
+      const { data: tickets, error: ticketsError } = await supabase
+        .from('tickets')
+        .select('id, attendee_name, attendee_email, attendee_phone, created_at')
+        .in('event_id', eventIds)
+        .not('attendee_email', 'is', null);
+
+      if (ticketsError) {
+        console.error('Tickets error:', ticketsError);
+        throw ticketsError;
+      }
+
+      // Also try orders table as fallback (some systems use orders)
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, attendee_name, attendee_email, attendee_phone, created_at')
+        .in('event_id', eventIds)
+        .in('status', ['completed', 'confirmed'])
+        .not('attendee_email', 'is', null);
+
+      // Combine both sources
+      const allAttendees = [...(tickets || []), ...(orders || [])];
+
+      if (allAttendees.length === 0) {
+        alert('No attendees found to sync');
+        setSyncing(false);
+        return;
+      }
+
+      // 3. Get existing contacts to avoid duplicates
+      const { data: existingContacts } = await supabase
+        .from('contacts')
+        .select('email')
+        .eq('organizer_id', organizer.id);
+
+      const existingEmails = new Set((existingContacts || []).map(c => c.email?.toLowerCase()));
+
+      // 4. Create unique contacts (dedup by email)
+      const uniqueContacts = new Map();
+      allAttendees.forEach(attendee => {
+        const email = attendee.attendee_email?.toLowerCase();
+        if (email && !existingEmails.has(email) && !uniqueContacts.has(email)) {
+          uniqueContacts.set(email, {
+            organizer_id: organizer.id,
+            full_name: attendee.attendee_name || null,
+            email: attendee.attendee_email,
+            phone: attendee.attendee_phone || null,
+            source_type: 'ticket',
+            email_opt_in: true,
+            sms_opt_in: true,
+            whatsapp_opt_in: true,
+            is_active: true,
+            first_contact_at: attendee.created_at,
+            last_contact_at: attendee.created_at,
+            tags: ['Ticket Buyer'],
+          });
+        }
+      });
+
+      // 5. Insert new contacts
+      const newContacts = Array.from(uniqueContacts.values());
+
+      if (newContacts.length === 0) {
+        alert('All attendees are already in your contacts!');
+        await loadData();
+        setSyncing(false);
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from('contacts')
+        .insert(newContacts);
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw insertError;
+      }
+
+      alert(`Successfully synced ${newContacts.length} new contacts from ticket purchases!`);
       await loadData();
-      alert('Contacts synced successfully!');
     } catch (error) {
-      console.error('Error syncing:', error);
+      console.error('Error syncing contacts:', error);
+      alert('Failed to sync contacts: ' + error.message);
     } finally {
       setSyncing(false);
     }

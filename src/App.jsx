@@ -103,6 +103,12 @@ const AcceptTeamInvitation = lazyWithRetry(() => import('./pages/AcceptTeamInvit
 const TeamDashboard = lazyWithRetry(() => import('./pages/TeamDashboard').then(m => ({ default: m.TeamDashboard })), 'TeamDashboard');
 const CreateEvent = lazyWithRetry(() => import('./pages/organizer/CreateEvent').then(m => ({ default: m.CreateEvent })), 'CreateEvent');
 const NotFound = lazyWithRetry(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })), 'NotFound');
+
+// Stripe Connect V2 Demo Pages - Lazy loaded
+const StripeConnectV2Demo = lazyWithRetry(() => import('./pages/connect/StripeConnectV2Demo').then(m => ({ default: m.StripeConnectV2Demo })), 'StripeConnectV2Demo');
+const ConnectStorefront = lazyWithRetry(() => import('./pages/connect/ConnectStorefront').then(m => ({ default: m.ConnectStorefront })), 'ConnectStorefront');
+const ConnectCheckoutSuccess = lazyWithRetry(() => import('./pages/connect/ConnectCheckoutSuccess').then(m => ({ default: m.ConnectCheckoutSuccess })), 'ConnectCheckoutSuccess');
+
 import { OrganizerProvider } from './contexts/OrganizerContext';
 
 // Heavy routes - lazy loaded with retry (admin, organizer, promoter, finance)
@@ -369,6 +375,23 @@ function App() {
                   </Suspense>
                 } />
               </Route>
+
+              {/* Stripe Connect V2 Demo Routes - Standalone (no WebLayout) */}
+              <Route path="/connect/demo" element={
+                <Suspense fallback={<PageLoader />}>
+                  <StripeConnectV2Demo />
+                </Suspense>
+              } />
+              <Route path="/connect/store/:accountId" element={
+                <Suspense fallback={<PageLoader />}>
+                  <ConnectStorefront />
+                </Suspense>
+              } />
+              <Route path="/connect/checkout-success" element={
+                <Suspense fallback={<PageLoader />}>
+                  <ConnectCheckoutSuccess />
+                </Suspense>
+              } />
 
               {/* 404 Catch-all Route */}
               <Route path="*" element={

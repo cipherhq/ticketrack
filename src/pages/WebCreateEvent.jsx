@@ -16,6 +16,13 @@ import { Checkbox } from '../components/ui/checkbox';
 import { AddressAutocomplete } from '../components/ui/AddressAutocomplete';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import {
+  PreCreateEventPrompt,
+  PostCreateEventPrompt,
+  shouldShowPrecreatePrompt,
+  shouldShowPostcreatePrompt,
+  calculateSnoozeUntil,
+} from '@/components/PaymentGatewayPrompt';
 
 const eventTypes = [
   'Concert', 'Party/Club', 'Wedding', 'Comedy',
@@ -36,6 +43,13 @@ export function WebCreateEvent() {
   const [urlManuallyEdited, setUrlManuallyEdited] = useState(false);
   const [tabErrors, setTabErrors] = useState({});
   const errorRef = useRef(null);
+
+  // Payment gateway prompt states
+  const [showPreCreatePrompt, setShowPreCreatePrompt] = useState(false);
+  const [showPostCreatePrompt, setShowPostCreatePrompt] = useState(false);
+  const [preCreatePromptHandled, setPreCreatePromptHandled] = useState(false);
+  const [organizerData, setOrganizerData] = useState(null);
+  const [eventCount, setEventCount] = useState(0);
   
   // Helper function to set error and scroll to show it
   const showError = (message) => {
@@ -58,6 +72,43 @@ export function WebCreateEvent() {
       navigate('/login?redirect=/create-event');
     }
   }, [authLoading, isAuthenticated, navigate]);
+
+  // Load organizer data and check if we should show pre-create prompt
+  useEffect(() => {
+    const loadOrganizerAndCheckPrompt = async () => {
+      if (!user?.id || preCreatePromptHandled) return;
+
+      try {
+        const { data: organizer } = await supabase
+          .from('organizers')
+          .select('id, country_code, stripe_connect_id, stripe_connect_status, stripe_connect_enabled, paystack_subaccount_id, paystack_subaccount_status, paystack_subaccount_enabled, flutterwave_subaccount_id, flutterwave_subaccount_status, flutterwave_subaccount_enabled, dismissed_precreate_prompt, dismissed_postcreate_prompt, precreate_prompt_snoozed_until, postcreate_prompt_snoozed_until')
+          .eq('user_id', user.id)
+          .single();
+
+        if (organizer) {
+          setOrganizerData(organizer);
+
+          // Get event count to check if this is their first event
+          const { count } = await supabase
+            .from('events')
+            .select('id', { count: 'exact', head: true })
+            .eq('organizer_id', organizer.id);
+
+          setEventCount(count || 0);
+
+          // Check if we should show the payment gateway prompt (first event only)
+          if (shouldShowPrecreatePrompt(organizer, count || 0)) {
+            setShowPreCreatePrompt(true);
+          }
+        }
+        setPreCreatePromptHandled(true);
+      } catch (err) {
+        console.error('Error loading organizer data:', err);
+        setPreCreatePromptHandled(true);
+      }
+    };
+    loadOrganizerAndCheckPrompt();
+  }, [user?.id, preCreatePromptHandled]);
 
   // Set default currency from user profile country
   useEffect(() => {
@@ -113,7 +164,7 @@ export function WebCreateEvent() {
     googleMapLink: '',
     venueType: 'indoor',
     venueCapacity: '',
-    seatingType: 'Standing',
+    seatingType: '',
     city: '',
     country: '',
     currency: '',
@@ -136,7 +187,7 @@ export function WebCreateEvent() {
 
   // Tickets State
   const [tickets, setTickets] = useState([
-    { id: 1, name: '', price: '', quantity: '', description: '', isRefundable: true },
+    { id: 1, name: '', price: '', quantity: '', description: '', isRefundable: false },
   ]);
 
   // Table Tickets State
@@ -199,8 +250,23 @@ export function WebCreateEvent() {
       if (!formData.isFreeEvent && validTickets.length === 0) {
         errors.push("At least one ticket type is required");
       }
+
+      // Validate table tickets
+      tableTickets.forEach((t) => {
+        if (t.name?.trim()) {
+          if (!t.quantity || parseInt(t.quantity) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have available quantity greater than 0");
+          }
+          if (!t.price || parseFloat(t.price) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have a price greater than 0");
+          }
+          if (!t.seatsPerTable || parseInt(t.seatsPerTable) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have seats per table greater than 0");
+          }
+        }
+      });
     }
-    
+
     return errors;
   };
 
@@ -357,7 +423,7 @@ export function WebCreateEvent() {
   // Ticket Functions
   const addTicket = () => {
     setTickets([...tickets, { 
-      id: Date.now(), name: '', price: '', quantity: '', description: '', isRefundable: true 
+      id: Date.now(), name: '', price: '', quantity: '', description: '', isRefundable: false 
     }]);
     // Don't auto-scroll when adding ticket - keep current scroll position
   };
@@ -615,8 +681,16 @@ export function WebCreateEvent() {
         await createTicketTypes(event.id, tableTicketsFormatted);
       }
 
-      // Redirect to organizer dashboard
-      navigate('/organizer/events');
+      // Check if we should show post-create payment prompt
+      // Only show for paid events when payment gateway not connected
+      const hasPaidContent = validTickets.some(t => parseFloat(t.price) > 0) || validTableTickets.some(t => parseFloat(t.price) > 0);
+
+      if (shouldShowPostcreatePrompt(organizerData, hasPaidContent)) {
+        setShowPostCreatePrompt(true);
+      } else {
+        // Redirect to organizer dashboard
+        navigate('/organizer/events');
+      }
     } catch (err) {
       console.error('Error creating event:', err);
       showError(err.message || 'Failed to create event');
@@ -1010,12 +1084,13 @@ export function WebCreateEvent() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Seating Type <span className="text-red-500">*</span></Label>
+                    <Label>Seating Type <span className="text-[#0F0F0F]/40 text-xs font-normal">(optional)</span></Label>
                     <select
-                      value={formData.seatingType}
+                      value={formData.seatingType || ''}
                       onChange={(e) => handleInputChange('seatingType', e.target.value)}
                       className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
                     >
+                      <option value="">Not specified</option>
                       {seatingTypes.map((type) => (
                         <option key={type} value={type}>{type}</option>
                       ))}
@@ -1614,6 +1689,64 @@ export function WebCreateEvent() {
           </div>
         </div>
       </div>
+
+      {/* Pre-Create Payment Gateway Prompt */}
+      <PreCreateEventPrompt
+        open={showPreCreatePrompt}
+        onClose={() => setShowPreCreatePrompt(false)}
+        onSetup={() => {
+          setShowPreCreatePrompt(false);
+          navigate('/organizer/finance?tab=connect');
+        }}
+        onSkip={() => setShowPreCreatePrompt(false)}
+        onDontShowAgain={async () => {
+          if (organizerData?.id) {
+            await supabase
+              .from('organizers')
+              .update({ dismissed_precreate_prompt: true })
+              .eq('id', organizerData.id);
+          }
+        }}
+        onRemindLater={async () => {
+          if (organizerData?.id) {
+            await supabase
+              .from('organizers')
+              .update({ precreate_prompt_snoozed_until: calculateSnoozeUntil(7) })
+              .eq('id', organizerData.id);
+          }
+        }}
+        countryCode={organizerData?.country_code}
+      />
+
+      {/* Post-Create Payment Gateway Prompt */}
+      <PostCreateEventPrompt
+        open={showPostCreatePrompt}
+        onClose={() => {
+          setShowPostCreatePrompt(false);
+          navigate('/organizer/events');
+        }}
+        onSetup={() => {
+          setShowPostCreatePrompt(false);
+          navigate('/organizer/finance?tab=connect');
+        }}
+        onDontShowAgain={async () => {
+          if (organizerData?.id) {
+            await supabase
+              .from('organizers')
+              .update({ dismissed_postcreate_prompt: true })
+              .eq('id', organizerData.id);
+          }
+        }}
+        onRemindLater={async () => {
+          if (organizerData?.id) {
+            await supabase
+              .from('organizers')
+              .update({ postcreate_prompt_snoozed_until: calculateSnoozeUntil(7) })
+              .eq('id', organizerData.id);
+          }
+        }}
+        countryCode={organizerData?.country_code}
+      />
     </div>
   );
 }

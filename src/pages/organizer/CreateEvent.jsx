@@ -26,6 +26,13 @@ import { generateRecurringDates } from '@/utils/recurringDates';
 import { HelpTip } from '@/components/HelpTip';
 import { StripeConnectEducationModal } from '@/components/StripeConnectEducationModal';
 import { PaystackFlutterwaveEducationModal } from '@/components/PaystackFlutterwaveEducationModal';
+import {
+  PreCreateEventPrompt,
+  PostCreateEventPrompt,
+  shouldShowPrecreatePrompt,
+  shouldShowPostcreatePrompt,
+  calculateSnoozeUntil,
+} from '@/components/PaymentGatewayPrompt';
 import 'react-quill/dist/quill.snow.css';
 
 
@@ -66,6 +73,10 @@ export function CreateEvent() {
   const [savingCountry, setSavingCountry] = useState(false);
   const [showStripeConnectModal, setShowStripeConnectModal] = useState(false);
   const [showPaystackFlutterwaveModal, setShowPaystackFlutterwaveModal] = useState(false);
+  const [showPreCreatePrompt, setShowPreCreatePrompt] = useState(false);
+  const [showPostCreatePrompt, setShowPostCreatePrompt] = useState(false);
+  const [preCreatePromptHandled, setPreCreatePromptHandled] = useState(false);
+  const [eventCount, setEventCount] = useState(0);
   const urlCheckTimeout = useRef(null);
 
   // Refs for file inputs
@@ -105,7 +116,7 @@ export function CreateEvent() {
     venueType: 'indoor',
     venueCapacity: '',
     maxTicketsPerOrder: 10,
-    seatingType: 'Seated',
+    seatingType: '',
     city: '',
     country: '',
     currency: '',
@@ -155,7 +166,7 @@ export function CreateEvent() {
 
   // Tickets State
   const [tickets, setTickets] = useState([
-    { id: 1, name: '', price: '', quantity: '', description: '', isRefundable: true },
+    { id: 1, name: '', price: '', quantity: '', description: '', isRefundable: false },
   ]);
 
   // Table Tickets State
@@ -286,6 +297,29 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     };
     setCurrencyFromCountry();
   }, [organizer?.country_code, isEditMode]);
+
+  // Show pre-create payment gateway prompt for new events (first event only)
+  useEffect(() => {
+    const checkAndShowPrompt = async () => {
+      // Only show for new events (not edit mode), when organizer data is loaded
+      if (!isEditMode && !preCreatePromptHandled && organizer?.id) {
+        // Get event count to check if this is their first event
+        const { count } = await supabase
+          .from('events')
+          .select('id', { count: 'exact', head: true })
+          .eq('organizer_id', organizer.id);
+
+        setEventCount(count || 0);
+
+        // Check if we should show the payment gateway prompt (only for first event)
+        if (shouldShowPrecreatePrompt(organizer, count || 0)) {
+          setShowPreCreatePrompt(true);
+        }
+        setPreCreatePromptHandled(true);
+      }
+    };
+    checkAndShowPrompt();
+  }, [isEditMode, preCreatePromptHandled, organizer?.id]);
 
   useEffect(() => {
     const loadEventData = async () => {
@@ -486,7 +520,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             price: t.price || "",
             quantity: t.quantity_available || "",
             description: t.description || "",
-            isRefundable: true,
+            isRefundable: false,
           })));
         }
       }
@@ -500,7 +534,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     { id: 'datetime', label: 'Date & Time', icon: Clock },
     { id: 'venue', label: 'Venue Details', icon: MapPin },
     { id: 'ticketing', label: 'Ticketing', icon: Ticket },
-    { id: 'speakers', label: 'Speakers', icon: Mic },
+    { id: 'speakers', label: 'Lineup', icon: Mic },
     { id: 'media', label: 'Media & Sponsors', icon: ImageIcon },
   ];
 
@@ -609,7 +643,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (!formData.isFree && !formData.currency) errors.push("Currency is required");
       const validTickets = tickets.filter(t => t.name?.trim() && parseInt(t.quantity) > 0);
       if (validTickets.length === 0 && !formData.isFree) errors.push("At least one ticket type is required");
-      
+
       // Check for invalid tickets (name but no valid quantity/price)
       tickets.forEach((t, idx) => {
         if (t.name?.trim()) {
@@ -618,6 +652,21 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           }
           if (!formData.isFree && (!t.price || parseFloat(t.price) <= 0)) {
             errors.push("Ticket \"" + t.name + "\" must have a price greater than 0");
+          }
+        }
+      });
+
+      // Check for invalid table tickets (name but missing required fields)
+      tableTickets.forEach((t) => {
+        if (t.name?.trim()) {
+          if (!t.quantity || parseInt(t.quantity) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have available quantity greater than 0");
+          }
+          if (!t.price || parseFloat(t.price) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have a price greater than 0");
+          }
+          if (!t.seatsPerTable || parseInt(t.seatsPerTable) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have seats per table greater than 0");
           }
         }
       });
@@ -696,8 +745,22 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       if (!formData.isFree && validTickets.some(t => parseFloat(t.price) <= 0)) {
         errors.push("All ticket types must have a price greater than 0");
       }
+      // Validate table tickets
+      tableTickets.forEach((t) => {
+        if (t.name?.trim()) {
+          if (!t.quantity || parseInt(t.quantity) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have available quantity greater than 0");
+          }
+          if (!t.price || parseFloat(t.price) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have a price greater than 0");
+          }
+          if (!t.seatsPerTable || parseInt(t.seatsPerTable) <= 0) {
+            errors.push("Table \"" + t.name + "\" must have seats per table greater than 0");
+          }
+        }
+      });
     }
-    
+
     return errors;
   };
 
@@ -1026,7 +1089,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
   // Ticket Functions
   const addTicket = () => {
     setTickets([...tickets, { 
-      id: Date.now(), name: '', price: '', quantity: '', description: '', isRefundable: true 
+      id: Date.now(), name: '', price: '', quantity: '', description: '', isRefundable: false 
     }]);
     // Don't auto-scroll when adding ticket - keep current scroll position
   };
@@ -1785,39 +1848,14 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       }
 
       // Check if we should show payment education modals
-      // Only show for events with payments (paid tickets or donations), and if not already dismissed
-      const stripeConnectCountries = ['US', 'GB', 'CA', 'AU', 'IE', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'AT', 'CH'];
-      const paystackFlutterwaveCountries = ['NG', 'GH', 'KE', 'ZA']; // Nigeria, Ghana, Kenya, South Africa
-      
-      const hasPaidTickets = formData.tickets?.some(t => parseFloat(t.price) > 0);
+      // Only show for events with payments (paid tickets or donations)
+      const hasPaidTickets = tickets?.some(t => parseFloat(t.price) > 0);
       const hasDonations = formData.acceptsDonations === true;
-      const hasPayments = hasPaidTickets || hasDonations;
-      const countryCode = organizer?.country_code;
+      const hasPaidContent = hasPaidTickets || hasDonations;
 
-      // Stripe Connect modal for US/UK/EU countries
-      const shouldShowStripeConnectModal = 
-        !isEditMode && 
-        hasPayments &&
-        countryCode &&
-        stripeConnectCountries.includes(countryCode) &&
-        !organizer?.stripe_connect_id &&
-        organizer?.stripe_connect_status !== 'active' &&
-        !localStorage.getItem('stripe_connect_reminder') &&
-        !localStorage.getItem('stripe_connect_dismissed');
-
-      // Paystack/Flutterwave modal for African countries
-      const shouldShowPaystackFlutterwaveModal = 
-        !isEditMode && 
-        hasPayments &&
-        countryCode &&
-        paystackFlutterwaveCountries.includes(countryCode) &&
-        !localStorage.getItem('paystack_flutterwave_reminder') &&
-        !localStorage.getItem('paystack_flutterwave_dismissed');
-
-      if (shouldShowStripeConnectModal) {
-        setShowStripeConnectModal(true);
-      } else if (shouldShowPaystackFlutterwaveModal) {
-        setShowPaystackFlutterwaveModal(true);
+      // Use the new consolidated post-create prompt system
+      if (!isEditMode && shouldShowPostcreatePrompt(organizer, hasPaidContent)) {
+        setShowPostCreatePrompt(true);
       } else {
         navigate('/organizer/events');
       }
@@ -1860,7 +1898,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               >
                 <tab.icon className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{['Details', 'Date', 'Venue', 'Tickets', 'Speakers', 'Media'][index]}</span>
+                <span className="sm:hidden">{['Details', 'Date', 'Venue', 'Tickets', 'Lineup', 'Media'][index]}</span>
               </button>
             ))}
           </div>
@@ -2601,12 +2639,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Seating Type <span className="text-red-500">*</span></Label>
+                      <Label>Seating Type <span className="text-[#0F0F0F]/40 text-xs font-normal">(optional)</span></Label>
                       <select
-                        value={formData.seatingType}
+                        value={formData.seatingType || ''}
                         onChange={(e) => handleInputChange('seatingType', e.target.value)}
                         className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
                       >
+                        <option value="">Not specified</option>
                         {seatingTypes.map((type) => (
                           <option key={type} value={type}>{type}</option>
                         ))}
@@ -2995,15 +3034,20 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       </div>
                       <div className="space-y-2">
                         <Label>Price <span className="text-red-500">*</span></Label>
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          min="0.01"
-                          step="0.01"
-                          value={ticket.price}
-                          onChange={(e) => updateTicket(ticket.id, 'price', e.target.value)}
-                          className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors['ticket_price_' + ticket.id] ? 'border-2 border-red-500' : 'border-0'}`}
-                        />
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">
+                            {currencies[formData.currency]?.symbol || '$'}
+                          </span>
+                          <Input
+                            type="number"
+                            placeholder="0.00"
+                            min="0.01"
+                            step="0.01"
+                            value={ticket.price}
+                            onChange={(e) => updateTicket(ticket.id, 'price', e.target.value)}
+                            className={`h-12 rounded-xl bg-[#F4F6FA] pl-10 ${fieldErrors['ticket_price_' + ticket.id] ? 'border-2 border-red-500' : 'border-0'}`}
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
@@ -3109,13 +3153,18 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         </div>
                         <div className="space-y-2">
                           <Label>Price per Table <span className="text-red-500">*</span></Label>
-                          <Input
-                            type="number"
-                            placeholder="0.00"
-                            value={table.price}
-                            onChange={(e) => updateTableTicket(table.id, 'price', e.target.value)}
-                            className="h-12 rounded-xl bg-[#F4F6FA] border-0"
-                          />
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">
+                              {currencies[formData.currency]?.symbol || '$'}
+                            </span>
+                            <Input
+                              type="number"
+                              placeholder="0.00"
+                              value={table.price}
+                              onChange={(e) => updateTableTicket(table.id, 'price', e.target.value)}
+                              className="h-12 rounded-xl bg-[#F4F6FA] border-0 pl-10"
+                            />
+                          </div>
                         </div>
                       </div>
                       <div className="grid md:grid-cols-2 gap-4">
@@ -3743,24 +3792,62 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         </div>
       )}
 
-      {/* Stripe Connect Education Modal (US/UK/EU) */}
-      <StripeConnectEducationModal
-        open={showStripeConnectModal}
-        onClose={() => {
-          setShowStripeConnectModal(false);
-          navigate('/organizer/events');
+      {/* Pre-Create Payment Gateway Prompt */}
+      <PreCreateEventPrompt
+        open={showPreCreatePrompt}
+        onClose={() => setShowPreCreatePrompt(false)}
+        onSetup={() => {
+          setShowPreCreatePrompt(false);
+          navigate('/organizer/finance?tab=connect');
         }}
-        organizerCountry={organizer?.country_code}
+        onSkip={() => setShowPreCreatePrompt(false)}
+        onDontShowAgain={async () => {
+          if (organizer?.id) {
+            await supabase
+              .from('organizers')
+              .update({ dismissed_precreate_prompt: true })
+              .eq('id', organizer.id);
+          }
+        }}
+        onRemindLater={async () => {
+          if (organizer?.id) {
+            await supabase
+              .from('organizers')
+              .update({ precreate_prompt_snoozed_until: calculateSnoozeUntil(7) })
+              .eq('id', organizer.id);
+          }
+        }}
+        countryCode={organizer?.country_code}
       />
 
-      {/* Paystack/Flutterwave Education Modal (Nigeria/Ghana/Kenya/SA) */}
-      <PaystackFlutterwaveEducationModal
-        open={showPaystackFlutterwaveModal}
+      {/* Post-Create Payment Gateway Prompt */}
+      <PostCreateEventPrompt
+        open={showPostCreatePrompt}
         onClose={() => {
-          setShowPaystackFlutterwaveModal(false);
+          setShowPostCreatePrompt(false);
           navigate('/organizer/events');
         }}
-        organizerCountry={organizer?.country_code}
+        onSetup={() => {
+          setShowPostCreatePrompt(false);
+          navigate('/organizer/finance?tab=connect');
+        }}
+        onDontShowAgain={async () => {
+          if (organizer?.id) {
+            await supabase
+              .from('organizers')
+              .update({ dismissed_postcreate_prompt: true })
+              .eq('id', organizer.id);
+          }
+        }}
+        onRemindLater={async () => {
+          if (organizer?.id) {
+            await supabase
+              .from('organizers')
+              .update({ postcreate_prompt_snoozed_until: calculateSnoozeUntil(7) })
+              .eq('id', organizer.id);
+          }
+        }}
+        countryCode={organizer?.country_code}
       />
     </div>
   );

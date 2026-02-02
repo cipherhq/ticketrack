@@ -20,6 +20,8 @@ import {
   Home,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import { useOrganizer } from '../../contexts/OrganizerContext';
+import { PaymentGatewayBanner } from '../../components/PaymentGatewayPrompt';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/organizer' },
@@ -42,6 +44,31 @@ export function OrganizerDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const {
+    organizer,
+    showDashboardBanner,
+    dismissDashboardBanner,
+    snoozeDashboardBanner,
+  } = useOrganizer();
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // Show banner only on main dashboard page
+  const isMainDashboard = location.pathname === '/organizer';
+  const showBanner = isMainDashboard && showDashboardBanner && !bannerDismissed;
+
+  const handleBannerSetup = () => {
+    navigate('/organizer/finance?tab=connect');
+  };
+
+  const handleBannerDismiss = async () => {
+    setBannerDismissed(true);
+    await dismissDashboardBanner();
+  };
+
+  const handleBannerRemindLater = async () => {
+    setBannerDismissed(true);
+    await snoozeDashboardBanner(7); // Snooze for 7 days
+  };
 
   return (
     <div className="min-h-screen bg-[#F4F6FA] flex">
@@ -155,6 +182,15 @@ export function OrganizerDashboard() {
 
         {/* Page Content */}
         <main className="flex-1 p-6 overflow-auto">
+          {/* Payment Gateway Setup Banner */}
+          {showBanner && (
+            <PaymentGatewayBanner
+              onSetup={handleBannerSetup}
+              onDismiss={handleBannerDismiss}
+              onRemindLater={handleBannerRemindLater}
+              countryCode={organizer?.country_code}
+            />
+          )}
           <Outlet />
         </main>
       </div>

@@ -62,7 +62,7 @@ export function EventPayouts() {
           promoters ( id, full_name, email, promoter_bank_accounts (id, bank_name, account_number, account_name, is_verified) )
         `).eq('event_id', event.id);
 
-        const completedOrders = eventOrders?.filter(o => o.status === 'completed') || [];
+        const completedOrders = (event.orders || []).filter(o => o.status === 'completed');
         const totalSales = completedOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
         const platformFees = completedOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0);
 
@@ -139,18 +139,63 @@ export function EventPayouts() {
       const { type, recipient, event } = paymentDialog;
 
       if (type === 'organizer') {
-        await supabase.from('payouts').insert({
-          organizer_id: event.organizers?.id, event_id: event.id, amount: event.totalSales,
-          fee: event.platformFees, net_amount: event.organizerNet, currency: event.currency,
-          status: 'completed', reference: transactionRef || `PAY-${Date.now().toString(36).toUpperCase()}`,
-          processed_at: new Date().toISOString(), notes: paymentNotes
+        // Check if organizer has a bank account
+        const bankAccountId = event.primaryBankAccount?.id;
+        if (!bankAccountId) {
+          alert('Organizer must have a bank account to process payout');
+          setProcessing(false);
+          return;
+        }
+
+        // Generate payout number
+        const payoutNumber = `PAY-${Date.now().toString(36).toUpperCase()}`;
+
+        // Insert payout record (note: payouts table doesn't have event_id column)
+        const { error: payoutError } = await supabase.from('payouts').insert({
+          organizer_id: event.organizers?.id,
+          bank_account_id: bankAccountId,
+          payout_number: payoutNumber,
+          amount: event.totalSales,
+          platform_fee_deducted: event.platformFees,
+          net_amount: event.organizerNet,
+          currency: event.currency || 'NGN',
+          status: 'completed',
+          transaction_reference: transactionRef || null,
+          processed_at: new Date().toISOString(),
+          notes: `Event: ${event.title} (${event.id}). ${paymentNotes || ''}`
         });
-        await supabase.from('events').update({ payout_status: 'paid' }).eq('id', event.id);
-        await logFinanceAction('organizer_payout', 'event', event.id, { 
-          amount: event.organizerNet, 
+        if (payoutError) {
+          console.error('Payout insert error:', payoutError);
+          throw payoutError;
+        }
+
+        // Update event payout status
+        const { error: eventError } = await supabase.from('events').update({ payout_status: 'paid' }).eq('id', event.id);
+        if (eventError) {
+          console.error('Event update error:', eventError);
+          throw eventError;
+        }
+
+        // Deduct from organizer's available balance (if they have one)
+        const { data: organizer } = await supabase
+          .from('organizers')
+          .select('available_balance')
+          .eq('id', event.organizers?.id)
+          .single();
+
+        if (organizer && organizer.available_balance > 0) {
+          const newBalance = Math.max(0, (organizer.available_balance || 0) - event.organizerNet);
+          await supabase
+            .from('organizers')
+            .update({ available_balance: newBalance })
+            .eq('id', event.organizers?.id);
+        }
+
+        await logFinanceAction('organizer_payout', 'event', event.id, {
+          amount: event.organizerNet,
           organizer: event.organizers?.business_name,
           bank: event.primaryBankAccount?.bank_name,
-          reference: transactionRef 
+          reference: transactionRef
         });
 
       } else if (type === 'promoter') {
@@ -189,12 +234,53 @@ export function EventPayouts() {
     setProcessing(true);
     try {
       if (event.organizerNet > 0 && event.payout_status !== 'paid') {
-        await supabase.from('payouts').insert({
-          organizer_id: event.organizers?.id, event_id: event.id, amount: event.totalSales,
-          fee: event.platformFees, net_amount: event.organizerNet, currency: event.currency,
-          status: 'completed', reference: `PAY-${Date.now().toString(36).toUpperCase()}`, processed_at: new Date().toISOString()
+        // Check if organizer has a bank account
+        const bankAccountId = event.primaryBankAccount?.id;
+        if (!bankAccountId) {
+          alert('Organizer must have a bank account to process payout');
+          setProcessing(false);
+          return;
+        }
+
+        // Generate payout number
+        const payoutNumber = `PAY-${Date.now().toString(36).toUpperCase()}`;
+
+        // Insert payout record with correct column names
+        const { error: payoutError } = await supabase.from('payouts').insert({
+          organizer_id: event.organizers?.id,
+          bank_account_id: bankAccountId,
+          payout_number: payoutNumber,
+          amount: event.totalSales,
+          platform_fee_deducted: event.platformFees,
+          net_amount: event.organizerNet,
+          currency: event.currency || 'NGN',
+          status: 'completed',
+          transaction_reference: payoutNumber,
+          processed_at: new Date().toISOString(),
+          notes: `Event: ${event.title} (${event.id})`
         });
+        if (payoutError) {
+          console.error('Payout insert error:', payoutError);
+          throw payoutError;
+        }
+
+        // Update event status
         await supabase.from('events').update({ payout_status: 'paid' }).eq('id', event.id);
+
+        // Deduct from organizer's available balance
+        const { data: organizer } = await supabase
+          .from('organizers')
+          .select('available_balance')
+          .eq('id', event.organizers?.id)
+          .single();
+
+        if (organizer && organizer.available_balance > 0) {
+          const newBalance = Math.max(0, (organizer.available_balance || 0) - event.organizerNet);
+          await supabase
+            .from('organizers')
+            .update({ available_balance: newBalance })
+            .eq('id', event.organizers?.id);
+        }
       }
       for (const promo of event.promoterEarnings) {
         if (promo.isPaid) continue;

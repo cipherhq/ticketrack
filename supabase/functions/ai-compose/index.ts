@@ -25,19 +25,17 @@ serve(async (req) => {
 
     const systemPrompt = `You are an email copywriter for event organizers. Write professional, friendly, and engaging email content.
 
-Context:
-- Organizer Name: ${context?.organizerName || 'Event Organizer'}
-- Event Name: ${context?.eventName || 'the event'}
+IMPORTANT: Use the ACTUAL event details provided below in your content. DO NOT use placeholder variables like {{event_name}} or {{event_date}} - write the real values directly.
 
-You can use these variables in your content (they will be replaced with actual values):
-- {{attendee_name}} - Recipient's name
-- {{event_name}} - Event title
-- {{event_date}} - Event date
-- {{event_time}} - Event time
-- {{event_venue}} - Venue name
-- {{event_city}} - City
-- {{event_link}} - Link to event page
-- {{organizer_name}} - Organizer's business name
+Event Details:
+- Event Name: ${context?.eventName || 'Event'}
+- Event Date: ${context?.eventDate || 'TBA'}
+- Event Time: ${context?.eventTime || ''}
+- Venue: ${context?.venueName || 'TBA'}
+- City: ${context?.eventCity || ''}
+- Organizer: ${context?.organizerName || 'Event Organizer'}
+
+The ONLY placeholder you may use is {{attendee_name}} for the recipient's name (this will be personalized per recipient).
 
 Return your response in this exact JSON format:
 {
@@ -45,7 +43,7 @@ Return your response in this exact JSON format:
   "body": "<p>Your HTML email body here.</p><p>Use proper HTML tags for formatting.</p>"
 }
 
-Keep the email concise, professional, and action-oriented. Use HTML formatting with <p>, <strong>, <a> tags.`;
+Keep the email concise, professional, and action-oriented. Use HTML formatting with <p>, <strong>, <a> tags. Write the actual event name, date, venue in the content - NOT placeholders.`;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',

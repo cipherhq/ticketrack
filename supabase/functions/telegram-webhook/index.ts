@@ -62,13 +62,18 @@ async function handleMessage(supabase: any, message: any) {
   const username = message.from?.username;
   const firstName = message.from?.first_name || 'User';
 
+  console.log(`Processing message from ${chatId}: "${text}"`);
+
   // Handle commands
   if (text.startsWith('/')) {
     const [command, ...args] = text.split(' ');
+    console.log(`Command detected: ${command}, args: ${args.join(', ')}`);
 
     switch (command) {
       case '/start':
+        console.log('Handling /start command...');
         await handleStart(supabase, chatId, firstName, args[0]);
+        console.log('/start command handled');
         break;
       case '/link':
         await handleLinkRequest(chatId, firstName);
@@ -157,6 +162,8 @@ Once linked, you'll receive event reminders and updates directly here!
 }
 
 async function handleLinkWithToken(supabase: any, chatId: number, firstName: string, token: string) {
+  console.log(`handleLinkWithToken called: chatId=${chatId}, token=${token.substring(0, 20)}...`);
+
   // Verify the link token
   const { data: linkRequest, error } = await supabase
     .from('telegram_link_requests')
@@ -165,8 +172,11 @@ async function handleLinkWithToken(supabase: any, chatId: number, firstName: str
     .eq('status', 'pending')
     .single();
 
+  console.log(`Token lookup result: data=${JSON.stringify(linkRequest)}, error=${JSON.stringify(error)}`);
+
   if (error || !linkRequest) {
-    await sendMessage(chatId, 
+    console.log('Token invalid or not found');
+    await sendMessage(chatId,
       `❌ Invalid or expired link. Please try again from your Ticketrack profile settings.`
     );
     return;
@@ -174,22 +184,41 @@ async function handleLinkWithToken(supabase: any, chatId: number, firstName: str
 
   // Check expiry
   if (new Date(linkRequest.expires_at) < new Date()) {
-    await sendMessage(chatId, 
+    console.log('Token expired');
+    await sendMessage(chatId,
       `⏰ This link has expired. Please request a new one from your Ticketrack profile settings.`
     );
     return;
   }
 
-  // Show confirmation button
-  const keyboard = {
-    inline_keyboard: [[
-      { text: '✅ Confirm Link', callback_data: `confirm_link:${token}` }
-    ]]
-  };
+  console.log('Token valid, linking account directly');
 
-  await sendMessage(chatId, 
-    `Hi ${firstName}! 👋\n\nWould you like to link this Telegram account to Ticketrack?`,
-    { reply_markup: keyboard }
+  // Link the account directly (no confirmation button needed)
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({
+      telegram_chat_id: chatId.toString(),
+      telegram_linked_at: new Date().toISOString(),
+    })
+    .eq('id', linkRequest.user_id);
+
+  if (updateError) {
+    console.error('Failed to update profile:', updateError);
+    await sendMessage(chatId, `❌ Failed to link account. Please try again.`);
+    return;
+  }
+
+  // Mark link request as completed
+  await supabase
+    .from('telegram_link_requests')
+    .update({ status: 'completed', completed_at: new Date().toISOString() })
+    .eq('token', token);
+
+  console.log('Account linked successfully');
+
+  await sendMessage(chatId,
+    `✅ *Success!*\n\nHi ${firstName}! Your Telegram is now linked to Ticketrack.\n\nYou'll receive event reminders and ticket updates here.\n\nType /help to see what I can do.`,
+    { parse_mode: 'Markdown' }
   );
 }
 
@@ -382,8 +411,12 @@ Visit ${APP_URL}/support
 // ============================================================================
 
 async function sendMessage(chatId: number, text: string, options: any = {}) {
+  console.log(`Sending message to ${chatId}: "${text.substring(0, 50)}..."`);
   try {
-    const response = await fetch(`${TELEGRAM_API_URL}/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    const url = `${TELEGRAM_API_URL}/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    console.log(`Telegram API URL: ${url.substring(0, 50)}...`);
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -394,12 +427,13 @@ async function sendMessage(chatId: number, text: string, options: any = {}) {
     });
 
     const result = await response.json();
+    console.log(`Telegram sendMessage result: ${JSON.stringify(result).substring(0, 100)}`);
     if (!result.ok) {
       console.error('Telegram sendMessage error:', result);
     }
     return result;
   } catch (error) {
-    console.error('Telegram sendMessage error:', error);
+    console.error('Telegram sendMessage fetch error:', error);
     return { ok: false };
   }
 }

@@ -843,7 +843,55 @@ export function ProjectManager() {
 
                 {isExpanded && (
                   <div className="border-t border-[#0F0F0F]/10 p-4">
-                    {viewMode === 'kanban' ? renderKanbanBoard(event.id) : (
+                    {viewMode === 'kanban' ? renderKanbanBoard(event.id) : viewMode === 'timeline' ? (
+                      // Timeline/Gantt View
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-4 text-xs text-[#0F0F0F]/60 border-b pb-2">
+                          <div className="w-48 font-medium">Task</div>
+                          <div className="flex-1 font-medium">Timeline</div>
+                          <div className="w-20 font-medium text-center">Status</div>
+                        </div>
+                        {getFilteredTasks(event.id).length === 0 ? (
+                          <p className="text-center text-[#0F0F0F]/40 py-8">No tasks</p>
+                        ) : (
+                          getFilteredTasks(event.id).map(task => {
+                            const dueDateStatus = getDueDateStatus(task.due_date);
+                            const StatusIcon = STATUSES[task.status]?.icon || Circle;
+                            return (
+                              <div key={task.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-[#F4F6FA] cursor-pointer" onClick={() => openTaskModal(task)}>
+                                <div className="w-48 truncate">
+                                  <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-[#0F0F0F]/40' : ''}`}>{task.title}</p>
+                                  <p className="text-xs text-[#0F0F0F]/50">{task.assigned_member?.name || 'Unassigned'}</p>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded text-xs ${PHASES[task.phase]?.bgLight} ${PHASES[task.phase]?.textColor} border`}>{PHASES[task.phase]?.label}</span>
+                                    {task.due_date && (
+                                      <span className={`flex items-center gap-1 text-xs ${dueDateStatus === 'overdue' ? 'text-red-600 font-medium' : dueDateStatus === 'today' ? 'text-orange-600' : 'text-[#0F0F0F]/60'}`}>
+                                        <CalendarDays className="w-3 h-3" />
+                                        {format(new Date(task.due_date), 'MMM d, yyyy')}
+                                      </span>
+                                    )}
+                                    <span className={`px-2 py-0.5 rounded text-xs ${PRIORITIES[task.priority]?.color}`}>{PRIORITIES[task.priority]?.label}</span>
+                                  </div>
+                                </div>
+                                <div className="w-20 flex justify-center">
+                                  <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${STATUSES[task.status]?.bg}`}>
+                                    <StatusIcon className={`w-3 h-3 ${STATUSES[task.status]?.color}`} />
+                                    <span className={`text-xs ${STATUSES[task.status]?.color}`}>{STATUSES[task.status]?.label}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                        <div className="flex gap-2 pt-2">
+                          <Button variant="outline" size="sm" onClick={() => openTaskModal(null, event.id)} className="rounded-xl"><Plus className="w-4 h-4 mr-1" />Add Task</Button>
+                          {eventTasks.length === 0 && <Button variant="outline" size="sm" onClick={() => applyTemplates(event.id)} className="rounded-xl"><LayoutGrid className="w-4 h-4 mr-1" />Apply Templates</Button>}
+                        </div>
+                      </div>
+                    ) : (
+                      // List View
                       <div className="space-y-2">
                         {getFilteredTasks(event.id).length === 0 ? <p className="text-center text-[#0F0F0F]/40 py-8">No tasks</p> : getFilteredTasks(event.id).map(renderTaskCard)}
                         <div className="flex gap-2 pt-2">
