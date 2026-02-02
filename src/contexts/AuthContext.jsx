@@ -44,17 +44,36 @@ export function AuthProvider({ children }) {
   }
 
   // Set up session expiry warning timers
-  const setupSessionTimers = (session) => {
+  // Note: Admins have extended sessions (no warnings), Finance has its own security in FinanceContext
+  const setupSessionTimers = async (session) => {
     clearSessionTimers()
 
-    if (!session?.expires_at) return
+    if (!session?.expires_at || !session?.user?.id) return
+
+    // Check if user is admin - admins don't get session warnings (extended session)
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, role')
+        .eq('id', session.user.id)
+        .single()
+
+      // Skip session warnings for admins - they have extended sessions
+      if (profile?.is_admin || profile?.role === 'super_admin') {
+        console.log('Admin user detected - session warnings disabled')
+        return
+      }
+    } catch (err) {
+      // If profile check fails, continue with normal session handling
+      console.warn('Could not check admin status:', err.message)
+    }
 
     const expiresAt = session.expires_at * 1000 // Convert to milliseconds
     const now = Date.now()
     const timeUntilExpiry = expiresAt - now
     const timeUntilWarning = timeUntilExpiry - SESSION_WARNING_MS
 
-    // Set up warning timer (5 minutes before expiry)
+    // Set up warning timer (5 minutes before expiry) for attendees/organizers
     if (timeUntilWarning > 0) {
       sessionWarningTimeoutRef.current = setTimeout(() => {
         setSessionWarning(true)

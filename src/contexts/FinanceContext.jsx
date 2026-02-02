@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 const FinanceContext = createContext({});
 
@@ -11,10 +12,13 @@ export function FinanceProvider({ children }) {
   const [financeUser, setFinanceUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const sessionTimerRef = useRef(null);
+  const warningTimerRef = useRef(null);
   const hasCheckedAccess = useRef(false);
 
   // Session timeout: 30 minutes of inactivity
   const SESSION_TIMEOUT = 30 * 60 * 1000;
+  // Warning: 5 minutes before timeout
+  const WARNING_TIME = 5 * 60 * 1000;
 
   const checkFinanceAccess = useCallback(async () => {
     try {
@@ -93,34 +97,54 @@ export function FinanceProvider({ children }) {
     return () => subscription.unsubscribe();
   }, [checkFinanceAccess, navigate]);
 
-  // Activity tracker for session timeout
+  // Activity tracker for session timeout with warning
   useEffect(() => {
     if (!financeUser) return;
 
+    const clearTimers = () => {
+      if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+    };
+
     const resetTimer = () => {
-      if (sessionTimerRef.current) {
-        clearTimeout(sessionTimerRef.current);
-      }
+      clearTimers();
+
+      // Dismiss any existing warning toast
+      toast.dismiss('finance-session-warning');
+
+      // Set warning timer (5 minutes before timeout)
+      warningTimerRef.current = setTimeout(() => {
+        toast.warning(
+          'Your finance session will expire in 5 minutes due to inactivity.',
+          {
+            duration: 60000,
+            id: 'finance-session-warning',
+            description: 'Move your mouse or press any key to stay logged in.',
+          }
+        );
+      }, SESSION_TIMEOUT - WARNING_TIME);
+
+      // Set logout timer
       sessionTimerRef.current = setTimeout(() => {
+        toast.error('Session expired due to inactivity.', { id: 'finance-session-expired' });
         logFinanceAction('session_timeout', null, null, { reason: 'inactivity' });
         handleLogout();
       }, SESSION_TIMEOUT);
     };
 
     // Reset on activity
-    window.addEventListener('mousemove', resetTimer);
-    window.addEventListener('keypress', resetTimer);
-    window.addEventListener('click', resetTimer);
+    const activityEvents = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
+    activityEvents.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
 
     resetTimer(); // Initialize
 
     return () => {
-      if (sessionTimerRef.current) {
-        clearTimeout(sessionTimerRef.current);
-      }
-      window.removeEventListener('mousemove', resetTimer);
-      window.removeEventListener('keypress', resetTimer);
-      window.removeEventListener('click', resetTimer);
+      clearTimers();
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
     };
   }, [financeUser]);
 
