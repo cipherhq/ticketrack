@@ -138,6 +138,7 @@ export function FinancePayouts() {
           start_date,
           parent_event_id,
           is_recurring,
+          is_free,
           fee_handling,
           event_type,
           orders (
@@ -148,7 +149,8 @@ export function FinancePayouts() {
             total_amount,
             status,
             created_at,
-            event_id
+            event_id,
+            is_donation
           )
         `)
         .eq('organizer_id', organizer.id);
@@ -217,8 +219,20 @@ export function FinancePayouts() {
       Object.values(ordersByEventDate).forEach(({ event, orders, currency }) => {
         if (orders.length === 0) return;
 
-        const subtotalAmount = orders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
-        const platformFeeTotal = orders.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
+        // Separate regular orders and donation orders
+        const regularOrders = orders.filter(o => !o.is_donation);
+        const donationOrders = orders.filter(o => o.is_donation);
+
+        // Regular ticket revenue from subtotal
+        const ticketSubtotal = regularOrders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
+        const ticketPlatformFee = regularOrders.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
+
+        // Donation revenue from total_amount (subtotal is 0 for free events)
+        const donationTotal = donationOrders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
+        const donationPlatformFee = donationOrders.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
+
+        const subtotalAmount = ticketSubtotal + donationTotal;
+        const platformFeeTotal = ticketPlatformFee + donationPlatformFee;
 
         // If organizer absorbed the fee (fee_handling = 'absorb'), deduct platform fee from their payout
         // Otherwise, they receive the full subtotal (attendee paid the fee)
