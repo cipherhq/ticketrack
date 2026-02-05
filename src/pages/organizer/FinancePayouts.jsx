@@ -1,10 +1,12 @@
 import { getCountryFees } from '@/config/fees';
 import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
+import { calculatePayoutDate, formatPayoutDelayLabel, getPayoutDelayDays } from '@/config/payoutThresholds';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  DollarSign, Clock, CheckCircle, Plus, CreditCard, Building2, 
-  Download, Calendar, Loader2, FileText, HelpCircle, Zap, AlertCircle, Info
+import {
+  DollarSign, Clock, CheckCircle, Plus, CreditCard, Building2,
+  Download, Calendar, Loader2, FileText, HelpCircle, Zap, AlertCircle, Info,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -50,6 +52,9 @@ export function FinancePayouts() {
   const [fastPayoutAmount, setFastPayoutAmount] = useState('');
   const [fastPayoutProcessing, setFastPayoutProcessing] = useState(false);
   const [fastPayoutFee, setFastPayoutFee] = useState({ gross: 0, fee: 0, net: 0 });
+  const [escrowEvents, setEscrowEvents] = useState([]);
+  const [escrowExpanded, setEscrowExpanded] = useState(false);
+  const [totalBalanceByCurrency, setTotalBalanceByCurrency] = useState({});
 
   useEffect(() => {
     if (organizer?.id) {
@@ -121,7 +126,6 @@ export function FinancePayouts() {
     setLoading(true);
     try {
       const now = new Date();
-      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
       // Fetch all events with their order totals (including child events for recurring events)
       const { data: events, error: eventsError } = await supabase
@@ -135,6 +139,7 @@ export function FinancePayouts() {
           parent_event_id,
           is_recurring,
           fee_handling,
+          event_type,
           orders (
             id,
             subtotal,
@@ -200,26 +205,38 @@ export function FinancePayouts() {
         });
       });
       
+      // Build a map of parent events for looking up event_type on child events
+      const parentEventMap = {};
+      parentEvents.forEach(e => { parentEventMap[e.id] = e; });
+
       // Process each group of orders by event date
+      const escrowEventsList = [];
+
       Object.values(ordersByEventDate).forEach(({ event, orders, currency }) => {
         if (orders.length === 0) return;
-        
-        const grossRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
+
         const subtotalAmount = orders.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
         const platformFeeTotal = orders.reduce((sum, o) => sum + (parseFloat(o.platform_fee) || 0), 0);
-        
+
         // If organizer absorbed the fee (fee_handling = 'absorb'), deduct platform fee from their payout
         // Otherwise, they receive the full subtotal (attendee paid the fee)
         const organizerAbsorbsFee = event.fee_handling === 'absorb';
-        const netAmount = organizerAbsorbsFee 
-          ? subtotalAmount - platformFeeTotal 
+        const netAmount = organizerAbsorbsFee
+          ? subtotalAmount - platformFeeTotal
           : subtotalAmount;
-        
+
         if (netAmount <= 0) return;
-        
+
         const eventEndDate = new Date(event.end_date);
-        const payoutDate = new Date(eventEndDate.getTime() + 24 * 60 * 60 * 1000);
-        
+
+        // Use event_type from event, or fall back to parent's event_type for child events
+        const eventType = event.event_type
+          || (event.parent_event_id && parentEventMap[event.parent_event_id]?.event_type)
+          || 'other';
+        const orderCount = orders.length;
+        const payoutDate = calculatePayoutDate(event.end_date, eventType, orderCount);
+        const delayLabel = formatPayoutDelayLabel(eventType, orderCount);
+
         // Determine event display name (include date if child event)
         let eventDisplayName = event.title;
         if (event.parent_event_id) {
@@ -235,19 +252,31 @@ export function FinancePayouts() {
         if (eventEndDate > now) {
           // Event hasn't ended yet - In Escrow
           inEscrowByCurrency[currency] = (inEscrowByCurrency[currency] || 0) + netAmount;
+          escrowEventsList.push({
+            id: event.id,
+            currency,
+            event: eventDisplayName,
+            orderCount,
+            netAmount,
+            eventEndDate: event.end_date,
+            payoutDate: payoutDate.toISOString(),
+            delayLabel,
+          });
         } else if (payoutDate > now) {
-          // Event ended, within 24 hours - Upcoming Payout
+          // Event ended, within hold period - Upcoming Payout
           upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
           upcoming.push({
             id: event.id,
             currency,
             event: eventDisplayName,
-            grossAmount: subtotalAmount, // Ticket price before any fees
+            orderCount,
+            grossAmount: subtotalAmount,
             platformFee: platformFeeTotal,
-            feeAbsorbed: organizerAbsorbsFee, // Track if fee was absorbed
-            netAmount: netAmount, // Amount after deducting absorbed fee
+            feeAbsorbed: organizerAbsorbsFee,
+            netAmount,
             eventEndDate: event.end_date,
             payoutDate: payoutDate.toISOString(),
+            delayLabel,
             status: 'Scheduled',
           });
         }
@@ -260,12 +289,23 @@ export function FinancePayouts() {
         totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + (parseFloat(p.amount) || 0);
       });
 
+      // Calculate total balance (escrow + upcoming)
+      const computedTotalBalance = {};
+      Object.entries(inEscrowByCurrency).forEach(([cur, amt]) => {
+        computedTotalBalance[cur] = (computedTotalBalance[cur] || 0) + amt;
+      });
+      Object.entries(upcomingPayoutsByCurrency).forEach(([cur, amt]) => {
+        computedTotalBalance[cur] = (computedTotalBalance[cur] || 0) + amt;
+      });
+
       setStats({
         inEscrowByCurrency,
         upcomingPayoutsByCurrency,
         totalPaidOutByCurrency,
       });
 
+      setEscrowEvents(escrowEventsList.sort((a, b) => new Date(a.eventEndDate) - new Date(b.eventEndDate)));
+      setTotalBalanceByCurrency(computedTotalBalance);
       setUpcomingPayouts(upcoming);
       setPayoutHistory(payouts || []);
 
@@ -376,13 +416,35 @@ Status,${payout.status}
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50">
           <CardContent className="p-6">
-            <Clock className="w-8 h-8 text-orange-500 mb-3" />
+            <DollarSign className="w-8 h-8 text-indigo-500 mb-3" />
+            <p className="text-[#0F0F0F]/60 mb-2">Total Balance</p>
+            <h2 className="text-2xl font-semibold text-indigo-600">{formatMultiCurrencyCompact(totalBalanceByCurrency)}</h2>
+            <p className="text-xs text-[#0F0F0F]/40 mt-1">Escrow + upcoming payouts</p>
+          </CardContent>
+        </Card>
+        <Card
+          className="border-[#0F0F0F]/10 rounded-2xl cursor-pointer hover:border-orange-200 transition-colors"
+          onClick={() => escrowEvents.length > 0 && setEscrowExpanded(!escrowExpanded)}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-3">
+              <Clock className="w-8 h-8 text-orange-500" />
+              {escrowEvents.length > 0 && (
+                escrowExpanded
+                  ? <ChevronUp className="w-5 h-5 text-[#0F0F0F]/40" />
+                  : <ChevronDown className="w-5 h-5 text-[#0F0F0F]/40" />
+              )}
+            </div>
             <p className="text-[#0F0F0F]/60 mb-2">In Escrow</p>
             <h2 className="text-2xl font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.inEscrowByCurrency)}</h2>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">From upcoming events</p>
+            <p className="text-xs text-[#0F0F0F]/40 mt-1">
+              {escrowEvents.length > 0
+                ? `${escrowEvents.length} active event${escrowEvents.length !== 1 ? 's' : ''}`
+                : 'From upcoming events'}
+            </p>
           </CardContent>
         </Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -390,7 +452,7 @@ Status,${payout.status}
             <Calendar className="w-8 h-8 text-[#2969FF] mb-3" />
             <p className="text-[#0F0F0F]/60 mb-2">Upcoming Payouts</p>
             <h2 className="text-2xl font-semibold text-[#2969FF]">{formatMultiCurrencyCompact(stats.upcomingPayoutsByCurrency)}</h2>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">To be paid within 24 hours</p>
+            <p className="text-xs text-[#0F0F0F]/40 mt-1">Processing after event hold period</p>
           </CardContent>
         </Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
@@ -402,6 +464,45 @@ Status,${payout.status}
           </CardContent>
         </Card>
       </div>
+
+      {/* Escrow Breakdown */}
+      {escrowExpanded && escrowEvents.length > 0 && (
+        <Card className="border-orange-200 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+              <Clock className="w-5 h-5 text-orange-500" />
+              Escrow Breakdown by Event
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {escrowEvents.map((item) => (
+                <div key={item.id} className="p-4 rounded-xl bg-orange-50/50">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-[#0F0F0F] mb-1">{item.event}</h4>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                        <span>{item.orderCount} order{item.orderCount !== 1 ? 's' : ''}</span>
+                        <span>Event ends: {formatDate(item.eventEndDate)}</span>
+                        <span>Expected payout: {formatDate(item.payoutDate)}</span>
+                      </div>
+                      <p className="text-xs text-[#0F0F0F]/40 mt-1">{item.delayLabel}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-orange-600 font-semibold text-lg">{formatPrice(item.netAmount, item.currency)}</p>
+                      <p className="text-xs text-[#0F0F0F]/40">Net amount</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="border-t pt-3 flex items-center justify-between px-4">
+                <span className="font-medium text-[#0F0F0F]/60">Total in Escrow</span>
+                <span className="font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.inEscrowByCurrency)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Fast Payout Card */}
       {fastPayoutEligibility?.eligible && (
@@ -474,7 +575,8 @@ Status,${payout.status}
             <div>
               <h3 className="font-medium text-[#0F0F0F] mb-1">Automatic Payouts</h3>
               <p className="text-sm text-[#0F0F0F]/60">
-                Your earnings are automatically paid to your registered bank account within 24 hours after each event ends. 
+                Your earnings are automatically paid to your registered bank account after each event ends.
+                The hold period varies by event type (0-7 days) and event size, then funds are transferred within 3-5 business days.
                 A 5% platform fee is deducted from ticket sales.
               </p>
             </div>
@@ -542,11 +644,13 @@ Status,${payout.status}
                     <div className="flex-1">
                       <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.event}</h4>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                        <span>{payout.orderCount} order{payout.orderCount !== 1 ? 's' : ''}</span>
                         <span>Event ended: {formatDate(payout.eventEndDate)}</span>
                         <span className="text-[#2969FF] font-medium">
                           Payout: {formatDateTime(payout.payoutDate)}
                         </span>
                       </div>
+                      <p className="text-xs text-[#0F0F0F]/40 mt-1">{payout.delayLabel}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
