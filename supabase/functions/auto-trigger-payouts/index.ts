@@ -53,6 +53,11 @@ serve(async (req) => {
       return finalDelay;
     };
 
+    // Calculate the cutoff date for events that have ended
+    const now = new Date();
+    const cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+    const cutoffDateStr = cutoffDate.toISOString();
+
     console.log(`Looking for events ended before: ${cutoffDateStr}`);
 
     // Get all potentially eligible events first
@@ -73,10 +78,13 @@ serve(async (req) => {
           stripe_connect_status,
           stripe_connect_payouts_enabled,
           stripe_connect_charges_enabled,
+          paystack_subaccount_id,
+          paystack_subaccount_enabled,
+          flutterwave_subaccount_id,
+          flutterwave_subaccount_enabled,
           country_code,
           kyc_status,
-          kyc_verified,
-          stripe_identity_status
+          kyc_verified
         )
       `)
       .not("organizers.stripe_connect_id", "is", null)
@@ -140,20 +148,12 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // Currency-specific minimum payout thresholds
+    // Centralized minimum payout thresholds
+    const MINIMUM_PAYOUTS: { [key: string]: number } = {
+      NGN: 1000, GHS: 10, USD: 5, GBP: 5, EUR: 5, KES: 500, ZAR: 50, CAD: 5, AUD: 5
+    };
     const getMinimumPayout = (currency: string): number => {
-      const minimums: { [key: string]: number } = {
-        'USD': 10,
-        'EUR': 10,
-        'GBP': 8,
-        'NGN': 5000,
-        'GHS': 50,
-        'KES': 1000,
-        'ZAR': 150,
-        'CAD': 12,
-        'AUD': 15
-      };
-      return minimums[currency.toUpperCase()] || 10; // Default to $10 USD equivalent
+      return MINIMUM_PAYOUTS[currency.toUpperCase()] || 5;
     };
 
     const results = [];
@@ -171,59 +171,66 @@ serve(async (req) => {
       console.log(`Processing organizer: ${organizer.business_name}`);
 
       // SECURITY: KYC VERIFICATION CHECK
-      const isKYCVerified = await checkKYCStatus(supabase, organizer);
+      // KYC is only required if organizer has NO payment gateway connected
+      const hasPaymentGateway =
+        (organizer.stripe_connect_id && organizer.stripe_connect_status === "active") ||
+        (organizer.paystack_subaccount_id && organizer.paystack_subaccount_enabled) ||
+        (organizer.flutterwave_subaccount_id && organizer.flutterwave_subaccount_enabled);
 
-      if (!isKYCVerified) {
-        console.log(`KYC not verified for ${organizer.business_name} - skipping payout`);
-        
-        kycBlockedOrganizers.push({
-          organizer_id: organizer.id,
-          business_name: organizer.business_name,
-          kyc_status: organizer.kyc_status,
-          event_title: event.title,
-        });
+      if (!hasPaymentGateway) {
+        const isKYCVerified = organizer.kyc_verified || organizer.kyc_status === "approved";
 
-        await supabase.from("admin_audit_logs").insert({
-          action: "auto_payout_blocked_kyc",
-          entity_type: "organizer",
-          entity_id: organizer.id,
-          details: {
-            reason: "KYC verification required",
-            event_id: event.id,
-            event_title: event.title,
+        if (!isKYCVerified) {
+          console.log(`KYC not verified for ${organizer.business_name} (no payment gateway) - skipping payout`);
+
+          kycBlockedOrganizers.push({
+            organizer_id: organizer.id,
+            business_name: organizer.business_name,
             kyc_status: organizer.kyc_status,
-            kyc_verified: organizer.kyc_verified,
-            stripe_identity_status: organizer.stripe_identity_status,
-          },
-        });
+            event_title: event.title,
+          });
 
-        try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("email")
-            .eq("id", organizer.user_id)
-            .single();
+          await supabase.from("admin_audit_logs").insert({
+            action: "auto_payout_blocked_kyc",
+            entity_type: "organizer",
+            entity_id: organizer.id,
+            details: {
+              reason: "KYC verification required - no payment gateway connected",
+              event_id: event.id,
+              event_title: event.title,
+              kyc_status: organizer.kyc_status,
+              kyc_verified: organizer.kyc_verified,
+            },
+          });
 
-          if (profile?.email) {
-            await supabase.functions.invoke("send-email", {
-              body: {
-                type: "payout_blocked_kyc",
-                to: profile.email,
-                data: {
-                  organizerName: organizer.business_name,
-                  eventTitle: event.title,
-                  message: "Your payout is pending KYC verification. Please complete identity verification to receive your funds.",
-                  appUrl: "https://ticketrack.com/organizer/kyc-verification",
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("email")
+              .eq("id", organizer.user_id)
+              .single();
+
+            if (profile?.email) {
+              await supabase.functions.invoke("send-email", {
+                body: {
+                  type: "payout_blocked_kyc",
+                  to: profile.email,
+                  data: {
+                    organizerName: organizer.business_name,
+                    eventTitle: event.title,
+                    message: "Your payout is pending KYC verification. Please complete identity verification to receive your funds.",
+                    appUrl: "https://ticketrack.com/organizer/kyc-verification",
+                  },
                 },
-              },
-            });
+              });
+            }
+          } catch (emailErr) {
+            console.error("Failed to send KYC blocked email:", emailErr);
           }
-        } catch (emailErr) {
-          console.error("Failed to send KYC blocked email:", emailErr);
-        }
 
-        processedOrganizers.add(organizer.id);
-        continue;
+          processedOrganizers.add(organizer.id);
+          continue;
+        }
       }
 
       try {
@@ -244,21 +251,49 @@ serve(async (req) => {
           stripeAccount: organizer.stripe_connect_id,
         });
 
+        // Get organizer's events for promoter commission lookup
+        const { data: orgEvents } = await supabase
+          .from("events")
+          .select("id")
+          .eq("organizer_id", organizer.id);
+
+        const orgEventIds = (orgEvents || []).map((e: any) => e.id);
+
+        // Get all promoter commissions grouped by currency
+        let promoterCommissionsByCurrency: Record<string, number> = {};
+        if (orgEventIds.length > 0) {
+          const { data: promoterSales } = await supabase
+            .from("promoter_sales")
+            .select("commission_amount, events!inner(currency)")
+            .in("event_id", orgEventIds);
+
+          for (const sale of promoterSales || []) {
+            const currency = ((sale as any).events?.currency || "USD").toUpperCase();
+            promoterCommissionsByCurrency[currency] =
+              (promoterCommissionsByCurrency[currency] || 0) + (parseFloat(sale.commission_amount) || 0);
+          }
+        }
+
         for (const available of balance.available) {
-          const amount = available.amount / 100;
           const currency = available.currency.toUpperCase();
+
+          // Deduct promoter commissions for this currency
+          const commissionForCurrency = promoterCommissionsByCurrency[currency] || 0;
+          const commissionInCents = Math.round(commissionForCurrency * 100);
+          const payoutAmountCents = available.amount - commissionInCents;
+          const amount = payoutAmountCents / 100;
           const minPayoutForCurrency = getMinimumPayout(currency);
 
-          console.log(`${organizer.business_name}: ${currency} ${amount} available (min: ${minPayoutForCurrency})`);
+          console.log(`${organizer.business_name}: ${currency} ${available.amount / 100} available, ${commissionForCurrency} commission, ${amount} after deduction (min: ${minPayoutForCurrency})`);
 
           if (amount < minPayoutForCurrency) {
-            console.log(`Below minimum threshold (${minPayoutForCurrency} ${currency}), skipping`);
+            console.log(`Below minimum threshold (${minPayoutForCurrency} ${currency}) after commission deduction, skipping`);
             continue;
           }
 
           const payout = await stripe.payouts.create(
             {
-              amount: available.amount,
+              amount: payoutAmountCents,
               currency: available.currency,
               metadata: {
                 organizer_id: organizer.id,
@@ -376,46 +411,6 @@ serve(async (req) => {
   }
 });
 
-async function checkKYCStatus(supabase: any, organizer: any): Promise<boolean> {
-  if (organizer.kyc_verified === true) return true;
-  if (organizer.stripe_identity_status === "verified") return true;
-
-  if (
-    organizer.stripe_connect_status === "active" &&
-    organizer.stripe_connect_charges_enabled === true &&
-    organizer.stripe_connect_payouts_enabled === true
-  ) {
-    const { data: autoTrustSetting } = await supabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "stripe_connect_auto_trust_kyc")
-      .single();
-
-    if (autoTrustSetting?.value === "true") return true;
-  }
-
-  const { data: approvedDocs, error } = await supabase
-    .from("kyc_documents")
-    .select("id, status")
-    .eq("organizer_id", organizer.id)
-    .eq("status", "approved")
-    .limit(1);
-
-  if (!error && approvedDocs && approvedDocs.length > 0) return true;
-
-  const { data: kycVerification } = await supabase
-    .from("kyc_verifications")
-    .select("verification_level, bvn_verified, status")
-    .eq("organizer_id", organizer.id)
-    .single();
-
-  if (kycVerification) {
-    if (kycVerification.verification_level >= 1 && kycVerification.status === "verified") return true;
-    if (kycVerification.bvn_verified === true) return true;
-  }
-
-  return false;
-}
 
 // Send pre-payout reminders to organizers 24 hours before payout eligibility
 async function sendPrePayoutReminders(supabase: any) {
@@ -554,7 +549,13 @@ async function processPaystackDonationPayouts(supabase: any) {
             kyc_verified,
             kyc_status,
             paystack_recipient_code,
-            user_id
+            user_id,
+            stripe_connect_id,
+            stripe_connect_status,
+            paystack_subaccount_id,
+            paystack_subaccount_enabled,
+            flutterwave_subaccount_id,
+            flutterwave_subaccount_enabled
           )
         )
       `)
@@ -596,32 +597,40 @@ async function processPaystackDonationPayouts(supabase: any) {
         continue;
       }
 
-      // Check KYC status
-      const isKYCVerified = organizer.kyc_verified || organizer.kyc_status === "approved";
-      if (!isKYCVerified) {
-        console.log(`Skipping ${organizer.business_name} - KYC not verified`);
+      // Check if organizer has any payment gateway connected
+      const hasPaymentGateway =
+        (organizer.stripe_connect_id && organizer.stripe_connect_status === "active") ||
+        (organizer.paystack_subaccount_id && organizer.paystack_subaccount_enabled) ||
+        (organizer.flutterwave_subaccount_id && organizer.flutterwave_subaccount_enabled);
 
-        // Send KYC reminder
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("email")
-          .eq("id", organizer.user_id)
-          .single();
+      // KYC only required if NO payment gateway is connected
+      if (!hasPaymentGateway) {
+        const isKYCVerified = organizer.kyc_verified || organizer.kyc_status === "approved";
+        if (!isKYCVerified) {
+          console.log(`Skipping ${organizer.business_name} - KYC not verified (no payment gateway)`);
 
-        if (profile?.email) {
-          await supabase.functions.invoke("send-email", {
-            body: {
-              type: "payout_blocked_kyc",
-              to: profile.email,
-              data: {
-                organizerName: organizer.business_name,
-                message: "You have pending donation payouts. Please complete KYC verification to receive your funds.",
-                appUrl: "https://ticketrack.com/organizer/kyc-verification",
+          // Send KYC reminder
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("email")
+            .eq("id", organizer.user_id)
+            .single();
+
+          if (profile?.email) {
+            await supabase.functions.invoke("send-email", {
+              body: {
+                type: "payout_blocked_kyc",
+                to: profile.email,
+                data: {
+                  organizerName: organizer.business_name,
+                  message: "You have pending donation payouts. Please complete KYC verification to receive your funds.",
+                  appUrl: "https://ticketrack.com/organizer/kyc-verification",
+                },
               },
-            },
-          });
+            });
+          }
+          continue;
         }
-        continue;
       }
 
       // Trigger Paystack payout for this organizer

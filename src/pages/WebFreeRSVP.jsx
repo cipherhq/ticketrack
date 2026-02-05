@@ -877,7 +877,8 @@ export function WebFreeRSVP() {
         .select()
 
       // Credit promoter
-      await creditPromoter(order.id, event.id, actualDonation, quantity)
+      const netDonation = actualDonation - (donationFee || 0)
+      await creditPromoter(order.id, event.id, netDonation, quantity)
 
       // Generate PDF and send confirmation email
       try {

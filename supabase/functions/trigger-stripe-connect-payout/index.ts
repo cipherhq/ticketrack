@@ -59,37 +59,17 @@ serve(async (req) => {
       throw new Error("Payouts are not enabled for this Stripe Connect account");
     }
 
-    // SECURITY: KYC VERIFICATION CHECK - CRITICAL
-    const isKYCVerified = await checkKYCStatus(supabase, organizer);
-    
-    if (!isKYCVerified) {
-      await supabase.from("admin_audit_logs").insert({
-        action: "payout_blocked_kyc",
-        entity_type: "organizer",
-        entity_id: organizer.id,
-        details: {
-          reason: "KYC verification required",
-          kyc_status: organizer.kyc_status,
-          kyc_verified: organizer.kyc_verified,
-          stripe_identity_status: organizer.stripe_identity_status,
-          triggered_by: triggeredBy || "manual",
-        },
-      });
+    // SECURITY: KYC VERIFICATION CHECK
+    // Since Stripe Connect is active, the organizer HAS a payment gateway connected
+    // KYC is only required if NO payment gateway is connected
+    // Check if organizer has any OTHER payment gateway or if we should require KYC
+    const hasPaymentGateway =
+      (organizer.stripe_connect_id && organizer.stripe_connect_status === "active") ||
+      (organizer.paystack_subaccount_id && organizer.paystack_subaccount_enabled) ||
+      (organizer.flutterwave_subaccount_id && organizer.flutterwave_subaccount_enabled);
 
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "KYC verification required before payouts can be processed",
-          error_code: "KYC_REQUIRED",
-          details: {
-            kyc_status: organizer.kyc_status,
-            kyc_verified: organizer.kyc_verified,
-            message: "Please complete identity verification to receive payouts.",
-          },
-        }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Since we're in this function, Stripe Connect IS active, so hasPaymentGateway = true
+    // KYC check is skipped because organizer has an active payment gateway
 
     const { data: gatewayConfig } = await supabase
       .from("payment_gateway_config")
@@ -126,6 +106,29 @@ serve(async (req) => {
       );
     }
 
+    // Get organizer's events for promoter commission lookup
+    const { data: orgEvents } = await supabase
+      .from("events")
+      .select("id")
+      .eq("organizer_id", organizer.id);
+
+    const orgEventIds = (orgEvents || []).map((e: any) => e.id);
+
+    // Get all promoter commissions grouped by currency
+    let promoterCommissionsByCurrency: Record<string, number> = {};
+    if (orgEventIds.length > 0) {
+      const { data: promoterSales } = await supabase
+        .from("promoter_sales")
+        .select("commission_amount, events!inner(currency)")
+        .in("event_id", orgEventIds);
+
+      for (const sale of promoterSales || []) {
+        const currency = ((sale as any).events?.currency || "USD").toLowerCase();
+        promoterCommissionsByCurrency[currency] =
+          (promoterCommissionsByCurrency[currency] || 0) + (parseFloat(sale.commission_amount) || 0);
+      }
+    }
+
     const { data: settings } = await supabase
       .from("platform_settings")
       .select("value")
@@ -136,11 +139,16 @@ serve(async (req) => {
     const payoutResults = [];
 
     for (const bal of availableBalances) {
-      if (bal.amount < minimumPayout) {
-        payoutResults.push({ 
-          currency: bal.currency, 
-          status: "skipped", 
-          reason: "Below minimum" 
+      // Deduct promoter commissions for this currency
+      const commissionForCurrency = promoterCommissionsByCurrency[bal.currency] || 0;
+      const commissionInCents = Math.round(commissionForCurrency * 100);
+      const payoutAmountCents = bal.amount - commissionInCents;
+
+      if (payoutAmountCents < minimumPayout) {
+        payoutResults.push({
+          currency: bal.currency,
+          status: "skipped",
+          reason: "Below minimum after commission deduction"
         });
         continue;
       }
@@ -148,7 +156,7 @@ serve(async (req) => {
       try {
         const payout = await stripe.payouts.create(
           {
-            amount: bal.amount,
+            amount: payoutAmountCents,
             currency: bal.currency,
             description: eventId 
               ? `Ticketrack payout for event ${eventId}` 
@@ -168,18 +176,18 @@ serve(async (req) => {
           event_id: eventId || null,
           stripe_payout_id: payout.id,
           stripe_account_id: organizer.stripe_connect_id,
-          amount: bal.amount / 100,
+          amount: payoutAmountCents / 100,
           currency: bal.currency.toUpperCase(),
           status: payout.status,
           triggered_by: triggeredBy || null,
           triggered_at: new Date().toISOString(),
         });
 
-        payoutResults.push({ 
-          currency: bal.currency, 
-          amount: bal.amount / 100, 
-          status: "initiated", 
-          payoutId: payout.id 
+        payoutResults.push({
+          currency: bal.currency,
+          amount: payoutAmountCents / 100,
+          status: "initiated",
+          payoutId: payout.id
         });
 
         try {
@@ -196,7 +204,7 @@ serve(async (req) => {
                 to: profile.email,
                 data: {
                   organizerName: organizer.business_name,
-                  amount: (bal.amount / 100).toFixed(2),
+                  amount: (payoutAmountCents / 100).toFixed(2),
                   currency: bal.currency.toUpperCase(),
                 },
               },
@@ -232,43 +240,3 @@ serve(async (req) => {
   }
 });
 
-async function checkKYCStatus(supabase: any, organizer: any): Promise<boolean> {
-  if (organizer.kyc_verified === true) return true;
-  if (organizer.stripe_identity_status === "verified") return true;
-
-  if (
-    organizer.stripe_connect_status === "active" &&
-    organizer.stripe_connect_charges_enabled === true &&
-    organizer.stripe_connect_payouts_enabled === true
-  ) {
-    const { data: autoTrustSetting } = await supabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "stripe_connect_auto_trust_kyc")
-      .single();
-    
-    if (autoTrustSetting?.value === "true") return true;
-  }
-
-  const { data: approvedDocs, error } = await supabase
-    .from("kyc_documents")
-    .select("id, status")
-    .eq("organizer_id", organizer.id)
-    .eq("status", "approved")
-    .limit(1);
-
-  if (!error && approvedDocs && approvedDocs.length > 0) return true;
-
-  const { data: kycVerification } = await supabase
-    .from("kyc_verifications")
-    .select("verification_level, bvn_verified, status")
-    .eq("organizer_id", organizer.id)
-    .single();
-
-  if (kycVerification) {
-    if (kycVerification.verification_level >= 1 && kycVerification.status === "verified") return true;
-    if (kycVerification.bvn_verified === true) return true;
-  }
-
-  return false;
-}

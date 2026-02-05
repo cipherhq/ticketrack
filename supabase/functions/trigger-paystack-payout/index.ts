@@ -77,10 +77,18 @@ serve(async (req) => {
       throw new Error("Organizer bank details not configured. Please add bank account in settings.");
     }
 
-    // Verify KYC status
-    const isKYCVerified = organizer.kyc_verified || organizer.kyc_status === "approved";
-    if (!isKYCVerified) {
-      throw new Error("KYC verification required before receiving payouts");
+    // Check if organizer has ANY payment gateway connected
+    const hasPaymentGateway =
+      (organizer.stripe_connect_id && organizer.stripe_connect_status === "active") ||
+      (organizer.paystack_subaccount_id && organizer.paystack_subaccount_enabled) ||
+      (organizer.flutterwave_subaccount_id && organizer.flutterwave_subaccount_enabled);
+
+    // KYC only required if NO payment gateway is connected
+    if (!hasPaymentGateway) {
+      const isKYCVerified = organizer.kyc_verified || organizer.kyc_status === "approved";
+      if (!isKYCVerified) {
+        throw new Error("KYC verification required - no payment gateway connected");
+      }
     }
 
     // Get Paystack secret key for the country
@@ -136,6 +144,17 @@ serve(async (req) => {
         orderIds.push(order.id);
         payoutCurrency = order.currency || payoutCurrency;
       }
+
+      // Deduct promoter commissions from organizer payout
+      const { data: promoterSales } = await supabase
+        .from("promoter_sales")
+        .select("commission_amount")
+        .eq("event_id", eventId);
+
+      const totalPromoterCommission = (promoterSales || [])
+        .reduce((sum, sale) => sum + (parseFloat(sale.commission_amount) || 0), 0);
+
+      payoutAmount = payoutAmount - totalPromoterCommission;
     } else {
       // Get all unpaid orders for this organizer
       const { data: events } = await supabase
@@ -180,10 +199,24 @@ serve(async (req) => {
         payoutAmount += orderPayout;
         orderIds.push(order.id);
       }
+
+      // Deduct promoter commissions from organizer payout
+      const { data: promoterSales } = await supabase
+        .from("promoter_sales")
+        .select("commission_amount")
+        .in("event_id", eventIds);
+
+      const totalPromoterCommission = (promoterSales || [])
+        .reduce((sum: number, sale: any) => sum + (parseFloat(sale.commission_amount) || 0), 0);
+
+      payoutAmount = payoutAmount - totalPromoterCommission;
     }
 
     // Check minimum payout threshold
-    const minimumPayout = payoutCurrency === "NGN" ? 1000 : payoutCurrency === "GHS" ? 10 : 5;
+    const MINIMUM_PAYOUTS: Record<string, number> = {
+      NGN: 1000, GHS: 10, USD: 5, GBP: 5, EUR: 5, KES: 500, ZAR: 50, CAD: 5, AUD: 5
+    };
+    const minimumPayout = MINIMUM_PAYOUTS[payoutCurrency] || 5;
     if (payoutAmount < minimumPayout) {
       return new Response(
         JSON.stringify({ 
@@ -236,8 +269,9 @@ serve(async (req) => {
         .eq("id", organizer.id);
     }
 
-    // Initiate transfer
+    // Initiate transfer with idempotency key to prevent duplicate transfers
     const transferRef = `TRF-${organizer.id.slice(0, 8)}-${Date.now()}`;
+    const idempotencyKey = `payout-${organizer.id}-${eventId || 'all'}-${Date.now()}`;
     const amountInKobo = Math.round(payoutAmount * 100); // Convert to kobo/pesewas
 
     const transferResponse = await fetch(`${PAYSTACK_API}/transfer`, {
@@ -245,6 +279,7 @@ serve(async (req) => {
       headers: {
         "Authorization": `Bearer ${paystackSecretKey}`,
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify({
         source: "balance",

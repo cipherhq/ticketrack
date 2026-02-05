@@ -902,7 +902,8 @@ export function WebCheckout() {
         .eq('id', orderId)
         .single();
       
-      await creditPromoter(orderId, orderData?.event_id || event?.id, finalTotal, totalTicketCount)
+      const netAfterFees = finalTotal - actualPlatformFee
+      await creditPromoter(orderId, orderData?.event_id || event?.id, netAfterFees, totalTicketCount)
 
       // Increment promo code usage if applied
       if (promoApplied?.id) {
