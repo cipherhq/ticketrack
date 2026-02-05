@@ -493,7 +493,7 @@ export async function requestPayout(organizerId, bankAccountId, amount) {
 
 export async function getPromoCodes(organizerId) {
   const { data, error } = await supabase
-    .from('referral_codes')
+    .from('promo_codes')
     .select(`*, events (id, title)`)
     .eq('organizer_id', organizerId)
     .order('created_at', { ascending: false });
@@ -504,7 +504,7 @@ export async function getPromoCodes(organizerId) {
 
 export async function createPromoCode(organizerId, promoData) {
   const { data, error } = await supabase
-    .from('referral_codes')
+    .from('promo_codes')
     .insert({
       organizer_id: organizerId,
       code: promoData.code.toUpperCase(),
@@ -526,7 +526,7 @@ export async function createPromoCode(organizerId, promoData) {
 
 export async function updatePromoCode(promoCodeId, promoData) {
   const { data, error } = await supabase
-    .from('referral_codes')
+    .from('promo_codes')
     .update({ ...promoData, code: promoData.code?.toUpperCase(), updated_at: new Date().toISOString() })
     .eq('id', promoCodeId)
     .select()
@@ -537,13 +537,13 @@ export async function updatePromoCode(promoCodeId, promoData) {
 }
 
 export async function deletePromoCode(promoCodeId) {
-  const { error } = await supabase.from('referral_codes').delete().eq('id', promoCodeId);
+  const { error } = await supabase.from('promo_codes').delete().eq('id', promoCodeId);
   if (error) throw error;
 }
 
 export async function togglePromoCodeStatus(promoCodeId, isActive) {
   const { data, error } = await supabase
-    .from('referral_codes')
+    .from('promo_codes')
     .update({ is_active: isActive })
     .eq('id', promoCodeId)
     .select()

@@ -245,7 +245,7 @@ export function CommunicationAutomations() {
       eventId: '',
       isActive: true,
       actions: template.actions.map((a, i) => ({
-        id: i,
+        id: Date.now() + i,
         channel: a.channel,
         delayMinutes: a.delay,
         content: getDefaultContent(a.channel, template.triggers[0]),

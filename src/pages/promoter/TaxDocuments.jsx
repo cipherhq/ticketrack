@@ -33,7 +33,8 @@ export function PromoterTaxDocuments() {
 
   const currentYear = new Date().getFullYear();
   const now = new Date();
-  const countryConfig = COUNTRY_CONFIG['NG'];
+  const countryCode = promoter?.country_code || promoter?.country || 'NG';
+  const countryConfig = COUNTRY_CONFIG[countryCode] || COUNTRY_CONFIG.NG;
 
   const isYearAvailable = (year) => {
     const yearEnd = new Date(year, 11, 31, 23, 59, 59);

@@ -257,7 +257,7 @@ export function AdminSupport() {
           user_id: admin?.id,
           user_type: 'admin',
           user_name: admin?.full_name || 'Support Team',
-          reply: replyMessage,
+          message: replyMessage,
           is_internal: isInternal,
         })
 

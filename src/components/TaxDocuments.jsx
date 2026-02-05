@@ -36,7 +36,7 @@ export function TaxDocuments({ type, recipientId, countryCode = 'NG' }) {
   const daysUntilAvailable = (year) => {
     const yearEnd = new Date(year, 11, 31, 23, 59, 59);
     const diff = yearEnd - now;
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
   useEffect(() => {

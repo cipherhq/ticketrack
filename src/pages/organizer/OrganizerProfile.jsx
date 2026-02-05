@@ -106,6 +106,13 @@ export function OrganizerProfile() {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
     setSaving(true);
     setError('');
 

@@ -62,12 +62,20 @@ export function TeamManagement() {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteData.email.trim())) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
     setSaving(true);
     try {
       // Check if already invited
       const existing = members.find(m => m.email.toLowerCase() === inviteData.email.toLowerCase());
       if (existing) {
         alert('This email is already on your team');
+        setSaving(false);
         return;
       }
 
@@ -94,17 +102,21 @@ export function TeamManagement() {
       setInviteData({ email: '', firstName: '', lastName: '', role: 'staff' });
       const link = `${window.location.origin}/accept-invite?token=${data.invitation_token}`;
       setInviteLink(link);
-      
+
       // Send invitation email
       const roleLabels = { owner: "Owner", manager: "Manager", coordinator: "Coordinator", staff: "Staff" };
-      await sendTeamInvitationEmail(emailToSend, {
-        firstName: firstNameToSend,
-        organizerName: organizer.name || organizer.business_name,
-        roleName: roleLabels[roleToSend] || "Team Member",
-        inviteLink: link
-      }, organizer.id);
-      
-      alert("Invitation sent to " + emailToSend + "!");
+      try {
+        await sendTeamInvitationEmail(emailToSend, {
+          firstName: firstNameToSend,
+          organizerName: organizer.name || organizer.business_name,
+          roleName: roleLabels[roleToSend] || "Team Member",
+          inviteLink: link
+        }, organizer.id);
+        alert("Invitation sent to " + emailToSend + "!");
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError);
+        alert("Team member added but email failed to send. You can share this link manually:\n\n" + link);
+      }
 
     } catch (error) {
       console.error('Error inviting member:', error);
