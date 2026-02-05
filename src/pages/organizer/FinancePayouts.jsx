@@ -175,24 +175,26 @@ export function FinancePayouts() {
 
       // Calculate stats and categorize by currency
       // Group orders by their actual event (child event if recurring, parent otherwise)
-      const inEscrowByCurrency = {};
       const upcomingPayoutsByCurrency = {};
       const upcoming = [];
-      
+
+      // Track total revenue from all completed orders (for escrow/total balance calculation)
+      const totalRevenueByCurrency = {};
+
       // Process all orders and group by actual event date
       const ordersByEventDate = {};
 
       events?.forEach(event => {
         const completedOrders = event.orders?.filter(o => o.status === 'completed') || [];
-        
+
         completedOrders.forEach(order => {
           // Get the actual event for this order (could be child or parent)
           const actualEvent = childEventMap[order.event_id] || event;
           const eventEndDate = new Date(actualEvent.end_date);
-          
+
           // Create a key for grouping: event ID + event end date
           const eventKey = `${actualEvent.id}-${actualEvent.end_date}`;
-          
+
           if (!ordersByEventDate[eventKey]) {
             ordersByEventDate[eventKey] = {
               event: actualEvent,
@@ -200,11 +202,11 @@ export function FinancePayouts() {
               currency: actualEvent.currency,
             };
           }
-          
+
           ordersByEventDate[eventKey].orders.push(order);
         });
       });
-      
+
       // Build a map of parent events for looking up event_type on child events
       const parentEventMap = {};
       parentEvents.forEach(e => { parentEventMap[e.id] = e; });
@@ -226,6 +228,9 @@ export function FinancePayouts() {
           : subtotalAmount;
 
         if (netAmount <= 0) return;
+
+        // Add to total revenue (all completed orders contribute to escrow)
+        totalRevenueByCurrency[currency] = (totalRevenueByCurrency[currency] || 0) + netAmount;
 
         const eventEndDate = new Date(event.end_date);
 
@@ -249,9 +254,35 @@ export function FinancePayouts() {
           eventDisplayName = `${event.title} - ${eventDate}`;
         }
 
+        // Determine status based on event end date and payout date
+        let status;
         if (eventEndDate > now) {
-          // Event hasn't ended yet - In Escrow
-          inEscrowByCurrency[currency] = (inEscrowByCurrency[currency] || 0) + netAmount;
+          status = 'Scheduled'; // Event hasn't ended yet
+        } else if (payoutDate > now) {
+          status = 'Processing'; // Event ended, within hold period
+        } else {
+          status = 'Ready'; // Past payout date, ready for payout
+        }
+
+        // All events with orders go into upcoming payouts list for visibility
+        upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
+        upcoming.push({
+          id: event.id,
+          currency,
+          event: eventDisplayName,
+          orderCount,
+          grossAmount: subtotalAmount,
+          platformFee: platformFeeTotal,
+          feeAbsorbed: organizerAbsorbsFee,
+          netAmount,
+          eventEndDate: event.end_date,
+          payoutDate: payoutDate.toISOString(),
+          delayLabel,
+          status,
+        });
+
+        // Also track in escrow events for the breakdown view (only events not yet ended)
+        if (eventEndDate > now) {
           escrowEventsList.push({
             id: event.id,
             currency,
@@ -261,23 +292,6 @@ export function FinancePayouts() {
             eventEndDate: event.end_date,
             payoutDate: payoutDate.toISOString(),
             delayLabel,
-          });
-        } else if (payoutDate > now) {
-          // Event ended, within hold period - Upcoming Payout
-          upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
-          upcoming.push({
-            id: event.id,
-            currency,
-            event: eventDisplayName,
-            orderCount,
-            grossAmount: subtotalAmount,
-            platformFee: platformFeeTotal,
-            feeAbsorbed: organizerAbsorbsFee,
-            netAmount,
-            eventEndDate: event.end_date,
-            payoutDate: payoutDate.toISOString(),
-            delayLabel,
-            status: 'Scheduled',
           });
         }
       });
@@ -289,14 +303,19 @@ export function FinancePayouts() {
         totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + (parseFloat(p.amount) || 0);
       });
 
-      // Calculate total balance (escrow + upcoming)
-      const computedTotalBalance = {};
-      Object.entries(inEscrowByCurrency).forEach(([cur, amt]) => {
-        computedTotalBalance[cur] = (computedTotalBalance[cur] || 0) + amt;
+      // Calculate escrow = total revenue - total paid out
+      // This represents the organizer's current balance on the platform
+      const inEscrowByCurrency = {};
+      Object.entries(totalRevenueByCurrency).forEach(([currency, revenue]) => {
+        const paidOut = totalPaidOutByCurrency[currency] || 0;
+        const escrowAmount = revenue - paidOut;
+        if (escrowAmount > 0) {
+          inEscrowByCurrency[currency] = escrowAmount;
+        }
       });
-      Object.entries(upcomingPayoutsByCurrency).forEach(([cur, amt]) => {
-        computedTotalBalance[cur] = (computedTotalBalance[cur] || 0) + amt;
-      });
+
+      // Total Balance = In Escrow (they represent the same value)
+      const computedTotalBalance = { ...inEscrowByCurrency };
 
       setStats({
         inEscrowByCurrency,
@@ -306,7 +325,7 @@ export function FinancePayouts() {
 
       setEscrowEvents(escrowEventsList.sort((a, b) => new Date(a.eventEndDate) - new Date(b.eventEndDate)));
       setTotalBalanceByCurrency(computedTotalBalance);
-      setUpcomingPayouts(upcoming);
+      setUpcomingPayouts(upcoming.sort((a, b) => new Date(a.payoutDate) - new Date(b.payoutDate)));
       setPayoutHistory(payouts || []);
 
     } catch (error) {
@@ -422,7 +441,7 @@ Status,${payout.status}
             <DollarSign className="w-8 h-8 text-indigo-500 mb-3" />
             <p className="text-[#0F0F0F]/60 mb-2">Total Balance</p>
             <h2 className="text-2xl font-semibold text-indigo-600">{formatMultiCurrencyCompact(totalBalanceByCurrency)}</h2>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">Escrow + upcoming payouts</p>
+            <p className="text-xs text-[#0F0F0F]/40 mt-1">Revenue minus completed payouts</p>
           </CardContent>
         </Card>
         <Card
@@ -450,9 +469,9 @@ Status,${payout.status}
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
           <CardContent className="p-6">
             <Calendar className="w-8 h-8 text-[#2969FF] mb-3" />
-            <p className="text-[#0F0F0F]/60 mb-2">Upcoming Payouts</p>
+            <p className="text-[#0F0F0F]/60 mb-2">Pending Payouts</p>
             <h2 className="text-2xl font-semibold text-[#2969FF]">{formatMultiCurrencyCompact(stats.upcomingPayoutsByCurrency)}</h2>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">Processing after event hold period</p>
+            <p className="text-xs text-[#0F0F0F]/40 mt-1">Total from all events with orders</p>
           </CardContent>
         </Card>
         <Card className="border-[#0F0F0F]/10 rounded-2xl">
