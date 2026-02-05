@@ -325,7 +325,7 @@ export function OrganizerSupport() {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Brief summary of your issue"
-              className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+              className="h-12 rounded-xl bg-white border border-[#0F0F0F]/20 focus:border-[#2969FF] focus:ring-1 focus:ring-[#2969FF]"
               required
             />
           </div>
@@ -337,7 +337,7 @@ export function OrganizerSupport() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Please describe your issue in detail..."
-              className="min-h-[150px] rounded-xl bg-[#F4F6FA] border-0"
+              className="min-h-[150px] rounded-xl bg-white border border-[#0F0F0F]/20 focus:border-[#2969FF] focus:ring-1 focus:ring-[#2969FF]"
               required
             />
           </div>
