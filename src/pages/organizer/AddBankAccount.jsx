@@ -472,7 +472,7 @@ export function AddBankAccount() {
         account_name: formData.accountName,
         account_number_encrypted: formData.accountNumber, // Will be encrypted by RPC
         currency: getCurrency(),
-        is_verified: isPaystackCountry ? true : false, // Paystack verified, others need manual review
+        is_verified: true, // Paystack auto-verifies, others are trusted as entered
       };
 
       // Add country-specific fields
@@ -522,11 +522,7 @@ export function AddBankAccount() {
       setIsVerified(false);
       await loadBankAccounts();
       
-      if (isPaystackCountry) {
-        alert('Bank account added successfully!');
-      } else {
-        alert('Bank account added successfully! It will be reviewed for verification.');
-      }
+      alert('Bank account added successfully!');
     } catch (error) {
       console.error('Error saving bank account:', error);
       setError(error.message || 'Failed to save bank account. Please try again.');
@@ -875,10 +871,9 @@ export function AddBankAccount() {
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
                     <Info className="w-5 h-5 text-blue-500 mt-0.5" />
                     <div>
-                      <p className="font-medium text-blue-800">Manual Verification Required</p>
+                      <p className="font-medium text-blue-800">Important</p>
                       <p className="text-sm text-blue-700 mt-1">
-                        International bank accounts require manual verification by our team. 
-                        This typically takes 1-2 business days.
+                        Please double-check your bank details. Incorrect information may result in failed or delayed payouts.
                       </p>
                     </div>
                   </div>
@@ -1030,18 +1025,6 @@ export function AddBankAccount() {
                     <Badge variant="outline" className="text-xs">{account.currency}</Badge>
                   </div>
                   
-                  {/* Verification status */}
-                  <div className="flex items-center gap-1 mt-2">
-                    {account.is_verified ? (
-                      <span className="flex items-center gap-1 text-green-600 text-xs">
-                        <CheckCircle className="w-3 h-3" /> Verified
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-orange-600 text-xs">
-                        <AlertCircle className="w-3 h-3" /> Pending verification
-                      </span>
-                    )}
-                  </div>
 
                   <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#0F0F0F]/10">
                     {!account.is_default && (
