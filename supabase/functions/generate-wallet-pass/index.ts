@@ -1,14 +1,13 @@
 /**
  * Generate Wallet Pass - Supabase Edge Function
- * 
+ *
  * Generates Apple Wallet (.pkpass) and Google Wallet passes for tickets
- * 
+ *
  * Environment Variables Required:
  * - APPLE_PASS_TYPE_ID: Your Apple Pass Type ID (e.g., pass.com.ticketrack.event)
  * - APPLE_TEAM_ID: Your Apple Developer Team ID
  * - APPLE_PASS_CERTIFICATE: Base64 encoded .p12 certificate
  * - APPLE_PASS_CERTIFICATE_PASSWORD: Certificate password
- * - APPLE_WWDR_CERTIFICATE: Base64 encoded Apple WWDR certificate (optional, uses default)
  * - GOOGLE_SERVICE_ACCOUNT_KEY: Base64 encoded Google service account JSON
  * - GOOGLE_ISSUER_ID: Your Google Wallet Issuer ID
  */
@@ -16,11 +15,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts"
-import { 
-  errorResponse, 
-  logError, 
+import * as forge from 'https://esm.sh/node-forge@1.3.1'
+import {
+  errorResponse,
+  logError,
   safeLog,
-  ERROR_CODES 
+  ERROR_CODES
 } from "../_shared/errorHandler.ts";
 
 const corsHeaders = {
@@ -28,29 +28,62 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Apple WWDR Certificate (G4) - required for pass signing
+// This is Apple's public intermediate certificate
+const APPLE_WWDR_CERT_PEM = `-----BEGIN CERTIFICATE-----
+MIIEVTCCAz2gAwIBAgIUE9x3lVJx5T3GMujM/+Uh88zFztMwDQYJKoZIhvcNAQEL
+BQAwYjELMAkGA1UEBhMCVVMxEzARBgNVBAoTCkFwcGxlIEluYy4xJjAkBgNVBAsT
+HUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MRYwFAYDVQQDEw1BcHBsZSBS
+b290IENBMB4XDTIwMTIxNjE5MzYwNFoXDTMwMTIxMDAwMDAwMFowdTFEMEIGA1UE
+Aww7QXBwbGUgV29ybGR3aWRlIERldmVsb3BlciBSZWxhdGlvbnMgQ2VydGlmaWNh
+dGlvbiBBdXRob3JpdHkxCzAJBgNVBAsMAkc0MRMwEQYDVQQKDApBcHBsZSBJbmMu
+MQswCQYDVQQGEwJVUzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANAf
+eKp6JzKwRl/nF3bYoJ0OKY6tZTuXu2hPXowAyJ1bET4gYUMhb/vLt7JvKtKI7k/a
+xnBwYBpBsLknwvDxfLC4gqb5sHJq4s+k8F2XplH6G+ZPvn2kJWJpJTDqFDl/Hdeg
+Z5duS9re1JwfPaZI8rLY0VSThQ0LmUJqW1k2Ri+HXJuuGXpLHH7ys8Y3t/APdPT0
+kLWLqQFhlHYmuoQlSHIoThNLLJMM6RyCn5pzJE8/bTEMNzZPOrDQYWfedKmeP9H/
+Oih0g5gnR0V/lLVp+1XdIGNkBsgRczR7hnqkQPjq7dkPXXVbqYdLd6MJPSZ7Vxw1
+aCA+x5+H+RcQO0MD3ssCAwEAAaOB7zCB7DASBgNVHRMBAf8ECDAGAQH/AgEAMB8G
+A1UdIwQYMBaAFCvQaUeUdgn+9GuNLkCm90dNfwheMEQGCCsGAQUFBwEBBDgwNjA0
+BggrBgEFBQcwAYYoaHR0cDovL29jc3AuYXBwbGUuY29tL29jc3AwMy1hcHBsZXJv
+b3RjYTAuBgNVHR8EJzAlMCOgIaAfhh1odHRwOi8vY3JsLmFwcGxlLmNvbS9yb290
+LmNybDAdBgNVHQ4EFgQUW9n6HeeaGgujmXYiUIY79qPqn1IwDgYDVR0PAQH/BAQD
+AgEGMBAGCiqGSIb3Y2QGAgEEAgUAMA0GCSqGSIb3DQEBCwUAA4IBAQB09+Vf7Y7Y
+q3rtAUZXI9l4HTbS1K2hnpFelT/btXC9JuPbNhJT6hXWQ06pLiEl+NjhFSN+m1m8
+pvCeCyrASTb1llJ+cW2VjvrdwtweI3U3cghFzfKu0uaW1sH+UmYpC9rJQfGHCnkt
+KcN0Q3chH7T7K88Z8BuLOhf5754qZpI2d8e4OlSs4sTH3z+rhsn3JDz2U3VRkXB5
+Q67kNbQ1LxnP8X0w8Wo9W/NXFF8lGGGhHZbLqzT0sLLqP5Xq/pW3bkLLhLqn5mIo
+BhhZ7Sggz5P9Hb5z10Ct7CDB39eGlev/9sHNqtFCvy1lH2Q0Gj73RrZeFepnH2+n
+P/VlOHQvgK0j
+-----END CERTIFICATE-----`
+
 // Simple ZIP implementation for Deno
 class SimpleZip {
   private files: Map<string, Uint8Array> = new Map()
-  
+
   addFile(name: string, content: Uint8Array | string) {
     if (typeof content === 'string') {
       content = new TextEncoder().encode(content)
     }
     this.files.set(name, content)
   }
-  
+
+  getFile(name: string): Uint8Array | undefined {
+    return this.files.get(name)
+  }
+
   async generate(): Promise<Uint8Array> {
     const parts: Uint8Array[] = []
     const centralDirectory: Uint8Array[] = []
     let offset = 0
-    
+
     for (const [name, content] of this.files) {
       const nameBytes = new TextEncoder().encode(name)
-      
+
       // Local file header
       const localHeader = new Uint8Array(30 + nameBytes.length)
       const view = new DataView(localHeader.buffer)
-      
+
       view.setUint32(0, 0x04034b50, true) // Local file header signature
       view.setUint16(4, 20, true) // Version needed
       view.setUint16(6, 0, true) // General purpose flag
@@ -63,11 +96,11 @@ class SimpleZip {
       view.setUint16(26, nameBytes.length, true) // File name length
       view.setUint16(28, 0, true) // Extra field length
       localHeader.set(nameBytes, 30)
-      
+
       // Central directory entry
       const centralEntry = new Uint8Array(46 + nameBytes.length)
       const centralView = new DataView(centralEntry.buffer)
-      
+
       centralView.setUint32(0, 0x02014b50, true) // Central directory signature
       centralView.setUint16(4, 20, true) // Version made by
       centralView.setUint16(6, 20, true) // Version needed
@@ -86,13 +119,13 @@ class SimpleZip {
       centralView.setUint32(38, 0, true) // External file attributes
       centralView.setUint32(42, offset, true) // Relative offset of local header
       centralEntry.set(nameBytes, 46)
-      
+
       centralDirectory.push(centralEntry)
       parts.push(localHeader)
       parts.push(content)
       offset += localHeader.length + content.length
     }
-    
+
     // Add central directory
     const centralDirOffset = offset
     let centralDirSize = 0
@@ -100,7 +133,7 @@ class SimpleZip {
       parts.push(entry)
       centralDirSize += entry.length
     }
-    
+
     // End of central directory
     const eocd = new Uint8Array(22)
     const eocdView = new DataView(eocd.buffer)
@@ -113,7 +146,7 @@ class SimpleZip {
     eocdView.setUint32(16, centralDirOffset, true) // Offset of central directory
     eocdView.setUint16(20, 0, true) // Comment length
     parts.push(eocd)
-    
+
     // Combine all parts
     const totalLength = parts.reduce((sum, part) => sum + part.length, 0)
     const result = new Uint8Array(totalLength)
@@ -122,12 +155,11 @@ class SimpleZip {
       result.set(part, pos)
       pos += part.length
     }
-    
+
     return result
   }
-  
+
   private async crc32(data: Uint8Array): Promise<number> {
-    // CRC32 lookup table
     const table = new Uint32Array(256)
     for (let i = 0; i < 256; i++) {
       let c = i
@@ -136,7 +168,7 @@ class SimpleZip {
       }
       table[i] = c
     }
-    
+
     let crc = 0xFFFFFFFF
     for (const byte of data) {
       crc = table[(crc ^ byte) & 0xFF] ^ (crc >>> 8)
@@ -152,49 +184,41 @@ async function sha1(data: Uint8Array): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-// Create a simple branded icon
+// Create a simple branded icon PNG
 function createIconPng(size: number): Uint8Array {
-  // Create a minimal valid PNG with Ticketrack blue background
-  // This is a simplified 8-bit indexed PNG
   const width = size
   const height = size
-  
-  // PNG signature
+
   const signature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])
-  
-  // IHDR chunk
+
   const ihdrData = new Uint8Array(13)
   const ihdrView = new DataView(ihdrData.buffer)
   ihdrView.setUint32(0, width, false)
   ihdrView.setUint32(4, height, false)
-  ihdrData[8] = 8  // bit depth
-  ihdrData[9] = 2  // color type (RGB)
-  ihdrData[10] = 0 // compression
-  ihdrData[11] = 0 // filter
-  ihdrData[12] = 0 // interlace
-  
-  // Create raw image data (RGB)
+  ihdrData[8] = 8
+  ihdrData[9] = 2
+  ihdrData[10] = 0
+  ihdrData[11] = 0
+  ihdrData[12] = 0
+
   const rawData: number[] = []
   for (let y = 0; y < height; y++) {
-    rawData.push(0) // filter byte
+    rawData.push(0)
     for (let x = 0; x < width; x++) {
-      // Ticketrack blue: #2969FF
-      rawData.push(41)  // R
-      rawData.push(105) // G
-      rawData.push(255) // B
+      rawData.push(41)
+      rawData.push(105)
+      rawData.push(255)
     }
   }
-  
-  // Simple uncompressed deflate (store blocks)
+
   const imageData = new Uint8Array(rawData)
   const deflated = deflateStore(imageData)
-  
-  // Build PNG
+
   const chunks: Uint8Array[] = [signature]
   chunks.push(createPngChunk('IHDR', ihdrData))
   chunks.push(createPngChunk('IDAT', deflated))
   chunks.push(createPngChunk('IEND', new Uint8Array(0)))
-  
+
   const totalLength = chunks.reduce((sum, c) => sum + c.length, 0)
   const result = new Uint8Array(totalLength)
   let offset = 0
@@ -202,35 +226,32 @@ function createIconPng(size: number): Uint8Array {
     result.set(chunk, offset)
     offset += chunk.length
   }
-  
+
   return result
 }
 
 function deflateStore(data: Uint8Array): Uint8Array {
-  // Zlib header + uncompressed deflate blocks
   const maxBlockSize = 65535
   const blocks: Uint8Array[] = []
-  
-  // Zlib header (no compression)
+
   blocks.push(new Uint8Array([0x78, 0x01]))
-  
+
   for (let i = 0; i < data.length; i += maxBlockSize) {
     const isLast = i + maxBlockSize >= data.length
     const blockData = data.slice(i, Math.min(i + maxBlockSize, data.length))
     const blockSize = blockData.length
-    
+
     const blockHeader = new Uint8Array(5)
     blockHeader[0] = isLast ? 1 : 0
     blockHeader[1] = blockSize & 0xFF
     blockHeader[2] = (blockSize >> 8) & 0xFF
     blockHeader[3] = ~blockSize & 0xFF
     blockHeader[4] = (~blockSize >> 8) & 0xFF
-    
+
     blocks.push(blockHeader)
     blocks.push(blockData)
   }
-  
-  // Adler-32 checksum
+
   let a = 1, b = 0
   for (const byte of data) {
     a = (a + byte) % 65521
@@ -242,7 +263,7 @@ function deflateStore(data: Uint8Array): Uint8Array {
   adler[2] = (a >> 8) & 0xFF
   adler[3] = a & 0xFF
   blocks.push(adler)
-  
+
   const totalLength = blocks.reduce((sum, b) => sum + b.length, 0)
   const result = new Uint8Array(totalLength)
   let offset = 0
@@ -250,7 +271,7 @@ function deflateStore(data: Uint8Array): Uint8Array {
     result.set(block, offset)
     offset += block.length
   }
-  
+
   return result
 }
 
@@ -258,18 +279,17 @@ function createPngChunk(type: string, data: Uint8Array): Uint8Array {
   const typeBytes = new TextEncoder().encode(type)
   const chunk = new Uint8Array(4 + 4 + data.length + 4)
   const view = new DataView(chunk.buffer)
-  
+
   view.setUint32(0, data.length, false)
   chunk.set(typeBytes, 4)
   chunk.set(data, 8)
-  
-  // CRC32 of type + data
+
   const crcData = new Uint8Array(4 + data.length)
   crcData.set(typeBytes, 0)
   crcData.set(data, 4)
   const crc = crc32Sync(crcData)
   view.setUint32(8 + data.length, crc, false)
-  
+
   return chunk
 }
 
@@ -282,12 +302,88 @@ function crc32Sync(data: Uint8Array): number {
     }
     table[i] = c
   }
-  
+
   let crc = 0xFFFFFFFF
   for (const byte of data) {
     crc = table[(crc ^ byte) & 0xFF] ^ (crc >>> 8)
   }
   return (crc ^ 0xFFFFFFFF) >>> 0
+}
+
+/**
+ * Sign the manifest using PKCS#7 with node-forge
+ */
+function signManifest(manifestData: string, p12Base64: string, password: string): Uint8Array {
+  try {
+    // Decode the P12 certificate
+    const p12Der = forge.util.decode64(p12Base64)
+    const p12Asn1 = forge.asn1.fromDer(p12Der)
+    const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, password)
+
+    // Extract certificate and private key
+    let certificate: forge.pki.Certificate | null = null
+    let privateKey: forge.pki.PrivateKey | null = null
+
+    for (const safeContents of p12.safeContents) {
+      for (const safeBag of safeContents.safeBags) {
+        if (safeBag.type === forge.pki.oids.certBag && safeBag.cert) {
+          certificate = safeBag.cert
+        } else if (safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag && safeBag.key) {
+          privateKey = safeBag.key
+        }
+      }
+    }
+
+    if (!certificate || !privateKey) {
+      throw new Error('Could not extract certificate or private key from P12')
+    }
+
+    // Parse WWDR certificate
+    const wwdrCert = forge.pki.certificateFromPem(APPLE_WWDR_CERT_PEM)
+
+    // Create PKCS#7 signed data
+    const p7 = forge.pkcs7.createSignedData()
+    p7.content = forge.util.createBuffer(manifestData, 'utf8')
+    p7.addCertificate(certificate)
+    p7.addCertificate(wwdrCert)
+
+    p7.addSigner({
+      key: privateKey,
+      certificate: certificate,
+      digestAlgorithm: forge.pki.oids.sha256,
+      authenticatedAttributes: [
+        {
+          type: forge.pki.oids.contentType,
+          value: forge.pki.oids.data
+        },
+        {
+          type: forge.pki.oids.messageDigest
+        },
+        {
+          type: forge.pki.oids.signingTime,
+          value: new Date()
+        }
+      ]
+    })
+
+    p7.sign({ detached: true })
+
+    // Convert to DER
+    const asn1 = p7.toAsn1()
+    const der = forge.asn1.toDer(asn1)
+    const bytes = der.getBytes()
+
+    // Convert to Uint8Array
+    const result = new Uint8Array(bytes.length)
+    for (let i = 0; i < bytes.length; i++) {
+      result[i] = bytes.charCodeAt(i)
+    }
+
+    return result
+  } catch (error) {
+    safeLog.error('Signing error:', error)
+    throw error
+  }
 }
 
 serve(async (req) => {
@@ -314,8 +410,8 @@ serve(async (req) => {
       .select(`
         *,
         event:events(
-          id, title, slug, start_date, end_date, 
-          venue_name, venue_address, city, 
+          id, title, slug, start_date, end_date,
+          venue_name, venue_address, city,
           image_url, venue_lat, venue_lng,
           organizer:organizers(business_name, logo_url)
         ),
@@ -360,12 +456,12 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
   if (!APPLE_PASS_TYPE_ID || !APPLE_TEAM_ID || !APPLE_CERTIFICATE) {
     safeLog.info('Apple Wallet not configured - missing environment variables')
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Apple Wallet not configured',
         fallback: true,
-        message: 'Apple Wallet passes are coming soon! For now, please download your PDF ticket or add to calendar.'
+        message: 'Apple Wallet passes are coming soon! For now, please use "Add to Calendar".'
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
@@ -375,7 +471,7 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
   try {
     // Generate pass data
     const eventDate = new Date(event.start_date)
-    
+
     const passData = {
       formatVersion: 1,
       passTypeIdentifier: APPLE_PASS_TYPE_ID,
@@ -387,7 +483,7 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
       foregroundColor: 'rgb(255, 255, 255)',
       backgroundColor: 'rgb(41, 105, 255)',
       labelColor: 'rgb(255, 255, 255)',
-      
+
       eventTicket: {
         primaryFields: [{
           key: 'event',
@@ -398,19 +494,19 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
           {
             key: 'date',
             label: 'DATE',
-            value: eventDate.toLocaleDateString('en-US', { 
-              weekday: 'short', 
-              month: 'short', 
-              day: 'numeric' 
+            value: eventDate.toLocaleDateString('en-US', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric'
             })
           },
           {
             key: 'time',
             label: 'TIME',
-            value: eventDate.toLocaleTimeString('en-US', { 
-              hour: 'numeric', 
-              minute: '2-digit', 
-              hour12: true 
+            value: eventDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
             })
           }
         ],
@@ -449,13 +545,13 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
           }
         ]
       },
-      
+
       barcode: {
         format: 'PKBarcodeFormatQR',
         message: ticket.ticket_code,
         messageEncoding: 'iso-8859-1'
       },
-      
+
       relevantDate: event.start_date,
     }
 
@@ -470,11 +566,11 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
 
     // Create the .pkpass file
     const zip = new SimpleZip()
-    
+
     // Add pass.json
     const passJson = JSON.stringify(passData, null, 2)
     zip.addFile('pass.json', passJson)
-    
+
     // Add icons (create simple branded icons)
     zip.addFile('icon.png', createIconPng(29))
     zip.addFile('icon@2x.png', createIconPng(58))
@@ -485,7 +581,7 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
     // Create manifest.json with SHA1 hashes
     const manifest: Record<string, string> = {}
     const filesToHash = ['pass.json', 'icon.png', 'icon@2x.png', 'icon@3x.png', 'logo.png', 'logo@2x.png']
-    
+
     for (const filename of filesToHash) {
       let content: Uint8Array
       if (filename === 'pass.json') {
@@ -496,42 +592,22 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
       }
       manifest[filename] = await sha1(content)
     }
-    
+
     const manifestJson = JSON.stringify(manifest)
     zip.addFile('manifest.json', manifestJson)
 
-    // IMPORTANT: Apple Wallet requires PKCS#7 signing of the manifest
-    // Without proper signing, iOS will reject the pass with "The pass cannot be read because it isn't valid"
-    //
-    // To properly sign the pass, we need:
-    // 1. Apple Developer Pass Type ID certificate (.p12 file)
-    // 2. WWDR (Apple Worldwide Developer Relations) intermediate certificate
-    // 3. PKCS#7 (CMS) signing implementation
-    //
-    // Since Deno doesn't have native PKCS#7 support and we need the Apple certificates,
-    // we return a fallback message until proper signing is implemented.
+    // Sign the manifest with PKCS#7
+    safeLog.info('Signing Apple Wallet pass...')
+    const signature = signManifest(manifestJson, APPLE_CERTIFICATE, APPLE_CERT_PASSWORD)
+    zip.addFile('signature', signature)
+    safeLog.info('Pass signed successfully')
 
-    safeLog.info('Apple Wallet signing not implemented - returning fallback')
-    return new Response(
-      JSON.stringify({
-        error: 'Apple Wallet signing not configured',
-        fallback: true,
-        message: 'Apple Wallet passes are coming soon! For now, please use "Add to Calendar" to save your event.'
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
-    )
-
-    // The code below would generate the .pkpass file once signing is implemented:
-    /*
     // Generate the .pkpass file
     const pkpassData = await zip.generate()
-    
+
     // Upload to Supabase Storage
     const fileName = `passes/${ticket.ticket_code}.pkpass`
-    
+
     const { error: uploadError } = await supabaseClient.storage
       .from('tickets')
       .upload(fileName, pkpassData, {
@@ -541,7 +617,7 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
 
     if (uploadError) {
       safeLog.error('Failed to upload pkpass:', uploadError)
-      // Return the pass directly as download
+      // Return the pass directly
       return new Response(pkpassData, {
         headers: {
           ...corsHeaders,
@@ -567,7 +643,6 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
         status: 200
       }
     )
-    */
 
   } catch (error) {
     safeLog.error('Apple pass generation error:', error)
@@ -594,12 +669,12 @@ async function generateGooglePass(ticket: any, event: any): Promise<Response> {
   if (!GOOGLE_SERVICE_ACCOUNT || !GOOGLE_ISSUER_ID) {
     safeLog.info('Google Wallet not configured - returning fallback message')
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Google Wallet not configured',
         fallback: true,
-        message: 'Google Wallet passes are coming soon! For now, please download your PDF ticket or add to calendar.'
+        message: 'Google Wallet passes are coming soon! For now, please use "Add to Calendar".'
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
@@ -619,7 +694,7 @@ async function generateGooglePass(ticket: any, event: any): Promise<Response> {
       id: `${GOOGLE_ISSUER_ID}.${ticket.ticket_code}`,
       classId: `${GOOGLE_ISSUER_ID}.ticketrack_event_class`,
       state: 'ACTIVE',
-      
+
       textModulesData: [
         {
           header: 'Ticket Code',
@@ -632,13 +707,13 @@ async function generateGooglePass(ticket: any, event: any): Promise<Response> {
           id: 'attendee'
         }
       ],
-      
+
       barcode: {
         type: 'QR_CODE',
         value: ticket.ticket_code,
         alternateText: ticket.ticket_code
       },
-      
+
       heroImage: event.image_url ? {
         sourceUri: {
           uri: event.image_url
@@ -674,21 +749,21 @@ async function generateGooglePass(ticket: any, event: any): Promise<Response> {
     const encodedHeader = base64UrlEncode(JSON.stringify(header))
     const encodedPayload = base64UrlEncode(JSON.stringify(payload))
     const signatureInput = `${encodedHeader}.${encodedPayload}`
-    
+
     // Import the private key and sign
     const privateKeyPem = serviceAccount.private_key
     const signature = await signWithRSA(signatureInput, privateKeyPem)
-    
+
     const jwt = `${signatureInput}.${signature}`
     const saveUrl = `https://pay.google.com/gp/v/save/${jwt}`
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         saveUrl: saveUrl,
         message: 'Google Wallet pass ready'
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
@@ -697,13 +772,13 @@ async function generateGooglePass(ticket: any, event: any): Promise<Response> {
   } catch (error) {
     safeLog.error('Google Wallet pass error:', error)
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Failed to generate Google Wallet pass',
         fallback: true,
-        message: 'Unable to generate Google Wallet pass. Please download your PDF ticket instead.',
+        message: 'Unable to generate Google Wallet pass. Please use "Add to Calendar" instead.',
         details: error.message
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
@@ -717,16 +792,15 @@ function base64UrlEncode(str: string): string {
 }
 
 async function signWithRSA(data: string, privateKeyPem: string): Promise<string> {
-  // Extract the key from PEM format
   const pemHeader = '-----BEGIN PRIVATE KEY-----'
   const pemFooter = '-----END PRIVATE KEY-----'
   const pemContents = privateKeyPem
     .replace(pemHeader, '')
     .replace(pemFooter, '')
     .replace(/\s/g, '')
-  
+
   const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0))
-  
+
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
     binaryKey,
@@ -737,13 +811,13 @@ async function signWithRSA(data: string, privateKeyPem: string): Promise<string>
     false,
     ['sign']
   )
-  
+
   const signature = await crypto.subtle.sign(
     'RSASSA-PKCS1-v1_5',
     cryptoKey,
     new TextEncoder().encode(data)
   )
-  
+
   const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)))
   return base64Signature.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
