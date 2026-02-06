@@ -152,7 +152,7 @@ BEGIN
         'event_name', v_event.title,
         'event_date', to_char(v_event.start_date, 'Month DD, YYYY'),
         'event_time', to_char(v_event.start_date, 'HH12:MI AM'),
-        'venue_name', COALESCE(v_event.venue_name, 'TBA'),
+        'event_venue', COALESCE(v_event.venue_name, 'TBA'),
         'organizer_name', v_event.organizer_name,
         'ticket_id', NEW.id,
         'ticket_type', NEW.ticket_type_id

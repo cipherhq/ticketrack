@@ -259,15 +259,15 @@ export function CommunicationAutomations() {
       email: {
         ticket_purchase: {
           subject: 'Your Tickets for {{event_name}}',
-          body: `<p>Hi {{attendee_name}},</p><p>Thank you for your purchase! Here are your tickets for <strong>{{event_name}}</strong>.</p><p>📅 {{event_date}}<br/>📍 {{venue_name}}</p><p>Show your QR code at entry. See you there!</p>`,
+          body: `<p>Hi {{attendee_name}},</p><p>Thank you for your purchase! Here are your tickets for <strong>{{event_name}}</strong>.</p><p>📅 {{event_date}}<br/>📍 {{event_venue}}</p><p>Show your QR code at entry. See you there!</p>`,
         },
         event_reminder_7d: {
           subject: '{{event_name}} is in 7 days!',
-          body: `<p>Hi {{attendee_name}},</p><p>Just a reminder that <strong>{{event_name}}</strong> is coming up in 7 days!</p><p>📅 {{event_date}}<br/>📍 {{venue_name}}</p><p>See you there!</p>`,
+          body: `<p>Hi {{attendee_name}},</p><p>Just a reminder that <strong>{{event_name}}</strong> is coming up in 7 days!</p><p>📅 {{event_date}}<br/>📍 {{event_venue}}</p><p>See you there!</p>`,
         },
         event_reminder_1d: {
           subject: '{{event_name}} is tomorrow!',
-          body: `<p>Hi {{attendee_name}},</p><p><strong>{{event_name}}</strong> is happening tomorrow!</p><p>📅 {{event_date}}<br/>📍 {{venue_name}}</p><p>Don't forget your ticket!</p>`,
+          body: `<p>Hi {{attendee_name}},</p><p><strong>{{event_name}}</strong> is happening tomorrow!</p><p>📅 {{event_date}}<br/>📍 {{event_venue}}</p><p>Don't forget your ticket!</p>`,
         },
         post_event: {
           subject: 'Thank you for attending {{event_name}}!',
@@ -280,16 +280,16 @@ export function CommunicationAutomations() {
       },
       sms: {
         ticket_purchase: { message: 'Thanks for purchasing tickets to {{event_name}}! Your tickets are ready. See you there!' },
-        event_reminder_7d: { message: 'Reminder: {{event_name}} is in 7 days! {{event_date}} at {{venue_name}}' },
-        event_reminder_1d: { message: 'Tomorrow! {{event_name}} at {{venue_name}}. Don\'t forget your ticket!' },
-        event_reminder_2h: { message: '{{event_name}} starts in 2 hours! Head to {{venue_name}} now. Show your QR code at entry.' },
+        event_reminder_7d: { message: 'Reminder: {{event_name}} is in 7 days! {{event_date}} at {{event_venue}}' },
+        event_reminder_1d: { message: 'Tomorrow! {{event_name}} at {{event_venue}}. Don\'t forget your ticket!' },
+        event_reminder_2h: { message: '{{event_name}} starts in 2 hours! Head to {{event_venue}} now. Show your QR code at entry.' },
         cart_abandoned: { message: 'Your tickets to {{event_name}} are waiting! Complete your purchase now.' },
       },
       whatsapp: {
-        ticket_purchase: { message: `🎉 *Your tickets are confirmed!*\n\n*{{event_name}}*\n📅 {{event_date}}\n📍 {{venue_name}}\n\nShow your QR code at entry. See you there!` },
-        event_reminder_7d: { message: `📅 *Reminder: 7 days to go!*\n\n*{{event_name}}*\n{{event_date}}\n📍 {{venue_name}}\n\nGet ready!` },
-        event_reminder_1d: { message: `⏰ *Tomorrow is the day!*\n\n*{{event_name}}*\n📍 {{venue_name}}\n\nDon't forget your ticket!` },
-        event_reminder_2h: { message: `🚀 *Starting in 2 hours!*\n\n*{{event_name}}* is about to begin at {{venue_name}}.\n\nHead there now!` },
+        ticket_purchase: { message: `🎉 *Your tickets are confirmed!*\n\n*{{event_name}}*\n📅 {{event_date}}\n📍 {{event_venue}}\n\nShow your QR code at entry. See you there!` },
+        event_reminder_7d: { message: `📅 *Reminder: 7 days to go!*\n\n*{{event_name}}*\n{{event_date}}\n📍 {{event_venue}}\n\nGet ready!` },
+        event_reminder_1d: { message: `⏰ *Tomorrow is the day!*\n\n*{{event_name}}*\n📍 {{event_venue}}\n\nDon't forget your ticket!` },
+        event_reminder_2h: { message: `🚀 *Starting in 2 hours!*\n\n*{{event_name}}* is about to begin at {{event_venue}}.\n\nHead there now!` },
         cart_abandoned: { message: `Hey! 👋\n\nYou left tickets for *{{event_name}}* in your cart.\n\nComplete your purchase before they sell out!` },
       },
     };
@@ -784,13 +784,16 @@ export function CommunicationAutomations() {
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Body (use variables like {"{{event_name}}"})</Label>
+                            <Label className="text-xs">Body</Label>
                             <Textarea
                               value={action.content?.body?.replace(/<[^>]*>/g, '') || ''}
                               onChange={(e) => updateAction(action.id, 'content', { ...action.content, body: e.target.value })}
                               className="mt-1 min-h-[80px]"
                               placeholder="Email body..."
                             />
+                            <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                              Variables: {'{{attendee_name}}'}, {'{{event_name}}'}, {'{{event_date}}'}, {'{{event_venue}}'}, {'{{organizer_name}}'}
+                            </p>
                           </div>
                         </div>
                       )}
@@ -804,6 +807,9 @@ export function CommunicationAutomations() {
                             className="mt-1 min-h-[80px]"
                             placeholder="Message content..."
                           />
+                          <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                            Variables: {'{{attendee_name}}'}, {'{{event_name}}'}, {'{{event_date}}'}, {'{{event_venue}}'}
+                          </p>
                         </div>
                       )}
                     </CardContent>

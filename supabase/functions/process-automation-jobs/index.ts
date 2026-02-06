@@ -69,7 +69,7 @@ serve(async (req) => {
           event_name: job.event?.title,
           event_date: formatDate(job.event?.start_date),
           event_time: formatTime(job.event?.start_date),
-          venue_name: job.event?.venue_name || 'TBA',
+          event_venue: job.event?.venue_name || 'TBA',
           organizer_name: job.event?.organizer?.business_name,
         };
 
