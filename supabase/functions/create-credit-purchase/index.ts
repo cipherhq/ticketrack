@@ -2,7 +2,6 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import Stripe from 'https://esm.sh/stripe@14.5.0?target=deno';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +10,6 @@ const corsHeaders = {
 
 const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
 const PAYSTACK_API_URL = 'https://api.paystack.co';
-const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
 const FLUTTERWAVE_SECRET_KEY = Deno.env.get('FLUTTERWAVE_SECRET_KEY');
 const FLUTTERWAVE_API_URL = 'https://api.flutterwave.com/v3';
 
@@ -25,6 +23,9 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const body = await req.json();
+    console.log('Received request body:', JSON.stringify(body));
+
     const {
       organizerId,
       packageId,
@@ -35,7 +36,7 @@ serve(async (req) => {
       email,
       callbackUrl,
       provider = 'paystack',
-    } = await req.json();
+    } = body;
 
     // Validation
     if (!organizerId || !credits || !amount || !email) {
@@ -94,44 +95,17 @@ serve(async (req) => {
     // Generate unique reference
     const reference = `CREDIT-${organizerId.substring(0, 8)}-${Date.now()}`;
 
-    // Create pending transaction record
-    const { data: transaction, error: txError } = await supabase
-      .from('communication_credit_transactions')
-      .insert({
-        organizer_id: organizerId,
-        type: 'purchase',
-        amount: credits,
-        bonus_amount: bonusCredits || 0,
-        balance_after: 0, // Will be updated on webhook
-        bonus_balance_after: 0,
-        reference,
-        package_id: validPackageId, // Only use valid package ID from new table to avoid FK errors
-        amount_paid: amount,
-        currency,
-        payment_provider: provider,
-        description: packageDetails
-          ? `Credit purchase: ${packageDetails.name} (${credits}${bonusCredits ? ` + ${bonusCredits} bonus` : ''} credits)`
-          : `Credit purchase: ${credits} credits`,
-        metadata: {
-          status: 'pending',
-          email,
-          original_package_id: packageId, // Store original package ID in metadata
-        },
-      })
-      .select()
-      .single();
+    // Skip transaction table - go directly to payment
+    // We'll create transaction record in webhook after successful payment
+    console.log('Initializing payment for organizer:', organizerId, 'Provider:', provider);
 
-    if (txError) {
-      console.error('Transaction create error:', txError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create transaction' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const transactionId = crypto.randomUUID(); // Temporary ID for metadata
 
     // Route to appropriate payment provider
     if (provider === 'stripe') {
-      // Initialize Stripe payment
+      // Dynamically import Stripe only when needed
+      const Stripe = (await import('https://esm.sh/stripe@14.5.0?target=deno')).default;
+      const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
       const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
 
       const session = await stripe.checkout.sessions.create({
@@ -155,22 +129,13 @@ serve(async (req) => {
         metadata: {
           type: 'credit_purchase',
           organizer_id: organizerId,
-          transaction_id: transaction.id,
+          transaction_id: transactionId,
           credits: String(credits),
           bonus_credits: String(bonusCredits || 0),
           package_id: packageId || '',
           reference,
         },
       });
-
-      // Update transaction with Stripe session
-      await supabase
-        .from('communication_credit_transactions')
-        .update({
-          payment_reference: session.id,
-          metadata: { status: 'pending', stripe_session_id: session.id },
-        })
-        .eq('id', transaction.id);
 
       return new Response(
         JSON.stringify({
@@ -179,7 +144,7 @@ serve(async (req) => {
           authorization_url: session.url,
           session_id: session.id,
           reference,
-          transaction_id: transaction.id,
+          transaction_id: transactionId,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -200,7 +165,7 @@ serve(async (req) => {
         meta: {
           type: 'credit_purchase',
           organizer_id: organizerId,
-          transaction_id: transaction.id,
+          transaction_id: transactionId,
           credits,
           bonus_credits: bonusCredits || 0,
           package_id: packageId || null,
@@ -220,27 +185,11 @@ serve(async (req) => {
 
       if (!flutterwaveResponse.ok || flutterwaveData.status !== 'success') {
         console.error('Flutterwave error:', flutterwaveData);
-        await supabase
-          .from('communication_credit_transactions')
-          .update({
-            metadata: { status: 'failed', error: flutterwaveData.message },
-          })
-          .eq('id', transaction.id);
-
         return new Response(
           JSON.stringify({ error: flutterwaveData.message || 'Payment initialization failed' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
-      // Update transaction with Flutterwave reference
-      await supabase
-        .from('communication_credit_transactions')
-        .update({
-          payment_reference: reference,
-          metadata: { status: 'pending' },
-        })
-        .eq('id', transaction.id);
 
       return new Response(
         JSON.stringify({
@@ -248,7 +197,7 @@ serve(async (req) => {
           link: flutterwaveData.data.link,
           authorization_url: flutterwaveData.data.link,
           reference,
-          transaction_id: transaction.id,
+          transaction_id: transactionId,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -263,7 +212,7 @@ serve(async (req) => {
         metadata: {
           type: 'credit_purchase',
           organizer_id: organizerId,
-          transaction_id: transaction.id,
+          transaction_id: transactionId,
           credits,
           bonus_credits: bonusCredits || 0,
           package_id: packageId || null,
@@ -283,28 +232,11 @@ serve(async (req) => {
 
       if (!paystackResponse.ok || !paystackData.status) {
         console.error('Paystack error:', paystackData);
-
-        await supabase
-          .from('communication_credit_transactions')
-          .update({
-            metadata: { status: 'failed', error: paystackData.message },
-          })
-          .eq('id', transaction.id);
-
         return new Response(
           JSON.stringify({ error: paystackData.message || 'Payment initialization failed' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
-      // Update transaction with Paystack reference
-      await supabase
-        .from('communication_credit_transactions')
-        .update({
-          payment_reference: paystackData.data.reference,
-          metadata: { status: 'pending', access_code: paystackData.data.access_code },
-        })
-        .eq('id', transaction.id);
 
       return new Response(
         JSON.stringify({
@@ -312,7 +244,7 @@ serve(async (req) => {
           authorization_url: paystackData.data.authorization_url,
           access_code: paystackData.data.access_code,
           reference: paystackData.data.reference,
-          transaction_id: transaction.id,
+          transaction_id: transactionId,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
