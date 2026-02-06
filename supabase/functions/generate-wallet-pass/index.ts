@@ -22,8 +22,8 @@ import {
   ERROR_CODES
 } from "../_shared/errorHandler.ts";
 
-// Import node-forge using npm: specifier (supported by Deno)
-import forge from 'npm:node-forge@1.3.1'
+// Import node-forge - use esm.sh with deno target for better compatibility
+import forge from 'https://esm.sh/node-forge@1.3.1?target=deno'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
