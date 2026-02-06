@@ -59,15 +59,36 @@ serve(async (req) => {
       );
     }
 
-    // Get package details if provided
+    // Get package details if provided (check both new and legacy tables)
     let packageDetails = null;
+    let validPackageId = null;
     if (packageId) {
+      // Try new table first
       const { data: pkg } = await supabase
         .from('communication_credit_packages')
         .select('*')
         .eq('id', packageId)
         .single();
-      packageDetails = pkg;
+
+      if (pkg) {
+        packageDetails = pkg;
+        validPackageId = packageId;
+      } else {
+        // Try legacy table
+        const { data: legacyPkg } = await supabase
+          .from('sms_credit_packages')
+          .select('*')
+          .eq('id', packageId)
+          .single();
+
+        if (legacyPkg) {
+          packageDetails = {
+            ...legacyPkg,
+            price_ngn: legacyPkg.price,
+          };
+          // Don't set validPackageId as it's from legacy table and might cause FK errors
+        }
+      }
     }
 
     // Generate unique reference
@@ -84,7 +105,7 @@ serve(async (req) => {
         balance_after: 0, // Will be updated on webhook
         bonus_balance_after: 0,
         reference,
-        package_id: packageId || null,
+        package_id: validPackageId, // Only use valid package ID from new table to avoid FK errors
         amount_paid: amount,
         currency,
         payment_provider: provider,
@@ -94,6 +115,7 @@ serve(async (req) => {
         metadata: {
           status: 'pending',
           email,
+          original_package_id: packageId, // Store original package ID in metadata
         },
       })
       .select()
