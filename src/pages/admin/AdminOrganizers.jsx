@@ -112,6 +112,8 @@ export function AdminOrganizers() {
   const loadOrganizers = async () => {
     setLoading(true);
     try {
+      // Single query - uses pre-computed stats from tier system
+      // Avoids N+1 queries (was: 200+ queries for 100 organizers, now: 1 query)
       const { data, error } = await supabase
         .from('organizers')
         .select('*')
@@ -119,30 +121,13 @@ export function AdminOrganizers() {
 
       if (error) throw error;
 
-      const organizersWithStats = await Promise.all(
-        (data || []).map(async (org) => {
-          const { count: eventCount } = await supabase
-            .from('events')
-            .select('*', { count: 'exact', head: true })
-            .eq('organizer_id', org.id);
-
-          const { data: tickets } = await supabase
-            .from('tickets')
-            .select('total_price, quantity, events!inner(organizer_id)')
-            .eq('events.organizer_id', org.id)
-            .eq('payment_status', 'completed');
-
-          const totalRevenue = tickets?.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0) || 0;
-          const totalTickets = tickets?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
-
-          return {
-            ...org,
-            eventCount: eventCount || 0,
-            totalRevenue,
-            totalTickets,
-          };
-        })
-      );
+      // Use pre-computed values from tier system (total_events, total_tickets_sold, total_revenue)
+      const organizersWithStats = (data || []).map((org) => ({
+        ...org,
+        eventCount: org.total_events || 0,
+        totalRevenue: org.total_revenue || 0,
+        totalTickets: org.total_tickets_sold || 0,
+      }));
 
       setOrganizers(organizersWithStats);
     } catch (error) {

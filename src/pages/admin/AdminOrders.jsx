@@ -78,7 +78,8 @@ export function AdminOrders() {
   };
 
   const loadOrders = async () => {
-    // Get all orders with event and organizer info
+    // Get all orders with event, organizer, AND tickets in a single query
+    // This avoids N+1 queries (was: 500+ queries, now: 1 query)
     const { data: ordersData, error } = await supabase
       .from('orders')
       .select(`
@@ -108,6 +109,17 @@ export function AdminOrders() {
             id,
             business_name
           )
+        ),
+        tickets (
+          id,
+          attendee_name,
+          attendee_email,
+          ticket_code,
+          is_checked_in,
+          checked_in_at,
+          status,
+          unit_price,
+          ticket_types (name)
         )
       `)
       .order('created_at', { ascending: false })
@@ -118,33 +130,14 @@ export function AdminOrders() {
       return;
     }
 
-    // Get tickets for each order
-    const ordersWithTickets = await Promise.all(
-      (ordersData || []).map(async (order) => {
-        const { data: tickets } = await supabase
-          .from('tickets')
-          .select(`
-            id,
-            attendee_name,
-            attendee_email,
-            ticket_code,
-            is_checked_in,
-            checked_in_at,
-            status,
-            unit_price,
-            ticket_types (name)
-          `)
-          .eq('order_id', order.id);
-
-        return {
-          ...order,
-          tickets: tickets || [],
-          ticketCount: tickets?.length || 0,
-          organizer: order.events?.organizers,
-          eventTitle: order.events?.title,
-        };
-      })
-    );
+    // Map orders with tickets (already fetched in single query)
+    const ordersWithTickets = (ordersData || []).map((order) => ({
+      ...order,
+      tickets: order.tickets || [],
+      ticketCount: order.tickets?.length || 0,
+      organizer: order.events?.organizers,
+      eventTitle: order.events?.title,
+    }));
 
     setOrders(ordersWithTickets);
 

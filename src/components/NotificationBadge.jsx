@@ -683,8 +683,8 @@ export function useOrganizerNotifications(organizerId) {
 
     fetchCounts()
     
-    // Refresh every 60 seconds
-    const interval = setInterval(fetchCounts, 60000)
+    // Refresh every 5 minutes (reduced from 60s to lower Disk IO)
+    const interval = setInterval(fetchCounts, 300000)
     return () => clearInterval(interval)
   }, [organizerId])
 
