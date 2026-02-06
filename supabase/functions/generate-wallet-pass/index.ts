@@ -449,12 +449,91 @@ serve(async (req) => {
   }
 
   try {
+    // Safely parse the request body
+    let body: any = {}
+    try {
+      const text = await req.text()
+      safeLog.info('Raw request body length:', text.length)
+      if (text && text.length > 0) {
+        body = JSON.parse(text)
+      }
+    } catch (parseError) {
+      safeLog.error('Failed to parse request body:', parseError)
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'invalid_request',
+        message: 'Invalid or empty request body',
+        debug: parseError instanceof Error ? parseError.message : String(parseError)
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    const { ticketId, platform, testCert } = body
+
+    // Test mode - just test certificate loading
+    if (testCert) {
+      safeLog.info('=== CERTIFICATE TEST MODE ===')
+      const APPLE_CERTIFICATE = Deno.env.get('APPLE_PASS_CERTIFICATE')
+      const APPLE_CERT_PASSWORD = Deno.env.get('APPLE_PASS_CERTIFICATE_PASSWORD') || ''
+
+      if (!APPLE_CERTIFICATE) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'No certificate configured',
+          step: 'env_check'
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      safeLog.info('Certificate length:', APPLE_CERTIFICATE.length)
+      safeLog.info('Password length:', APPLE_CERT_PASSWORD.length)
+
+      try {
+        // Test decode base64
+        const p12Der = forge.util.decode64(APPLE_CERTIFICATE)
+        safeLog.info('Base64 decode OK, DER length:', p12Der.length)
+
+        // Test parse ASN1
+        const p12Asn1 = forge.asn1.fromDer(p12Der)
+        safeLog.info('ASN1 parse OK')
+
+        // Test parse PKCS12 with password
+        const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, APPLE_CERT_PASSWORD)
+        safeLog.info('PKCS12 parse OK')
+
+        // Extract cert and key
+        let hasCert = false, hasKey = false
+        for (const safeContents of p12.safeContents) {
+          for (const safeBag of safeContents.safeBags) {
+            if (safeBag.type === forge.pki.oids.certBag && safeBag.cert) hasCert = true
+            if (safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag && safeBag.key) hasKey = true
+          }
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Certificate test passed!',
+          hasCertificate: hasCert,
+          hasPrivateKey: hasKey,
+          certLength: APPLE_CERTIFICATE.length,
+          derLength: p12Der.length
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
+      } catch (certError) {
+        const errMsg = certError instanceof Error ? certError.message : String(certError)
+        safeLog.error('Certificate test failed:', errMsg)
+        return new Response(JSON.stringify({
+          success: false,
+          error: errMsg,
+          step: 'cert_parse'
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
-
-    const { ticketId, platform } = await req.json()
 
     if (!ticketId || !platform) {
       throw new Error('Missing ticketId or platform')

@@ -405,16 +405,39 @@ export async function getAppleWalletPass(ticketId) {
 
     // Try backend - Apple Wallet REQUIRES server-side signing
     try {
-      const { data, error } = await supabase.functions.invoke('generate-wallet-pass', {
+      const response = await supabase.functions.invoke('generate-wallet-pass', {
         body: {
           ticketId,
           platform: 'apple'
         }
       })
 
+      const { data, error } = response
+
+      // Check if we got a blob/binary response (the .pkpass file directly)
+      if (data instanceof Blob || data instanceof ArrayBuffer) {
+        // Create download link for the pkpass file
+        const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/vnd.apple.pkpass' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${ticketData.ticket_code || 'ticket'}.pkpass`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        return { success: true }
+      }
+
+      // Check if data is JSON with passUrl
       if (!error && data?.passUrl) {
-        // Backend generated signed pass successfully
+        // Backend generated signed pass and uploaded to storage
         window.location.href = data.passUrl
+        return { success: true }
+      }
+
+      // Check if data is JSON with success flag (direct pass data)
+      if (!error && data?.success) {
         return { success: true }
       }
 
@@ -425,6 +448,16 @@ export async function getAppleWalletPass(ticketId) {
           success: false,
           fallback: true,
           message: data.message || 'Apple Wallet passes require server configuration. Use "Add to Calendar" instead.'
+        }
+      }
+
+      // Check for error in data
+      if (data?.error) {
+        console.error('Backend returned error:', data.error, data.debug)
+        return {
+          success: false,
+          fallback: true,
+          message: data.message || 'Apple Wallet is temporarily unavailable. Use "Add to Calendar" instead.'
         }
       }
 
