@@ -42,13 +42,18 @@ export function EventPayouts() {
     try {
       const now = new Date().toISOString();
       // Include both parent and child events - only show events that have ended
+      // Fetch all related data in a SINGLE query to avoid N+1 queries
       const { data: events, error } = await supabase.from('events').select(`
         id, title, slug, start_date, end_date, currency, payout_status, organizer_id, parent_event_id,
-        organizers ( 
+        organizers (
           id, business_name, email, phone,
-          bank_accounts (id, bank_name, account_number_encrypted, account_name, is_default, is_verified) 
+          bank_accounts (id, bank_name, account_number_encrypted, account_name, is_default, is_verified)
         ),
-        orders (id, total_amount, status, platform_fee, event_id)
+        orders (id, total_amount, status, platform_fee, event_id),
+        promoter_sales (
+          id, commission_amount, status,
+          promoters ( id, full_name, email, promoter_bank_accounts (id, bank_name, account_number, account_name, is_verified) )
+        )
       `).lt('end_date', now).order('end_date', { ascending: false });
 
       if (error) throw error;
@@ -57,18 +62,16 @@ export function EventPayouts() {
       if (statusFilter === 'pending') filteredEvents = filteredEvents.filter(e => e.payout_status !== 'paid');
       else if (statusFilter === 'paid') filteredEvents = filteredEvents.filter(e => e.payout_status === 'paid');
 
-      const eventsWithPayouts = await Promise.all(filteredEvents.map(async (event) => {
-        const { data: promoterSales } = await supabase.from('promoter_sales').select(`
-          id, commission_amount, status,
-          promoters ( id, full_name, email, promoter_bank_accounts (id, bank_name, account_number, account_name, is_verified) )
-        `).eq('event_id', event.id);
+      // Process events with already-fetched data (no more N+1 queries)
+      const eventsWithPayouts = filteredEvents.map((event) => {
+        const promoterSales = event.promoter_sales || [];
 
         const completedOrders = (event.orders || []).filter(o => o.status === 'completed');
         const totalSales = completedOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
         const platformFees = completedOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0);
 
         const promoterEarnings = {};
-        promoterSales?.forEach(sale => {
+        promoterSales.forEach(sale => {
           const promoterId = sale.promoters?.id;
           if (!promoterId) return;
           if (!promoterEarnings[promoterId]) {
@@ -91,7 +94,7 @@ export function EventPayouts() {
           bankAccounts,
           primaryBankAccount
         };
-      }));
+      });
 
       setCompletedEvents(eventsWithPayouts.filter(e => e.totalSales > 0));
     } catch (error) {

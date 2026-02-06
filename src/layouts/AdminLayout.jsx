@@ -79,6 +79,12 @@ const navGroups = [
       { icon: Mail, label: 'Email Templates', path: '/admin/email-templates' },
       { icon: Send, label: 'Send Emails', path: '/admin/send-emails' },
       { icon: Bell, label: 'SMS Campaigns', path: '/admin/sms' },
+      { icon: Bell, label: 'SMS Packages', path: '/admin/sms-packages' },
+      { icon: DollarSign, label: 'SMS Revenue', path: '/admin/sms-revenue' },
+      { icon: Settings, label: 'SMS Settings', path: '/admin/sms-settings' },
+      { icon: MessageSquare, label: 'WhatsApp', path: '/admin/whatsapp' },
+      { icon: Settings, label: 'WhatsApp Settings', path: '/admin/whatsapp-settings' },
+      { icon: DollarSign, label: 'WhatsApp Packages', path: '/admin/whatsapp-packages' },
     ]
   },
   {

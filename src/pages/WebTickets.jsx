@@ -214,37 +214,27 @@ export function WebTickets() {
   // Load tickets user has transferred out
   const loadTransferredOut = async () => {
     try {
+      // Get all transfer data in a SINGLE query with PostgREST joins
+      // This avoids N+1 queries (was: 2N+1 queries, now: 1 query)
       const { data, error } = await supabase
         .from('ticket_transfers')
-        .select('*')
+        .select(`
+          *,
+          ticket:tickets!ticket_id (
+            id, ticket_code, attendee_name,
+            event:events (id, title, slug, start_date, image_url)
+          ),
+          to_user:profiles!to_user_id (full_name, email)
+        `)
         .eq('from_user_id', user.id)
         .order('created_at', { ascending: false })
-      
+
       if (error) {
         console.error('Error loading transfers:', error)
         return
       }
-      
-      // Enrich with ticket and user data
-      const enriched = await Promise.all((data || []).map(async (transfer) => {
-        // Get ticket with event
-        const { data: ticket } = await supabase
-          .from('tickets')
-          .select('id, ticket_code, attendee_name, event:events(id, title, slug, start_date, image_url)')
-          .eq('id', transfer.ticket_id)
-          .single()
-        
-        // Get recipient user
-        const { data: toUser } = await supabase
-          .from('profiles')
-          .select('full_name, email')
-          .eq('id', transfer.to_user_id)
-          .single()
-        
-        return { ...transfer, ticket, to_user: toUser }
-      }))
-      
-      setTransferredOutTickets(enriched)
+
+      setTransferredOutTickets(data || [])
     } catch (err) {
       console.error('Error loading transferred tickets:', err)
     }

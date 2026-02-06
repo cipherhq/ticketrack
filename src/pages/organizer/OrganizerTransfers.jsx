@@ -93,43 +93,29 @@ export function OrganizerTransfers() {
         .from('ticket_transfers')
         .select('*', { count: 'exact', head: true })
         .in('event_id', organizerEvents)
-      
+
       setTotalCount(count || 0)
 
-      // Get paginated data
+      // Get paginated data with all related data in a SINGLE query
+      // This avoids N+1 queries (was: 61 queries for 20 items, now: 1 query)
       const { data, error } = await supabase
         .from('ticket_transfers')
-        .select('*')
+        .select(`
+          *,
+          ticket:tickets!ticket_id (
+            id, ticket_code, attendee_name, attendee_email, total_price, payment_reference,
+            event:events (id, title, slug, currency)
+          ),
+          from_user:profiles!from_user_id (id, full_name, email, phone),
+          to_user:profiles!to_user_id (id, full_name, email, phone)
+        `)
         .in('event_id', organizerEvents)
         .order('created_at', { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
       if (error) throw error
 
-      // Enrich with related data
-      const enriched = await Promise.all((data || []).map(async (transfer) => {
-        const { data: ticket } = await supabase
-          .from('tickets')
-          .select('id, ticket_code, attendee_name, attendee_email, total_price, payment_reference, event:events(id, title, slug, currency)')
-          .eq('id', transfer.ticket_id)
-          .single()
-
-        const { data: fromUser } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, phone')
-          .eq('id', transfer.from_user_id)
-          .single()
-
-        const { data: toUser } = await supabase
-          .from('profiles')
-          .select('id, full_name, email, phone')
-          .eq('id', transfer.to_user_id)
-          .single()
-
-        return { ...transfer, ticket, from_user: fromUser, to_user: toUser }
-      }))
-
-      setTransfers(enriched)
+      setTransfers(data || [])
     } catch (err) {
       console.error('Error loading transfers:', err)
     } finally {
