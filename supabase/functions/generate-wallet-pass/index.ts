@@ -802,14 +802,20 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
 
     if (uploadError) {
       safeLog.error('Failed to upload pkpass:', uploadError)
-      // Return the pass directly
-      return new Response(pkpassData, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/vnd.apple.pkpass',
-          'Content-Disposition': `attachment; filename="${ticket.ticket_code}.pkpass"`
+      // Return the pass as base64 in JSON (Supabase client can't handle binary)
+      const base64Pass = base64Encode(pkpassData)
+      return new Response(
+        JSON.stringify({
+          success: true,
+          passData: base64Pass,
+          filename: `${ticket.ticket_code}.pkpass`,
+          message: 'Apple Wallet pass generated (direct download)'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
         }
-      })
+      )
     }
 
     // Get public URL

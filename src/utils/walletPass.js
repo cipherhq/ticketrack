@@ -436,6 +436,26 @@ export async function getAppleWalletPass(ticketId) {
         return { success: true }
       }
 
+      // Check if data is JSON with base64 pass data (storage upload failed)
+      if (!error && data?.passData) {
+        // Decode base64 and download
+        const binaryString = atob(data.passData)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        const blob = new Blob([bytes], { type: 'application/vnd.apple.pkpass' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = data.filename || `${ticketData.ticket_code || 'ticket'}.pkpass`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        return { success: true }
+      }
+
       // Check if data is JSON with success flag (direct pass data)
       if (!error && data?.success) {
         return { success: true }
