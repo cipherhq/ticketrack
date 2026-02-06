@@ -4,25 +4,94 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getPlatformStats } from '@/services/settings';
-import { 
-  Search, MapPin, Calendar, ChevronRight, ChevronLeft, Star, 
+import {
+  Search, MapPin, Calendar, ChevronRight, ChevronLeft, Star,
   Download, Shield, CreditCard, Headphones, TrendingUp, Clock,
-  Heart, Users, Ticket, Globe, X, ChevronDown, Monitor, Sparkles
+  Heart, Users, Ticket, Globe, X, ChevronDown, Monitor, Sparkles,
+  Music, Mic2, PartyPopper, Trophy, Drama, UtensilsCrossed,
+  Wine, Laugh, Leaf, HeartHandshake, Gamepad2, GraduationCap, Briefcase, Baby
 } from 'lucide-react';
 import { ForYouFeed } from '@/components/ForYouFeed';
 
-// Category images mapping
-const categoryImages = {
-  'music-concerts': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=300&fit=crop',
-  'conferences': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop',
-  'festivals': 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&h=300&fit=crop',
-  'sports': 'https://images.unsplash.com/photo-1461896836934-28f9ba7a02e3?w=400&h=300&fit=crop',
-  'arts-theatre': 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=400&h=300&fit=crop',
-  'food-drink': 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop',
-  'nightlife': 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=300&fit=crop',
-  'comedy': 'https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=400&h=300&fit=crop',
-  'wellness': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=300&fit=crop',
-  'charity': 'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=400&h=300&fit=crop',
+// Category styling with icons and gradients
+const categoryStyles = {
+  'music-concerts': {
+    icon: Music,
+    gradient: 'from-purple-500 to-pink-500',
+    emoji: '🎵'
+  },
+  'conferences': {
+    icon: Mic2,
+    gradient: 'from-blue-500 to-cyan-500',
+    emoji: '🎤'
+  },
+  'festivals': {
+    icon: PartyPopper,
+    gradient: 'from-orange-500 to-yellow-500',
+    emoji: '🎉'
+  },
+  'sports': {
+    icon: Trophy,
+    gradient: 'from-green-500 to-emerald-500',
+    emoji: '🏆'
+  },
+  'arts-theatre': {
+    icon: Drama,
+    gradient: 'from-rose-500 to-red-500',
+    emoji: '🎭'
+  },
+  'food-drink': {
+    icon: UtensilsCrossed,
+    gradient: 'from-amber-500 to-orange-500',
+    emoji: '🍽️'
+  },
+  'nightlife': {
+    icon: Wine,
+    gradient: 'from-violet-500 to-purple-500',
+    emoji: '🍸'
+  },
+  'comedy': {
+    icon: Laugh,
+    gradient: 'from-yellow-500 to-amber-500',
+    emoji: '😂'
+  },
+  'wellness': {
+    icon: Leaf,
+    gradient: 'from-teal-500 to-green-500',
+    emoji: '🧘'
+  },
+  'charity': {
+    icon: HeartHandshake,
+    gradient: 'from-pink-500 to-rose-500',
+    emoji: '💝'
+  },
+  'gaming': {
+    icon: Gamepad2,
+    gradient: 'from-indigo-500 to-blue-500',
+    emoji: '🎮'
+  },
+  'education': {
+    icon: GraduationCap,
+    gradient: 'from-sky-500 to-blue-500',
+    emoji: '🎓'
+  },
+  'business': {
+    icon: Briefcase,
+    gradient: 'from-slate-500 to-gray-600',
+    emoji: '💼'
+  },
+  'kids-family': {
+    icon: Baby,
+    gradient: 'from-pink-400 to-purple-400',
+    emoji: '👨‍👩‍👧'
+  },
+};
+
+// Default style for unknown categories
+const defaultCategoryStyle = {
+  icon: Sparkles,
+  gradient: 'from-gray-500 to-gray-600',
+  emoji: '✨'
 };
 
 const dateOptions = [
@@ -303,23 +372,39 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
   );
 };
 
-// Category Card
-const CategoryCard = ({ category, image }) => (
-  <Link 
-    to={`/events?category=${category.slug}`}
-    className="relative min-w-[160px] h-[140px] rounded-xl overflow-hidden group cursor-pointer"
-  >
-    <img 
-      src={image} 
-      alt={category.name}
-      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-    />
-    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-    <span className="absolute bottom-3 left-3 text-white font-semibold text-sm">
-      {category.name}
-    </span>
-  </Link>
-);
+// Category Card with modern icon design
+const CategoryCard = ({ category }) => {
+  const style = categoryStyles[category.slug] || defaultCategoryStyle;
+  const IconComponent = style.icon;
+
+  return (
+    <Link
+      to={`/events?category=${category.slug}`}
+      className={`relative min-w-[160px] h-[140px] rounded-2xl overflow-hidden group cursor-pointer bg-gradient-to-br ${style.gradient} p-4 flex flex-col justify-between shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}
+    >
+      {/* Decorative circles */}
+      <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
+      <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
+
+      {/* Icon */}
+      <div className="relative z-10 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+        <IconComponent className="w-6 h-6 text-white" strokeWidth={2} />
+      </div>
+
+      {/* Category name */}
+      <div className="relative z-10">
+        <span className="text-white font-semibold text-sm leading-tight block">
+          {category.name}
+        </span>
+        {category.event_count > 0 && (
+          <span className="text-white/70 text-xs">
+            {category.event_count} event{category.event_count !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+};
 
 export function WebHome() {
   const navigate = useNavigate();
@@ -651,10 +736,9 @@ export function WebHome() {
             <div className="relative group">
               <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none' }}>
                 {categories.map(category => (
-                  <CategoryCard 
-                    key={category.id} 
+                  <CategoryCard
+                    key={category.id}
                     category={category}
-                    image={categoryImages[category.slug] || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=300&fit=crop'}
                   />
                 ))}
               </div>
