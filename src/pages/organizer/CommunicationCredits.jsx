@@ -21,6 +21,8 @@ import {
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { getPaymentProvider } from '@/config/payments';
+import { getDefaultCurrency } from '@/config/currencies';
 
 // Channel icons and colors
 const CHANNEL_CONFIG = {
@@ -221,32 +223,86 @@ export function CommunicationCredits() {
 
     setPurchasing(true);
     try {
-      // Initialize Paystack payment
-      const { data, error } = await supabase.functions.invoke('create-credit-purchase', {
-        body: {
-          organizerId: organizer.id,
-          packageId: selectedPackage.id,
-          credits: selectedPackage.credits,
-          bonusCredits: selectedPackage.bonus_credits,
-          amount: selectedPackage.price_ngn,
-          currency: 'NGN',
-          email: organizer.business_email || organizer.email,
-          callbackUrl: `${window.location.origin}/organizer/credits?payment=success`,
-        },
-      });
+      // Determine organizer's currency and payment provider
+      const currency = getDefaultCurrency(organizer.country_code) || 'NGN';
+      const provider = getPaymentProvider(currency);
 
-      if (error) throw error;
+      // Get the price in the appropriate currency (fallback to NGN price)
+      const amount = selectedPackage.price_ngn; // TODO: Add multi-currency pricing to packages
 
-      // Redirect to payment page
-      if (data?.authorization_url) {
-        window.location.href = data.authorization_url;
-      } else if (data?.paymentUrl) {
-        window.location.href = data.paymentUrl;
+      if (provider === 'stripe') {
+        // Use Stripe for USD, GBP, EUR, etc.
+        const { data, error } = await supabase.functions.invoke('create-credit-purchase', {
+          body: {
+            organizerId: organizer.id,
+            packageId: selectedPackage.id,
+            credits: selectedPackage.credits,
+            bonusCredits: selectedPackage.bonus_credits,
+            amount,
+            currency,
+            email: organizer.business_email || organizer.email,
+            callbackUrl: `${window.location.origin}/organizer/credits?payment=success`,
+            provider: 'stripe',
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.url || data?.authorization_url) {
+          window.location.href = data.url || data.authorization_url;
+        } else {
+          throw new Error('Failed to create Stripe checkout');
+        }
+      } else if (provider === 'flutterwave') {
+        // Use Flutterwave for supported African currencies
+        const { data, error } = await supabase.functions.invoke('create-credit-purchase', {
+          body: {
+            organizerId: organizer.id,
+            packageId: selectedPackage.id,
+            credits: selectedPackage.credits,
+            bonusCredits: selectedPackage.bonus_credits,
+            amount,
+            currency,
+            email: organizer.business_email || organizer.email,
+            callbackUrl: `${window.location.origin}/organizer/credits?payment=success`,
+            provider: 'flutterwave',
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.link || data?.authorization_url) {
+          window.location.href = data.link || data.authorization_url;
+        } else {
+          throw new Error('Failed to create Flutterwave checkout');
+        }
       } else {
-        // If payment was processed directly (e.g., test mode)
-        await loadData();
-        setShowPurchaseDialog(false);
-        alert('Credits added successfully!');
+        // Default to Paystack for NGN
+        const { data, error } = await supabase.functions.invoke('create-credit-purchase', {
+          body: {
+            organizerId: organizer.id,
+            packageId: selectedPackage.id,
+            credits: selectedPackage.credits,
+            bonusCredits: selectedPackage.bonus_credits,
+            amount,
+            currency,
+            email: organizer.business_email || organizer.email,
+            callbackUrl: `${window.location.origin}/organizer/credits?payment=success`,
+            provider: 'paystack',
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.authorization_url) {
+          window.location.href = data.authorization_url;
+        } else if (data?.paymentUrl) {
+          window.location.href = data.paymentUrl;
+        } else {
+          await loadData();
+          setShowPurchaseDialog(false);
+          alert('Credits added successfully!');
+        }
       }
     } catch (error) {
       console.error('Payment error:', error);
