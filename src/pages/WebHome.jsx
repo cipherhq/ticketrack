@@ -13,85 +13,27 @@ import {
 } from 'lucide-react';
 import { ForYouFeed } from '@/components/ForYouFeed';
 
-// Category styling with icons and gradients
+// Category styling with icons - all blue theme
 const categoryStyles = {
-  'music-concerts': {
-    icon: Music,
-    gradient: 'from-purple-500 to-pink-500',
-    emoji: '🎵'
-  },
-  'conferences': {
-    icon: Mic2,
-    gradient: 'from-blue-500 to-cyan-500',
-    emoji: '🎤'
-  },
-  'festivals': {
-    icon: PartyPopper,
-    gradient: 'from-orange-500 to-yellow-500',
-    emoji: '🎉'
-  },
-  'sports': {
-    icon: Trophy,
-    gradient: 'from-green-500 to-emerald-500',
-    emoji: '🏆'
-  },
-  'arts-theatre': {
-    icon: Drama,
-    gradient: 'from-rose-500 to-red-500',
-    emoji: '🎭'
-  },
-  'food-drink': {
-    icon: UtensilsCrossed,
-    gradient: 'from-amber-500 to-orange-500',
-    emoji: '🍽️'
-  },
-  'nightlife': {
-    icon: Wine,
-    gradient: 'from-violet-500 to-purple-500',
-    emoji: '🍸'
-  },
-  'comedy': {
-    icon: Laugh,
-    gradient: 'from-yellow-500 to-amber-500',
-    emoji: '😂'
-  },
-  'wellness': {
-    icon: Leaf,
-    gradient: 'from-teal-500 to-green-500',
-    emoji: '🧘'
-  },
-  'charity': {
-    icon: HeartHandshake,
-    gradient: 'from-pink-500 to-rose-500',
-    emoji: '💝'
-  },
-  'gaming': {
-    icon: Gamepad2,
-    gradient: 'from-indigo-500 to-blue-500',
-    emoji: '🎮'
-  },
-  'education': {
-    icon: GraduationCap,
-    gradient: 'from-sky-500 to-blue-500',
-    emoji: '🎓'
-  },
-  'business': {
-    icon: Briefcase,
-    gradient: 'from-slate-500 to-gray-600',
-    emoji: '💼'
-  },
-  'kids-family': {
-    icon: Baby,
-    gradient: 'from-pink-400 to-purple-400',
-    emoji: '👨‍👩‍👧'
-  },
+  'music-concerts': { icon: Music },
+  'conferences': { icon: Mic2 },
+  'festivals': { icon: PartyPopper },
+  'sports': { icon: Trophy },
+  'arts-theatre': { icon: Drama },
+  'food-drink': { icon: UtensilsCrossed },
+  'nightlife': { icon: Wine },
+  'comedy': { icon: Laugh },
+  'wellness': { icon: Leaf },
+  'charity': { icon: HeartHandshake },
+  'gaming': { icon: Gamepad2 },
+  'education': { icon: GraduationCap },
+  'business': { icon: Briefcase },
+  'kids-family': { icon: Baby },
 };
 
 // Default style for unknown categories
 const defaultCategoryStyle = {
   icon: Sparkles,
-  gradient: 'from-gray-500 to-gray-600',
-  emoji: '✨'
 };
 
 const dateOptions = [
@@ -372,7 +314,7 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
   );
 };
 
-// Category Card with modern icon design
+// Category Card with modern blue design
 const CategoryCard = ({ category }) => {
   const style = categoryStyles[category.slug] || defaultCategoryStyle;
   const IconComponent = style.icon;
@@ -380,7 +322,7 @@ const CategoryCard = ({ category }) => {
   return (
     <Link
       to={`/events?category=${category.slug}`}
-      className={`relative min-w-[160px] h-[140px] rounded-2xl overflow-hidden group cursor-pointer bg-gradient-to-br ${style.gradient} p-4 flex flex-col justify-between shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}
+      className="relative min-w-[160px] h-[140px] rounded-2xl overflow-hidden group cursor-pointer bg-gradient-to-br from-[#2969FF] to-[#1a4fd8] p-4 flex flex-col justify-between shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
     >
       {/* Decorative circles */}
       <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
