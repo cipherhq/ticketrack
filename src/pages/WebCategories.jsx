@@ -36,7 +36,7 @@ export function WebCategories() {
   const loadCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('event_categories')
+        .from('categories')
         .select('*')
         .eq('is_active', true)
         .order('name');
