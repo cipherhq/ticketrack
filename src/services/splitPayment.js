@@ -180,16 +180,19 @@ export function subscribeToSplitPayment(splitPaymentId, callbacks) {
 // Calculate split amounts
 export function calculateSplitAmounts(totalAmount, memberCount, splitType = 'equal') {
   if (splitType === 'equal') {
-    const perPerson = Math.ceil((totalAmount / memberCount) * 100) / 100; // Round up to nearest cent
-    const lastPerson = totalAmount - (perPerson * (memberCount - 1)); // Last person pays remainder
-    
-    return Array(memberCount).fill(perPerson).map((amount, index) => 
+    // Use floor instead of ceil to prevent negative last-person amounts
+    // Round down to nearest cent, last person pays the remainder (slightly more)
+    const perPerson = Math.floor((totalAmount / memberCount) * 100) / 100;
+    const lastPerson = Math.round((totalAmount - (perPerson * (memberCount - 1))) * 100) / 100;
+
+    return Array(memberCount).fill(perPerson).map((amount, index) =>
       index === memberCount - 1 ? lastPerson : amount
     );
   }
-  
+
   // For custom splits, return equal by default (can be customized in UI)
-  return Array(memberCount).fill(totalAmount / memberCount);
+  const perPerson = Math.floor((totalAmount / memberCount) * 100) / 100;
+  return Array(memberCount).fill(perPerson);
 }
 
 // Format share status for display

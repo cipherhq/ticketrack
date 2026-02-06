@@ -238,6 +238,13 @@ serve(async (req) => {
         const splitPaymentId = session.metadata?.split_payment_id;
 
         if (shareId) {
+          // Get the share details for notifications
+          const { data: paidShare } = await supabase
+            .from("group_split_shares")
+            .select("name, email, split_payment_id")
+            .eq("id", shareId)
+            .single();
+
           // Record the share payment
           const { data: shareResult, error: shareError } = await supabase.rpc("record_share_payment", {
             p_share_id: shareId,
@@ -250,6 +257,42 @@ serve(async (req) => {
           } else if (shareResult?.all_paid) {
             // All shares paid - create the order and tickets
             await handleSplitPaymentCompleted(supabase, splitPaymentId);
+          } else if (paidShare?.split_payment_id) {
+            // Notify other members that someone paid
+            try {
+              const { data: otherShares } = await supabase
+                .from("group_split_shares")
+                .select("email, name")
+                .eq("split_payment_id", paidShare.split_payment_id)
+                .eq("payment_status", "unpaid")
+                .neq("id", shareId);
+
+              const { data: splitPaymentData } = await supabase
+                .from("group_split_payments")
+                .select("event:events(title)")
+                .eq("id", paidShare.split_payment_id)
+                .single();
+
+              const eventTitle = splitPaymentData?.event?.title || "the event";
+              const payerName = paidShare?.name || "A group member";
+
+              for (const share of otherShares || []) {
+                await supabase.functions.invoke("send-email", {
+                  body: {
+                    type: "split_payment_progress",
+                    to: share.email,
+                    data: {
+                      name: share.name,
+                      payerName,
+                      eventTitle,
+                      remainingCount: (otherShares?.length || 1),
+                    },
+                  },
+                });
+              }
+            } catch (notifyError) {
+              safeLog.warn("Failed to send split payment notifications:", notifyError);
+            }
           }
 
           safeLog.info(`Split payment share ${shareId} completed via Stripe`);

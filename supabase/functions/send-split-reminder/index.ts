@@ -51,8 +51,9 @@ serve(async (req) => {
       throw new Error("Missing event or email");
     }
 
-    // Generate payment link
-    const paymentLink = `https://ticketrack.com/pay-share/${share.payment_token}`;
+    // Generate payment link using environment variable or default
+    const siteUrl = Deno.env.get("SITE_URL") || "https://ticketrack.com";
+    const paymentLink = `${siteUrl}/pay-share/${share.payment_token}`;
 
     // Calculate time remaining
     const expiresAt = new Date(splitPayment.expires_at);

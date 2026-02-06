@@ -410,6 +410,13 @@ async function handleSplitPaymentSuccess(supabase: any, reference: string, metad
 
   safeLog.info(`Processing split payment for share: ${shareId}`);
 
+  // Get the share details for notifications
+  const { data: paidShare } = await supabase
+    .from("group_split_shares")
+    .select("name, email, split_payment_id")
+    .eq("id", shareId)
+    .single();
+
   // Record the share payment
   const { data: shareResult, error: shareError } = await supabase.rpc("record_share_payment", {
     p_share_id: shareId,
@@ -423,6 +430,46 @@ async function handleSplitPaymentSuccess(supabase: any, reference: string, metad
   }
 
   safeLog.info(`Split payment share ${shareId} recorded, all_paid: ${shareResult?.all_paid}`);
+
+  // Notify other members that someone paid (if not all paid yet)
+  if (!shareResult?.all_paid && paidShare?.split_payment_id) {
+    try {
+      // Get other unpaid shares to notify
+      const { data: otherShares } = await supabase
+        .from("group_split_shares")
+        .select("email, name")
+        .eq("split_payment_id", paidShare.split_payment_id)
+        .eq("payment_status", "unpaid")
+        .neq("id", shareId);
+
+      // Get event title for notification
+      const { data: splitPayment } = await supabase
+        .from("group_split_payments")
+        .select("event:events(title)")
+        .eq("id", paidShare.split_payment_id)
+        .single();
+
+      const eventTitle = splitPayment?.event?.title || "the event";
+      const payerName = paidShare?.name || "A group member";
+
+      // Send notification email to remaining members
+      for (const share of otherShares || []) {
+        await sendEmailWithServiceRole({
+          type: "split_payment_progress",
+          to: share.email,
+          data: {
+            name: share.name,
+            payerName,
+            eventTitle,
+            remainingCount: (otherShares?.length || 1),
+          },
+        });
+      }
+    } catch (notifyError) {
+      // Don't fail the payment if notifications fail
+      safeLog.warn("Failed to send split payment notifications:", notifyError);
+    }
+  }
 
   // Check if all shares are paid
   if (shareResult?.all_paid && splitPaymentId) {

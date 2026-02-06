@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Users, Loader2, AlertCircle, LogIn } from 'lucide-react'
+import { Users, Loader2, AlertCircle, LogIn, Crown, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/AuthContext'
 import { GroupBuyLobby } from '@/components/GroupBuyLobby'
-import { 
-  joinGroupSession, 
+import {
+  joinGroupSession,
   getGroupSessionByCode,
-  getMyMembership 
+  getMyMembership
 } from '@/services/groupBuy'
 
 export function GroupBuyJoin() {
@@ -32,7 +32,7 @@ export function GroupBuyJoin() {
       // Always load preview first, then user can click to join
       loadSessionPreview(code)
     }
-  }, [code])
+  }, [code, user?.id]) // Re-check when user logs in
 
   const loadSessionPreview = async (groupCode) => {
     try {
@@ -43,6 +43,24 @@ export function GroupBuyJoin() {
         throw new Error('Group not found')
       }
       setSession(sessionData)
+
+      // Check if logged-in user is already a member of this group
+      if (user) {
+        try {
+          const membershipData = await getMyMembership(sessionData.id)
+          if (membershipData) {
+            // User is already a member - go directly to lobby
+            setMembership(membershipData)
+            setStep('lobby')
+            setLoading(false)
+            return
+          }
+        } catch (err) {
+          // Not a member, continue to preview
+          console.log('User not a member yet')
+        }
+      }
+
       setStep('preview')
       setLoading(false)
     } catch (err) {
@@ -132,8 +150,66 @@ export function GroupBuyJoin() {
     )
   }
 
-  // Preview view (before login)
+  // Preview view (before login or for new members)
   if (step === 'preview' && session) {
+    // Check if user is the host (by checking session data)
+    const isHost = user && session.host_user_id === user.id
+    const existingMember = user && session.members?.find(m => m.user_id === user.id)
+
+    // If user is already a member, show different UI
+    if (existingMember) {
+      return (
+        <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+          <Card className="max-w-md w-full rounded-2xl overflow-hidden">
+            {session.event?.image_url && (
+              <div className="h-40 bg-cover bg-center" style={{ backgroundImage: `url(${session.event.image_url})` }} />
+            )}
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  {existingMember.is_host ? (
+                    <Crown className="w-8 h-8 text-green-600" />
+                  ) : (
+                    <Users className="w-8 h-8 text-green-600" />
+                  )}
+                </div>
+                <h1 className="text-2xl font-bold text-[#0F0F0F] mb-2">
+                  {existingMember.is_host ? 'Your Group' : "You're in this Group"}
+                </h1>
+                <p className="text-[#0F0F0F]/60">{session.name || `${session.host_name}'s Group`}</p>
+              </div>
+
+              <div className="bg-[#F4F6FA] rounded-xl p-4 mb-6">
+                <p className="text-sm text-[#0F0F0F]/60 mb-1">Event</p>
+                <p className="font-semibold text-[#0F0F0F]">{session.event?.title}</p>
+                <p className="text-sm text-[#0F0F0F]/60 mt-2">
+                  {session.member_count} member{session.member_count !== 1 ? 's' : ''} in this group
+                </p>
+                {existingMember.is_host && (
+                  <p className="text-xs text-green-600 mt-2 font-medium">You created this group</p>
+                )}
+              </div>
+
+              <Button
+                onClick={() => handleJoinWithCode(session.code)}
+                disabled={joining}
+                className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6"
+              >
+                {joining ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <ArrowRight className="w-5 h-5 mr-2" />
+                    Go to Group Lobby
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
     return (
       <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
         <Card className="max-w-md w-full rounded-2xl overflow-hidden">
@@ -146,7 +222,7 @@ export function GroupBuyJoin() {
                 <Users className="w-8 h-8 text-[#2969FF]" />
               </div>
               <h1 className="text-2xl font-bold text-[#0F0F0F] mb-2">Join Group</h1>
-              <p className="text-[#0F0F0F]/60">{session.name}</p>
+              <p className="text-[#0F0F0F]/60">{session.name || `${session.host_name}'s Group`}</p>
             </div>
 
             <div className="bg-[#F4F6FA] rounded-xl p-4 mb-6">
