@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function PromoterPayouts() {
@@ -165,9 +165,14 @@ export function PromoterPayouts() {
            p.promoter?.email?.toLowerCase().includes(query);
   });
 
-  // Calculate totals
-  const totalPending = promoterPayouts.reduce((sum, p) => sum + p.totalPending, 0);
-  const totalPaid = promoterPayouts.reduce((sum, p) => sum + p.totalPaid, 0);
+  // Calculate totals by currency
+  const totalPendingByCurrency = {};
+  const totalPaidByCurrency = {};
+  promoterPayouts.forEach(p => {
+    const currency = Array.from(p.currencies)[0] || 'NGN';
+    totalPendingByCurrency[currency] = (totalPendingByCurrency[currency] || 0) + p.totalPending;
+    totalPaidByCurrency[currency] = (totalPaidByCurrency[currency] || 0) + p.totalPaid;
+  });
 
   return (
     <div className="space-y-6">
@@ -205,7 +210,7 @@ export function PromoterPayouts() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Pending</p>
-                <p className="font-bold text-yellow-600">{formatPrice(totalPending, 'NGN')}</p>
+                <p className="font-bold text-yellow-600">{formatMultiCurrencyCompact(totalPendingByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -218,7 +223,7 @@ export function PromoterPayouts() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Paid</p>
-                <p className="font-bold text-green-600">{formatPrice(totalPaid, 'NGN')}</p>
+                <p className="font-bold text-green-600">{formatMultiCurrencyCompact(totalPaidByCurrency)}</p>
               </div>
             </div>
           </CardContent>

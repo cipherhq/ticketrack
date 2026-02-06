@@ -98,6 +98,9 @@ export function ContactManagement() {
   const loadData = async () => {
     setLoading(true);
     try {
+      // Auto-sync contacts from ticket purchases (silent, no alerts)
+      await autoSyncContacts();
+
       await Promise.all([
         loadContacts(),
         loadSegments(),
@@ -107,6 +110,78 @@ export function ContactManagement() {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Silent auto-sync of contacts from ticket purchases
+  const autoSyncContacts = async () => {
+    try {
+      // 1. Get all events for this organizer
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select('id')
+        .eq('organizer_id', organizer.id);
+
+      if (eventsError || !events || events.length === 0) return;
+
+      const eventIds = events.map(e => e.id);
+
+      // 2. Get all tickets with attendee data
+      const { data: tickets } = await supabase
+        .from('tickets')
+        .select('id, attendee_name, attendee_email, attendee_phone, created_at')
+        .in('event_id', eventIds)
+        .not('attendee_email', 'is', null);
+
+      // Also get from orders
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('id, attendee_name, attendee_email, attendee_phone, created_at')
+        .in('event_id', eventIds)
+        .in('status', ['completed', 'confirmed'])
+        .not('attendee_email', 'is', null);
+
+      const allAttendees = [...(tickets || []), ...(orders || [])];
+      if (allAttendees.length === 0) return;
+
+      // 3. Get existing contacts
+      const { data: existingContacts } = await supabase
+        .from('contacts')
+        .select('email')
+        .eq('organizer_id', organizer.id);
+
+      const existingEmails = new Set((existingContacts || []).map(c => c.email?.toLowerCase()));
+
+      // 4. Create unique new contacts
+      const uniqueContacts = new Map();
+      allAttendees.forEach(attendee => {
+        const email = attendee.attendee_email?.toLowerCase();
+        if (email && !existingEmails.has(email) && !uniqueContacts.has(email)) {
+          uniqueContacts.set(email, {
+            organizer_id: organizer.id,
+            full_name: attendee.attendee_name || null,
+            email: attendee.attendee_email,
+            phone: attendee.attendee_phone || null,
+            source_type: 'ticket',
+            email_opt_in: true,
+            sms_opt_in: true,
+            whatsapp_opt_in: true,
+            is_active: true,
+            first_contact_at: attendee.created_at,
+            last_contact_at: attendee.created_at,
+            tags: ['Ticket Buyer'],
+          });
+        }
+      });
+
+      // 5. Insert new contacts (silently)
+      const newContacts = Array.from(uniqueContacts.values());
+      if (newContacts.length > 0) {
+        await supabase.from('contacts').insert(newContacts);
+      }
+    } catch (error) {
+      // Silent fail - don't interrupt page load
+      console.error('Auto-sync error:', error);
     }
   };
 

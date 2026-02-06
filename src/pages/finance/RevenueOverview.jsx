@@ -5,16 +5,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function RevenueOverview() {
   const { logFinanceAction } = useFinance();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalPaidOut: 0,
-    pendingPayouts: 0,
+    totalRevenueByCurrency: {},
+    totalPaidOutByCurrency: {},
+    pendingPayoutsByCurrency: {},
     revenueByMonth: []
   });
 
@@ -27,13 +27,31 @@ export function RevenueOverview() {
     setLoading(true);
     try {
       const { data: orders } = await supabase.from('orders').select('platform_fee, created_at, currency').eq('status', 'completed');
-      const totalRevenue = orders?.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0) || 0;
 
-      const { data: payouts } = await supabase.from('payouts').select('net_amount').eq('status', 'completed');
-      const totalPaidOut = payouts?.reduce((sum, p) => sum + parseFloat(p.net_amount || 0), 0) || 0;
+      // Group revenue by currency
+      const totalRevenueByCurrency = {};
+      orders?.forEach(o => {
+        const currency = o.currency || 'NGN';
+        totalRevenueByCurrency[currency] = (totalRevenueByCurrency[currency] || 0) + parseFloat(o.platform_fee || 0);
+      });
 
-      const { data: pendingPayouts } = await supabase.from('payouts').select('net_amount').in('status', ['pending', 'processing']);
-      const pendingAmount = pendingPayouts?.reduce((sum, p) => sum + parseFloat(p.net_amount || 0), 0) || 0;
+      const { data: payouts } = await supabase.from('payouts').select('net_amount, currency').eq('status', 'completed');
+
+      // Group paid out by currency
+      const totalPaidOutByCurrency = {};
+      payouts?.forEach(p => {
+        const currency = p.currency || 'NGN';
+        totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + parseFloat(p.net_amount || 0);
+      });
+
+      const { data: pendingPayouts } = await supabase.from('payouts').select('net_amount, currency').in('status', ['pending', 'processing']);
+
+      // Group pending by currency
+      const pendingPayoutsByCurrency = {};
+      pendingPayouts?.forEach(p => {
+        const currency = p.currency || 'NGN';
+        pendingPayoutsByCurrency[currency] = (pendingPayoutsByCurrency[currency] || 0) + parseFloat(p.net_amount || 0);
+      });
 
       const revenueByMonth = [];
       for (let i = 11; i >= 0; i--) {
@@ -41,17 +59,17 @@ export function RevenueOverview() {
         date.setMonth(date.getMonth() - i);
         const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
         const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-        const monthOrders = orders?.filter(o => { 
-          const d = new Date(o.created_at); 
-          return d >= monthStart && d <= monthEnd; 
+        const monthOrders = orders?.filter(o => {
+          const d = new Date(o.created_at);
+          return d >= monthStart && d <= monthEnd;
         }) || [];
-        revenueByMonth.push({ 
-          month: monthStart.toLocaleString('default', { month: 'short', year: '2-digit' }), 
-          revenue: monthOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0) 
+        revenueByMonth.push({
+          month: monthStart.toLocaleString('default', { month: 'short', year: '2-digit' }),
+          revenue: monthOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0)
         });
       }
 
-      setStats({ totalRevenue, totalPaidOut, pendingPayouts: pendingAmount, revenueByMonth });
+      setStats({ totalRevenueByCurrency, totalPaidOutByCurrency, pendingPayoutsByCurrency, revenueByMonth });
     } catch (error) {
       console.error('Error loading revenue:', error);
     } finally {
@@ -92,7 +110,7 @@ export function RevenueOverview() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Platform Revenue</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.totalRevenue, 'NGN')}</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.totalRevenueByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -105,7 +123,7 @@ export function RevenueOverview() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Paid Out</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.totalPaidOut, 'NGN')}</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.totalPaidOutByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -118,7 +136,7 @@ export function RevenueOverview() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.pendingPayouts, 'NGN')}</p>
+                <p className="text-2xl font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.pendingPayoutsByCurrency)}</p>
               </div>
             </div>
           </CardContent>

@@ -34,9 +34,11 @@ export function AdminSMSPackages() {
   const [editingPackage, setEditingPackage] = useState(null);
   const [form, setForm] = useState({
     name: '',
+    description: '',
     credits: '',
-    price: '',
+    price_ngn: '',
     bonus_credits: '0',
+    badge_text: '',
     is_popular: false,
     is_active: true,
     sort_order: '0',
@@ -50,7 +52,7 @@ export function AdminSMSPackages() {
     setLoading(true);
     try {
       const { data } = await supabase
-        .from('sms_credit_packages')
+        .from('communication_credit_packages')
         .select('*')
         .order('sort_order');
       setPackages(data || []);
@@ -63,7 +65,7 @@ export function AdminSMSPackages() {
 
   const openCreateDialog = () => {
     setEditingPackage(null);
-    setForm({ name: '', credits: '', price: '', bonus_credits: '0', is_popular: false, is_active: true, sort_order: String(packages.length + 1) });
+    setForm({ name: '', description: '', credits: '', price_ngn: '', bonus_credits: '0', badge_text: '', is_popular: false, is_active: true, sort_order: String(packages.length + 1) });
     setDialogOpen(true);
   };
 
@@ -71,9 +73,11 @@ export function AdminSMSPackages() {
     setEditingPackage(pkg);
     setForm({
       name: pkg.name,
+      description: pkg.description || '',
       credits: String(pkg.credits),
-      price: String(pkg.price),
+      price_ngn: String(pkg.price_ngn),
       bonus_credits: String(pkg.bonus_credits || 0),
+      badge_text: pkg.badge_text || '',
       is_popular: pkg.is_popular,
       is_active: pkg.is_active,
       sort_order: String(pkg.sort_order || 0),
@@ -82,33 +86,40 @@ export function AdminSMSPackages() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.credits || !form.price) {
+    if (!form.name || !form.credits || !form.price_ngn) {
       alert('Please fill in all required fields');
       return;
     }
     setSaving(true);
     try {
+      const totalCredits = parseInt(form.credits) + (parseInt(form.bonus_credits) || 0);
+      const pricePerCredit = totalCredits > 0 ? parseFloat(form.price_ngn) / totalCredits : 0;
+
       const packageData = {
         name: form.name,
+        description: form.description || null,
         credits: parseInt(form.credits),
-        price: parseFloat(form.price),
+        price_ngn: parseFloat(form.price_ngn),
+        price_per_credit: pricePerCredit,
         bonus_credits: parseInt(form.bonus_credits) || 0,
+        badge_text: form.badge_text || null,
         is_popular: form.is_popular,
         is_active: form.is_active,
         sort_order: parseInt(form.sort_order) || 0,
       };
 
       if (editingPackage) {
-        await supabase.from('sms_credit_packages').update(packageData).eq('id', editingPackage.id);
-        await logAdminAction('sms_package_updated', 'sms_credit_packages', editingPackage.id, packageData);
+        await supabase.from('communication_credit_packages').update(packageData).eq('id', editingPackage.id);
+        await logAdminAction('credit_package_updated', 'communication_credit_packages', editingPackage.id, packageData);
       } else {
-        await supabase.from('sms_credit_packages').insert(packageData);
-        await logAdminAction('sms_package_created', 'sms_credit_packages', null, packageData);
+        await supabase.from('communication_credit_packages').insert(packageData);
+        await logAdminAction('credit_package_created', 'communication_credit_packages', null, packageData);
       }
       setDialogOpen(false);
       loadPackages();
     } catch (error) {
-      alert('Failed to save package');
+      console.error('Error saving package:', error);
+      alert('Failed to save package: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -117,7 +128,7 @@ export function AdminSMSPackages() {
   const handleDelete = async (pkg) => {
     if (!confirm(`Delete "${pkg.name}" package?`)) return;
     try {
-      await supabase.from('sms_credit_packages').delete().eq('id', pkg.id);
+      await supabase.from('communication_credit_packages').delete().eq('id', pkg.id);
       loadPackages();
     } catch (error) {
       alert('Failed to delete');
@@ -125,7 +136,7 @@ export function AdminSMSPackages() {
   };
 
   const toggleActive = async (pkg) => {
-    await supabase.from('sms_credit_packages').update({ is_active: !pkg.is_active }).eq('id', pkg.id);
+    await supabase.from('communication_credit_packages').update({ is_active: !pkg.is_active }).eq('id', pkg.id);
     loadPackages();
   };
 
@@ -133,7 +144,7 @@ export function AdminSMSPackages() {
 
   const calculateProfit = (pkg) => {
     const totalCredits = pkg.credits + (pkg.bonus_credits || 0);
-    return pkg.price - (totalCredits * 4);
+    return pkg.price_ngn - (totalCredits * 4);
   };
 
   if (loading) {
@@ -144,8 +155,8 @@ export function AdminSMSPackages() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">SMS Packages</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Set prices for SMS credit packages</p>
+          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Message Credit Packages</h2>
+          <p className="text-[#0F0F0F]/60 mt-1">Create packages for organizers to buy SMS, WhatsApp, and email credits</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={loadPackages} className="rounded-xl"><RefreshCw className="w-4 h-4" /></Button>
@@ -188,8 +199,8 @@ export function AdminSMSPackages() {
                       </td>
                       <td className="py-3 px-4">{pkg.credits}</td>
                       <td className="py-3 px-4 text-green-600">+{pkg.bonus_credits || 0}</td>
-                      <td className="py-3 px-4 font-medium">{formatCurrency(pkg.price)}</td>
-                      <td className="py-3 px-4">₦{parseFloat(pkg.price_per_sms || 0).toFixed(2)}</td>
+                      <td className="py-3 px-4 font-medium">{formatCurrency(pkg.price_ngn)}</td>
+                      <td className="py-3 px-4">₦{parseFloat(pkg.price_per_credit || 0).toFixed(2)}</td>
                       <td className={`py-3 px-4 font-medium ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(profit)}</td>
                       <td className="py-3 px-4"><Switch checked={pkg.is_active} onCheckedChange={() => toggleActive(pkg)} /></td>
                       <td className="py-3 px-4 text-right">
@@ -209,19 +220,23 @@ export function AdminSMSPackages() {
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader><DialogTitle>{editingPackage ? 'Edit' : 'Create'} Package</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl mt-1" /></div>
+            <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl mt-1" placeholder="e.g., Starter Pack" /></div>
+            <div><Label>Description</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="rounded-xl mt-1" placeholder="e.g., Perfect for small events" /></div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Credits *</Label><Input type="number" value={form.credits} onChange={(e) => setForm({ ...form, credits: e.target.value })} className="rounded-xl mt-1" /></div>
               <div><Label>Bonus</Label><Input type="number" value={form.bonus_credits} onChange={(e) => setForm({ ...form, bonus_credits: e.target.value })} className="rounded-xl mt-1" /></div>
             </div>
-            <div><Label>Price (₦) *</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-xl mt-1" /></div>
-            <div><Label>Sort Order</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} className="rounded-xl mt-1" /></div>
-            <div className="flex items-center justify-between"><Label>Popular</Label><Switch checked={form.is_popular} onCheckedChange={(c) => setForm({ ...form, is_popular: c })} /></div>
-            <div className="flex items-center justify-between"><Label>Active</Label><Switch checked={form.is_active} onCheckedChange={(c) => setForm({ ...form, is_active: c })} /></div>
-            {form.credits && form.price && (
+            <div><Label>Price (₦) *</Label><Input type="number" value={form.price_ngn} onChange={(e) => setForm({ ...form, price_ngn: e.target.value })} className="rounded-xl mt-1" /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Badge Text</Label><Input value={form.badge_text} onChange={(e) => setForm({ ...form, badge_text: e.target.value })} className="rounded-xl mt-1" placeholder="e.g., Best Value" /></div>
+              <div><Label>Sort Order</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} className="rounded-xl mt-1" /></div>
+            </div>
+            <div className="flex items-center justify-between"><Label>Popular (highlighted)</Label><Switch checked={form.is_popular} onCheckedChange={(c) => setForm({ ...form, is_popular: c })} /></div>
+            <div className="flex items-center justify-between"><Label>Active (visible to organizers)</Label><Switch checked={form.is_active} onCheckedChange={(c) => setForm({ ...form, is_active: c })} /></div>
+            {form.credits && form.price_ngn && (
               <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60">Profit per sale</p>
-                <p className="font-medium">{formatCurrency(parseFloat(form.price) - (parseInt(form.credits) + parseInt(form.bonus_credits || 0)) * 4)}</p>
+                <p className="text-sm text-[#0F0F0F]/60">Profit per sale (cost ₦4/credit)</p>
+                <p className="font-medium">{formatCurrency(parseFloat(form.price_ngn) - (parseInt(form.credits) + parseInt(form.bonus_credits || 0)) * 4)}</p>
               </div>
             )}
             <div className="flex gap-3">

@@ -143,11 +143,32 @@ export function CommunicationCredits() {
   };
 
   const loadPackages = async () => {
-    const { data } = await supabase
+    // Try new table first
+    let { data } = await supabase
       .from('communication_credit_packages')
       .select('*')
       .eq('is_active', true)
       .order('sort_order');
+
+    // Fallback to old sms_credit_packages table if new table is empty
+    if (!data || data.length === 0) {
+      const { data: legacyData } = await supabase
+        .from('sms_credit_packages')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      // Map old field names to new format
+      if (legacyData && legacyData.length > 0) {
+        data = legacyData.map(pkg => ({
+          ...pkg,
+          price_ngn: pkg.price,
+          price_per_credit: pkg.price / (pkg.credits + (pkg.bonus_credits || 0)),
+          description: null,
+          badge_text: pkg.is_popular ? 'Popular' : null,
+        }));
+      }
+    }
 
     setPackages(data || []);
   };
