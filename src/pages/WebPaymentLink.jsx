@@ -158,11 +158,17 @@ export function WebPaymentLink() {
           await supabase.rpc('increment_ticket_sold', {
             p_ticket_type_id: item.ticket_type_id,
             p_quantity: item.quantity,
-          }).catch(() => {
-            // Fallback: direct update
-            supabase
+          }).catch(async () => {
+            // Fallback: fetch and update
+            const { data: ticketType } = await supabase
               .from('ticket_types')
-              .update({ quantity_sold: supabase.raw(`quantity_sold + ${item.quantity}`) })
+              .select('quantity_sold')
+              .eq('id', item.ticket_type_id)
+              .single()
+
+            await supabase
+              .from('ticket_types')
+              .update({ quantity_sold: (ticketType?.quantity_sold || 0) + item.quantity })
               .eq('id', item.ticket_type_id)
           })
         }

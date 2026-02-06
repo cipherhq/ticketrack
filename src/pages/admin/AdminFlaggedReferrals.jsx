@@ -61,19 +61,26 @@ export function AdminFlaggedReferrals() {
       // Update status to available (approved)
       await supabase
         .from('referral_earnings')
-        .update({ 
+        .update({
           status: 'available',
           reviewed_by: (await supabase.auth.getUser()).data.user?.id,
           reviewed_at: new Date().toISOString()
         })
         .eq('id', referral.id);
 
+      // Get current profile balances
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('affiliate_balance, total_referral_earnings')
+        .eq('id', referral.user_id)
+        .single();
+
       // Add commission to affiliate balance
       await supabase
         .from('profiles')
-        .update({ 
-          affiliate_balance: supabase.raw(`affiliate_balance + ${referral.commission_amount}`),
-          total_referral_earnings: supabase.raw(`total_referral_earnings + ${referral.commission_amount}`)
+        .update({
+          affiliate_balance: (profile?.affiliate_balance || 0) + referral.commission_amount,
+          total_referral_earnings: (profile?.total_referral_earnings || 0) + referral.commission_amount
         })
         .eq('id', referral.user_id);
 

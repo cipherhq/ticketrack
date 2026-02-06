@@ -163,15 +163,21 @@ export async function getPromoterByCode(promoCode) {
 // Track promoter click
 export async function trackPromoterClick(promoterId) {
   // Increment total_clicks on the promoter
-  const { error } = await supabase.rpc('increment_promoter_clicks', { 
-    promoter_id: promoterId 
+  const { error } = await supabase.rpc('increment_promoter_clicks', {
+    promoter_id: promoterId
   })
 
   // If RPC doesn't exist, fall back to manual update
   if (error) {
+    const { data: promoter } = await supabase
+      .from('promoters')
+      .select('total_clicks')
+      .eq('id', promoterId)
+      .single()
+
     await supabase
       .from('promoters')
-      .update({ total_clicks: supabase.raw('total_clicks + 1') })
+      .update({ total_clicks: (promoter?.total_clicks || 0) + 1 })
       .eq('id', promoterId)
   }
 }
