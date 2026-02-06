@@ -92,6 +92,7 @@ const WebRefundPolicy = lazyWithRetry(() => import('./pages/WebRefundPolicy').th
 const WebCareers = lazyWithRetry(() => import('./pages/WebCareers').then(m => ({ default: m.WebCareers })), 'WebCareers');
 const WebResources = lazyWithRetry(() => import('./pages/WebResources').then(m => ({ default: m.WebResources })), 'WebResources');
 const WebBlog = lazyWithRetry(() => import('./pages/WebBlog').then(m => ({ default: m.WebBlog })), 'WebBlog');
+const WebCategories = lazyWithRetry(() => import('./pages/WebCategories').then(m => ({ default: m.WebCategories })), 'WebCategories');
 const WebBlogPost = lazyWithRetry(() => import('./pages/WebBlogPost').then(m => ({ default: m.WebBlogPost })), 'WebBlogPost');
 const AttendeeProfile = lazyWithRetry(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })), 'AttendeeProfile');
 const OrganizerPublicProfile = lazyWithRetry(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })), 'OrganizerPublicProfile');
@@ -236,6 +237,11 @@ function App() {
                 <Route path="/events" element={
                   <Suspense fallback={<PageLoader />}>
                     <WebEventBrowse />
+                  </Suspense>
+                } />
+                <Route path="/categories" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebCategories />
                   </Suspense>
                 } />
                 <Route path="/events/:id" element={<WebEventDetails />} />

@@ -671,7 +671,7 @@ export function WebHome() {
           <section className="py-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">Popular categories</h2>
-              <Link to="/events" className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+              <Link to="/categories" className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
                 View All <ChevronRight size={16} />
               </Link>
             </div>
