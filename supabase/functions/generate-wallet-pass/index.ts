@@ -492,12 +492,20 @@ serve(async (req) => {
 
   } catch (error) {
     logError('wallet_pass_generation', error)
-    return errorResponse(
-      ERROR_CODES.INTERNAL_ERROR,
-      400,
-      error,
-      'Failed to generate wallet pass. Please try downloading the PDF ticket instead.',
-      corsHeaders
+    // Return detailed error for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'wallet_pass_generation_failed',
+        message: 'Failed to generate wallet pass.',
+        debug: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
   }
 })
@@ -511,11 +519,53 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
   // Check if Apple Wallet is configured
   if (!APPLE_PASS_TYPE_ID || !APPLE_TEAM_ID || !APPLE_CERTIFICATE) {
     safeLog.info('Apple Wallet not configured - missing environment variables')
+    safeLog.info('APPLE_PASS_TYPE_ID:', !!APPLE_PASS_TYPE_ID)
+    safeLog.info('APPLE_TEAM_ID:', !!APPLE_TEAM_ID)
+    safeLog.info('APPLE_PASS_CERTIFICATE:', !!APPLE_CERTIFICATE)
     return new Response(
       JSON.stringify({
         error: 'Apple Wallet not configured',
         fallback: true,
         message: 'Apple Wallet passes are coming soon! For now, please use "Add to Calendar".'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    )
+  }
+
+  // Validate certificate format (should be base64 encoded P12)
+  safeLog.info('Certificate length:', APPLE_CERTIFICATE.length)
+  safeLog.info('Certificate starts with:', APPLE_CERTIFICATE.substring(0, 20))
+
+  // Check if the certificate looks like it might be a file path or raw binary
+  if (APPLE_CERTIFICATE.startsWith('/') || APPLE_CERTIFICATE.startsWith('./')) {
+    safeLog.error('Certificate appears to be a file path, not base64 content')
+    return new Response(
+      JSON.stringify({
+        error: 'Certificate configuration error',
+        fallback: true,
+        message: 'Apple Wallet certificate must be base64 encoded. Please contact support.',
+        details: 'Certificate appears to be a file path'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    )
+  }
+
+  // Check if certificate is valid base64
+  const base64Regex = /^[A-Za-z0-9+/=]+$/
+  if (!base64Regex.test(APPLE_CERTIFICATE.replace(/\s/g, ''))) {
+    safeLog.error('Certificate does not appear to be valid base64')
+    return new Response(
+      JSON.stringify({
+        error: 'Certificate configuration error',
+        fallback: true,
+        message: 'Apple Wallet certificate format is invalid. Please contact support.',
+        details: 'Certificate is not valid base64'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
