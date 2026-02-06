@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from '@/lib/supabase';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+import { brand } from '@/config/brand';
 
 // Country configurations for tax/compliance
 const COUNTRY_CONFIG = {
@@ -364,9 +365,9 @@ export function FinanceReports() {
         })) || [],
         countryConfig,
         platform: {
-          name: 'Ticketrack',
-          website: 'https://ticketrack.com',
-          supportEmail: 'support@ticketrack.com'
+          name: brand.name,
+          website: brand.urls.website,
+          supportEmail: brand.emails.support
         }
       };
 
@@ -468,8 +469,8 @@ export function FinanceReports() {
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([month, data]) => ({ month, ...data })),
         platform: {
-          name: 'Ticketrack',
-          website: 'https://ticketrack.com'
+          name: brand.name,
+          website: brand.urls.website
         }
       };
 

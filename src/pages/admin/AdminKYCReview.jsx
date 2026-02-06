@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/lib/supabase';
+import { brand } from '@/config/brand';
 
 const DOCUMENT_TYPE_LABELS = {
   passport: 'Passport',
@@ -229,7 +230,7 @@ export function AdminKYCReview() {
               to: profile.email,
               data: {
                 organizerName: doc.organizer?.business_name,
-                appUrl: 'https://ticketrack.com',
+                appUrl: brand.urls.website,
               },
             },
           });
@@ -313,7 +314,7 @@ export function AdminKYCReview() {
               data: {
                 organizerName: doc.organizer?.business_name,
                 reason: rejectionReason,
-                appUrl: 'https://ticketrack.com',
+                appUrl: brand.urls.website,
               },
             },
           });
@@ -394,7 +395,7 @@ export function AdminKYCReview() {
               data: {
                 organizerName: doc.organizer?.business_name,
                 message: requestInfoMessage,
-                appUrl: 'https://ticketrack.com',
+                appUrl: brand.urls.website,
               },
             },
           });

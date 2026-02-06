@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { 
-  CreditCard, CheckCircle, AlertCircle, ExternalLink, Loader2, 
+import {
+  CreditCard, CheckCircle, AlertCircle, ExternalLink, Loader2,
   Shield, DollarSign, Zap, ArrowRight, RefreshCw, XCircle,
-  Building2, FileText, Clock, TrendingUp, Wallet
+  Building2, FileText, Clock, TrendingUp, Wallet, Lock, Trophy
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -307,6 +307,35 @@ export function StripeConnect() {
     );
   }
 
+  // Feature disabled for this organizer by admin
+  if (organizer?.feature_direct_payment_enabled === false) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F0F0F]">Stripe Connect</h1>
+          <p className="text-[#0F0F0F]/60 mt-1">Automatic payouts for your events</p>
+        </div>
+
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-[#0F0F0F] mb-2">Direct Payments Disabled</h3>
+              <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-4">
+                Direct payments have been disabled for your account. Your event earnings will be processed through our standard escrow payout system.
+              </p>
+              <p className="text-sm text-[#0F0F0F]/50">
+                If you believe this is an error, please contact support.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Feature disabled globally
   if (connectStatus?.eligible === false && connectStatus?.reason === 'disabled') {
     return (
@@ -326,6 +355,187 @@ export function StripeConnect() {
               <p className="text-[#0F0F0F]/60 max-w-md mx-auto">
                 Stripe Connect is not currently available. Please check back later or contact support for more information.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Not eligible - needs to complete more events (direct payout gating)
+  const completedEvents = organizer?.completed_events_count || 0;
+  const requiredEvents = organizer?.required_events_for_payout || 5;
+  const isPayoutEligible = organizer?.direct_payout_eligible || organizer?.direct_payout_override;
+  const eventsRemaining = Math.max(0, requiredEvents - completedEvents);
+
+  if (!isPayoutEligible && !connectStatus?.connected) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F0F0F]">Stripe Connect</h1>
+          <p className="text-[#0F0F0F]/60 mt-1">Automatic payouts for your events</p>
+        </div>
+
+        {/* Locked State Card */}
+        <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+          <CardContent className="pt-6">
+            <div className="text-center py-6">
+              <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-10 h-10 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Unlock Direct Payouts</h3>
+              <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-6">
+                Complete {requiredEvents} successful events to unlock Stripe Connect and receive automatic payouts directly to your bank account.
+              </p>
+
+              {/* Progress Bar */}
+              <div className="max-w-xs mx-auto mb-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-[#0F0F0F]/60">Progress</span>
+                  <span className="font-semibold text-[#0F0F0F]">{completedEvents}/{requiredEvents} events</span>
+                </div>
+                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, (completedEvents / requiredEvents) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {eventsRemaining > 0 ? (
+                <p className="text-sm text-amber-700 font-medium">
+                  {eventsRemaining} more event{eventsRemaining !== 1 ? 's' : ''} to go!
+                </p>
+              ) : (
+                <p className="text-sm text-green-600 font-medium">
+                  Almost there! Your eligibility is being verified.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Why This Requirement */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-[#2969FF]" />
+              Why We Require Completed Events
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#0F0F0F]">Trust & Security</h4>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Protects attendees and ensures quality events
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#0F0F0F]">Proven Track Record</h4>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Shows you're a reliable event organizer
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#0F0F0F]">Faster Payouts</h4>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Once unlocked, get paid automatically after events
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Wallet className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#0F0F0F]">Full Control</h4>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Manage your own Stripe account & payouts
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>In the meantime:</strong> Your event earnings are safely held and will be paid out by our finance team after each event ends. You can track your earnings in the Finance section.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Benefits Preview */}
+        <Card>
+          <CardHeader>
+            <CardTitle>What You'll Get with Stripe Connect</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-60">
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Zap className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#0F0F0F]">Automatic Payouts</h4>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Receive earnings automatically after each event
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#0F0F0F]">Secure & Verified</h4>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Stripe handles identity verification
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#0F0F0F]">Track Earnings</h4>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Access Stripe Dashboard for analytics
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-[#0F0F0F]">Tax Documents</h4>
+                  <p className="text-sm text-[#0F0F0F]/60">
+                    Automatic 1099 forms for US organizers
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

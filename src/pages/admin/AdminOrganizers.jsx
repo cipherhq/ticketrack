@@ -24,9 +24,30 @@ import {
   TrendingUp,
   CreditCard,
   LogIn,
+  Lock,
+  Unlock,
+  Trophy,
+  Star,
+  Sparkles,
+  MessageSquare,
+  Users,
+  Link2,
+  Percent,
+  Clock,
+  LayoutGrid,
+  Repeat,
+  Award,
+  Zap,
+  ExternalLink,
+  ToggleLeft,
+  ToggleRight,
+  Settings2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -79,6 +100,10 @@ export function AdminOrganizers() {
     fixed: ""
   });
   const [savingFees, setSavingFees] = useState(false);
+  const [payoutOverrideReason, setPayoutOverrideReason] = useState('');
+  const [savingPayoutOverride, setSavingPayoutOverride] = useState(false);
+  const [featureFlags, setFeatureFlags] = useState({});
+  const [savingFeatures, setSavingFeatures] = useState(false);
 
   useEffect(() => {
     loadOrganizers();
@@ -218,6 +243,24 @@ export function AdminOrganizers() {
       percentage: organizer.custom_service_fee_percentage || "",
       fixed: organizer.custom_service_fee_fixed || ""
     });
+    // Initialize feature flags from organizer data
+    setFeatureFlags({
+      feature_sms_enabled: organizer.feature_sms_enabled ?? true,
+      feature_whatsapp_enabled: organizer.feature_whatsapp_enabled ?? true,
+      feature_email_enabled: organizer.feature_email_enabled ?? true,
+      feature_direct_payment_enabled: organizer.feature_direct_payment_enabled ?? true,
+      feature_group_buy_enabled: organizer.feature_group_buy_enabled ?? true,
+      feature_promoters_enabled: organizer.feature_promoters_enabled ?? true,
+      feature_custom_urls_enabled: organizer.feature_custom_urls_enabled ?? true,
+      feature_discount_codes_enabled: organizer.feature_discount_codes_enabled ?? true,
+      feature_waitlist_enabled: organizer.feature_waitlist_enabled ?? true,
+      // feature_reserved_seating_enabled - not implemented yet
+      feature_multiday_events_enabled: organizer.feature_multiday_events_enabled ?? true,
+      feature_recurring_events_enabled: organizer.feature_recurring_events_enabled ?? true,
+      feature_sponsors_enabled: organizer.feature_sponsors_enabled ?? true,
+      feature_fast_payout_enabled: organizer.feature_fast_payout_enabled ?? true,
+      feature_payment_links_enabled: organizer.feature_payment_links_enabled ?? true,
+    });
     setDetailsDialogOpen(true);
     await loadOrganizerDetails(organizer);
   };
@@ -265,6 +308,237 @@ export function AdminOrganizers() {
       setSavingFees(false);
     }
   };
+
+  const toggleDirectPayoutOverride = async (enable) => {
+    if (!selectedOrganizer) return;
+    if (enable && !payoutOverrideReason.trim()) {
+      alert('Please provide a reason for enabling direct payout override');
+      return;
+    }
+
+    setSavingPayoutOverride(true);
+    try {
+      const { error } = await supabase
+        .from("organizers")
+        .update({
+          direct_payout_override: enable,
+          direct_payout_override_by: enable ? admin?.id : null,
+          direct_payout_override_at: enable ? new Date().toISOString() : null,
+          direct_payout_override_reason: enable ? payoutOverrideReason : null,
+          direct_payout_eligible: enable || (selectedOrganizer.completed_events_count >= (selectedOrganizer.required_events_for_payout || 5))
+        })
+        .eq("id", selectedOrganizer.id);
+
+      if (error) throw error;
+
+      await logAdminAction(
+        enable ? "direct_payout_enabled" : "direct_payout_disabled",
+        "organizer",
+        selectedOrganizer.id,
+        {
+          name: selectedOrganizer.business_name,
+          reason: payoutOverrideReason
+        }
+      );
+
+      // Update local state
+      setSelectedOrganizer(prev => ({
+        ...prev,
+        direct_payout_override: enable,
+        direct_payout_eligible: enable || (prev.completed_events_count >= (prev.required_events_for_payout || 5))
+      }));
+      setPayoutOverrideReason('');
+      loadOrganizers();
+    } catch (err) {
+      console.error("Error updating payout override:", err);
+      alert('Failed to update payout override');
+    } finally {
+      setSavingPayoutOverride(false);
+    }
+  };
+
+  const toggleFeatureFlag = (key, value) => {
+    setFeatureFlags(prev => ({ ...prev, [key]: value }));
+  };
+
+  const saveFeatureFlags = async () => {
+    if (!selectedOrganizer) return;
+    setSavingFeatures(true);
+    try {
+      const { error } = await supabase
+        .from("organizers")
+        .update({
+          ...featureFlags,
+          feature_flags_updated_by: admin?.id,
+          feature_flags_updated_at: new Date().toISOString()
+        })
+        .eq("id", selectedOrganizer.id);
+
+      if (error) throw error;
+
+      // Find which flags changed
+      const changes = {};
+      Object.keys(featureFlags).forEach(key => {
+        const originalValue = selectedOrganizer[key] ?? true;
+        if (featureFlags[key] !== originalValue) {
+          changes[key] = featureFlags[key];
+        }
+      });
+
+      if (Object.keys(changes).length > 0) {
+        await logAdminAction(
+          "feature_flags_updated",
+          "organizer",
+          selectedOrganizer.id,
+          {
+            name: selectedOrganizer.business_name,
+            changes
+          }
+        );
+      }
+
+      // Update local state
+      setSelectedOrganizer(prev => ({
+        ...prev,
+        ...featureFlags
+      }));
+
+      loadOrganizers();
+    } catch (err) {
+      console.error("Error saving feature flags:", err);
+      alert('Failed to save feature flags');
+    } finally {
+      setSavingFeatures(false);
+    }
+  };
+
+  // Feature flags configuration
+  const featureFlagsConfig = [
+    {
+      key: 'feature_direct_payment_enabled',
+      label: 'Direct Payment',
+      description: 'Stripe Connect / Paystack / Flutterwave subaccounts. When disabled, uses escrow payout only.',
+      icon: CreditCard,
+      category: 'payments',
+      warning: true
+    },
+    {
+      key: 'feature_fast_payout_enabled',
+      label: 'Fast Payout',
+      description: 'Instant/same-day payouts for eligible organizers',
+      icon: Zap,
+      category: 'payments'
+    },
+    {
+      key: 'feature_payment_links_enabled',
+      label: 'Payment Links',
+      description: 'Create shareable payment links for tickets',
+      icon: ExternalLink,
+      category: 'payments'
+    },
+    {
+      key: 'feature_sms_enabled',
+      label: 'SMS Notifications',
+      description: 'Send SMS notifications to attendees',
+      icon: MessageSquare,
+      category: 'notifications'
+    },
+    {
+      key: 'feature_whatsapp_enabled',
+      label: 'WhatsApp Notifications',
+      description: 'Send WhatsApp notifications to attendees',
+      icon: MessageSquare,
+      category: 'notifications'
+    },
+    {
+      key: 'feature_email_enabled',
+      label: 'Email Notifications',
+      description: 'Send email notifications to attendees',
+      icon: Mail,
+      category: 'notifications'
+    },
+    {
+      key: 'feature_group_buy_enabled',
+      label: 'Group Buy / Split Payment',
+      description: 'Allow attendees to split ticket costs',
+      icon: Users,
+      category: 'tickets'
+    },
+    {
+      key: 'feature_discount_codes_enabled',
+      label: 'Discount Codes',
+      description: 'Create and use promo/discount codes',
+      icon: Percent,
+      category: 'tickets'
+    },
+    {
+      key: 'feature_waitlist_enabled',
+      label: 'Waitlist',
+      description: 'Enable waitlist for sold-out events',
+      icon: Clock,
+      category: 'tickets'
+    },
+    // Reserved seating - not implemented yet
+    // {
+    //   key: 'feature_reserved_seating_enabled',
+    //   label: 'Reserved Seating',
+    //   description: 'Enable seat selection for events',
+    //   icon: LayoutGrid,
+    //   category: 'events'
+    // },
+    {
+      key: 'feature_multiday_events_enabled',
+      label: 'Multi-day Events',
+      description: 'Create events spanning multiple days',
+      icon: Calendar,
+      category: 'events'
+    },
+    {
+      key: 'feature_recurring_events_enabled',
+      label: 'Recurring Events',
+      description: 'Create repeating/recurring events',
+      icon: Repeat,
+      category: 'events'
+    },
+    {
+      key: 'feature_sponsors_enabled',
+      label: 'Event Sponsors',
+      description: 'Add sponsor logos and info to events',
+      icon: Award,
+      category: 'events'
+    },
+    {
+      key: 'feature_promoters_enabled',
+      label: 'Promoter System',
+      description: 'Enable affiliate/promoter referral program',
+      icon: Users,
+      category: 'marketing'
+    },
+    {
+      key: 'feature_custom_urls_enabled',
+      label: 'Custom URLs',
+      description: 'Create custom URLs for events',
+      icon: Link2,
+      category: 'marketing'
+    },
+  ];
+
+  const getTierBadge = (tier) => {
+    const tierConfig = {
+      emerging: { label: 'Emerging', color: 'bg-gray-100 text-gray-700', icon: Sparkles },
+      established: { label: 'Established', color: 'bg-blue-100 text-blue-700', icon: Star },
+      premier: { label: 'Premier', color: 'bg-amber-100 text-amber-700', icon: Trophy },
+    };
+    const config = tierConfig[tier] || tierConfig.emerging;
+    const Icon = config.icon;
+    return (
+      <Badge className={`${config.color} flex items-center gap-1`}>
+        <Icon className="w-3 h-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -428,6 +702,7 @@ export function AdminOrganizers() {
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Revenue</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">KYC</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Connect</th>
+                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Tier</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
                   <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
                 </tr>
@@ -476,6 +751,20 @@ export function AdminOrganizers() {
                       ) : (
                         <span className="text-[#0F0F0F]/30">—</span>
                       )}
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col gap-1">
+                        {getTierBadge(org.organizer_tier)}
+                        {org.direct_payout_eligible ? (
+                          <Badge className="bg-green-100 text-green-700 flex items-center gap-1 w-fit text-xs">
+                            <Unlock className="w-2.5 h-2.5" />Payout OK
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-amber-100 text-amber-700 flex items-center gap-1 w-fit text-xs">
+                            <Lock className="w-2.5 h-2.5" />{org.completed_events_count || 0}/{org.required_events_for_payout || 5}
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-4">
                       {org.is_active !== false ? (
@@ -533,7 +822,7 @@ export function AdminOrganizers() {
                 ))}
                 {filteredOrganizers.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-[#0F0F0F]/60">
+                    <td colSpan={9} className="py-8 text-center text-[#0F0F0F]/60">
                       No organizers found
                     </td>
                   </tr>
@@ -613,10 +902,12 @@ export function AdminOrganizers() {
                 </div>
               ) : (
                 <Tabs defaultValue="info" className="w-full">
-                  <TabsList className="bg-[#F4F6FA] rounded-xl">
+                  <TabsList className="bg-[#F4F6FA] rounded-xl flex-wrap">
                     <TabsTrigger value="info" className="rounded-lg">Contact Info</TabsTrigger>
                     <TabsTrigger value="events" className="rounded-lg">Events ({organizerEvents.length})</TabsTrigger>
                     <TabsTrigger value="payouts" className="rounded-lg">Payouts ({organizerPayouts.length})</TabsTrigger>
+                    <TabsTrigger value="tier" className="rounded-lg">Tier & Payouts</TabsTrigger>
+                    <TabsTrigger value="features" className="rounded-lg">Features</TabsTrigger>
                     <TabsTrigger value="pricing" className="rounded-lg">Custom Pricing</TabsTrigger>
                   </TabsList>
 
@@ -746,6 +1037,397 @@ export function AdminOrganizers() {
                           </div>
                         ))}
                       </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="tier" className="mt-4 space-y-4">
+                    {/* Tier Info */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                        <p className="text-sm text-[#0F0F0F]/60 mb-2">Organizer Tier</p>
+                        {getTierBadge(selectedOrganizer.organizer_tier)}
+                        {selectedOrganizer.tier_calculated_at && (
+                          <p className="text-xs text-[#0F0F0F]/40 mt-2">
+                            Last updated: {new Date(selectedOrganizer.tier_calculated_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                        <p className="text-sm text-[#0F0F0F]/60 mb-2">Completed Events</p>
+                        <p className="text-2xl font-semibold text-[#0F0F0F]">
+                          {selectedOrganizer.completed_events_count || 0}
+                        </p>
+                        <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                          Required for direct payout: {selectedOrganizer.required_events_for_payout || 5}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                        <p className="text-sm text-[#0F0F0F]/60 mb-2">Refund Rate</p>
+                        <p className="text-2xl font-semibold text-[#0F0F0F]">
+                          {selectedOrganizer.refund_rate || 0}%
+                        </p>
+                      </div>
+                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                        <p className="text-sm text-[#0F0F0F]/60 mb-2">Cancellation Rate</p>
+                        <p className="text-2xl font-semibold text-[#0F0F0F]">
+                          {selectedOrganizer.cancellation_rate || 0}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Direct Payout Status */}
+                    <div className={`p-4 rounded-xl border-2 ${
+                      selectedOrganizer.direct_payout_eligible
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-amber-50 border-amber-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          {selectedOrganizer.direct_payout_eligible ? (
+                            <Unlock className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <Lock className="w-5 h-5 text-amber-600" />
+                          )}
+                          <span className="font-semibold text-[#0F0F0F]">
+                            Direct Payout {selectedOrganizer.direct_payout_eligible ? 'Unlocked' : 'Locked'}
+                          </span>
+                        </div>
+                        {selectedOrganizer.direct_payout_override && (
+                          <Badge className="bg-purple-100 text-purple-700">Admin Override</Badge>
+                        )}
+                      </div>
+
+                      {selectedOrganizer.direct_payout_eligible ? (
+                        <p className="text-sm text-green-700">
+                          {selectedOrganizer.direct_payout_override
+                            ? `Override enabled by admin${selectedOrganizer.direct_payout_override_reason ? `: ${selectedOrganizer.direct_payout_override_reason}` : ''}`
+                            : 'Organizer has completed enough events to unlock direct payouts.'}
+                        </p>
+                      ) : (
+                        <div>
+                          <p className="text-sm text-amber-700 mb-2">
+                            {(selectedOrganizer.required_events_for_payout || 5) - (selectedOrganizer.completed_events_count || 0)} more events needed to unlock.
+                          </p>
+                          <div className="h-2 bg-amber-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-amber-500 rounded-full"
+                              style={{
+                                width: `${Math.min(100, ((selectedOrganizer.completed_events_count || 0) / (selectedOrganizer.required_events_for_payout || 5)) * 100)}%`
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Admin Override */}
+                    <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl">
+                      <h4 className="font-semibold text-[#0F0F0F] mb-3 flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-[#2969FF]" />
+                        Admin Override
+                      </h4>
+
+                      {selectedOrganizer.direct_payout_override ? (
+                        <div className="space-y-3">
+                          <p className="text-sm text-[#0F0F0F]/60">
+                            Direct payout is currently enabled via admin override.
+                          </p>
+                          <Button
+                            onClick={() => toggleDirectPayoutOverride(false)}
+                            disabled={savingPayoutOverride}
+                            variant="outline"
+                            className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+                          >
+                            {savingPayoutOverride ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Lock className="w-4 h-4 mr-2" />
+                            )}
+                            Remove Override
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-sm text-[#0F0F0F]/60">
+                            Enable direct payout for this organizer before they complete the required events.
+                          </p>
+                          <Textarea
+                            placeholder="Reason for override (required)..."
+                            value={payoutOverrideReason}
+                            onChange={(e) => setPayoutOverrideReason(e.target.value)}
+                            className="rounded-xl"
+                            rows={2}
+                          />
+                          <Button
+                            onClick={() => toggleDirectPayoutOverride(true)}
+                            disabled={savingPayoutOverride || !payoutOverrideReason.trim()}
+                            className="rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90"
+                          >
+                            {savingPayoutOverride ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Unlock className="w-4 h-4 mr-2" />
+                            )}
+                            Enable Direct Payout
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tier Criteria Info */}
+                    <div className="p-4 bg-blue-50 rounded-xl">
+                      <h4 className="font-semibold text-blue-800 mb-2">Tier Criteria</h4>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="font-medium text-blue-700">Emerging</p>
+                          <p className="text-blue-600/70">0-2 events</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-blue-700">Established</p>
+                          <p className="text-blue-600/70">3-9 events, ≤5% refund</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-blue-700">Premier</p>
+                          <p className="text-blue-600/70">10+ events, ≤2% refund</p>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="features" className="mt-4 space-y-4">
+                    {/* Feature Flags Header */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+                          <Settings2 className="w-5 h-5 text-[#2969FF]" />
+                          Feature Management
+                        </h4>
+                        <p className="text-sm text-[#0F0F0F]/60">
+                          Enable or disable specific features for this organizer
+                        </p>
+                      </div>
+                      <Button
+                        onClick={saveFeatureFlags}
+                        disabled={savingFeatures}
+                        className="rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90"
+                      >
+                        {savingFeatures ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Save Changes
+                      </Button>
+                    </div>
+
+                    {/* Payments Section */}
+                    <div className="space-y-3">
+                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                        Payments & Payouts
+                      </h5>
+                      <div className="grid gap-3">
+                        {featureFlagsConfig.filter(f => f.category === 'payments').map((feature) => {
+                          const Icon = feature.icon;
+                          const isEnabled = featureFlags[feature.key] ?? true;
+                          return (
+                            <div
+                              key={feature.key}
+                              className={`flex items-center justify-between p-4 rounded-xl border ${
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                  !isEnabled ? 'bg-red-100' : 'bg-[#2969FF]/10'
+                                }`}>
+                                  <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-[#2969FF]'}`} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
+                                    {feature.warning && !isEnabled && (
+                                      <Badge className="bg-red-100 text-red-700 text-xs">Escrow Only</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={(checked) => toggleFeatureFlag(feature.key, checked)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Notifications Section */}
+                    <div className="space-y-3">
+                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                        Notifications
+                      </h5>
+                      <div className="grid gap-3">
+                        {featureFlagsConfig.filter(f => f.category === 'notifications').map((feature) => {
+                          const Icon = feature.icon;
+                          const isEnabled = featureFlags[feature.key] ?? true;
+                          return (
+                            <div
+                              key={feature.key}
+                              className={`flex items-center justify-between p-4 rounded-xl border ${
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                  !isEnabled ? 'bg-red-100' : 'bg-green-100'
+                                }`}>
+                                  <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-green-600'}`} />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
+                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={(checked) => toggleFeatureFlag(feature.key, checked)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Tickets Section */}
+                    <div className="space-y-3">
+                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                        Tickets & Sales
+                      </h5>
+                      <div className="grid gap-3">
+                        {featureFlagsConfig.filter(f => f.category === 'tickets').map((feature) => {
+                          const Icon = feature.icon;
+                          const isEnabled = featureFlags[feature.key] ?? true;
+                          return (
+                            <div
+                              key={feature.key}
+                              className={`flex items-center justify-between p-4 rounded-xl border ${
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                  !isEnabled ? 'bg-red-100' : 'bg-purple-100'
+                                }`}>
+                                  <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-purple-600'}`} />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
+                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={(checked) => toggleFeatureFlag(feature.key, checked)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Events Section */}
+                    <div className="space-y-3">
+                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                        Event Features
+                      </h5>
+                      <div className="grid gap-3">
+                        {featureFlagsConfig.filter(f => f.category === 'events').map((feature) => {
+                          const Icon = feature.icon;
+                          const isEnabled = featureFlags[feature.key] ?? true;
+                          return (
+                            <div
+                              key={feature.key}
+                              className={`flex items-center justify-between p-4 rounded-xl border ${
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                  !isEnabled ? 'bg-red-100' : 'bg-orange-100'
+                                }`}>
+                                  <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-orange-600'}`} />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
+                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={(checked) => toggleFeatureFlag(feature.key, checked)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Marketing Section */}
+                    <div className="space-y-3">
+                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                        Marketing & Promotion
+                      </h5>
+                      <div className="grid gap-3">
+                        {featureFlagsConfig.filter(f => f.category === 'marketing').map((feature) => {
+                          const Icon = feature.icon;
+                          const isEnabled = featureFlags[feature.key] ?? true;
+                          return (
+                            <div
+                              key={feature.key}
+                              className={`flex items-center justify-between p-4 rounded-xl border ${
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                  !isEnabled ? 'bg-red-100' : 'bg-pink-100'
+                                }`}>
+                                  <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-pink-600'}`} />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
+                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={(checked) => toggleFeatureFlag(feature.key, checked)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Warning Notice */}
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-amber-800">Important</p>
+                        <p className="text-sm text-amber-700">
+                          Disabling features will immediately affect the organizer's dashboard.
+                          They will not be able to use disabled features until re-enabled.
+                          When "Direct Payment" is disabled, the organizer will only receive payouts through escrow.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Last Updated */}
+                    {selectedOrganizer.feature_flags_updated_at && (
+                      <p className="text-xs text-[#0F0F0F]/40 text-right">
+                        Last updated: {new Date(selectedOrganizer.feature_flags_updated_at).toLocaleString()}
+                      </p>
                     )}
                   </TabsContent>
                 </Tabs>

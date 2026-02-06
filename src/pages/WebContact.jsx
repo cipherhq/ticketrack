@@ -6,13 +6,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { getContactInfo } from '@/services/settings'
+import { brand } from '@/config/brand'
 
 export function WebContact() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
   const [contact, setContact] = useState({
-    email: 'support@ticketrack.com',
-    phone: '+1 (800) TICKETS'
+    email: brand.emails.support,
+    phone: brand.contact.phone
   })
 
   useEffect(() => {

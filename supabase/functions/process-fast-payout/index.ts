@@ -184,8 +184,9 @@ serve(async (req) => {
         .eq("id", organizer.id);
     }
 
-    // Initiate transfer (net amount after fee deduction)
+    // Initiate transfer (net amount after fee deduction) with idempotency key
     const transferRef = `FAST-${fastPayoutRequest.id.slice(0, 8)}-${Date.now()}`;
+    const idempotencyKey = `fast-payout-${fastPayoutRequest.id}`;
     const amountInKobo = Math.round(fastPayoutRequest.net_amount * 100);
 
     const transferResponse = await fetch(`${PAYSTACK_API}/transfer`, {
@@ -193,6 +194,7 @@ serve(async (req) => {
       headers: {
         "Authorization": `Bearer ${paystackSecretKey}`,
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify({
         source: "balance",

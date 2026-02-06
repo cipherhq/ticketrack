@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+import { getMinimumPayout, getBelowThresholdMessage } from '@/config/payoutThresholds';
 
 export function EventPayouts() {
   const { logFinanceAction, canProcessPayouts, reAuthenticate } = useFinance();
@@ -139,6 +140,50 @@ export function EventPayouts() {
       const { type, recipient, event } = paymentDialog;
 
       if (type === 'organizer') {
+        // Check if this event has already been paid (prevent duplicate payouts)
+        const { data: existingPayout } = await supabase
+          .from('payouts')
+          .select('id, payout_number')
+          .eq('notes', `Event: ${event.title} (${event.id})%`)
+          .eq('status', 'completed')
+          .limit(1);
+
+        if (existingPayout && existingPayout.length > 0) {
+          alert(`This event has already been paid out (${existingPayout[0].payout_number}). Refresh the page to see updated status.`);
+          setProcessing(false);
+          loadEventPayouts();
+          return;
+        }
+
+        // Double-check event payout status from database
+        const { data: currentEvent } = await supabase
+          .from('events')
+          .select('payout_status')
+          .eq('id', event.id)
+          .single();
+
+        if (currentEvent?.payout_status === 'paid') {
+          alert('This event has already been marked as paid. Refresh the page to see updated status.');
+          setProcessing(false);
+          loadEventPayouts();
+          return;
+        }
+
+        // Validate payout amount
+        if (!event.organizerNet || event.organizerNet <= 0) {
+          alert('Invalid payout amount. The organizer net amount must be greater than zero.');
+          setProcessing(false);
+          return;
+        }
+
+        // Check minimum payout threshold based on currency
+        const minPayout = getMinimumPayout(event.currency);
+        if (event.organizerNet < minPayout) {
+          alert(getBelowThresholdMessage(event.organizerNet, event.currency));
+          setProcessing(false);
+          return;
+        }
+
         // Check if organizer has a bank account
         const bankAccountId = event.primaryBankAccount?.id;
         if (!bankAccountId) {
@@ -150,8 +195,8 @@ export function EventPayouts() {
         // Generate payout number
         const payoutNumber = `PAY-${Date.now().toString(36).toUpperCase()}`;
 
-        // Insert payout record (note: payouts table doesn't have event_id column)
-        const { error: payoutError } = await supabase.from('payouts').insert({
+        // Insert payout record with 'processing' status initially
+        const { data: payoutRecord, error: payoutError } = await supabase.from('payouts').insert({
           organizer_id: event.organizers?.id,
           bank_account_id: bankAccountId,
           payout_number: payoutNumber,
@@ -159,36 +204,47 @@ export function EventPayouts() {
           platform_fee_deducted: event.platformFees,
           net_amount: event.organizerNet,
           currency: event.currency || 'NGN',
-          status: 'completed',
+          status: 'processing',
           transaction_reference: transactionRef || null,
           processed_at: new Date().toISOString(),
           notes: `Event: ${event.title} (${event.id}). ${paymentNotes || ''}`
-        });
+        }).select('id').single();
         if (payoutError) {
           console.error('Payout insert error:', payoutError);
           throw payoutError;
         }
 
-        // Update event payout status
-        const { error: eventError } = await supabase.from('events').update({ payout_status: 'paid' }).eq('id', event.id);
-        if (eventError) {
-          console.error('Event update error:', eventError);
-          throw eventError;
-        }
+        try {
+          // Update event payout status
+          const { error: eventError } = await supabase.from('events').update({ payout_status: 'paid' }).eq('id', event.id);
+          if (eventError) {
+            console.error('Event update error:', eventError);
+            throw eventError;
+          }
 
-        // Deduct from organizer's available balance (if they have one)
-        const { data: organizer } = await supabase
-          .from('organizers')
-          .select('available_balance')
-          .eq('id', event.organizers?.id)
-          .single();
-
-        if (organizer && organizer.available_balance > 0) {
-          const newBalance = Math.max(0, (organizer.available_balance || 0) - event.organizerNet);
-          await supabase
+          // Deduct from organizer's available balance (if they have one)
+          const { data: organizer } = await supabase
             .from('organizers')
-            .update({ available_balance: newBalance })
-            .eq('id', event.organizers?.id);
+            .select('available_balance')
+            .eq('id', event.organizers?.id)
+            .single();
+
+          if (organizer && organizer.available_balance > 0) {
+            const newBalance = Math.max(0, (organizer.available_balance || 0) - event.organizerNet);
+            await supabase
+              .from('organizers')
+              .update({ available_balance: newBalance })
+              .eq('id', event.organizers?.id);
+          }
+
+          // Mark payout as completed after all operations succeed
+          await supabase.from('payouts').update({ status: 'completed' }).eq('id', payoutRecord.id);
+        } catch (rollbackError) {
+          // Rollback: delete payout record and reset event status on failure
+          console.error('Payout operation failed, rolling back:', rollbackError);
+          await supabase.from('payouts').delete().eq('id', payoutRecord.id);
+          await supabase.from('events').update({ payout_status: 'pending' }).eq('id', event.id);
+          throw rollbackError;
         }
 
         await logFinanceAction('organizer_payout', 'event', event.id, {
@@ -245,8 +301,8 @@ export function EventPayouts() {
         // Generate payout number
         const payoutNumber = `PAY-${Date.now().toString(36).toUpperCase()}`;
 
-        // Insert payout record with correct column names
-        const { error: payoutError } = await supabase.from('payouts').insert({
+        // Insert payout record with 'processing' status initially
+        const { data: payoutRecord, error: payoutError } = await supabase.from('payouts').insert({
           organizer_id: event.organizers?.id,
           bank_account_id: bankAccountId,
           payout_number: payoutNumber,
@@ -254,32 +310,43 @@ export function EventPayouts() {
           platform_fee_deducted: event.platformFees,
           net_amount: event.organizerNet,
           currency: event.currency || 'NGN',
-          status: 'completed',
+          status: 'processing',
           transaction_reference: payoutNumber,
           processed_at: new Date().toISOString(),
           notes: `Event: ${event.title} (${event.id})`
-        });
+        }).select('id').single();
         if (payoutError) {
           console.error('Payout insert error:', payoutError);
           throw payoutError;
         }
 
-        // Update event status
-        await supabase.from('events').update({ payout_status: 'paid' }).eq('id', event.id);
+        try {
+          // Update event status
+          await supabase.from('events').update({ payout_status: 'paid' }).eq('id', event.id);
 
-        // Deduct from organizer's available balance
-        const { data: organizer } = await supabase
-          .from('organizers')
-          .select('available_balance')
-          .eq('id', event.organizers?.id)
-          .single();
-
-        if (organizer && organizer.available_balance > 0) {
-          const newBalance = Math.max(0, (organizer.available_balance || 0) - event.organizerNet);
-          await supabase
+          // Deduct from organizer's available balance
+          const { data: organizer } = await supabase
             .from('organizers')
-            .update({ available_balance: newBalance })
-            .eq('id', event.organizers?.id);
+            .select('available_balance')
+            .eq('id', event.organizers?.id)
+            .single();
+
+          if (organizer && organizer.available_balance > 0) {
+            const newBalance = Math.max(0, (organizer.available_balance || 0) - event.organizerNet);
+            await supabase
+              .from('organizers')
+              .update({ available_balance: newBalance })
+              .eq('id', event.organizers?.id);
+          }
+
+          // Mark payout as completed after all operations succeed
+          await supabase.from('payouts').update({ status: 'completed' }).eq('id', payoutRecord.id);
+        } catch (rollbackError) {
+          // Rollback: delete payout record and reset event status on failure
+          console.error('Bulk payout operation failed, rolling back:', rollbackError);
+          await supabase.from('payouts').delete().eq('id', payoutRecord.id);
+          await supabase.from('events').update({ payout_status: 'pending' }).eq('id', event.id);
+          throw rollbackError;
         }
       }
       for (const promo of event.promoterEarnings) {

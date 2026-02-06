@@ -1,6 +1,7 @@
 import { BookOpen, TrendingUp, Users, Megaphone, Calendar, DollarSign, Shield, Zap, ArrowRight, Download, PlayCircle, Globe, CreditCard, Smartphone, QrCode, Mail, FileText, Code, Settings, HelpCircle, Link as LinkIcon, CheckCircle2, Ticket, BarChart3, Sparkles, Building, RefreshCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { currencies } from '@/config/currencies'
+import { brand } from '@/config/brand'
 
 export function WebResources() {
   // Platform Overview
@@ -153,21 +154,21 @@ export function WebResources() {
       title: 'API Documentation',
       description: 'Access our REST API documentation for integrating Ticketrack into your applications.',
       comingSoon: false,
-      link: 'https://docs.ticketrack.com/api'
+      link: brand.urls.api
     },
     {
       icon: Settings,
       title: 'Webhooks',
       description: 'Set up webhooks to receive real-time notifications for events, orders, and payments.',
       comingSoon: false,
-      link: 'https://docs.ticketrack.com/webhooks'
+      link: brand.urls.webhooks
     },
     {
       icon: LinkIcon,
       title: 'Payment Gateway Integration',
       description: 'Learn how to integrate Paystack, Stripe, and Flutterwave payment gateways.',
       comingSoon: false,
-      link: 'https://docs.ticketrack.com/integrations'
+      link: brand.urls.integrations
     },
     {
       icon: Smartphone,
@@ -481,9 +482,9 @@ export function WebResources() {
               Contact Us
               <ArrowRight className="w-5 h-5" />
             </Link>
-              <a href="mailto:support@ticketrack.com" className="inline-flex items-center gap-2 bg-white/10 text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/20 transition-colors">
+              <a href={`mailto:${brand.emails.support}`} className="inline-flex items-center gap-2 bg-white/10 text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/20 transition-colors">
                 <Mail className="w-5 h-5" />
-                support@ticketrack.com
+                {brand.emails.support}
               </a>
             </div>
           </div>

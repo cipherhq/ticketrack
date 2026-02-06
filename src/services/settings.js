@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { brand } from '@/config/brand'
 
 // In-memory cache for settings
 let settingsCache = null
@@ -104,13 +105,13 @@ function getDefaultSettings() {
     rsvp_require_phone: true,
     free_event_order_status: 'completed',
     donation_failed_still_rsvp: true,
-    // Contact info (can be overridden from DB)
-    contact_email: 'support@ticketrack.com',
-    contact_phone: '+1 (800) TICKETS',
-    // Social links (can be overridden from DB)
-    social_twitter: 'https://twitter.com/ticketrack',
-    social_instagram: 'https://instagram.com/ticketrack',
-    social_facebook: 'https://facebook.com/ticketrack',
+    // Contact info (from brand config, can be overridden from DB)
+    contact_email: brand.emails.support,
+    contact_phone: brand.contact.phone,
+    // Social links (from brand config, can be overridden from DB)
+    social_twitter: brand.social.twitter,
+    social_instagram: brand.social.instagram,
+    social_facebook: brand.social.facebook,
     social_linkedin: 'https://linkedin.com/company/ticketrack'
   }
 }
@@ -121,8 +122,8 @@ function getDefaultSettings() {
 export async function getContactInfo() {
   const settings = await getPlatformSettings()
   return {
-    email: settings.contact_email || 'support@ticketrack.com',
-    phone: settings.contact_phone || '+1 (800) TICKETS'
+    email: settings.contact_email || brand.emails.support,
+    phone: settings.contact_phone || brand.contact.phone
   }
 }
 

@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { brand } from '@/config/brand';
 
 // Help content organized by category
 const helpContent = {
@@ -1160,7 +1161,7 @@ export function HelpCenter() {
                 className="bg-[#2969FF] hover:bg-[#1a4fd6] text-white rounded-xl px-6"
                 asChild
               >
-                <a href="mailto:support@ticketrack.com">
+                <a href={`mailto:${brand.emails.support}`}>
                   <Mail className="w-4 h-4 mr-2" /> Email Support
                 </a>
               </Button>

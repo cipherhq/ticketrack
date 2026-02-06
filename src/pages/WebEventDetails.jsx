@@ -68,6 +68,7 @@ export function WebEventDetails() {
   const [recurringPage, setRecurringPage] = useState(1)
   const [showGroupModal, setShowGroupModal] = useState(false) // Group Buy modal
   const [speakers, setSpeakers] = useState([]) // Event speakers/artists
+  const [failedSpeakerImages, setFailedSpeakerImages] = useState({}) // Track failed image loads
 
   // Function to load tickets for a specific event (for recurring events)
   const loadTicketsForEvent = async (eventId) => {
@@ -880,14 +881,13 @@ export function WebEventDetails() {
                       <CardContent className="p-0">
                         {/* Speaker Image */}
                         <div className="aspect-square bg-gradient-to-br from-[#2969FF]/10 to-purple-500/10 flex items-center justify-center overflow-hidden">
-                          {speaker.image_url ? (
+                          {speaker.image_url && !failedSpeakerImages[speaker.id] ? (
                             <img
                               src={speaker.image_url}
                               alt={speaker.name}
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = 'none'
-                                e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg class="w-16 h-16 text-[#0F0F0F]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>`
+                              onError={() => {
+                                setFailedSpeakerImages(prev => ({ ...prev, [speaker.id]: true }))
                               }}
                             />
                           ) : (

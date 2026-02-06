@@ -3,10 +3,12 @@ import { supabase } from '@/lib/supabase'
 import { validateEmail, validatePassword, validatePhone, validateFirstName, validateLastName, validateOTP } from '@/utils/validation'
 import { validatePhoneForRegistration, normalizePhone } from '@/lib/phoneValidation'
 import { toast } from 'sonner'
+import { brand } from '@/config/brand'
 
 const AuthContext = createContext({})
 
 // Session warning time - warn 5 minutes before expiry
+// In development, you can test by calling window.__testSessionWarning() in browser console
 const SESSION_WARNING_MINUTES = 5
 const SESSION_WARNING_MS = SESSION_WARNING_MINUTES * 60 * 1000
 
@@ -123,6 +125,41 @@ export function AuthProvider({ children }) {
       toast.error('Failed to extend session. Please log in again.')
     }
   }
+
+  // Development helper to test session warning (call window.__testSessionWarning() in console)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.__testSessionWarning = () => {
+        setSessionWarning(true)
+        toast.warning(
+          '[TEST] Your session will expire in 5 minutes. Click to extend.',
+          {
+            duration: 60000,
+            id: 'session-warning',
+            action: {
+              label: 'Extend Session',
+              onClick: () => extendSession(),
+            },
+          }
+        )
+        console.log('Session warning test triggered')
+      }
+      window.__testSessionExpired = () => {
+        setSessionExpired(true)
+        toast.error('[TEST] Your session has expired. Please log in again.', {
+          duration: 5000,
+          id: 'session-expired',
+        })
+        console.log('Session expired test triggered')
+      }
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete window.__testSessionWarning
+        delete window.__testSessionExpired
+      }
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -631,9 +668,8 @@ export function AuthProvider({ children }) {
       
       // Always use production URL for password reset to ensure consistent experience
       // Must match Supabase Site URL setting
-      const productionUrl = 'https://ticketrack.com'
       const { data, error } = await supabase.auth.resetPasswordForEmail(emailResult.value, {
-        redirectTo: `${productionUrl}/reset-password`,
+        redirectTo: `${brand.urls.website}/reset-password`,
       })
 
       if (error) {
