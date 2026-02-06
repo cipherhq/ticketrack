@@ -15,13 +15,15 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts"
-import * as forge from 'https://esm.sh/node-forge@1.3.1'
 import {
   errorResponse,
   logError,
   safeLog,
   ERROR_CODES
 } from "../_shared/errorHandler.ts";
+
+// Import node-forge using npm: specifier (supported by Deno)
+import forge from 'npm:node-forge@1.3.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -314,32 +316,82 @@ function crc32Sync(data: Uint8Array): number {
  * Sign the manifest using PKCS#7 with node-forge
  */
 function signManifest(manifestData: string, p12Base64: string, password: string): Uint8Array {
+  safeLog.info('Starting manifest signing...')
+
   try {
+    // Validate inputs
+    if (!p12Base64 || p12Base64.length < 100) {
+      throw new Error('Invalid P12 certificate - too short or empty')
+    }
+
+    safeLog.info('Decoding P12 certificate...')
+
     // Decode the P12 certificate
-    const p12Der = forge.util.decode64(p12Base64)
-    const p12Asn1 = forge.asn1.fromDer(p12Der)
-    const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, password)
+    let p12Der: string
+    try {
+      p12Der = forge.util.decode64(p12Base64)
+    } catch (decodeError) {
+      safeLog.error('Failed to decode base64 P12:', decodeError)
+      throw new Error('Failed to decode P12 certificate from base64')
+    }
+
+    safeLog.info('P12 decoded, length:', p12Der.length)
+
+    let p12Asn1
+    try {
+      p12Asn1 = forge.asn1.fromDer(p12Der)
+    } catch (asn1Error) {
+      safeLog.error('Failed to parse P12 ASN1:', asn1Error)
+      throw new Error('Failed to parse P12 certificate structure')
+    }
+
+    safeLog.info('Parsing PKCS12 structure...')
+
+    let p12
+    try {
+      p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, password || '')
+    } catch (pkcs12Error) {
+      safeLog.error('Failed to parse PKCS12:', pkcs12Error)
+      throw new Error('Failed to parse P12 - check certificate password')
+    }
+
+    safeLog.info('Extracting certificate and private key...')
 
     // Extract certificate and private key
-    let certificate: forge.pki.Certificate | null = null
-    let privateKey: forge.pki.PrivateKey | null = null
+    let certificate: any = null
+    let privateKey: any = null
 
     for (const safeContents of p12.safeContents) {
       for (const safeBag of safeContents.safeBags) {
         if (safeBag.type === forge.pki.oids.certBag && safeBag.cert) {
           certificate = safeBag.cert
+          safeLog.info('Found certificate')
         } else if (safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag && safeBag.key) {
           privateKey = safeBag.key
+          safeLog.info('Found private key')
         }
       }
     }
 
-    if (!certificate || !privateKey) {
-      throw new Error('Could not extract certificate or private key from P12')
+    if (!certificate) {
+      throw new Error('Could not extract certificate from P12')
+    }
+    if (!privateKey) {
+      throw new Error('Could not extract private key from P12')
     }
 
+    safeLog.info('Parsing WWDR certificate...')
+
     // Parse WWDR certificate
-    const wwdrCert = forge.pki.certificateFromPem(APPLE_WWDR_CERT_PEM)
+    let wwdrCert
+    try {
+      wwdrCert = forge.pki.certificateFromPem(APPLE_WWDR_CERT_PEM)
+    } catch (wwdrError) {
+      safeLog.error('Failed to parse WWDR cert:', wwdrError)
+      throw new Error('Failed to parse Apple WWDR certificate')
+    }
+
+    safeLog.info('Creating PKCS7 signed data...')
 
     // Create PKCS#7 signed data
     const p7 = forge.pkcs7.createSignedData()
@@ -366,7 +418,10 @@ function signManifest(manifestData: string, p12Base64: string, password: string)
       ]
     })
 
+    safeLog.info('Signing...')
     p7.sign({ detached: true })
+
+    safeLog.info('Converting to DER...')
 
     // Convert to DER
     const asn1 = p7.toAsn1()
@@ -379,9 +434,10 @@ function signManifest(manifestData: string, p12Base64: string, password: string)
       result[i] = bytes.charCodeAt(i)
     }
 
+    safeLog.info('Signing complete, signature length:', result.length)
     return result
   } catch (error) {
-    safeLog.error('Signing error:', error)
+    safeLog.error('Signing error:', error instanceof Error ? error.message : error)
     throw error
   }
 }
@@ -645,13 +701,23 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
     )
 
   } catch (error) {
-    safeLog.error('Apple pass generation error:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    safeLog.error('Apple pass generation error:', errorMessage)
+
+    // Provide specific error messages based on the error
+    let userMessage = 'Unable to generate Apple Wallet pass. Please use "Add to Calendar" instead.'
+    if (errorMessage.includes('P12') || errorMessage.includes('certificate') || errorMessage.includes('password')) {
+      userMessage = 'Apple Wallet certificate configuration issue. Please contact support or use "Add to Calendar".'
+    } else if (errorMessage.includes('private key')) {
+      userMessage = 'Apple Wallet signing key issue. Please contact support or use "Add to Calendar".'
+    }
+
     return new Response(
       JSON.stringify({
         error: 'Failed to generate Apple Wallet pass',
         fallback: true,
-        message: 'Unable to generate Apple Wallet pass. Please use "Add to Calendar" instead.',
-        details: error.message
+        message: userMessage,
+        details: errorMessage
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

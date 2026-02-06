@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { Mail, Lock, User, Eye, EyeOff, Ticket, AlertCircle, CheckCircle2, Loader2, RefreshCw, ArrowLeft, Globe, Phone } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,10 +12,12 @@ import { Logo } from '@/components/Logo'
 export function WebAuth() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const { signIn, signUp, sendOTP, verifyOTP, sendEmailOTP, verifyEmailOTP, resendOTP, resendVerificationEmail, user, pendingUser } = useAuth()
-  
+
   const isLogin = location.pathname === '/login'
-  const from = location.state?.from || '/profile'
+  // Support both state.from (preferred) and redirect query param (backwards compat)
+  const from = location.state?.from || searchParams.get('redirect') || '/profile'
 
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)

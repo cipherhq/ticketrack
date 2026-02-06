@@ -73,8 +73,8 @@ export function GroupBuyJoin() {
 
   const handleJoinWithCode = async (groupCode) => {
     if (!user) {
-      // Redirect to login with return URL
-      navigate(`/login?redirect=/group/${groupCode}`)
+      // Redirect to login with return URL via state (WebAuth expects state.from)
+      navigate('/login', { state: { from: `/group/${groupCode}` } })
       return
     }
 
