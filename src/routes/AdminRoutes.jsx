@@ -21,6 +21,7 @@ import { AdminWhatsAppSettings } from '@/pages/admin/AdminWhatsAppSettings';
 import { AdminSMS } from '@/pages/admin/AdminSMS';
 import { AdminSMSRevenue } from '@/pages/admin/AdminSMSRevenue';
 import { AdminSMSSettings } from '@/pages/admin/AdminSMSSettings';
+import { AdminSMSPackages } from '@/pages/admin/AdminSMSPackages';
 import { AdminAffiliateSettings } from "@/pages/admin/AdminAffiliateSettings";
 import { AdminAffiliatesManagement } from "@/pages/admin/AdminAffiliatesManagement";
 import { AdminFlaggedReferrals } from "@/pages/admin/AdminFlaggedReferrals";
@@ -115,7 +116,7 @@ export function AdminRoutes() {
             <Route path="/whatsapp-packages" element={<AdminWhatsAppPackages />} />
             <Route path="adverts" element={<AdminAdverts />} />
             <Route path="/sms" element={<AdminSMS />} />
-            <Route path="/sms-revenue" element={<AdminSMSRevenue />} />
+            <Route path="/sms-packages" element={<AdminSMSPackages />} />
             <Route path="/sms-revenue" element={<AdminSMSRevenue />} />
             <Route path="/sms-settings" element={<AdminSMSSettings />} />
             <Route path="/affiliate-settings" element={<AdminAffiliateSettings />} />
