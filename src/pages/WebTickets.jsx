@@ -93,7 +93,7 @@ export function WebTickets() {
         .from('tickets')
         .select(`
           *,
-          event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, streaming_platform, is_free, event_sponsors(id, name, logo_url, website_url, sort_order)),
+          event:events(id, title, slug, start_date, end_date, venue_name, venue_address, city, image_url, is_virtual, streaming_url, streaming_platform, is_free, allow_transfers, event_sponsors(id, name, logo_url, website_url, sort_order)),
           ticket_type:ticket_types(name, price),
           order:orders(id, order_number, total_amount, is_donation, currency)
         `)
@@ -848,10 +848,11 @@ export function WebTickets() {
               
               {/* Smart Wallet Button - Shows Apple/Google based on device */}
               <WalletButtons ticket={ticket} event={ticket.event} size="sm" singleButton={true} />
-              {ticket.transfer_count === 0 && (
-              <Button 
-                size="sm" 
-                variant="outline" 
+              {/* Only show transfer button if event allows transfers and ticket hasn't been transferred */}
+              {ticket.event?.allow_transfers && ticket.transfer_count === 0 && (
+              <Button
+                size="sm"
+                variant="outline"
                 className="rounded-xl border-purple-300 text-purple-600 hover:bg-purple-50 flex items-center gap-2 text-xs"
                 onClick={() => openTransferModal(ticket)}
               >
