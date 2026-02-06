@@ -294,6 +294,11 @@ export function CommunicationCredits() {
 
         if (error) throw error;
 
+        // Check if the response indicates an error
+        if (data && !data.success) {
+          throw new Error(data.error || 'Payment initialization failed');
+        }
+
         if (data?.authorization_url) {
           window.location.href = data.authorization_url;
         } else if (data?.paymentUrl) {
@@ -306,7 +311,7 @@ export function CommunicationCredits() {
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Failed to initiate payment: ' + error.message);
+      alert('Failed to initiate payment: ' + (error.message || 'Unknown error'));
     } finally {
       setPurchasing(false);
     }
