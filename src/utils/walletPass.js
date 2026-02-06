@@ -378,18 +378,19 @@ async function generateClientSideApplePass(ticket, event) {
 
 /**
  * Request Apple Wallet pass from backend
- * Falls back to client-side generation if backend is not configured
+ * Apple Wallet passes REQUIRE server-side signing with Apple Developer certificates.
+ * Client-side generation is NOT possible because iOS rejects unsigned passes.
  */
 export async function getAppleWalletPass(ticketId) {
   try {
-    // First, fetch ticket and event data
+    // First, fetch ticket and event data for calendar fallback
     const { data: ticketData, error: ticketError } = await supabase
       .from('tickets')
       .select(`
         *,
         event:events(
-          id, title, slug, start_date, end_date, 
-          venue_name, venue_address, city, 
+          id, title, slug, start_date, end_date,
+          venue_name, venue_address, city,
           image_url, venue_lat, venue_lng,
           organizers(business_name, logo_url)
         ),
@@ -402,55 +403,62 @@ export async function getAppleWalletPass(ticketId) {
       throw new Error('Ticket not found')
     }
 
-    // Try backend first - even if not fully configured, it can serve the file with correct headers
+    // Try backend - Apple Wallet REQUIRES server-side signing
     try {
       const { data, error } = await supabase.functions.invoke('generate-wallet-pass', {
         body: {
           ticketId,
-          platform: 'apple',
-          useClientSide: true // Tell backend to use client-side generation but serve with proper headers
+          platform: 'apple'
         }
       })
-      
+
       if (!error && data?.passUrl) {
-        // Backend generated pass successfully and served with correct headers
+        // Backend generated signed pass successfully
         window.location.href = data.passUrl
         return { success: true }
       }
-      
-      // If backend returns fallback flag or error, use client-side generation with storage upload
-      if (data?.fallback || error) {
-        console.log('Backend not configured, using client-side generation with storage')
-        return await generateClientSideApplePass(ticketData, ticketData.event)
+
+      // Backend not configured or signing failed
+      if (data?.fallback) {
+        console.log('Apple Wallet not configured on server')
+        return {
+          success: false,
+          fallback: true,
+          message: data.message || 'Apple Wallet passes require server configuration. Use "Add to Calendar" instead.'
+        }
+      }
+
+      if (error) {
+        console.error('Backend error:', error)
+        return {
+          success: false,
+          fallback: true,
+          message: 'Apple Wallet is temporarily unavailable. Use "Add to Calendar" instead.'
+        }
       }
     } catch (backendError) {
-      console.log('Backend pass generation not available, using client-side generation with storage')
-      return await generateClientSideApplePass(ticketData, ticketData.event)
+      console.log('Backend pass generation not available:', backendError.message)
+      return {
+        success: false,
+        fallback: true,
+        message: 'Apple Wallet is temporarily unavailable. Use "Add to Calendar" instead.'
+      }
     }
 
-    // Fallback to client-side generation (shouldn't reach here, but just in case)
-    try {
-      return await generateClientSideApplePass(ticketData, ticketData.event)
-    } catch (clientError) {
-      console.error('Client-side generation also failed:', clientError)
-      return { 
-        success: false, 
-        error: clientError.message,
-        fallback: true
-      }
+    // If we reach here, something unexpected happened
+    return {
+      success: false,
+      fallback: true,
+      message: 'Apple Wallet is temporarily unavailable. Use "Add to Calendar" instead.'
     }
-    
+
   } catch (error) {
     console.error('Apple Wallet pass error:', error)
-    // Try client-side generation as last resort
-    try {
-      return await generateClientSideApplePass(ticketData, ticketData.event)
-    } catch (clientError) {
-      return { 
-        success: false, 
-        error: error.message,
-        fallback: true
-      }
+    return {
+      success: false,
+      error: error.message,
+      fallback: true,
+      message: 'Apple Wallet is temporarily unavailable. Use "Add to Calendar" instead.'
     }
   }
 }

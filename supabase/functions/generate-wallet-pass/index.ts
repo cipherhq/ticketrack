@@ -500,10 +500,32 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
     const manifestJson = JSON.stringify(manifest)
     zip.addFile('manifest.json', manifestJson)
 
-    // Note: In production, you would sign the manifest with the Apple certificate
-    // For now, we'll create an unsigned pass that works for testing
-    // iOS will show a warning but still allow adding unsigned passes in development
-    
+    // IMPORTANT: Apple Wallet requires PKCS#7 signing of the manifest
+    // Without proper signing, iOS will reject the pass with "The pass cannot be read because it isn't valid"
+    //
+    // To properly sign the pass, we need:
+    // 1. Apple Developer Pass Type ID certificate (.p12 file)
+    // 2. WWDR (Apple Worldwide Developer Relations) intermediate certificate
+    // 3. PKCS#7 (CMS) signing implementation
+    //
+    // Since Deno doesn't have native PKCS#7 support and we need the Apple certificates,
+    // we return a fallback message until proper signing is implemented.
+
+    safeLog.info('Apple Wallet signing not implemented - returning fallback')
+    return new Response(
+      JSON.stringify({
+        error: 'Apple Wallet signing not configured',
+        fallback: true,
+        message: 'Apple Wallet passes are coming soon! For now, please use "Add to Calendar" to save your event.'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    )
+
+    // The code below would generate the .pkpass file once signing is implemented:
+    /*
     // Generate the .pkpass file
     const pkpassData = await zip.generate()
     
@@ -535,27 +557,28 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
       .getPublicUrl(fileName)
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         passUrl: urlData.publicUrl,
         message: 'Apple Wallet pass generated successfully'
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
     )
+    */
 
   } catch (error) {
     safeLog.error('Apple pass generation error:', error)
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Failed to generate Apple Wallet pass',
         fallback: true,
-        message: 'Unable to generate Apple Wallet pass. Please download your PDF ticket instead.',
+        message: 'Unable to generate Apple Wallet pass. Please use "Add to Calendar" instead.',
         details: error.message
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
