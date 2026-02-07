@@ -64,7 +64,7 @@ export function BackOfficeFunding() {
   const loadOrganizers = async () => {
     // Get all organizers with their events and earnings
     const { data: orgs, error } = await supabase.from('organizers').select(`
-      id, business_name, email, phone, is_trusted, trusted_at, user_id,
+      id, business_name, email, phone, is_trusted, trusted_at, user_id, kyc_status, kyc_verified,
       events (
         id, title, start_date, end_date, currency, payout_status,
         orders (id, total_amount, platform_fee, status)
@@ -273,6 +273,14 @@ export function BackOfficeFunding() {
 
     if (amount > available) {
       alert(`Amount exceeds available balance of ${formatPrice(available, advanceDialog.organizer.currency)}`);
+      return;
+    }
+
+    // Check KYC verification status
+    const kycStatus = advanceDialog.organizer.kyc_status;
+    const kycVerified = advanceDialog.organizer.kyc_verified;
+    if (!kycVerified && kycStatus !== 'verified' && kycStatus !== 'approved') {
+      alert('Cannot process advance payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
       return;
     }
 

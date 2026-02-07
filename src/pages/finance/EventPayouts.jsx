@@ -46,7 +46,7 @@ export function EventPayouts() {
       const { data: events, error } = await supabase.from('events').select(`
         id, title, slug, start_date, end_date, currency, payout_status, organizer_id, parent_event_id,
         organizers (
-          id, business_name, email, phone
+          id, business_name, email, phone, kyc_status, kyc_verified
         ),
         orders (id, total_amount, status, platform_fee, event_id),
         promoter_sales (
@@ -217,6 +217,15 @@ export function EventPayouts() {
           return;
         }
 
+        // Check KYC verification status
+        const kycStatus = event.organizers?.kyc_status;
+        const kycVerified = event.organizers?.kyc_verified;
+        if (!kycVerified && kycStatus !== 'verified' && kycStatus !== 'approved') {
+          alert('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
+          setProcessing(false);
+          return;
+        }
+
         // Generate payout number
         const payoutNumber = `PAY-${Date.now().toString(36).toUpperCase()}`;
 
@@ -319,6 +328,15 @@ export function EventPayouts() {
         const bankAccountId = event.primaryBankAccount?.id;
         if (!bankAccountId) {
           alert('Organizer must have a bank account to process payout');
+          setProcessing(false);
+          return;
+        }
+
+        // Check KYC verification status
+        const kycStatus = event.organizers?.kyc_status;
+        const kycVerified = event.organizers?.kyc_verified;
+        if (!kycVerified && kycStatus !== 'verified' && kycStatus !== 'approved') {
+          alert('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
           setProcessing(false);
           return;
         }

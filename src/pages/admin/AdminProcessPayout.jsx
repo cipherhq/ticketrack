@@ -50,7 +50,9 @@ export function AdminProcessPayout() {
           business_email,
           country_code,
           available_balance,
-          pending_balance
+          pending_balance,
+          kyc_status,
+          kyc_verified
         `)
         .gt('available_balance', 0)
         .eq('is_active', true)
@@ -114,6 +116,15 @@ export function AdminProcessPayout() {
 
   const processPayout = async () => {
     if (!selectedOrganizer || !bankAccount) return;
+
+    // Check KYC verification status
+    const kycStatus = selectedOrganizer.kyc_status;
+    const kycVerified = selectedOrganizer.kyc_verified;
+    if (!kycVerified && kycStatus !== 'verified' && kycStatus !== 'approved') {
+      alert('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
+      return;
+    }
+
     setProcessing(true);
 
     try {
