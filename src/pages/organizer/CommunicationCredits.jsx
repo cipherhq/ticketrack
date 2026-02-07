@@ -218,6 +218,22 @@ export function CommunicationCredits() {
     setShowPurchaseDialog(true);
   };
 
+  // Approximate exchange rates from NGN (update periodically)
+  const NGN_EXCHANGE_RATES = {
+    NGN: 1,
+    USD: 0.00063,  // 1 NGN ≈ $0.00063 (or ~₦1,600 = $1)
+    GBP: 0.0005,   // 1 NGN ≈ £0.0005
+    EUR: 0.00058,  // 1 NGN ≈ €0.00058
+    CAD: 0.00085,  // 1 NGN ≈ C$0.00085
+    AUD: 0.00095,  // 1 NGN ≈ A$0.00095
+    GHS: 0.0095,   // 1 NGN ≈ GH₵0.0095
+  };
+
+  const convertFromNGN = (amountNGN, toCurrency) => {
+    const rate = NGN_EXCHANGE_RATES[toCurrency] || NGN_EXCHANGE_RATES.USD;
+    return Math.ceil(amountNGN * rate * 100) / 100; // Round up to 2 decimal places
+  };
+
   const processPayment = async () => {
     if (!selectedPackage) return;
 
@@ -227,8 +243,14 @@ export function CommunicationCredits() {
       const currency = getDefaultCurrency(organizer.country_code) || 'NGN';
       const provider = getPaymentProvider(currency);
 
-      // Get the price in the appropriate currency (fallback to NGN price)
-      const amount = selectedPackage.price_ngn; // TODO: Add multi-currency pricing to packages
+      // Get price in the organizer's currency
+      // Use explicit USD price if available, otherwise fall back to conversion
+      let amount = selectedPackage.price_ngn;
+      if (currency === 'USD' && selectedPackage.price_usd) {
+        amount = selectedPackage.price_usd;
+      } else if (currency !== 'NGN') {
+        amount = convertFromNGN(selectedPackage.price_ngn, currency);
+      }
 
       if (provider === 'stripe') {
         // Use Stripe for USD, GBP, EUR, etc.
@@ -247,6 +269,11 @@ export function CommunicationCredits() {
         });
 
         if (error) throw error;
+
+        // Check if the response indicates an error
+        if (data && !data.success) {
+          throw new Error(data.error || 'Failed to create Stripe checkout');
+        }
 
         if (data?.url || data?.authorization_url) {
           window.location.href = data.url || data.authorization_url;
@@ -270,6 +297,11 @@ export function CommunicationCredits() {
         });
 
         if (error) throw error;
+
+        // Check if the response indicates an error
+        if (data && !data.success) {
+          throw new Error(data.error || 'Failed to create Flutterwave checkout');
+        }
 
         if (data?.link || data?.authorization_url) {
           window.location.href = data.link || data.authorization_url;
@@ -328,10 +360,13 @@ export function CommunicationCredits() {
   };
 
   const formatCurrency = (amount, currency = 'NGN') => {
-    if (currency === 'NGN') {
-      return `₦${new Intl.NumberFormat('en-NG').format(amount || 0)}`;
-    }
-    return `$${new Intl.NumberFormat('en-US').format(amount || 0)}`;
+    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', CAD: 'C$', AUD: 'A$', GHS: 'GH₵' };
+    const symbol = symbols[currency] || '$';
+    const formatted = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: currency === 'NGN' ? 0 : 2,
+      maximumFractionDigits: currency === 'NGN' ? 0 : 2,
+    }).format(amount || 0);
+    return `${symbol}${formatted}`;
   };
 
   const getTransactionIcon = (type) => {
@@ -449,53 +484,68 @@ export function CommunicationCredits() {
 
         {/* Packages Tab */}
         <TabsContent value="packages" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {packages.map((pkg) => (
-              <Card
-                key={pkg.id}
-                className={`border-2 rounded-xl transition-all cursor-pointer hover:shadow-lg ${
-                  pkg.is_popular ? 'border-[#2969FF] ring-2 ring-[#2969FF]/20' : 'border-[#0F0F0F]/10'
-                }`}
-                onClick={() => initiatePayment(pkg)}
-              >
-                <CardContent className="p-5">
-                  {pkg.badge_text && (
-                    <Badge className={`mb-3 ${pkg.is_popular ? 'bg-[#2969FF]' : 'bg-gray-600'}`}>
-                      {pkg.badge_text}
-                    </Badge>
-                  )}
-                  
-                  <h3 className="text-lg font-bold mb-1">{pkg.name}</h3>
-                  <p className="text-sm text-[#0F0F0F]/60 mb-4">{pkg.description}</p>
-                  
-                  <div className="mb-4">
-                    <p className="text-3xl font-bold text-[#2969FF]">
-                      {formatCredits(pkg.credits + pkg.bonus_credits)}
-                    </p>
-                    <p className="text-sm text-[#0F0F0F]/60">credits</p>
-                  </div>
-                  
-                  {pkg.bonus_credits > 0 && (
-                    <div className="flex items-center gap-1 text-sm text-green-600 mb-3">
-                      <Sparkles className="w-4 h-4" />
-                      <span>+{formatCredits(pkg.bonus_credits)} bonus</span>
-                    </div>
-                  )}
-                  
-                  <div className="border-t border-[#0F0F0F]/10 pt-4">
-                    <p className="text-2xl font-bold">{formatCurrency(pkg.price_ngn)}</p>
-                    <p className="text-xs text-[#0F0F0F]/40">
-                      {formatCurrency(pkg.price_per_credit)}/credit
-                    </p>
-                  </div>
-                  
-                  <Button className="w-full mt-4 bg-[#2969FF] text-white">
-                    Buy Now
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {(() => {
+            const userCurrency = getDefaultCurrency(organizer?.country_code) || 'NGN';
+            const getPackagePrice = (pkg) => {
+              if (userCurrency === 'USD' && pkg.price_usd) return pkg.price_usd;
+              if (userCurrency !== 'NGN') return convertFromNGN(pkg.price_ngn, userCurrency);
+              return pkg.price_ngn;
+            };
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {packages.map((pkg) => {
+                  const displayPrice = getPackagePrice(pkg);
+                  const totalCredits = pkg.credits + (pkg.bonus_credits || 0);
+                  const pricePerCredit = totalCredits > 0 ? displayPrice / totalCredits : 0;
+                  return (
+                    <Card
+                      key={pkg.id}
+                      className={`border-2 rounded-xl transition-all cursor-pointer hover:shadow-lg ${
+                        pkg.is_popular ? 'border-[#2969FF] ring-2 ring-[#2969FF]/20' : 'border-[#0F0F0F]/10'
+                      }`}
+                      onClick={() => initiatePayment(pkg)}
+                    >
+                      <CardContent className="p-5">
+                        {pkg.badge_text && (
+                          <Badge className={`mb-3 ${pkg.is_popular ? 'bg-[#2969FF]' : 'bg-gray-600'}`}>
+                            {pkg.badge_text}
+                          </Badge>
+                        )}
+
+                        <h3 className="text-lg font-bold mb-1">{pkg.name}</h3>
+                        <p className="text-sm text-[#0F0F0F]/60 mb-4">{pkg.description}</p>
+
+                        <div className="mb-4">
+                          <p className="text-3xl font-bold text-[#2969FF]">
+                            {formatCredits(pkg.credits + (pkg.bonus_credits || 0))}
+                          </p>
+                          <p className="text-sm text-[#0F0F0F]/60">credits</p>
+                        </div>
+
+                        {pkg.bonus_credits > 0 && (
+                          <div className="flex items-center gap-1 text-sm text-green-600 mb-3">
+                            <Sparkles className="w-4 h-4" />
+                            <span>+{formatCredits(pkg.bonus_credits)} bonus</span>
+                          </div>
+                        )}
+
+                        <div className="border-t border-[#0F0F0F]/10 pt-4">
+                          <p className="text-2xl font-bold">{formatCurrency(displayPrice, userCurrency)}</p>
+                          <p className="text-xs text-[#0F0F0F]/40">
+                            {formatCurrency(pricePerCredit, userCurrency)}/credit
+                          </p>
+                        </div>
+
+                        <Button className="w-full mt-4 bg-[#2969FF] text-white">
+                          Buy Now
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           <Card className="border-[#0F0F0F]/10 rounded-xl">
             <CardContent className="p-6">
@@ -698,46 +748,60 @@ export function CommunicationCredits() {
             </DialogDescription>
           </DialogHeader>
 
-          {selectedPackage && (
-            <div className="py-4 space-y-4">
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[#0F0F0F]/60">Credits</span>
-                  <span className="font-semibold">{formatCredits(selectedPackage.credits)}</span>
-                </div>
-                {selectedPackage.bonus_credits > 0 && (
-                  <div className="flex items-center justify-between mb-2 text-green-600">
-                    <span className="flex items-center gap-1">
-                      <Sparkles className="w-4 h-4" />
-                      Bonus Credits
-                    </span>
-                    <span className="font-semibold">+{formatCredits(selectedPackage.bonus_credits)}</span>
+          {selectedPackage && (() => {
+            const userCurrency = getDefaultCurrency(organizer?.country_code) || 'NGN';
+            const provider = getPaymentProvider(userCurrency);
+            const providerNames = { stripe: 'Stripe', paystack: 'Paystack', flutterwave: 'Flutterwave' };
+
+            // Use explicit USD price if available, otherwise convert
+            let displayAmount = selectedPackage.price_ngn;
+            if (userCurrency === 'USD' && selectedPackage.price_usd) {
+              displayAmount = selectedPackage.price_usd;
+            } else if (userCurrency !== 'NGN') {
+              displayAmount = convertFromNGN(selectedPackage.price_ngn, userCurrency);
+            }
+
+            return (
+              <div className="py-4 space-y-4">
+                <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[#0F0F0F]/60">Credits</span>
+                    <span className="font-semibold">{formatCredits(selectedPackage.credits)}</span>
                   </div>
-                )}
-                <div className="border-t border-[#0F0F0F]/10 pt-2 mt-2">
+                  {selectedPackage.bonus_credits > 0 && (
+                    <div className="flex items-center justify-between mb-2 text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-4 h-4" />
+                        Bonus Credits
+                      </span>
+                      <span className="font-semibold">+{formatCredits(selectedPackage.bonus_credits)}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-[#0F0F0F]/10 pt-2 mt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">Total Credits</span>
+                      <span className="font-bold text-[#2969FF]">
+                        {formatCredits(selectedPackage.credits + selectedPackage.bonus_credits)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-[#2969FF]/5 rounded-xl border border-[#2969FF]/20">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold">Total Credits</span>
-                    <span className="font-bold text-[#2969FF]">
-                      {formatCredits(selectedPackage.credits + selectedPackage.bonus_credits)}
+                    <span className="font-semibold text-[#0F0F0F]">Amount to Pay</span>
+                    <span className="text-2xl font-bold text-[#2969FF]">
+                      {formatCurrency(displayAmount, userCurrency)}
                     </span>
                   </div>
                 </div>
-              </div>
 
-              <div className="p-4 bg-[#2969FF]/5 rounded-xl border border-[#2969FF]/20">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#0F0F0F]">Amount to Pay</span>
-                  <span className="text-2xl font-bold text-[#2969FF]">
-                    {formatCurrency(selectedPackage.price_ngn)}
-                  </span>
-                </div>
+                <p className="text-xs text-[#0F0F0F]/40 text-center">
+                  You'll be redirected to {providerNames[provider] || 'payment'} to complete payment
+                </p>
               </div>
-
-              <p className="text-xs text-[#0F0F0F]/40 text-center">
-                You'll be redirected to Paystack to complete payment
-              </p>
-            </div>
-          )}
+            );
+          })()}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPurchaseDialog(false)}>
@@ -753,7 +817,7 @@ export function CommunicationCredits() {
               ) : (
                 <CreditCard className="w-4 h-4 mr-2" />
               )}
-              Pay {formatCurrency(selectedPackage?.price_ngn)}
+              Pay Now
             </Button>
           </DialogFooter>
         </DialogContent>
