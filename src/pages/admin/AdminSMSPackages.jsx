@@ -37,6 +37,7 @@ export function AdminSMSPackages() {
     description: '',
     credits: '',
     price_ngn: '',
+    price_ghs: '',
     price_usd: '',
     price_gbp: '',
     price_cad: '',
@@ -68,7 +69,7 @@ export function AdminSMSPackages() {
 
   const openCreateDialog = () => {
     setEditingPackage(null);
-    setForm({ name: '', description: '', credits: '', price_ngn: '', price_usd: '', price_gbp: '', price_cad: '', bonus_credits: '0', badge_text: '', is_popular: false, is_active: true, sort_order: String(packages.length + 1) });
+    setForm({ name: '', description: '', credits: '', price_ngn: '', price_ghs: '', price_usd: '', price_gbp: '', price_cad: '', bonus_credits: '0', badge_text: '', is_popular: false, is_active: true, sort_order: String(packages.length + 1) });
     setDialogOpen(true);
   };
 
@@ -79,6 +80,7 @@ export function AdminSMSPackages() {
       description: pkg.description || '',
       credits: String(pkg.credits),
       price_ngn: String(pkg.price_ngn),
+      price_ghs: String(pkg.price_ghs || ''),
       price_usd: String(pkg.price_usd || ''),
       price_gbp: String(pkg.price_gbp || ''),
       price_cad: String(pkg.price_cad || ''),
@@ -106,6 +108,7 @@ export function AdminSMSPackages() {
         description: form.description || null,
         credits: parseInt(form.credits),
         price_ngn: parseFloat(form.price_ngn),
+        price_ghs: form.price_ghs ? parseFloat(form.price_ghs) : null,
         price_usd: form.price_usd ? parseFloat(form.price_usd) : null,
         price_gbp: form.price_gbp ? parseFloat(form.price_gbp) : null,
         price_cad: form.price_cad ? parseFloat(form.price_cad) : null,
@@ -178,7 +181,8 @@ export function AdminSMSPackages() {
           <p className="text-blue-800 font-medium">Multi-Currency Pricing</p>
           <p className="text-sm text-blue-700 mt-1">Set prices for each region. Organizers only see their local currency.</p>
           <div className="text-xs text-blue-600 mt-2 flex flex-wrap gap-x-4 gap-y-1">
-            <span><strong>NGN</strong> → Nigeria, Ghana (Paystack)</span>
+            <span><strong>NGN</strong> → Nigeria (Paystack)</span>
+            <span><strong>GHS</strong> → Ghana (Paystack)</span>
             <span><strong>USD</strong> → USA (Stripe)</span>
             <span><strong>GBP</strong> → UK (Stripe)</span>
             <span><strong>CAD</strong> → Canada (Stripe)</span>
@@ -196,6 +200,7 @@ export function AdminSMSPackages() {
                   <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Package</th>
                   <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Credits</th>
                   <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">NGN</th>
+                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">GHS</th>
                   <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">USD</th>
                   <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">GBP</th>
                   <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">CAD</th>
@@ -212,6 +217,7 @@ export function AdminSMSPackages() {
                     </td>
                     <td className="py-3 px-2">{pkg.credits}{pkg.bonus_credits > 0 && <span className="text-green-600 text-xs ml-1">+{pkg.bonus_credits}</span>}</td>
                     <td className="py-3 px-2 font-medium">₦{pkg.price_ngn?.toLocaleString()}</td>
+                    <td className="py-3 px-2">{pkg.price_ghs ? `GH₵${pkg.price_ghs}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
                     <td className="py-3 px-2">{pkg.price_usd ? `$${pkg.price_usd}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
                     <td className="py-3 px-2">{pkg.price_gbp ? `£${pkg.price_gbp}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
                     <td className="py-3 px-2">{pkg.price_cad ? `C$${pkg.price_cad}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
@@ -241,7 +247,8 @@ export function AdminSMSPackages() {
             <div className="space-y-3">
               <p className="text-sm font-medium text-[#0F0F0F]/60">Pricing by Region</p>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>NGN (₦) * <span className="text-xs text-[#0F0F0F]/40">Nigeria/Ghana</span></Label><Input type="number" value={form.price_ngn} onChange={(e) => setForm({ ...form, price_ngn: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>NGN (₦) * <span className="text-xs text-[#0F0F0F]/40">Nigeria</span></Label><Input type="number" value={form.price_ngn} onChange={(e) => setForm({ ...form, price_ngn: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>GHS (GH₵) <span className="text-xs text-[#0F0F0F]/40">Ghana</span></Label><Input type="number" step="0.01" value={form.price_ghs} onChange={(e) => setForm({ ...form, price_ghs: e.target.value })} className="rounded-xl mt-1" /></div>
                 <div><Label>USD ($) <span className="text-xs text-[#0F0F0F]/40">USA</span></Label><Input type="number" step="0.01" value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="rounded-xl mt-1" /></div>
                 <div><Label>GBP (£) <span className="text-xs text-[#0F0F0F]/40">UK</span></Label><Input type="number" step="0.01" value={form.price_gbp} onChange={(e) => setForm({ ...form, price_gbp: e.target.value })} className="rounded-xl mt-1" /></div>
                 <div><Label>CAD (C$) <span className="text-xs text-[#0F0F0F]/40">Canada</span></Label><Input type="number" step="0.01" value={form.price_cad} onChange={(e) => setForm({ ...form, price_cad: e.target.value })} className="rounded-xl mt-1" /></div>

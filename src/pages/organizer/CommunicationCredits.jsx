@@ -222,10 +222,11 @@ export function CommunicationCredits() {
   const getOrganizerCurrency = () => {
     const countryCode = organizer?.country_code;
     const countryToCurrency = {
-      NG: 'NGN', GH: 'NGN',  // Nigeria & Ghana use NGN (Paystack)
-      US: 'USD',             // USA uses USD (Stripe)
-      GB: 'GBP',             // UK uses GBP (Stripe)
-      CA: 'CAD',             // Canada uses CAD (Stripe)
+      NG: 'NGN',  // Nigeria uses NGN (Paystack)
+      GH: 'GHS',  // Ghana uses GHS (Paystack)
+      US: 'USD',  // USA uses USD (Stripe)
+      GB: 'GBP',  // UK uses GBP (Stripe)
+      CA: 'CAD',  // Canada uses CAD (Stripe)
     };
     return countryToCurrency[countryCode] || 'USD'; // Default to USD for other countries
   };
@@ -234,6 +235,7 @@ export function CommunicationCredits() {
   const getPackagePrice = (pkg, currency) => {
     const priceMap = {
       NGN: pkg.price_ngn,
+      GHS: pkg.price_ghs,
       USD: pkg.price_usd,
       GBP: pkg.price_gbp,
       CAD: pkg.price_cad,
@@ -371,11 +373,12 @@ export function CommunicationCredits() {
   };
 
   const formatCurrency = (amount, currency = 'NGN') => {
-    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', CAD: 'C$', AUD: 'A$', GHS: 'GH₵' };
+    const symbols = { NGN: '₦', GHS: 'GH₵', USD: '$', GBP: '£', EUR: '€', CAD: 'C$', AUD: 'A$' };
     const symbol = symbols[currency] || '$';
+    const noDecimals = ['NGN', 'GHS']; // These currencies typically don't show decimals
     const formatted = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: currency === 'NGN' ? 0 : 2,
-      maximumFractionDigits: currency === 'NGN' ? 0 : 2,
+      minimumFractionDigits: noDecimals.includes(currency) ? 0 : 2,
+      maximumFractionDigits: noDecimals.includes(currency) ? 0 : 2,
     }).format(amount || 0);
     return `${symbol}${formatted}`;
   };
