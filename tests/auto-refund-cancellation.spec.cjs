@@ -4,10 +4,24 @@ require('dotenv').config({ path: '.env.local' });
 
 // Supabase client for direct database operations
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://bkvbvggngttrizbchygy.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const TEST_USER_ID = process.env.TEST_USER_ID; // Required: a valid user_id from auth.users
 
-test.describe('Auto-Refund on Event Cancellation', () => {
+// Skip entire suite if no service role key or test user ID available
+// This test requires:
+// 1. SUPABASE_SERVICE_ROLE_KEY - for admin database access
+// 2. TEST_USER_ID - a valid user ID to link the test organizer to
+const hasRequiredEnv = !!SUPABASE_SERVICE_KEY && !!TEST_USER_ID;
+
+// Only create client if we have the key
+const supabase = hasRequiredEnv
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+  : null;
+
+// Use test.describe.skip to skip entire suite when missing required env
+const describeFn = hasRequiredEnv ? test.describe : test.describe.skip;
+
+describeFn('Auto-Refund on Event Cancellation', () => {
   let testOrganizerId;
   let testEventId;
   let testChildEventId;
@@ -27,10 +41,11 @@ test.describe('Auto-Refund on Event Cancellation', () => {
     if (organizer) {
       testOrganizerId = organizer.id;
     } else {
-      // Create test organizer
+      // Create test organizer with required user_id
       const { data: newOrg, error: createError } = await supabase
         .from('organizers')
         .insert({
+          user_id: TEST_USER_ID,
           business_name: 'Test Auto-Refund Organizer',
           business_email: 'test-auto-refund@ticketrack.test',
           email: 'test-auto-refund@ticketrack.test',

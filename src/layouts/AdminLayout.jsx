@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { NotificationBadge, useAdminNotifications } from '@/components/NotificationBadge';
 
 // Grouped navigation items for cleaner organization
+// Each item can have a 'permission' field to control visibility based on role
 const navGroups = [
   {
     id: 'main',
@@ -25,6 +26,7 @@ const navGroups = [
   {
     id: 'verification',
     label: 'Verification',
+    permission: 'canManageKYC',
     items: [
       { icon: Shield, label: 'KYC Verification', path: '/admin/kyc', notificationKey: 'kycPending' },
       { icon: FileText, label: 'KYC Review', path: '/admin/kyc-review' },
@@ -33,6 +35,7 @@ const navGroups = [
   {
     id: 'users',
     label: 'Users',
+    permission: 'canManageUsers',
     items: [
       { icon: Users, label: 'All Users', path: '/admin/users' },
       { icon: Building, label: 'Organizers', path: '/admin/organizers' },
@@ -42,6 +45,7 @@ const navGroups = [
   {
     id: 'management',
     label: 'Events & Content',
+    permission: 'canManageEvents',
     items: [
       { icon: Calendar, label: 'Events', path: '/admin/events' },
       { icon: FolderOpen, label: 'Categories', path: '/admin/categories' },
@@ -51,19 +55,21 @@ const navGroups = [
   {
     id: 'finance',
     label: 'Finance & Orders',
+    permission: 'canAccessFinance',
     items: [
       { icon: DollarSign, label: 'Finance', path: '/admin/finance' },
       { icon: Receipt, label: 'Orders', path: '/admin/orders' },
-      { icon: RefreshCw, label: 'Refunds', path: '/admin/refunds', notificationKey: 'refundsPending' },
-      { icon: Settings, label: 'Refund Settings', path: '/admin/refund-settings' },
+      { icon: RefreshCw, label: 'Refunds', path: '/admin/refunds', notificationKey: 'refundsPending', permission: 'canProcessRefunds' },
+      { icon: Settings, label: 'Refund Settings', path: '/admin/refund-settings', permission: 'canManageSettings' },
       { icon: ArrowRightLeft, label: 'Transfers', path: '/admin/transfers' },
-      { icon: CreditCard, label: 'Payment Connections', path: '/admin/payment-connections' },
-      { icon: DollarSign, label: 'Fee Management', path: '/admin/fees' },
+      { icon: CreditCard, label: 'Payment Connections', path: '/admin/payment-connections', permission: 'canManagePaymentConnections' },
+      { icon: DollarSign, label: 'Fee Management', path: '/admin/fees', permission: 'canManageFees' },
     ]
   },
   {
     id: 'affiliates',
     label: 'Affiliates & Promoters',
+    permission: 'canManageAffiliates',
     items: [
       { icon: Settings, label: 'Affiliate Settings', path: '/admin/affiliate-settings' },
       { icon: Users, label: 'Affiliates', path: '/admin/affiliates' },
@@ -74,6 +80,7 @@ const navGroups = [
   {
     id: 'communication',
     label: 'Communication',
+    permission: 'canManageCommunications',
     items: [
       { icon: MessageSquare, label: 'Support', path: '/admin/support', notificationKey: 'supportOpen' },
       { icon: Users, label: 'All Contacts', path: '/admin/contacts' },
@@ -82,20 +89,21 @@ const navGroups = [
       { icon: Send, label: 'Send Emails', path: '/admin/send-emails' },
       { icon: Bell, label: 'SMS Campaigns', path: '/admin/sms' },
       { icon: Bell, label: 'SMS Packages', path: '/admin/sms-packages' },
-      { icon: DollarSign, label: 'SMS Revenue', path: '/admin/sms-revenue' },
-      { icon: Settings, label: 'SMS Settings', path: '/admin/sms-settings' },
+      { icon: DollarSign, label: 'SMS Revenue', path: '/admin/sms-revenue', permission: 'canAccessFinance' },
+      { icon: Settings, label: 'SMS Settings', path: '/admin/sms-settings', permission: 'canManageSettings' },
       { icon: MessageSquare, label: 'WhatsApp', path: '/admin/whatsapp' },
-      { icon: Settings, label: 'WhatsApp Settings', path: '/admin/whatsapp-settings' },
+      { icon: Settings, label: 'WhatsApp Settings', path: '/admin/whatsapp-settings', permission: 'canManageSettings' },
       { icon: DollarSign, label: 'WhatsApp Packages', path: '/admin/whatsapp-packages' },
     ]
   },
   {
     id: 'system',
     label: 'System',
+    permission: 'canManageSettings',
     items: [
       { icon: Globe, label: 'Country Features', path: '/admin/country-features' },
       { icon: Shield, label: 'User Access Control', path: '/admin/user-types' },
-      { icon: Users, label: 'Roles & Permissions', path: '/admin/roles' },
+      { icon: Users, label: 'Roles & Permissions', path: '/admin/roles', permission: 'canManageRoles' },
       { icon: Clock, label: 'Waitlist', path: '/admin/waitlist', notificationKey: 'waitlist' },
       { icon: Settings, label: 'Settings', path: '/admin/settings' },
     ]
@@ -105,9 +113,18 @@ const navGroups = [
 export function AdminLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { admin, loading } = useAdmin();
+  const { admin, loading, hasPermission } = useAdmin();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState({});
+
+  // Filter nav groups and items based on permissions
+  const filteredNavGroups = navGroups
+    .filter(group => !group.permission || hasPermission(group.permission))
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => !item.permission || hasPermission(item.permission))
+    }))
+    .filter(group => group.items.length > 0);
   const { counts } = useAdminNotifications();
 
   const handleLogout = async () => {
@@ -175,7 +192,7 @@ export function AdminLayout({ children }) {
       </div>
       
       <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
-        {navGroups.map((group) => (
+        {filteredNavGroups.map((group) => (
           <div key={group.id}>
             <button
               onClick={() => toggleGroup(group.id)}

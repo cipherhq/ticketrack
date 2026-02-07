@@ -45,12 +45,15 @@ export function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, 
 export function usePagination(items, defaultItemsPerPage = 20) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
-  
-  const totalItems = items.length;
+
+  // Ensure items is always an array
+  const safeItems = Array.isArray(items) ? items : [];
+
+  const totalItems = safeItems.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  
-  const paginatedItems = items.slice(
-    (currentPage - 1) * itemsPerPage, 
+
+  const paginatedItems = safeItems.slice(
+    (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
   

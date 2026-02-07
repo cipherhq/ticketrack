@@ -1,19 +1,24 @@
 const { test, expect } = require('@playwright/test');
 
 test.describe('XSS Protection', () => {
-  
+
   test('search input sanitizes XSS attempts', async ({ page }) => {
+    // Set up dialog handler to dismiss any alert/confirm/prompt dialogs
+    page.on('dialog', async dialog => {
+      await dialog.dismiss();
+    });
+
     await page.goto('/events');
     await page.waitForLoadState('domcontentloaded');
-    
+
     const xssPayload = '<script>alert("XSS")</script>';
     const searchInput = page.locator('input[type="text"], input[placeholder*="Search"]').first();
-    
+
     if (await searchInput.isVisible()) {
       await searchInput.fill(xssPayload);
       await searchInput.press('Enter');
       await page.waitForTimeout(1000);
-      
+
       const bodyHtml = await page.content();
       expect(bodyHtml).not.toContain('<script>alert');
       await expect(page.locator('body')).toBeVisible();

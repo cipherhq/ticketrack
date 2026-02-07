@@ -47,7 +47,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
-import { Pagination, usePagination } from '@/components/ui/pagination';
+import { Pagination } from '@/components/ui/pagination';
 
 // Status configuration for display
 const STATUS_CONFIG = {
@@ -124,7 +124,8 @@ export function AdminPaymentConnections() {
   const [loadingRevenue, setLoadingRevenue] = useState(false);
 
   // Pagination
-  const pagination = usePagination({ initialPageSize: 20 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   useEffect(() => {
     loadOrganizers();
@@ -277,10 +278,16 @@ export function AdminPaymentConnections() {
   });
 
   // Paginate
+  const totalPages = Math.max(1, Math.ceil(filteredOrganizers.length / pageSize));
   const paginatedOrganizers = filteredOrganizers.slice(
-    (pagination.page - 1) * pagination.pageSize,
-    pagination.page * pagination.pageSize
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, providerFilter, statusFilter, countryFilter]);
 
   const toggleProviderEnabled = async (organizerId, provider, currentEnabled) => {
     setProcessing(true);
@@ -893,11 +900,14 @@ export function AdminPaymentConnections() {
             </div>
           )}
 
-          {filteredOrganizers.length > pagination.pageSize && (
+          {filteredOrganizers.length > pageSize && (
             <div className="p-4 border-t border-[#0F0F0F]/10">
               <Pagination
-                {...pagination}
+                currentPage={currentPage}
+                totalPages={totalPages}
                 totalItems={filteredOrganizers.length}
+                itemsPerPage={pageSize}
+                onPageChange={setCurrentPage}
               />
             </div>
           )}

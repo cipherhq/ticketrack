@@ -42,6 +42,7 @@ import { AdminContacts } from '@/pages/admin/AdminContacts'; // All contacts man
 import { AdminCommunications } from '@/pages/admin/AdminCommunications'; // Platform broadcasts
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdmin } from '@/contexts/AdminContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -59,11 +60,14 @@ function AdminAuthGuard({ children }) {
 
       const { data } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_admin, admin_role')
         .eq('id', user.id)
         .single();
 
-      setIsAdmin(data?.role === 'admin' || data?.role === 'super_admin');
+      // Allow admin, super_admin roles OR users with is_admin flag and support admin_role
+      const isAdminUser = data?.role === 'admin' || data?.role === 'super_admin' ||
+                          (data?.is_admin && ['admin', 'super_admin', 'support'].includes(data?.admin_role));
+      setIsAdmin(isAdminUser);
       setLoading(false);
     };
 
@@ -91,6 +95,32 @@ function AdminAuthGuard({ children }) {
   return children;
 }
 
+// Permission-based route protection component
+function PermissionRoute({ children, permission, fallback = null }) {
+  const { hasPermission, loading } = useAdmin();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
+      </div>
+    );
+  }
+
+  if (permission && !hasPermission(permission)) {
+    return fallback || (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
+}
+
 export function AdminRoutes() {
   return (
     <AdminAuthGuard>
@@ -103,11 +133,11 @@ export function AdminRoutes() {
             <Route path="/events" element={<AdminEvents />} />
             <Route path="/organizers" element={<AdminOrganizers />} />
             <Route path="/attendees" element={<AdminAttendees />} />
-            <Route path="/finance" element={<AdminFinance />} />
-            <Route path="/payouts" element={<AdminPayouts />} />
-            <Route path="/payouts/process" element={<AdminProcessPayout />} />
-            <Route path="/refunds" element={<AdminRefunds />} />
-            <Route path="/orders" element={<AdminOrders />} />
+            <Route path="/finance" element={<PermissionRoute permission="canAccessFinance"><AdminFinance /></PermissionRoute>} />
+            <Route path="/payouts" element={<PermissionRoute permission="canProcessPayouts"><AdminPayouts /></PermissionRoute>} />
+            <Route path="/payouts/process" element={<PermissionRoute permission="canProcessPayouts"><AdminProcessPayout /></PermissionRoute>} />
+            <Route path="/refunds" element={<PermissionRoute permission="canProcessRefunds"><AdminRefunds /></PermissionRoute>} />
+            <Route path="/orders" element={<PermissionRoute permission="canAccessFinance"><AdminOrders /></PermissionRoute>} />
             <Route path="/promoters" element={<AdminAffiliates />} />
             <Route path="/affiliates" element={<AdminAffiliatesManagement />} />
             <Route path="/support" element={<AdminSupport />} />
@@ -123,17 +153,17 @@ export function AdminRoutes() {
             <Route path="/sms-settings" element={<AdminSMSSettings />} />
             <Route path="/affiliate-settings" element={<AdminAffiliateSettings />} />
             <Route path="/flagged-referrals" element={<AdminFlaggedReferrals />} />
-            <Route path="/roles" element={<AdminRoles />} />
+            <Route path="/roles" element={<PermissionRoute permission="canManageRoles"><AdminRoles /></PermissionRoute>} />
             <Route path="/waitlist" element={<AdminWaitlist />} />
-            <Route path="/transfers" element={<AdminTransfers />} />
+            <Route path="/transfers" element={<PermissionRoute permission="canAccessFinance"><AdminTransfers /></PermissionRoute>} />
             <Route path="/categories" element={<AdminCategories />} />  {/* NEW: Categories route */}
             <Route path="/country-features" element={<AdminCountryFeatures />} />  {/* NEW: Country features */}
             <Route path="/user-types" element={<AdminUserTypes />} />  {/* NEW: User type management */}
             <Route path="/users" element={<AdminUsers />} />  {/* NEW: All user management */}
-            <Route path="/settings" element={<AdminSettings />} />
-            <Route path="/fees" element={<AdminFeeManagement />} />
-            <Route path="/refund-settings" element={<AdminRefundSettings />} />
-            <Route path="/payment-connections" element={<AdminPaymentConnections />} />
+            <Route path="/settings" element={<PermissionRoute permission="canManageSettings"><AdminSettings /></PermissionRoute>} />
+            <Route path="/fees" element={<PermissionRoute permission="canManageFees"><AdminFeeManagement /></PermissionRoute>} />
+            <Route path="/refund-settings" element={<PermissionRoute permission="canManageSettings"><AdminRefundSettings /></PermissionRoute>} />
+            <Route path="/payment-connections" element={<PermissionRoute permission="canManagePaymentConnections"><AdminPaymentConnections /></PermissionRoute>} />
             <Route path="/contacts" element={<AdminContacts />} />
             <Route path="/communications" element={<AdminCommunications />} />
           </Routes>

@@ -86,6 +86,7 @@ export function AdminOrganizers() {
   const [organizers, setOrganizers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
   const [selectedOrganizer, setSelectedOrganizer] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
@@ -104,6 +105,8 @@ export function AdminOrganizers() {
   const [savingPayoutOverride, setSavingPayoutOverride] = useState(false);
   const [featureFlags, setFeatureFlags] = useState({});
   const [savingFeatures, setSavingFeatures] = useState(false);
+  const [accountData, setAccountData] = useState({ country_code: '', default_currency: '' });
+  const [savingAccount, setSavingAccount] = useState(false);
 
   useEffect(() => {
     loadOrganizers();
@@ -221,12 +224,33 @@ export function AdminOrganizers() {
     setActionDialogOpen(true);
   };
 
+  // Country to currency mapping
+  const COUNTRY_CURRENCY_MAP = {
+    NG: { currency: 'NGN', name: 'Nigeria', flag: '🇳🇬', symbol: '₦' },
+    GH: { currency: 'GHS', name: 'Ghana', flag: '🇬🇭', symbol: '₵' },
+    KE: { currency: 'KES', name: 'Kenya', flag: '🇰🇪', symbol: 'KSh' },
+    ZA: { currency: 'ZAR', name: 'South Africa', flag: '🇿🇦', symbol: 'R' },
+    US: { currency: 'USD', name: 'United States', flag: '🇺🇸', symbol: '$' },
+    GB: { currency: 'GBP', name: 'United Kingdom', flag: '🇬🇧', symbol: '£' },
+    CA: { currency: 'CAD', name: 'Canada', flag: '🇨🇦', symbol: 'C$' },
+    AU: { currency: 'AUD', name: 'Australia', flag: '🇦🇺', symbol: 'A$' },
+  };
+
+  const getCurrencyForCountry = (countryCode) => {
+    return COUNTRY_CURRENCY_MAP[countryCode]?.currency || 'USD';
+  };
+
   const openDetailsDialog = async (organizer) => {
     setSelectedOrganizer(organizer);
     setCustomFeeData({
       enabled: organizer.custom_fee_enabled || false,
       percentage: organizer.custom_service_fee_percentage || "",
       fixed: organizer.custom_service_fee_fixed || ""
+    });
+    // Initialize account data
+    setAccountData({
+      country_code: organizer.country_code || 'NG',
+      default_currency: organizer.default_currency || getCurrencyForCountry(organizer.country_code || 'NG'),
     });
     // Initialize feature flags from organizer data
     setFeatureFlags({
@@ -397,6 +421,68 @@ export function AdminOrganizers() {
     }
   };
 
+  const saveAccountSettings = async () => {
+    if (!selectedOrganizer) return;
+    setSavingAccount(true);
+    try {
+      const newCurrency = getCurrencyForCountry(accountData.country_code);
+      const { error } = await supabase
+        .from("organizers")
+        .update({
+          country_code: accountData.country_code,
+          default_currency: newCurrency,
+        })
+        .eq("id", selectedOrganizer.id);
+
+      if (error) throw error;
+
+      await logAdminAction(
+        "organizer_account_updated",
+        "organizer",
+        selectedOrganizer.id,
+        {
+          name: selectedOrganizer.business_name,
+          old_country: selectedOrganizer.country_code,
+          new_country: accountData.country_code,
+          old_currency: selectedOrganizer.default_currency || getCurrencyForCountry(selectedOrganizer.country_code),
+          new_currency: newCurrency,
+        }
+      );
+
+      // Update local state
+      setSelectedOrganizer(prev => ({
+        ...prev,
+        country_code: accountData.country_code,
+        default_currency: newCurrency,
+      }));
+
+      // Send notification email to organizer about the change
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            type: 'account_settings_updated',
+            to: selectedOrganizer.email || selectedOrganizer.business_email,
+            data: {
+              organizerName: selectedOrganizer.business_name,
+              changes: `Your account country has been updated to ${COUNTRY_CURRENCY_MAP[accountData.country_code]?.name || accountData.country_code}. Your default currency is now ${newCurrency}.`,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send notification email:', emailError);
+      }
+
+      loadOrganizers();
+      alert('Account settings updated successfully');
+    } catch (err) {
+      console.error("Error saving account settings:", err);
+      alert('Failed to update account settings: ' + err.message);
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
   // Feature flags configuration
   const featureFlagsConfig = [
     {
@@ -549,12 +635,15 @@ export function AdminOrganizers() {
       org.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       org.business_email?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (filter === 'all') return matchesSearch;
-    if (filter === 'verified') return matchesSearch && (org.kyc_status === 'verified' || org.kyc_status === 'approved');
-    if (filter === 'pending') return matchesSearch && (org.kyc_status === 'pending' || org.kyc_status === 'in_review');
-    if (filter === 'suspended') return matchesSearch && org.is_active === false;
-    if (filter === 'no-kyc') return matchesSearch && (!org.kyc_status || org.kyc_status === 'none');
-    return matchesSearch;
+    const matchesCountry = countryFilter === 'all' || org.country_code === countryFilter;
+
+    let matchesStatus = true;
+    if (filter === 'verified') matchesStatus = org.kyc_status === 'verified' || org.kyc_status === 'approved';
+    if (filter === 'pending') matchesStatus = org.kyc_status === 'pending' || org.kyc_status === 'in_review';
+    if (filter === 'suspended') matchesStatus = org.is_active === false;
+    if (filter === 'no-kyc') matchesStatus = !org.kyc_status || org.kyc_status === 'none';
+
+    return matchesSearch && matchesCountry && matchesStatus;
   });
 
   const stats = {
@@ -660,11 +749,27 @@ export function AdminOrganizers() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="verified">Verified</SelectItem>
                 <SelectItem value="pending">Pending KYC</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
                 <SelectItem value="no-kyc">No KYC</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={countryFilter} onValueChange={setCountryFilter}>
+              <SelectTrigger className="w-44 rounded-xl">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">All Countries</SelectItem>
+                <SelectItem value="NG">🇳🇬 Nigeria (NGN)</SelectItem>
+                <SelectItem value="GH">🇬🇭 Ghana (GHS)</SelectItem>
+                <SelectItem value="KE">🇰🇪 Kenya (KES)</SelectItem>
+                <SelectItem value="ZA">🇿🇦 South Africa (ZAR)</SelectItem>
+                <SelectItem value="US">🇺🇸 United States (USD)</SelectItem>
+                <SelectItem value="GB">🇬🇧 United Kingdom (GBP)</SelectItem>
+                <SelectItem value="CA">🇨🇦 Canada (CAD)</SelectItem>
+                <SelectItem value="AU">🇦🇺 Australia (AUD)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -683,6 +788,7 @@ export function AdminOrganizers() {
                 <tr className="border-b border-[#0F0F0F]/10">
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Organizer</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Contact</th>
+                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Country</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Events</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Revenue</th>
                   <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">KYC</th>
@@ -715,6 +821,15 @@ export function AdminOrganizers() {
                     <td className="py-4 px-4">
                       <p className="text-[#0F0F0F]/80 text-sm">{org.email || org.business_email || 'N/A'}</p>
                       <p className="text-[#0F0F0F]/60 text-sm">{org.phone || org.business_phone || 'N/A'}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{COUNTRY_CURRENCY_MAP[org.country_code]?.flag || '🌍'}</span>
+                        <div>
+                          <p className="text-[#0F0F0F] text-sm font-medium">{org.country_code || 'N/A'}</p>
+                          <p className="text-xs text-[#0F0F0F]/60">{getCurrencyForCountry(org.country_code)}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-4 px-4">
                       <p className="text-[#0F0F0F]">{org.eventCount}</p>
@@ -807,7 +922,7 @@ export function AdminOrganizers() {
                 ))}
                 {filteredOrganizers.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-[#0F0F0F]/60">
+                    <td colSpan={10} className="py-8 text-center text-[#0F0F0F]/60">
                       No organizers found
                     </td>
                   </tr>
@@ -889,6 +1004,7 @@ export function AdminOrganizers() {
                 <Tabs defaultValue="info" className="w-full">
                   <TabsList className="bg-[#F4F6FA] rounded-xl flex-wrap">
                     <TabsTrigger value="info" className="rounded-lg">Contact Info</TabsTrigger>
+                    <TabsTrigger value="account" className="rounded-lg">Account</TabsTrigger>
                     <TabsTrigger value="events" className="rounded-lg">Events ({organizerEvents.length})</TabsTrigger>
                     <TabsTrigger value="payouts" className="rounded-lg">Payouts ({organizerPayouts.length})</TabsTrigger>
                     <TabsTrigger value="tier" className="rounded-lg">Tier & Payouts</TabsTrigger>
@@ -972,6 +1088,144 @@ export function AdminOrganizers() {
                          !selectedOrganizer.linkedin && !selectedOrganizer.social_linkedin && (
                           <p className="text-[#0F0F0F]/60 text-sm">No social links added</p>
                         )}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="account" className="mt-4 space-y-4">
+                    {/* Country & Currency Settings */}
+                    <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl space-y-4">
+                      <h4 className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+                        <Globe className="w-5 h-5 text-[#2969FF]" />
+                        Country & Currency
+                      </h4>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm text-[#0F0F0F]/60 mb-2 block">Country</label>
+                          <Select
+                            value={accountData.country_code}
+                            onValueChange={(value) => setAccountData(prev => ({
+                              ...prev,
+                              country_code: value,
+                              default_currency: getCurrencyForCountry(value)
+                            }))}
+                          >
+                            <SelectTrigger className="rounded-xl">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                              {Object.entries(COUNTRY_CURRENCY_MAP).map(([code, info]) => (
+                                <SelectItem key={code} value={code}>
+                                  <span className="flex items-center gap-2">
+                                    <span>{info.flag}</span>
+                                    <span>{info.name}</span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm text-[#0F0F0F]/60 mb-2 block">Currency</label>
+                          <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                            <span className="text-2xl">{COUNTRY_CURRENCY_MAP[accountData.country_code]?.symbol || '$'}</span>
+                            <div>
+                              <p className="font-semibold text-[#0F0F0F]">
+                                {getCurrencyForCountry(accountData.country_code)}
+                              </p>
+                              <p className="text-xs text-[#0F0F0F]/60">
+                                Based on selected country
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Show change preview if different from current */}
+                      {accountData.country_code !== selectedOrganizer.country_code && (
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm">
+                              <p className="font-medium text-amber-800">Currency Change Preview</p>
+                              <p className="text-amber-700">
+                                {COUNTRY_CURRENCY_MAP[selectedOrganizer.country_code]?.flag} {selectedOrganizer.country_code} ({getCurrencyForCountry(selectedOrganizer.country_code)})
+                                {' → '}
+                                {COUNTRY_CURRENCY_MAP[accountData.country_code]?.flag} {accountData.country_code} ({getCurrencyForCountry(accountData.country_code)})
+                              </p>
+                              <p className="text-amber-600 mt-1">
+                                This will change the organizer's default currency for future events and payouts.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={saveAccountSettings}
+                        disabled={savingAccount || accountData.country_code === selectedOrganizer.country_code}
+                        className="rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90"
+                      >
+                        {savingAccount ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Save Country & Currency
+                      </Button>
+                    </div>
+
+                    {/* Payment Gateway Info */}
+                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                      <h4 className="font-semibold text-[#0F0F0F] mb-3">Payment Gateway Routing</h4>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="p-3 bg-white rounded-lg">
+                          <p className="text-[#0F0F0F]/60 mb-1">Africa (NG, GH, KE, ZA)</p>
+                          <div className="flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-blue-600" />
+                            <span className="font-medium">Paystack / Flutterwave</span>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-white rounded-lg">
+                          <p className="text-[#0F0F0F]/60 mb-1">International (US, GB, CA, AU)</p>
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-purple-600" />
+                            <span className="font-medium">Stripe Connect</span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[#0F0F0F]/40 mt-3">
+                        Payment gateway is automatically determined by the organizer's country.
+                      </p>
+                    </div>
+
+                    {/* Current Connection Status */}
+                    <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl">
+                      <h4 className="font-semibold text-[#0F0F0F] mb-3">Payment Connections</h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-3 bg-[#F4F6FA] rounded-lg text-center">
+                          <CreditCard className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+                          <p className="text-xs text-[#0F0F0F]/60">Stripe</p>
+                          <Badge className={selectedOrganizer.stripe_connect_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                            {selectedOrganizer.stripe_connect_status || 'Not Connected'}
+                          </Badge>
+                        </div>
+                        <div className="p-3 bg-[#F4F6FA] rounded-lg text-center">
+                          <Zap className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+                          <p className="text-xs text-[#0F0F0F]/60">Paystack</p>
+                          <Badge className={selectedOrganizer.paystack_subaccount_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                            {selectedOrganizer.paystack_subaccount_status || 'Not Connected'}
+                          </Badge>
+                        </div>
+                        <div className="p-3 bg-[#F4F6FA] rounded-lg text-center">
+                          <Globe className="w-5 h-5 text-orange-600 mx-auto mb-1" />
+                          <p className="text-xs text-[#0F0F0F]/60">Flutterwave</p>
+                          <Badge className={selectedOrganizer.flutterwave_subaccount_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                            {selectedOrganizer.flutterwave_subaccount_status || 'Not Connected'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </TabsContent>
@@ -1414,6 +1668,95 @@ export function AdminOrganizers() {
                         Last updated: {new Date(selectedOrganizer.feature_flags_updated_at).toLocaleString()}
                       </p>
                     )}
+                  </TabsContent>
+
+                  <TabsContent value="pricing" className="mt-4 space-y-4">
+                    {/* Custom Fee Settings */}
+                    <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+                            <Percent className="w-5 h-5 text-[#2969FF]" />
+                            Custom Service Fees
+                          </h4>
+                          <p className="text-sm text-[#0F0F0F]/60">
+                            Override platform default fees for this organizer
+                          </p>
+                        </div>
+                        <Switch
+                          checked={customFeeData.enabled}
+                          onCheckedChange={(checked) => setCustomFeeData(prev => ({ ...prev, enabled: checked }))}
+                        />
+                      </div>
+
+                      {customFeeData.enabled && (
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#0F0F0F]/10">
+                          <div>
+                            <label className="text-sm text-[#0F0F0F]/60 mb-2 block">Percentage Fee (%)</label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              max="100"
+                              placeholder="e.g., 3.5"
+                              value={customFeeData.percentage}
+                              onChange={(e) => setCustomFeeData(prev => ({ ...prev, percentage: e.target.value }))}
+                              className="rounded-xl"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm text-[#0F0F0F]/60 mb-2 block">Fixed Fee (₦)</label>
+                            <Input
+                              type="number"
+                              step="1"
+                              min="0"
+                              placeholder="e.g., 100"
+                              value={customFeeData.fixed}
+                              onChange={(e) => setCustomFeeData(prev => ({ ...prev, fixed: e.target.value }))}
+                              className="rounded-xl"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {customFeeData.enabled && (
+                        <div className="p-3 bg-blue-50 rounded-xl text-sm">
+                          <p className="text-blue-800 font-medium">Fee Calculation Example</p>
+                          <p className="text-blue-600">
+                            For a ₦10,000 ticket: {customFeeData.percentage || 0}% + ₦{customFeeData.fixed || 0} =
+                            ₦{((parseFloat(customFeeData.percentage) || 0) / 100 * 10000 + (parseFloat(customFeeData.fixed) || 0)).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={saveCustomFees}
+                        disabled={savingFees}
+                        className="rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90"
+                      >
+                        {savingFees ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Save Custom Pricing
+                      </Button>
+
+                      {selectedOrganizer.custom_fee_set_at && (
+                        <p className="text-xs text-[#0F0F0F]/40">
+                          Last updated: {new Date(selectedOrganizer.custom_fee_set_at).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Platform Default Fees Info */}
+                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                      <h4 className="font-semibold text-[#0F0F0F] mb-2">Platform Default Fees</h4>
+                      <p className="text-sm text-[#0F0F0F]/60">
+                        If custom fees are disabled, the platform default fees will apply.
+                        Check the Fee Management page for current platform defaults.
+                      </p>
+                    </div>
                   </TabsContent>
                 </Tabs>
               )}
