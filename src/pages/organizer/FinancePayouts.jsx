@@ -170,7 +170,7 @@ export function FinancePayouts() {
       const feesByCurrency = await getCountryFees();
       // Fetch completed payouts
       const { data: payouts, error: payoutsError } = await supabase
-        .from('organizer_payouts')
+        .from('payouts')
         .select('*')
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false });
@@ -310,11 +310,11 @@ export function FinancePayouts() {
         }
       });
 
-      // Total paid out from payouts table - group by currency
+      // Total paid out from payouts table - group by currency (use net_amount - what organizer actually receives)
       const totalPaidOutByCurrency = {};
       payouts?.filter(p => p.status === 'completed')?.forEach(p => {
         const currency = p.currency || getDefaultCurrency(p.country_code || organizer?.country_code || organizer?.country);
-        totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + (parseFloat(p.amount) || 0);
+        totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + (parseFloat(p.net_amount) || parseFloat(p.amount) || 0);
       });
 
       // Calculate escrow = total revenue - total paid out
@@ -741,12 +741,15 @@ Status,${payout.status}
                 <div key={payout.id} className="p-4 rounded-xl bg-[#F4F6FA]">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.event_title || 'Payout'}</h4>
-                      <p className="text-sm text-[#0F0F0F]/60">{formatDate(payout.created_at)}</p>
+                      <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.payout_number || 'Payout'}</h4>
+                      <p className="text-sm text-[#0F0F0F]/60">{formatDate(payout.processed_at || payout.created_at)}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-[#2969FF] font-medium">{formatPrice(payout.amount, payout.currency)}</p>
+                        <p className="text-green-600 font-medium">{formatPrice(payout.net_amount || payout.amount, payout.currency)}</p>
+                        {payout.net_amount && payout.amount && payout.net_amount !== payout.amount && (
+                          <p className="text-xs text-[#0F0F0F]/40">Gross: {formatPrice(payout.amount, payout.currency)}</p>
+                        )}
                       </div>
                       <Badge
                         className={`${
