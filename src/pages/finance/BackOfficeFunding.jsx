@@ -59,7 +59,6 @@ export function BackOfficeFunding() {
     // Get all organizers with their events and earnings
     const { data: orgs, error } = await supabase.from('organizers').select(`
       id, business_name, email, phone, is_trusted, trusted_at, user_id,
-      bank_accounts (id, bank_name, account_number_encrypted, account_name, is_default, is_verified),
       events (
         id, title, start_date, end_date, currency, payout_status,
         orders (id, total_amount, platform_fee, status)
@@ -67,6 +66,18 @@ export function BackOfficeFunding() {
     `).order('business_name');
 
     if (error) throw error;
+
+    // Fetch decrypted bank accounts separately
+    const organizerIds = orgs?.map(o => o.id).filter(Boolean) || [];
+    const { data: bankAccounts } = await supabase
+      .from('bank_accounts_decrypted')
+      .select('*')
+      .in('organizer_id', organizerIds);
+
+    // Map bank accounts to organizers
+    orgs?.forEach(org => {
+      org.bank_accounts = bankAccounts?.filter(ba => ba.organizer_id === org.id) || [];
+    });
 
     // Get all advance payments
     const { data: advances } = await supabase.from('advance_payments')
@@ -569,7 +580,7 @@ export function BackOfficeFunding() {
                   <p className="text-xs text-[#0F0F0F]/60 mb-2">💳 Bank Details</p>
                   <div className="text-sm space-y-1 bg-white p-2 rounded-lg">
                     <p><span className="text-[#0F0F0F]/60">Bank:</span> <span className="font-medium">{advanceDialog.organizer.primaryBank.bank_name}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono font-medium">{advanceDialog.organizer.primaryBank.account_number_encrypted}</span></p>
+                    <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono font-medium">{advanceDialog.organizer.primaryBank.account_number}</span></p>
                     <p><span className="text-[#0F0F0F]/60">Name:</span> <span className="font-medium">{advanceDialog.organizer.primaryBank.account_name}</span></p>
                   </div>
                 </div>
@@ -689,7 +700,7 @@ function OrganizerCard({ organizer, expanded, onToggleExpand, onAdvance, onTrust
               </div>
               <div className="text-sm grid grid-cols-1 md:grid-cols-3 gap-2">
                 <p><span className="text-[#0F0F0F]/60">Bank:</span> <span className="font-medium">{organizer.primaryBank.bank_name}</span></p>
-                <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono">{organizer.primaryBank.account_number_encrypted}</span></p>
+                <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono">{organizer.primaryBank.account_number}</span></p>
                 <p><span className="text-[#0F0F0F]/60">Name:</span> <span className="font-medium">{organizer.primaryBank.account_name}</span></p>
               </div>
             </div>

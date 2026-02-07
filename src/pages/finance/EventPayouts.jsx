@@ -46,8 +46,7 @@ export function EventPayouts() {
       const { data: events, error } = await supabase.from('events').select(`
         id, title, slug, start_date, end_date, currency, payout_status, organizer_id, parent_event_id,
         organizers (
-          id, business_name, email, phone,
-          bank_accounts (id, bank_name, account_number_encrypted, account_name, is_default, is_verified)
+          id, business_name, email, phone
         ),
         orders (id, total_amount, status, platform_fee, event_id),
         promoter_sales (
@@ -55,6 +54,29 @@ export function EventPayouts() {
           promoters ( id, full_name, email, promoter_bank_accounts (id, bank_name, account_number, account_name, is_verified) )
         )
       `).lt('end_date', now).order('end_date', { ascending: false });
+
+      // Fetch decrypted bank accounts separately
+      const organizerIds = [...new Set(events?.map(e => e.organizer_id).filter(Boolean))];
+      const { data: bankAccounts } = await supabase
+        .from('bank_accounts_decrypted')
+        .select('*')
+        .in('organizer_id', organizerIds);
+
+      // Map bank accounts to organizers
+      const bankAccountsByOrganizer = {};
+      bankAccounts?.forEach(ba => {
+        if (!bankAccountsByOrganizer[ba.organizer_id]) {
+          bankAccountsByOrganizer[ba.organizer_id] = [];
+        }
+        bankAccountsByOrganizer[ba.organizer_id].push(ba);
+      });
+
+      // Attach bank accounts to events
+      events?.forEach(event => {
+        if (event.organizers) {
+          event.organizers.bank_accounts = bankAccountsByOrganizer[event.organizer_id] || [];
+        }
+      });
 
       if (error) throw error;
 
@@ -532,7 +554,7 @@ export function EventPayouts() {
                                       </div>
                                       <div>
                                         <span className="text-[#0F0F0F]/60">Account Number: </span>
-                                        <span className="font-mono font-medium text-[#0F0F0F]">{bank.account_number_encrypted || 'N/A'}</span>
+                                        <span className="font-mono font-medium text-[#0F0F0F]">{bank.account_number || 'N/A'}</span>
                                       </div>
                                     </div>
                                   </div>
@@ -663,7 +685,7 @@ export function EventPayouts() {
                   <p className="text-xs text-[#0F0F0F]/60 mb-2">Bank Details</p>
                   <div className="text-sm space-y-1">
                     <p><span className="text-[#0F0F0F]/60">Bank:</span> <span className="font-medium">{paymentDialog.event.primaryBankAccount.bank_name}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono font-medium">{paymentDialog.event.primaryBankAccount.account_number_encrypted}</span></p>
+                    <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono font-medium">{paymentDialog.event.primaryBankAccount.account_number}</span></p>
                     <p><span className="text-[#0F0F0F]/60">Name:</span> <span className="font-medium">{paymentDialog.event.primaryBankAccount.account_name}</span></p>
                   </div>
                 </div>

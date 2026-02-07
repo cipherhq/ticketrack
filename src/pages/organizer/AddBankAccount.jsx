@@ -257,7 +257,7 @@ export function AddBankAccount() {
     setLoadingAccounts(true);
     try {
       const { data, error } = await supabase
-        .from('bank_accounts')
+        .from('bank_accounts_decrypted')
         .select('*')
         .eq('organizer_id', organizer.id)
         .order('is_default', { ascending: false });
@@ -1021,7 +1021,7 @@ export function AddBankAccount() {
                   </div>
                   <p className="text-[#0F0F0F]/60 text-sm mb-1">{account.account_name}</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-[#0F0F0F] font-mono text-sm">••••••{account.account_number_encrypted?.slice(-4) || '••••'}</p>
+                    <p className="text-[#0F0F0F] font-mono text-sm">••••••{account.account_number?.slice(-4) || '••••'}</p>
                     <Badge variant="outline" className="text-xs">{account.currency}</Badge>
                   </div>
                   

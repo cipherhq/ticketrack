@@ -150,8 +150,7 @@ export function AdminFinance() {
         id, business_name, email,
         stripe_connect_id, stripe_connect_enabled, stripe_connect_payouts_enabled,
         paystack_subaccount_id, paystack_subaccount_enabled, paystack_subaccount_payouts_enabled,
-        flutterwave_subaccount_id, flutterwave_subaccount_enabled, flutterwave_subaccount_payouts_enabled,
-        bank_accounts (id, bank_name, account_number_encrypted, account_name, is_default)
+        flutterwave_subaccount_id, flutterwave_subaccount_enabled, flutterwave_subaccount_payouts_enabled
       ),
       orders (id, total_amount, status, platform_fee),
       promoter_sales (
@@ -161,6 +160,20 @@ export function AdminFinance() {
     `).lt('end_date', now).order('end_date', { ascending: false });
 
     if (error) throw error;
+
+    // Fetch decrypted bank accounts separately
+    const organizerIds = [...new Set(events?.map(e => e.organizer_id).filter(Boolean))];
+    const { data: bankAccounts } = await supabase
+      .from('bank_accounts_decrypted')
+      .select('*')
+      .in('organizer_id', organizerIds);
+
+    // Map bank accounts to organizers
+    events?.forEach(event => {
+      if (event.organizers) {
+        event.organizers.bank_accounts = bankAccounts?.filter(ba => ba.organizer_id === event.organizer_id) || [];
+      }
+    });
 
     let filteredEvents = events || [];
     if (statusFilter === 'pending') filteredEvents = filteredEvents.filter(e => e.payout_status !== 'paid');
@@ -764,7 +777,7 @@ export function AdminFinance() {
                               </div>
                               <div>
                                 <span className="text-[#0F0F0F]/60">Account Number: </span>
-                                <span className="font-mono font-medium text-[#0F0F0F]">{event.primaryBankAccount.account_number_encrypted || 'N/A'}</span>
+                                <span className="font-mono font-medium text-[#0F0F0F]">{event.primaryBankAccount.account_number || 'N/A'}</span>
                               </div>
                             </div>
                           </div>
