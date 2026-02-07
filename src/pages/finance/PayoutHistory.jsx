@@ -89,14 +89,42 @@ export function PayoutHistory() {
     setBankDetails(null);
 
     // Load bank details for organizer payouts
-    if (payout.type === 'organizer' && payout.bank_account_id) {
+    if (payout.type === 'organizer') {
       setLoadingDetails(true);
       try {
-        const { data: bank } = await supabase
-          .from('bank_accounts_decrypted')
-          .select('bank_name, account_name, account_number_decrypted')
-          .eq('id', payout.bank_account_id)
-          .single();
+        let bank = null;
+
+        // First try to load by bank_account_id if available
+        if (payout.bank_account_id) {
+          const { data } = await supabase
+            .from('bank_accounts_decrypted')
+            .select('bank_name, account_name, account_number_decrypted')
+            .eq('id', payout.bank_account_id)
+            .single();
+          bank = data;
+        }
+
+        // Fallback: try to get organizer's primary bank account
+        if (!bank && payout.organizer_id) {
+          const { data } = await supabase
+            .from('bank_accounts_decrypted')
+            .select('bank_name, account_name, account_number_decrypted')
+            .eq('organizer_id', payout.organizer_id)
+            .eq('is_primary', true)
+            .single();
+          bank = data;
+        }
+
+        // Last fallback: any bank account for this organizer
+        if (!bank && payout.organizer_id) {
+          const { data } = await supabase
+            .from('bank_accounts_decrypted')
+            .select('bank_name, account_name, account_number_decrypted')
+            .eq('organizer_id', payout.organizer_id)
+            .limit(1)
+            .single();
+          bank = data;
+        }
 
         if (bank) {
           setBankDetails(bank);
