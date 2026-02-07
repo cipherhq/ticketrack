@@ -468,9 +468,6 @@ export function AdminSettings() {
           <TabsTrigger value="features" className="rounded-lg data-[state=active]:bg-white">
             <ToggleLeft className="w-4 h-4 mr-2" /> Features
           </TabsTrigger>
-          <TabsTrigger value="gateways" className="rounded-lg data-[state=active]:bg-white">
-            <CreditCard className="w-4 h-4 mr-2" /> Payments
-          </TabsTrigger>
           <TabsTrigger value="branding" className="rounded-lg data-[state=active]:bg-white">
             <Palette className="w-4 h-4 mr-2" /> Branding
           </TabsTrigger>
@@ -681,129 +678,6 @@ export function AdminSettings() {
                   })}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* PAYMENT GATEWAYS TAB */}
-        <TabsContent value="gateways" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Payment Gateway Configuration</CardTitle>
-              <Button 
-                onClick={() => setGatewayModal({ 
-                  open: true, 
-                  isNew: true,
-                  data: { 
-                    country_code: countries[0]?.code || '',
-                    provider: 'paystack',
-                    public_key: '',
-                    secret_key_encrypted: '',
-                    webhook_secret_encrypted: '',
-                    sandbox_mode: true,
-                    is_active: true,
-                    config: {}
-                  }
-                })}
-                className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl"
-              >
-                <Plus className="w-4 h-4 mr-2" /> Add Gateway
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {countries.length === 0 && (
-                  <p className="text-[#0F0F0F]/60 text-center py-8">No countries configured. Add countries first.</p>
-                )}
-                {countries.map(country => {
-                  const countryGateways = paymentGateways.filter(g => g.country_code === country.code);
-                  
-                  return (
-                    <div key={country.code} className="p-4 rounded-xl bg-[#F4F6FA]">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-[#0F0F0F]">{country.name} ({country.code})</h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setGatewayModal({
-                            open: true,
-                            isNew: true,
-                            data: {
-                              country_code: country.code,
-                              provider: 'paystack',
-                              public_key: '',
-                              secret_key_encrypted: '',
-                              webhook_secret_encrypted: '',
-                              sandbox_mode: true,
-                              is_active: true,
-                              config: {}
-                            }
-                          })}
-                          className="rounded-lg"
-                        >
-                          <Plus className="w-4 h-4 mr-1" /> Add
-                        </Button>
-                      </div>
-                      {countryGateways.length === 0 ? (
-                        <p className="text-[#0F0F0F]/40 text-sm">No payment gateways configured</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {countryGateways.map(gw => (
-                            <div key={gw.id} className="p-4 bg-white rounded-xl">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-[#F4F6FA] flex items-center justify-center">
-                                  <CreditCard className="w-5 h-5 text-[#2969FF]" />
-                                </div>
-                                <div>
-                                  <h5 className="font-medium text-[#0F0F0F] capitalize">{gw.provider}</h5>
-                                  <div className="flex gap-2 mt-1">
-                                    <Badge className={gw.sandbox_mode ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}>
-                                      {gw.sandbox_mode ? 'Sandbox' : 'Live'}
-                                    </Badge>
-                                    <Badge className={gw.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
-                                      {gw.is_active ? 'Active' : 'Inactive'}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Switch 
-                                  checked={gw.is_active} 
-                                  onCheckedChange={() => toggleGateway(gw.id, gw.is_active)}
-                                />
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  onClick={() => setGatewayModal({ open: true, isNew: false, data: { ...gw } })}
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className={`grid gap-3 text-sm ${gw.provider === 'flutterwave' ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                              <div>
-                                <p className="text-[#0F0F0F]/60">Public Key</p>
-                                <p className="font-mono text-xs">{maskSecret(gw.public_key) || 'Not set'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[#0F0F0F]/60">Secret Key</p>
-                                <p className="font-mono text-xs">{maskSecret(gw.secret_key_encrypted) || 'Not set'}</p>
-                              </div>
-                              {gw.provider === 'flutterwave' && (
-                                <div>
-                                  <p className="text-[#0F0F0F]/60">Encryption Key</p>
-                                  <p className="font-mono text-xs">{maskSecret(gw.config?.encryption_key_encrypted) || 'Not set'}</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>)}
-                    </div>
-                  );
-                })}
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1499,7 +1373,7 @@ export function AdminSettings() {
             </Card>
           </div>
 
-          {/* Payment Gateways Summary */}
+          {/* Payment Gateways */}
           <Card className="border-[#0F0F0F]/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1507,31 +1381,117 @@ export function AdminSettings() {
                 <CardTitle>Payment Gateways</CardTitle>
               </div>
               <Button
-                variant="outline"
+                onClick={() => setGatewayModal({
+                  open: true,
+                  isNew: true,
+                  data: {
+                    country_code: countries[0]?.code || '',
+                    provider: 'paystack',
+                    public_key: '',
+                    secret_key_encrypted: '',
+                    webhook_secret_encrypted: '',
+                    sandbox_mode: true,
+                    is_active: true,
+                    config: {}
+                  }
+                })}
+                className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl"
                 size="sm"
-                onClick={() => setActiveTab('gateways')}
-                className="rounded-xl"
               >
-                <Edit2 className="w-4 h-4 mr-2" /> Manage
+                <Plus className="w-4 h-4 mr-2" /> Add Gateway
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {['paystack', 'stripe', 'flutterwave', 'paypal'].map(provider => {
-                  const gateways = paymentGateways.filter(g => g.provider === provider);
-                  const activeCount = gateways.filter(g => g.is_active).length;
-                  const totalCount = gateways.length;
+              <div className="space-y-4">
+                {countries.length === 0 && (
+                  <p className="text-[#0F0F0F]/60 text-center py-8">No countries configured. Add countries first.</p>
+                )}
+                {countries.map(country => {
+                  const countryGateways = paymentGateways.filter(g => g.country_code === country.code);
+
                   return (
-                    <div key={provider} className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium capitalize">{provider}</span>
-                        <Badge className={activeCount > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
-                          {activeCount > 0 ? `${activeCount} active` : 'None'}
-                        </Badge>
+                    <div key={country.code} className="p-4 rounded-xl bg-[#F4F6FA]">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-[#0F0F0F]">{country.name} ({country.code})</h4>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setGatewayModal({
+                            open: true,
+                            isNew: true,
+                            data: {
+                              country_code: country.code,
+                              provider: 'paystack',
+                              public_key: '',
+                              secret_key_encrypted: '',
+                              webhook_secret_encrypted: '',
+                              sandbox_mode: true,
+                              is_active: true,
+                              config: {}
+                            }
+                          })}
+                          className="rounded-lg"
+                        >
+                          <Plus className="w-4 h-4 mr-1" /> Add
+                        </Button>
                       </div>
-                      <p className="text-xs text-[#0F0F0F]/60">
-                        {totalCount} {totalCount === 1 ? 'country' : 'countries'} configured
-                      </p>
+                      {countryGateways.length === 0 ? (
+                        <p className="text-[#0F0F0F]/40 text-sm">No payment gateways configured</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {countryGateways.map(gw => (
+                            <div key={gw.id} className="p-4 bg-white rounded-xl">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-lg bg-[#F4F6FA] flex items-center justify-center">
+                                    <CreditCard className="w-5 h-5 text-[#2969FF]" />
+                                  </div>
+                                  <div>
+                                    <h5 className="font-medium text-[#0F0F0F] capitalize">{gw.provider}</h5>
+                                    <div className="flex gap-2 mt-1">
+                                      <Badge className={gw.sandbox_mode ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}>
+                                        {gw.sandbox_mode ? 'Sandbox' : 'Live'}
+                                      </Badge>
+                                      <Badge className={gw.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                                        {gw.is_active ? 'Active' : 'Inactive'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={gw.is_active}
+                                    onCheckedChange={() => toggleGateway(gw.id, gw.is_active)}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setGatewayModal({ open: true, isNew: false, data: { ...gw } })}
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className={`grid gap-3 text-sm ${gw.provider === 'flutterwave' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                                <div>
+                                  <p className="text-[#0F0F0F]/60">Public Key</p>
+                                  <p className="font-mono text-xs">{maskSecret(gw.public_key) || 'Not set'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[#0F0F0F]/60">Secret Key</p>
+                                  <p className="font-mono text-xs">{maskSecret(gw.secret_key_encrypted) || 'Not set'}</p>
+                                </div>
+                                {gw.provider === 'flutterwave' && (
+                                  <div>
+                                    <p className="text-[#0F0F0F]/60">Encryption Key</p>
+                                    <p className="font-mono text-xs">{maskSecret(gw.config?.encryption_key_encrypted) || 'Not set'}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
