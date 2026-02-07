@@ -218,20 +218,33 @@ export function CommunicationCredits() {
     setShowPurchaseDialog(true);
   };
 
-  // Approximate exchange rates from NGN (update periodically)
-  const NGN_EXCHANGE_RATES = {
-    NGN: 1,
-    USD: 0.00063,  // 1 NGN ≈ $0.00063 (or ~₦1,600 = $1)
-    GBP: 0.0005,   // 1 NGN ≈ £0.0005
-    EUR: 0.00058,  // 1 NGN ≈ €0.00058
-    CAD: 0.00085,  // 1 NGN ≈ C$0.00085
-    AUD: 0.00095,  // 1 NGN ≈ A$0.00095
-    GHS: 0.0095,   // 1 NGN ≈ GH₵0.0095
+  // Get the organizer's currency based on their country
+  const getOrganizerCurrency = () => {
+    const countryCode = organizer?.country_code;
+    const countryToCurrency = {
+      NG: 'NGN', GH: 'NGN',  // Nigeria & Ghana use NGN (Paystack)
+      US: 'USD',             // USA uses USD (Stripe)
+      GB: 'GBP',             // UK uses GBP (Stripe)
+      CA: 'CAD',             // Canada uses CAD (Stripe)
+    };
+    return countryToCurrency[countryCode] || 'USD'; // Default to USD for other countries
   };
 
-  const convertFromNGN = (amountNGN, toCurrency) => {
-    const rate = NGN_EXCHANGE_RATES[toCurrency] || NGN_EXCHANGE_RATES.USD;
-    return Math.ceil(amountNGN * rate * 100) / 100; // Round up to 2 decimal places
+  // Get price from package based on currency
+  const getPackagePrice = (pkg, currency) => {
+    const priceMap = {
+      NGN: pkg.price_ngn,
+      USD: pkg.price_usd,
+      GBP: pkg.price_gbp,
+      CAD: pkg.price_cad,
+    };
+    return priceMap[currency] || null;
+  };
+
+  // Filter packages that have a price set for the organizer's currency
+  const getAvailablePackages = () => {
+    const currency = getOrganizerCurrency();
+    return packages.filter(pkg => getPackagePrice(pkg, currency) !== null && getPackagePrice(pkg, currency) > 0);
   };
 
   const processPayment = async () => {
@@ -240,16 +253,14 @@ export function CommunicationCredits() {
     setPurchasing(true);
     try {
       // Determine organizer's currency and payment provider
-      const currency = getDefaultCurrency(organizer.country_code) || 'NGN';
+      const currency = getOrganizerCurrency();
       const provider = getPaymentProvider(currency);
 
       // Get price in the organizer's currency
-      // Use explicit USD price if available, otherwise fall back to conversion
-      let amount = selectedPackage.price_ngn;
-      if (currency === 'USD' && selectedPackage.price_usd) {
-        amount = selectedPackage.price_usd;
-      } else if (currency !== 'NGN') {
-        amount = convertFromNGN(selectedPackage.price_ngn, currency);
+      const amount = getPackagePrice(selectedPackage, currency);
+
+      if (!amount) {
+        throw new Error('This package is not available in your region');
       }
 
       if (provider === 'stripe') {
@@ -485,16 +496,25 @@ export function CommunicationCredits() {
         {/* Packages Tab */}
         <TabsContent value="packages" className="space-y-4 mt-4">
           {(() => {
-            const userCurrency = getDefaultCurrency(organizer?.country_code) || 'NGN';
-            const getPackagePrice = (pkg) => {
-              if (userCurrency === 'USD' && pkg.price_usd) return pkg.price_usd;
-              if (userCurrency !== 'NGN') return convertFromNGN(pkg.price_ngn, userCurrency);
-              return pkg.price_ngn;
-            };
+            const userCurrency = getOrganizerCurrency();
+            const availablePackages = getAvailablePackages();
+
+            if (availablePackages.length === 0) {
+              return (
+                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                  <CardContent className="p-12 text-center">
+                    <Package className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+                    <p className="text-[#0F0F0F]/60">No packages available for your region yet.</p>
+                    <p className="text-sm text-[#0F0F0F]/40 mt-2">Please contact support for assistance.</p>
+                  </CardContent>
+                </Card>
+              );
+            }
+
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {packages.map((pkg) => {
-                  const displayPrice = getPackagePrice(pkg);
+                {availablePackages.map((pkg) => {
+                  const displayPrice = getPackagePrice(pkg, userCurrency);
                   const totalCredits = pkg.credits + (pkg.bonus_credits || 0);
                   const pricePerCredit = totalCredits > 0 ? displayPrice / totalCredits : 0;
                   return (
@@ -749,17 +769,10 @@ export function CommunicationCredits() {
           </DialogHeader>
 
           {selectedPackage && (() => {
-            const userCurrency = getDefaultCurrency(organizer?.country_code) || 'NGN';
+            const userCurrency = getOrganizerCurrency();
             const provider = getPaymentProvider(userCurrency);
             const providerNames = { stripe: 'Stripe', paystack: 'Paystack', flutterwave: 'Flutterwave' };
-
-            // Use explicit USD price if available, otherwise convert
-            let displayAmount = selectedPackage.price_ngn;
-            if (userCurrency === 'USD' && selectedPackage.price_usd) {
-              displayAmount = selectedPackage.price_usd;
-            } else if (userCurrency !== 'NGN') {
-              displayAmount = convertFromNGN(selectedPackage.price_ngn, userCurrency);
-            }
+            const displayAmount = getPackagePrice(selectedPackage, userCurrency);
 
             return (
               <div className="py-4 space-y-4">

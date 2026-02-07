@@ -38,6 +38,8 @@ export function AdminSMSPackages() {
     credits: '',
     price_ngn: '',
     price_usd: '',
+    price_gbp: '',
+    price_cad: '',
     bonus_credits: '0',
     badge_text: '',
     is_popular: false,
@@ -66,7 +68,7 @@ export function AdminSMSPackages() {
 
   const openCreateDialog = () => {
     setEditingPackage(null);
-    setForm({ name: '', description: '', credits: '', price_ngn: '', price_usd: '', bonus_credits: '0', badge_text: '', is_popular: false, is_active: true, sort_order: String(packages.length + 1) });
+    setForm({ name: '', description: '', credits: '', price_ngn: '', price_usd: '', price_gbp: '', price_cad: '', bonus_credits: '0', badge_text: '', is_popular: false, is_active: true, sort_order: String(packages.length + 1) });
     setDialogOpen(true);
   };
 
@@ -78,6 +80,8 @@ export function AdminSMSPackages() {
       credits: String(pkg.credits),
       price_ngn: String(pkg.price_ngn),
       price_usd: String(pkg.price_usd || ''),
+      price_gbp: String(pkg.price_gbp || ''),
+      price_cad: String(pkg.price_cad || ''),
       bonus_credits: String(pkg.bonus_credits || 0),
       badge_text: pkg.badge_text || '',
       is_popular: pkg.is_popular,
@@ -103,6 +107,8 @@ export function AdminSMSPackages() {
         credits: parseInt(form.credits),
         price_ngn: parseFloat(form.price_ngn),
         price_usd: form.price_usd ? parseFloat(form.price_usd) : null,
+        price_gbp: form.price_gbp ? parseFloat(form.price_gbp) : null,
+        price_cad: form.price_cad ? parseFloat(form.price_cad) : null,
         price_per_credit: pricePerCredit,
         bonus_credits: parseInt(form.bonus_credits) || 0,
         badge_text: form.badge_text || null,
@@ -169,11 +175,14 @@ export function AdminSMSPackages() {
 
       <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50">
         <CardContent className="p-4">
-          <p className="text-blue-800 font-medium">Pricing Info</p>
-          <p className="text-sm text-blue-700 mt-1">Your cost from Termii: <strong>₦4 per SMS</strong>. Set higher prices to profit.</p>
-          <p className="text-sm text-blue-700 mt-2">
-            <strong>NGN Price</strong> → Nigerian organizers (Paystack) · <strong>USD Price</strong> → International organizers (Stripe)
-          </p>
+          <p className="text-blue-800 font-medium">Multi-Currency Pricing</p>
+          <p className="text-sm text-blue-700 mt-1">Set prices for each region. Organizers only see their local currency.</p>
+          <div className="text-xs text-blue-600 mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <span><strong>NGN</strong> → Nigeria, Ghana (Paystack)</span>
+            <span><strong>USD</strong> → USA (Stripe)</span>
+            <span><strong>GBP</strong> → UK (Stripe)</span>
+            <span><strong>CAD</strong> → Canada (Stripe)</span>
+          </div>
         </CardContent>
       </Card>
 
@@ -184,38 +193,35 @@ export function AdminSMSPackages() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#0F0F0F]/10">
-                  <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Package</th>
-                  <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Credits</th>
-                  <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Bonus</th>
-                  <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">NGN Price</th>
-                  <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">USD Price</th>
-                  <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Profit</th>
-                  <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Active</th>
-                  <th className="text-right py-3 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Package</th>
+                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Credits</th>
+                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">NGN</th>
+                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">USD</th>
+                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">GBP</th>
+                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">CAD</th>
+                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Active</th>
+                  <th className="text-right py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {packages.map((pkg) => {
-                  const profit = calculateProfit(pkg);
-                  return (
-                    <tr key={pkg.id} className="border-b border-[#0F0F0F]/5">
-                      <td className="py-3 px-4">
-                        <span className="font-medium">{pkg.name}</span>
-                        {pkg.is_popular && <Badge className="ml-2 bg-[#2969FF] text-white text-xs"><Sparkles className="w-3 h-3 mr-1" />Popular</Badge>}
-                      </td>
-                      <td className="py-3 px-4">{pkg.credits}</td>
-                      <td className="py-3 px-4 text-green-600">+{pkg.bonus_credits || 0}</td>
-                      <td className="py-3 px-4 font-medium">{formatCurrency(pkg.price_ngn)}</td>
-                      <td className="py-3 px-4 font-medium">{pkg.price_usd ? `$${pkg.price_usd}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
-                      <td className={`py-3 px-4 font-medium ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(profit)}</td>
-                      <td className="py-3 px-4"><Switch checked={pkg.is_active} onCheckedChange={() => toggleActive(pkg)} /></td>
-                      <td className="py-3 px-4 text-right">
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(pkg)}><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(pkg)} className="text-red-600"><Trash2 className="w-4 h-4" /></Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {packages.map((pkg) => (
+                  <tr key={pkg.id} className="border-b border-[#0F0F0F]/5">
+                    <td className="py-3 px-2">
+                      <span className="font-medium">{pkg.name}</span>
+                      {pkg.is_popular && <Badge className="ml-2 bg-[#2969FF] text-white text-xs"><Sparkles className="w-3 h-3 mr-1" />Popular</Badge>}
+                    </td>
+                    <td className="py-3 px-2">{pkg.credits}{pkg.bonus_credits > 0 && <span className="text-green-600 text-xs ml-1">+{pkg.bonus_credits}</span>}</td>
+                    <td className="py-3 px-2 font-medium">₦{pkg.price_ngn?.toLocaleString()}</td>
+                    <td className="py-3 px-2">{pkg.price_usd ? `$${pkg.price_usd}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
+                    <td className="py-3 px-2">{pkg.price_gbp ? `£${pkg.price_gbp}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
+                    <td className="py-3 px-2">{pkg.price_cad ? `C$${pkg.price_cad}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
+                    <td className="py-3 px-2"><Switch checked={pkg.is_active} onCheckedChange={() => toggleActive(pkg)} /></td>
+                    <td className="py-3 px-2 text-right">
+                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(pkg)}><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(pkg)} className="text-red-600"><Trash2 className="w-4 h-4" /></Button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -232,9 +238,14 @@ export function AdminSMSPackages() {
               <div><Label>Credits *</Label><Input type="number" value={form.credits} onChange={(e) => setForm({ ...form, credits: e.target.value })} className="rounded-xl mt-1" /></div>
               <div><Label>Bonus</Label><Input type="number" value={form.bonus_credits} onChange={(e) => setForm({ ...form, bonus_credits: e.target.value })} className="rounded-xl mt-1" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Price NGN (₦) *</Label><Input type="number" value={form.price_ngn} onChange={(e) => setForm({ ...form, price_ngn: e.target.value })} className="rounded-xl mt-1" placeholder="Paystack" /></div>
-              <div><Label>Price USD ($)</Label><Input type="number" step="0.01" value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="rounded-xl mt-1" placeholder="Stripe" /></div>
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-[#0F0F0F]/60">Pricing by Region</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>NGN (₦) * <span className="text-xs text-[#0F0F0F]/40">Nigeria/Ghana</span></Label><Input type="number" value={form.price_ngn} onChange={(e) => setForm({ ...form, price_ngn: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>USD ($) <span className="text-xs text-[#0F0F0F]/40">USA</span></Label><Input type="number" step="0.01" value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>GBP (£) <span className="text-xs text-[#0F0F0F]/40">UK</span></Label><Input type="number" step="0.01" value={form.price_gbp} onChange={(e) => setForm({ ...form, price_gbp: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>CAD (C$) <span className="text-xs text-[#0F0F0F]/40">Canada</span></Label><Input type="number" step="0.01" value={form.price_cad} onChange={(e) => setForm({ ...form, price_cad: e.target.value })} className="rounded-xl mt-1" /></div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Badge Text</Label><Input value={form.badge_text} onChange={(e) => setForm({ ...form, badge_text: e.target.value })} className="rounded-xl mt-1" placeholder="e.g., Best Value" /></div>
