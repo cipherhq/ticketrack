@@ -76,6 +76,8 @@ const navGroups = [
     label: 'Communication',
     items: [
       { icon: MessageSquare, label: 'Support', path: '/admin/support', notificationKey: 'supportOpen' },
+      { icon: Users, label: 'All Contacts', path: '/admin/contacts' },
+      { icon: Send, label: 'Broadcasts', path: '/admin/communications' },
       { icon: Mail, label: 'Email Templates', path: '/admin/email-templates' },
       { icon: Send, label: 'Send Emails', path: '/admin/send-emails' },
       { icon: Bell, label: 'SMS Campaigns', path: '/admin/sms' },

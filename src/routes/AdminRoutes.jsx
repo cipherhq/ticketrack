@@ -38,6 +38,8 @@ import { AdminCountryFeatures } from '@/pages/admin/AdminCountryFeatures'; // NE
 import { AdminUserTypes } from '@/pages/admin/AdminUserTypes'; // NEW: User type management
 import { AdminUsers } from '@/pages/admin/AdminUsers'; // NEW: All user management
 import { AdminPaymentConnections } from '@/pages/admin/AdminPaymentConnections'; // Payment connections management
+import { AdminContacts } from '@/pages/admin/AdminContacts'; // All contacts management
+import { AdminCommunications } from '@/pages/admin/AdminCommunications'; // Platform broadcasts
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
@@ -132,6 +134,8 @@ export function AdminRoutes() {
             <Route path="/fees" element={<AdminFeeManagement />} />
             <Route path="/refund-settings" element={<AdminRefundSettings />} />
             <Route path="/payment-connections" element={<AdminPaymentConnections />} />
+            <Route path="/contacts" element={<AdminContacts />} />
+            <Route path="/communications" element={<AdminCommunications />} />
           </Routes>
         </AdminLayout>
       </AdminProvider>
