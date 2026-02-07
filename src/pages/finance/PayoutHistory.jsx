@@ -26,19 +26,20 @@ export function PayoutHistory() {
     setLoading(true);
     try {
       const [organizerPayouts, promoterPayouts, affiliateEarnings] = await Promise.all([
-        supabase.from('payouts').select('*, organizers(business_name, email), events(title)').eq('status', 'completed').order('processed_at', { ascending: false }).limit(200),
+        supabase.from('payouts').select('*, organizers(business_name, email, country_code)').eq('status', 'completed').order('processed_at', { ascending: false }).limit(200),
         supabase.from('promoter_payouts').select('*, promoters(full_name, email), events(title)').eq('status', 'completed').order('created_at', { ascending: false }).limit(200),
         supabase.from('referral_earnings').select('*, profiles!referral_earnings_user_id_fkey(first_name, last_name, email), event:event_id(title)').eq('status', 'paid').order('paid_at', { ascending: false }).limit(200)
       ]);
 
       const history = [
-        ...(organizerPayouts.data || []).map(p => ({ 
-          ...p, 
-          type: 'organizer', 
-          recipientName: p.organizers?.business_name, 
-          recipientEmail: p.organizers?.email, 
-          eventTitle: p.events?.title,
-          paidAt: p.processed_at 
+        ...(organizerPayouts.data || []).map(p => ({
+          ...p,
+          type: 'organizer',
+          recipientName: p.organizers?.business_name,
+          recipientEmail: p.organizers?.email,
+          eventTitle: null,
+          country_code: p.organizers?.country_code,
+          paidAt: p.processed_at
         })),
         ...(promoterPayouts.data || []).map(p => ({ 
           ...p, 
@@ -94,7 +95,7 @@ export function PayoutHistory() {
       p.recipientEmail,
       p.eventTitle || '-',
       p.amount || p.net_amount,
-      p.currency || getDefaultCurrency(p.events?.country_code || p.event?.country_code || p.country_code),
+      p.currency || getDefaultCurrency(p.country_code),
       p.reference || p.transaction_reference || '-'
     ]);
     
@@ -202,7 +203,7 @@ export function PayoutHistory() {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.amount || payout.net_amount, payout.currency || getDefaultCurrency(payout.events?.country_code || payout.event?.country_code || payout.country_code))}</p>
+                      <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.amount || payout.net_amount, payout.currency || getDefaultCurrency(payout.country_code))}</p>
                       <p className="text-xs text-[#0F0F0F]/40">{payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}</p>
                     </div>
                     <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>

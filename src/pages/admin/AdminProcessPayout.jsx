@@ -122,16 +122,19 @@ export function AdminProcessPayout() {
       const reference = `PAY-${Date.now().toString(36).toUpperCase()}`;
 
       // Create payout record
+      const currency = getCurrencyFromCountry(selectedOrganizer.country_code);
       const { data: payout, error: payoutError } = await supabase
         .from('payouts')
         .insert({
           organizer_id: selectedOrganizer.id,
           bank_account_id: bankAccount.id,
+          payout_number: reference,
           amount: amount,
-          fee: platformFee,
+          platform_fee_deducted: platformFee,
           net_amount: netAmount,
+          currency: currency,
           status: 'completed',
-          reference: reference,
+          transaction_reference: reference,
           processed_at: new Date().toISOString(),
         })
         .select()
