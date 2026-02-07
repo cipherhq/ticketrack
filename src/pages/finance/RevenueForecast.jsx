@@ -29,7 +29,7 @@ export function RevenueForecast() {
   const { logFinanceAction } = useFinance();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
-  const [currency, setCurrency] = useState('NGN');
+  const [currency, setCurrency] = useState('USD');
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [forecast, setForecast] = useState({
     projectedRevenue: 0,
@@ -231,10 +231,13 @@ export function RevenueForecast() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="NGN">NGN</SelectItem>
               <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="NGN">NGN</SelectItem>
               <SelectItem value="GBP">GBP</SelectItem>
+              <SelectItem value="EUR">EUR</SelectItem>
               <SelectItem value="GHS">GHS</SelectItem>
+              <SelectItem value="KES">KES</SelectItem>
+              <SelectItem value="CAD">CAD</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={loadForecastData} className="rounded-xl">

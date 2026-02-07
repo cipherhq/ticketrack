@@ -30,7 +30,7 @@ import {
   Download, Upload, Calendar, TrendingDown
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 const EXPENSE_CATEGORIES = [
@@ -58,17 +58,17 @@ export function ExpenseTracking() {
     category: '',
     description: '',
     amount: '',
-    currency: 'NGN',
+    currency: 'USD',
     expense_date: '',
     vendor: '',
     is_recurring: false
   });
   const [receiptFile, setReceiptFile] = useState(null);
   const [stats, setStats] = useState({
-    totalExpenses: 0,
-    pendingExpenses: 0,
-    approvedExpenses: 0,
-    thisMonth: 0
+    totalByCurrency: {},
+    pendingByCurrency: {},
+    approvedByCurrency: {},
+    thisMonthByCurrency: {}
   });
 
   useEffect(() => {
@@ -105,23 +105,35 @@ export function ExpenseTracking() {
       if (error) throw error;
       setExpenses(data || []);
 
-      // Calculate stats
-      const total = data?.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) || 0;
-      const pending = data?.filter(e => e.status === 'pending')
-        .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) || 0;
-      const approved = data?.filter(e => e.status === 'approved')
-        .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) || 0;
+      // Calculate stats grouped by currency
+      const totalByCurrency = {};
+      const pendingByCurrency = {};
+      const approvedByCurrency = {};
+      const thisMonthByCurrency = {};
 
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const thisMonth = data?.filter(e => new Date(e.expense_date) >= startOfMonth)
-        .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) || 0;
+
+      data?.forEach(e => {
+        const currency = e.currency || 'USD';
+        const amount = parseFloat(e.amount || 0);
+        totalByCurrency[currency] = (totalByCurrency[currency] || 0) + amount;
+        if (e.status === 'pending') {
+          pendingByCurrency[currency] = (pendingByCurrency[currency] || 0) + amount;
+        }
+        if (e.status === 'approved') {
+          approvedByCurrency[currency] = (approvedByCurrency[currency] || 0) + amount;
+        }
+        if (new Date(e.expense_date) >= startOfMonth) {
+          thisMonthByCurrency[currency] = (thisMonthByCurrency[currency] || 0) + amount;
+        }
+      });
 
       setStats({
-        totalExpenses: total,
-        pendingExpenses: pending,
-        approvedExpenses: approved,
-        thisMonth
+        totalByCurrency,
+        pendingByCurrency,
+        approvedByCurrency,
+        thisMonthByCurrency
       });
     } catch (error) {
       console.error('Error loading expenses:', error);
@@ -171,7 +183,7 @@ export function ExpenseTracking() {
         category: '',
         description: '',
         amount: '',
-        currency: 'NGN',
+        currency: 'USD',
         expense_date: '',
         vendor: '',
         is_recurring: false
@@ -310,7 +322,7 @@ export function ExpenseTracking() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Expenses</p>
                 <p className="text-2xl font-bold">
-                  {formatPrice(stats.totalExpenses, 'NGN')}
+                  {formatMultiCurrencyCompact(stats.totalByCurrency)}
                 </p>
               </div>
             </div>
@@ -326,7 +338,7 @@ export function ExpenseTracking() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending</p>
                 <p className="text-2xl font-bold">
-                  {formatPrice(stats.pendingExpenses, 'NGN')}
+                  {formatMultiCurrencyCompact(stats.pendingByCurrency)}
                 </p>
               </div>
             </div>
@@ -342,7 +354,7 @@ export function ExpenseTracking() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Approved</p>
                 <p className="text-2xl font-bold">
-                  {formatPrice(stats.approvedExpenses, 'NGN')}
+                  {formatMultiCurrencyCompact(stats.approvedByCurrency)}
                 </p>
               </div>
             </div>
@@ -358,7 +370,7 @@ export function ExpenseTracking() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">This Month</p>
                 <p className="text-2xl font-bold">
-                  {formatPrice(stats.thisMonth, 'NGN')}
+                  {formatMultiCurrencyCompact(stats.thisMonthByCurrency)}
                 </p>
               </div>
             </div>

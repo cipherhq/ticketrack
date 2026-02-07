@@ -24,7 +24,7 @@ import {
   XCircle, Eye, TrendingDown
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function ChargebacksManagement() {
@@ -40,8 +40,8 @@ export function ChargebacksManagement() {
     pending: 0,
     won: 0,
     lost: 0,
-    totalAmount: 0,
-    pendingAmount: 0
+    totalAmountByCurrency: {},
+    pendingAmountByCurrency: {}
   });
 
   useEffect(() => {
@@ -80,11 +80,20 @@ export function ChargebacksManagement() {
       const pending = data?.filter(c => ['opened', 'needs_response', 'under_review'].includes(c.status)).length || 0;
       const won = data?.filter(c => c.status === 'won').length || 0;
       const lost = data?.filter(c => c.status === 'lost').length || 0;
-      const totalAmount = data?.reduce((sum, c) => sum + parseFloat(c.disputed_amount || 0), 0) || 0;
-      const pendingAmount = data?.filter(c => ['opened', 'needs_response', 'under_review'].includes(c.status))
-        .reduce((sum, c) => sum + parseFloat(c.disputed_amount || 0), 0) || 0;
 
-      setStats({ total, pending, won, lost, totalAmount, pendingAmount });
+      // Group by currency
+      const totalAmountByCurrency = {};
+      const pendingAmountByCurrency = {};
+      data?.forEach(c => {
+        const currency = c.currency || 'USD';
+        const amount = parseFloat(c.disputed_amount || 0);
+        totalAmountByCurrency[currency] = (totalAmountByCurrency[currency] || 0) + amount;
+        if (['opened', 'needs_response', 'under_review'].includes(c.status)) {
+          pendingAmountByCurrency[currency] = (pendingAmountByCurrency[currency] || 0) + amount;
+        }
+      });
+
+      setStats({ total, pending, won, lost, totalAmountByCurrency, pendingAmountByCurrency });
     } catch (error) {
       console.error('Error loading chargebacks:', error);
     } finally {
@@ -152,7 +161,7 @@ export function ChargebacksManagement() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending</p>
                 <p className="text-2xl font-bold">{stats.pending}</p>
-                <p className="text-xs text-[#0F0F0F]/50">{formatPrice(stats.pendingAmount, 'NGN')}</p>
+                <p className="text-xs text-[#0F0F0F]/50">{formatMultiCurrencyCompact(stats.pendingAmountByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -194,7 +203,7 @@ export function ChargebacksManagement() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Disputed</p>
-                <p className="text-2xl font-bold">{formatPrice(stats.totalAmount, 'NGN')}</p>
+                <p className="text-2xl font-bold">{formatMultiCurrencyCompact(stats.totalAmountByCurrency)}</p>
               </div>
             </div>
           </CardContent>

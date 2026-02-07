@@ -3,7 +3,7 @@ import { PieChart, Loader2, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 const categoryColors = [
@@ -24,18 +24,25 @@ export function RevenueByCategory() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: orders } = await supabase.from('orders').select('platform_fee, events(category)').eq('status', 'completed');
-      
+      const { data: orders } = await supabase.from('orders').select('platform_fee, currency, events(category)').eq('status', 'completed');
+
+      // Group by category, then by currency within each category
       const categoryMap = {};
       orders?.forEach(o => {
         const category = o.events?.category || 'Other';
-        categoryMap[category] = (categoryMap[category] || 0) + parseFloat(o.platform_fee || 0);
+        const currency = o.currency || 'USD';
+        if (!categoryMap[category]) {
+          categoryMap[category] = { revenueByCurrency: {}, total: 0 };
+        }
+        const fee = parseFloat(o.platform_fee || 0);
+        categoryMap[category].revenueByCurrency[currency] = (categoryMap[category].revenueByCurrency[currency] || 0) + fee;
+        categoryMap[category].total += fee;
       });
-      
+
       const sorted = Object.entries(categoryMap)
-        .map(([category, revenue]) => ({ category, revenue }))
-        .sort((a, b) => b.revenue - a.revenue);
-      
+        .map(([category, data]) => ({ category, revenueByCurrency: data.revenueByCurrency, total: data.total }))
+        .sort((a, b) => b.total - a.total);
+
       setRevenueByCategory(sorted);
     } catch (error) {
       console.error('Error:', error);
@@ -44,7 +51,7 @@ export function RevenueByCategory() {
     }
   };
 
-  const totalRevenue = revenueByCategory.reduce((sum, c) => sum + c.revenue, 0);
+  const totalRevenue = revenueByCategory.reduce((sum, c) => sum + c.total, 0);
 
   return (
     <div className="space-y-6">
@@ -71,7 +78,7 @@ export function RevenueByCategory() {
             ) : (
               <div className="space-y-3">
                 {revenueByCategory.map((item, idx) => {
-                  const percentage = totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0;
+                  const percentage = totalRevenue > 0 ? (item.total / totalRevenue) * 100 : 0;
                   const colorClass = categoryColors[idx % categoryColors.length];
                   return (
                     <div key={idx} className="space-y-2">
@@ -81,7 +88,7 @@ export function RevenueByCategory() {
                           <p className="font-medium text-[#0F0F0F]">{item.category}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-[#0F0F0F]">{formatPrice(item.revenue, 'NGN')}</p>
+                          <p className="font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(item.revenueByCurrency)}</p>
                           <p className="text-xs text-[#0F0F0F]/60">{percentage.toFixed(1)}%</p>
                         </div>
                       </div>

@@ -28,7 +28,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 export function AgingReports() {
   const { logFinanceAction } = useFinance();
   const [loading, setLoading] = useState(true);
-  const [currency, setCurrency] = useState('NGN');
+  const [currency, setCurrency] = useState('USD');
   const [reportType, setReportType] = useState('payouts');
   const [agingData, setAgingData] = useState([]);
   const [summary, setSummary] = useState({
@@ -275,10 +275,13 @@ export function AgingReports() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="NGN">NGN</SelectItem>
               <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="NGN">NGN</SelectItem>
               <SelectItem value="GBP">GBP</SelectItem>
+              <SelectItem value="EUR">EUR</SelectItem>
               <SelectItem value="GHS">GHS</SelectItem>
+              <SelectItem value="KES">KES</SelectItem>
+              <SelectItem value="CAD">CAD</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={loadAgingData} className="rounded-xl">

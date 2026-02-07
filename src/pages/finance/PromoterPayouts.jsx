@@ -169,7 +169,7 @@ export function PromoterPayouts() {
   const totalPendingByCurrency = {};
   const totalPaidByCurrency = {};
   promoterPayouts.forEach(p => {
-    const currency = Array.from(p.currencies)[0] || 'NGN';
+    const currency = Array.from(p.currencies)[0] || 'USD';
     totalPendingByCurrency[currency] = (totalPendingByCurrency[currency] || 0) + p.totalPending;
     totalPaidByCurrency[currency] = (totalPaidByCurrency[currency] || 0) + p.totalPaid;
   });
@@ -380,7 +380,7 @@ export function PromoterPayouts() {
                 <div>
                   <p className="text-[#0F0F0F]/60">Amount</p>
                   <p className="font-bold text-green-600 text-lg">
-                    {formatPrice(paymentDialog.promoter?.totalPending, Array.from(paymentDialog.promoter?.currencies || ['NGN'])[0])}
+                    {formatPrice(paymentDialog.promoter?.totalPending, Array.from(paymentDialog.promoter?.currencies || ['USD'])[0])}
                   </p>
                 </div>
               </div>

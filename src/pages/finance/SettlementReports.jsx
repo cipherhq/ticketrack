@@ -23,7 +23,7 @@ import {
   Download, Calendar, ArrowUpDown
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function SettlementReports() {
@@ -38,7 +38,7 @@ export function SettlementReports() {
     totalSettlements: 0,
     reconciledCount: 0,
     unreconciledCount: 0,
-    totalDiscrepancy: 0
+    discrepancyByCurrency: {}
   });
 
   useEffect(() => {
@@ -83,13 +83,20 @@ export function SettlementReports() {
       const total = data?.length || 0;
       const reconciled = data?.filter(s => s.is_reconciled).length || 0;
       const unreconciled = total - reconciled;
-      const discrepancy = data?.reduce((sum, s) => sum + Math.abs(parseFloat(s.discrepancy || 0)), 0) || 0;
+
+      // Group discrepancy by currency
+      const discrepancyByCurrency = {};
+      data?.forEach(s => {
+        const currency = s.currency || 'USD';
+        const discrepancy = Math.abs(parseFloat(s.discrepancy || 0));
+        discrepancyByCurrency[currency] = (discrepancyByCurrency[currency] || 0) + discrepancy;
+      });
 
       setStats({
         totalSettlements: total,
         reconciledCount: reconciled,
         unreconciledCount: unreconciled,
-        totalDiscrepancy: discrepancy
+        discrepancyByCurrency
       });
     } catch (error) {
       console.error('Error loading settlements:', error);
@@ -259,7 +266,7 @@ export function SettlementReports() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Discrepancy</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {formatPrice(stats.totalDiscrepancy, 'NGN')}
+                  {formatMultiCurrencyCompact(stats.discrepancyByCurrency)}
                 </p>
               </div>
             </div>

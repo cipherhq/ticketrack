@@ -3,7 +3,7 @@ import { Globe, Loader2, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function RevenueByCountry() {
@@ -19,18 +19,25 @@ export function RevenueByCountry() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: orders } = await supabase.from('orders').select('platform_fee, events(country_code)').eq('status', 'completed');
-      
+      const { data: orders } = await supabase.from('orders').select('platform_fee, currency, events(country_code)').eq('status', 'completed');
+
+      // Group by country, then by currency within each country
       const countryMap = {};
       orders?.forEach(o => {
         const country = o.events?.country_code || 'Unknown';
-        countryMap[country] = (countryMap[country] || 0) + parseFloat(o.platform_fee || 0);
+        const currency = o.currency || 'USD';
+        if (!countryMap[country]) {
+          countryMap[country] = { revenueByCurrency: {}, total: 0 };
+        }
+        const fee = parseFloat(o.platform_fee || 0);
+        countryMap[country].revenueByCurrency[currency] = (countryMap[country].revenueByCurrency[currency] || 0) + fee;
+        countryMap[country].total += fee;
       });
-      
+
       const sorted = Object.entries(countryMap)
-        .map(([country, revenue]) => ({ country, revenue }))
-        .sort((a, b) => b.revenue - a.revenue);
-      
+        .map(([country, data]) => ({ country, revenueByCurrency: data.revenueByCurrency, total: data.total }))
+        .sort((a, b) => b.total - a.total);
+
       setRevenueByCountry(sorted);
     } catch (error) {
       console.error('Error:', error);
@@ -39,7 +46,7 @@ export function RevenueByCountry() {
     }
   };
 
-  const totalRevenue = revenueByCountry.reduce((sum, c) => sum + c.revenue, 0);
+  const totalRevenue = revenueByCountry.reduce((sum, c) => sum + c.total, 0);
 
   return (
     <div className="space-y-6">
@@ -66,7 +73,7 @@ export function RevenueByCountry() {
             ) : (
               <div className="space-y-3">
                 {revenueByCountry.map((item, idx) => {
-                  const percentage = totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0;
+                  const percentage = totalRevenue > 0 ? (item.total / totalRevenue) * 100 : 0;
                   return (
                     <div key={idx} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -77,7 +84,7 @@ export function RevenueByCountry() {
                           <p className="font-medium text-[#0F0F0F]">{item.country || 'Unknown'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-[#0F0F0F]">{formatPrice(item.revenue, 'NGN')}</p>
+                          <p className="font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(item.revenueByCurrency)}</p>
                           <p className="text-xs text-[#0F0F0F]/60">{percentage.toFixed(1)}%</p>
                         </div>
                       </div>

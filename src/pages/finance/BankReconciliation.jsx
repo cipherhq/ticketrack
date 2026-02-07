@@ -177,7 +177,7 @@ export function BankReconciliation() {
             description: description?.trim(),
             reference: reference?.trim(),
             amount: parseFloat(amount?.trim() || 0),
-            currency: currency?.trim() || 'NGN'
+            currency: currency?.trim() || 'USD'
           };
         });
 

@@ -23,7 +23,7 @@ import {
   CheckCircle, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function EscrowManagement() {
@@ -34,9 +34,9 @@ export function EscrowManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [currencyFilter, setCurrencyFilter] = useState('all');
   const [stats, setStats] = useState({
-    totalPending: 0,
-    totalEligible: 0,
-    totalHeld: 0,
+    pendingByCurrency: {},
+    eligibleByCurrency: {},
+    heldByCurrency: {},
     currencies: []
   });
 
@@ -70,14 +70,26 @@ export function EscrowManagement() {
       if (error) throw error;
       setEscrows(data || []);
 
-      // Calculate stats
-      const pending = data?.filter(e => e.status === 'pending').reduce((sum, e) => sum + parseFloat(e.available_balance || 0), 0) || 0;
-      const eligible = data?.filter(e => e.status === 'eligible').reduce((sum, e) => sum + parseFloat(e.available_balance || 0), 0) || 0;
-      const held = data?.filter(e => e.status === 'hold').reduce((sum, e) => sum + parseFloat(e.available_balance || 0), 0) || 0;
+      // Calculate stats grouped by currency
+      const pendingByCurrency = {};
+      const eligibleByCurrency = {};
+      const heldByCurrency = {};
+
+      data?.forEach(e => {
+        const currency = e.currency || 'USD';
+        const balance = parseFloat(e.available_balance || 0);
+        if (e.status === 'pending') {
+          pendingByCurrency[currency] = (pendingByCurrency[currency] || 0) + balance;
+        } else if (e.status === 'eligible') {
+          eligibleByCurrency[currency] = (eligibleByCurrency[currency] || 0) + balance;
+        } else if (e.status === 'hold') {
+          heldByCurrency[currency] = (heldByCurrency[currency] || 0) + balance;
+        }
+      });
 
       const currencies = [...new Set(data?.map(e => e.currency) || [])];
 
-      setStats({ totalPending: pending, totalEligible: eligible, totalHeld: held, currencies });
+      setStats({ pendingByCurrency, eligibleByCurrency, heldByCurrency, currencies });
     } catch (error) {
       console.error('Error loading escrow data:', error);
     } finally {
@@ -185,7 +197,7 @@ export function EscrowManagement() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending Escrow</p>
-                <p className="text-2xl font-bold">{formatPrice(stats.totalPending, 'NGN')}</p>
+                <p className="text-2xl font-bold">{formatMultiCurrencyCompact(stats.pendingByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -199,7 +211,7 @@ export function EscrowManagement() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Ready for Payout</p>
-                <p className="text-2xl font-bold">{formatPrice(stats.totalEligible, 'NGN')}</p>
+                <p className="text-2xl font-bold">{formatMultiCurrencyCompact(stats.eligibleByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -213,7 +225,7 @@ export function EscrowManagement() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">On Hold</p>
-                <p className="text-2xl font-bold">{formatPrice(stats.totalHeld, 'NGN')}</p>
+                <p className="text-2xl font-bold">{formatMultiCurrencyCompact(stats.heldByCurrency)}</p>
               </div>
             </div>
           </CardContent>

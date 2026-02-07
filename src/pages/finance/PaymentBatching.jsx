@@ -30,7 +30,7 @@ import {
   Clock, DollarSign, RefreshCw, Plus
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function PaymentBatching() {
@@ -42,14 +42,14 @@ export function PaymentBatching() {
   const [selectedPayouts, setSelectedPayouts] = useState([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newBatch, setNewBatch] = useState({
-    provider: 'paystack',
-    currency: 'NGN'
+    provider: 'stripe',
+    currency: 'USD'
   });
   const [stats, setStats] = useState({
     pendingBatches: 0,
     processingBatches: 0,
     completedBatches: 0,
-    totalPendingAmount: 0
+    pendingAmountByCurrency: {}
   });
 
   useEffect(() => {
@@ -75,14 +75,20 @@ export function PaymentBatching() {
       const pending = data?.filter(b => b.status === 'pending').length || 0;
       const processingCount = data?.filter(b => b.status === 'processing').length || 0;
       const completed = data?.filter(b => b.status === 'completed').length || 0;
-      const pendingAmount = data?.filter(b => ['pending', 'processing'].includes(b.status))
-        .reduce((sum, b) => sum + parseFloat(b.total_amount || 0), 0) || 0;
+
+      // Group pending amount by currency
+      const pendingAmountByCurrency = {};
+      data?.filter(b => ['pending', 'processing'].includes(b.status))
+        .forEach(b => {
+          const currency = b.currency || 'USD';
+          pendingAmountByCurrency[currency] = (pendingAmountByCurrency[currency] || 0) + parseFloat(b.total_amount || 0);
+        });
 
       setStats({
         pendingBatches: pending,
         processingBatches: processingCount,
         completedBatches: completed,
-        totalPendingAmount: pendingAmount
+        pendingAmountByCurrency
       });
     } catch (error) {
       console.error('Error loading batches:', error);
@@ -348,7 +354,7 @@ export function PaymentBatching() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending Amount</p>
                 <p className="text-2xl font-bold">
-                  {formatPrice(stats.totalPendingAmount, 'NGN')}
+                  {formatMultiCurrencyCompact(stats.pendingAmountByCurrency)}
                 </p>
               </div>
             </div>
@@ -494,11 +500,13 @@ export function PaymentBatching() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NGN">NGN</SelectItem>
                     <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="NGN">NGN</SelectItem>
                     <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
                     <SelectItem value="GHS">GHS</SelectItem>
                     <SelectItem value="KES">KES</SelectItem>
+                    <SelectItem value="CAD">CAD</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

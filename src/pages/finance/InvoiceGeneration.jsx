@@ -29,7 +29,7 @@ import {
   Calendar, RefreshCw, CheckCircle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function InvoiceGeneration() {
@@ -406,9 +406,12 @@ export function InvoiceGeneration() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Earnings</p>
                 <p className="text-2xl font-bold">
-                  {formatPrice(
-                    invoices.reduce((sum, i) => sum + parseFloat(i.net_earnings || 0), 0),
-                    'NGN'
+                  {formatMultiCurrencyCompact(
+                    invoices.reduce((acc, i) => {
+                      const currency = i.currency || 'USD';
+                      acc[currency] = (acc[currency] || 0) + parseFloat(i.net_earnings || 0);
+                      return acc;
+                    }, {})
                   )}
                 </p>
               </div>

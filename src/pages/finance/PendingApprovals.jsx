@@ -22,7 +22,7 @@ import {
   AlertTriangle, User, DollarSign
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function PendingApprovals() {
@@ -38,7 +38,7 @@ export function PendingApprovals() {
     pending: 0,
     approved: 0,
     rejected: 0,
-    totalPendingAmount: 0
+    pendingAmountByCurrency: {}
   });
 
   useEffect(() => {
@@ -73,14 +73,20 @@ export function PendingApprovals() {
       const pending = data?.filter(r => r.status === 'pending').length || 0;
       const approved = data?.filter(r => r.status === 'approved').length || 0;
       const rejected = data?.filter(r => r.status === 'rejected').length || 0;
-      const pendingAmount = data?.filter(r => r.status === 'pending')
-        .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0) || 0;
+
+      // Group pending amount by currency
+      const pendingAmountByCurrency = {};
+      data?.filter(r => r.status === 'pending')
+        .forEach(r => {
+          const currency = r.currency || 'USD';
+          pendingAmountByCurrency[currency] = (pendingAmountByCurrency[currency] || 0) + parseFloat(r.amount || 0);
+        });
 
       setStats({
         pending,
         approved,
         rejected,
-        totalPendingAmount: pendingAmount
+        pendingAmountByCurrency
       });
     } catch (error) {
       console.error('Error loading approval requests:', error);
@@ -286,7 +292,7 @@ export function PendingApprovals() {
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending Amount</p>
                 <p className="text-2xl font-bold">
-                  {formatPrice(stats.totalPendingAmount, 'NGN')}
+                  {formatMultiCurrencyCompact(stats.pendingAmountByCurrency)}
                 </p>
               </div>
             </div>

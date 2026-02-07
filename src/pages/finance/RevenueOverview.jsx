@@ -31,7 +31,7 @@ export function RevenueOverview() {
       // Group revenue by currency
       const totalRevenueByCurrency = {};
       orders?.forEach(o => {
-        const currency = o.currency || 'NGN';
+        const currency = o.currency || 'USD';
         totalRevenueByCurrency[currency] = (totalRevenueByCurrency[currency] || 0) + parseFloat(o.platform_fee || 0);
       });
 
@@ -40,7 +40,7 @@ export function RevenueOverview() {
       // Group paid out by currency
       const totalPaidOutByCurrency = {};
       payouts?.forEach(p => {
-        const currency = p.currency || 'NGN';
+        const currency = p.currency || 'USD';
         totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + parseFloat(p.net_amount || 0);
       });
 
@@ -49,7 +49,7 @@ export function RevenueOverview() {
       // Group pending by currency
       const pendingPayoutsByCurrency = {};
       pendingPayouts?.forEach(p => {
-        const currency = p.currency || 'NGN';
+        const currency = p.currency || 'USD';
         pendingPayoutsByCurrency[currency] = (pendingPayoutsByCurrency[currency] || 0) + parseFloat(p.net_amount || 0);
       });
 
@@ -63,9 +63,16 @@ export function RevenueOverview() {
           const d = new Date(o.created_at);
           return d >= monthStart && d <= monthEnd;
         }) || [];
+        // Group by currency for this month
+        const revenueByCurrency = {};
+        monthOrders.forEach(o => {
+          const curr = o.currency || 'USD';
+          revenueByCurrency[curr] = (revenueByCurrency[curr] || 0) + parseFloat(o.platform_fee || 0);
+        });
         revenueByMonth.push({
           month: monthStart.toLocaleString('default', { month: 'short', year: '2-digit' }),
-          revenue: monthOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0)
+          revenue: monthOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0),
+          revenueByCurrency
         });
       }
 
@@ -156,9 +163,9 @@ export function RevenueOverview() {
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2">
                   <div className="w-full bg-[#F4F6FA] rounded-t-lg relative" style={{ height: '200px' }}>
                     <div 
-                      className="absolute bottom-0 w-full bg-[#2969FF] rounded-t-lg transition-all hover:bg-[#2969FF]/80" 
-                      style={{ height: `${Math.max(height, 3)}%` }} 
-                      title={formatPrice(month.revenue, 'NGN')}
+                      className="absolute bottom-0 w-full bg-[#2969FF] rounded-t-lg transition-all hover:bg-[#2969FF]/80"
+                      style={{ height: `${Math.max(height, 3)}%` }}
+                      title={formatMultiCurrencyCompact(month.revenueByCurrency)}
                     />
                   </div>
                   <p className="text-xs text-[#0F0F0F]/60 whitespace-nowrap">{month.month}</p>
