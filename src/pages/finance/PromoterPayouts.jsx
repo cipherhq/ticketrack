@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { 
-  Users, User, CheckCircle, Clock, Loader2, Search, Filter, 
-  Banknote, RefreshCw, Calendar
+import {
+  Users, User, CheckCircle, Clock, Loader2, Search, Filter,
+  Banknote, RefreshCw, Calendar, Lock
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+import { sendPayoutProcessedEmail } from '@/lib/emailService';
 
 export function PromoterPayouts() {
-  const { logFinanceAction, canProcessPayouts } = useFinance();
+  const { logFinanceAction, canProcessPayouts, reAuthenticate } = useFinance();
   const [loading, setLoading] = useState(true);
   const [promoterPayouts, setPromoterPayouts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +26,11 @@ export function PromoterPayouts() {
   const [transactionRef, setTransactionRef] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [processing, setProcessing] = useState(false);
+
+  // Re-authentication state
+  const [reAuthPassword, setReAuthPassword] = useState('');
+  const [reAuthRequired, setReAuthRequired] = useState(true);
+  const [reAuthError, setReAuthError] = useState('');
 
   useEffect(() => {
     loadPromoterPayouts();
@@ -108,20 +114,42 @@ export function PromoterPayouts() {
     setPaymentDialog({ open: true, promoter });
     setTransactionRef('');
     setPaymentNotes('');
+    setReAuthPassword('');
+    setReAuthRequired(true);
+    setReAuthError('');
+  };
+
+  const handleReAuth = async () => {
+    const result = await reAuthenticate(reAuthPassword);
+    if (result.success) {
+      setReAuthRequired(false);
+      setReAuthError('');
+    } else {
+      setReAuthError(result.error || 'Invalid password');
+    }
   };
 
   const processPayment = async () => {
     if (!paymentDialog.promoter) return;
+
+    if (reAuthRequired) {
+      setReAuthError('Please verify your password first');
+      return;
+    }
+
     setProcessing(true);
     try {
       const { promoter } = paymentDialog;
       const bankAccount = promoter.promoter?.promoter_bank_accounts?.[0];
-      
+
       // Get the primary currency (most common)
       const currency = Array.from(promoter.currencies)[0] || getDefaultCurrency(promoter.sales[0]?.events?.country_code || promoter.sales[0]?.events?.country);
 
+      // Generate payout reference
+      const payoutReference = `PROMO-${Date.now().toString(36).toUpperCase()}`;
+
       // Create payout record
-      await supabase.from('promoter_payouts').insert({
+      const { error: payoutError } = await supabase.from('promoter_payouts').insert({
         promoter_id: promoter.promoter.id,
         amount: promoter.totalPending,
         currency: currency,
@@ -130,29 +158,52 @@ export function PromoterPayouts() {
         account_name: bankAccount?.account_name,
         status: 'completed',
         completed_at: new Date().toISOString(),
-        transaction_reference: transactionRef,
+        payment_reference: payoutReference,
+        transaction_reference: transactionRef || payoutReference,
         admin_notes: paymentNotes
       });
 
+      if (payoutError) throw payoutError;
+
       // Update all pending sales to paid
       const pendingSaleIds = promoter.pendingSales.map(s => s.id);
-      await supabase.from('promoter_sales').update({ 
-        status: 'paid', 
-        paid_at: new Date().toISOString() 
+      await supabase.from('promoter_sales').update({
+        status: 'paid',
+        paid_at: new Date().toISOString()
       }).in('id', pendingSaleIds);
 
       await logFinanceAction('promoter_payout', 'promoter', promoter.promoter.id, {
         amount: promoter.totalPending,
         promoterName: promoter.promoter.full_name,
         salesCount: pendingSaleIds.length,
-        reference: transactionRef
+        reference: payoutReference
       });
+
+      // Send email notification to promoter
+      if (promoter.promoter?.email) {
+        try {
+          await sendPayoutProcessedEmail(promoter.promoter.email, {
+            organizerName: promoter.promoter.full_name,
+            amount: formatPrice(promoter.totalPending, currency),
+            netAmount: formatPrice(promoter.totalPending, currency),
+            currency: currency,
+            bankName: bankAccount?.bank_name || 'N/A',
+            accountNumber: bankAccount?.account_number ? `****${bankAccount.account_number.slice(-4)}` : 'N/A',
+            reference: payoutReference,
+            processedAt: new Date().toISOString(),
+            isPromoter: true
+          });
+        } catch (emailError) {
+          console.error('Email notification failed:', emailError);
+          // Don't fail the payout if email fails
+        }
+      }
 
       setPaymentDialog({ open: false, promoter: null });
       loadPromoterPayouts();
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Failed to process payment.');
+      alert('Failed to process payment: ' + error.message);
     } finally {
       setProcessing(false);
     }
@@ -398,21 +449,47 @@ export function PromoterPayouts() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Transaction Reference (optional)</Label>
-              <Input placeholder="e.g., Bank transfer reference" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} className="rounded-xl" />
-            </div>
-            <div className="space-y-2">
-              <Label>Notes (optional)</Label>
-              <Textarea placeholder="Add any notes..." value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} className="rounded-xl" rows={2} />
-            </div>
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-              <p className="text-sm text-blue-800">⚠️ Make sure you have transferred the funds before marking as paid.</p>
-            </div>
+            {/* Re-Authentication */}
+            {reAuthRequired ? (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
+                <p className="text-sm font-medium text-red-800 flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Security Verification Required
+                </p>
+                <div className="space-y-2">
+                  <Label>Enter your password to continue</Label>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={reAuthPassword}
+                    onChange={(e) => setReAuthPassword(e.target.value)}
+                    className="rounded-xl"
+                  />
+                  {reAuthError && <p className="text-xs text-red-600">{reAuthError}</p>}
+                </div>
+                <Button onClick={handleReAuth} variant="outline" className="w-full rounded-xl">
+                  Verify Password
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Transaction Reference (optional)</Label>
+                  <Input placeholder="e.g., Bank transfer reference" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes (optional)</Label>
+                  <Textarea placeholder="Add any notes..." value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} className="rounded-xl" rows={2} />
+                </div>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-sm text-blue-800">⚠️ Make sure you have transferred the funds before marking as paid.</p>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPaymentDialog({ open: false, promoter: null })} className="rounded-xl">Cancel</Button>
-            <Button onClick={processPayment} disabled={processing} className="bg-purple-600 hover:bg-purple-700 rounded-xl">
+            <Button onClick={processPayment} disabled={processing || reAuthRequired} className="bg-purple-600 hover:bg-purple-700 rounded-xl">
               {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
               Confirm Payment
             </Button>

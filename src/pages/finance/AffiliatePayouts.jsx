@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { 
-  Link2, User, CheckCircle, Clock, Loader2, Search, Filter, 
-  Banknote, RefreshCw
+import {
+  Link2, User, CheckCircle, Clock, Loader2, Search, Filter,
+  Banknote, RefreshCw, Lock
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+import { sendPayoutProcessedEmail } from '@/lib/emailService';
 
 export function AffiliatePayouts() {
-  const { logFinanceAction, canProcessPayouts } = useFinance();
+  const { logFinanceAction, canProcessPayouts, reAuthenticate } = useFinance();
   const [loading, setLoading] = useState(true);
   const [affiliatePayouts, setAffiliatePayouts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +26,11 @@ export function AffiliatePayouts() {
   const [transactionRef, setTransactionRef] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [processing, setProcessing] = useState(false);
+
+  // Re-authentication state
+  const [reAuthPassword, setReAuthPassword] = useState('');
+  const [reAuthRequired, setReAuthRequired] = useState(true);
+  const [reAuthError, setReAuthError] = useState('');
 
   useEffect(() => {
     loadAffiliatePayouts();
@@ -90,32 +96,79 @@ export function AffiliatePayouts() {
     setPaymentDialog({ open: true, affiliate });
     setTransactionRef('');
     setPaymentNotes('');
+    setReAuthPassword('');
+    setReAuthRequired(true);
+    setReAuthError('');
+  };
+
+  const handleReAuth = async () => {
+    const result = await reAuthenticate(reAuthPassword);
+    if (result.success) {
+      setReAuthRequired(false);
+      setReAuthError('');
+    } else {
+      setReAuthError(result.error || 'Invalid password');
+    }
   };
 
   const processPayment = async () => {
     if (!paymentDialog.affiliate) return;
+
+    if (reAuthRequired) {
+      setReAuthError('Please verify your password first');
+      return;
+    }
+
     setProcessing(true);
     try {
       const { affiliate } = paymentDialog;
       const earningIds = affiliate.earnings.filter(e => e.status === 'available' || e.status === 'pending').map(e => e.id);
-      
-      await supabase.from('referral_earnings').update({ 
-        status: 'paid', 
-        paid_at: new Date().toISOString(), 
-        transaction_reference: transactionRef 
+
+      // Generate payout reference
+      const payoutReference = `AFF-${Date.now().toString(36).toUpperCase()}`;
+
+      const { error } = await supabase.from('referral_earnings').update({
+        status: 'paid',
+        paid_at: new Date().toISOString(),
+        transaction_reference: transactionRef || payoutReference,
+        reference: payoutReference
       }).in('id', earningIds);
-      
-      await logFinanceAction('affiliate_payout', 'profile', affiliate.affiliate.id, { 
+
+      if (error) throw error;
+
+      const affiliateName = `${affiliate.affiliate.first_name} ${affiliate.affiliate.last_name}`;
+
+      await logFinanceAction('affiliate_payout', 'profile', affiliate.affiliate.id, {
         amount: affiliate.totalPending,
-        affiliateName: `${affiliate.affiliate.first_name} ${affiliate.affiliate.last_name}`,
-        reference: transactionRef 
+        affiliateName: affiliateName,
+        reference: payoutReference
       });
+
+      // Send email notification to affiliate
+      if (affiliate.affiliate?.email) {
+        try {
+          await sendPayoutProcessedEmail(affiliate.affiliate.email, {
+            organizerName: affiliateName,
+            amount: formatPrice(affiliate.totalPending, affiliate.currency),
+            netAmount: formatPrice(affiliate.totalPending, affiliate.currency),
+            currency: affiliate.currency,
+            bankName: 'N/A',
+            accountNumber: 'N/A',
+            reference: payoutReference,
+            processedAt: new Date().toISOString(),
+            isAffiliate: true
+          });
+        } catch (emailError) {
+          console.error('Email notification failed:', emailError);
+          // Don't fail the payout if email fails
+        }
+      }
 
       setPaymentDialog({ open: false, affiliate: null });
       loadAffiliatePayouts();
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Failed to process payment.');
+      alert('Failed to process payment: ' + error.message);
     } finally {
       setProcessing(false);
     }
@@ -126,6 +179,15 @@ export function AffiliatePayouts() {
     const query = searchQuery.toLowerCase();
     const name = `${affiliate.affiliate?.first_name} ${affiliate.affiliate?.last_name}`.toLowerCase();
     return name.includes(query) || affiliate.affiliate?.email?.toLowerCase().includes(query) || affiliate.affiliate?.referral_code?.toLowerCase().includes(query);
+  });
+
+  // Calculate totals by currency
+  const totalPendingByCurrency = {};
+  const totalPaidByCurrency = {};
+  affiliatePayouts.forEach(a => {
+    const currency = a.currency || 'USD';
+    totalPendingByCurrency[currency] = (totalPendingByCurrency[currency] || 0) + a.totalPending;
+    totalPaidByCurrency[currency] = (totalPaidByCurrency[currency] || 0) + a.totalPaid;
   });
 
   return (
@@ -139,6 +201,49 @@ export function AffiliatePayouts() {
         <Button onClick={loadAffiliatePayouts} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />Refresh
         </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <Link2 className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[#0F0F0F]/60">Total Affiliates</p>
+                <p className="font-bold text-[#0F0F0F]">{affiliatePayouts.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[#0F0F0F]/60">Total Pending</p>
+                <p className="font-bold text-yellow-600">{formatMultiCurrencyCompact(totalPendingByCurrency)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[#0F0F0F]/60">Total Paid</p>
+                <p className="font-bold text-green-600">{formatMultiCurrencyCompact(totalPaidByCurrency)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -228,30 +333,58 @@ export function AffiliatePayouts() {
                   <p className="font-medium text-[#0F0F0F]">
                     {paymentDialog.affiliate?.affiliate?.first_name} {paymentDialog.affiliate?.affiliate?.last_name}
                   </p>
+                  <p className="text-xs text-[#0F0F0F]/60">{paymentDialog.affiliate?.affiliate?.email}</p>
                 </div>
                 <div>
                   <p className="text-[#0F0F0F]/60">Amount</p>
-                  <p className="font-bold text-[#0F0F0F]">
+                  <p className="font-bold text-green-600 text-lg">
                     {formatPrice(paymentDialog.affiliate?.totalPending, paymentDialog.affiliate?.currency)}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Transaction Reference (optional)</Label>
-              <Input placeholder="e.g., Bank transfer reference" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} className="rounded-xl" />
-            </div>
-            <div className="space-y-2">
-              <Label>Notes (optional)</Label>
-              <Textarea placeholder="Add any notes..." value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} className="rounded-xl" rows={2} />
-            </div>
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-              <p className="text-sm text-blue-800">Make sure you have transferred the funds before marking as paid.</p>
-            </div>
+
+            {/* Re-Authentication */}
+            {reAuthRequired ? (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
+                <p className="text-sm font-medium text-red-800 flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Security Verification Required
+                </p>
+                <div className="space-y-2">
+                  <Label>Enter your password to continue</Label>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={reAuthPassword}
+                    onChange={(e) => setReAuthPassword(e.target.value)}
+                    className="rounded-xl"
+                  />
+                  {reAuthError && <p className="text-xs text-red-600">{reAuthError}</p>}
+                </div>
+                <Button onClick={handleReAuth} variant="outline" className="w-full rounded-xl">
+                  Verify Password
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Transaction Reference (optional)</Label>
+                  <Input placeholder="e.g., Bank transfer reference" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes (optional)</Label>
+                  <Textarea placeholder="Add any notes..." value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} className="rounded-xl" rows={2} />
+                </div>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-sm text-blue-800">⚠️ Make sure you have transferred the funds before marking as paid.</p>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPaymentDialog({ open: false, affiliate: null })} className="rounded-xl">Cancel</Button>
-            <Button onClick={processPayment} disabled={processing} className="bg-green-600 hover:bg-green-700 rounded-xl">
+            <Button onClick={processPayment} disabled={processing || reAuthRequired} className="bg-green-600 hover:bg-green-700 rounded-xl">
               {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
               Confirm Payment
             </Button>

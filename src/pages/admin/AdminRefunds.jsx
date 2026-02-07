@@ -86,7 +86,7 @@ const processRefund = async () => {
     setProcessing(true);
     try {
       const session = await supabase.auth.getSession();
-      const response = await fetch('https://bkvbvggngttrizbchygy.supabase.co/functions/v1/process-refund', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-refund`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 
 export function BuySMSCredits() {
   const { user } = useAuth();
@@ -114,12 +115,15 @@ export function BuySMSCredits() {
 
       if (purchaseError) throw purchaseError;
 
-      // Initialize Paystack
+      // Determine currency from package or organizer's country
+      const currency = pkg.currency || getDefaultCurrency(organizer.country_code);
+
+      // Initialize Paystack (supports NGN, GHS only)
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         email: organizer.email || organizer.business_email,
-        amount: pkg.price * 100, // Paystack uses kobo
-        currency: 'NGN',
+        amount: pkg.price * 100, // Paystack uses kobo/pesewas
+        currency: currency,
         ref: `SMS-${purchase.id.split('-')[0]}-${Date.now()}`,
         metadata: {
           purchase_id: purchase.id,

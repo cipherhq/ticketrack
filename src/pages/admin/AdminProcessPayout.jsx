@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { sendPayoutProcessedEmail, sendAdminPayoutCompletedEmail } from '@/lib/emailService';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 
 export function AdminProcessPayout() {
   const navigate = useNavigate();
@@ -134,7 +135,7 @@ export function AdminProcessPayout() {
       const reference = `PAY-${Date.now().toString(36).toUpperCase()}`;
 
       // Create payout record
-      const currency = getCurrencyFromCountry(selectedOrganizer.country_code);
+      const currency = getDefaultCurrency(selectedOrganizer.country_code);
       const eventTitles = pendingEvents.map(e => e.title).join(', ');
       const eventIds = pendingEvents.map(e => e.id);
       const { data: payout, error: payoutError } = await supabase
@@ -229,17 +230,6 @@ export function AdminProcessPayout() {
     }
   };
 
-  const formatCurrency = (amount, currency = 'NGN') => {
-    const symbols = { NGN: '₦', GHS: '₵', KES: 'KSh', USD: '$' };
-    const symbol = symbols[currency] || '₦';
-    return `${symbol}${(amount || 0).toLocaleString()}`;
-  };
-
-  const getCurrencyFromCountry = (countryCode) => {
-    const currencies = { NG: 'NGN', GH: 'GHS', KE: 'KES', US: 'USD' };
-    return currencies[countryCode] || 'NGN';
-  };
-
   const filteredOrganizers = organizers.filter((org) =>
     org.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     org.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -321,7 +311,7 @@ export function AdminProcessPayout() {
                 <p className="text-center text-[#0F0F0F]/60 py-8">No organizers with pending payouts</p>
               ) : (
                 filteredOrganizers.map((org) => {
-                  const currency = getCurrencyFromCountry(org.country_code);
+                  const currency = getDefaultCurrency(org.country_code);
                   return (
                     <div
                       key={org.id}
@@ -352,11 +342,11 @@ export function AdminProcessPayout() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-[#0F0F0F]/60">Available Balance</p>
-                        <p className="text-xl font-semibold text-[#0F0F0F]">{formatCurrency(org.available_balance, currency)}</p>
+                        <p className="text-xl font-semibold text-[#0F0F0F]">{formatPrice(org.available_balance, currency)}</p>
                         {org.pending_balance > 0 && (
                           <>
                             <p className="text-xs text-[#0F0F0F]/60 mt-1">Pending Payout</p>
-                            <p className="text-sm font-medium text-[#2969FF]">{formatCurrency(org.pending_balance, currency)}</p>
+                            <p className="text-sm font-medium text-[#2969FF]">{formatPrice(org.pending_balance, currency)}</p>
                           </>
                         )}
                       </div>
@@ -403,7 +393,7 @@ export function AdminProcessPayout() {
                         <span className="text-sm">Total Revenue</span>
                       </div>
                       <p className="text-xl font-semibold text-[#0F0F0F]">
-                        {formatCurrency(selectedOrganizer.available_balance)}
+                        {formatPrice(selectedOrganizer.available_balance)}
                       </p>
                     </div>
                     <div className="p-4 bg-[#F4F6FA] rounded-xl">
@@ -419,17 +409,17 @@ export function AdminProcessPayout() {
                   <div className="p-4 border border-[#0F0F0F]/10 rounded-xl mb-4">
                     <div className="flex justify-between mb-2">
                       <span className="text-[#0F0F0F]/60">Gross Amount</span>
-                      <span className="text-[#0F0F0F]">{formatCurrency(selectedOrganizer.available_balance)}</span>
+                      <span className="text-[#0F0F0F]">{formatPrice(selectedOrganizer.available_balance)}</span>
                     </div>
                     <div className="flex justify-between mb-2">
                       <span className="text-[#0F0F0F]/60">Platform Fee (10%)</span>
-                      <span className="text-red-600">-{formatCurrency(selectedOrganizer.available_balance * 0.1)}</span>
+                      <span className="text-red-600">-{formatPrice(selectedOrganizer.available_balance * 0.1)}</span>
                     </div>
                     <div className="border-t border-[#0F0F0F]/10 pt-2 mt-2">
                       <div className="flex justify-between">
                         <span className="font-medium text-[#0F0F0F]">Net Payout</span>
                         <span className="text-xl font-semibold text-green-600">
-                          {formatCurrency(selectedOrganizer.available_balance * 0.9)}
+                          {formatPrice(selectedOrganizer.available_balance * 0.9)}
                         </span>
                       </div>
                     </div>
@@ -490,7 +480,7 @@ export function AdminProcessPayout() {
             </div>
             <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-2">Payout Processed Successfully!</h2>
             <p className="text-[#0F0F0F]/60 mb-6">
-              {formatCurrency(payoutResult.netPayout)} has been paid to {payoutResult.organizer}
+              {formatPrice(payoutResult.netPayout)} has been paid to {payoutResult.organizer}
             </p>
 
             {/* Transaction Summary */}
@@ -519,17 +509,17 @@ export function AdminProcessPayout() {
                 </div>
                 <div>
                   <p className="text-sm text-[#0F0F0F]/60">Total Revenue</p>
-                  <p className="text-[#0F0F0F] font-medium">{formatCurrency(payoutResult.totalRevenue)}</p>
+                  <p className="text-[#0F0F0F] font-medium">{formatPrice(payoutResult.totalRevenue)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[#0F0F0F]/60">Platform Fees</p>
-                  <p className="text-red-600 font-medium">-{formatCurrency(payoutResult.platformFee)}</p>
+                  <p className="text-red-600 font-medium">-{formatPrice(payoutResult.platformFee)}</p>
                 </div>
               </div>
 
               <div className="border-t border-[#0F0F0F]/10 mt-4 pt-4">
                 <p className="text-sm text-[#0F0F0F]/60">Net Payout</p>
-                <p className="text-2xl font-semibold text-green-600">{formatCurrency(payoutResult.netPayout)}</p>
+                <p className="text-2xl font-semibold text-green-600">{formatPrice(payoutResult.netPayout)}</p>
               </div>
             </div>
 
@@ -541,7 +531,7 @@ export function AdminProcessPayout() {
               </div>
               <ul className="text-sm text-green-700 space-y-1 ml-7">
                 <li>✓ Payout marked as completed</li>
-                <li>✓ Deducted {formatCurrency(payoutResult.netPayout)} from organizer's available balance</li>
+                <li>✓ Deducted {formatPrice(payoutResult.netPayout)} from organizer's available balance</li>
                 <li>✓ Added payout record to organizer's history</li>
                 <li>✓ Marked {payoutResult.eventsCount} events as paid</li>
                 <li>✓ Confirmation email sent to organizer</li>

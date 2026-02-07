@@ -15,12 +15,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 
 export function AdminSMSRevenue() {
   const { admin } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalRevenue: 0,
+    revenueByCurrency: {},
     totalCreditsSold: 0,
     totalCreditsUsed: 0,
     totalPurchases: 0,
@@ -46,7 +48,12 @@ export function AdminSMSRevenue() {
 
       setPurchases(purchaseData || []);
 
-      // Calculate stats
+      // Calculate stats - group revenue by currency
+      const revenueByCurrency = {};
+      (purchaseData || []).forEach(p => {
+        const currency = p.currency || 'NGN';
+        revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + parseFloat(p.amount_paid);
+      });
       const totalRevenue = (purchaseData || []).reduce((sum, p) => sum + parseFloat(p.amount_paid), 0);
       const totalCreditsSold = (purchaseData || []).reduce((sum, p) => sum + p.credits_purchased + p.bonus_credits, 0);
 
@@ -64,6 +71,7 @@ export function AdminSMSRevenue() {
 
       setStats({
         totalRevenue,
+        revenueByCurrency,
         totalCreditsSold,
         totalCreditsUsed,
         totalPurchases: (purchaseData || []).length,
@@ -90,14 +98,6 @@ export function AdminSMSRevenue() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
   };
 
   // Calculate profit (assuming ₦4 cost per SMS)
@@ -133,7 +133,7 @@ export function AdminSMSRevenue() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Revenue</p>
-                <p className="text-2xl font-semibold text-green-600">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-2xl font-semibold text-green-600">{formatMultiCurrencyCompact(stats.revenueByCurrency)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-green-200" />
             </div>
@@ -144,7 +144,7 @@ export function AdminSMSRevenue() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Gross Profit</p>
-                <p className="text-2xl font-semibold text-[#2969FF]">{formatCurrency(grossProfit)}</p>
+                <p className="text-2xl font-semibold text-[#2969FF]">{formatPrice(grossProfit, 'NGN')}</p>
                 <p className="text-xs text-[#0F0F0F]/40">{profitMargin}% margin</p>
               </div>
               <TrendingUp className="w-8 h-8 text-blue-200" />
@@ -227,7 +227,7 @@ export function AdminSMSRevenue() {
                             </p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F] font-medium">{formatCurrency(purchase.amount_paid)}</p>
+                            <p className="text-[#0F0F0F] font-medium">{formatPrice(purchase.amount_paid, purchase.currency || 'NGN')}</p>
                           </td>
                           <td className="py-3 px-4">
                             <p className="text-[#0F0F0F]/60 text-sm">
@@ -279,9 +279,9 @@ export function AdminSMSRevenue() {
                           </td>
                           <td className="py-3 px-4">{pkg.credits}</td>
                           <td className="py-3 px-4 text-green-600">+{pkg.bonus_credits}</td>
-                          <td className="py-3 px-4 font-medium">{formatCurrency(pkg.price)}</td>
-                          <td className="py-3 px-4">₦{parseFloat(pkg.price_per_sms).toFixed(2)}</td>
-                          <td className="py-3 px-4 text-green-600 font-medium">{formatCurrency(profit)}</td>
+                          <td className="py-3 px-4 font-medium">{formatPrice(pkg.price, pkg.currency || 'NGN')}</td>
+                          <td className="py-3 px-4">{formatPrice(parseFloat(pkg.price_per_sms), pkg.currency || 'NGN')}</td>
+                          <td className="py-3 px-4 text-green-600 font-medium">{formatPrice(profit, pkg.currency || 'NGN')}</td>
                           <td className="py-3 px-4">
                             {pkg.is_active ? (
                               <Badge className="bg-green-100 text-green-700">Active</Badge>
