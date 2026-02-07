@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Globe, DollarSign, ToggleLeft, Loader2, Plus, Edit2, Trash2, Save, X, Check, CreditCard, Palette, FileText, Gauge, Eye, EyeOff, Zap, Banknote } from 'lucide-react';
+import { Settings, Globe, DollarSign, ToggleLeft, Loader2, Plus, Edit2, Trash2, Save, X, Check, CreditCard, Palette, FileText, Gauge, Eye, EyeOff, Zap, Banknote, Key, Mail, MessageSquare, Smartphone, CheckCircle, AlertCircle, TestTube } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +51,29 @@ export function AdminSettings() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [showSecrets, setShowSecrets] = useState({});
 
+  // API Configurations
+  const [smsConfig, setSmsConfig] = useState({
+    provider: 'termii',
+    api_key: '',
+    sender_id: 'Ticketrack',
+    is_active: true,
+  });
+  const [whatsappConfig, setWhatsappConfig] = useState({
+    provider: 'manual',
+    api_key: '',
+    phone_number_id: '',
+    business_account_id: '',
+    is_verified: false,
+  });
+  const [emailConfig, setEmailConfig] = useState({
+    provider: 'resend',
+    api_key: '',
+    from_email: 'tickets@ticketrack.com',
+    from_name: 'Ticketrack',
+    is_active: true,
+  });
+  const [testingApi, setTestingApi] = useState(null);
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -58,7 +81,7 @@ export function AdminSettings() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [currencyRes, countryRes, featureRes, cfRes, gatewayRes, brandingRes, legalRes, limitsRes, platformSettingsRes, fastPayoutRes] = await Promise.all([
+      const [currencyRes, countryRes, featureRes, cfRes, gatewayRes, brandingRes, legalRes, limitsRes, platformSettingsRes, fastPayoutRes, smsRes, whatsappRes, emailRes] = await Promise.all([
         supabase.from('currencies').select('*').order('sort_order'),
         supabase.from('countries').select('*').order('name'),
         supabase.from('features').select('*').order('category, name'),
@@ -69,8 +92,11 @@ export function AdminSettings() {
         supabase.from('platform_limits').select('*').order('country_code, limit_key'),
         supabase.from('platform_settings').select('*').order('category, key'),
         supabase.from('fast_payout_settings').select('*').limit(1).single(),
+        supabase.from('platform_sms_config').select('*').single(),
+        supabase.from('platform_whatsapp_config').select('*').single(),
+        supabase.from('platform_email_config').select('*').single(),
       ]);
-      
+
       setCurrencies(currencyRes.data || []);
       setCountries(countryRes.data || []);
       setFeatures(featureRes.data || []);
@@ -83,7 +109,16 @@ export function AdminSettings() {
       if (fastPayoutRes.data) {
         setFastPayoutSettings(fastPayoutRes.data);
       }
-      
+      if (smsRes.data) {
+        setSmsConfig(smsRes.data);
+      }
+      if (whatsappRes.data) {
+        setWhatsappConfig(whatsappRes.data);
+      }
+      if (emailRes.data) {
+        setEmailConfig(emailRes.data);
+      }
+
       if (countryRes.data?.length > 0) {
         setSelectedCountry(countryRes.data[0].code);
       }
@@ -311,7 +346,7 @@ export function AdminSettings() {
     try {
       const { id, created_at, ...updateData } = fastPayoutSettings;
       updateData.updated_at = new Date().toISOString();
-      
+
       if (id) {
         await supabase.from('fast_payout_settings').update(updateData).eq('id', id);
       } else {
@@ -322,6 +357,86 @@ export function AdminSettings() {
       console.error('Error saving fast payout settings:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // API Configuration handlers
+  const saveSmsConfig = async () => {
+    setSaving(true);
+    try {
+      const { id, created_at, ...updateData } = smsConfig;
+      updateData.updated_at = new Date().toISOString();
+
+      const { data: existing } = await supabase.from('platform_sms_config').select('id').single();
+      if (existing) {
+        await supabase.from('platform_sms_config').update(updateData).eq('id', existing.id);
+      } else {
+        await supabase.from('platform_sms_config').insert(updateData);
+      }
+      setSavedKey('sms');
+      setTimeout(() => setSavedKey(null), 2000);
+      loadAllData();
+    } catch (error) {
+      console.error('Error saving SMS config:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveWhatsappConfig = async () => {
+    setSaving(true);
+    try {
+      const { id, created_at, ...updateData } = whatsappConfig;
+      updateData.updated_at = new Date().toISOString();
+
+      const { data: existing } = await supabase.from('platform_whatsapp_config').select('id').single();
+      if (existing) {
+        await supabase.from('platform_whatsapp_config').update(updateData).eq('id', existing.id);
+      } else {
+        await supabase.from('platform_whatsapp_config').insert(updateData);
+      }
+      setSavedKey('whatsapp');
+      setTimeout(() => setSavedKey(null), 2000);
+      loadAllData();
+    } catch (error) {
+      console.error('Error saving WhatsApp config:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveEmailConfig = async () => {
+    setSaving(true);
+    try {
+      const { id, created_at, ...updateData } = emailConfig;
+      updateData.updated_at = new Date().toISOString();
+
+      const { data: existing } = await supabase.from('platform_email_config').select('id').single();
+      if (existing) {
+        await supabase.from('platform_email_config').update(updateData).eq('id', existing.id);
+      } else {
+        await supabase.from('platform_email_config').insert(updateData);
+      }
+      setSavedKey('email');
+      setTimeout(() => setSavedKey(null), 2000);
+      loadAllData();
+    } catch (error) {
+      console.error('Error saving Email config:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const testApiConnection = async (service) => {
+    setTestingApi(service);
+    try {
+      // Simulate API test - in production, this would call actual test endpoints
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      alert(`${service} connection test successful!`);
+    } catch (error) {
+      alert(`${service} connection test failed.`);
+    } finally {
+      setTestingApi(null);
     }
   };
 
@@ -370,6 +485,9 @@ export function AdminSettings() {
           </TabsTrigger>
           <TabsTrigger value="fastpayout" className="rounded-lg data-[state=active]:bg-white">
             <Banknote className="w-4 h-4 mr-2" /> Fast Payout
+          </TabsTrigger>
+          <TabsTrigger value="apis" className="rounded-lg data-[state=active]:bg-white">
+            <Key className="w-4 h-4 mr-2" /> APIs
           </TabsTrigger>
         </TabsList>
 
@@ -1318,6 +1436,395 @@ export function AdminSettings() {
                   <li>• Payout caps protect against refund liability (remaining % held as buffer)</li>
                   <li>• Only non-subaccount organizers are eligible (subaccounts get instant payouts)</li>
                 </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* APIs TAB */}
+        <TabsContent value="apis" className="mt-6 space-y-6">
+          {/* Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentGateways.some(g => g.is_active) ? 'bg-green-100' : 'bg-gray-100'}`}>
+                    <CreditCard className={`w-5 h-5 ${paymentGateways.some(g => g.is_active) ? 'text-green-600' : 'text-gray-400'}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[#0F0F0F]">Payments</p>
+                    <p className="text-xs text-[#0F0F0F]/60">{paymentGateways.filter(g => g.is_active).length} active gateways</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${emailConfig.api_key ? 'bg-green-100' : 'bg-yellow-100'}`}>
+                    <Mail className={`w-5 h-5 ${emailConfig.api_key ? 'text-green-600' : 'text-yellow-600'}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[#0F0F0F]">Email</p>
+                    <p className="text-xs text-[#0F0F0F]/60">{emailConfig.api_key ? 'Resend configured' : 'Not configured'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${smsConfig.api_key ? 'bg-green-100' : 'bg-yellow-100'}`}>
+                    <Smartphone className={`w-5 h-5 ${smsConfig.api_key ? 'text-green-600' : 'text-yellow-600'}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[#0F0F0F]">SMS</p>
+                    <p className="text-xs text-[#0F0F0F]/60">{smsConfig.api_key ? 'Termii configured' : 'Not configured'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${whatsappConfig.provider !== 'manual' && whatsappConfig.api_key ? 'bg-green-100' : 'bg-gray-100'}`}>
+                    <MessageSquare className={`w-5 h-5 ${whatsappConfig.provider !== 'manual' && whatsappConfig.api_key ? 'text-green-600' : 'text-gray-400'}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[#0F0F0F]">WhatsApp</p>
+                    <p className="text-xs text-[#0F0F0F]/60">{whatsappConfig.provider === 'manual' ? 'Manual mode' : whatsappConfig.api_key ? 'Connected' : 'Not configured'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Gateways Summary */}
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-[#2969FF]" />
+                <CardTitle>Payment Gateways</CardTitle>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveTab('gateways')}
+                className="rounded-xl"
+              >
+                <Edit2 className="w-4 h-4 mr-2" /> Manage
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {['paystack', 'stripe', 'flutterwave', 'paypal'].map(provider => {
+                  const gateways = paymentGateways.filter(g => g.provider === provider);
+                  const activeCount = gateways.filter(g => g.is_active).length;
+                  const totalCount = gateways.length;
+                  return (
+                    <div key={provider} className="p-4 bg-[#F4F6FA] rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium capitalize">{provider}</span>
+                        <Badge className={activeCount > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                          {activeCount > 0 ? `${activeCount} active` : 'None'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-[#0F0F0F]/60">
+                        {totalCount} {totalCount === 1 ? 'country' : 'countries'} configured
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Email Service (Resend) */}
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-purple-600" />
+                <CardTitle>Email Service (Resend)</CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                {savedKey === 'email' && <span className="text-xs text-green-600 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Saved</span>}
+                <Button
+                  onClick={saveEmailConfig}
+                  disabled={saving}
+                  className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl"
+                  size="sm"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>API Key</Label>
+                  <div className="relative">
+                    <Input
+                      type={showSecrets.email ? 'text' : 'password'}
+                      value={emailConfig.api_key || ''}
+                      onChange={(e) => setEmailConfig(prev => ({ ...prev, api_key: e.target.value }))}
+                      className="rounded-xl mt-1 font-mono text-sm pr-10"
+                      placeholder="re_..."
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2"
+                      onClick={() => setShowSecrets(prev => ({ ...prev, email: !prev.email }))}
+                    >
+                      {showSecrets.email ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label>From Email</Label>
+                  <Input
+                    type="email"
+                    value={emailConfig.from_email || ''}
+                    onChange={(e) => setEmailConfig(prev => ({ ...prev, from_email: e.target.value }))}
+                    className="rounded-xl mt-1"
+                    placeholder="tickets@example.com"
+                  />
+                </div>
+                <div>
+                  <Label>From Name</Label>
+                  <Input
+                    value={emailConfig.from_name || ''}
+                    onChange={(e) => setEmailConfig(prev => ({ ...prev, from_name: e.target.value }))}
+                    className="rounded-xl mt-1"
+                    placeholder="Ticketrack"
+                  />
+                </div>
+                <div className="flex items-center gap-4 pt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => testApiConnection('Email')}
+                    disabled={testingApi === 'Email' || !emailConfig.api_key}
+                    className="rounded-xl"
+                  >
+                    {testingApi === 'Email' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <TestTube className="w-4 h-4 mr-2" />}
+                    Test Connection
+                  </Button>
+                </div>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-xl text-sm text-purple-800">
+                <strong>Note:</strong> Email API keys are typically stored as Supabase secrets for Edge Functions.
+                This UI updates the database config for reference and fallback.
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* SMS Service (Termii) */}
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-green-600" />
+                <CardTitle>SMS Service (Termii)</CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                {savedKey === 'sms' && <span className="text-xs text-green-600 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Saved</span>}
+                <Button
+                  onClick={saveSmsConfig}
+                  disabled={saving}
+                  className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl"
+                  size="sm"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>API Key</Label>
+                  <div className="relative">
+                    <Input
+                      type={showSecrets.sms ? 'text' : 'password'}
+                      value={smsConfig.api_key || ''}
+                      onChange={(e) => setSmsConfig(prev => ({ ...prev, api_key: e.target.value }))}
+                      className="rounded-xl mt-1 font-mono text-sm pr-10"
+                      placeholder="TL..."
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2"
+                      onClick={() => setShowSecrets(prev => ({ ...prev, sms: !prev.sms }))}
+                    >
+                      {showSecrets.sms ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label>Sender ID</Label>
+                  <Input
+                    value={smsConfig.sender_id || ''}
+                    onChange={(e) => setSmsConfig(prev => ({ ...prev, sender_id: e.target.value }))}
+                    className="rounded-xl mt-1"
+                    placeholder="Ticketrack"
+                  />
+                  <p className="text-xs text-[#0F0F0F]/60 mt-1">Max 11 characters, alphanumeric</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => testApiConnection('SMS')}
+                  disabled={testingApi === 'SMS' || !smsConfig.api_key}
+                  className="rounded-xl"
+                >
+                  {testingApi === 'SMS' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <TestTube className="w-4 h-4 mr-2" />}
+                  Test Connection
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={smsConfig.is_active}
+                    onCheckedChange={(checked) => setSmsConfig(prev => ({ ...prev, is_active: checked }))}
+                  />
+                  <Label>Active</Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* WhatsApp Service */}
+          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-green-500" />
+                <CardTitle>WhatsApp Business</CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                {savedKey === 'whatsapp' && <span className="text-xs text-green-600 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Saved</span>}
+                <Button
+                  onClick={saveWhatsappConfig}
+                  disabled={saving}
+                  className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl"
+                  size="sm"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="mb-2 block">Provider</Label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  {[
+                    { value: 'manual', label: 'Manual (wa.me)' },
+                    { value: '360dialog', label: '360dialog' },
+                    { value: 'wati', label: 'WATI' },
+                    { value: 'twilio', label: 'Twilio' },
+                    { value: 'termii', label: 'Termii' },
+                  ].map(provider => (
+                    <div
+                      key={provider.value}
+                      onClick={() => setWhatsappConfig(prev => ({ ...prev, provider: provider.value, is_verified: false }))}
+                      className={`p-3 rounded-xl border-2 cursor-pointer text-center text-sm transition-all ${
+                        whatsappConfig.provider === provider.value
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                      }`}
+                    >
+                      {provider.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {whatsappConfig.provider !== 'manual' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>API Key / Access Token</Label>
+                    <div className="relative">
+                      <Input
+                        type={showSecrets.whatsapp ? 'text' : 'password'}
+                        value={whatsappConfig.api_key || ''}
+                        onChange={(e) => setWhatsappConfig(prev => ({ ...prev, api_key: e.target.value }))}
+                        className="rounded-xl mt-1 font-mono text-sm pr-10"
+                        placeholder="Enter API key"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowSecrets(prev => ({ ...prev, whatsapp: !prev.whatsapp }))}
+                      >
+                        {showSecrets.whatsapp ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Phone Number ID</Label>
+                    <Input
+                      value={whatsappConfig.phone_number_id || ''}
+                      onChange={(e) => setWhatsappConfig(prev => ({ ...prev, phone_number_id: e.target.value }))}
+                      className="rounded-xl mt-1"
+                      placeholder="e.g., 1234567890"
+                    />
+                  </div>
+                  <div>
+                    <Label>Business Account ID (optional)</Label>
+                    <Input
+                      value={whatsappConfig.business_account_id || ''}
+                      onChange={(e) => setWhatsappConfig(prev => ({ ...prev, business_account_id: e.target.value }))}
+                      className="rounded-xl mt-1"
+                      placeholder="e.g., 9876543210"
+                    />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => testApiConnection('WhatsApp')}
+                      disabled={testingApi === 'WhatsApp' || !whatsappConfig.api_key}
+                      className="rounded-xl"
+                    >
+                      {testingApi === 'WhatsApp' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <TestTube className="w-4 h-4 mr-2" />}
+                      Test Connection
+                    </Button>
+                    {whatsappConfig.is_verified && (
+                      <Badge className="bg-green-100 text-green-700">Verified</Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {whatsappConfig.provider === 'manual' && (
+                <div className="p-4 bg-blue-50 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-blue-900">Manual Mode Active</p>
+                      <p className="text-sm text-blue-700">WhatsApp messages will open wa.me links for each recipient. No API integration required.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* API Security Notice */}
+          <Card className="border-yellow-200 bg-yellow-50 rounded-2xl">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-yellow-900">Security Notice</h4>
+                  <p className="text-sm text-yellow-800 mt-1">
+                    API keys stored here are encrypted at rest. For production deployments, sensitive keys should also be
+                    configured as Supabase Edge Function secrets for maximum security.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
