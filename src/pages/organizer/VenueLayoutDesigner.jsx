@@ -3194,7 +3194,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                         <Input
                           type="number"
                           value={selectedObject.seats || 0}
-                          onChange={(e) => updateObject(selectedObject.id, { seats: parseInt(e.target.value) || 0 })}
+                          onChange={(e) => updateObject(selectedObject.id, { seats: e.target.value === '' ? '' : parseInt(e.target.value) })}
                           className="h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs mt-1"
                         />
                       </div>
@@ -3245,7 +3245,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                       <Input
                         type="number"
                         value={selectedObject.rotation || 0}
-                        onChange={(e) => updateObject(selectedObject.id, { rotation: parseInt(e.target.value) || 0 })}
+                        onChange={(e) => updateObject(selectedObject.id, { rotation: e.target.value === '' ? '' : parseInt(e.target.value) })}
                         className="flex-1 h-7 bg-[#1e1e2e] border-[#3d3d4d] text-white text-xs"
                       />
                       <Button
@@ -3389,7 +3389,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                     <Input
                       type="number"
                       value={questionnaireAnswers.guestCount}
-                      onChange={(e) => setQuestionnaireAnswers({...questionnaireAnswers, guestCount: parseInt(e.target.value) || 50})}
+                      onChange={(e) => setQuestionnaireAnswers({...questionnaireAnswers, guestCount: e.target.value === '' ? '' : parseInt(e.target.value)})}
                       className="h-12 bg-[#1e1e2e] border-[#3d3d4d] text-white text-lg"
                       min="10"
                       max="1000"
@@ -3520,7 +3520,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                         <Input
                           type="number"
                           value={questionnaireAnswers.foodStations}
-                          onChange={(e) => setQuestionnaireAnswers({...questionnaireAnswers, foodStations: parseInt(e.target.value) || 0})}
+                          onChange={(e) => setQuestionnaireAnswers({...questionnaireAnswers, foodStations: e.target.value === '' ? '' : parseInt(e.target.value)})}
                           className="w-20 h-8 bg-[#252535] border-[#3d3d4d] text-white text-sm"
                           min="0"
                           max="10"

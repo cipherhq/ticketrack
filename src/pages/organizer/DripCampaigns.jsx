@@ -866,7 +866,7 @@ function StepEditor({ step, onUpdate, onClose }) {
                 type="number"
                 min={1}
                 value={delayValue}
-                onChange={(e) => setDelayValue(parseInt(e.target.value) || 1)}
+                onChange={(e) => setDelayValue(e.target.value === '' ? '' : parseInt(e.target.value))}
                 className="w-20"
               />
               <Select value={delayUnit} onValueChange={setDelayUnit}>

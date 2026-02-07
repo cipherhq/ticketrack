@@ -2481,7 +2481,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                             min="2"
                             max="52"
                             value={formData.recurringOccurrences}
-                            onChange={(e) => handleInputChange('recurringOccurrences', parseInt(e.target.value) || 4)}
+                            onChange={(e) => handleInputChange('recurringOccurrences', e.target.value === '' ? '' : parseInt(e.target.value))}
                             className="h-12 rounded-xl bg-white border-0 w-32"
                           />
                         </div>
@@ -2850,7 +2850,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 value={amount}
                                 onChange={(e) => {
                                   const newAmounts = [...formData.donationAmounts];
-                                  newAmounts[idx] = parseInt(e.target.value) || 0;
+                                  newAmounts[idx] = e.target.value === '' ? '' : parseInt(e.target.value);
                                   handleInputChange('donationAmounts', newAmounts);
                                 }}
                                 className="w-24 px-3 py-2 rounded-lg bg-white border border-green-500/30 text-center font-medium focus:outline-none focus:ring-2 focus:ring-green-500"

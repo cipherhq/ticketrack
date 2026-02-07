@@ -1167,9 +1167,9 @@ export function AdminSettings() {
                       min="0"
                       max="100"
                       value={fastPayoutSettings.min_ticket_sales_percentage}
-                      onChange={(e) => setFastPayoutSettings(prev => ({ 
-                        ...prev, 
-                        min_ticket_sales_percentage: parseFloat(e.target.value) || 50 
+                      onChange={(e) => setFastPayoutSettings(prev => ({
+                        ...prev,
+                        min_ticket_sales_percentage: e.target.value === '' ? '' : parseFloat(e.target.value)
                       }))}
                       className="rounded-xl w-24"
                     />
@@ -1194,7 +1194,7 @@ export function AdminSettings() {
                         min="0"
                         max="100"
                         value={fastPayoutSettings.cap_bronze}
-                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_bronze: parseFloat(e.target.value) || 70 }))}
+                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_bronze: e.target.value === '' ? '' : parseFloat(e.target.value) }))}
                         className="rounded-lg w-16 h-8 text-center"
                       />
                       <span className="text-sm text-[#0F0F0F]/60">%</span>
@@ -1211,7 +1211,7 @@ export function AdminSettings() {
                         min="0"
                         max="100"
                         value={fastPayoutSettings.cap_silver}
-                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_silver: parseFloat(e.target.value) || 80 }))}
+                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_silver: e.target.value === '' ? '' : parseFloat(e.target.value) }))}
                         className="rounded-lg w-16 h-8 text-center"
                       />
                       <span className="text-sm text-[#0F0F0F]/60">%</span>
@@ -1228,7 +1228,7 @@ export function AdminSettings() {
                         min="0"
                         max="100"
                         value={fastPayoutSettings.cap_gold}
-                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_gold: parseFloat(e.target.value) || 90 }))}
+                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_gold: e.target.value === '' ? '' : parseFloat(e.target.value) }))}
                         className="rounded-lg w-16 h-8 text-center"
                       />
                       <span className="text-sm text-[#0F0F0F]/60">%</span>
@@ -1245,7 +1245,7 @@ export function AdminSettings() {
                         min="0"
                         max="100"
                         value={fastPayoutSettings.cap_trusted}
-                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_trusted: parseFloat(e.target.value) || 95 }))}
+                        onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_trusted: e.target.value === '' ? '' : parseFloat(e.target.value) }))}
                         className="rounded-lg w-16 h-8 text-center"
                       />
                       <span className="text-sm text-[#0F0F0F]/60">%</span>
@@ -1291,7 +1291,7 @@ export function AdminSettings() {
                     min="1"
                     max="10"
                     value={fastPayoutSettings.max_requests_per_event}
-                    onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, max_requests_per_event: parseInt(e.target.value) || 3 }))}
+                    onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, max_requests_per_event: e.target.value === '' ? '' : parseInt(e.target.value) }))}
                     className="rounded-xl w-24"
                   />
                 </div>
@@ -1303,7 +1303,7 @@ export function AdminSettings() {
                     min="0"
                     max="168"
                     value={fastPayoutSettings.cooldown_hours}
-                    onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cooldown_hours: parseInt(e.target.value) || 24 }))}
+                    onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cooldown_hours: e.target.value === '' ? '' : parseInt(e.target.value) }))}
                     className="rounded-xl w-24"
                   />
                 </div>
@@ -1736,7 +1736,7 @@ export function AdminSettings() {
                 <Input 
                   type="number"
                   value={limitModal.data.limit_value} 
-                  onChange={(e) => setLimitModal(prev => ({ ...prev, data: { ...prev.data, limit_value: parseInt(e.target.value) || 0 }}))}
+                  onChange={(e) => setLimitModal(prev => ({ ...prev, data: { ...prev.data, limit_value: e.target.value === '' ? '' : parseInt(e.target.value) }}))}
                   className="rounded-xl mt-1"
                 />
               </div>

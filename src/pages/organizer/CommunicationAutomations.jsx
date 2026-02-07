@@ -765,7 +765,7 @@ export function CommunicationAutomations() {
                           <Input
                             type="number"
                             value={action.delayMinutes}
-                            onChange={(e) => updateAction(action.id, 'delayMinutes', parseInt(e.target.value) || 0)}
+                            onChange={(e) => updateAction(action.id, 'delayMinutes', e.target.value === '' ? '' : parseInt(e.target.value))}
                             className="mt-1"
                             min={0}
                           />

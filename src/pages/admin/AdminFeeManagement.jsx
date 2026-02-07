@@ -267,7 +267,7 @@ export function AdminFeeManagement() {
               <Input
                 type="number"
                 value={previewAmount}
-                onChange={(e) => setPreviewAmount(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setPreviewAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
                 className="w-32 rounded-xl mt-1"
               />
             </div>
@@ -276,7 +276,7 @@ export function AdminFeeManagement() {
               <Input
                 type="number"
                 value={previewTickets}
-                onChange={(e) => setPreviewTickets(parseInt(e.target.value) || 1)}
+                onChange={(e) => setPreviewTickets(e.target.value === '' ? '' : parseInt(e.target.value))}
                 className="w-24 rounded-xl mt-1"
                 min="1"
               />
