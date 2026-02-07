@@ -92,14 +92,21 @@ export function EscrowManagement() {
       setStats({ pendingByCurrency, eligibleByCurrency, heldByCurrency, currencies });
     } catch (error) {
       console.error('Error loading escrow data:', error);
+      // Don't show alert for missing table (table may not exist yet)
+      if (!error.message?.includes('does not exist')) {
+        alert('Failed to load escrow data. Please try refreshing the page.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleHoldEscrow = async (escrowId, reason) => {
+    if (!confirm('Are you sure you want to put this escrow on hold? This will prevent automatic payouts.')) {
+      return;
+    }
     try {
-      await supabase
+      const { error } = await supabase
         .from('escrow_balances')
         .update({
           status: 'hold',
@@ -108,16 +115,21 @@ export function EscrowManagement() {
         })
         .eq('id', escrowId);
 
+      if (error) throw error;
       logFinanceAction('hold_escrow', { escrow_id: escrowId });
       loadEscrowData();
     } catch (error) {
       console.error('Error holding escrow:', error);
+      alert('Failed to hold escrow: ' + error.message);
     }
   };
 
   const handleReleaseHold = async (escrowId) => {
+    if (!confirm('Are you sure you want to release this hold? The escrow will become eligible for payout.')) {
+      return;
+    }
     try {
-      await supabase
+      const { error } = await supabase
         .from('escrow_balances')
         .update({
           status: 'eligible',
@@ -127,14 +139,19 @@ export function EscrowManagement() {
         })
         .eq('id', escrowId);
 
+      if (error) throw error;
       logFinanceAction('release_escrow_hold', { escrow_id: escrowId });
       loadEscrowData();
     } catch (error) {
       console.error('Error releasing hold:', error);
+      alert('Failed to release hold: ' + error.message);
     }
   };
 
   const handleProcessPayout = async (escrowId) => {
+    if (!confirm('Are you sure you want to queue this escrow for payout? This will initiate the payout process.')) {
+      return;
+    }
     try {
       const { data, error } = await supabase.rpc('queue_payout_from_escrow', {
         p_escrow_id: escrowId
@@ -142,10 +159,17 @@ export function EscrowManagement() {
 
       if (error) throw error;
 
+      if (data && !data.success) {
+        alert('Failed to queue payout: ' + (data.error || 'Unknown error'));
+        return;
+      }
+
       logFinanceAction('queue_escrow_payout', { escrow_id: escrowId, result: data });
+      alert('Payout queued successfully');
       loadEscrowData();
     } catch (error) {
       console.error('Error processing payout:', error);
+      alert('Failed to process payout: ' + error.message);
     }
   };
 
@@ -256,6 +280,7 @@ export function EscrowManagement() {
                 <SelectItem value="hold">On Hold</SelectItem>
                 <SelectItem value="processing">Processing</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="disputed">Disputed</SelectItem>
               </SelectContent>
             </Select>
             <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
