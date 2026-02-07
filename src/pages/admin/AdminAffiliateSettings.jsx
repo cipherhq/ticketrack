@@ -158,15 +158,15 @@ export function AdminAffiliateSettings() {
 
       const updateData = {
         is_enabled: settings.is_enabled,
-        commission_percent: settings.commission_percent,
-        min_payout: settings.min_payout_ngn, // Keep for backward compatibility
-        min_payout_ngn: settings.min_payout_ngn,
-        min_payout_usd: settings.min_payout_usd,
-        min_payout_gbp: settings.min_payout_gbp,
-        min_payout_ghs: settings.min_payout_ghs,
-        min_payout_cad: settings.min_payout_cad,
-        cookie_days: settings.cookie_days,
-        payout_delay_days: settings.payout_delay_days,
+        commission_percent: settings.commission_percent === '' ? 1.5 : Number(settings.commission_percent),
+        min_payout: settings.min_payout_ngn === '' ? 5000 : Number(settings.min_payout_ngn), // Keep for backward compatibility
+        min_payout_ngn: settings.min_payout_ngn === '' ? 5000 : Number(settings.min_payout_ngn),
+        min_payout_usd: settings.min_payout_usd === '' ? 10 : Number(settings.min_payout_usd),
+        min_payout_gbp: settings.min_payout_gbp === '' ? 8 : Number(settings.min_payout_gbp),
+        min_payout_ghs: settings.min_payout_ghs === '' ? 50 : Number(settings.min_payout_ghs),
+        min_payout_cad: settings.min_payout_cad === '' ? 15 : Number(settings.min_payout_cad),
+        cookie_days: settings.cookie_days === '' ? 7 : Number(settings.cookie_days),
+        payout_delay_days: settings.payout_delay_days === '' ? 7 : Number(settings.payout_delay_days),
         updated_at: new Date().toISOString(),
       };
 
@@ -316,7 +316,7 @@ export function AdminAffiliateSettings() {
                 min="1"
                 max="100"
                 value={settings.commission_percent}
-                onChange={(e) => setSettings({ ...settings, commission_percent: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setSettings({ ...settings, commission_percent: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                 className="rounded-xl"
               />
               <p className="text-xs text-[#0F0F0F]/50">
@@ -334,7 +334,7 @@ export function AdminAffiliateSettings() {
                 min="1"
                 max="90"
                 value={settings.cookie_days}
-                onChange={(e) => setSettings({ ...settings, cookie_days: parseInt(e.target.value) || 7 })}
+                onChange={(e) => setSettings({ ...settings, cookie_days: e.target.value === '' ? '' : parseInt(e.target.value) })}
                 className="rounded-xl"
               />
               <p className="text-xs text-[#0F0F0F]/50">
@@ -355,7 +355,7 @@ export function AdminAffiliateSettings() {
                 min="0"
                 max="30"
                 value={settings.payout_delay_days}
-                onChange={(e) => setSettings({ ...settings, payout_delay_days: parseInt(e.target.value) || 7 })}
+                onChange={(e) => setSettings({ ...settings, payout_delay_days: e.target.value === '' ? '' : parseInt(e.target.value) })}
                 className="rounded-xl"
               />
               <p className="text-xs text-[#0F0F0F]/50">
@@ -382,7 +382,7 @@ export function AdminAffiliateSettings() {
                   type="number"
                   min="100"
                   value={settings.min_payout_ngn}
-                  onChange={(e) => setSettings({ ...settings, min_payout_ngn: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setSettings({ ...settings, min_payout_ngn: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                   className="rounded-xl"
                   placeholder="5000"
                 />
@@ -395,7 +395,7 @@ export function AdminAffiliateSettings() {
                   type="number"
                   min="1"
                   value={settings.min_payout_usd}
-                  onChange={(e) => setSettings({ ...settings, min_payout_usd: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setSettings({ ...settings, min_payout_usd: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                   className="rounded-xl"
                   placeholder="10"
                 />
@@ -408,7 +408,7 @@ export function AdminAffiliateSettings() {
                   type="number"
                   min="1"
                   value={settings.min_payout_gbp}
-                  onChange={(e) => setSettings({ ...settings, min_payout_gbp: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setSettings({ ...settings, min_payout_gbp: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                   className="rounded-xl"
                   placeholder="8"
                 />
@@ -421,7 +421,7 @@ export function AdminAffiliateSettings() {
                   type="number"
                   min="1"
                   value={settings.min_payout_ghs}
-                  onChange={(e) => setSettings({ ...settings, min_payout_ghs: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setSettings({ ...settings, min_payout_ghs: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                   className="rounded-xl"
                   placeholder="50"
                 />
@@ -434,7 +434,7 @@ export function AdminAffiliateSettings() {
                   type="number"
                   min="1"
                   value={settings.min_payout_cad}
-                  onChange={(e) => setSettings({ ...settings, min_payout_cad: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setSettings({ ...settings, min_payout_cad: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                   className="rounded-xl"
                   placeholder="15"
                 />
