@@ -714,7 +714,7 @@ export const sendAdminFlaggedContentEmail = (email, data) =>
     flagId: data.flagId,
   });
 
-export const sendAdminDailyStatsEmail = (email, data) => 
+export const sendAdminDailyStatsEmail = (email, data) =>
   sendEmail('admin_daily_stats', email, {
     date: data.date,
     totalRevenue: data.totalRevenue,
@@ -723,6 +723,21 @@ export const sendAdminDailyStatsEmail = (email, data) =>
     newOrganizers: data.newOrganizers,
     platformFees: data.platformFees,
     currency: data.currency,
+  });
+
+export const sendAdminPayoutCompletedEmail = (email, data) =>
+  sendEmail('admin_payout_completed', email, {
+    organizerName: data.organizerName,
+    organizerEmail: data.organizerEmail,
+    amount: data.amount,
+    netAmount: data.netAmount,
+    platformFee: data.platformFee,
+    currency: data.currency,
+    bankName: data.bankName,
+    accountNumber: data.accountNumber,
+    reference: data.reference,
+    processedAt: data.processedAt || new Date().toISOString(),
+    processedBy: data.processedBy,
   });
 
 // ============================================================================
@@ -818,4 +833,5 @@ export default {
   sendAdminNewEventEmail,
   sendAdminFlaggedContentEmail,
   sendAdminDailyStatsEmail,
+  sendAdminPayoutCompletedEmail,
 };

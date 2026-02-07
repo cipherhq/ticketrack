@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { sendPayoutProcessedEmail, sendAdminPayoutCompletedEmail } from '@/lib/emailService';
 
 export function AdminProcessPayout() {
   const navigate = useNavigate();
@@ -166,6 +167,32 @@ export function AdminProcessPayout() {
         organizer: selectedOrganizer.business_name,
         amount: netAmount,
       });
+
+      // Send email to organizer
+      const organizerEmail = selectedOrganizer.email || selectedOrganizer.business_email;
+      if (organizerEmail) {
+        sendPayoutProcessedEmail(organizerEmail, {
+          amount: netAmount,
+          currency: currency,
+          bankName: bankAccount.bank_name,
+          accountNumber: bankAccount.account_number?.slice(-4) || '****',
+          reference: reference,
+        }, selectedOrganizer.id).catch(err => console.error('Failed to send organizer payout email:', err));
+      }
+
+      // Send email to support/admin
+      sendAdminPayoutCompletedEmail('support@ticketrack.com', {
+        organizerName: selectedOrganizer.business_name,
+        organizerEmail: organizerEmail,
+        amount: amount,
+        netAmount: netAmount,
+        platformFee: platformFee,
+        currency: currency,
+        bankName: bankAccount.bank_name,
+        accountNumber: bankAccount.account_number,
+        reference: reference,
+        processedBy: 'Admin',
+      }).catch(err => console.error('Failed to send admin payout email:', err));
 
       setPayoutResult({
         organizer: selectedOrganizer.business_name,
