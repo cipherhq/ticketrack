@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   Building2, CheckCircle, Clock, Loader2, Search, RefreshCw,
   Banknote, Shield, AlertCircle, Star, History, ChevronDown, ChevronUp,
-  CreditCard, DollarSign, Calendar
+  CreditCard, DollarSign, Calendar, Lock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency, getCurrencySymbol } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+import { sendPayoutProcessedEmail, sendAdminPayoutCompletedEmail } from '@/lib/emailService';
 
 export function BackOfficeFunding() {
-  const { logFinanceAction, financeUser } = useFinance();
+  const { logFinanceAction, financeUser, reAuthenticate } = useFinance();
   const [loading, setLoading] = useState(true);
   const [organizers, setOrganizers] = useState([]);
   const [advanceHistory, setAdvanceHistory] = useState([]);
@@ -25,13 +26,18 @@ export function BackOfficeFunding() {
   const [expandedOrganizers, setExpandedOrganizers] = useState({});
   const [activeTab, setActiveTab] = useState('all');
   const [refreshKey, setRefreshKey] = useState(0);
-  
+
   // Advance payment dialog
   const [advanceDialog, setAdvanceDialog] = useState({ open: false, organizer: null });
   const [advanceAmount, setAdvanceAmount] = useState('');
   const [transactionRef, setTransactionRef] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [processing, setProcessing] = useState(false);
+
+  // Re-authentication state
+  const [reAuthPassword, setReAuthPassword] = useState('');
+  const [reAuthRequired, setReAuthRequired] = useState(true);
+  const [reAuthError, setReAuthError] = useState('');
 
   // Trust dialog
   const [trustDialog, setTrustDialog] = useState({ open: false, organizer: null, action: 'trust' });
@@ -217,6 +223,16 @@ export function BackOfficeFunding() {
     }
   };
 
+  const handleReAuth = async () => {
+    const result = await reAuthenticate(reAuthPassword);
+    if (result.success) {
+      setReAuthRequired(false);
+      setReAuthError('');
+    } else {
+      setReAuthError(result.error || 'Invalid password');
+    }
+  };
+
   const openAdvanceDialog = (organizer) => {
     if (!organizer.is_trusted) {
       alert('⚠️ Please mark this organizer as trusted first before paying an advance.');
@@ -234,19 +250,27 @@ export function BackOfficeFunding() {
     setAdvanceAmount('');
     setTransactionRef('');
     setPaymentNotes('');
+    setReAuthPassword('');
+    setReAuthRequired(true);
+    setReAuthError('');
   };
 
   const processAdvancePayment = async () => {
     if (!advanceDialog.organizer || !advanceAmount) return;
-    
+
+    if (reAuthRequired) {
+      setReAuthError('Please verify your password first');
+      return;
+    }
+
     const amount = parseFloat(advanceAmount);
     const available = advanceDialog.organizer.availableForAdvance;
-    
+
     if (amount <= 0) {
       alert('Please enter a valid amount.');
       return;
     }
-    
+
     if (amount > available) {
       alert(`Amount exceeds available balance of ${formatPrice(available, advanceDialog.organizer.currency)}`);
       return;
@@ -255,6 +279,8 @@ export function BackOfficeFunding() {
     setProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      const currency = advanceDialog.organizer.currency;
+      const bankAccount = advanceDialog.organizer.primaryBank;
 
       // Create advance payment record
       const advanceRef = `ADV-${Date.now().toString(36).toUpperCase()}`;
@@ -263,7 +289,7 @@ export function BackOfficeFunding() {
         organizer_id: advanceDialog.organizer.id,
         available_balance: available,
         advance_amount: amount,
-        currency: advanceDialog.organizer.currency,
+        currency: currency,
         status: 'paid',
         transaction_reference: transactionRef || advanceRef,
         payment_notes: paymentNotes || null,
@@ -279,12 +305,12 @@ export function BackOfficeFunding() {
       // Also create a payout record so it shows in payout history
       const { error: payoutError } = await supabase.from('payouts').insert({
         organizer_id: advanceDialog.organizer.id,
-        bank_account_id: advanceDialog.organizer.primaryBank?.id || null,
+        bank_account_id: bankAccount?.id || null,
         payout_number: advanceRef,
         amount: amount,
         platform_fee_deducted: 0,
         net_amount: amount,
-        currency: advanceDialog.organizer.currency,
+        currency: currency,
         status: 'completed',
         transaction_reference: transactionRef || advanceRef,
         processed_at: new Date().toISOString(),
@@ -298,13 +324,41 @@ export function BackOfficeFunding() {
         amount,
         available_balance: available,
         business_name: advanceDialog.organizer.business_name,
-        reference: transactionRef
+        reference: advanceRef
       });
+
+      // Send email to organizer
+      const organizerEmail = advanceDialog.organizer.email;
+      if (organizerEmail) {
+        sendPayoutProcessedEmail(organizerEmail, {
+          amount: amount,
+          currency: currency,
+          bankName: bankAccount?.bank_name || 'N/A',
+          accountNumber: bankAccount?.account_number?.slice(-4) || '****',
+          reference: advanceRef,
+          isAdvance: true,
+        }, advanceDialog.organizer.id).catch(err => console.error('Failed to send organizer advance email:', err));
+      }
+
+      // Send email to support/admin
+      sendAdminPayoutCompletedEmail('support@ticketrack.com', {
+        organizerName: advanceDialog.organizer.business_name,
+        organizerEmail: organizerEmail,
+        amount: amount,
+        netAmount: amount,
+        platformFee: 0,
+        currency: currency,
+        bankName: bankAccount?.bank_name || 'N/A',
+        accountNumber: bankAccount?.account_number || 'N/A',
+        reference: advanceRef,
+        processedBy: financeUser?.email || 'Finance Admin',
+        isAdvance: true,
+      }).catch(err => console.error('Failed to send admin advance email:', err));
 
       setAdvanceDialog({ open: false, organizer: null });
       setRefreshKey(prev => prev + 1);
-      
-      alert(`✅ Advance payment of ${formatPrice(amount, advanceDialog.organizer.currency)} processed successfully!`);
+
+      alert(`✅ Advance payment of ${formatPrice(amount, currency)} processed successfully!`);
     } catch (error) {
       console.error('Error:', error);
       alert('Failed to process advance payment: ' + error.message);
@@ -614,42 +668,71 @@ export function BackOfficeFunding() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Advance Amount *</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">{getCurrencySymbol(advanceDialog.organizer?.currency)}</span>
-                <Input
-                  type="number"
-                  placeholder="Enter amount"
-                  value={advanceAmount}
-                  onChange={(e) => setAdvanceAmount(e.target.value)}
-                  className="pl-8 rounded-xl text-lg font-semibold"
-                />
+            {/* Re-Authentication */}
+            {reAuthRequired && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
+                <p className="text-sm font-medium text-red-800 flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Security Verification Required
+                </p>
+                <div className="space-y-2">
+                  <Label>Enter your password to continue</Label>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={reAuthPassword}
+                    onChange={(e) => setReAuthPassword(e.target.value)}
+                    className="rounded-xl"
+                  />
+                  {reAuthError && <p className="text-xs text-red-600">{reAuthError}</p>}
+                </div>
+                <Button onClick={handleReAuth} variant="outline" className="w-full rounded-xl">
+                  Verify Password
+                </Button>
               </div>
-              <p className="text-xs text-[#0F0F0F]/60">
-                Maximum: {formatPrice(advanceDialog.organizer?.availableForAdvance, advanceDialog.organizer?.currency)}
-              </p>
-            </div>
+            )}
 
-            <div className="space-y-2">
-              <Label>Transaction Reference (optional)</Label>
-              <Input placeholder="e.g., Bank transfer reference" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} className="rounded-xl" />
-            </div>
+            {/* Payment Details (shown after re-auth) */}
+            {!reAuthRequired && (
+              <>
+                <div className="space-y-2">
+                  <Label>Advance Amount *</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">{getCurrencySymbol(advanceDialog.organizer?.currency)}</span>
+                    <Input
+                      type="number"
+                      placeholder="Enter amount"
+                      value={advanceAmount}
+                      onChange={(e) => setAdvanceAmount(e.target.value)}
+                      className="pl-8 rounded-xl text-lg font-semibold"
+                    />
+                  </div>
+                  <p className="text-xs text-[#0F0F0F]/60">
+                    Maximum: {formatPrice(advanceDialog.organizer?.availableForAdvance, advanceDialog.organizer?.currency)}
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Notes (optional)</Label>
-              <Textarea placeholder="Reason for advance, etc." value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} className="rounded-xl" rows={2} />
-            </div>
+                <div className="space-y-2">
+                  <Label>Transaction Reference (optional)</Label>
+                  <Input placeholder="e.g., Bank transfer reference" value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)} className="rounded-xl" />
+                </div>
 
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-              <p className="text-sm text-blue-800">⚠️ Make sure you have transferred the funds before confirming. This advance will be deducted from the final payout when the event ends.</p>
-            </div>
+                <div className="space-y-2">
+                  <Label>Notes (optional)</Label>
+                  <Textarea placeholder="Reason for advance, etc." value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} className="rounded-xl" rows={2} />
+                </div>
+
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-sm text-blue-800">⚠️ Make sure you have transferred the funds before confirming. This advance will be deducted from the final payout when the event ends.</p>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdvanceDialog({ open: false, organizer: null })} className="rounded-xl">Cancel</Button>
-            <Button 
-              onClick={processAdvancePayment} 
-              disabled={processing || !advanceAmount || parseFloat(advanceAmount) <= 0}
+            <Button
+              onClick={processAdvancePayment}
+              disabled={processing || reAuthRequired || !advanceAmount || parseFloat(advanceAmount) <= 0}
               className="bg-green-600 hover:bg-green-700 rounded-xl"
             >
               {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Banknote className="w-4 h-4 mr-2" />}
