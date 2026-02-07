@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  TrendingUp, DollarSign, Clock, CheckCircle, Users, 
-  Calendar, ArrowRight, Loader2, AlertCircle
+import {
+  TrendingUp, DollarSign, Clock, CheckCircle, Users,
+  Calendar, ArrowRight, Loader2, AlertCircle, Shield,
+  FileText, Lock, BarChart3, Receipt
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
@@ -20,6 +21,9 @@ export function FinanceDashboard() {
     pendingPayouts: 0,
     completedPayouts: 0,
     pendingEventCount: 0,
+    pendingApprovals: 0,
+    openChargebacks: 0,
+    escrowBalance: 0,
     recentPayouts: []
   });
 
@@ -71,11 +75,34 @@ export function FinanceDashboard() {
         .order('processed_at', { ascending: false })
         .limit(5);
 
+      // Pending approvals
+      const { count: approvalCount } = await supabase
+        .from('payout_approval_requests')
+        .select('id', { count: 'exact' })
+        .eq('status', 'pending');
+
+      // Open chargebacks
+      const { count: chargebackCount } = await supabase
+        .from('chargebacks')
+        .select('id', { count: 'exact' })
+        .in('status', ['opened', 'needs_response', 'under_review']);
+
+      // Escrow balance
+      const { data: escrowData } = await supabase
+        .from('escrow_balances')
+        .select('available_balance')
+        .in('status', ['pending', 'eligible']);
+
+      const escrowTotal = escrowData?.reduce((sum, e) => sum + parseFloat(e.available_balance || 0), 0) || 0;
+
       setStats({
         totalRevenue,
         pendingPayouts: pendingAmount,
         completedPayouts: completedAmount,
         pendingEventCount: count || 0,
+        pendingApprovals: approvalCount || 0,
+        openChargebacks: chargebackCount || 0,
+        escrowBalance: escrowTotal,
         recentPayouts: recentPayouts || []
       });
     } catch (error) {
@@ -211,8 +238,8 @@ export function FinanceDashboard() {
               </div>
               <ArrowRight className="w-4 h-4" />
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full justify-between rounded-xl h-14"
               onClick={() => navigate('/finance/revenue/overview')}
             >
@@ -221,6 +248,32 @@ export function FinanceDashboard() {
                 <span>View Revenue Reports</span>
               </div>
               <ArrowRight className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-between rounded-xl h-14"
+              onClick={() => navigate('/finance/approvals')}
+            >
+              <div className="flex items-center gap-3">
+                <Shield className="w-5 h-5 text-orange-600" />
+                <span>Pending Approvals</span>
+              </div>
+              {stats.pendingApprovals > 0 && (
+                <Badge className="bg-orange-100 text-orange-800">{stats.pendingApprovals}</Badge>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-between rounded-xl h-14"
+              onClick={() => navigate('/finance/chargebacks')}
+            >
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span>Chargebacks & Disputes</span>
+              </div>
+              {stats.openChargebacks > 0 && (
+                <Badge className="bg-red-100 text-red-800">{stats.openChargebacks}</Badge>
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -262,6 +315,119 @@ export function FinanceDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Finance Tools Grid */}
+      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <CardHeader>
+          <CardTitle>Finance Tools</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/escrow')}
+            >
+              <Lock className="w-5 h-5 text-blue-600" />
+              <span className="text-xs">Escrow</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/batching')}
+            >
+              <Users className="w-5 h-5 text-green-600" />
+              <span className="text-xs">Batching</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/pnl')}
+            >
+              <BarChart3 className="w-5 h-5 text-purple-600" />
+              <span className="text-xs">P&L</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/settlements')}
+            >
+              <CheckCircle className="w-5 h-5 text-teal-600" />
+              <span className="text-xs">Settlements</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/invoices')}
+            >
+              <FileText className="w-5 h-5 text-indigo-600" />
+              <span className="text-xs">Invoices</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/audit-log')}
+            >
+              <Receipt className="w-5 h-5 text-gray-600" />
+              <span className="text-xs">Audit Log</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/expenses')}
+            >
+              <DollarSign className="w-5 h-5 text-red-600" />
+              <span className="text-xs">Expenses</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/forecast')}
+            >
+              <TrendingUp className="w-5 h-5 text-cyan-600" />
+              <span className="text-xs">Forecast</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/aging')}
+            >
+              <Clock className="w-5 h-5 text-orange-600" />
+              <span className="text-xs">Aging</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
+              onClick={() => navigate('/finance/bank-reconciliation')}
+            >
+              <Calendar className="w-5 h-5 text-pink-600" />
+              <span className="text-xs">Bank Recon</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Escrow Summary */}
+      {stats.escrowBalance > 0 && (
+        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="font-medium text-blue-800">Escrow Balance</p>
+                <p className="text-2xl font-bold text-blue-900">{formatPrice(stats.escrowBalance, 'NGN')}</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate('/finance/escrow')}
+              className="bg-blue-600 hover:bg-blue-700 rounded-xl"
+            >
+              Manage Escrow
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

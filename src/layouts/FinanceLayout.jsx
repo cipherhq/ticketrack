@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useFinance } from '@/contexts/FinanceContext';
-import { 
-  LayoutDashboard, Banknote, Users, Link2, History, 
+import {
+  LayoutDashboard, Banknote, Users, Link2, History,
   TrendingUp, Globe, PieChart, FileText, Settings,
   LogOut, Menu, X, DollarSign, Shield, ChevronDown, ChevronRight,
-  Calendar, UserCheck, Star, Bell, Home
+  Calendar, UserCheck, Star, Bell, Home, Lock, Package,
+  AlertTriangle, CheckCircle, Building, Receipt, BarChart3,
+  Clock, Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +33,33 @@ const navGroups = [
     ]
   },
   {
+    id: 'escrow',
+    label: 'Escrow & Operations',
+    icon: Lock,
+    children: [
+      { label: 'Escrow Management', path: '/finance/escrow', icon: Lock },
+      { label: 'Payment Batching', path: '/finance/batching', icon: Package },
+      { label: 'Pending Approvals', path: '/finance/approvals', icon: CheckCircle, notificationKey: 'pendingApprovals' },
+    ]
+  },
+  {
+    id: 'disputes',
+    label: 'Disputes',
+    icon: AlertTriangle,
+    children: [
+      { label: 'Chargebacks', path: '/finance/chargebacks', icon: AlertTriangle, notificationKey: 'openChargebacks' },
+    ]
+  },
+  {
+    id: 'reconciliation',
+    label: 'Reconciliation',
+    icon: Building,
+    children: [
+      { label: 'Settlements', path: '/finance/settlements', icon: Receipt },
+      { label: 'Bank Reconciliation', path: '/finance/bank-reconciliation', icon: Building },
+    ]
+  },
+  {
     id: 'revenue',
     label: 'Revenue',
     icon: TrendingUp,
@@ -41,10 +70,30 @@ const navGroups = [
     ]
   },
   {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: BarChart3,
+    children: [
+      { label: 'Platform P&L', path: '/finance/pnl', icon: BarChart3 },
+      { label: 'Expenses', path: '/finance/expenses', icon: Receipt },
+      { label: 'Revenue Forecast', path: '/finance/forecast', icon: Target },
+      { label: 'Aging Reports', path: '/finance/aging', icon: Clock },
+    ]
+  },
+  {
     id: 'reports',
     label: 'Reports',
     path: '/finance/reports',
     icon: FileText
+  },
+  {
+    id: 'audit',
+    label: 'Audit & Invoices',
+    icon: FileText,
+    children: [
+      { label: 'Audit Log', path: '/finance/audit-log', icon: History },
+      { label: 'Invoices', path: '/finance/invoices', icon: FileText },
+    ]
   },
   {
     id: 'fees',
@@ -64,7 +113,15 @@ export function FinanceLayout() {
   const navigate = useNavigate();
   const { financeUser, handleLogout, isFinanceAdmin } = useFinance();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [expandedGroups, setExpandedGroups] = useState({ payouts: true, revenue: false });
+  const [expandedGroups, setExpandedGroups] = useState({
+    payouts: true,
+    escrow: false,
+    disputes: false,
+    reconciliation: false,
+    revenue: false,
+    analytics: false,
+    audit: false
+  });
   const { counts } = useFinanceNotifications();
 
   const toggleGroup = (groupId) => {

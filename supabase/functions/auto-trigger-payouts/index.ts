@@ -19,11 +19,17 @@ serve(async (req) => {
 
     console.log("Starting auto-payout process...");
 
+    // Update escrow eligibility first
+    await updateEscrowEligibility(supabase);
+
     // Send pre-payout reminders (24 hours before eligibility)
     await sendPrePayoutReminders(supabase);
 
     // Process Paystack donation payouts (NGN, GHS)
     await processPaystackDonationPayouts(supabase);
+
+    // Process escrow-based payouts
+    await processEscrowPayouts(supabase);
 
     // Intelligent payout scheduling based on event type
     const getPayoutDelayDays = async (eventType: string, eventSize: number): Promise<number> => {
@@ -650,5 +656,149 @@ async function processPaystackDonationPayouts(supabase: any) {
     }
   } catch (error) {
     console.error("Error processing Paystack donation payouts:", error);
+  }
+}
+
+// Update escrow balance eligibility
+async function updateEscrowEligibility(supabase: any) {
+  console.log("Updating escrow eligibility...");
+
+  try {
+    // Call the database function to update eligible escrow balances
+    const { data: count, error } = await supabase.rpc("update_escrow_eligibility");
+
+    if (error) {
+      console.error("Error updating escrow eligibility:", error);
+      return;
+    }
+
+    console.log(`Updated ${count || 0} escrow balances to eligible status`);
+  } catch (error) {
+    console.error("Error in updateEscrowEligibility:", error);
+  }
+}
+
+// Process payouts from eligible escrow balances
+async function processEscrowPayouts(supabase: any) {
+  console.log("Processing escrow-based payouts...");
+
+  try {
+    // Get eligible escrow balances
+    const { data: eligibleEscrows, error: fetchError } = await supabase
+      .from("escrow_balances")
+      .select(`
+        *,
+        organizers (
+          id,
+          business_name,
+          user_id,
+          stripe_connect_id,
+          stripe_connect_status,
+          paystack_recipient_code,
+          flutterwave_subaccount_id,
+          country_code,
+          kyc_status,
+          kyc_verified
+        ),
+        events (
+          id,
+          title
+        )
+      `)
+      .eq("status", "eligible")
+      .gt("available_balance", 0);
+
+    if (fetchError) {
+      console.error("Error fetching eligible escrows:", fetchError);
+      return;
+    }
+
+    if (!eligibleEscrows || eligibleEscrows.length === 0) {
+      console.log("No eligible escrow balances to process");
+      return;
+    }
+
+    console.log(`Found ${eligibleEscrows.length} eligible escrow balances`);
+
+    for (const escrow of eligibleEscrows) {
+      const organizer = escrow.organizers;
+
+      // Skip if no organizer
+      if (!organizer) {
+        console.log(`Skipping escrow ${escrow.id} - no organizer found`);
+        continue;
+      }
+
+      // Check KYC if no payment gateway
+      const hasPaymentGateway =
+        (organizer.stripe_connect_id && organizer.stripe_connect_status === "active") ||
+        organizer.paystack_recipient_code ||
+        organizer.flutterwave_subaccount_id;
+
+      if (!hasPaymentGateway) {
+        const isKYCVerified = organizer.kyc_verified || organizer.kyc_status === "approved";
+        if (!isKYCVerified) {
+          console.log(`Skipping escrow ${escrow.id} - KYC not verified`);
+          continue;
+        }
+      }
+
+      // Queue payout from escrow
+      try {
+        const { data: queueResult, error: queueError } = await supabase.rpc(
+          "queue_payout_from_escrow",
+          { p_escrow_id: escrow.id }
+        );
+
+        if (queueError) {
+          console.error(`Error queueing payout for escrow ${escrow.id}:`, queueError);
+          continue;
+        }
+
+        if (queueResult?.success) {
+          console.log(
+            `Queued payout of ${queueResult.amount} ${escrow.currency} for ${organizer.business_name}`
+          );
+
+          // If approval is not required, process immediately
+          if (!queueResult.requires_approval && queueResult.queue_id) {
+            // Determine which payout function to call based on provider
+            const provider = queueResult.payment_provider || "manual";
+
+            if (provider === "stripe") {
+              await supabase.functions.invoke("trigger-stripe-connect-payout", {
+                body: {
+                  payoutQueueId: queueResult.queue_id,
+                  organizerId: organizer.id,
+                  amount: queueResult.amount,
+                  currency: escrow.currency,
+                },
+              });
+            } else if (provider === "paystack") {
+              await supabase.functions.invoke("trigger-paystack-payout", {
+                body: {
+                  payoutQueueId: queueResult.queue_id,
+                  organizerId: organizer.id,
+                  triggeredBy: "escrow_auto",
+                },
+              });
+            }
+          }
+        }
+      } catch (queueErr) {
+        console.error(`Error processing escrow ${escrow.id}:`, queueErr);
+      }
+    }
+
+    // Log completion
+    await supabase.from("admin_audit_logs").insert({
+      action: "escrow_payouts_processed",
+      entity_type: "escrow",
+      details: {
+        eligible_count: eligibleEscrows.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error processing escrow payouts:", error);
   }
 }

@@ -376,6 +376,18 @@ serve(async (req) => {
           .update({ status: "expired" })
           .eq("id", orderId);
       }
+    } else if (event.type === "charge.dispute.created") {
+      // Handle new chargeback/dispute
+      const dispute = event.data.object;
+      await handleStripeDispute(supabase, stripe, dispute, "opened");
+    } else if (event.type === "charge.dispute.updated") {
+      // Handle dispute status update
+      const dispute = event.data.object;
+      await handleStripeDispute(supabase, stripe, dispute, "updated");
+    } else if (event.type === "charge.dispute.closed") {
+      // Handle dispute resolution
+      const dispute = event.data.object;
+      await handleStripeDisputeClosed(supabase, dispute);
     } else if (event.type === "payout.paid") {
       // Handle payout completion - send notification to organizer
       const payout = event.data.object;
@@ -450,3 +462,188 @@ serve(async (req) => {
     );
   }
 });
+
+// Handle Stripe dispute/chargeback events
+async function handleStripeDispute(supabase: any, stripe: Stripe, dispute: any, action: string) {
+  try {
+    safeLog.info(`Processing Stripe dispute ${dispute.id} - ${action}`);
+
+    // Get the charge to find the order
+    const charge = await stripe.charges.retrieve(dispute.charge as string);
+
+    // Try to find order by payment intent or charge ID
+    let order = null;
+    const { data: orderByIntent } = await supabase
+      .from("orders")
+      .select("*, events(organizer_id, title)")
+      .eq("payment_reference", charge.payment_intent || charge.id)
+      .single();
+
+    order = orderByIntent;
+
+    if (!order) {
+      // Try by metadata
+      if (charge.metadata?.order_id) {
+        const { data: orderById } = await supabase
+          .from("orders")
+          .select("*, events(organizer_id, title)")
+          .eq("id", charge.metadata.order_id)
+          .single();
+        order = orderById;
+      }
+    }
+
+    // Calculate evidence due date
+    const evidenceDueBy = dispute.evidence_details?.due_by
+      ? new Date(dispute.evidence_details.due_by * 1000).toISOString()
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Create or update chargeback record
+    const { data: result, error } = await supabase.rpc("create_chargeback_from_webhook", {
+      p_provider: "stripe",
+      p_provider_dispute_id: dispute.id,
+      p_provider_charge_id: charge.id,
+      p_order_id: order?.id || null,
+      p_disputed_amount: dispute.amount / 100,
+      p_currency: dispute.currency.toUpperCase(),
+      p_reason: dispute.reason,
+      p_reason_code: dispute.reason,
+      p_evidence_due_by: evidenceDueBy,
+      p_provider_data: JSON.stringify(dispute),
+    });
+
+    if (error) {
+      logError("create_stripe_chargeback", error, { dispute_id: dispute.id });
+      return;
+    }
+
+    // Send notification to organizer
+    if (order?.events?.organizer_id) {
+      const { data: organizer } = await supabase
+        .from("organizers")
+        .select("business_name, user_id")
+        .eq("id", order.events.organizer_id)
+        .single();
+
+      if (organizer?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", organizer.user_id)
+          .single();
+
+        if (profile?.email) {
+          await sendEmailWithServiceRole({
+            type: "chargeback_received",
+            to: profile.email,
+            data: {
+              organizerName: organizer.business_name,
+              eventTitle: order.events?.title || "Event",
+              orderNumber: order.order_number,
+              amount: (dispute.amount / 100).toFixed(2),
+              currency: dispute.currency.toUpperCase(),
+              reason: dispute.reason,
+              evidenceDueBy: new Date(evidenceDueBy).toLocaleDateString(),
+              chargebackUrl: "https://ticketrack.com/organizer/chargebacks",
+            },
+          });
+        }
+      }
+    }
+
+    // Also notify finance team
+    await sendEmailWithServiceRole({
+      type: "chargeback_alert",
+      to: Deno.env.get("FINANCE_ADMIN_EMAIL") || "finance@ticketrack.com",
+      data: {
+        disputeId: dispute.id,
+        orderId: order?.id,
+        amount: (dispute.amount / 100).toFixed(2),
+        currency: dispute.currency.toUpperCase(),
+        reason: dispute.reason,
+        eventTitle: order?.events?.title || "Unknown",
+      },
+    });
+
+    safeLog.info(`Stripe dispute ${dispute.id} recorded successfully`);
+  } catch (err) {
+    logError("handle_stripe_dispute", err, { dispute_id: dispute.id });
+  }
+}
+
+// Handle Stripe dispute closure
+async function handleStripeDisputeClosed(supabase: any, dispute: any) {
+  try {
+    safeLog.info(`Processing closed Stripe dispute ${dispute.id}`);
+
+    // Map Stripe status to our status
+    let resolution: string;
+    let status: string;
+
+    switch (dispute.status) {
+      case "won":
+        resolution = "won";
+        status = "won";
+        break;
+      case "lost":
+        resolution = "lost";
+        status = "lost";
+        break;
+      case "warning_closed":
+        resolution = "withdrawn";
+        status = "withdrawn";
+        break;
+      default:
+        resolution = "lost";
+        status = "closed";
+    }
+
+    // Update chargeback status
+    const { data: chargeback } = await supabase
+      .from("chargebacks")
+      .select("id, organizer_id, disputed_amount, currency")
+      .eq("provider_dispute_id", dispute.id)
+      .single();
+
+    if (chargeback) {
+      await supabase.rpc("update_chargeback_status", {
+        p_chargeback_id: chargeback.id,
+        p_new_status: status,
+        p_resolution: resolution,
+        p_notes: `Dispute ${dispute.status} via Stripe webhook`,
+      });
+
+      // Send resolution notification
+      const { data: organizer } = await supabase
+        .from("organizers")
+        .select("business_name, user_id")
+        .eq("id", chargeback.organizer_id)
+        .single();
+
+      if (organizer?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", organizer.user_id)
+          .single();
+
+        if (profile?.email) {
+          await sendEmailWithServiceRole({
+            type: resolution === "won" ? "chargeback_won" : "chargeback_lost",
+            to: profile.email,
+            data: {
+              organizerName: organizer.business_name,
+              amount: chargeback.disputed_amount,
+              currency: chargeback.currency,
+              resolution,
+            },
+          });
+        }
+      }
+    }
+
+    safeLog.info(`Stripe dispute ${dispute.id} closed: ${resolution}`);
+  } catch (err) {
+    logError("handle_stripe_dispute_closed", err, { dispute_id: dispute.id });
+  }
+}

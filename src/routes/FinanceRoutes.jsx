@@ -14,6 +14,19 @@ import { RevenueByCategory } from '@/pages/finance/RevenueByCategory';
 import { FinanceReports } from '@/pages/finance/FinanceReports';
 import { FinanceSettings } from '@/pages/finance/FinanceSettings';
 import { AdminFeeManagement } from "@/pages/admin/AdminFeeManagement";
+import { EscrowManagement } from '@/pages/finance/EscrowManagement';
+import { TransactionAuditLog } from '@/pages/finance/TransactionAuditLog';
+import { ChargebacksManagement } from '@/pages/finance/ChargebacksManagement';
+import { ChargebackDetail } from '@/pages/finance/ChargebackDetail';
+import { PlatformPnL } from '@/pages/finance/PlatformPnL';
+import { SettlementReports } from '@/pages/finance/SettlementReports';
+import { BankReconciliation } from '@/pages/finance/BankReconciliation';
+import { InvoiceGeneration } from '@/pages/finance/InvoiceGeneration';
+import { PaymentBatching } from '@/pages/finance/PaymentBatching';
+import { PendingApprovals } from '@/pages/finance/PendingApprovals';
+import { ExpenseTracking } from '@/pages/finance/ExpenseTracking';
+import { RevenueForecast } from '@/pages/finance/RevenueForecast';
+import { AgingReports } from '@/pages/finance/AgingReports';
 import { Loader2 } from "lucide-react";
 // Auth guard component
 function FinanceGuard({ children }) {
@@ -68,6 +81,31 @@ export function FinanceRoutes() {
         <Route path="reports" element={<FinanceReports />} />
         <Route path="settings" element={<FinanceSettings />} />
         <Route path="fees" element={<AdminFeeManagement />} />
+
+        {/* Escrow & Payouts Management */}
+        <Route path="escrow" element={<EscrowManagement />} />
+        <Route path="batching" element={<PaymentBatching />} />
+        <Route path="approvals" element={<PendingApprovals />} />
+
+        {/* Chargebacks & Disputes */}
+        <Route path="chargebacks" element={<ChargebacksManagement />} />
+        <Route path="chargebacks/:id" element={<ChargebackDetail />} />
+
+        {/* Reconciliation & Settlements */}
+        <Route path="settlements" element={<SettlementReports />} />
+        <Route path="bank-reconciliation" element={<BankReconciliation />} />
+
+        {/* Audit & Transactions */}
+        <Route path="audit-log" element={<TransactionAuditLog />} />
+
+        {/* P&L & Analytics */}
+        <Route path="pnl" element={<PlatformPnL />} />
+        <Route path="expenses" element={<ExpenseTracking />} />
+        <Route path="forecast" element={<RevenueForecast />} />
+        <Route path="aging" element={<AgingReports />} />
+
+        {/* Invoicing */}
+        <Route path="invoices" element={<InvoiceGeneration />} />
       </Route>      
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/finance/dashboard" replace />} />

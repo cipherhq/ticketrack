@@ -127,6 +127,22 @@ serve(async (req) => {
         break;
       }
 
+      // Chargeback/Dispute events
+      case "charge.dispute.create": {
+        await handlePaystackDispute(supabase, event.data, "opened");
+        break;
+      }
+
+      case "charge.dispute.remind": {
+        await handlePaystackDispute(supabase, event.data, "reminder");
+        break;
+      }
+
+      case "charge.dispute.resolve": {
+        await handlePaystackDisputeResolved(supabase, event.data);
+        break;
+      }
+
       default:
         safeLog.debug(`Unhandled Paystack event: ${event.event}`);
     }
@@ -762,7 +778,7 @@ async function handleTransferReversed(supabase: any, data: any) {
 
 async function handleRefundProcessed(supabase: any, data: any) {
   const { reference, amount, transaction_reference } = data;
-  
+
   safeLog.info(`Processing refund for transaction: ${transaction_reference}`);
 
   // Find the refund request
@@ -784,5 +800,188 @@ async function handleRefundProcessed(supabase: any, data: any) {
       .eq("id", refund.id);
 
     safeLog.info(`Refund ${refund.id} marked as completed`);
+  }
+}
+
+// Handle Paystack dispute/chargeback events
+async function handlePaystackDispute(supabase: any, data: any, action: string) {
+  try {
+    const { id, status, transaction, amount, currency, reason, due_date, resolution_deadline } = data;
+
+    safeLog.info(`Processing Paystack dispute ${id} - ${action}`);
+
+    // Find order by transaction reference
+    let order = null;
+    if (transaction?.reference) {
+      const { data: orderData } = await supabase
+        .from("orders")
+        .select("*, events(organizer_id, title)")
+        .eq("payment_reference", transaction.reference)
+        .single();
+      order = orderData;
+    }
+
+    // Calculate evidence due date
+    const evidenceDueBy = resolution_deadline || due_date
+      ? new Date(resolution_deadline || due_date).toISOString()
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Map Paystack dispute status
+    const chargebackStatus = status === "pending" ? "needs_response" : status;
+
+    // Create or update chargeback record
+    const { data: result, error } = await supabase.rpc("create_chargeback_from_webhook", {
+      p_provider: "paystack",
+      p_provider_dispute_id: id?.toString(),
+      p_provider_charge_id: transaction?.reference || transaction?.id?.toString(),
+      p_order_id: order?.id || null,
+      p_disputed_amount: (amount || 0) / 100,
+      p_currency: currency || "NGN",
+      p_reason: reason || "Customer dispute",
+      p_reason_code: reason,
+      p_evidence_due_by: evidenceDueBy,
+      p_provider_data: JSON.stringify(data),
+    });
+
+    if (error) {
+      logError("create_paystack_chargeback", error, { dispute_id: id });
+      return;
+    }
+
+    // Send notification to organizer
+    if (order?.events?.organizer_id) {
+      const { data: organizer } = await supabase
+        .from("organizers")
+        .select("business_name, user_id")
+        .eq("id", order.events.organizer_id)
+        .single();
+
+      if (organizer?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", organizer.user_id)
+          .single();
+
+        if (profile?.email) {
+          const emailType = action === "reminder" ? "chargeback_reminder" : "chargeback_received";
+          await sendEmailWithServiceRole({
+            type: emailType,
+            to: profile.email,
+            data: {
+              organizerName: organizer.business_name,
+              eventTitle: order.events?.title || "Event",
+              orderNumber: order.order_number,
+              amount: ((amount || 0) / 100).toFixed(2),
+              currency: currency || "NGN",
+              reason: reason || "Customer dispute",
+              evidenceDueBy: new Date(evidenceDueBy).toLocaleDateString(),
+              chargebackUrl: "https://ticketrack.com/organizer/chargebacks",
+            },
+          });
+        }
+      }
+    }
+
+    // Also notify finance team
+    await sendEmailWithServiceRole({
+      type: "chargeback_alert",
+      to: Deno.env.get("FINANCE_ADMIN_EMAIL") || "finance@ticketrack.com",
+      data: {
+        disputeId: id,
+        orderId: order?.id,
+        amount: ((amount || 0) / 100).toFixed(2),
+        currency: currency || "NGN",
+        reason: reason || "Customer dispute",
+        eventTitle: order?.events?.title || "Unknown",
+        provider: "Paystack",
+      },
+    });
+
+    safeLog.info(`Paystack dispute ${id} recorded successfully`);
+  } catch (err) {
+    logError("handle_paystack_dispute", err, { data });
+  }
+}
+
+// Handle Paystack dispute resolution
+async function handlePaystackDisputeResolved(supabase: any, data: any) {
+  try {
+    const { id, status, resolution } = data;
+
+    safeLog.info(`Processing resolved Paystack dispute ${id}`);
+
+    // Map Paystack resolution to our status
+    let ourResolution: string;
+    let ourStatus: string;
+
+    switch (resolution || status) {
+      case "merchant-accepted":
+      case "accepted":
+        ourResolution = "lost";
+        ourStatus = "lost";
+        break;
+      case "declined":
+      case "merchant-declined":
+        ourResolution = "won";
+        ourStatus = "won";
+        break;
+      case "resolved":
+        // Check if in merchant's favor
+        ourResolution = status === "resolved" ? "won" : "lost";
+        ourStatus = ourResolution;
+        break;
+      default:
+        ourResolution = "lost";
+        ourStatus = "closed";
+    }
+
+    // Update chargeback status
+    const { data: chargeback } = await supabase
+      .from("chargebacks")
+      .select("id, organizer_id, disputed_amount, currency")
+      .eq("provider_dispute_id", id?.toString())
+      .single();
+
+    if (chargeback) {
+      await supabase.rpc("update_chargeback_status", {
+        p_chargeback_id: chargeback.id,
+        p_new_status: ourStatus,
+        p_resolution: ourResolution,
+        p_notes: `Dispute resolved via Paystack webhook: ${resolution || status}`,
+      });
+
+      // Send resolution notification
+      const { data: organizer } = await supabase
+        .from("organizers")
+        .select("business_name, user_id")
+        .eq("id", chargeback.organizer_id)
+        .single();
+
+      if (organizer?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", organizer.user_id)
+          .single();
+
+        if (profile?.email) {
+          await sendEmailWithServiceRole({
+            type: ourResolution === "won" ? "chargeback_won" : "chargeback_lost",
+            to: profile.email,
+            data: {
+              organizerName: organizer.business_name,
+              amount: chargeback.disputed_amount,
+              currency: chargeback.currency,
+              resolution: ourResolution,
+            },
+          });
+        }
+      }
+    }
+
+    safeLog.info(`Paystack dispute ${id} resolved: ${ourResolution}`);
+  } catch (err) {
+    logError("handle_paystack_dispute_resolved", err, { data });
   }
 }
