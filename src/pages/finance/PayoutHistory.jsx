@@ -166,7 +166,7 @@ export function PayoutHistory() {
       p.type,
       p.recipientName,
       p.recipientEmail,
-      p.eventTitle || '-',
+      p.eventTitle || (p.notes ? p.notes.replace('Events: ', '').replace('Event: ', '') : '-'),
       p.amount || '-',
       p.net_amount || p.amount || '-',
       p.currency || getDefaultCurrency(p.country_code)
