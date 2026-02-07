@@ -9,21 +9,33 @@ import {
   FileText, Lock, BarChart3, Receipt
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+
+// Helper to format currency object as multi-currency string
+const formatCurrencyBreakdown = (currencyObj) => {
+  if (!currencyObj || Object.keys(currencyObj).length === 0) {
+    return 'Free';
+  }
+
+  const entries = Object.entries(currencyObj).filter(([_, amount]) => amount > 0);
+  if (entries.length === 0) return 'Free';
+
+  return entries.map(([currency, amount]) => formatPrice(amount, currency)).join(' · ');
+};
 
 export function FinanceDashboard() {
   const navigate = useNavigate();
   const { financeUser, logFinanceAction } = useFinance();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalRevenue: 0,
-    pendingPayouts: 0,
-    completedPayouts: 0,
+    revenueByCurrency: {},
+    pendingPayoutsByCurrency: {},
+    completedPayoutsByCurrency: {},
     pendingEventCount: 0,
     pendingApprovals: 0,
     openChargebacks: 0,
-    escrowBalance: 0,
+    escrowByCurrency: {},
     recentPayouts: []
   });
 
@@ -35,13 +47,18 @@ export function FinanceDashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Total platform revenue
+      // Total platform revenue by currency
       const { data: orders } = await supabase
         .from('orders')
-        .select('platform_fee')
+        .select('platform_fee, currency')
         .eq('status', 'completed');
-      
-      const totalRevenue = orders?.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0) || 0;
+
+      const revenueByCurrency = {};
+      orders?.forEach(o => {
+        const currency = o.currency || 'NGN';
+        const fee = parseFloat(o.platform_fee || 0);
+        revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + fee;
+      });
 
       // Pending events count (ended but not paid)
       const now = new Date().toISOString();
@@ -51,21 +68,31 @@ export function FinanceDashboard() {
         .lt('end_date', now)
         .neq('payout_status', 'paid');
 
-      // Completed payouts
+      // Completed payouts by currency
       const { data: completedPayouts } = await supabase
         .from('payouts')
-        .select('net_amount')
+        .select('net_amount, currency')
         .eq('status', 'completed');
-      
-      const completedAmount = completedPayouts?.reduce((sum, p) => sum + parseFloat(p.net_amount || 0), 0) || 0;
 
-      // Pending payouts
+      const completedPayoutsByCurrency = {};
+      completedPayouts?.forEach(p => {
+        const currency = p.currency || 'NGN';
+        const amount = parseFloat(p.net_amount || 0);
+        completedPayoutsByCurrency[currency] = (completedPayoutsByCurrency[currency] || 0) + amount;
+      });
+
+      // Pending payouts by currency
       const { data: pendingPayoutsData } = await supabase
         .from('payouts')
-        .select('net_amount')
+        .select('net_amount, currency')
         .in('status', ['pending', 'processing']);
-      
-      const pendingAmount = pendingPayoutsData?.reduce((sum, p) => sum + parseFloat(p.net_amount || 0), 0) || 0;
+
+      const pendingPayoutsByCurrency = {};
+      pendingPayoutsData?.forEach(p => {
+        const currency = p.currency || 'NGN';
+        const amount = parseFloat(p.net_amount || 0);
+        pendingPayoutsByCurrency[currency] = (pendingPayoutsByCurrency[currency] || 0) + amount;
+      });
 
       // Recent payout activity
       const { data: recentPayouts } = await supabase
@@ -87,22 +114,27 @@ export function FinanceDashboard() {
         .select('id', { count: 'exact' })
         .in('status', ['opened', 'needs_response', 'under_review']);
 
-      // Escrow balance
+      // Escrow balance by currency
       const { data: escrowData } = await supabase
         .from('escrow_balances')
-        .select('available_balance')
+        .select('available_balance, currency')
         .in('status', ['pending', 'eligible']);
 
-      const escrowTotal = escrowData?.reduce((sum, e) => sum + parseFloat(e.available_balance || 0), 0) || 0;
+      const escrowByCurrency = {};
+      escrowData?.forEach(e => {
+        const currency = e.currency || 'NGN';
+        const amount = parseFloat(e.available_balance || 0);
+        escrowByCurrency[currency] = (escrowByCurrency[currency] || 0) + amount;
+      });
 
       setStats({
-        totalRevenue,
-        pendingPayouts: pendingAmount,
-        completedPayouts: completedAmount,
+        revenueByCurrency,
+        pendingPayoutsByCurrency,
+        completedPayoutsByCurrency,
         pendingEventCount: count || 0,
         pendingApprovals: approvalCount || 0,
         openChargebacks: chargebackCount || 0,
-        escrowBalance: escrowTotal,
+        escrowByCurrency,
         recentPayouts: recentPayouts || []
       });
     } catch (error) {
@@ -159,7 +191,7 @@ export function FinanceDashboard() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Platform Revenue</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.totalRevenue, 'NGN')}</p>
+                <p className="text-xl font-bold text-[#0F0F0F]">{formatCurrencyBreakdown(stats.revenueByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -173,7 +205,7 @@ export function FinanceDashboard() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.pendingPayouts, 'NGN')}</p>
+                <p className="text-xl font-bold text-[#0F0F0F]">{formatCurrencyBreakdown(stats.pendingPayoutsByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -187,7 +219,7 @@ export function FinanceDashboard() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Paid Out</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(stats.completedPayouts, 'NGN')}</p>
+                <p className="text-xl font-bold text-[#0F0F0F]">{formatCurrencyBreakdown(stats.completedPayoutsByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -408,14 +440,14 @@ export function FinanceDashboard() {
       </Card>
 
       {/* Escrow Summary */}
-      {stats.escrowBalance > 0 && (
+      {Object.keys(stats.escrowByCurrency).length > 0 && Object.values(stats.escrowByCurrency).some(v => v > 0) && (
         <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Lock className="w-5 h-5 text-blue-600" />
               <div>
                 <p className="font-medium text-blue-800">Escrow Balance</p>
-                <p className="text-2xl font-bold text-blue-900">{formatPrice(stats.escrowBalance, 'NGN')}</p>
+                <p className="text-xl font-bold text-blue-900">{formatCurrencyBreakdown(stats.escrowByCurrency)}</p>
               </div>
             </div>
             <Button
