@@ -257,6 +257,7 @@ export function BackOfficeFunding() {
       const { data: { user } } = await supabase.auth.getUser();
 
       // Create advance payment record
+      const advanceRef = `ADV-${Date.now().toString(36).toUpperCase()}`;
       const { error } = await supabase.from('advance_payments').insert({
         recipient_type: 'organizer',
         organizer_id: advanceDialog.organizer.id,
@@ -264,7 +265,7 @@ export function BackOfficeFunding() {
         advance_amount: amount,
         currency: advanceDialog.organizer.currency,
         status: 'paid',
-        transaction_reference: transactionRef || null,
+        transaction_reference: transactionRef || advanceRef,
         payment_notes: paymentNotes || null,
         approved_by: user.id,
         approved_at: new Date().toISOString(),
@@ -274,6 +275,24 @@ export function BackOfficeFunding() {
       });
 
       if (error) throw error;
+
+      // Also create a payout record so it shows in payout history
+      const { error: payoutError } = await supabase.from('payouts').insert({
+        organizer_id: advanceDialog.organizer.id,
+        bank_account_id: advanceDialog.organizer.primaryBank?.id || null,
+        payout_number: advanceRef,
+        amount: amount,
+        platform_fee_deducted: 0,
+        net_amount: amount,
+        currency: advanceDialog.organizer.currency,
+        status: 'completed',
+        transaction_reference: transactionRef || advanceRef,
+        processed_at: new Date().toISOString(),
+        is_advance: true,
+        notes: `Advance Payment${paymentNotes ? ': ' + paymentNotes : ''}`
+      });
+
+      if (payoutError) console.error('Failed to create payout record:', payoutError);
 
       await logFinanceAction('advance_payment', 'organizer', advanceDialog.organizer.id, {
         amount,

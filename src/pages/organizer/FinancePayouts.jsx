@@ -738,25 +738,32 @@ Status,${payout.status}
           ) : (
             <div className="space-y-3">
               {payoutHistory.map((payout) => (
-                <div key={payout.id} className="p-4 rounded-xl bg-[#F4F6FA]">
+                <div key={payout.id} className={`p-4 rounded-xl ${payout.is_advance ? 'bg-purple-50' : 'bg-[#F4F6FA]'}`}>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
-                      <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.payout_number || 'Payout'}</h4>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium text-[#0F0F0F]">{payout.payout_number || 'Payout'}</h4>
+                        {payout.is_advance && (
+                          <Badge className="bg-purple-100 text-purple-700 text-xs">Advance</Badge>
+                        )}
+                      </div>
                       <p className="text-sm text-[#0F0F0F]/60">{formatDate(payout.processed_at || payout.created_at)}</p>
                       {payout.notes && (
-                        <p className="text-xs text-[#2969FF] mt-1">{payout.notes.replace('Events: ', '')}</p>
+                        <p className="text-xs text-[#2969FF] mt-1">{payout.notes.replace('Events: ', '').replace('Advance Payment: ', '').replace('Advance Payment', '')}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-green-600 font-medium">{formatPrice(payout.net_amount || payout.amount, payout.currency)}</p>
-                        {payout.net_amount && payout.amount && payout.net_amount !== payout.amount && (
+                        <p className={`font-medium ${payout.is_advance ? 'text-purple-600' : 'text-green-600'}`}>{formatPrice(payout.net_amount || payout.amount, payout.currency)}</p>
+                        {payout.net_amount && payout.amount && payout.net_amount !== payout.amount && !payout.is_advance && (
                           <p className="text-xs text-[#0F0F0F]/40">Gross: {formatPrice(payout.amount, payout.currency)}</p>
                         )}
                       </div>
                       <Badge
                         className={`${
-                          payout.status === 'completed'
+                          payout.is_advance
+                            ? 'bg-purple-100 text-purple-700'
+                            : payout.status === 'completed'
                             ? 'bg-green-100 text-green-700'
                             : payout.status === 'processing'
                             ? 'bg-blue-100 text-blue-700'
@@ -765,7 +772,7 @@ Status,${payout.status}
                             : 'bg-[#0F0F0F]/10 text-[#0F0F0F]/60'
                         }`}
                       >
-                        {payout.status}
+                        {payout.is_advance ? 'advance' : payout.status}
                       </Badge>
                     </div>
                   </div>

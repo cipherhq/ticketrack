@@ -301,7 +301,11 @@ export function PayoutHistory() {
                       <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.net_amount || payout.amount, payout.currency || getDefaultCurrency(payout.country_code))}</p>
                       <p className="text-xs text-[#0F0F0F]/40">{payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}</p>
                     </div>
-                    <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>
+                    {payout.is_advance ? (
+                      <Badge className="bg-purple-100 text-purple-800"><DollarSign className="w-3 h-3 mr-1" />Advance</Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>
+                    )}
                   </div>
                 </div>
               ))}
@@ -326,9 +330,15 @@ export function PayoutHistory() {
               <div className="bg-[#F4F6FA] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-[#0F0F0F]/60">Reference</span>
-                  <Badge className="bg-green-100 text-green-800">
-                    <CheckCircle className="w-3 h-3 mr-1" />Completed
-                  </Badge>
+                  {selectedPayout.is_advance ? (
+                    <Badge className="bg-purple-100 text-purple-800">
+                      <DollarSign className="w-3 h-3 mr-1" />Advance Payout
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-green-100 text-green-800">
+                      <CheckCircle className="w-3 h-3 mr-1" />Completed
+                    </Badge>
+                  )}
                 </div>
                 <p className="font-mono text-lg font-semibold text-[#0F0F0F]">
                   {selectedPayout.reference || selectedPayout.payout_number || 'N/A'}
