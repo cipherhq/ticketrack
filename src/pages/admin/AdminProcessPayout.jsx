@@ -124,6 +124,8 @@ export function AdminProcessPayout() {
 
       // Create payout record
       const currency = getCurrencyFromCountry(selectedOrganizer.country_code);
+      const eventTitles = pendingEvents.map(e => e.title).join(', ');
+      const eventIds = pendingEvents.map(e => e.id);
       const { data: payout, error: payoutError } = await supabase
         .from('payouts')
         .insert({
@@ -137,6 +139,8 @@ export function AdminProcessPayout() {
           status: 'completed',
           transaction_reference: reference,
           processed_at: new Date().toISOString(),
+          event_ids: eventIds,
+          notes: eventTitles ? `Events: ${eventTitles}` : null,
         })
         .select()
         .single();

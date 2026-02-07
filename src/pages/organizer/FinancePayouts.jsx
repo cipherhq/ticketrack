@@ -739,10 +739,13 @@ Status,${payout.status}
             <div className="space-y-3">
               {payoutHistory.map((payout) => (
                 <div key={payout.id} className="p-4 rounded-xl bg-[#F4F6FA]">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
                       <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.payout_number || 'Payout'}</h4>
                       <p className="text-sm text-[#0F0F0F]/60">{formatDate(payout.processed_at || payout.created_at)}</p>
+                      {payout.notes && (
+                        <p className="text-xs text-[#2969FF] mt-1">{payout.notes.replace('Events: ', '')}</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">

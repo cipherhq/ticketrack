@@ -289,6 +289,11 @@ export function PayoutHistory() {
                       {payout.reference && (
                         <p className="text-xs text-[#2969FF] font-mono">{payout.reference}</p>
                       )}
+                      {(payout.eventTitle || payout.notes) && (
+                        <p className="text-xs text-[#0F0F0F]/50 mt-1">
+                          {payout.eventTitle || payout.notes?.replace('Events: ', '')}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
@@ -349,14 +354,31 @@ export function PayoutHistory() {
                     <p className="text-[#0F0F0F]/60">Email</p>
                     <p className="font-medium">{selectedPayout.recipientEmail}</p>
                   </div>
-                  {selectedPayout.eventTitle && (
-                    <div className="col-span-2">
-                      <p className="text-[#0F0F0F]/60">Event</p>
-                      <p className="font-medium">{selectedPayout.eventTitle}</p>
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {/* Event Info */}
+              {(selectedPayout.eventTitle || selectedPayout.notes || selectedPayout.event_ids?.length > 0) && (
+                <div className="border border-[#0F0F0F]/10 rounded-xl p-4 space-y-3">
+                  <h4 className="font-medium text-[#0F0F0F] flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Event{selectedPayout.event_ids?.length > 1 ? 's' : ''}
+                  </h4>
+                  <div className="text-sm">
+                    {selectedPayout.eventTitle && (
+                      <p className="font-medium text-[#2969FF]">{selectedPayout.eventTitle}</p>
+                    )}
+                    {selectedPayout.notes && !selectedPayout.eventTitle && (
+                      <p className="font-medium">{selectedPayout.notes.replace('Events: ', '')}</p>
+                    )}
+                    {selectedPayout.event_ids?.length > 0 && (
+                      <p className="text-[#0F0F0F]/40 text-xs mt-1">
+                        {selectedPayout.event_ids.length} event{selectedPayout.event_ids.length > 1 ? 's' : ''} included
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Amount Breakdown */}
               <div className="border border-[#0F0F0F]/10 rounded-xl p-4 space-y-3">
