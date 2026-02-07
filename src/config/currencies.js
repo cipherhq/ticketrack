@@ -52,6 +52,12 @@ export const getCurrency = (code) => {
   return currencies[code];
 };
 
+// Get currency symbol by code
+export const getCurrencySymbol = (code) => {
+  const currency = getCurrency(code);
+  return currency?.symbol || '$';
+};
+
 // Format price with currency - currency is REQUIRED
 export const formatPrice = (amount, currencyCode) => {
   if (!currencyCode) {

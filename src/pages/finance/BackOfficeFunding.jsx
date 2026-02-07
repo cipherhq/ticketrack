@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency, getCurrencySymbol } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
 export function BackOfficeFunding() {
@@ -301,12 +301,20 @@ export function BackOfficeFunding() {
            org.email?.toLowerCase().includes(query);
   });
 
-  // Stats
+  // Stats - group by currency
   const totalTrusted = organizers.filter(o => o.is_trusted).length;
-  const totalAvailableBalance = organizers.reduce((sum, o) => sum + o.availableForAdvance, 0);
-  const totalAdvancesPaid = advanceHistory
+  const availableBalanceByCurrency = {};
+  organizers.forEach(o => {
+    const currency = o.currency || 'USD';
+    availableBalanceByCurrency[currency] = (availableBalanceByCurrency[currency] || 0) + o.availableForAdvance;
+  });
+  const advancesPaidByCurrency = {};
+  advanceHistory
     .filter(a => a.status === 'paid')
-    .reduce((sum, a) => sum + parseFloat(a.advance_amount || 0), 0);
+    .forEach(a => {
+      const currency = a.currency || 'USD';
+      advancesPaidByCurrency[currency] = (advancesPaidByCurrency[currency] || 0) + parseFloat(a.advance_amount || 0);
+    });
 
   return (
     <div className="space-y-6">
@@ -357,7 +365,7 @@ export function BackOfficeFunding() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Available Balance</p>
-                <p className="font-bold text-[#0F0F0F]">{formatPrice(totalAvailableBalance, 'NGN')}</p>
+                <p className="font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(availableBalanceByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -370,7 +378,7 @@ export function BackOfficeFunding() {
               </div>
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Total Advances Paid</p>
-                <p className="font-bold text-green-600">{formatPrice(totalAdvancesPaid, 'NGN')}</p>
+                <p className="font-bold text-green-600">{formatMultiCurrencyCompact(advancesPaidByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -590,12 +598,12 @@ export function BackOfficeFunding() {
             <div className="space-y-2">
               <Label>Advance Amount *</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">₦</span>
-                <Input 
-                  type="number" 
-                  placeholder="Enter amount" 
-                  value={advanceAmount} 
-                  onChange={(e) => setAdvanceAmount(e.target.value)} 
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">{getCurrencySymbol(advanceDialog.organizer?.currency)}</span>
+                <Input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={advanceAmount}
+                  onChange={(e) => setAdvanceAmount(e.target.value)}
                   className="pl-8 rounded-xl text-lg font-semibold"
                 />
               </div>
