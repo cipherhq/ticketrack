@@ -21,25 +21,34 @@ export function PlatformPnL() {
   const { logFinanceAction } = useFinance();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
-  const [currency, setCurrency] = useState('NGN');
-  const [metrics, setMetrics] = useState({
-    grossRevenue: 0,
-    platformFees: 0,
-    processingCosts: 0,
-    refunds: 0,
-    chargebacks: 0,
-    promoterCommissions: 0,
-    netRevenue: 0,
-    operatingExpenses: 0,
-    netProfit: 0,
-    profitMargin: 0
-  });
+  const [currency, setCurrency] = useState('ALL');
+  const [metricsByCurrency, setMetricsByCurrency] = useState({});
   const [dailyData, setDailyData] = useState([]);
   const [comparison, setComparison] = useState({
     grossChange: 0,
     feeChange: 0,
     profitChange: 0
   });
+
+  // Helper to format multi-currency display
+  const formatMultiCurrency = (metricKey) => {
+    if (currency !== 'ALL') {
+      const val = metricsByCurrency[currency]?.[metricKey] || 0;
+      return formatPrice(val, currency);
+    }
+    const entries = Object.entries(metricsByCurrency)
+      .filter(([_, m]) => m[metricKey] > 0)
+      .map(([curr, m]) => formatPrice(m[metricKey], curr));
+    return entries.length > 0 ? entries.join(' · ') : 'Free';
+  };
+
+  // Get total for a metric across all currencies (for margin calculation)
+  const getTotalMetric = (metricKey) => {
+    if (currency !== 'ALL') {
+      return metricsByCurrency[currency]?.[metricKey] || 0;
+    }
+    return Object.values(metricsByCurrency).reduce((sum, m) => sum + (m[metricKey] || 0), 0);
+  };
 
   useEffect(() => {
     loadPnLData();
@@ -80,100 +89,153 @@ export function PlatformPnL() {
           prevEndDate = startDate;
       }
 
-      // Fetch current period orders
-      const { data: orders } = await supabase
+      // Fetch current period orders (all currencies or filtered)
+      let ordersQuery = supabase
         .from('orders')
-        .select('total_amount, platform_fee, payment_processor_fee, created_at')
-        .eq('currency', currency)
-        .in('status', ['completed', 'refunded'])
+        .select('total_amount, platform_fee, payment_processor_fee, created_at, currency')
+        .in('status', ['completed'])
         .gte('created_at', startDate.toISOString())
         .lte('created_at', now.toISOString());
 
-      // Fetch refunds
-      const { data: refunds } = await supabase
-        .from('refunds')
-        .select('amount')
-        .eq('currency', currency)
-        .eq('status', 'completed')
-        .gte('processed_at', startDate.toISOString());
+      if (currency !== 'ALL') {
+        ordersQuery = ordersQuery.eq('currency', currency);
+      }
+
+      const { data: orders } = await ordersQuery;
 
       // Fetch chargebacks
-      const { data: chargebacks } = await supabase
+      let chargebacksQuery = supabase
         .from('chargebacks')
-        .select('disputed_amount, fee_amount')
-        .eq('currency', currency)
+        .select('disputed_amount, fee_amount, currency')
         .eq('status', 'lost')
         .gte('opened_at', startDate.toISOString());
 
-      // Fetch commissions
-      const { data: commissions } = await supabase
-        .from('promoter_earnings')
-        .select('commission_amount')
-        .eq('currency', currency)
+      if (currency !== 'ALL') {
+        chargebacksQuery = chargebacksQuery.eq('currency', currency);
+      }
+
+      const { data: chargebacks } = await chargebacksQuery;
+
+      // Fetch commissions from promoter_sales (the actual table)
+      let commissionsQuery = supabase
+        .from('promoter_sales')
+        .select('commission_amount, currency')
+        .eq('status', 'completed')
         .gte('created_at', startDate.toISOString());
 
+      if (currency !== 'ALL') {
+        commissionsQuery = commissionsQuery.eq('currency', currency);
+      }
+
+      const { data: commissions } = await commissionsQuery;
+
       // Fetch operating expenses
-      const { data: expenses } = await supabase
+      let expensesQuery = supabase
         .from('platform_expenses')
-        .select('amount')
-        .eq('currency', currency)
+        .select('amount, currency')
         .eq('status', 'approved')
         .gte('expense_date', startDate.toISOString().split('T')[0]);
 
-      // Calculate metrics
-      const grossRevenue = orders?.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0) || 0;
-      const platformFees = orders?.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0) || 0;
-      const processingCosts = orders?.reduce((sum, o) => sum + parseFloat(o.payment_processor_fee || 0), 0) || 0;
-      const totalRefunds = refunds?.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0) || 0;
-      const totalChargebacks = chargebacks?.reduce((sum, c) => sum + parseFloat(c.disputed_amount || 0) + parseFloat(c.fee_amount || 0), 0) || 0;
-      const totalCommissions = commissions?.reduce((sum, c) => sum + parseFloat(c.commission_amount || 0), 0) || 0;
-      const totalExpenses = expenses?.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) || 0;
+      if (currency !== 'ALL') {
+        expensesQuery = expensesQuery.eq('currency', currency);
+      }
 
-      const netRevenue = platformFees - processingCosts - totalCommissions;
-      const netProfit = netRevenue - totalExpenses - totalChargebacks;
-      const profitMargin = platformFees > 0 ? (netProfit / platformFees) * 100 : 0;
+      const { data: expenses } = await expensesQuery;
 
-      setMetrics({
-        grossRevenue,
-        platformFees,
-        processingCosts,
-        refunds: totalRefunds,
-        chargebacks: totalChargebacks,
-        promoterCommissions: totalCommissions,
-        netRevenue,
-        operatingExpenses: totalExpenses,
-        netProfit,
-        profitMargin
+      // Group metrics by currency
+      const currencyMetrics = {};
+
+      // Process orders
+      orders?.forEach(o => {
+        const curr = o.currency || 'USD';
+        if (!currencyMetrics[curr]) {
+          currencyMetrics[curr] = {
+            grossRevenue: 0, platformFees: 0, processingCosts: 0,
+            chargebacks: 0, promoterCommissions: 0, operatingExpenses: 0,
+            netRevenue: 0, netProfit: 0, profitMargin: 0
+          };
+        }
+        currencyMetrics[curr].grossRevenue += parseFloat(o.total_amount || 0);
+        currencyMetrics[curr].platformFees += parseFloat(o.platform_fee || 0);
+        currencyMetrics[curr].processingCosts += parseFloat(o.payment_processor_fee || 0);
       });
 
+      // Process chargebacks
+      chargebacks?.forEach(c => {
+        const curr = c.currency || 'USD';
+        if (currencyMetrics[curr]) {
+          currencyMetrics[curr].chargebacks += parseFloat(c.disputed_amount || 0) + parseFloat(c.fee_amount || 0);
+        }
+      });
+
+      // Process commissions
+      commissions?.forEach(c => {
+        const curr = c.currency || 'USD';
+        if (currencyMetrics[curr]) {
+          currencyMetrics[curr].promoterCommissions += parseFloat(c.commission_amount || 0);
+        }
+      });
+
+      // Process expenses
+      expenses?.forEach(e => {
+        const curr = e.currency || 'NGN';
+        if (!currencyMetrics[curr]) {
+          currencyMetrics[curr] = {
+            grossRevenue: 0, platformFees: 0, processingCosts: 0,
+            chargebacks: 0, promoterCommissions: 0, operatingExpenses: 0,
+            netRevenue: 0, netProfit: 0, profitMargin: 0
+          };
+        }
+        currencyMetrics[curr].operatingExpenses += parseFloat(e.amount || 0);
+      });
+
+      // Calculate derived metrics per currency
+      Object.keys(currencyMetrics).forEach(curr => {
+        const m = currencyMetrics[curr];
+        m.netRevenue = m.platformFees - m.processingCosts - m.promoterCommissions;
+        m.netProfit = m.netRevenue - m.operatingExpenses - m.chargebacks;
+        m.profitMargin = m.platformFees > 0 ? (m.netProfit / m.platformFees) * 100 : 0;
+      });
+
+      setMetricsByCurrency(currencyMetrics);
+
       // Fetch previous period for comparison
-      const { data: prevOrders } = await supabase
+      let prevQuery = supabase
         .from('orders')
         .select('total_amount, platform_fee')
-        .eq('currency', currency)
-        .in('status', ['completed', 'refunded'])
+        .in('status', ['completed'])
         .gte('created_at', prevStartDate.toISOString())
         .lt('created_at', prevEndDate.toISOString());
 
+      if (currency !== 'ALL') {
+        prevQuery = prevQuery.eq('currency', currency);
+      }
+
+      const { data: prevOrders } = await prevQuery;
+
       const prevGross = prevOrders?.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0) || 0;
       const prevFees = prevOrders?.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0) || 0;
+      const currentGross = getTotalMetric('grossRevenue');
+      const currentFees = getTotalMetric('platformFees');
 
       setComparison({
-        grossChange: prevGross > 0 ? ((grossRevenue - prevGross) / prevGross) * 100 : 0,
-        feeChange: prevFees > 0 ? ((platformFees - prevFees) / prevFees) * 100 : 0,
-        profitChange: 0 // Would need previous period profit calculation
+        grossChange: prevGross > 0 ? ((currentGross - prevGross) / prevGross) * 100 : 0,
+        feeChange: prevFees > 0 ? ((currentFees - prevFees) / prevFees) * 100 : 0,
+        profitChange: 0
       });
 
-      // Daily breakdown for chart
+      // Daily breakdown for chart (grouped by date and currency)
       const dailyMap = {};
       orders?.forEach(order => {
         const date = order.created_at.split('T')[0];
-        if (!dailyMap[date]) {
-          dailyMap[date] = { date, gross: 0, fees: 0, count: 0 };
+        const curr = order.currency || 'USD';
+        const key = `${date}-${curr}`;
+        if (!dailyMap[key]) {
+          dailyMap[key] = { date, currency: curr, gross: 0, fees: 0, count: 0 };
         }
-        dailyMap[date].gross += parseFloat(order.total_amount || 0);
-        dailyMap[date].fees += parseFloat(order.platform_fee || 0);
-        dailyMap[date].count += 1;
+        dailyMap[key].gross += parseFloat(order.total_amount || 0);
+        dailyMap[key].fees += parseFloat(order.platform_fee || 0);
+        dailyMap[key].count += 1;
       });
 
       setDailyData(Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date)));
@@ -185,19 +247,22 @@ export function PlatformPnL() {
   };
 
   const handleExport = () => {
-    const csv = [
-      ['Metric', 'Amount', 'Currency'],
-      ['Gross Revenue', metrics.grossRevenue, currency],
-      ['Platform Fees', metrics.platformFees, currency],
-      ['Processing Costs', metrics.processingCosts, currency],
-      ['Refunds', metrics.refunds, currency],
-      ['Chargebacks', metrics.chargebacks, currency],
-      ['Promoter Commissions', metrics.promoterCommissions, currency],
-      ['Net Revenue', metrics.netRevenue, currency],
-      ['Operating Expenses', metrics.operatingExpenses, currency],
-      ['Net Profit', metrics.netProfit, currency],
-      ['Profit Margin (%)', metrics.profitMargin.toFixed(2), '%']
-    ].map(row => row.join(',')).join('\n');
+    const rows = [['Currency', 'Metric', 'Amount']];
+
+    Object.entries(metricsByCurrency).forEach(([curr, m]) => {
+      rows.push([curr, 'Gross Revenue', m.grossRevenue]);
+      rows.push([curr, 'Platform Fees', m.platformFees]);
+      rows.push([curr, 'Processing Costs', m.processingCosts]);
+      rows.push([curr, 'Chargebacks', m.chargebacks]);
+      rows.push([curr, 'Promoter Commissions', m.promoterCommissions]);
+      rows.push([curr, 'Net Revenue', m.netRevenue]);
+      rows.push([curr, 'Operating Expenses', m.operatingExpenses]);
+      rows.push([curr, 'Net Profit', m.netProfit]);
+      rows.push([curr, 'Profit Margin (%)', m.profitMargin.toFixed(2)]);
+      rows.push(['', '', '']); // Empty row between currencies
+    });
+
+    const csv = rows.map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -241,11 +306,14 @@ export function PlatformPnL() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="NGN">NGN</SelectItem>
+              <SelectItem value="ALL">All</SelectItem>
               <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="NGN">NGN</SelectItem>
               <SelectItem value="GBP">GBP</SelectItem>
               <SelectItem value="GHS">GHS</SelectItem>
               <SelectItem value="KES">KES</SelectItem>
+              <SelectItem value="CAD">CAD</SelectItem>
+              <SelectItem value="EUR">EUR</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={loadPnLData} className="rounded-xl">
@@ -265,7 +333,7 @@ export function PlatformPnL() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Gross Revenue</p>
-                <p className="text-2xl font-bold">{formatPrice(metrics.grossRevenue, currency)}</p>
+                <p className="text-xl font-bold">{formatMultiCurrency('grossRevenue')}</p>
                 {comparison.grossChange !== 0 && (
                   <div className={`flex items-center text-sm mt-1 ${comparison.grossChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {comparison.grossChange > 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
@@ -285,7 +353,7 @@ export function PlatformPnL() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Platform Fees</p>
-                <p className="text-2xl font-bold">{formatPrice(metrics.platformFees, currency)}</p>
+                <p className="text-xl font-bold text-green-600">{formatMultiCurrency('platformFees')}</p>
                 {comparison.feeChange !== 0 && (
                   <div className={`flex items-center text-sm mt-1 ${comparison.feeChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {comparison.feeChange > 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
@@ -305,12 +373,12 @@ export function PlatformPnL() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-[#0F0F0F]/60">Net Profit</p>
-                <p className={`text-2xl font-bold ${metrics.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatPrice(metrics.netProfit, currency)}
+                <p className={`text-xl font-bold ${getTotalMetric('netProfit') >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatMultiCurrency('netProfit')}
                 </p>
               </div>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${metrics.netProfit >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                {metrics.netProfit >= 0 ? (
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getTotalMetric('netProfit') >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                {getTotalMetric('netProfit') >= 0 ? (
                   <TrendingUp className="w-6 h-6 text-green-600" />
                 ) : (
                   <TrendingDown className="w-6 h-6 text-red-600" />
@@ -324,9 +392,11 @@ export function PlatformPnL() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Profit Margin</p>
-                <p className={`text-2xl font-bold ${metrics.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {metrics.profitMargin.toFixed(1)}%
+                <p className="text-sm text-[#0F0F0F]/60">Avg Profit Margin</p>
+                <p className={`text-2xl font-bold ${getTotalMetric('platformFees') > 0 ? (getTotalMetric('netProfit') / getTotalMetric('platformFees') * 100 >= 0 ? 'text-green-600' : 'text-red-600') : ''}`}>
+                  {getTotalMetric('platformFees') > 0
+                    ? (getTotalMetric('netProfit') / getTotalMetric('platformFees') * 100).toFixed(1)
+                    : '0.0'}%
                 </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -350,11 +420,11 @@ export function PlatformPnL() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Gross Transaction Volume</span>
-                  <span className="font-medium">{formatPrice(metrics.grossRevenue, currency)}</span>
+                  <span className="font-medium">{formatMultiCurrency('grossRevenue')}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
                   <span className="pl-4">Platform Fees Collected</span>
-                  <span className="font-medium">{formatPrice(metrics.platformFees, currency)}</span>
+                  <span className="font-medium">{formatMultiCurrency('platformFees')}</span>
                 </div>
               </div>
             </div>
@@ -365,16 +435,16 @@ export function PlatformPnL() {
               <div className="space-y-2">
                 <div className="flex justify-between text-red-600">
                   <span className="pl-4">Payment Processing Fees</span>
-                  <span className="font-medium">-{formatPrice(metrics.processingCosts, currency)}</span>
+                  <span className="font-medium">-{formatMultiCurrency('processingCosts')}</span>
                 </div>
                 <div className="flex justify-between text-red-600">
                   <span className="pl-4">Promoter Commissions</span>
-                  <span className="font-medium">-{formatPrice(metrics.promoterCommissions, currency)}</span>
+                  <span className="font-medium">-{formatMultiCurrency('promoterCommissions')}</span>
                 </div>
                 <div className="flex justify-between font-semibold border-t pt-2">
                   <span>Net Revenue</span>
-                  <span className={metrics.netRevenue >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {formatPrice(metrics.netRevenue, currency)}
+                  <span className={getTotalMetric('netRevenue') >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {formatMultiCurrency('netRevenue')}
                   </span>
                 </div>
               </div>
@@ -386,11 +456,11 @@ export function PlatformPnL() {
               <div className="space-y-2">
                 <div className="flex justify-between text-red-600">
                   <span className="pl-4">Operating Expenses</span>
-                  <span className="font-medium">-{formatPrice(metrics.operatingExpenses, currency)}</span>
+                  <span className="font-medium">-{formatMultiCurrency('operatingExpenses')}</span>
                 </div>
                 <div className="flex justify-between text-red-600">
                   <span className="pl-4">Chargebacks & Losses</span>
-                  <span className="font-medium">-{formatPrice(metrics.chargebacks, currency)}</span>
+                  <span className="font-medium">-{formatMultiCurrency('chargebacks')}</span>
                 </div>
               </div>
             </div>
@@ -399,8 +469,8 @@ export function PlatformPnL() {
             <div className="pt-2">
               <div className="flex justify-between text-xl font-bold">
                 <span>Net Profit</span>
-                <span className={metrics.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}>
-                  {formatPrice(metrics.netProfit, currency)}
+                <span className={getTotalMetric('netProfit') >= 0 ? 'text-green-600' : 'text-red-600'}>
+                  {formatMultiCurrency('netProfit')}
                 </span>
               </div>
             </div>
@@ -419,6 +489,7 @@ export function PlatformPnL() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-2">Date</th>
+                  <th className="text-left py-2">Currency</th>
                   <th className="text-right py-2">Orders</th>
                   <th className="text-right py-2">Gross Volume</th>
                   <th className="text-right py-2">Platform Fees</th>
@@ -426,18 +497,21 @@ export function PlatformPnL() {
                 </tr>
               </thead>
               <tbody>
-                {dailyData.slice(-14).map((day) => (
-                  <tr key={day.date} className="border-b last:border-0">
+                {dailyData.slice(-30).map((day, idx) => (
+                  <tr key={`${day.date}-${day.currency}-${idx}`} className="border-b last:border-0">
                     <td className="py-2">{new Date(day.date).toLocaleDateString()}</td>
+                    <td className="py-2">
+                      <Badge variant="outline" className="text-xs">{day.currency}</Badge>
+                    </td>
                     <td className="text-right">{day.count}</td>
-                    <td className="text-right">{formatPrice(day.gross, currency)}</td>
-                    <td className="text-right text-green-600">{formatPrice(day.fees, currency)}</td>
-                    <td className="text-right">{formatPrice(day.gross / day.count, currency)}</td>
+                    <td className="text-right">{formatPrice(day.gross, day.currency)}</td>
+                    <td className="text-right text-green-600">{formatPrice(day.fees, day.currency)}</td>
+                    <td className="text-right">{formatPrice(day.gross / day.count, day.currency)}</td>
                   </tr>
                 ))}
                 {dailyData.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-[#0F0F0F]/60">
+                    <td colSpan={6} className="text-center py-8 text-[#0F0F0F]/60">
                       No data for selected period
                     </td>
                   </tr>
