@@ -13,28 +13,28 @@ import {
 } from 'lucide-react';
 import { ForYouFeed } from '@/components/ForYouFeed';
 
-// Category styling with icons and unique gradient colors
+// Category styling with icons - all blue shades
 const categoryStyles = {
-  'music-concerts': { icon: Music, gradient: 'from-purple-600 via-pink-500 to-rose-500', glow: 'shadow-purple-500/30' },
-  'conferences': { icon: Mic2, gradient: 'from-blue-600 via-blue-500 to-cyan-500', glow: 'shadow-blue-500/30' },
-  'festivals': { icon: PartyPopper, gradient: 'from-orange-500 via-amber-500 to-yellow-500', glow: 'shadow-orange-500/30' },
-  'sports': { icon: Trophy, gradient: 'from-green-600 via-emerald-500 to-teal-500', glow: 'shadow-green-500/30' },
-  'arts-theatre': { icon: Drama, gradient: 'from-rose-600 via-pink-500 to-fuchsia-500', glow: 'shadow-rose-500/30' },
-  'food-drink': { icon: UtensilsCrossed, gradient: 'from-amber-600 via-orange-500 to-red-500', glow: 'shadow-amber-500/30' },
-  'nightlife': { icon: Wine, gradient: 'from-violet-600 via-purple-500 to-fuchsia-500', glow: 'shadow-violet-500/30' },
-  'comedy': { icon: Laugh, gradient: 'from-yellow-500 via-amber-400 to-orange-400', glow: 'shadow-yellow-500/30' },
-  'wellness': { icon: Leaf, gradient: 'from-teal-600 via-emerald-500 to-green-500', glow: 'shadow-teal-500/30' },
-  'charity': { icon: HeartHandshake, gradient: 'from-pink-600 via-rose-500 to-red-500', glow: 'shadow-pink-500/30' },
-  'gaming': { icon: Gamepad2, gradient: 'from-indigo-600 via-violet-500 to-purple-500', glow: 'shadow-indigo-500/30' },
-  'education': { icon: GraduationCap, gradient: 'from-sky-600 via-blue-500 to-indigo-500', glow: 'shadow-sky-500/30' },
-  'business': { icon: Briefcase, gradient: 'from-slate-600 via-gray-500 to-zinc-500', glow: 'shadow-slate-500/30' },
-  'kids-family': { icon: Baby, gradient: 'from-cyan-500 via-teal-400 to-emerald-400', glow: 'shadow-cyan-500/30' },
+  'music-concerts': { icon: Music, gradient: 'from-blue-600 via-blue-500 to-blue-400', glow: 'shadow-blue-500/30' },
+  'conferences': { icon: Mic2, gradient: 'from-blue-700 via-blue-600 to-blue-500', glow: 'shadow-blue-600/30' },
+  'festivals': { icon: PartyPopper, gradient: 'from-sky-500 via-blue-500 to-blue-600', glow: 'shadow-sky-500/30' },
+  'sports': { icon: Trophy, gradient: 'from-blue-500 via-sky-500 to-cyan-500', glow: 'shadow-blue-500/30' },
+  'arts-theatre': { icon: Drama, gradient: 'from-indigo-600 via-blue-500 to-blue-400', glow: 'shadow-indigo-500/30' },
+  'food-drink': { icon: UtensilsCrossed, gradient: 'from-blue-600 via-sky-500 to-sky-400', glow: 'shadow-blue-500/30' },
+  'nightlife': { icon: Wine, gradient: 'from-indigo-500 via-blue-600 to-blue-500', glow: 'shadow-indigo-500/30' },
+  'comedy': { icon: Laugh, gradient: 'from-sky-400 via-blue-500 to-blue-600', glow: 'shadow-sky-500/30' },
+  'wellness': { icon: Leaf, gradient: 'from-cyan-500 via-sky-500 to-blue-500', glow: 'shadow-cyan-500/30' },
+  'charity': { icon: HeartHandshake, gradient: 'from-blue-500 via-blue-600 to-indigo-600', glow: 'shadow-blue-500/30' },
+  'gaming': { icon: Gamepad2, gradient: 'from-indigo-600 via-indigo-500 to-blue-500', glow: 'shadow-indigo-500/30' },
+  'education': { icon: GraduationCap, gradient: 'from-sky-600 via-blue-500 to-blue-400', glow: 'shadow-sky-500/30' },
+  'business': { icon: Briefcase, gradient: 'from-blue-800 via-blue-700 to-blue-600', glow: 'shadow-blue-700/30' },
+  'kids-family': { icon: Baby, gradient: 'from-cyan-400 via-sky-500 to-blue-500', glow: 'shadow-cyan-500/30' },
 };
 
 // Default style for unknown categories
 const defaultCategoryStyle = {
   icon: Sparkles,
-  gradient: 'from-blue-600 via-indigo-500 to-purple-500',
+  gradient: 'from-blue-600 via-blue-500 to-blue-400',
   glow: 'shadow-blue-500/30',
 };
 
