@@ -370,8 +370,7 @@ export function WebHome() {
   const [platformStats, setPlatformStats] = useState({
     eventsHosted: '100+',
     ticketsSold: '1K+',
-    organizers: '50+',
-    countries: '6'
+    organizers: '50+'
   });
   const [ads, setAds] = useState({
     top: null,
@@ -648,8 +647,8 @@ export function WebHome() {
                 <div className="text-gray-400 text-sm">Tickets Sold</div>
               </div>
               <div>
-                <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.countries}</div>
-                <div className="text-gray-400 text-sm">Countries</div>
+                <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.organizers}</div>
+                <div className="text-gray-400 text-sm">Organizers</div>
               </div>
             </div>
           </div>
@@ -746,7 +745,7 @@ export function WebHome() {
 
           {/* Stats Section */}
           <section className="py-12 my-8 bg-white rounded-2xl shadow-sm">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div className="grid grid-cols-3 gap-8 text-center">
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.eventsHosted}</div>
                 <div className="text-gray-500 mt-1">Events</div>
@@ -758,10 +757,6 @@ export function WebHome() {
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.organizers}</div>
                 <div className="text-gray-500 mt-1">Organizers</div>
-              </div>
-              <div>
-                <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.countries}</div>
-                <div className="text-gray-500 mt-1">Countries</div>
               </div>
             </div>
           </section>

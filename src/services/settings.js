@@ -181,17 +181,17 @@ export async function getPlatformStats() {
 
   try {
     // Get counts in parallel
-    const [eventsResult, ticketsResult, organizersResult, countriesResult] = await Promise.all([
+    const [eventsResult, ticketTypesResult, organizersResult] = await Promise.all([
       supabase.from('events').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-      supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('organizers').select('id', { count: 'exact', head: true }),
-      supabase.from('countries').select('id', { count: 'exact', head: true }).eq('is_active', true)
+      // Sum quantity_sold from ticket_types for accurate tickets sold count
+      supabase.from('ticket_types').select('quantity_sold'),
+      supabase.from('organizers').select('id', { count: 'exact', head: true })
     ])
 
     const eventsCount = eventsResult.count || 0
-    const ticketsCount = ticketsResult.count || 0
+    // Calculate total tickets sold by summing quantity_sold from all ticket types
+    const ticketsCount = ticketTypesResult.data?.reduce((sum, tt) => sum + (tt.quantity_sold || 0), 0) || 0
     const organizersCount = organizersResult.count || 0
-    const countriesCount = countriesResult.count || 0
 
     // Format stats with friendly suffixes
     const formatCount = (count) => {
@@ -207,9 +207,7 @@ export async function getPlatformStats() {
       ticketsSold: formatCount(ticketsCount),
       ticketsSoldRaw: ticketsCount,
       organizers: formatCount(organizersCount),
-      organizersRaw: organizersCount,
-      countries: countriesCount.toString(),
-      countriesRaw: countriesCount
+      organizersRaw: organizersCount
     }
 
     // Cache results
@@ -226,9 +224,7 @@ export async function getPlatformStats() {
       ticketsSold: '1K+',
       ticketsSoldRaw: 1000,
       organizers: '50+',
-      organizersRaw: 50,
-      countries: '6',
-      countriesRaw: 6
+      organizersRaw: 50
     }
   }
 }

@@ -778,6 +778,192 @@ export function WebEventDetails() {
 
           <Separator />
 
+          {/* Mobile Ticket Selection - Shown only on mobile, before Organizer */}
+          <div className="lg:hidden">
+            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <CardContent className="p-4 space-y-4">
+                {/* Recurring Event Date Selector */}
+                {event?.is_recurring && (childEvents.length > 0 || event) && (
+                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl">
+                    <label className="text-sm font-medium text-[#0F0F0F] mb-2 block">
+                      📅 Select Event Date
+                    </label>
+                    <select
+                      value={selectedDate || event.id}
+                      onChange={(e) => {
+                        const eventId = e.target.value;
+                        setSelectedDate(eventId);
+                        loadTicketsForEvent(eventId);
+                      }}
+                      className="w-full p-2 rounded-lg border border-purple-300 bg-white text-[#0F0F0F] focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                    >
+                      <option value={event.id}>
+                        {new Date(event.start_date).toLocaleDateString('en-US', {
+                          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+                          hour: 'numeric', minute: '2-digit'
+                        })}
+                      </option>
+                      {childEvents.map((child) => (
+                        <option key={child.id} value={child.id}>
+                          {new Date(child.start_date).toLocaleDateString('en-US', {
+                            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+                            hour: 'numeric', minute: '2-digit'
+                          })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <h2 className="text-xl font-bold text-[#0F0F0F] mb-3">
+                    {isFreeEvent ? 'Register' : 'Select Tickets'}
+                  </h2>
+
+                  {isFreeEvent ? (
+                    <div className="space-y-3">
+                      <div className="text-center py-3">
+                        <Badge className="bg-green-100 text-green-700 border-0 text-base px-3 py-1.5">
+                          🎉 Free Event
+                        </Badge>
+                        <p className="text-[#0F0F0F]/60 mt-2 text-sm">This event is free to attend!</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {ticketTypes.map(tier => {
+                        const remaining = tier.quantity_available - (tier.quantity_sold || 0);
+                        const isSoldOut = remaining <= 0;
+
+                        return (
+                          <div
+                            key={tier.id}
+                            className={`p-3 border rounded-xl space-y-2 ${
+                              isSoldOut
+                                ? 'border-red-200 bg-red-50/50 opacity-75'
+                                : 'border-[#0F0F0F]/10'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className={`font-semibold text-sm ${isSoldOut ? 'text-[#0F0F0F]/50' : 'text-[#0F0F0F]'}`}>
+                                  {tier.name}
+                                </h3>
+                                <p className={`text-lg font-bold ${isSoldOut ? 'text-[#0F0F0F]/40' : 'text-[#2969FF]'}`}>
+                                  {formatPrice(tier.price, event?.currency)}
+                                </p>
+                              </div>
+                              {isSoldOut ? (
+                                <Badge className="bg-red-100 text-red-600 border-red-200 rounded-lg text-xs">
+                                  Sold Out
+                                </Badge>
+                              ) : (() => {
+                                const total = tier.quantity_available || tier.quantity_total || 100;
+                                const percentRemaining = (remaining / total) * 100;
+                                const isLowStock = remaining <= 10 || percentRemaining <= 20;
+
+                                return (
+                                  <Badge
+                                    variant="outline"
+                                    className={`rounded-lg text-xs ${
+                                      isLowStock
+                                        ? 'bg-amber-50 text-amber-600 border-amber-300'
+                                        : 'border-[#0F0F0F]/20 text-[#0F0F0F]/60'
+                                    }`}
+                                  >
+                                    {isLowStock ? 'Few left' : `${remaining} left`}
+                                  </Badge>
+                                );
+                              })()}
+                            </div>
+                            {!isSoldOut && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-[#0F0F0F]/60">Quantity</span>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    onClick={() => updateTicketQuantity(tier.id, -1)}
+                                    disabled={!selectedTickets[tier.id]}
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center touch-manipulation"
+                                  >
+                                    <Minus className="w-4 h-4" />
+                                  </Button>
+                                  <span className="w-6 text-center font-medium text-[#0F0F0F]">
+                                    {selectedTickets[tier.id] || 0}
+                                  </span>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    onClick={() => updateTicketQuantity(tier.id, 1)}
+                                    disabled={
+                                      (selectedTickets[tier.id] || 0) >= remaining ||
+                                      (selectedTickets[tier.id] || 0) >= 10
+                                    }
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center touch-manipulation"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Totals for paid events */}
+                {!isFreeEvent && totalTickets > 0 && (
+                  <div className="space-y-2 pt-3 border-t border-[#0F0F0F]/10">
+                    <div className="flex justify-between text-sm text-[#0F0F0F]/60">
+                      <span>Tickets ({totalTickets})</span>
+                      <span>{formatPrice(totalAmount, event?.currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-[#0F0F0F]/60">
+                      <span>Service Fee</span>
+                      <span>{formatPrice(serviceFee, event?.currency)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-[#0F0F0F] pt-2 border-t border-[#0F0F0F]/10">
+                      <span>Total</span>
+                      <span>{formatPrice(totalWithFees, event?.currency)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Button */}
+                {isAllSoldOut && !isFreeEvent ? (
+                  <Button
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-5"
+                    onClick={() => setWaitlistOpen(true)}
+                  >
+                    <Clock className="w-5 h-5 mr-2" />
+                    {isOnWaitlist ? `On Waitlist (#${waitlistPosition})` : 'Join Waitlist'}
+                  </Button>
+                ) : isFreeEvent ? (
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-5"
+                    onClick={handleCheckout}
+                  >
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    RSVP - Free
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-5"
+                    onClick={handleCheckout}
+                    disabled={totalTickets === 0}
+                  >
+                    {totalTickets > 0 ? `Checkout - ${formatPrice(totalWithFees, event?.currency)}` : 'Select Tickets'}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Separator className="lg:hidden" />
+
           {/* Organizer */}
           <div>
             <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Organized By</h2>
@@ -1508,8 +1694,8 @@ export function WebEventDetails() {
 
         </div>
 
-        {/* Ticket Sidebar */}
-        <div className="lg:col-span-1">
+        {/* Ticket Sidebar - Hidden on mobile, shown on desktop */}
+        <div className="hidden lg:block lg:col-span-1">
           <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
             <CardContent className="p-6 space-y-6">
               {/* Recurring Event Date Selector */}
