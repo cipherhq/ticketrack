@@ -122,7 +122,7 @@ export function OrganizerLayout({ children }) {
       title={item.tip} // Native tooltip on hover
       className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
         isActive(item.path)
-          ? 'bg-primary text-primary-foreground'
+          ? 'bg-primary text-white'
           : 'text-gray-900/70 hover:bg-gray-100'
       }`}
     >
@@ -227,7 +227,7 @@ export function OrganizerLayout({ children }) {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-40 flex items-center justify-between px-4">
         <button

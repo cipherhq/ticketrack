@@ -161,7 +161,7 @@ export function PromoterLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-gray-50 flex">
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <Logo className="h-8" />
@@ -171,7 +171,7 @@ export function PromoterLayout() {
         {promoter && (
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
                 {promoter.full_name?.charAt(0) || 'P'}
               </div>
               <div className="flex-1 min-w-0">
@@ -190,7 +190,7 @@ export function PromoterLayout() {
               onClick={() => handleNavClick(item)}
               className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
                 location.pathname === item.path
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-primary text-white'
                   : 'text-gray-900/60 hover:bg-gray-100'
               }`}
             >
@@ -236,7 +236,7 @@ export function PromoterLayout() {
         <nav className="p-4 space-y-1">
           {navItems.map((item) => (
             <Link key={item.path} to={item.path} onClick={() => handleNavClick(item)}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${location.pathname === item.path ? 'bg-primary text-primary-foreground' : 'text-gray-900/60 hover:bg-gray-100'}`}>
+              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${location.pathname === item.path ? 'bg-primary text-white' : 'text-gray-900/60 hover:bg-gray-100'}`}>
               <span className="flex items-center space-x-3">
                 <item.icon className="w-5 h-5" /><span>{item.label}</span>
               </span>
@@ -280,7 +280,7 @@ export function PromoterLayout() {
                   onClose={() => setNotificationOpen(false)}
                 />
               </div>
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
                 {promoter?.full_name?.charAt(0) || 'P'}
               </div>
             </div>

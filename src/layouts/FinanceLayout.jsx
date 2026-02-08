@@ -145,7 +145,7 @@ export function FinanceLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-[#0F0F0F] text-white transition-all duration-300 flex flex-col fixed h-full z-40`}>
         {/* Logo */}
@@ -301,7 +301,7 @@ export function FinanceLayout() {
                   </div>
                 )}
               </button>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-medium text-sm">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-medium text-sm">
                 {financeUser?.email?.charAt(0)?.toUpperCase() || 'F'}
               </div>
             </div>

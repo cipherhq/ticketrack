@@ -143,7 +143,7 @@ export function AdminLayout({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -159,7 +159,7 @@ export function AdminLayout({ children }) {
       to={item.path}
       className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
         isActive(item.path)
-          ? 'bg-primary text-primary-foreground'
+          ? 'bg-primary text-white'
           : 'text-gray-900/60 hover:bg-gray-100 hover:text-gray-900'
       }`}
       title={item.label}
@@ -213,7 +213,7 @@ export function AdminLayout({ children }) {
 
       <div className="p-3 border-t border-gray-200">
         <div className="flex items-center gap-3 mb-3 px-2">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm">
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-medium text-sm">
             {admin.name?.charAt(0) || 'A'}
           </div>
           <div className="flex-1 min-w-0">
@@ -242,7 +242,7 @@ export function AdminLayout({ children }) {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 fixed h-full">
         {renderSidebar()}
@@ -287,7 +287,7 @@ export function AdminLayout({ children }) {
                 )}
               </button>
               <span className="text-sm text-gray-600 hidden md:block">{admin.email}</span>
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-medium text-sm">
                 {admin.name?.charAt(0) || 'A'}
               </div>
             </div>
