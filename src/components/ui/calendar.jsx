@@ -23,9 +23,9 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         nav_button_next: 'absolute right-1',
         table: 'w-full border-collapse space-y-1',
         head_row: 'flex',
-        head_cell: 'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]',
+        head_cell: 'text-gray-600 rounded-md w-9 font-normal text-[0.8rem]',
         row: 'flex w-full mt-2',
-        cell: 'h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-muted/50 [&:has([aria-selected])]:bg-muted first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+        cell: 'h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-gray-50 [&:has([aria-selected])]:bg-gray-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
         day: cn(
           buttonVariants({ variant: 'ghost' }),
           'h-9 w-9 p-0 font-normal aria-selected:opacity-100'
@@ -33,12 +33,12 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         day_range_end: 'day-range-end',
         day_selected:
           'bg-[#2969FF] text-white hover:bg-[#2969FF] hover:text-white focus:bg-[#2969FF] focus:text-white',
-        day_today: 'bg-muted text-foreground',
+        day_today: 'bg-gray-100 text-gray-900',
         day_outside:
-          'day-outside text-foreground/30 opacity-50 aria-selected:bg-muted/50 aria-selected:text-foreground/30 aria-selected:opacity-30',
-        day_disabled: 'text-foreground/30 opacity-50',
+          'day-outside text-gray-300 opacity-50 aria-selected:bg-gray-50 aria-selected:text-gray-300 aria-selected:opacity-30',
+        day_disabled: 'text-gray-300 opacity-50',
         day_range_middle:
-          'aria-selected:bg-muted aria-selected:text-foreground',
+          'aria-selected:bg-gray-100 aria-selected:text-gray-900',
         day_hidden: 'invisible',
         ...classNames,
       }}
