@@ -41,14 +41,50 @@ export function ThemeProvider({ children }) {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
-  // Apply dark class to document element
+  // Apply dark class to document element - only on admin/organizer/finance/promoter dashboards
   useEffect(() => {
     const root = document.documentElement;
-    if (resolvedTheme === 'dark') {
+    const path = window.location.pathname;
+    const isDashboardRoute = path.startsWith('/admin') ||
+                             path.startsWith('/organizer') ||
+                             path.startsWith('/finance') ||
+                             path.startsWith('/promoter');
+
+    if (resolvedTheme === 'dark' && isDashboardRoute) {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
+  }, [resolvedTheme]);
+
+  // Listen for route changes to update dark mode
+  useEffect(() => {
+    const handleRouteChange = () => {
+      const root = document.documentElement;
+      const path = window.location.pathname;
+      const isDashboardRoute = path.startsWith('/admin') ||
+                               path.startsWith('/organizer') ||
+                               path.startsWith('/finance') ||
+                               path.startsWith('/promoter');
+
+      if (resolvedTheme === 'dark' && isDashboardRoute) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
+
+    // Listen for popstate (browser back/forward)
+    window.addEventListener('popstate', handleRouteChange);
+
+    // Create a MutationObserver to watch for URL changes (for SPA navigation)
+    const observer = new MutationObserver(handleRouteChange);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+      observer.disconnect();
+    };
   }, [resolvedTheme]);
 
   // Persist theme choice

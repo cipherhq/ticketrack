@@ -13,7 +13,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function WebLayout() {
   const navigate = useNavigate()
@@ -153,7 +152,6 @@ export function WebLayout() {
                   </span>
                 )}
               </button>
-              <ThemeToggle className="text-foreground/60" />
             </nav>
 
             {/* Auth Buttons / User Profile */}
