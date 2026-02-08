@@ -4,14 +4,20 @@ const ThemeContext = createContext(undefined);
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    // Check localStorage first
+    // Check localStorage first, but only accept explicit 'dark' choice
+    // Default everything else to 'light' for bright dashboards
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('theme');
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
-        return stored;
+      // Only respect 'dark' if explicitly set, otherwise default to light
+      if (stored === 'dark') {
+        return 'dark';
+      }
+      // Reset any 'system' preference to 'light' for consistent experience
+      if (stored === 'system') {
+        localStorage.setItem('theme', 'light');
       }
     }
-    return 'light'; // Default to light mode
+    return 'light'; // Default to light mode (bright)
   });
 
   const [resolvedTheme, setResolvedTheme] = useState('light');
@@ -99,11 +105,8 @@ export function ThemeProvider({ children }) {
   };
 
   const toggleTheme = () => {
-    setTheme(prev => {
-      if (prev === 'light') return 'dark';
-      if (prev === 'dark') return 'system';
-      return 'light';
-    });
+    // Simple toggle between light and dark only
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   return (
