@@ -5,7 +5,7 @@
 /* Theme CSS Variables */
 :root {
   /* Light mode (default) */
-  --background: 244 246 250;      /* #F4F6FA */
+  --background: 255 255 255;      /* white */
   --foreground: 15 15 15;         /* #0F0F0F */
   --card: 255 255 255;            /* white */
   --card-foreground: 15 15 15;    /* #0F0F0F */
