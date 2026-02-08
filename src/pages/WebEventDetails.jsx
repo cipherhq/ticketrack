@@ -878,32 +878,28 @@ export function WebEventDetails() {
                             </div>
                             {!isSoldOut && (
                               <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">Quantity</span>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="icon"
-                                    variant="outline"
+                                <span className="text-xs text-gray-500">Quantity</span>
+                                <div className="flex items-center gap-3">
+                                  <button
                                     onClick={() => updateTicketQuantity(tier.id, -1)}
                                     disabled={!selectedTickets[tier.id]}
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center touch-manipulation"
+                                    className="w-9 h-9 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100"
                                   >
-                                    <Minus className="w-4 h-4" />
-                                  </Button>
-                                  <span className="w-6 text-center font-medium text-foreground">
+                                    <Minus className="w-5 h-5 text-gray-700" />
+                                  </button>
+                                  <span className="w-8 text-center font-semibold text-gray-900 text-lg">
                                     {selectedTickets[tier.id] || 0}
                                   </span>
-                                  <Button
-                                    size="icon"
-                                    variant="outline"
+                                  <button
                                     onClick={() => updateTicketQuantity(tier.id, 1)}
                                     disabled={
                                       (selectedTickets[tier.id] || 0) >= remaining ||
                                       (selectedTickets[tier.id] || 0) >= 10
                                     }
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center touch-manipulation"
+                                    className="w-9 h-9 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100"
                                   >
-                                    <Plus className="w-4 h-4" />
-                                  </Button>
+                                    <Plus className="w-5 h-5 text-gray-700" />
+                                  </button>
                                 </div>
                               </div>
                             )}
@@ -1832,30 +1828,26 @@ export function WebEventDetails() {
                             <div className="flex items-center justify-between">
                               <span className="text-sm text-muted-foreground">Quantity</span>
                               <div className="flex items-center gap-3">
-                                <Button 
-                                  size="icon" 
-                                  variant="outline" 
-                                  onClick={() => updateTicketQuantity(tier.id, -1)} 
-                                  disabled={!selectedTickets[tier.id]} 
-                                  className="w-10 h-10 rounded-lg flex items-center justify-center touch-manipulation"
+                                <button
+                                  onClick={() => updateTicketQuantity(tier.id, -1)}
+                                  disabled={!selectedTickets[tier.id]}
+                                  className="w-10 h-10 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100"
                                 >
-                                  <Minus className="w-5 h-5 min-w-5 min-h-5" />
-                                </Button>
-                                <span className="w-8 text-center font-medium text-foreground text-lg">
+                                  <Minus className="w-5 h-5 text-gray-700" />
+                                </button>
+                                <span className="w-8 text-center font-semibold text-gray-900 text-lg">
                                   {selectedTickets[tier.id] || 0}
                                 </span>
-                                <Button 
-                                  size="icon" 
-                                  variant="outline" 
-                                  onClick={() => updateTicketQuantity(tier.id, 1)} 
+                                <button
+                                  onClick={() => updateTicketQuantity(tier.id, 1)}
                                   disabled={
-                                    (selectedTickets[tier.id] || 0) >= remaining || 
+                                    (selectedTickets[tier.id] || 0) >= remaining ||
                                     (selectedTickets[tier.id] || 0) >= 10
-                                  } 
-                                  className="w-10 h-10 rounded-lg flex items-center justify-center touch-manipulation"
+                                  }
+                                  className="w-10 h-10 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100"
                                 >
-                                  <Plus className="w-5 h-5 min-w-5 min-h-5" />
-                                </Button>
+                                  <Plus className="w-5 h-5 text-gray-700" />
+                                </button>
                               </div>
                             </div>
                           )}
