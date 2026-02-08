@@ -101,15 +101,15 @@ export function StartGroupModal({ open, onOpenChange, event }) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md rounded-2xl">
+      <DialogContent className="max-w-md rounded-2xl bg-white border-gray-200">
         {step === 'form' && (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl">
+              <DialogTitle className="flex items-center gap-2 text-xl text-gray-900">
                 <Users className="w-6 h-6 text-[#2969FF]" />
                 Start a Group
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-gray-600">
                 Create a group so your friends can buy tickets together for {event?.title}
               </DialogDescription>
             </DialogHeader>
@@ -122,17 +122,17 @@ export function StartGroupModal({ open, onOpenChange, event }) {
               )}
 
               <div className="space-y-2">
-                <Label>Group Name (Optional)</Label>
+                <Label className="text-gray-700">Group Name (Optional)</Label>
                 <Input
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   placeholder="e.g., Sarah's Birthday Squad"
-                  className="rounded-xl"
+                  className="rounded-xl bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Session Duration</Label>
+                <Label className="text-gray-700">Session Duration</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {DURATION_OPTIONS.map((opt) => (
                     <button
@@ -141,21 +141,21 @@ export function StartGroupModal({ open, onOpenChange, event }) {
                       className={`p-3 rounded-xl border text-sm font-medium transition-colors ${
                         duration === opt.value
                           ? 'border-[#2969FF] bg-[#2969FF]/10 text-[#2969FF]'
-                          : 'border-border/10 hover:border-border/20'
+                          : 'border-gray-200 text-gray-700 hover:border-gray-300'
                       }`}
                     >
                       {opt.label}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   Friends can join and buy tickets within this time
                 </p>
               </div>
 
-              <div className="bg-muted rounded-xl p-4">
-                <h4 className="font-medium text-foreground mb-2">How it works:</h4>
-                <ol className="text-sm text-foreground/70 space-y-1 list-decimal pl-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="font-medium text-gray-900 mb-2">How it works:</h4>
+                <ol className="text-sm text-gray-600 space-y-1 list-decimal pl-4">
                   <li>You create a group and get a shareable link</li>
                   <li>Share the link with your friends</li>
                   <li>Everyone joins and selects their tickets</li>
@@ -165,11 +165,11 @@ export function StartGroupModal({ open, onOpenChange, event }) {
             </div>
 
             <div className="flex gap-3">
-              <Button variant="outline" onClick={handleClose} className="flex-1 rounded-xl">
+              <Button variant="outline" onClick={handleClose} className="flex-1 rounded-xl border-gray-300 text-gray-700 hover:bg-gray-50">
                 Cancel
               </Button>
-              <Button 
-                onClick={handleCreate} 
+              <Button
+                onClick={handleCreate}
                 disabled={loading}
                 className="flex-1 bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl"
               >
@@ -182,7 +182,7 @@ export function StartGroupModal({ open, onOpenChange, event }) {
         {step === 'creating' && (
           <div className="py-12 text-center">
             <Loader2 className="w-12 h-12 animate-spin text-[#2969FF] mx-auto mb-4" />
-            <p className="text-muted-foreground">Creating your group...</p>
+            <p className="text-gray-600">Creating your group...</p>
           </div>
         )}
 
@@ -198,11 +198,11 @@ export function StartGroupModal({ open, onOpenChange, event }) {
             <div className="py-6">
               {/* Group Code */}
               <div className="bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-2xl p-6 text-center mb-6">
-                <p className="text-sm text-muted-foreground mb-2">Your Group Code</p>
+                <p className="text-sm text-gray-600 mb-2">Your Group Code</p>
                 <p className="text-4xl font-mono font-bold text-[#2969FF] tracking-wider">
                   {createdSession.code}
                 </p>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-gray-600 mt-2">
                   <Clock className="w-4 h-4 inline mr-1" />
                   Expires in {DURATION_OPTIONS.find(d => d.value === duration)?.label}
                 </p>
@@ -213,7 +213,7 @@ export function StartGroupModal({ open, onOpenChange, event }) {
                 <Button
                   variant="outline"
                   onClick={handleCopyLink}
-                  className="flex-1 rounded-xl"
+                  className="flex-1 rounded-xl border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   {copied ? (
                     <>
@@ -236,7 +236,7 @@ export function StartGroupModal({ open, onOpenChange, event }) {
                 </Button>
               </div>
 
-              <p className="text-sm text-muted-foreground text-center mb-6">
+              <p className="text-sm text-gray-600 text-center mb-6">
                 Share this code or link with your friends so they can join!
               </p>
 
