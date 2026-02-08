@@ -83,7 +83,7 @@ const isEventPast = (eventDate) => {
 export function AttendeeProfile() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, signOut } = useAuth()
+  const { user, signOut, loading: authLoading } = useAuth()
   
   const [profile, setProfile] = useState(null)
   const [tickets, setTickets] = useState([])
@@ -142,6 +142,7 @@ export function AttendeeProfile() {
   const [telegramLinkUrl, setTelegramLinkUrl] = useState(null)
 
   useEffect(() => {
+    if (authLoading) return // Wait for auth to finish loading
     if (!user) {
       navigate('/login')
       return
@@ -154,7 +155,7 @@ export function AttendeeProfile() {
     loadOrders()
     loadGroups()
     loadCommunicationPreferences()
-  }, [user, navigate])
+  }, [user, authLoading, navigate])
 
   // Load communication preferences (contacts linked to this user)
   const loadCommunicationPreferences = async () => {
@@ -842,7 +843,7 @@ export function AttendeeProfile() {
     return '💳'
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
