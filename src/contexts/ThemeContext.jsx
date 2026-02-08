@@ -11,7 +11,7 @@ export function ThemeProvider({ children }) {
         return stored;
       }
     }
-    return 'system';
+    return 'light'; // Default to light mode
   });
 
   const [resolvedTheme, setResolvedTheme] = useState('light');
