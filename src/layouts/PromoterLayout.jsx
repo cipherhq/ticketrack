@@ -9,7 +9,7 @@ import {
   X,
   History,
   LogOut,
-  Bell, FileText, HelpCircle, Home,
+  Bell, FileText, HelpCircle, Home, Shield,
 } from 'lucide-react';
 import { usePromoter } from '@/contexts/PromoterContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,6 +41,7 @@ const navItems = [
   { icon: TrendingUp, label: 'Performance', path: '/promoter/performance', notificationKey: 'newSales' },
   { icon: CreditCard, label: 'Bank Accounts', path: '/promoter/bank-accounts' },
   { icon: History, label: 'Payment History', path: '/promoter/payment-history', notificationKey: 'pendingPayouts' },
+  { icon: Shield, label: 'KYC Verification', path: '/promoter/kyc' },
   { icon: FileText, label: 'Tax Documents', path: '/promoter/tax-documents' },
   { icon: UserCircle, label: 'Profile', path: '/promoter/profile' },
   { icon: HelpCircle, label: 'Support', path: '/promoter/support', notificationKey: 'supportTickets' },
