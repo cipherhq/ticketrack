@@ -90,9 +90,9 @@ export function AcceptTeamInvitation() {
 
       if (data?.success) {
         setStatus('success');
-        // Redirect after 2 seconds
+        // Redirect to organizer dashboard after 2 seconds
         setTimeout(() => {
-          navigate('/team-dashboard');
+          navigate('/organizer');
         }, 2000);
       } else {
         setStatus('error');
@@ -106,14 +106,23 @@ export function AcceptTeamInvitation() {
   };
 
   const goToLogin = () => {
-    // Store token in session storage for after login
-    sessionStorage.setItem('pending_team_invite', token);
-    navigate('/login?redirect=/accept-invite?token=' + token);
+    // Redirect to login with return URL via state
+    navigate('/login', {
+      state: {
+        from: `/accept-invite?token=${token}`,
+        message: 'Please log in to accept your team invitation.'
+      }
+    });
   };
 
   const goToSignup = () => {
-    sessionStorage.setItem('pending_team_invite', token);
-    navigate('/signup?redirect=/accept-invite?token=' + token);
+    // Redirect to signup with return URL via state
+    navigate('/signup', {
+      state: {
+        from: `/accept-invite?token=${token}`,
+        message: 'Please create an account to accept your team invitation.'
+      }
+    });
   };
 
   if (authLoading || status === 'loading') {
@@ -177,7 +186,13 @@ export function AcceptTeamInvitation() {
             <div className="text-center py-8">
               <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
               <p className="text-lg font-medium text-foreground mb-2">Welcome to the team!</p>
-              <p className="text-sm text-muted-foreground">Redirecting to your dashboard...</p>
+              <p className="text-sm text-muted-foreground mb-4">Redirecting to the organizer dashboard...</p>
+              <Button
+                onClick={() => navigate('/organizer')}
+                className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
+              >
+                Go Now
+              </Button>
             </div>
           )}
 

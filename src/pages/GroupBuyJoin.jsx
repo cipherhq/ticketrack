@@ -29,10 +29,62 @@ export function GroupBuyJoin() {
   // Auto-join if code is in URL
   useEffect(() => {
     if (code) {
-      // Always load preview first, then user can click to join
-      loadSessionPreview(code)
+      // If user is logged in, try to auto-join
+      if (user) {
+        autoJoinGroup(code)
+      } else {
+        // Not logged in - show preview
+        loadSessionPreview(code)
+      }
     }
   }, [code, user?.id]) // Re-check when user logs in
+
+  const autoJoinGroup = async (groupCode) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // First check if already a member
+      const sessionData = await getGroupSessionByCode(groupCode)
+      if (!sessionData) {
+        throw new Error('Group not found')
+      }
+
+      try {
+        const membershipData = await getMyMembership(sessionData.id)
+        if (membershipData) {
+          // Already a member - go straight to lobby
+          setSession(sessionData)
+          setMembership(membershipData)
+          setStep('lobby')
+          setLoading(false)
+          return
+        }
+      } catch (err) {
+        // Not a member yet, continue to join
+      }
+
+      // Try to join the group automatically
+      const result = await joinGroupSession(groupCode)
+
+      // Load full session and membership
+      const [fullSession, membershipData] = await Promise.all([
+        getGroupSessionByCode(groupCode),
+        getMyMembership(result.session_id)
+      ])
+
+      setSession(fullSession)
+      setMembership(membershipData)
+      setStep('lobby')
+    } catch (err) {
+      console.error('Error auto-joining group:', err)
+      setError(err.message)
+      // Fall back to preview mode
+      loadSessionPreview(groupCode)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const loadSessionPreview = async (groupCode) => {
     try {

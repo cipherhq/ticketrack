@@ -452,109 +452,141 @@ export function WebLayout() {
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#0F0F0F] text-white py-12 mt-16">
+      {/* Footer - Mobile Compact */}
+      <footer className="bg-[#0F0F0F] text-white py-6 md:py-12 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="mb-4">
-                <Logo className="h-12" variant="light" />
-              </div>
-              <p className="text-white/60 text-sm">
-                The best platform for discovering and booking events worldwide.
-              </p>
+          {/* Mobile Footer */}
+          <div className="md:hidden">
+            <div className="flex items-center justify-center mb-4">
+              <Logo className="h-8" variant="light" />
             </div>
 
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-white/60 text-sm">
-                <li>
-                  <button onClick={() => navigate('/about')} className="hover:text-white transition-colors">
-                    About Us
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/contact')} className="hover:text-white transition-colors">
-                    Contact
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/careers')} className="hover:text-white transition-colors">
-                    Careers
-                  </button>
-                </li>
-              </ul>
+            {/* Compact Links */}
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-white/60 mb-4">
+              <button onClick={() => navigate('/about')} className="hover:text-white">About</button>
+              <button onClick={() => navigate('/contact')} className="hover:text-white">Contact</button>
+              <button onClick={() => navigate('/help')} className="hover:text-white">Help</button>
+              <button onClick={() => navigate('/pricing')} className="hover:text-white">Pricing</button>
+              <button onClick={() => navigate('/blog')} className="hover:text-white">Blog</button>
             </div>
 
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-white/60 text-sm">
-                <li>
-                  <button onClick={() => navigate('/help')} className="hover:text-white transition-colors">
-                    Help Center
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/terms')} className="hover:text-white transition-colors">
-                    Terms of Service
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/privacy')} className="hover:text-white transition-colors">
-                    Privacy Policy
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/refund-policy')} className="hover:text-white transition-colors">
-                    Refund Policy
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/trust-safety')} className="hover:text-white transition-colors">
-                    Trust & Safety
-                  </button>
-                </li>
-              </ul>
+            {/* Legal Links */}
+            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-white/40 mb-4">
+              <button onClick={() => navigate('/terms')} className="hover:text-white/60">Terms</button>
+              <span>·</span>
+              <button onClick={() => navigate('/privacy')} className="hover:text-white/60">Privacy</button>
+              <span>·</span>
+              <button onClick={() => navigate('/refund-policy')} className="hover:text-white/60">Refunds</button>
             </div>
 
-            <div>
-              <h4 className="font-semibold mb-4">For Organizers</h4>
-              <ul className="space-y-2 text-white/60 text-sm">
-                <li>
-                  <button 
-                    onClick={() => {
-                      if (user) {
-                        navigate('/create-event');
-                      } else {
-                        navigate('/login', { state: { from: '/create-event' } });
-                      }
-                    }} 
-                    className="hover:text-white transition-colors"
-                  >
-                    Create Event
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/pricing')} className="hover:text-white transition-colors">
-                    Pricing
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/resources')} className="hover:text-white transition-colors">
-                    Resources
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/blog')} className="hover:text-white transition-colors">
-                    Blog
-                  </button>
-                </li>
-              </ul>
-            </div>
+            <p className="text-center text-white/40 text-xs">
+              © {new Date().getFullYear()} Ticketrack
+            </p>
           </div>
 
-          <div className="border-t border-white/10 mt-8 pt-8 text-center text-white/40 text-sm">
-            <p>© {new Date().getFullYear()} Ticketrack. All rights reserved.</p>
+          {/* Desktop Footer */}
+          <div className="hidden md:block">
+            <div className="grid grid-cols-4 gap-8">
+              <div>
+                <div className="mb-4">
+                  <Logo className="h-12" variant="light" />
+                </div>
+                <p className="text-white/60 text-sm">
+                  The best platform for discovering and booking events worldwide.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-4">Company</h4>
+                <ul className="space-y-2 text-white/60 text-sm">
+                  <li>
+                    <button onClick={() => navigate('/about')} className="hover:text-white transition-colors">
+                      About Us
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/contact')} className="hover:text-white transition-colors">
+                      Contact
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/careers')} className="hover:text-white transition-colors">
+                      Careers
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-4">Support</h4>
+                <ul className="space-y-2 text-white/60 text-sm">
+                  <li>
+                    <button onClick={() => navigate('/help')} className="hover:text-white transition-colors">
+                      Help Center
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/terms')} className="hover:text-white transition-colors">
+                      Terms of Service
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/privacy')} className="hover:text-white transition-colors">
+                      Privacy Policy
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/refund-policy')} className="hover:text-white transition-colors">
+                      Refund Policy
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/trust-safety')} className="hover:text-white transition-colors">
+                      Trust & Safety
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-4">For Organizers</h4>
+                <ul className="space-y-2 text-white/60 text-sm">
+                  <li>
+                    <button
+                      onClick={() => {
+                        if (user) {
+                          navigate('/create-event');
+                        } else {
+                          navigate('/login', { state: { from: '/create-event' } });
+                        }
+                      }}
+                      className="hover:text-white transition-colors"
+                    >
+                      Create Event
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/pricing')} className="hover:text-white transition-colors">
+                      Pricing
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/resources')} className="hover:text-white transition-colors">
+                      Resources
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/blog')} className="hover:text-white transition-colors">
+                      Blog
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="border-t border-white/10 mt-8 pt-8 text-center text-white/40 text-sm">
+              <p>© {new Date().getFullYear()} Ticketrack. All rights reserved.</p>
+            </div>
           </div>
         </div>
       </footer>

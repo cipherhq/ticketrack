@@ -155,6 +155,11 @@ export function AcceptInvitation() {
       setMessage('Congratulations! You are now an official promoter.');
       setPromoterData(promoter);
 
+      // Auto-redirect to promoter dashboard after a brief moment
+      setTimeout(() => {
+        navigate('/promoter');
+      }, 2000);
+
     } catch (err) {
       console.error('Error accepting invitation:', err);
       setStatus('error');
@@ -183,7 +188,8 @@ export function AcceptInvitation() {
                 <PartyPopper className="w-10 h-10 text-green-600" />
               </div>
               <h2 className="text-2xl font-bold text-foreground mb-2">Welcome Aboard!</h2>
-              <p className="text-muted-foreground mb-6">{message}</p>
+              <p className="text-muted-foreground mb-4">{message}</p>
+              <p className="text-sm text-muted-foreground mb-6">Redirecting to your dashboard...</p>
               {promoterData && (
                 <div className="bg-muted rounded-xl p-4 mb-6 text-left">
                   <div className="flex justify-between py-2 border-b border-border/10">
@@ -199,11 +205,11 @@ export function AcceptInvitation() {
                   </div>
                 </div>
               )}
-              <Button 
-                onClick={() => navigate('/promoter')} 
+              <Button
+                onClick={() => navigate('/promoter')}
                 className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl py-6"
               >
-                Go to Dashboard
+                Go to Dashboard Now
               </Button>
             </>
           )}
