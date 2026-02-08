@@ -332,102 +332,50 @@ export function AuthProvider({ children }) {
     if (!phoneResult.valid) throw new Error(phoneResult.error)
 
     try {
-      // Format phone number consistently (remove + prefix for storage)
-      // This matches the format used in edge functions (formatPhoneNumber)
-      let formattedPhoneForStorage = phoneResult.value
-      if (formattedPhoneForStorage.startsWith('+')) {
-        formattedPhoneForStorage = formattedPhoneForStorage.substring(1)
-      }
-      
-      // Check if phone number is already registered
-      const phoneUniqueCheck = await validatePhoneForRegistration(formattedPhoneForStorage)
-      if (!phoneUniqueCheck.valid) {
-        throw new Error(phoneUniqueCheck.error)
-      }
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: emailResult.value,
-        password,
-        options: {
-          data: {
-            first_name: firstNameResult.value,
-            last_name: lastNameResult.value,
-            full_name: `${firstNameResult.value} ${lastNameResult.value}`,
-            phone: formattedPhoneForStorage, // Store without + prefix (e.g., "12025579406")
-            country_code: countryCode,
-            marketing_consent: marketingConsent, // GDPR: Store marketing consent
-            marketing_consent_date: marketingConsent ? new Date().toISOString() : null,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+      // Use custom signup edge function to avoid automatic email confirmation
+      // This allows user to choose their verification method (phone or email)
+      const { data, error } = await supabase.functions.invoke('signup', {
+        body: {
+          email: emailResult.value,
+          password,
+          firstName: firstNameResult.value,
+          lastName: lastNameResult.value,
+          phone: phoneResult.value,
+          countryCode,
+          marketingConsent,
         }
       })
 
       if (error) {
         console.error('Signup error details:', error)
-        console.error('Error status:', error.status)
-        console.error('Error message:', error.message)
-        
-        if (error.status === 429) throw new Error(AUTH_ERRORS.RATE_LIMITED)
-        
-        // Handle SMTP/email configuration errors
-        if (error.message?.includes('email') && (error.message?.includes('send') || error.message?.includes('SMTP') || error.message?.includes('mail'))) {
-          console.error('Email sending error - likely SMTP configuration issue')
-          throw new Error('Unable to send verification email. Please check your email settings or try again later.')
+        if (error.message?.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+        throw new Error(error.message || AUTH_ERRORS.UNKNOWN)
+      }
+
+      if (!data?.success) {
+        const errMsg = data?.error || 'Signup failed'
+
+        // Handle rate limiting
+        if (errMsg.includes('rate') || errMsg.includes('429')) {
+          throw new Error(AUTH_ERRORS.RATE_LIMITED)
         }
-        
-        if (error.status === 500 || error.status >= 500) {
-          // Check if it's an email-related 500 error
-          if (error.message?.toLowerCase().includes('email') || error.message?.toLowerCase().includes('smtp') || error.message?.toLowerCase().includes('mail')) {
-            throw new Error('Email service error. Please check your SMTP configuration or try again later.')
-          }
-          throw new Error('Server error. Please try again in a moment. If the problem persists, contact support.')
-        }
-        
+
         // Handle "email already registered" error with special flag
-        if (
-          error.message?.toLowerCase().includes('already registered') || 
-          error.message?.toLowerCase().includes('already exists') ||
-          error.message?.toLowerCase().includes('user already registered') ||
-          error.message?.includes('User already registered') ||
-          error.message?.includes('duplicate key') ||
-          error.message?.includes('unique constraint')
-        ) {
+        if (errMsg === 'EMAIL_ALREADY_REGISTERED' || errMsg.includes('already registered') || errMsg.includes('already exists')) {
           const customError = new Error('EMAIL_ALREADY_REGISTERED')
           customError.isEmailExists = true
-          customError.userMessage = 'An account with this email already exists.'
+          customError.userMessage = data?.userMessage || 'An account with this email already exists.'
           throw customError
         }
-        
-        if (error.message) {
-          throw new Error(error.message)
-        }
-        throw new Error(AUTH_ERRORS.UNKNOWN)
+
+        throw new Error(errMsg)
       }
 
-      // Even if signup succeeds, check if email was actually sent
-      // Supabase might create the user but fail to send email silently
-      if (data?.user && !data?.session) {
-        // User created but not confirmed - email should have been sent
-        // Send welcome email to new user
-        try {
-          await supabase.functions.invoke('send-email', {
-            body: {
-              type: 'welcome',
-              to: emailResult.value,
-              data: {
-                firstName: firstNameResult.value,
-                appUrl: window.location.origin
-              }
-            }
-          })
-        } catch (emailErr) {
-          console.warn('Welcome email may not have been sent:', emailErr?.message)
-        }
-      }
-
-      return { success: true, message: 'Please check your email to verify your account', email: emailResult.value }
+      // Success - user created without automatic email
+      // User will choose verification method in the next step
+      return { success: true, message: 'Account created! Please verify your account.', email: data.email || emailResult.value }
     } catch (error) {
-      if (error.message.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+      if (error.message?.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
       throw error
     }
   }, [])
