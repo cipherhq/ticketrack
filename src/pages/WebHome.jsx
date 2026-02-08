@@ -547,7 +547,7 @@ export function WebHome() {
             </h1>
             
             {/* Subtitle */}
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl">
+            <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-xl">
               From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening worldwide.
             </p>
             
@@ -640,15 +640,15 @@ export function WebHome() {
             <div className="flex flex-wrap gap-8 md:gap-12">
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.eventsHosted}</div>
-                <div className="text-muted-foreground text-sm">Events Hosted</div>
+                <div className="text-gray-400 text-sm">Events Hosted</div>
               </div>
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.ticketsSold}</div>
-                <div className="text-muted-foreground text-sm">Tickets Sold</div>
+                <div className="text-gray-400 text-sm">Tickets Sold</div>
               </div>
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.organizers}</div>
-                <div className="text-muted-foreground text-sm">Organizers</div>
+                <div className="text-gray-400 text-sm">Organizers</div>
               </div>
             </div>
           </div>
