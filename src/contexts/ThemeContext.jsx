@@ -42,13 +42,18 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   // Apply dark class to document element
+  // NOTE: Dark mode disabled - not fully implemented across all pages
+  // Keeping infrastructure in place for future use
   useEffect(() => {
     const root = document.documentElement;
-    if (resolvedTheme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    // Always remove dark class to force light mode
+    root.classList.remove('dark');
+    // When dark mode is ready, uncomment below:
+    // if (resolvedTheme === 'dark') {
+    //   root.classList.add('dark');
+    // } else {
+    //   root.classList.remove('dark');
+    // }
   }, [resolvedTheme]);
 
   // Persist theme choice
