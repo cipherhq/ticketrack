@@ -37,9 +37,9 @@ export function PlatformPnL() {
       return formatPrice(val, currency);
     }
     const entries = Object.entries(metricsByCurrency)
-      .filter(([_, m]) => m[metricKey] > 0)
+      .filter(([_, m]) => m[metricKey] !== 0)
       .map(([curr, m]) => formatPrice(m[metricKey], curr));
-    return entries.length > 0 ? entries.join(' · ') : 'Free';
+    return entries.length > 0 ? entries.join(' · ') : formatPrice(0, 'USD');
   };
 
   // Get total for a metric across all currencies (for margin calculation)

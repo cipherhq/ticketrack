@@ -290,13 +290,24 @@ export const sendRefundRejectedEmail = (email, data) =>
     organizerNotes: data.organizerNotes,
   });
 
-export const sendRefundProcessedEmail = (email, data) => 
+export const sendRefundProcessedEmail = (email, data) =>
   sendEmail('refund_processed', email, {
     attendeeName: data.attendeeName,
     refundAmount: data.refundAmount,
     currency: data.currency,
     paymentMethod: data.paymentMethod,
   });
+
+export const sendRefundCompletedOrganizerEmail = (email, data, organizerId) =>
+  sendEmail('refund_completed_organizer', email, {
+    organizerName: data.organizerName,
+    attendeeName: data.attendeeName,
+    eventTitle: data.eventTitle,
+    refundAmount: data.refundAmount,
+    currency: data.currency,
+    refundReference: data.refundReference,
+    processedAt: data.processedAt || new Date().toISOString(),
+  }, { organizerId });
 
 // ============================================================================
 // WAITLIST EMAILS
@@ -429,7 +440,7 @@ export const sendEventReminderOrganizerEmail = (email, data, organizerId) =>
     timeUntil: data.timeUntil,
   }, { organizerId, eventId: data.eventId });
 
-export const sendRefundRequestEmail = (email, data, organizerId) => 
+export const sendRefundRequestEmail = (email, data, organizerId) =>
   sendEmail('refund_request', email, {
     eventTitle: data.eventTitle,
     attendeeName: data.attendeeName,
@@ -438,6 +449,41 @@ export const sendRefundRequestEmail = (email, data, organizerId) =>
     currency: data.currency,
     reason: data.reason,
     refundId: data.refundId,
+  }, { organizerId, eventId: data.eventId });
+
+export const sendChargebackNotificationEmail = (email, data, organizerId) =>
+  sendEmail('chargeback_notification', email, {
+    organizerName: data.organizerName,
+    eventTitle: data.eventTitle,
+    orderNumber: data.orderNumber,
+    disputedAmount: data.disputedAmount,
+    currency: data.currency,
+    reason: data.reason,
+    status: data.status,
+    evidenceDueBy: data.evidenceDueBy,
+    chargebackId: data.chargebackId,
+    paymentProvider: data.paymentProvider,
+  }, { organizerId });
+
+export const sendChargebackResolvedEmail = (email, data, organizerId) =>
+  sendEmail('chargeback_resolved', email, {
+    organizerName: data.organizerName,
+    eventTitle: data.eventTitle,
+    orderNumber: data.orderNumber,
+    disputedAmount: data.disputedAmount,
+    currency: data.currency,
+    resolution: data.resolution,
+    chargebackId: data.chargebackId,
+  }, { organizerId });
+
+export const sendPayoutEligibleEmail = (email, data, organizerId) =>
+  sendEmail('payout_eligible', email, {
+    organizerName: data.organizerName,
+    eventTitle: data.eventTitle,
+    amount: data.amount,
+    currency: data.currency,
+    eligibleDate: data.eligibleDate,
+    eventId: data.eventId,
   }, { organizerId, eventId: data.eventId });
 
 export const sendPostEventSummaryEmail = (email, data, organizerId) => 
@@ -477,10 +523,17 @@ export const sendWhatsAppCreditsPurchasedEmail = (email, data, organizerId) =>
     newBalance: data.newBalance,
   }, { organizerId });
 
-export const sendLowSMSBalanceEmail = (email, data, organizerId) => 
+export const sendLowSMSBalanceEmail = (email, data, organizerId) =>
   sendEmail('low_sms_balance', email, {
     organizerName: data.organizerName,
     balance: data.balance,
+  }, { organizerId });
+
+export const sendLowWhatsAppBalanceEmail = (email, data, organizerId) =>
+  sendEmail('low_whatsapp_balance', email, {
+    organizerName: data.organizerName,
+    balance: data.balance,
+    currency: data.currency || 'USD',
   }, { organizerId });
 
 export const sendEventDraftReminderEmail = (email, data, organizerId) => 
@@ -777,6 +830,7 @@ export default {
   sendRefundApprovedEmail,
   sendRefundRejectedEmail,
   sendRefundProcessedEmail,
+  sendRefundCompletedOrganizerEmail,
   // Waitlist
   sendWaitlistJoinedEmail,
   sendWaitlistAvailableEmail,
@@ -797,11 +851,15 @@ export default {
   sendEventCancelledOrganizerEmail,
   sendEventReminderOrganizerEmail,
   sendRefundRequestEmail,
+  sendChargebackNotificationEmail,
+  sendChargebackResolvedEmail,
+  sendPayoutEligibleEmail,
   sendPostEventSummaryEmail,
   sendPayoutProcessedEmail,
   sendSMSCreditsPurchasedEmail,
   sendWhatsAppCreditsPurchasedEmail,
   sendLowSMSBalanceEmail,
+  sendLowWhatsAppBalanceEmail,
   sendEventDraftReminderEmail,
   // Team
   sendTeamInvitationEmail,

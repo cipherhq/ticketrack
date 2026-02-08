@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
+import { sendRefundCompletedOrganizerEmail } from '@/lib/emailService';
 import { Pagination, usePagination } from '@/components/ui/pagination';
 
 export function OrganizerRefunds() {
@@ -164,11 +165,25 @@ export function OrganizerRefunds() {
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
+      // Send confirmation email to organizer
+      const refund = connectRefundModal.refund;
+      const organizerEmail = organizer.email || organizer.business_email;
+      if (organizerEmail) {
+        sendRefundCompletedOrganizerEmail(organizerEmail, {
+          organizerName: organizer.business_name,
+          attendeeName: refund.ticket?.attendee_name,
+          eventTitle: refund.event?.title,
+          refundAmount: refund.amount || refund.refund_amount,
+          currency: refund.currency,
+          refundReference: data.refundId,
+        }, organizer.id);
+      }
+
       // Success
       setConnectRefundModal({ open: false, refund: null });
       setConnectRefundNotes('');
       loadRefunds();
-      
+
       alert(`Refund processed successfully! Refund ID: ${data.refundId}`);
     } catch (error) {
       console.error('Error processing Connect refund:', error);

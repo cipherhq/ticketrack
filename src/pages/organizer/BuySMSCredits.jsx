@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { sendSMSCreditsPurchasedEmail } from '@/lib/emailService';
 
 export function BuySMSCredits() {
   const { user } = useAuth();
@@ -165,11 +166,12 @@ export function BuySMSCredits() {
 
       // Update wallet
       const totalCredits = pkg.credits + pkg.bonus_credits;
-      
+      const newBalance = (wallet?.sms_balance || 0) + totalCredits;
+
       await supabase
         .from('organizer_sms_wallet')
         .update({
-          sms_balance: (wallet?.sms_balance || 0) + totalCredits,
+          sms_balance: newBalance,
           total_purchased: (wallet?.total_purchased || 0) + totalCredits,
           total_spent: (wallet?.total_spent || 0) + pkg.price,
           last_purchase_at: new Date().toISOString(),
@@ -177,9 +179,21 @@ export function BuySMSCredits() {
         })
         .eq('organizer_id', organizer.id);
 
+      // Send confirmation email
+      const organizerEmail = organizer.email || organizer.business_email;
+      if (organizerEmail) {
+        const currency = pkg.currency || getDefaultCurrency(organizer.country_code);
+        sendSMSCreditsPurchasedEmail(organizerEmail, {
+          units: totalCredits,
+          amount: pkg.price,
+          currency: currency,
+          newBalance: newBalance,
+        }, organizer.id);
+      }
+
       // Reload data
       await loadData();
-      
+
       alert(`Success! ${totalCredits} SMS credits added to your account.`);
     } catch (error) {
       console.error('Error processing payment:', error);

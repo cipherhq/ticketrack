@@ -29,7 +29,9 @@ serve(async (req) => {
       .select(`
         *,
         order:orders(id, payment_reference, payment_provider, currency),
-        ticket:tickets(id, ticket_code, attendee_email, attendee_name)
+        ticket:tickets(id, ticket_code, attendee_email, attendee_name),
+        event:events(id, title),
+        organizer:organizers(id, business_name, email, business_email)
       `)
       .eq("id", refundRequestId)
       .single();
@@ -277,7 +279,7 @@ serve(async (req) => {
     try {
       const attendeeEmail = refundRequest.ticket?.attendee_email;
       const attendeeName = refundRequest.ticket?.attendee_name || "Customer";
-      
+
       if (attendeeEmail) {
         await fetch(`${supabaseUrl}/functions/v1/send-email`, {
           method: "POST",
@@ -306,7 +308,42 @@ serve(async (req) => {
         });
       }
     } catch (emailError) {
-      console.error("Failed to send refund email:", emailError);
+      console.error("Failed to send attendee refund email:", emailError);
+      // Don't fail the refund if email fails
+    }
+
+    // Send email notification to organizer
+    try {
+      const organizerEmail = refundRequest.organizer?.email || refundRequest.organizer?.business_email;
+      const organizerName = refundRequest.organizer?.business_name || "Organizer";
+      const eventTitle = refundRequest.event?.title || "Event";
+      const attendeeName = refundRequest.ticket?.attendee_name || "Customer";
+
+      if (organizerEmail) {
+        await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            type: "refund_completed_organizer",
+            to: organizerEmail,
+            data: {
+              organizerName,
+              attendeeName,
+              eventTitle,
+              refundAmount: refundRequest.amount,
+              currency,
+              refundReference,
+              processedAt: new Date().toISOString(),
+            },
+            organizerId: refundRequest.organizer?.id,
+          }),
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send organizer refund email:", emailError);
       // Don't fail the refund if email fails
     }
 

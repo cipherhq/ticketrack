@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { MessageSquare, CreditCard, History, Wallet, Check, AlertCircle } from 'lucide-react';
+import { sendWhatsAppCreditsPurchasedEmail } from '@/lib/emailService';
 
 export default function BuyWhatsAppCredits() {
   const { organizer } = useOrganizer();
@@ -69,11 +70,22 @@ export default function BuyWhatsAppCredits() {
         callback: async function(response) {
           try {
             await supabase.from('whatsapp_credit_purchases').update({ payment_reference: response.reference, payment_status: 'completed' }).eq('id', purchase.id);
-            
+
             // Add credits to wallet
             const newBalance = (wallet?.balance || 0) + pkg.credits;
             const newTotal = (wallet?.total_purchased || 0) + pkg.credits;
             await supabase.from('organizer_whatsapp_wallet').update({ balance: newBalance, total_purchased: newTotal, updated_at: new Date().toISOString() }).eq('organizer_id', organizer.id);
+
+            // Send confirmation email
+            const organizerEmail = organizer.email || organizer.business_email;
+            if (organizerEmail) {
+              sendWhatsAppCreditsPurchasedEmail(organizerEmail, {
+                units: pkg.credits,
+                amount: pkg.price,
+                currency: 'NGN',
+                newBalance: newBalance,
+              }, organizer.id);
+            }
 
             setSuccess(`Successfully purchased ${pkg.name}! $${pkg.credits} credits added.`);
             loadData();

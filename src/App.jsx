@@ -17,6 +17,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext';
 import { CartProvider } from './contexts/CartContext';
 import { ImpersonationProvider } from './contexts/ImpersonationContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
 import { SessionTimeoutProvider } from './hooks/useSessionTimeout.jsx';
 import { SESSION_TIMEOUT_MS, SESSION_WARNING_MS } from './config/app';
@@ -51,10 +52,10 @@ function lazyWithRetry(importFn, moduleName) {
 
 // Loading fallback component
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
+  <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="text-center">
-      <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto mb-4" />
-      <p className="text-[#0F0F0F]/60">Loading...</p>
+      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+      <p className="text-muted-foreground">Loading...</p>
     </div>
   </div>
 );
@@ -133,6 +134,7 @@ const FinanceApp = lazyWithRetry(
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthProvider><FeatureFlagsProvider>
       <CartProvider>
         <ImpersonationProvider>
@@ -143,13 +145,13 @@ function App() {
             <ImpersonationBanner />
             <Sentry.ErrorBoundary
               fallback={({ error, resetError }) => (
-                <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
+                <div className="min-h-screen flex items-center justify-center bg-background">
                   <div className="text-center max-w-md px-6">
-                    <h1 className="text-2xl font-bold mb-4 text-[#0F0F0F]">Something went wrong</h1>
-                    <p className="text-[#0F0F0F]/60 mb-6">We've been notified and are working on fixing this issue.</p>
+                    <h1 className="text-2xl font-bold mb-4 text-foreground">Something went wrong</h1>
+                    <p className="text-muted-foreground mb-6">We've been notified and are working on fixing this issue.</p>
                     <button
                       onClick={resetError}
-                      className="px-6 py-2 bg-[#2969FF] text-white rounded-lg hover:bg-[#2969FF]/90 transition-colors"
+                      className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
                       Try again
                     </button>
@@ -415,6 +417,7 @@ function App() {
         </ImpersonationProvider>
       </CartProvider>
     </FeatureFlagsProvider></AuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -1,4 +1,7 @@
 import { supabase } from './supabase';
+import { sendLowWhatsAppBalanceEmail } from './emailService';
+
+const LOW_BALANCE_THRESHOLD = 5.00; // $5 USD threshold
 
 export async function getOrCreateWallet(organizerId) {
   if (!organizerId) throw new Error('Organizer ID required');
@@ -34,9 +37,11 @@ export async function deductCredits(organizerId, messageType, recipientPhone, me
   if (rate === 0) return true;
   const wallet = await getOrCreateWallet(organizerId);
   if (wallet.balance < rate) throw new Error('Insufficient WhatsApp credits');
-  
+
+  const newBalance = wallet.balance - rate;
+
   await supabase.from('organizer_whatsapp_wallet').update({
-    balance: wallet.balance - rate,
+    balance: newBalance,
     total_used: (wallet.total_used || 0) + rate,
     updated_at: new Date().toISOString()
   }).eq('organizer_id', organizerId);
@@ -51,6 +56,30 @@ export async function deductCredits(organizerId, messageType, recipientPhone, me
     message_id: messageId,
     status: 'sent'
   });
+
+  // Check for low balance and send alert if needed
+  if (newBalance <= LOW_BALANCE_THRESHOLD && wallet.balance > LOW_BALANCE_THRESHOLD) {
+    // Balance just dropped below threshold - send alert
+    try {
+      const { data: organizer } = await supabase
+        .from('organizers')
+        .select('business_name, email, business_email')
+        .eq('id', organizerId)
+        .single();
+
+      const organizerEmail = organizer?.email || organizer?.business_email;
+      if (organizerEmail) {
+        sendLowWhatsAppBalanceEmail(organizerEmail, {
+          organizerName: organizer?.business_name || 'Organizer',
+          balance: newBalance,
+          currency: 'USD',
+        }, organizerId);
+      }
+    } catch (err) {
+      console.error('Failed to send low WhatsApp balance alert:', err);
+    }
+  }
+
   return true;
 }
 

@@ -12,6 +12,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+import { sendChargebackNotificationEmail, sendChargebackResolvedEmail } from '@/lib/emailService';
 
 export function ChargebackDetail() {
   const { id } = useParams();
@@ -139,6 +140,22 @@ export function ChargebackDetail() {
         notes: 'Evidence submitted to payment provider'
       });
 
+      // Notify organizer that evidence was submitted
+      const organizerEmail = chargeback.organizers?.email;
+      if (organizerEmail) {
+        sendChargebackNotificationEmail(organizerEmail, {
+          organizerName: chargeback.organizers?.business_name,
+          eventTitle: chargeback.events?.title,
+          orderNumber: chargeback.orders?.order_number,
+          disputedAmount: chargeback.disputed_amount,
+          currency: chargeback.currency,
+          reason: chargeback.reason,
+          status: 'under_review',
+          chargebackId: chargeback.provider_dispute_id,
+          paymentProvider: chargeback.payment_provider,
+        }, chargeback.organizers?.id);
+      }
+
       logFinanceAction('submit_chargeback_evidence', { chargeback_id: id });
       loadChargeback();
     } catch (error) {
@@ -168,6 +185,20 @@ export function ChargebackDetail() {
         action: 'chargeback_accepted',
         notes: 'Chargeback accepted, amount deducted from organizer balance'
       });
+
+      // Notify organizer about the resolution
+      const organizerEmail = chargeback.organizers?.email;
+      if (organizerEmail) {
+        sendChargebackResolvedEmail(organizerEmail, {
+          organizerName: chargeback.organizers?.business_name,
+          eventTitle: chargeback.events?.title,
+          orderNumber: chargeback.orders?.order_number,
+          disputedAmount: chargeback.disputed_amount,
+          currency: chargeback.currency,
+          resolution: 'lost',
+          chargebackId: chargeback.provider_dispute_id,
+        }, chargeback.organizers?.id);
+      }
 
       logFinanceAction('accept_chargeback', { chargeback_id: id });
       loadChargeback();

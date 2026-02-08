@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { NotificationBadge, useFinanceNotifications } from '@/components/NotificationBadge';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const navGroups = [
   {
@@ -144,7 +145,7 @@ export function FinanceLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA] flex">
+    <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-[#0F0F0F] text-white transition-all duration-300 flex flex-col fixed h-full z-40`}>
         {/* Logo */}
@@ -282,24 +283,25 @@ export function FinanceLayout() {
       {/* Main Content */}
       <main className={`flex-1 overflow-auto ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
         {/* Header */}
-        <header className="bg-white border-b border-[#0F0F0F]/10 px-6 py-4 sticky top-0 z-30">
+        <header className="bg-card border-b border-border/10 px-6 py-4 sticky top-0 z-30">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-[#0F0F0F]">Finance Portal</h1>
+            <h1 className="text-lg font-semibold text-foreground">Finance Portal</h1>
             <div className="flex items-center gap-4">
-              <button className="relative p-2 rounded-lg hover:bg-[#F4F6FA] group" title="Notifications">
-                <Bell className="w-5 h-5 text-[#0F0F0F]/60" />
+              <ThemeToggle className="text-foreground/60" />
+              <button className="relative p-2 rounded-lg hover:bg-muted group" title="Notifications">
+                <Bell className="w-5 h-5 text-foreground/60" />
                 {getTotalNotifications() > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                 )}
                 {/* Tooltip */}
                 {getTotalNotifications() > 0 && (
-                  <div className="absolute right-0 top-full mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg 
+                  <div className="absolute right-0 top-full mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg
                                   opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 whitespace-nowrap">
                     {getTotalNotifications()} pending payouts
                   </div>
                 )}
               </button>
-              <div className="w-8 h-8 bg-[#2969FF] rounded-full flex items-center justify-center text-white font-medium text-sm">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-medium text-sm">
                 {financeUser?.email?.charAt(0)?.toUpperCase() || 'F'}
               </div>
             </div>

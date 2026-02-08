@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function WebLayout() {
   const navigate = useNavigate()
@@ -93,9 +94,9 @@ export function WebLayout() {
   const isActive = (path) => location.pathname === path
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-[#0F0F0F]/10 sticky top-0 z-50" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
+      <header className="bg-card border-b border-border/10 sticky top-0 z-50" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -105,53 +106,54 @@ export function WebLayout() {
             <nav className="hidden md:flex items-center gap-8">
               <button
                 onClick={() => navigate('/events')}
-                className={`text-[#0F0F0F] hover:text-[#2969FF] transition-colors ${
-                  isActive('/events') ? 'text-[#2969FF]' : ''
+                className={`text-foreground hover:text-primary transition-colors ${
+                  isActive('/events') ? 'text-primary' : ''
                 }`}
               >
                 Browse Events
               </button>
               <button
                 onClick={() => navigate('/profile', { state: { tab: 'tickets' } })}
-                className={`text-[#0F0F0F] hover:text-[#2969FF] transition-colors ${
-                  isActive('/tickets') ? 'text-[#2969FF]' : ''
+                className={`text-foreground hover:text-primary transition-colors ${
+                  isActive('/tickets') ? 'text-primary' : ''
                 }`}
               >
                 My Tickets
               </button>
               <button
                 onClick={() => navigate('/pricing')}
-                className={`text-[#0F0F0F] hover:text-[#2969FF] transition-colors ${
-                  isActive('/pricing') ? 'text-[#2969FF]' : ''
+                className={`text-foreground hover:text-primary transition-colors ${
+                  isActive('/pricing') ? 'text-primary' : ''
                 }`}
               >
                 Pricing
               </button>
               <button
                 onClick={() => navigate('/blog')}
-                className={`text-[#0F0F0F] hover:text-[#2969FF] transition-colors ${
-                  isActive('/blog') ? 'text-[#2969FF]' : ''
+                className={`text-foreground hover:text-primary transition-colors ${
+                  isActive('/blog') ? 'text-primary' : ''
                 }`}
               >
                 Blog
               </button>
               <button
                 onClick={() => navigate('/search')}
-                className="text-[#0F0F0F] hover:text-[#2969FF] transition-colors"
+                className="text-foreground hover:text-primary transition-colors"
               >
                 <Search className="w-5 h-5" />
               </button>
               <button
                 onClick={() => navigate('/cart')}
-                className="relative text-[#0F0F0F] hover:text-[#2969FF] transition-colors"
+                className="relative text-foreground hover:text-primary transition-colors"
               >
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-[#2969FF] text-white text-xs rounded-full flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
                     {cartCount}
                   </span>
                 )}
               </button>
+              <ThemeToggle className="text-foreground/60" />
             </nav>
 
             {/* Auth Buttons / User Profile */}
@@ -165,7 +167,7 @@ export function WebLayout() {
                     navigate('/login', { state: { from: '/create-event' } });
                   }
                 }}
-                className="rounded-xl border-[#2969FF] text-[#2969FF] hover:bg-[#2969FF]/10 flex items-center gap-2"
+                className="rounded-xl border-primary text-primary hover:bg-primary/10 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Create Event
@@ -190,10 +192,10 @@ export function WebLayout() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 rounded-xl">
                     <div className="px-2 py-2">
-                      <p className="text-sm font-medium text-[#0F0F0F]">
+                      <p className="text-sm font-medium text-foreground">
                         {currentUser.firstName} {currentUser.lastName}
                       </p>
-                      <p className="text-xs text-[#0F0F0F]/60">
+                      <p className="text-xs text-muted-foreground">
                         {currentUser.email}
                       </p>
                     </div>
@@ -279,7 +281,7 @@ export function WebLayout() {
                   </Button>
                   <Button
                     onClick={() => navigate('/signup')}
-                    className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
                   >
                     Sign Up
                   </Button>
@@ -294,9 +296,9 @@ export function WebLayout() {
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-[#0F0F0F]" />
+                <X className="w-6 h-6 text-foreground" />
               ) : (
-                <Menu className="w-6 h-6 text-[#0F0F0F]" />
+                <Menu className="w-6 h-6 text-foreground" />
               )}
             </button>
           </div>
@@ -304,7 +306,7 @@ export function WebLayout() {
 
         {/* Mobile Menu - Compact Design */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-[#0F0F0F]/10 max-h-[85vh] overflow-y-auto">
+          <div className="md:hidden bg-card border-t border-border/10 max-h-[85vh] overflow-y-auto">
             <div className="px-4 py-3">
               {/* Create Event CTA - Always visible */}
               <button
@@ -312,7 +314,7 @@ export function WebLayout() {
                   navigate('/create-event')
                   setMobileMenuOpen(false)
                 }}
-                className="w-full mb-4 py-3 px-4 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl font-medium flex items-center justify-center gap-2 touch-manipulation"
+                className="w-full mb-4 py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium flex items-center justify-center gap-2 touch-manipulation"
               >
                 <Plus className="w-5 h-5" />
                 Create Event
@@ -322,46 +324,46 @@ export function WebLayout() {
               <div className="grid grid-cols-4 gap-2 mb-4">
                 <button
                   onClick={() => { navigate('/events'); setMobileMenuOpen(false); }}
-                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-[#F4F6FA] active:bg-[#F4F6FA] touch-manipulation"
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-muted active:bg-muted touch-manipulation"
                 >
-                  <Calendar className="w-5 h-5 text-[#2969FF]" />
-                  <span className="text-xs text-[#0F0F0F]">Events</span>
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <span className="text-xs text-foreground">Events</span>
                 </button>
                 <button
                   onClick={() => { navigate('/search'); setMobileMenuOpen(false); }}
-                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-[#F4F6FA] active:bg-[#F4F6FA] touch-manipulation"
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-muted active:bg-muted touch-manipulation"
                 >
-                  <Search className="w-5 h-5 text-[#2969FF]" />
-                  <span className="text-xs text-[#0F0F0F]">Search</span>
+                  <Search className="w-5 h-5 text-primary" />
+                  <span className="text-xs text-foreground">Search</span>
                 </button>
                 <button
                   onClick={() => { navigate('/profile', { state: { tab: 'tickets' } }); setMobileMenuOpen(false); }}
-                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-[#F4F6FA] active:bg-[#F4F6FA] touch-manipulation"
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-muted active:bg-muted touch-manipulation"
                 >
-                  <Ticket className="w-5 h-5 text-[#2969FF]" />
-                  <span className="text-xs text-[#0F0F0F]">Tickets</span>
+                  <Ticket className="w-5 h-5 text-primary" />
+                  <span className="text-xs text-foreground">Tickets</span>
                 </button>
                 <button
                   onClick={() => { navigate('/my-groups'); setMobileMenuOpen(false); }}
-                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-[#F4F6FA] active:bg-[#F4F6FA] touch-manipulation"
+                  className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl hover:bg-muted active:bg-muted touch-manipulation"
                 >
-                  <Users className="w-5 h-5 text-[#2969FF]" />
-                  <span className="text-xs text-[#0F0F0F]">Groups</span>
+                  <Users className="w-5 h-5 text-primary" />
+                  <span className="text-xs text-foreground">Groups</span>
                 </button>
               </div>
 
               {/* Secondary Links */}
-              <div className="flex gap-4 py-2 border-t border-[#0F0F0F]/10 text-sm">
+              <div className="flex gap-4 py-2 border-t border-border/10 text-sm">
                 <button
                   onClick={() => { navigate('/blog'); setMobileMenuOpen(false); }}
-                  className="flex items-center gap-1.5 text-[#0F0F0F]/70 hover:text-[#0F0F0F]"
+                  className="flex items-center gap-1.5 text-foreground/70 hover:text-foreground"
                 >
                   <BookOpen className="w-4 h-4" />
                   Blog
                 </button>
                 <button
                   onClick={() => { navigate('/pricing'); setMobileMenuOpen(false); }}
-                  className="flex items-center gap-1.5 text-[#0F0F0F]/70 hover:text-[#0F0F0F]"
+                  className="flex items-center gap-1.5 text-foreground/70 hover:text-foreground"
                 >
                   <DollarSign className="w-4 h-4" />
                   Pricing
@@ -369,31 +371,31 @@ export function WebLayout() {
               </div>
               
               {/* User Section */}
-              <div className="pt-3 mt-2 border-t border-[#0F0F0F]/10">
+              <div className="pt-3 mt-2 border-t border-border/10">
                 {isLoggedIn ? (
                   <div className="space-y-2">
                     {/* User Info Row */}
                     <div className="flex items-center gap-3 py-2">
                       <Avatar className="w-9 h-9">
                         <AvatarImage src={currentUser.profileImage} />
-                        <AvatarFallback className="bg-[#2969FF] text-white text-sm">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                           {getInitials()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#0F0F0F] truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {currentUser.firstName} {currentUser.lastName}
                         </p>
-                        <p className="text-xs text-[#0F0F0F]/60 truncate">{currentUser.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
                       </div>
                     </div>
-                    
+
                     {/* Dashboard Links */}
                     <div className="flex flex-wrap gap-2">
                       {isOrganizer && (
                         <button
                           onClick={() => { navigate('/organizer'); setMobileMenuOpen(false); }}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-[#F4F6FA] rounded-lg text-sm text-[#0F0F0F] hover:bg-[#2969FF]/10"
+                          className="flex items-center gap-1.5 px-3 py-2 bg-muted rounded-lg text-sm text-foreground hover:bg-primary/10"
                         >
                           <LayoutDashboard className="w-4 h-4" />
                           Organizer
@@ -402,7 +404,7 @@ export function WebLayout() {
                       {isPromoter && (
                         <button
                           onClick={() => { navigate('/promoter'); setMobileMenuOpen(false); }}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-[#F4F6FA] rounded-lg text-sm text-[#0F0F0F] hover:bg-[#2969FF]/10"
+                          className="flex items-center gap-1.5 px-3 py-2 bg-muted rounded-lg text-sm text-foreground hover:bg-primary/10"
                         >
                           <Megaphone className="w-4 h-4" />
                           Promoter
@@ -410,14 +412,14 @@ export function WebLayout() {
                       )}
                       <button
                         onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-[#F4F6FA] rounded-lg text-sm text-[#0F0F0F] hover:bg-[#2969FF]/10"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-muted rounded-lg text-sm text-foreground hover:bg-primary/10"
                       >
                         <UserCircle className="w-4 h-4" />
                         Profile
                       </button>
                       <button
                         onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-500/10"
                       >
                         <LogOut className="w-4 h-4" />
                         Logout
@@ -435,7 +437,7 @@ export function WebLayout() {
                     </Button>
                     <Button
                       onClick={() => { navigate('/signup'); setMobileMenuOpen(false); }}
-                      className="flex-1 bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-11"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-11"
                     >
                       Sign Up
                     </Button>
