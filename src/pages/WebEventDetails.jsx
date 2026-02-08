@@ -966,6 +966,16 @@ export function WebEventDetails() {
                     {totalTickets > 0 ? `Checkout - ${formatPrice(totalWithFees, event?.currency)}` : 'Select Tickets'}
                   </Button>
                 )}
+
+                {/* Buy with Friends Button - Mobile */}
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl py-5 border-[#2969FF]/30 text-[#2969FF] hover:bg-[#2969FF]/5"
+                  onClick={() => setShowGroupModal(true)}
+                >
+                  <UsersRound className="w-5 h-5 mr-2" />
+                  Buy with Friends
+                </Button>
               </CardContent>
             </Card>
           </div>
