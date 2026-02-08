@@ -32,25 +32,34 @@ export function WebEventDetails() {
   const [waitlistPosition, setWaitlistPosition] = useState(null)
   const [error, setError] = useState(null)
   
-  // Restore selected tickets from state or sessionStorage (for login redirect)
-  const [selectedTickets, setSelectedTickets] = useState(() => {
-    if (location.state?.selectedTickets) {
-      return location.state.selectedTickets
+  // Selected tickets state
+  const [selectedTickets, setSelectedTickets] = useState({})
+
+  // Restore selected tickets from state or sessionStorage after login redirect
+  useEffect(() => {
+    // Check if we have tickets in navigation state (passed from login redirect)
+    if (location.state?.selectedTickets && Object.keys(location.state.selectedTickets).length > 0) {
+      setSelectedTickets(location.state.selectedTickets)
+      // Clear the state to prevent re-restoration on subsequent renders
+      window.history.replaceState({}, document.title)
+      return
     }
-    // Try to restore from sessionStorage
+
+    // Try to restore from sessionStorage (backup mechanism)
     try {
       const stored = sessionStorage.getItem(`pending_tickets_${id}`)
       if (stored) {
         const parsed = JSON.parse(stored)
-        // Clear it after restoring
-        sessionStorage.removeItem(`pending_tickets_${id}`)
-        return parsed
+        if (parsed && Object.keys(parsed).length > 0) {
+          setSelectedTickets(parsed)
+          // Clear it after restoring
+          sessionStorage.removeItem(`pending_tickets_${id}`)
+        }
       }
     } catch (e) {
       console.error('Error restoring tickets from session:', e)
     }
-    return {}
-  })
+  }, [id, location.state?.selectedTickets])
   const [isFavorite, setIsFavorite] = useState(false)
   const [savingFavorite, setSavingFavorite] = useState(false)
   const [childEvents, setChildEvents] = useState([])
@@ -71,9 +80,10 @@ export function WebEventDetails() {
   const [failedSpeakerImages, setFailedSpeakerImages] = useState({}) // Track failed image loads
 
   // Function to load tickets for a specific event (for recurring events)
-  const loadTicketsForEvent = async (eventId) => {
+  // resetSelection: only reset selected tickets when user explicitly switches dates
+  const loadTicketsForEvent = async (eventId, resetSelection = false) => {
     if (!eventId) return
-    
+
     try {
       const { data: tickets, error: ticketsError } = await supabase
         .from('ticket_types')
@@ -81,16 +91,18 @@ export function WebEventDetails() {
         .eq('event_id', eventId)
         .eq('is_active', true)
         .order('price', { ascending: true })
-      
+
       if (ticketsError) {
         console.warn('Error loading tickets for event:', ticketsError.message)
         // Don't throw - free events may not have tickets
       }
-      
+
       // Set ticket types (empty array if none found - free events won't have tickets)
       setTicketTypes(tickets || [])
-      // Reset selected tickets when switching dates
-      setSelectedTickets({})
+      // Only reset selected tickets when explicitly switching dates (not initial load)
+      if (resetSelection) {
+        setSelectedTickets({})
+      }
     } catch (err) {
       console.warn('Error loading tickets:', err.message)
       // Set empty array on error - page can still show free event info
@@ -793,7 +805,7 @@ export function WebEventDetails() {
                       onChange={(e) => {
                         const eventId = e.target.value;
                         setSelectedDate(eventId);
-                        loadTicketsForEvent(eventId);
+                        loadTicketsForEvent(eventId, true);
                       }}
                       className="w-full p-2 rounded-lg border border-purple-300 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                     >
@@ -1202,7 +1214,7 @@ export function WebEventDetails() {
                                 key={evt.id}
                     onClick={() => {
                                   setSelectedDate(evt.id);
-                                  loadTicketsForEvent(evt.id);
+                                  loadTicketsForEvent(evt.id, true);
                     }}
                                 className={`rounded-xl cursor-pointer transition-all overflow-hidden ${
                                   selectedDate === evt.id
@@ -1358,7 +1370,7 @@ export function WebEventDetails() {
                                   }`}
                                   onClick={dayData?.event ? () => {
                                     setSelectedDate(dayData.event.id);
-                                    loadTicketsForEvent(dayData.event.id);
+                                    loadTicketsForEvent(dayData.event.id, true);
                                   } : undefined}
                                   title={dayData?.event ? new Date(dayData.event.start_date).toLocaleDateString('en-US', { 
                                     weekday: 'long', 
@@ -1705,7 +1717,7 @@ export function WebEventDetails() {
                     onChange={(e) => {
                       const eventId = e.target.value;
                       setSelectedDate(eventId);
-                      loadTicketsForEvent(eventId);
+                      loadTicketsForEvent(eventId, true);
                     }}
                     className="w-full p-2 rounded-lg border border-purple-300 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
