@@ -95,7 +95,7 @@ export function WebLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border/10 sticky top-0 z-50" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50" style={{ paddingTop: 'max(0px, env(safe-area-inset-top))' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -304,7 +304,7 @@ export function WebLayout() {
 
         {/* Mobile Menu - Compact Design */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-card border-t border-border/10 max-h-[85vh] overflow-y-auto">
+          <div className="md:hidden bg-white border-t border-gray-200 max-h-[85vh] overflow-y-auto">
             <div className="px-4 py-3">
               {/* Create Event CTA - Always visible */}
               <button
