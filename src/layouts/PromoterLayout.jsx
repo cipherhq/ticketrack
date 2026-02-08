@@ -162,21 +162,21 @@ export function PromoterLayout() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border/10">
-        <div className="p-6 border-b border-border/10">
+      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200">
+        <div className="p-6 border-b border-gray-200">
           <Logo className="h-8" />
-          <p className="text-sm text-muted-foreground mt-2">Promoter Portal</p>
+          <p className="text-sm text-gray-600 mt-2">Promoter Portal</p>
         </div>
 
         {promoter && (
-          <div className="p-4 border-b border-border/10">
+          <div className="p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
                 {promoter.full_name?.charAt(0) || 'P'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate">{promoter.full_name || 'Promoter'}</p>
-                <p className="text-xs text-muted-foreground">Code: {promoter.short_code || '---'}</p>
+                <p className="font-medium text-gray-900 truncate">{promoter.full_name || 'Promoter'}</p>
+                <p className="text-xs text-gray-600">Code: {promoter.short_code || '---'}</p>
               </div>
             </div>
           </div>
@@ -191,7 +191,7 @@ export function PromoterLayout() {
               className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
                 location.pathname === item.path
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground/60 hover:bg-muted'
+                  : 'text-gray-900/60 hover:bg-gray-100'
               }`}
             >
               <span className="flex items-center space-x-3">
@@ -202,15 +202,15 @@ export function PromoterLayout() {
                 <NotificationBadge
                   count={counts[item.notificationKey]}
                   size="sm"
-                  className={location.pathname === item.path ? 'bg-card text-primary' : ''}
+                  className={location.pathname === item.path ? 'bg-white text-primary' : ''}
                 />
               )}
             </Link>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border/10 space-y-1">
-          <Link to="/" className="flex items-center space-x-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-muted">
+        <div className="p-4 border-t border-gray-200 space-y-1">
+          <Link to="/" className="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100">
             <Home className="w-5 h-5" />
             <span>Back to Platform</span>
           </Link>
@@ -225,18 +225,18 @@ export function PromoterLayout() {
         <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`lg:hidden fixed top-0 left-0 h-full w-64 bg-card z-50 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6 border-b border-border/10 flex items-center justify-between">
+      <aside className={`lg:hidden fixed top-0 left-0 h-full w-64 bg-white z-50 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <div>
             <Logo className="h-8" />
-            <p className="text-sm text-muted-foreground mt-2">Promoter Portal</p>
+            <p className="text-sm text-gray-600 mt-2">Promoter Portal</p>
           </div>
-          <button onClick={() => setSidebarOpen(false)}><X className="w-6 h-6 text-muted-foreground" /></button>
+          <button onClick={() => setSidebarOpen(false)}><X className="w-6 h-6 text-gray-600" /></button>
         </div>
         <nav className="p-4 space-y-1">
           {navItems.map((item) => (
             <Link key={item.path} to={item.path} onClick={() => handleNavClick(item)}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${location.pathname === item.path ? 'bg-primary text-primary-foreground' : 'text-foreground/60 hover:bg-muted'}`}>
+              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${location.pathname === item.path ? 'bg-primary text-primary-foreground' : 'text-gray-900/60 hover:bg-gray-100'}`}>
               <span className="flex items-center space-x-3">
                 <item.icon className="w-5 h-5" /><span>{item.label}</span>
               </span>
@@ -244,7 +244,7 @@ export function PromoterLayout() {
                 <NotificationBadge
                   count={counts[item.notificationKey]}
                   size="sm"
-                  className={location.pathname === item.path ? 'bg-card text-primary' : ''}
+                  className={location.pathname === item.path ? 'bg-white text-primary' : ''}
                 />
               )}
             </Link>
@@ -253,23 +253,23 @@ export function PromoterLayout() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-card border-b border-border/10 px-6 py-4">
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <button className="lg:hidden p-2 rounded-xl hover:bg-muted" onClick={() => setSidebarOpen(true)}>
-                <Menu className="w-6 h-6 text-foreground" />
+              <button className="lg:hidden p-2 rounded-xl hover:bg-gray-100" onClick={() => setSidebarOpen(true)}>
+                <Menu className="w-6 h-6 text-gray-900" />
               </button>
-              <h1 className="text-foreground">Promoter Portal</h1>
+              <h1 className="text-gray-900">Promoter Portal</h1>
             </div>
             <div className="flex items-center space-x-3">
-              <ThemeToggle className="text-foreground/60" />
+              <ThemeToggle className="text-gray-900/60" />
               <div className="relative">
                 <button
                   onClick={() => setNotificationOpen(!notificationOpen)}
-                  className="p-2 hover:bg-muted rounded-lg relative"
+                  className="p-2 hover:bg-gray-100 rounded-lg relative"
                   title="Notifications"
                 >
-                  <Bell className="w-5 h-5 text-foreground/60" />
+                  <Bell className="w-5 h-5 text-gray-900/60" />
                   {counts.total > 0 && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                   )}

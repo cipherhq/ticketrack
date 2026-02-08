@@ -141,7 +141,7 @@ export function FinanceLayout() {
   const getRoleBadge = () => {
     if (financeUser?.isSuperAdmin) return <Badge className="bg-red-100 text-red-800 text-xs">Super Admin</Badge>;
     if (financeUser?.financeRole === 'finance_admin') return <Badge className="bg-blue-100 text-blue-800 text-xs">Finance Admin</Badge>;
-    return <Badge className="bg-muted text-foreground text-xs">Finance Viewer</Badge>;
+    return <Badge className="bg-gray-100 text-gray-900 text-xs">Finance Viewer</Badge>;
   };
 
   return (
@@ -165,7 +165,7 @@ export function FinanceLayout() {
             variant="ghost" 
             size="icon" 
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-white/60 hover:text-white hover:bg-card/10"
+            className="text-white/60 hover:text-white hover:bg-white/10"
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
@@ -179,7 +179,7 @@ export function FinanceLayout() {
                 <>
                   <button
                     onClick={() => toggleGroup(group.id)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-card/10 transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <group.icon className="w-5 h-5" />
@@ -207,7 +207,7 @@ export function FinanceLayout() {
                             `flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                               isActive 
                                 ? 'bg-[#2969FF] text-white' 
-                                : 'text-white/60 hover:text-white hover:bg-card/10'
+                                : 'text-white/60 hover:text-white hover:bg-white/10'
                             }`
                           }
                         >
@@ -230,7 +230,7 @@ export function FinanceLayout() {
                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                       isActive 
                         ? 'bg-[#2969FF] text-white' 
-                        : 'text-white/70 hover:text-white hover:bg-card/10'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
                     }`
                   }
                 >
@@ -244,7 +244,7 @@ export function FinanceLayout() {
 
         {/* User Section */}
         <div className="p-3 border-t border-white/10">
-          <div className="px-3 py-2 rounded-xl bg-card/5">
+          <div className="px-3 py-2 rounded-xl bg-white/5">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-[#2969FF] rounded-full flex items-center justify-center">
                 <Shield className="w-4 h-4 text-white" />
@@ -260,7 +260,7 @@ export function FinanceLayout() {
               <div className="mt-3 space-y-2">
                 <NavLink
                   to="/"
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-card/10 text-sm"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 text-sm"
                 >
                   <Home className="w-4 h-4" />
                   Back to Website
@@ -269,7 +269,7 @@ export function FinanceLayout() {
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="w-full text-white/60 hover:text-white hover:bg-card/10"
+                  className="w-full text-white/60 hover:text-white hover:bg-white/10"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -283,13 +283,13 @@ export function FinanceLayout() {
       {/* Main Content */}
       <main className={`flex-1 overflow-auto ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
         {/* Header */}
-        <header className="bg-card border-b border-border/10 px-6 py-4 sticky top-0 z-30">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-30">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-foreground">Finance Portal</h1>
+            <h1 className="text-lg font-semibold text-gray-900">Finance Portal</h1>
             <div className="flex items-center gap-4">
-              <ThemeToggle className="text-foreground/60" />
-              <button className="relative p-2 rounded-lg hover:bg-muted group" title="Notifications">
-                <Bell className="w-5 h-5 text-foreground/60" />
+              <ThemeToggle className="text-gray-900/60" />
+              <button className="relative p-2 rounded-lg hover:bg-gray-100 group" title="Notifications">
+                <Bell className="w-5 h-5 text-gray-900/60" />
                 {getTotalNotifications() > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                 )}

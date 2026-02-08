@@ -123,7 +123,7 @@ export function OrganizerLayout({ children }) {
       className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
         isActive(item.path)
           ? 'bg-primary text-primary-foreground'
-          : 'text-foreground/70 hover:bg-muted'
+          : 'text-gray-900/70 hover:bg-gray-100'
       }`}
     >
       <span className="flex items-center gap-3">
@@ -134,7 +134,7 @@ export function OrganizerLayout({ children }) {
         <NotificationBadge
           count={counts[item.notificationKey]}
           size="sm"
-          className={isActive(item.path) ? 'bg-card text-primary' : ''}
+          className={isActive(item.path) ? 'bg-white text-primary' : ''}
         />
       )}
     </Link>
@@ -143,20 +143,20 @@ export function OrganizerLayout({ children }) {
   const renderSidebar = (isMobile = false) => (
     <div className="h-full flex flex-col">
       {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-border/10">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
         <Logo className="h-10" />
         {isMobile && (
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-2 hover:bg-muted rounded-lg"
+            className="p-2 hover:bg-gray-100 rounded-lg"
           >
-            <X className="w-5 h-5 text-foreground" />
+            <X className="w-5 h-5 text-gray-900" />
           </button>
         )}
       </div>
 
       {/* Organizer Info */}
-      <div className="p-4 border-b border-border/10">
+      <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
           {organizer?.logo_url ? (
             <img
@@ -170,10 +170,10 @@ export function OrganizerLayout({ children }) {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground truncate">
+            <p className="font-medium text-gray-900 truncate">
               {organizer?.business_name || 'My Organization'}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-600">
               {organizer?.kyc_status === 'approved' ? 'Verified' : 'Basic'} Account
             </p>
           </div>
@@ -186,7 +186,7 @@ export function OrganizerLayout({ children }) {
           <div key={group.id}>
             <button
               onClick={() => toggleGroup(group.id)}
-              className="w-full flex items-center justify-between px-2 py-1.5 text-xs font-semibold text-foreground/40 uppercase tracking-wider hover:text-foreground/60"
+              className="w-full flex items-center justify-between px-2 py-1.5 text-xs font-semibold text-gray-900/40 uppercase tracking-wider hover:text-gray-900/60"
             >
               <span>{group.label}</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${collapsedGroups[group.id] ? '-rotate-90' : ''}`} />
@@ -206,7 +206,7 @@ export function OrganizerLayout({ children }) {
       <div className="px-4 pb-2">
         <Link
           to="/"
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors text-sm"
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors text-sm"
         >
           <Home className="w-4 h-4" />
           Back to Website
@@ -214,7 +214,7 @@ export function OrganizerLayout({ children }) {
       </div>
 
       {/* Logout */}
-      <div className="p-4 border-t border-border/10">
+      <div className="p-4 border-t border-gray-200">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-500/10 transition-colors text-sm"
@@ -229,20 +229,20 @@ export function OrganizerLayout({ children }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border/10 z-40 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-40 flex items-center justify-between px-4">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 hover:bg-muted rounded-lg"
+          className="p-2 hover:bg-gray-100 rounded-lg"
         >
-          <Menu className="w-6 h-6 text-foreground" />
+          <Menu className="w-6 h-6 text-gray-900" />
         </button>
         <Logo className="h-10" />
         <div className="relative">
           <button
             onClick={() => setNotificationOpen(!notificationOpen)}
-            className="p-2 hover:bg-muted rounded-lg relative"
+            className="p-2 hover:bg-gray-100 rounded-lg relative"
           >
-            <Bell className="w-6 h-6 text-foreground" />
+            <Bell className="w-6 h-6 text-gray-900" />
             {getTotalNotifications() > 0 && (
               <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
             )}
@@ -265,7 +265,7 @@ export function OrganizerLayout({ children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-card border-r border-border/10 z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -275,19 +275,19 @@ export function OrganizerLayout({ children }) {
       {/* Main Content */}
       <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
         {/* Desktop Header */}
-        <header className="hidden lg:flex h-16 bg-card border-b border-border/10 items-center justify-between px-6">
+        <header className="hidden lg:flex h-16 bg-white border-b border-gray-200 items-center justify-between px-6">
           <div>
-            <h2 className="font-medium text-foreground">Welcome back!</h2>
+            <h2 className="font-medium text-gray-900">Welcome back!</h2>
           </div>
           <div className="flex items-center gap-4">
-            <ThemeToggle className="text-foreground/60" />
+            <ThemeToggle className="text-gray-900/60" />
             <div className="relative">
               <button
                 onClick={() => setNotificationOpen(!notificationOpen)}
-                className="p-2 hover:bg-muted rounded-lg relative"
+                className="p-2 hover:bg-gray-100 rounded-lg relative"
                 title="Notifications"
               >
-                <Bell className="w-5 h-5 text-foreground/60" />
+                <Bell className="w-5 h-5 text-gray-900/60" />
                 {getTotalNotifications() > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                 )}
@@ -300,7 +300,7 @@ export function OrganizerLayout({ children }) {
             </div>
             <Link
               to="/organizer/profile"
-              className="flex items-center gap-2 hover:bg-muted rounded-lg p-2"
+              className="flex items-center gap-2 hover:bg-gray-100 rounded-lg p-2"
             >
               {organizer?.logo_url ? (
                 <img

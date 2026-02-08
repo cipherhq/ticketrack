@@ -160,7 +160,7 @@ export function AdminLayout({ children }) {
       className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
         isActive(item.path)
           ? 'bg-primary text-primary-foreground'
-          : 'text-foreground/60 hover:bg-muted hover:text-foreground'
+          : 'text-gray-900/60 hover:bg-gray-100 hover:text-gray-900'
       }`}
       title={item.label}
     >
@@ -180,14 +180,14 @@ export function AdminLayout({ children }) {
 
   const renderSidebar = (isMobile = false) => (
     <>
-      <div className="p-4 border-b border-border/10 flex items-center justify-between">
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <div>
           <Logo className="h-8" />
-          <p className="text-xs text-muted-foreground mt-1">Admin Portal</p>
+          <p className="text-xs text-gray-600 mt-1">Admin Portal</p>
         </div>
         {isMobile && (
           <button onClick={() => setSidebarOpen(false)}>
-            <X className="w-6 h-6 text-muted-foreground" />
+            <X className="w-6 h-6 text-gray-600" />
           </button>
         )}
       </div>
@@ -197,7 +197,7 @@ export function AdminLayout({ children }) {
           <div key={group.id}>
             <button
               onClick={() => toggleGroup(group.id)}
-              className="w-full flex items-center justify-between px-2 py-1.5 text-xs font-semibold text-foreground/40 uppercase tracking-wider hover:text-foreground/60"
+              className="w-full flex items-center justify-between px-2 py-1.5 text-xs font-semibold text-gray-900/40 uppercase tracking-wider hover:text-gray-900/60"
             >
               <span>{group.label}</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${collapsedGroups[group.id] ? '-rotate-90' : ''}`} />
@@ -211,19 +211,19 @@ export function AdminLayout({ children }) {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-border/10">
+      <div className="p-3 border-t border-gray-200">
         <div className="flex items-center gap-3 mb-3 px-2">
           <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm">
             {admin.name?.charAt(0) || 'A'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{admin.name || 'Admin'}</p>
-            <p className="text-xs text-muted-foreground truncate">{admin.role || 'Administrator'}</p>
+            <p className="text-sm font-medium text-gray-900 truncate">{admin.name || 'Admin'}</p>
+            <p className="text-xs text-gray-600 truncate">{admin.role || 'Administrator'}</p>
           </div>
         </div>
         <Link
           to="/"
-          className="w-full mb-2 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-border/10 text-muted-foreground hover:bg-muted transition-colors text-sm"
+          className="w-full mb-2 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors text-sm"
         >
           <Home className="w-4 h-4" />
           Back to Website
@@ -232,7 +232,7 @@ export function AdminLayout({ children }) {
           variant="outline"
           size="sm"
           onClick={handleLogout}
-          className="w-full rounded-lg border-border/10"
+          className="w-full rounded-lg border-gray-200"
         >
           <LogOut className="w-4 h-4 mr-2" />
           Logout
@@ -244,7 +244,7 @@ export function AdminLayout({ children }) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border/10 fixed h-full">
+      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 fixed h-full">
         {renderSidebar()}
       </aside>
 
@@ -255,7 +255,7 @@ export function AdminLayout({ children }) {
           onClick={() => setSidebarOpen(false)}
         >
           <aside
-            className="w-64 h-full bg-card overflow-y-auto flex flex-col"
+            className="w-64 h-full bg-white overflow-y-auto flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {renderSidebar(true)}
@@ -266,27 +266,27 @@ export function AdminLayout({ children }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         {/* Header */}
-        <header className="bg-card border-b border-border/10 px-4 lg:px-6 py-3 sticky top-0 z-30">
+        <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                className="lg:hidden p-2 rounded-lg hover:bg-muted"
+                className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
                 onClick={() => setSidebarOpen(true)}
               >
-                <Menu className="w-5 h-5 text-foreground" />
+                <Menu className="w-5 h-5 text-gray-900" />
               </button>
-              <h1 className="text-lg font-semibold text-foreground">Admin Portal</h1>
+              <h1 className="text-lg font-semibold text-gray-900">Admin Portal</h1>
             </div>
             <div className="flex items-center space-x-3">
-              <ThemeToggle className="text-foreground/60" />
+              <ThemeToggle className="text-gray-900/60" />
               {/* Notification Bell */}
-              <button className="relative p-2 rounded-lg hover:bg-muted" title="Notifications">
-                <Bell className="w-5 h-5 text-foreground/60" />
+              <button className="relative p-2 rounded-lg hover:bg-gray-100" title="Notifications">
+                <Bell className="w-5 h-5 text-gray-900/60" />
                 {getTotalNotifications() > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                 )}
               </button>
-              <span className="text-sm text-muted-foreground hidden md:block">{admin.email}</span>
+              <span className="text-sm text-gray-600 hidden md:block">{admin.email}</span>
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm">
                 {admin.name?.charAt(0) || 'A'}
               </div>
