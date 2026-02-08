@@ -13,27 +13,29 @@ import {
 } from 'lucide-react';
 import { ForYouFeed } from '@/components/ForYouFeed';
 
-// Category styling with icons - all blue theme
+// Category styling with icons and unique gradient colors
 const categoryStyles = {
-  'music-concerts': { icon: Music },
-  'conferences': { icon: Mic2 },
-  'festivals': { icon: PartyPopper },
-  'sports': { icon: Trophy },
-  'arts-theatre': { icon: Drama },
-  'food-drink': { icon: UtensilsCrossed },
-  'nightlife': { icon: Wine },
-  'comedy': { icon: Laugh },
-  'wellness': { icon: Leaf },
-  'charity': { icon: HeartHandshake },
-  'gaming': { icon: Gamepad2 },
-  'education': { icon: GraduationCap },
-  'business': { icon: Briefcase },
-  'kids-family': { icon: Baby },
+  'music-concerts': { icon: Music, gradient: 'from-purple-600 via-pink-500 to-rose-500', glow: 'shadow-purple-500/30' },
+  'conferences': { icon: Mic2, gradient: 'from-blue-600 via-blue-500 to-cyan-500', glow: 'shadow-blue-500/30' },
+  'festivals': { icon: PartyPopper, gradient: 'from-orange-500 via-amber-500 to-yellow-500', glow: 'shadow-orange-500/30' },
+  'sports': { icon: Trophy, gradient: 'from-green-600 via-emerald-500 to-teal-500', glow: 'shadow-green-500/30' },
+  'arts-theatre': { icon: Drama, gradient: 'from-rose-600 via-pink-500 to-fuchsia-500', glow: 'shadow-rose-500/30' },
+  'food-drink': { icon: UtensilsCrossed, gradient: 'from-amber-600 via-orange-500 to-red-500', glow: 'shadow-amber-500/30' },
+  'nightlife': { icon: Wine, gradient: 'from-violet-600 via-purple-500 to-fuchsia-500', glow: 'shadow-violet-500/30' },
+  'comedy': { icon: Laugh, gradient: 'from-yellow-500 via-amber-400 to-orange-400', glow: 'shadow-yellow-500/30' },
+  'wellness': { icon: Leaf, gradient: 'from-teal-600 via-emerald-500 to-green-500', glow: 'shadow-teal-500/30' },
+  'charity': { icon: HeartHandshake, gradient: 'from-pink-600 via-rose-500 to-red-500', glow: 'shadow-pink-500/30' },
+  'gaming': { icon: Gamepad2, gradient: 'from-indigo-600 via-violet-500 to-purple-500', glow: 'shadow-indigo-500/30' },
+  'education': { icon: GraduationCap, gradient: 'from-sky-600 via-blue-500 to-indigo-500', glow: 'shadow-sky-500/30' },
+  'business': { icon: Briefcase, gradient: 'from-slate-600 via-gray-500 to-zinc-500', glow: 'shadow-slate-500/30' },
+  'kids-family': { icon: Baby, gradient: 'from-cyan-500 via-teal-400 to-emerald-400', glow: 'shadow-cyan-500/30' },
 };
 
 // Default style for unknown categories
 const defaultCategoryStyle = {
   icon: Sparkles,
+  gradient: 'from-blue-600 via-indigo-500 to-purple-500',
+  glow: 'shadow-blue-500/30',
 };
 
 const dateOptions = [
@@ -314,7 +316,7 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
   );
 };
 
-// Category Card with modern blue design
+// Category Card with unique gradient per category
 const CategoryCard = ({ category }) => {
   const style = categoryStyles[category.slug] || defaultCategoryStyle;
   const IconComponent = style.icon;
@@ -322,24 +324,33 @@ const CategoryCard = ({ category }) => {
   return (
     <Link
       to={`/events?category=${category.slug}`}
-      className="relative min-w-[160px] h-[140px] rounded-2xl overflow-hidden group cursor-pointer bg-gradient-to-br from-[#2969FF] to-[#1a4fd8] p-4 flex flex-col justify-between shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+      className={`relative min-w-[160px] h-[150px] rounded-2xl overflow-hidden group cursor-pointer bg-gradient-to-br ${style.gradient} p-4 flex flex-col justify-between shadow-lg ${style.glow} hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-1`}
     >
-      {/* Decorative circles */}
-      <div className="absolute -top-6 -right-6 w-24 h-24 bg-card/10 rounded-full" />
-      <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-card/10 rounded-full" />
+      {/* Animated background pattern */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.3)_0%,transparent_50%)]" />
+        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.2)_0%,transparent_40%)]" />
+      </div>
 
-      {/* Icon */}
-      <div className="relative z-10 w-12 h-12 bg-card/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-        <IconComponent className="w-6 h-6 text-white" strokeWidth={2} />
+      {/* Decorative elements */}
+      <div className="absolute -top-8 -right-8 w-28 h-28 bg-white/10 rounded-full group-hover:scale-150 transition-transform duration-700" />
+      <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-white/10 rounded-full group-hover:scale-125 transition-transform duration-500" />
+
+      {/* Shimmer effect on hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+      {/* Icon with glass effect */}
+      <div className="relative z-10 w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-300">
+        <IconComponent className="w-6 h-6 text-white drop-shadow-sm" strokeWidth={2} />
       </div>
 
       {/* Category name */}
       <div className="relative z-10">
-        <span className="text-white font-semibold text-sm leading-tight block">
+        <span className="text-white font-bold text-sm leading-tight block drop-shadow-sm">
           {category.name}
         </span>
         {category.event_count > 0 && (
-          <span className="text-white/70 text-xs">
+          <span className="text-white/80 text-xs font-medium">
             {category.event_count} event{category.event_count !== 1 ? 's' : ''}
           </span>
         )}
@@ -552,24 +563,24 @@ export function WebHome() {
             </p>
             
             {/* New Search Bar */}
-            <div className="bg-card rounded-2xl p-2 flex flex-col lg:flex-row gap-2 max-w-4xl mb-12">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 flex flex-col lg:flex-row gap-2 max-w-4xl mb-12 shadow-xl">
               {/* Location Input */}
               <div className="flex-1 relative">
-                <div className="flex items-center gap-2 px-4 py-3 border border-border/20 rounded-xl">
+                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                   <MapPin className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-muted-foreground uppercase font-medium">Location</div>
+                    <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Location</div>
                     <input
                       type="text"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="City or Venue"
-                      className="w-full outline-none text-sm text-foreground placeholder-muted-foreground"
+                      className="w-full outline-none text-sm text-gray-900 placeholder-gray-400 bg-transparent"
                     />
                   </div>
                   {location && (
-                    <button onClick={() => setLocation('')} className="text-muted-foreground hover:text-muted-foreground">
+                    <button onClick={() => setLocation('')} className="text-gray-400 hover:text-gray-600">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -578,24 +589,24 @@ export function WebHome() {
 
               {/* Date Filter */}
               <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
-                <div 
-                  className="flex items-center gap-2 px-4 py-3 border border-border/20 rounded-xl cursor-pointer hover:border-blue-500/50"
+                <div
+                  className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors"
                   onClick={() => setShowDateDropdown(!showDateDropdown)}
                 >
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-muted-foreground uppercase font-medium">Dates</div>
-                    <div className="text-sm text-foreground">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
+                    <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Dates</div>
+                    <div className="text-sm text-gray-900">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
                 </div>
                 {showDateDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/20 rounded-xl shadow-lg z-20">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
                     {dateOptions.map((option) => (
                       <button
                         key={option.value}
                         onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
-                        className={`w-full text-left px-4 py-3 hover:bg-background text-sm ${dateFilter === option.value ? 'bg-blue-50 text-blue-600' : 'text-foreground'}`}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 text-sm first:rounded-t-xl last:rounded-b-xl ${dateFilter === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-900'}`}
                       >
                         {option.label}
                       </button>
@@ -606,21 +617,21 @@ export function WebHome() {
 
               {/* Search Input */}
               <div className="flex-[2] relative">
-                <div className="flex items-center gap-2 px-4 py-3 border border-border/20 rounded-xl">
+                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                   <Search className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-muted-foreground uppercase font-medium">Search</div>
+                    <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Search</div>
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Artist, Event or Venue"
-                      className="w-full outline-none text-sm text-foreground placeholder-muted-foreground"
+                      className="w-full outline-none text-sm text-gray-900 placeholder-gray-400 bg-transparent"
                     />
                   </div>
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="text-muted-foreground hover:text-muted-foreground">
+                    <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -628,9 +639,9 @@ export function WebHome() {
               </div>
 
               {/* Search Button */}
-              <button 
+              <button
                 onClick={handleSearch}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.02]"
               >
                 Search
               </button>
