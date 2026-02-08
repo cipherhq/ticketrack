@@ -701,33 +701,33 @@ export function WebCreateEvent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-muted flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-card border-b sticky top-0 z-40">
+      <header className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <button 
             onClick={() => navigate('/')} 
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-5 h-5" />
             Back to Home
           </button>
-          <h1 className="text-xl font-semibold text-foreground">Create Event</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Create Event</h1>
           <div className="w-24" />
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="bg-card rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           {/* Tabs */}
-          <div className="border-b border-border/10">
+          <div className="border-b border-gray-200">
             <div className="flex overflow-x-auto">
               {tabs.map((tab) => (
                 <button
@@ -739,7 +739,7 @@ export function WebCreateEvent() {
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
                     activeTab === tab.id
                       ? 'border-[#2969FF] text-[#2969FF]'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
@@ -767,20 +767,20 @@ export function WebCreateEvent() {
                     placeholder="Enter event title"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
-                    className="h-12 rounded-xl bg-muted border-0"
+                    className="h-12 rounded-xl bg-gray-50 border-0"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Custom Event URL</Label>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">ticketrack.com/e/</span>
+                    <span className="text-sm text-gray-600 whitespace-nowrap">ticketrack.com/e/</span>
                     <Input
                       placeholder={formData.title?.trim() ? "my-awesome-event" : "Enter event title first"}
                       value={formData.custom_url}
                       onChange={(e) => handleInputChange("custom_url", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
                       disabled={!formData.title?.trim()}
-                      className={`h-12 rounded-xl bg-muted flex-1 ${!formData.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''} ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
+                      className={`h-12 rounded-xl bg-gray-50 flex-1 ${!formData.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''} ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
                     />
                     <Button
                       type="button"
@@ -814,7 +814,7 @@ export function WebCreateEvent() {
                       </span>
                     )}
                     {formData.title?.trim() && !urlStatus.checking && urlStatus.available === null && (
-                      <span className="text-xs text-muted-foreground">Leave blank to auto-generate from title</span>
+                      <span className="text-xs text-gray-600">Leave blank to auto-generate from title</span>
                     )}
                   </div>
                 </div>
@@ -830,7 +830,7 @@ export function WebCreateEvent() {
                         className={`p-3 rounded-xl border text-center transition-all ${
                           formData.eventType === type
                             ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
-                            : 'border-border/10 hover:border-border/20'
+                            : 'border-gray-200 hover:border-gray-300'
                         }`}
                       >
                         {type}
@@ -845,7 +845,7 @@ export function WebCreateEvent() {
                     placeholder="Describe your event in detail..."
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    className="min-h-[150px] rounded-xl bg-muted border-0"
+                    className="min-h-[150px] rounded-xl bg-gray-50 border-0"
                   />
                 </div>
 
@@ -855,7 +855,7 @@ export function WebCreateEvent() {
                     placeholder="e.g., Music, Business, Entertainment"
                     value={formData.category}
                     onChange={(e) => handleInputChange('category', e.target.value)}
-                    className="h-12 rounded-xl bg-muted border-0"
+                    className="h-12 rounded-xl bg-gray-50 border-0"
                   />
                 </div>
 
@@ -869,7 +869,7 @@ export function WebCreateEvent() {
                     onChange={handleBannerChange}
                     className="hidden"
                   />
-                  <div className="border-2 border-dashed border-border/10 rounded-xl p-6">
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-6">
                     {bannerPreview ? (
                       <div className="relative">
                         <img 
@@ -898,9 +898,9 @@ export function WebCreateEvent() {
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <ImageIcon className="w-12 h-12 text-foreground/30 mx-auto mb-3" />
-                        <p className="text-muted-foreground mb-1">Upload event banner image</p>
-                        <p className="text-muted-foreground text-sm mb-4">Recommended: 1920x1080px (16:9), Max 5MB</p>
+                        <ImageIcon className="w-12 h-12 text-gray-900/30 mx-auto mb-3" />
+                        <p className="text-gray-600 mb-1">Upload event banner image</p>
+                        <p className="text-gray-600 text-sm mb-4">Recommended: 1920x1080px (16:9), Max 5MB</p>
                         <Button
                           type="button"
                           variant="outline"
@@ -927,7 +927,7 @@ export function WebCreateEvent() {
                       type="date"
                       value={formData.startDate}
                       onChange={(e) => handleInputChange('startDate', e.target.value)}
-                      className="h-12 rounded-xl bg-muted border-0"
+                      className="h-12 rounded-xl bg-gray-50 border-0"
                     />
                   </div>
                   <div className="space-y-2">
@@ -936,7 +936,7 @@ export function WebCreateEvent() {
                       type="time"
                       value={formData.startTime}
                       onChange={(e) => handleInputChange('startTime', e.target.value)}
-                      className="h-12 rounded-xl bg-muted border-0"
+                      className="h-12 rounded-xl bg-gray-50 border-0"
                     />
                   </div>
                 </div>
@@ -948,7 +948,7 @@ export function WebCreateEvent() {
                       type="date"
                       value={formData.endDate}
                       onChange={(e) => handleInputChange('endDate', e.target.value)}
-                      className="h-12 rounded-xl bg-muted border-0"
+                      className="h-12 rounded-xl bg-gray-50 border-0"
                     />
                   </div>
                   <div className="space-y-2">
@@ -957,7 +957,7 @@ export function WebCreateEvent() {
                       type="time"
                       value={formData.endTime}
                       onChange={(e) => handleInputChange('endTime', e.target.value)}
-                      className="h-12 rounded-xl bg-muted border-0"
+                      className="h-12 rounded-xl bg-gray-50 border-0"
                     />
                   </div>
                 </div>
@@ -969,17 +969,17 @@ export function WebCreateEvent() {
                       type="time"
                       value={formData.gateOpeningTime}
                       onChange={(e) => handleInputChange('gateOpeningTime', e.target.value)}
-                      className="h-12 rounded-xl bg-muted border-0"
+                      className="h-12 rounded-xl bg-gray-50 border-0"
                       placeholder="Optional"
                     />
-                    <p className="text-xs text-muted-foreground">Optional - when gates open for attendees</p>
+                    <p className="text-xs text-gray-600">Optional - when gates open for attendees</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Timezone <span className="text-red-500">*</span></Label>
                     <select
                       value={formData.timezone}
                       onChange={(e) => handleInputChange('timezone', e.target.value)}
-                      className="w-full h-12 px-4 rounded-xl bg-muted border-0"
+                      className="w-full h-12 px-4 rounded-xl bg-gray-50 border-0"
                     >
                       {Object.entries(getTimezonesByRegion()).map(([region, tzList]) => (
                         <optgroup key={region} label={region}>
@@ -1019,7 +1019,7 @@ export function WebCreateEvent() {
                           placeholder="e.g., Every Friday at 8 PM"
                           value={formData.recurringPattern}
                           onChange={(e) => handleInputChange('recurringPattern', e.target.value)}
-                          className="h-12 rounded-xl bg-muted border-0"
+                          className="h-12 rounded-xl bg-gray-50 border-0"
                         />
                       </div>
                     )}
@@ -1037,7 +1037,7 @@ export function WebCreateEvent() {
                     placeholder="Enter venue name"
                     value={formData.venueName}
                     onChange={(e) => handleInputChange('venueName', e.target.value)}
-                    className="h-12 rounded-xl bg-muted border-0"
+                    className="h-12 rounded-xl bg-gray-50 border-0"
                   />
                 </div>
 
@@ -1049,7 +1049,7 @@ export function WebCreateEvent() {
                     onPlaceSelect={handlePlaceSelect}
                     placeholder="Search for venue address..."
                   />
-                  <p className="text-xs text-muted-foreground">Start typing to search for venues and addresses</p>
+                  <p className="text-xs text-gray-600">Start typing to search for venues and addresses</p>
                 </div>
 
                 <div className="space-y-2">
@@ -1063,7 +1063,7 @@ export function WebCreateEvent() {
                         className={`p-4 rounded-xl border text-center capitalize transition-all ${
                           formData.venueType === type
                             ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
-                            : 'border-border/10'
+                            : 'border-gray-200'
                         }`}
                       >
                         {type}
@@ -1080,15 +1080,15 @@ export function WebCreateEvent() {
                       placeholder="Maximum attendees"
                       value={formData.venueCapacity}
                       onChange={(e) => handleInputChange('venueCapacity', e.target.value)}
-                      className="h-12 rounded-xl bg-muted border-0"
+                      className="h-12 rounded-xl bg-gray-50 border-0"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Seating Type <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+                    <Label>Seating Type <span className="text-gray-600 text-xs font-normal">(optional)</span></Label>
                     <select
                       value={formData.seatingType || ''}
                       onChange={(e) => handleInputChange('seatingType', e.target.value)}
-                      className="w-full h-12 px-4 rounded-xl bg-muted border-0"
+                      className="w-full h-12 px-4 rounded-xl bg-gray-50 border-0"
                     >
                       <option value="">Not specified</option>
                       {seatingTypes.map((type) => (
@@ -1108,13 +1108,13 @@ export function WebCreateEvent() {
                     onChange={handleVenueLayoutChange}
                     className="hidden"
                   />
-                  <div className="border-2 border-dashed border-border/10 rounded-xl p-6">
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-6">
                     {venueLayoutPreview ? (
                       <div className="relative">
                         <img 
                           src={venueLayoutPreview} 
                           alt="Venue layout preview" 
-                          className="w-full h-40 object-contain rounded-xl bg-muted"
+                          className="w-full h-40 object-contain rounded-xl bg-gray-50"
                         />
                         <div className="absolute top-2 right-2 flex gap-2">
                           <button
@@ -1135,8 +1135,8 @@ export function WebCreateEvent() {
                       </div>
                     ) : (
                       <div className="text-center py-4">
-                        <Upload className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
-                        <p className="text-muted-foreground text-sm mb-3">Upload venue seating layout or floor plan</p>
+                        <Upload className="w-8 h-8 text-gray-900/30 mx-auto mb-2" />
+                        <p className="text-gray-600 text-sm mb-3">Upload venue seating layout or floor plan</p>
                         <Button 
                           type="button" 
                           variant="outline" 
@@ -1150,9 +1150,9 @@ export function WebCreateEvent() {
                   </div>
                 </div>
 
-                <Card className="border-border/10 rounded-xl">
+                <Card className="border-gray-200 rounded-xl">
                   <CardContent className="p-4 space-y-3">
-                    <p className="font-medium text-foreground">Additional Options</p>
+                    <p className="font-medium text-gray-900">Additional Options</p>
                     <div className="flex items-center gap-3">
                       <Checkbox
                         id="adult"
@@ -1183,7 +1183,7 @@ export function WebCreateEvent() {
                         placeholder="e.g., Smart Casual, Black Tie, Traditional"
                         value={formData.dressCode}
                         onChange={(e) => handleInputChange('dressCode', e.target.value)}
-                        className="h-12 rounded-xl bg-muted border-0"
+                        className="h-12 rounded-xl bg-gray-50 border-0"
                       />
                     </div>
                   </CardContent>
@@ -1195,7 +1195,7 @@ export function WebCreateEvent() {
             {activeTab === 'ticketing' && (
               <div ref={ticketingSectionRef} className="space-y-6">
                 {/* Free Event Toggle */}
-                <Card className="border-border/10 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50">
+                <Card className="border-gray-200 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1203,8 +1203,8 @@ export function WebCreateEvent() {
                           <Ticket className="w-5 h-5 text-green-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-foreground">This is a Free Event</h3>
-                          <p className="text-sm text-muted-foreground">No tickets required - attendees register for free</p>
+                          <h3 className="font-semibold text-gray-900">This is a Free Event</h3>
+                          <p className="text-sm text-gray-600">No tickets required - attendees register for free</p>
                         </div>
                       </div>
                       <Checkbox
@@ -1224,9 +1224,9 @@ export function WebCreateEvent() {
                             placeholder="Leave empty for unlimited"
                             value={formData.freeEventCapacity}
                             onChange={(e) => handleInputChange('freeEventCapacity', e.target.value)}
-                            className="h-12 rounded-xl bg-card border-green-200"
+                            className="h-12 rounded-xl bg-white border-green-200"
                           />
-                          <p className="text-xs text-muted-foreground">Set a limit or leave empty for unlimited registrations</p>
+                          <p className="text-xs text-gray-600">Set a limit or leave empty for unlimited registrations</p>
                         </div>
                       </div>
                     )}
@@ -1236,12 +1236,12 @@ export function WebCreateEvent() {
                   <>
 
                 {/* Currency Selection */}
-                <div className="flex items-center gap-4 p-4 bg-muted rounded-xl mb-6">
-                  <Label className="font-medium text-foreground">Currency</Label>
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl mb-6">
+                  <Label className="font-medium text-gray-900">Currency</Label>
                   <select
                     value={formData.currency}
                     onChange={(e) => handleInputChange('currency', e.target.value)}
-                    className="px-4 py-2 rounded-lg border border-border/10 bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     {currencyOptions.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -1252,8 +1252,8 @@ export function WebCreateEvent() {
                 {/* Regular Tickets */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-foreground">Ticket Categories</h3>
-                    <p className="text-sm text-muted-foreground">Create unlimited ticket types for your event</p>
+                    <h3 className="font-semibold text-gray-900">Ticket Categories</h3>
+                    <p className="text-sm text-gray-600">Create unlimited ticket types for your event</p>
                   </div>
                   <Button onClick={addTicket} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
                     <Plus className="w-4 h-4 mr-2" />Add Ticket
@@ -1261,7 +1261,7 @@ export function WebCreateEvent() {
                 </div>
 
                 {tickets.map((ticket, index) => (
-                  <Card key={ticket.id} className="border-border/10 rounded-xl">
+                  <Card key={ticket.id} className="border-gray-200 rounded-xl">
                     <CardContent className="p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-[#2969FF]">Ticket {index + 1}</span>
@@ -1278,13 +1278,13 @@ export function WebCreateEvent() {
                             placeholder="e.g., GA, VIP, VVIP, Early Bird"
                             value={ticket.name}
                             onChange={(e) => updateTicket(ticket.id, 'name', e.target.value)}
-                            className="h-12 rounded-xl bg-muted border-0"
+                            className="h-12 rounded-xl bg-gray-50 border-0"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label>Price <span className="text-red-500">*</span></Label>
                           <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600">
                               {currencyOptions.find(c => c.value === formData.currency)?.symbol || "₦"}
                             </span>
                             <Input
@@ -1292,7 +1292,7 @@ export function WebCreateEvent() {
                               placeholder="0.00"
                               value={ticket.price}
                               onChange={(e) => updateTicket(ticket.id, "price", e.target.value)}
-                              className="h-12 rounded-xl bg-muted border-0 pl-10"
+                              className="h-12 rounded-xl bg-gray-50 border-0 pl-10"
                             />
                           </div>
                         </div>
@@ -1305,7 +1305,7 @@ export function WebCreateEvent() {
                             placeholder="Number of tickets"
                             value={ticket.quantity}
                             onChange={(e) => updateTicket(ticket.id, 'quantity', e.target.value)}
-                            className="h-12 rounded-xl bg-muted border-0"
+                            className="h-12 rounded-xl bg-gray-50 border-0"
                           />
                         </div>
                         <div className="space-y-2">
@@ -1340,20 +1340,20 @@ export function WebCreateEvent() {
                           placeholder="Describe what's included in this ticket..."
                           value={ticket.description}
                           onChange={(e) => updateTicket(ticket.id, 'description', e.target.value)}
-                          className="rounded-xl bg-muted border-0"
+                          className="rounded-xl bg-gray-50 border-0"
                         />
                       </div>
                     </CardContent>
                   </Card>
                 ))}
 
-                <hr className="border-border/10" />
+                <hr className="border-gray-200" />
 
                 {/* Table Tickets */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-foreground">Table Tickets</h3>
-                    <p className="text-sm text-muted-foreground">Add VIP tables or group seating options</p>
+                    <h3 className="font-semibold text-gray-900">Table Tickets</h3>
+                    <p className="text-sm text-gray-600">Add VIP tables or group seating options</p>
                   </div>
                   <Button onClick={addTableTicket} variant="outline" className="rounded-xl">
                     <Plus className="w-4 h-4 mr-2" />Add Table
@@ -1361,12 +1361,12 @@ export function WebCreateEvent() {
                 </div>
 
                 {tableTickets.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">
+                  <p className="text-center text-gray-600 py-4">
                     No table tickets added yet. Click "Add Table" to create one.
                   </p>
                 ) : (
                   tableTickets.map((table, index) => (
-                    <Card key={table.id} className="border-border/10 rounded-xl">
+                    <Card key={table.id} className="border-gray-200 rounded-xl">
                       <CardContent className="p-5 space-y-4">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-[#2969FF] flex items-center gap-2">
@@ -1384,13 +1384,13 @@ export function WebCreateEvent() {
                               placeholder="e.g., VIP Table, VVIP Table"
                               value={table.name}
                               onChange={(e) => updateTableTicket(table.id, 'name', e.target.value)}
-                              className="h-12 rounded-xl bg-muted border-0"
+                              className="h-12 rounded-xl bg-gray-50 border-0"
                             />
                           </div>
                           <div className="space-y-2">
                             <Label>Price per Table <span className="text-red-500">*</span></Label>
                             <div className="relative">
-                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600">
                                 {currencyOptions.find(c => c.value === formData.currency)?.symbol || "₦"}
                               </span>
                               <Input
@@ -1398,7 +1398,7 @@ export function WebCreateEvent() {
                                 placeholder="0.00"
                                 value={table.price}
                                 onChange={(e) => updateTableTicket(table.id, "price", e.target.value)}
-                                className="h-12 rounded-xl bg-muted border-0 pl-10"
+                                className="h-12 rounded-xl bg-gray-50 border-0 pl-10"
                               />
                             </div>
                           </div>
@@ -1411,7 +1411,7 @@ export function WebCreateEvent() {
                               placeholder="e.g., 6, 8, 10"
                               value={table.seatsPerTable}
                               onChange={(e) => updateTableTicket(table.id, 'seatsPerTable', e.target.value)}
-                              className="h-12 rounded-xl bg-muted border-0"
+                              className="h-12 rounded-xl bg-gray-50 border-0"
                             />
                           </div>
                           <div className="space-y-2">
@@ -1421,7 +1421,7 @@ export function WebCreateEvent() {
                               placeholder="Available tables"
                               value={table.quantity}
                               onChange={(e) => updateTableTicket(table.id, 'quantity', e.target.value)}
-                              className="h-12 rounded-xl bg-muted border-0"
+                              className="h-12 rounded-xl bg-gray-50 border-0"
                             />
                           </div>
                         </div>
@@ -1431,7 +1431,7 @@ export function WebCreateEvent() {
                             placeholder="Describe what's included (e.g., bottles, mixers, server)..."
                             value={table.description}
                             onChange={(e) => updateTableTicket(table.id, 'description', e.target.value)}
-                            className="rounded-xl bg-muted border-0"
+                            className="rounded-xl bg-gray-50 border-0"
                           />
                         </div>
                       </CardContent>
@@ -1439,16 +1439,16 @@ export function WebCreateEvent() {
                   ))
                 )}
 
-                <hr className="border-border/10" />
+                <hr className="border-gray-200" />
 
                 {/* Fee Handling */}
-                <Card className="border-border/10 rounded-xl">
+                <Card className="border-gray-200 rounded-xl">
                   <CardContent className="p-5 space-y-4">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-muted-foreground" />
+                      <DollarSign className="w-5 h-5 text-gray-600" />
                       <div>
-                        <h3 className="font-semibold text-foreground">Transaction Fee Handling</h3>
-                        <p className="text-sm text-muted-foreground">Choose who pays the Ticketrack platform fees</p>
+                        <h3 className="font-semibold text-gray-900">Transaction Fee Handling</h3>
+                        <p className="text-sm text-gray-600">Choose who pays the Ticketrack platform fees</p>
                       </div>
                     </div>
 
@@ -1457,7 +1457,7 @@ export function WebCreateEvent() {
                         className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                           formData.feeHandling === 'pass_to_attendee'
                             ? 'border-[#2969FF] bg-[#2969FF]/5'
-                            : 'border-border/10'
+                            : 'border-gray-200'
                         }`}
                       >
                         <input
@@ -1471,7 +1471,7 @@ export function WebCreateEvent() {
                         <div>
                           <span className="font-medium">Pass fees to attendees</span>
                           <span className="ml-2 text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">Recommended</span>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-sm text-gray-600 mt-1">
                             Attendees pay a small service fee on top of the ticket price. You receive the full ticket amount.
                           </p>
                         </div>
@@ -1481,7 +1481,7 @@ export function WebCreateEvent() {
                         className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                           formData.feeHandling === 'absorb'
                             ? 'border-[#2969FF] bg-[#2969FF]/5'
-                            : 'border-border/10'
+                            : 'border-gray-200'
                         }`}
                       >
                         <input
@@ -1494,7 +1494,7 @@ export function WebCreateEvent() {
                         />
                         <div>
                           <span className="font-medium">Absorb fees (Organizer pays)</span>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-sm text-gray-600 mt-1">
                             You cover the platform fees. Attendees pay exactly the ticket price with no additional charges.
                           </p>
                         </div>
@@ -1516,8 +1516,8 @@ export function WebCreateEvent() {
             {activeTab === 'media' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">Photo Gallery</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Upload 3–10 images for your event</p>
+                  <h3 className="font-semibold text-gray-900 mb-1">Photo Gallery</h3>
+                  <p className="text-sm text-gray-600 mb-4">Upload 3–10 images for your event</p>
                   
                   <input
                     ref={galleryInputRef}
@@ -1528,7 +1528,7 @@ export function WebCreateEvent() {
                     className="hidden"
                   />
                   
-                  <div className="border-2 border-dashed border-border/10 rounded-xl p-8">
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-8">
                     {eventImages.length > 0 ? (
                       <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-4">
                         {eventImages.map((img, index) => (
@@ -1545,8 +1545,8 @@ export function WebCreateEvent() {
                       </div>
                     ) : (
                       <div className="text-center">
-                        <ImageIcon className="w-10 h-10 text-foreground/30 mx-auto mb-2" />
-                        <p className="text-muted-foreground text-sm mb-3">Upload event photos (JPG, PNG)</p>
+                        <ImageIcon className="w-10 h-10 text-gray-900/30 mx-auto mb-2" />
+                        <p className="text-gray-600 text-sm mb-3">Upload event photos (JPG, PNG)</p>
                       </div>
                     )}
                     <div className="text-center">
@@ -1568,16 +1568,16 @@ export function WebCreateEvent() {
                     placeholder="YouTube, Instagram Reel, or TikTok URL"
                     value={formData.promoVideoUrl}
                     onChange={(e) => handleInputChange('promoVideoUrl', e.target.value)}
-                    className="h-12 rounded-xl bg-muted border-0"
+                    className="h-12 rounded-xl bg-gray-50 border-0"
                   />
-                  <p className="text-sm text-muted-foreground">Paste a link to your event promo video from YouTube, Instagram, or TikTok</p>
+                  <p className="text-sm text-gray-600">Paste a link to your event promo video from YouTube, Instagram, or TikTok</p>
                 </div>
 
-                <hr className="border-border/10" />
+                <hr className="border-gray-200" />
 
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">Sponsor Logos</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Add up to 5 sponsor logos • These logos will appear on event tickets</p>
+                  <h3 className="font-semibold text-gray-900 mb-1">Sponsor Logos</h3>
+                  <p className="text-sm text-gray-600 mb-4">Add up to 5 sponsor logos • These logos will appear on event tickets</p>
                   
                   <input
                     ref={sponsorInputRef}
@@ -1588,12 +1588,12 @@ export function WebCreateEvent() {
                     className="hidden"
                   />
                   
-                  <div className="border-2 border-dashed border-border/10 rounded-xl p-8">
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-8">
                     {sponsorLogos.length > 0 && (
                       <div className="flex flex-wrap gap-3 mb-4">
                         {sponsorLogos.map((logo, index) => (
                           <div key={index} className="relative w-20 h-20">
-                            <img src={logo.preview} alt="" className="w-full h-full object-contain rounded-lg bg-card border" />
+                            <img src={logo.preview} alt="" className="w-full h-full object-contain rounded-lg bg-white border" />
                             <button
                               onClick={() => removeSponsorLogo(index)}
                               className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
@@ -1605,9 +1605,9 @@ export function WebCreateEvent() {
                       </div>
                     )}
                     <div className="text-center">
-                      <Upload className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
-                      <p className="text-muted-foreground text-sm mb-1">Add Sponsor Logo</p>
-                      <p className="text-muted-foreground text-xs mb-3">PNG format recommended for best quality on tickets</p>
+                      <Upload className="w-8 h-8 text-gray-900/30 mx-auto mb-2" />
+                      <p className="text-gray-600 text-sm mb-1">Add Sponsor Logo</p>
+                      <p className="text-gray-600 text-xs mb-3">PNG format recommended for best quality on tickets</p>
                       <Button
                         type="button"
                         variant="outline"
@@ -1621,7 +1621,7 @@ export function WebCreateEvent() {
                   </div>
 
                   {sponsorLogos.length === 0 && (
-                    <p className="text-center text-muted-foreground text-sm mt-4">No sponsor logos added yet</p>
+                    <p className="text-center text-gray-600 text-sm mt-4">No sponsor logos added yet</p>
                   )}
 
                   <div className="flex items-center gap-2 p-3 bg-[#2969FF]/5 rounded-xl text-sm text-[#2969FF] mt-4">
@@ -1631,7 +1631,7 @@ export function WebCreateEvent() {
                 </div>
 
                 {/* Terms and Conditions */}
-                <div className="mt-8 p-4 bg-muted rounded-xl">
+                <div className="mt-8 p-4 bg-gray-50 rounded-xl">
                   <div className="flex items-start gap-3">
                     <Checkbox
                       id="terms"
@@ -1639,7 +1639,7 @@ export function WebCreateEvent() {
                       onCheckedChange={(checked) => handleInputChange('agreedToTerms', checked)}
                       className="mt-1"
                     />
-                    <label htmlFor="terms" className="text-sm text-foreground/80 cursor-pointer">
+                    <label htmlFor="terms" className="text-sm text-gray-900/80 cursor-pointer">
                       I agree to the{' '}
                       <a href="/terms" target="_blank" className="text-[#2969FF] hover:underline">
                         Terms and Conditions
@@ -1657,7 +1657,7 @@ export function WebCreateEvent() {
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-border/10 flex justify-between">
+          <div className="p-6 border-t border-gray-200 flex justify-between">
             <Button
               type="button"
               variant="outline"
