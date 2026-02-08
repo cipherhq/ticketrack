@@ -883,10 +883,9 @@ export function WebEventDetails() {
                                   <button
                                     onClick={() => updateTicketQuantity(tier.id, -1)}
                                     disabled={!selectedTickets[tier.id]}
-                                    className="w-9 h-9 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100"
-                                    style={{ color: '#374151' }}
+                                    className="w-9 h-9 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xl font-bold select-none"
                                   >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    −
                                   </button>
                                   <span className="w-8 text-center font-semibold text-gray-900 text-lg">
                                     {selectedTickets[tier.id] || 0}
@@ -897,10 +896,9 @@ export function WebEventDetails() {
                                       (selectedTickets[tier.id] || 0) >= remaining ||
                                       (selectedTickets[tier.id] || 0) >= 10
                                     }
-                                    className="w-9 h-9 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100"
-                                    style={{ color: '#374151' }}
+                                    className="w-9 h-9 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xl font-bold select-none"
                                   >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    +
                                   </button>
                                 </div>
                               </div>
@@ -1833,10 +1831,9 @@ export function WebEventDetails() {
                                 <button
                                   onClick={() => updateTicketQuantity(tier.id, -1)}
                                   disabled={!selectedTickets[tier.id]}
-                                  className="w-10 h-10 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100"
-                                  style={{ color: '#374151' }}
+                                  className="w-10 h-10 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xl font-bold select-none"
                                 >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                  −
                                 </button>
                                 <span className="w-8 text-center font-semibold text-gray-900 text-lg">
                                   {selectedTickets[tier.id] || 0}
@@ -1847,10 +1844,9 @@ export function WebEventDetails() {
                                     (selectedTickets[tier.id] || 0) >= remaining ||
                                     (selectedTickets[tier.id] || 0) >= 10
                                   }
-                                  className="w-10 h-10 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100"
-                                  style={{ color: '#374151' }}
+                                  className="w-10 h-10 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xl font-bold select-none"
                                 >
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                  +
                                 </button>
                               </div>
                             </div>
