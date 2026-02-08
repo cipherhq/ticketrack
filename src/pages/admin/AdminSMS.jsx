@@ -213,7 +213,7 @@ export function AdminSMS() {
       case 'failed':
         return <Badge className="bg-red-100 text-red-700">Failed</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-700">{status}</Badge>;
+        return <Badge className="bg-muted text-foreground/80">{status}</Badge>;
     }
   };
 
@@ -233,7 +233,7 @@ export function AdminSMS() {
   if (sendResults) {
     return (
       <div className="max-w-2xl mx-auto">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8">
             <div className="text-center mb-6">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
@@ -245,8 +245,8 @@ export function AdminSMS() {
                   <AlertCircle className="w-8 h-8 text-yellow-600" />
                 )}
               </div>
-              <h2 className="text-2xl font-semibold text-[#0F0F0F]">SMS Campaign Complete</h2>
-              <p className="text-[#0F0F0F]/60 mt-2">
+              <h2 className="text-2xl font-semibold text-foreground">SMS Campaign Complete</h2>
+              <p className="text-muted-foreground mt-2">
                 {sendResults.successCount} sent successfully, {sendResults.failCount} failed
               </p>
             </div>
@@ -257,8 +257,8 @@ export function AdminSMS() {
                   result.success ? 'bg-green-50' : 'bg-red-50'
                 }`}>
                   <div>
-                    <p className="text-[#0F0F0F] font-medium">{result.name || 'Unknown'}</p>
-                    <p className="text-sm text-[#0F0F0F]/60">{result.phone}</p>
+                    <p className="text-foreground font-medium">{result.name || 'Unknown'}</p>
+                    <p className="text-sm text-muted-foreground">{result.phone}</p>
                   </div>
                   {result.success ? (
                     <CheckCircle className="w-5 h-5 text-green-600" />
@@ -282,8 +282,8 @@ export function AdminSMS() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">SMS Campaigns</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Send SMS messages via Termii</p>
+          <h2 className="text-2xl font-semibold text-foreground">SMS Campaigns</h2>
+          <p className="text-muted-foreground mt-1">Send SMS messages via Termii</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={loadSmsHistory} className="rounded-xl">
@@ -306,7 +306,7 @@ export function AdminSMS() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#F4F6FA] rounded-xl">
+        <TabsList className="bg-muted rounded-xl">
           <TabsTrigger value="compose" className="rounded-lg">
             <Send className="w-4 h-4 mr-2" />
             Compose
@@ -318,7 +318,7 @@ export function AdminSMS() {
         </TabsList>
 
         <TabsContent value="compose" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-[#2969FF]" />
@@ -357,9 +357,9 @@ export function AdminSMS() {
               )}
 
               {form.recipientType && (
-                <div className="p-3 bg-[#F4F6FA] rounded-xl flex items-center gap-2">
+                <div className="p-3 bg-muted rounded-xl flex items-center gap-2">
                   <Users className="w-4 h-4 text-[#2969FF]" />
-                  <span className="text-sm text-[#0F0F0F]/60">
+                  <span className="text-sm text-muted-foreground">
                     {loading ? 'Loading...' : `${recipients.length} recipient(s) with phone numbers`}
                   </span>
                 </div>
@@ -373,7 +373,7 @@ export function AdminSMS() {
                   placeholder="Enter your SMS message..."
                   className="rounded-xl mt-1 min-h-[120px]"
                 />
-                <div className="flex items-center justify-between mt-2 text-sm text-[#0F0F0F]/60">
+                <div className="flex items-center justify-between mt-2 text-sm text-muted-foreground">
                   <span>{smsCount} SMS per recipient (160 chars each)</span>
                   <span>Total: {totalSms} SMS</span>
                 </div>
@@ -401,7 +401,7 @@ export function AdminSMS() {
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>SMS History</CardTitle>
             </CardHeader>
@@ -411,31 +411,31 @@ export function AdminSMS() {
                   <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
                 </div>
               ) : smsHistory.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No SMS campaigns sent yet</p>
+                <p className="text-center text-muted-foreground py-8">No SMS campaigns sent yet</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#0F0F0F]/10">
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Message</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Recipients</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Cost</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Date</th>
-                        <th className="text-right py-3 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                      <tr className="border-b border-border/10">
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Message</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Recipients</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Cost</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Status</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Date</th>
+                        <th className="text-right py-3 px-4 text-muted-foreground font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {smsHistory.map((sms) => (
-                        <tr key={sms.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                        <tr key={sms.id} className="border-b border-border/5 hover:bg-muted/50">
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F] truncate max-w-[200px]">{sms.message}</p>
+                            <p className="text-foreground truncate max-w-[200px]">{sms.message}</p>
                           </td>
                           <td className="py-3 px-4">{sms.recipient_count}</td>
                           <td className="py-3 px-4">{formatCurrency(sms.cost)}</td>
                           <td className="py-3 px-4">{getStatusBadge(sms.status)}</td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]/60 text-sm">
+                            <p className="text-muted-foreground text-sm">
                               {new Date(sms.created_at).toLocaleDateString()}
                             </p>
                           </td>
@@ -468,26 +468,26 @@ export function AdminSMS() {
           {selectedSms && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Recipients</p>
-                  <p className="text-[#0F0F0F] font-medium">{selectedSms.recipient_count}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Recipients</p>
+                  <p className="text-foreground font-medium">{selectedSms.recipient_count}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Cost</p>
-                  <p className="text-[#0F0F0F] font-medium">{formatCurrency(selectedSms.cost)}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Cost</p>
+                  <p className="text-foreground font-medium">{formatCurrency(selectedSms.cost)}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Status</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Status</p>
                   {getStatusBadge(selectedSms.status)}
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Date</p>
-                  <p className="text-[#0F0F0F]">{new Date(selectedSms.created_at).toLocaleString()}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="text-foreground">{new Date(selectedSms.created_at).toLocaleString()}</p>
                 </div>
               </div>
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Message</p>
-                <p className="text-[#0F0F0F] whitespace-pre-wrap">{selectedSms.message}</p>
+              <div className="p-4 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground mb-1">Message</p>
+                <p className="text-foreground whitespace-pre-wrap">{selectedSms.message}</p>
               </div>
             </div>
           )}

@@ -1187,15 +1187,15 @@ export function WebFreeRSVP() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Button 
         variant="ghost" 
-        className="mb-6 text-[#0F0F0F]/60 hover:text-[#0F0F0F]" 
+        className="mb-6 text-muted-foreground hover:text-foreground" 
         onClick={() => navigate(-1)}
       >
         <ArrowLeft className="w-4 h-4 mr-2" />Back
       </Button>
 
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-[#0F0F0F] mb-2">Register for Free Event</h1>
-        <p className="text-[#0F0F0F]/60">Complete your free registration for {event.title}</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Register for Free Event</h1>
+        <p className="text-muted-foreground">Complete your free registration for {event.title}</p>
       </div>
 
       {error && (
@@ -1216,9 +1216,9 @@ export function WebFreeRSVP() {
         {/* Form Section */}
         <div className="lg:col-span-2 space-y-6">
           {/* Contact Information */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-[#0F0F0F]">Contact Information</CardTitle>
+              <CardTitle className="text-foreground">Contact Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -1229,7 +1229,7 @@ export function WebFreeRSVP() {
                     placeholder="John" 
                     value={formData.firstName} 
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} 
-                    className="rounded-xl border-[#0F0F0F]/10" 
+                    className="rounded-xl border-border/10" 
                     disabled={atLimit}
                     required 
                   />
@@ -1241,7 +1241,7 @@ export function WebFreeRSVP() {
                     placeholder="Doe" 
                     value={formData.lastName} 
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} 
-                    className="rounded-xl border-[#0F0F0F]/10" 
+                    className="rounded-xl border-border/10" 
                     disabled={atLimit}
                     required 
                   />
@@ -1255,11 +1255,11 @@ export function WebFreeRSVP() {
                   placeholder="your@email.com" 
                   value={formData.email} 
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
-                  className="rounded-xl border-[#0F0F0F]/10" 
+                  className="rounded-xl border-border/10" 
                   disabled={atLimit}
                   required 
                 />
-                <p className="text-sm text-[#0F0F0F]/60">Confirmation will be sent to this email</p>
+                <p className="text-sm text-muted-foreground">Confirmation will be sent to this email</p>
               </div>
 
             </CardContent>
@@ -1273,14 +1273,14 @@ export function WebFreeRSVP() {
                   <CheckCircle className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#0F0F0F]">Free Event</h3>
-                  <p className="text-sm text-[#0F0F0F]/60">No payment required - just fill in your details</p>
+                  <h3 className="font-semibold text-foreground">Free Event</h3>
+                  <p className="text-sm text-muted-foreground">No payment required - just fill in your details</p>
                 </div>
               </div>
               
               {/* Quantity Selector */}
               <div className="pt-4 border-t border-green-200">
-                <Label className="text-[#0F0F0F] font-medium mb-2 block">Number of RSVPs</Label>
+                <Label className="text-foreground font-medium mb-2 block">Number of RSVPs</Label>
                 <div className="flex items-center gap-3">
                   <button 
                     type="button"
@@ -1290,7 +1290,7 @@ export function WebFreeRSVP() {
                   >
                     -
                   </button>
-                  <span className="w-12 text-center text-xl font-bold text-[#0F0F0F]">{quantity}</span>
+                  <span className="w-12 text-center text-xl font-bold text-foreground">{quantity}</span>
                   <button 
                     type="button"
                     onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
@@ -1299,7 +1299,7 @@ export function WebFreeRSVP() {
                   >
                     +
                   </button>
-                  <span className="text-sm text-[#0F0F0F]/60 ml-2">(max {maxQuantity || 10})</span>
+                  <span className="text-sm text-muted-foreground ml-2">(max {maxQuantity || 10})</span>
                 </div>
                 {rsvpLimit && rsvpLimit.current > 0 && (
                   <p className="text-sm text-amber-600 mt-2">
@@ -1311,12 +1311,12 @@ export function WebFreeRSVP() {
               {/* Donation Options */}
               {acceptsDonations && !atLimit && (
                 <div className="pt-4 border-t border-green-200">
-                  <Label className="text-[#0F0F0F] font-medium mb-2 block flex items-center gap-2">
+                  <Label className="text-foreground font-medium mb-2 block flex items-center gap-2">
                     <span>💝</span> Support This Event (Optional)
                   </Label>
-                  <p className="text-sm text-[#0F0F0F]/60 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Your donation helps make this event possible
-                    {donorPaysFee && <span className="text-[#0F0F0F]/40"> (processing fee will be added)</span>}
+                    {donorPaysFee && <span className="text-muted-foreground"> (processing fee will be added)</span>}
                   </p>
                   
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -1326,7 +1326,7 @@ export function WebFreeRSVP() {
                       className={`px-4 py-2 rounded-lg font-medium transition-all ${
                         donationAmount === 0 && !customDonation
                           ? 'bg-gray-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          : 'bg-muted text-foreground/80 hover:bg-muted border border-border/20'
                       }`}
                     >
                       No Thanks
@@ -1349,7 +1349,7 @@ export function WebFreeRSVP() {
                   
                   {allowCustomDonation && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[#0F0F0F]/60 text-sm">Custom:</span>
+                      <span className="text-muted-foreground text-sm">Custom:</span>
                       <input
                         type="number"
                         placeholder="Enter amount"
@@ -1371,14 +1371,14 @@ export function WebFreeRSVP() {
 
         {/* Order Summary Sidebar */}
         <div className="lg:col-span-1">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
+          <Card className="border-border/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
             <CardHeader>
-              <CardTitle className="text-[#0F0F0F]">Registration Summary</CardTitle>
+              <CardTitle className="text-foreground">Registration Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Event Info */}
               <div className="flex gap-4">
-                <div className="w-20 h-20 rounded-xl overflow-hidden bg-[#F4F6FA] flex-shrink-0">
+                <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0">
                   <img 
                     src={event.image_url} 
                     alt={event.title} 
@@ -1387,12 +1387,12 @@ export function WebFreeRSVP() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-[#0F0F0F] line-clamp-2">{event.title}</h3>
-                  <div className="flex items-center gap-1 text-xs text-[#0F0F0F]/60 mt-1">
+                  <h3 className="font-semibold text-foreground line-clamp-2">{event.title}</h3>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <Calendar className="w-3 h-3" />
                     <span>{formatDate(event.start_date)}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-[#0F0F0F]/60 mt-1">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <MapPin className="w-3 h-3" />
                     <span>{event.venue_name}</span>
                   </div>
@@ -1407,8 +1407,8 @@ export function WebFreeRSVP() {
 
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#0F0F0F]/70">Free Admission × {quantity}</span>
-                  <span className="text-[#0F0F0F]">Free</span>
+                  <span className="text-foreground/70">Free Admission × {quantity}</span>
+                  <span className="text-foreground">Free</span>
                 </div>
                 
                 {actualDonation > 0 && (
@@ -1421,10 +1421,10 @@ export function WebFreeRSVP() {
                     </div>
                     {donorPaysFee && donationFee > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#0F0F0F]/60 flex items-center gap-1">
+                        <span className="text-muted-foreground flex items-center gap-1">
                           Processing Fee ({(donationFeePercent * 100).toFixed(1)}%)
                         </span>
-                        <span className="text-[#0F0F0F]/60">
+                        <span className="text-muted-foreground">
                           {formatPrice(donationFee, event?.currency)}
                         </span>
                       </div>
@@ -1436,8 +1436,8 @@ export function WebFreeRSVP() {
               <Separator />
 
               <div className="flex justify-between font-bold text-lg">
-                <span className="text-[#0F0F0F]">Total</span>
-                <span className={actualDonation > 0 ? "text-green-600" : "text-[#0F0F0F]"}>
+                <span className="text-foreground">Total</span>
+                <span className={actualDonation > 0 ? "text-green-600" : "text-foreground"}>
                   {actualDonation > 0 ? formatPrice(donationTotal, event?.currency) : 'Free'}
                 </span>
               </div>
@@ -1462,7 +1462,7 @@ export function WebFreeRSVP() {
                 )}
               </Button>
 
-              <p className="text-xs text-center text-[#0F0F0F]/40">
+              <p className="text-xs text-center text-muted-foreground">
                 By registering, you agree to our Terms of Service
               </p>
             </CardContent>

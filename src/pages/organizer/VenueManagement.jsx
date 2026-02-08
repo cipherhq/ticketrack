@@ -263,11 +263,11 @@ export function VenueManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#0F0F0F] flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
             Venue Management
             <HelpTip>Create venue layouts with seating sections, standing areas, and amenities. Link layouts to events for seat selection ticketing.</HelpTip>
           </h1>
-          <p className="text-[#0F0F0F]/60 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage your venues and create interactive layouts
           </p>
         </div>
@@ -335,7 +335,7 @@ export function VenueManagement() {
                   id="iotEnabled"
                   checked={venueForm.iot_enabled}
                   onChange={(e) => setVenueForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
-                  className="h-4 w-4 rounded border-gray-300 text-[#2969FF] focus:ring-[#2969FF]"
+                  className="h-4 w-4 rounded border-border/30 text-[#2969FF] focus:ring-primary"
                 />
                 <Label htmlFor="iotEnabled" className="flex items-center gap-2 cursor-pointer">
                   <Wifi className="w-4 h-4 text-[#2969FF]" />
@@ -418,7 +418,7 @@ export function VenueManagement() {
                   id="editIotEnabled"
                   checked={editForm.iot_enabled}
                   onChange={(e) => setEditForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
-                  className="h-4 w-4 rounded border-gray-300 text-[#2969FF] focus:ring-[#2969FF]"
+                  className="h-4 w-4 rounded border-border/30 text-[#2969FF] focus:ring-primary"
                 />
                 <Label htmlFor="editIotEnabled" className="flex items-center gap-2 cursor-pointer">
                   <Wifi className="w-4 h-4 text-[#2969FF]" />
@@ -447,9 +447,9 @@ export function VenueManagement() {
       {venues.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Venues Yet</h3>
-            <p className="text-gray-500 mb-4">
+            <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No Venues Yet</h3>
+            <p className="text-muted-foreground mb-4">
               Create your first venue to start designing interactive layouts
             </p>
             <Button onClick={() => setShowCreateVenue(true)}>
@@ -471,10 +471,10 @@ export function VenueManagement() {
                         className="flex items-center gap-2 cursor-pointer hover:text-[#2969FF] transition-colors"
                         onClick={() => navigate(`/organizer/venues/${venue.id}`)}
                       >
-                        <MapPin className="w-5 h-5 text-gray-400" />
+                        <MapPin className="w-5 h-5 text-muted-foreground" />
                         {venue.name}
                       </CardTitle>
-                      <p className="text-sm text-gray-500 mt-1">{venue.address}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{venue.address}</p>
                     </div>
                     <div className="flex items-center gap-1">
                       <Badge variant="outline" className="capitalize">
@@ -498,14 +498,14 @@ export function VenueManagement() {
                     {/* Venue Stats */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <div className="flex items-center text-gray-600 mb-1">
+                        <div className="flex items-center text-muted-foreground mb-1">
                           <Users className="w-3 h-3 mr-1" />
                           Capacity
                         </div>
                         <div className="font-medium">{venue.capacity}</div>
                       </div>
                       <div>
-                        <div className="flex items-center text-gray-600 mb-1">
+                        <div className="flex items-center text-muted-foreground mb-1">
                           <Layout className="w-3 h-3 mr-1" />
                           Layouts
                         </div>
@@ -515,9 +515,9 @@ export function VenueManagement() {
 
                     {/* Layout Details */}
                     {stats.layouts > 0 && (
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Layout Summary</h4>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                      <div className="bg-background p-3 rounded-lg">
+                        <h4 className="text-sm font-medium text-foreground mb-2">Layout Summary</h4>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                           <div>Sections: {stats.totalSections}</div>
                           <div>Furniture: {stats.totalFurniture}</div>
                         </div>

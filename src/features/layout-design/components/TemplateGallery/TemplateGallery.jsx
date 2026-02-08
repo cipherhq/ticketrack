@@ -92,7 +92,7 @@ export function TemplateGallery({ onSelect }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -105,8 +105,8 @@ export function TemplateGallery({ onSelect }) {
             Back to Venues
           </Button>
 
-          <h1 className="text-3xl font-bold text-gray-900">Layout Design</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-foreground">Layout Design</h1>
+          <p className="text-muted-foreground mt-2">
             Choose a template to get started or create a blank layout
           </p>
         </div>
@@ -123,14 +123,14 @@ export function TemplateGallery({ onSelect }) {
                 <div className="text-4xl mb-4">
                   {getCategoryIcon(template.category)}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   {template.name}
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   {template.description}
                 </p>
                 {template.capacity_estimate > 0 && (
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-muted-foreground">
                     <Users className="w-4 h-4 mr-1" />
                     ~{template.capacity_estimate} capacity
                   </div>

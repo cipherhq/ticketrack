@@ -196,8 +196,8 @@ export function PricingZones({ eventId, layoutId, sections, onPricingChange }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">Section-Based Pricing</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-medium text-foreground">Section-Based Pricing</h3>
+          <p className="text-sm text-muted-foreground">
             Configure different pricing for different sections of your venue
           </p>
         </div>
@@ -223,7 +223,7 @@ export function PricingZones({ eventId, layoutId, sections, onPricingChange }) {
                 <Users className="w-5 h-5 text-blue-500" />
                 <div>
                   <div className="text-2xl font-bold">{getTotalCapacity()}</div>
-                  <div className="text-sm text-gray-500">Total Capacity</div>
+                  <div className="text-sm text-muted-foreground">Total Capacity</div>
                 </div>
               </div>
             </CardContent>
@@ -235,7 +235,7 @@ export function PricingZones({ eventId, layoutId, sections, onPricingChange }) {
                 <DollarSign className="w-5 h-5 text-green-500" />
                 <div>
                   <div className="text-2xl font-bold">${getTotalRevenue().toLocaleString()}</div>
-                  <div className="text-sm text-gray-500">Potential Revenue</div>
+                  <div className="text-sm text-muted-foreground">Potential Revenue</div>
                 </div>
               </div>
             </CardContent>
@@ -249,7 +249,7 @@ export function PricingZones({ eventId, layoutId, sections, onPricingChange }) {
                   <div className="text-2xl font-bold">
                     {sections.length > 0 ? Math.round((sectionPricing.length / (sections.length * ticketTypes.length)) * 100) : 0}%
                   </div>
-                  <div className="text-sm text-gray-500">Pricing Configured</div>
+                  <div className="text-sm text-muted-foreground">Pricing Configured</div>
                 </div>
               </div>
             </CardContent>
@@ -261,9 +261,9 @@ export function PricingZones({ eventId, layoutId, sections, onPricingChange }) {
       {sectionPricing.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Pricing Configuration</h3>
-            <p className="text-gray-500 mb-4">
+            <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No Pricing Configuration</h3>
+            <p className="text-muted-foreground mb-4">
               Set up section-based pricing to charge different rates for different areas
             </p>
             {sections.length > 0 && ticketTypes.length > 0 && (
@@ -294,7 +294,7 @@ export function PricingZones({ eventId, layoutId, sections, onPricingChange }) {
                           />
                           <div>
                             <h4 className="font-medium">{section.name}</h4>
-                            <p className="text-sm text-gray-500 capitalize">
+                            <p className="text-sm text-muted-foreground capitalize">
                               {section.section_type} • {section.capacity} capacity
                             </p>
                           </div>
@@ -306,7 +306,7 @@ export function PricingZones({ eventId, layoutId, sections, onPricingChange }) {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {sectionPricingData.map((pricing, index) => (
-                          <div key={pricing.ticketTypeId} className="bg-gray-50 p-3 rounded">
+                          <div key={pricing.ticketTypeId} className="bg-background p-3 rounded">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm font-medium">
                                 {pricing.ticketType.name}

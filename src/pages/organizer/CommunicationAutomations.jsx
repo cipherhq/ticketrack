@@ -460,8 +460,8 @@ export function CommunicationAutomations() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Automations</h1>
-          <p className="text-[#0F0F0F]/60">Set up automated messages for your events</p>
+          <h1 className="text-2xl font-bold text-foreground">Automations</h1>
+          <p className="text-muted-foreground">Set up automated messages for your events</p>
         </div>
         <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-[#2969FF] text-white">
           <Plus className="w-4 h-4 mr-2" />
@@ -471,7 +471,7 @@ export function CommunicationAutomations() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -479,13 +479,13 @@ export function CommunicationAutomations() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.totalAutomations}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Total</p>
+                <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -493,13 +493,13 @@ export function CommunicationAutomations() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-600">{stats.activeAutomations}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Active</p>
+                <p className="text-xs text-muted-foreground">Active</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -507,13 +507,13 @@ export function CommunicationAutomations() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.totalTriggered}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Triggered</p>
+                <p className="text-xs text-muted-foreground">Triggered</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -521,7 +521,7 @@ export function CommunicationAutomations() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.totalCompleted}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Completed</p>
+                <p className="text-xs text-muted-foreground">Completed</p>
               </div>
             </div>
           </CardContent>
@@ -536,7 +536,7 @@ export function CommunicationAutomations() {
             {AUTOMATION_TEMPLATES.map((template) => (
               <Card
                 key={template.id}
-                className="border-[#0F0F0F]/10 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
+                className="border-border/10 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => selectTemplate(template)}
               >
                 <CardContent className="p-5">
@@ -546,7 +546,7 @@ export function CommunicationAutomations() {
                     </div>
                     <div>
                       <h3 className="font-semibold">{template.name}</h3>
-                      <p className="text-sm text-[#0F0F0F]/60">{template.description}</p>
+                      <p className="text-sm text-muted-foreground">{template.description}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -570,7 +570,7 @@ export function CommunicationAutomations() {
 
       {/* Automations List */}
       {automations.length > 0 && (
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardHeader>
             <CardTitle>Your Automations</CardTitle>
           </CardHeader>
@@ -579,25 +579,25 @@ export function CommunicationAutomations() {
               {automations.map((automation) => {
                 const trigger = TRIGGER_TYPES.find(t => t.id === automation.trigger_type);
                 return (
-                  <div key={automation.id} className="flex items-center justify-between p-4 hover:bg-[#F4F6FA]/50">
+                  <div key={automation.id} className="flex items-center justify-between p-4 hover:bg-muted/50">
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        automation.status === 'active' ? 'bg-green-100' : 'bg-gray-100'
+                        automation.status === 'active' ? 'bg-green-100' : 'bg-muted'
                       }`}>
                         {trigger ? <trigger.icon className={`w-5 h-5 ${
-                          automation.status === 'active' ? 'text-green-600' : 'text-gray-400'
+                          automation.status === 'active' ? 'text-green-600' : 'text-muted-foreground'
                         }`} /> : <Zap className="w-5 h-5" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium">{automation.name}</h3>
                           <Badge variant="secondary" className={
-                            automation.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                            automation.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
                           }>
                             {automation.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-[#0F0F0F]/60">
+                        <p className="text-sm text-muted-foreground">
                           {trigger?.name || automation.trigger_type}
                           {automation.actions?.length > 0 && ` • ${automation.actions.length} actions`}
                         </p>
@@ -606,7 +606,7 @@ export function CommunicationAutomations() {
                     <div className="flex items-center gap-2">
                       <div className="text-right mr-4">
                         <p className="text-sm font-medium">{automation.total_triggered || 0}</p>
-                        <p className="text-xs text-[#0F0F0F]/40">triggered</p>
+                        <p className="text-xs text-muted-foreground">triggered</p>
                       </div>
                       <Switch
                         checked={automation.status === 'active'}
@@ -718,7 +718,7 @@ export function CommunicationAutomations() {
 
               <div className="space-y-4">
                 {form.actions.map((action, index) => (
-                  <Card key={action.id} className="border-[#0F0F0F]/10 rounded-xl">
+                  <Card key={action.id} className="border-border/10 rounded-xl">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
@@ -791,7 +791,7 @@ export function CommunicationAutomations() {
                               className="mt-1 min-h-[80px]"
                               placeholder="Email body..."
                             />
-                            <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                            <p className="text-xs text-muted-foreground mt-1">
                               Variables: {'{{attendee_name}}'}, {'{{event_name}}'}, {'{{event_date}}'}, {'{{event_venue}}'}, {'{{organizer_name}}'}
                             </p>
                           </div>
@@ -807,7 +807,7 @@ export function CommunicationAutomations() {
                             className="mt-1 min-h-[80px]"
                             placeholder="Message content..."
                           />
-                          <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Variables: {'{{attendee_name}}'}, {'{{event_name}}'}, {'{{event_date}}'}, {'{{event_venue}}'}
                           </p>
                         </div>
@@ -817,7 +817,7 @@ export function CommunicationAutomations() {
                 ))}
 
                 {form.actions.length === 0 && (
-                  <div className="text-center py-8 text-[#0F0F0F]/40">
+                  <div className="text-center py-8 text-muted-foreground">
                     <Zap className="w-8 h-8 mx-auto mb-2" />
                     <p>No actions yet. Add an action to get started.</p>
                   </div>
@@ -826,10 +826,10 @@ export function CommunicationAutomations() {
             </div>
 
             {/* Active Toggle */}
-            <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
               <div>
                 <p className="font-medium">Active</p>
-                <p className="text-sm text-[#0F0F0F]/60">Enable this automation immediately</p>
+                <p className="text-sm text-muted-foreground">Enable this automation immediately</p>
               </div>
               <Switch
                 checked={form.isActive}

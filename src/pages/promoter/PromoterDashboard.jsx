@@ -85,11 +85,11 @@ export function PromoterDashboard() {
 
   if (!promoter) {
     return (
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-8 text-center">
-          <AlertCircle className="w-16 h-16 text-[#0F0F0F]/20 mx-auto mb-4" />
-          <h3 className="text-lg text-[#0F0F0F] mb-2">Not a Promoter Yet</h3>
-          <p className="text-[#0F0F0F]/60">Contact an organizer to become a promoter.</p>
+          <AlertCircle className="w-16 h-16 text-foreground/20 mx-auto mb-4" />
+          <h3 className="text-lg text-foreground mb-2">Not a Promoter Yet</h3>
+          <p className="text-muted-foreground">Contact an organizer to become a promoter.</p>
         </CardContent>
       </Card>
     );
@@ -111,8 +111,8 @@ export function PromoterDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl text-[#0F0F0F] mb-2">Welcome back, {promoter.full_name}!</h2>
-        <p className="text-[#0F0F0F]/60">Track your performance and manage your earnings</p>
+        <h2 className="text-2xl text-foreground mb-2">Welcome back, {promoter.full_name}!</h2>
+        <p className="text-muted-foreground">Track your performance and manage your earnings</p>
       </div>
 
       {!hasBankAccount && (
@@ -121,8 +121,8 @@ export function PromoterDashboard() {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-[#0F0F0F] mb-1">Add Your Bank Account</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mb-3">To receive payments, please add your bank account details.</p>
+                <h3 className="text-foreground mb-1">Add Your Bank Account</h3>
+                <p className="text-sm text-muted-foreground mb-3">To receive payments, please add your bank account details.</p>
                 <Link to="/promoter/bank-accounts"><Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl">Add Bank Account</Button></Link>
               </div>
             </div>
@@ -131,51 +131,51 @@ export function PromoterDashboard() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4 text-blue-600" /><span className="text-sm text-[#0F0F0F]/60">Total Clicks</span></div><p className="text-2xl text-[#0F0F0F]">{(promoter.total_clicks || 0).toLocaleString()}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ShoppingCart className="w-4 h-4 text-green-600" /><span className="text-sm text-[#0F0F0F]/60">Tickets Sold</span></div><p className="text-2xl text-green-600">{promoter.total_sales || 0}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-purple-600" /><span className="text-sm text-[#0F0F0F]/60">Conversion</span></div><p className="text-2xl text-[#0F0F0F]">{conversionRate}%</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-[#2969FF]" /><span className="text-sm text-[#0F0F0F]/60">Total Earned</span></div><p className="text-xl text-[#2969FF]">{formatMultiCurrencyCompact(earningsByCurrency)}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4 text-blue-600" /><span className="text-sm text-muted-foreground">Total Clicks</span></div><p className="text-2xl text-foreground">{(promoter.total_clicks || 0).toLocaleString()}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ShoppingCart className="w-4 h-4 text-green-600" /><span className="text-sm text-muted-foreground">Tickets Sold</span></div><p className="text-2xl text-green-600">{promoter.total_sales || 0}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-purple-600" /><span className="text-sm text-muted-foreground">Conversion</span></div><p className="text-2xl text-foreground">{conversionRate}%</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-[#2969FF]" /><span className="text-sm text-muted-foreground">Total Earned</span></div><p className="text-xl text-[#2969FF]">{formatMultiCurrencyCompact(earningsByCurrency)}</p></CardContent></Card>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader><CardTitle>Earnings Overview</CardTitle></CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-green-50 border border-green-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Earned</p><p className="text-2xl text-[#0F0F0F] mb-2">{formatMultiCurrency(earningsByCurrency)}</p><p className="text-sm text-green-600">{promoter.commission_rate}% Commission Rate</p></div>
-            <div className="p-4 rounded-xl bg-blue-50 border border-blue-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Total Paid</p><p className="text-2xl text-blue-600 mb-2">{formatMultiCurrency(paidByCurrency)}</p><Link to="/promoter/payment-history" className="text-sm text-blue-600 hover:underline">View Payment History →</Link></div>
-            <div className="p-4 rounded-xl bg-orange-50 border border-orange-200"><p className="text-sm text-[#0F0F0F]/60 mb-1">Unpaid Balance</p><p className="text-2xl text-orange-600 mb-2">{formatMultiCurrency(unpaidByCurrency)}</p><p className="text-sm text-[#0F0F0F]/60">Pending payment</p></div>
+            <div className="p-4 rounded-xl bg-green-50 border border-green-200"><p className="text-sm text-muted-foreground mb-1">Total Earned</p><p className="text-2xl text-foreground mb-2">{formatMultiCurrency(earningsByCurrency)}</p><p className="text-sm text-green-600">{promoter.commission_rate}% Commission Rate</p></div>
+            <div className="p-4 rounded-xl bg-blue-50 border border-blue-200"><p className="text-sm text-muted-foreground mb-1">Total Paid</p><p className="text-2xl text-blue-600 mb-2">{formatMultiCurrency(paidByCurrency)}</p><Link to="/promoter/payment-history" className="text-sm text-blue-600 hover:underline">View Payment History →</Link></div>
+            <div className="p-4 rounded-xl bg-orange-50 border border-orange-200"><p className="text-sm text-muted-foreground mb-1">Unpaid Balance</p><p className="text-2xl text-orange-600 mb-2">{formatMultiCurrency(unpaidByCurrency)}</p><p className="text-sm text-muted-foreground">Pending payment</p></div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader><CardTitle>Your Unique Promo Link</CardTitle></CardHeader>
         <CardContent>
-          <div className="p-4 bg-[#F4F6FA] rounded-xl">
+          <div className="p-4 bg-muted rounded-xl">
             <div className="flex items-center justify-between gap-4 mb-3">
-              <div><p className="text-sm text-[#0F0F0F]/60 mb-1">Promo Code</p><p className="text-xl text-[#0F0F0F] font-bold">{promoter.short_code}</p></div>
+              <div><p className="text-sm text-muted-foreground mb-1">Promo Code</p><p className="text-xl text-foreground font-bold">{promoter.short_code}</p></div>
               <Badge className="bg-green-600 text-lg px-4 py-2">{promoter.commission_rate}% Commission</Badge>
             </div>
             <div className="flex items-center gap-3">
-              <code className="flex-1 text-sm text-[#0F0F0F] bg-white px-4 py-3 rounded-lg border border-[#0F0F0F]/10 truncate">{window.location.origin}/events?ref={promoter.short_code}</code>
+              <code className="flex-1 text-sm text-foreground bg-card px-4 py-3 rounded-lg border border-border/10 truncate">{window.location.origin}/events?ref={promoter.short_code}</code>
               <Button onClick={copyLink} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">{copied ? <CheckCircle className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}{copied ? 'Copied!' : 'Copy Link'}</Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader><CardTitle>Assigned Events ({events.length})</CardTitle></CardHeader>
         <CardContent>
-          {events.length === 0 ? <p className="text-center text-[#0F0F0F]/60 py-8">No events assigned yet</p> : (
-            <div className="space-y-3">{events.map((pe) => (<div key={pe.id} className="p-4 bg-[#F4F6FA] rounded-xl flex items-center justify-between"><span className="text-[#0F0F0F]">{pe.events?.title}</span><Badge variant="outline">Active</Badge></div>))}</div>
+          {events.length === 0 ? <p className="text-center text-muted-foreground py-8">No events assigned yet</p> : (
+            <div className="space-y-3">{events.map((pe) => (<div key={pe.id} className="p-4 bg-muted rounded-xl flex items-center justify-between"><span className="text-foreground">{pe.events?.title}</span><Badge variant="outline">Active</Badge></div>))}</div>
           )}
         </CardContent>
       </Card>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <Link to="/promoter/performance"><Card className="border-[#0F0F0F]/10 rounded-2xl hover:border-[#2969FF] transition-colors cursor-pointer"><CardContent className="p-6"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center"><TrendingUp className="w-6 h-6 text-purple-600" /></div><div><h3 className="text-[#0F0F0F] mb-1">View Performance</h3><p className="text-sm text-[#0F0F0F]/60">Detailed analytics and stats</p></div></div></CardContent></Card></Link>
-        <Link to="/promoter/bank-accounts"><Card className="border-[#0F0F0F]/10 rounded-2xl hover:border-[#2969FF] transition-colors cursor-pointer"><CardContent className="p-6"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center"><CreditCard className="w-6 h-6 text-blue-600" /></div><div><h3 className="text-[#0F0F0F] mb-1">Manage Bank Accounts</h3><p className="text-sm text-[#0F0F0F]/60">Add or update payment details</p></div></div></CardContent></Card></Link>
+        <Link to="/promoter/performance"><Card className="border-border/10 rounded-2xl hover:border-[#2969FF] transition-colors cursor-pointer"><CardContent className="p-6"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center"><TrendingUp className="w-6 h-6 text-purple-600" /></div><div><h3 className="text-foreground mb-1">View Performance</h3><p className="text-sm text-muted-foreground">Detailed analytics and stats</p></div></div></CardContent></Card></Link>
+        <Link to="/promoter/bank-accounts"><Card className="border-border/10 rounded-2xl hover:border-[#2969FF] transition-colors cursor-pointer"><CardContent className="p-6"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center"><CreditCard className="w-6 h-6 text-blue-600" /></div><div><h3 className="text-foreground mb-1">Manage Bank Accounts</h3><p className="text-sm text-muted-foreground">Add or update payment details</p></div></div></CardContent></Card></Link>
       </div>
 
       {/* Tax Documents */}

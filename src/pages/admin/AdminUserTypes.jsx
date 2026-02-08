@@ -425,8 +425,8 @@ export function AdminUserTypes() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">User Access Management</h2>
-          <p className="text-[#0F0F0F]/60">Zero-trust user role and security management</p>
+          <h2 className="text-2xl font-semibold text-foreground">User Access Management</h2>
+          <p className="text-muted-foreground">Zero-trust user role and security management</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl">
@@ -444,44 +444,44 @@ export function AdminUserTypes() {
 
       {/* Statistics */}
       <div className="grid md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Users</p>
+                <p className="text-sm text-muted-foreground">Total Users</p>
                 <p className="text-2xl font-semibold">{users.length}</p>
               </div>
               <Users className="w-8 h-8 text-[#2969FF]" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Active Sessions</p>
+                <p className="text-sm text-muted-foreground">Active Sessions</p>
                 <p className="text-2xl font-semibold text-green-600">{sessions.length}</p>
               </div>
               <Activity className="w-8 h-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Security Events</p>
+                <p className="text-sm text-muted-foreground">Security Events</p>
                 <p className="text-2xl font-semibold text-orange-600">{auditLogs.length}</p>
               </div>
               <Shield className="w-8 h-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Failed Attempts</p>
+                <p className="text-sm text-muted-foreground">Failed Attempts</p>
                 <p className="text-2xl font-semibold text-red-600">{failedAttempts.length}</p>
               </div>
               <Ban className="w-8 h-8 text-red-600" />
@@ -491,12 +491,12 @@ export function AdminUserTypes() {
       </div>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-64">
               <div className="relative">
-                <Users className="absolute left-3 top-3 h-4 w-4 text-[#0F0F0F]/40" />
+                <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search users by email or name..."
                   value={searchTerm}
@@ -547,7 +547,7 @@ export function AdminUserTypes() {
 
         {/* Users & Roles Tab */}
         <TabsContent value="users">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>User Access Control</CardTitle>
             </CardHeader>
@@ -555,8 +555,8 @@ export function AdminUserTypes() {
               <div className="space-y-4">
                 {filteredUsers.length === 0 ? (
                   <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                    <p className="text-[#0F0F0F]/60">No users match your filters</p>
+                    <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                    <p className="text-muted-foreground">No users match your filters</p>
                   </div>
                 ) : (
                   filteredUsers.map((userData) => {
@@ -575,11 +575,11 @@ export function AdminUserTypes() {
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-[#0F0F0F]">
+                                <h4 className="font-medium text-foreground">
                                   {userData.full_name || userData.email}
                                 </h4>
                                 <Badge 
-                                  className={`${status.color === 'green' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}
+                                  className={`${status.color === 'green' ? 'bg-green-100 text-green-700' : 'bg-muted text-foreground/80'}`}
                                 >
                                   {status.text}
                                 </Badge>
@@ -589,7 +589,7 @@ export function AdminUserTypes() {
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                   <Mail className="w-3 h-3" />
                                   {userData.email}
@@ -650,7 +650,7 @@ export function AdminUserTypes() {
 
         {/* Active Sessions Tab */}
         <TabsContent value="sessions">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Active User Sessions</CardTitle>
             </CardHeader>
@@ -672,21 +672,21 @@ export function AdminUserTypes() {
                       <TableCell>
                         <div>
                           <p className="font-medium">{session.profiles?.full_name}</p>
-                          <p className="text-xs text-[#0F0F0F]/60">{session.profiles?.email}</p>
+                          <p className="text-xs text-muted-foreground">{session.profiles?.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Monitor className="w-4 h-4 text-[#0F0F0F]/60" />
+                          <Monitor className="w-4 h-4 text-muted-foreground" />
                           <div>
                             <p className="text-sm">{session.device_info || 'Unknown'}</p>
-                            <p className="text-xs text-[#0F0F0F]/60">{session.ip_address}</p>
+                            <p className="text-xs text-muted-foreground">{session.ip_address}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-[#0F0F0F]/60" />
+                          <MapPin className="w-3 h-3 text-muted-foreground" />
                           <span className="text-sm">{session.location || 'Unknown'}</span>
                         </div>
                       </TableCell>
@@ -721,7 +721,7 @@ export function AdminUserTypes() {
 
         {/* Security Audit Tab */}
         <TabsContent value="audit">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Security Audit Log</CardTitle>
             </CardHeader>
@@ -737,12 +737,12 @@ export function AdminUserTypes() {
                         <span className="font-medium">{log.event_type.replace(/_/g, ' ')}</span>
                         <Badge variant="outline">{log.event_category}</Badge>
                       </div>
-                      <span className="text-sm text-[#0F0F0F]/60">
+                      <span className="text-sm text-muted-foreground">
                         {new Date(log.created_at).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-sm text-[#0F0F0F]/80 mb-2">{log.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-[#0F0F0F]/60">
+                    <p className="text-sm text-foreground/80 mb-2">{log.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span>User: {log.profiles?.email || 'System'}</span>
                       {log.ip_address && <span>IP: {log.ip_address}</span>}
                       {log.resource_type && <span>Resource: {log.resource_type}</span>}
@@ -756,7 +756,7 @@ export function AdminUserTypes() {
 
         {/* Security Threats Tab */}
         <TabsContent value="threats">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Security Threats & Failed Attempts</CardTitle>
             </CardHeader>
@@ -844,7 +844,7 @@ export function AdminUserTypes() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <p className="text-sm text-[#0F0F0F]/60">
+            <p className="text-sm text-muted-foreground">
               Send a one-time password to this user's phone for verification.
             </p>
             <Button
@@ -944,7 +944,7 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
       <div className="space-y-2">
         <Label>User Email</Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             type="email"
             placeholder="user@example.com"
@@ -954,7 +954,7 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
             required
           />
         </div>
-        <p className="text-xs text-[#0F0F0F]/60">
+        <p className="text-xs text-muted-foreground">
           User must already have a Ticketrack account
         </p>
       </div>
@@ -970,7 +970,7 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
               <SelectItem key={role.id} value={role.id}>
                 <div className="flex items-center gap-2">
                   <span>{role.display_name}</span>
-                  <span className="text-xs text-[#0F0F0F]/60">(Level {role.level})</span>
+                  <span className="text-xs text-muted-foreground">(Level {role.level})</span>
                 </div>
               </SelectItem>
             ))}
@@ -986,7 +986,7 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
           onChange={(e) => setExpiresAt(e.target.value)}
           className="rounded-xl"
         />
-        <p className="text-xs text-[#0F0F0F]/60">
+        <p className="text-xs text-muted-foreground">
           Leave empty for no expiration
         </p>
       </div>
@@ -1072,9 +1072,9 @@ function EditUserForm({ user: editUser, roles, onSuccess, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
-      <div className="p-3 bg-[#F4F6FA] rounded-xl">
+      <div className="p-3 bg-muted rounded-xl">
         <p className="font-medium">{editUser?.full_name || editUser?.email}</p>
-        <p className="text-sm text-[#0F0F0F]/60">{editUser?.email}</p>
+        <p className="text-sm text-muted-foreground">{editUser?.email}</p>
       </div>
 
       <div className="space-y-2">
@@ -1132,35 +1132,35 @@ function ViewUserDetails({ user: viewUser, roles }) {
   
   return (
     <div className="space-y-4 py-4">
-      <div className="p-4 bg-[#F4F6FA] rounded-xl">
+      <div className="p-4 bg-muted rounded-xl">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-[#2969FF]/10 rounded-full flex items-center justify-center">
             <User className="w-6 h-6 text-[#2969FF]" />
           </div>
           <div>
             <h3 className="font-semibold">{viewUser?.full_name || 'No Name'}</h3>
-            <p className="text-sm text-[#0F0F0F]/60">{viewUser?.email}</p>
+            <p className="text-sm text-muted-foreground">{viewUser?.email}</p>
           </div>
         </div>
       </div>
 
       <div className="space-y-3">
         <div className="flex justify-between p-3 border rounded-xl">
-          <span className="text-[#0F0F0F]/60">Role</span>
+          <span className="text-muted-foreground">Role</span>
           <span className="font-medium">{role?.display_name || 'No Role'}</span>
         </div>
         <div className="flex justify-between p-3 border rounded-xl">
-          <span className="text-[#0F0F0F]/60">Level</span>
+          <span className="text-muted-foreground">Level</span>
           <span className="font-medium">{role?.level || '-'}</span>
         </div>
         <div className="flex justify-between p-3 border rounded-xl">
-          <span className="text-[#0F0F0F]/60">Status</span>
-          <Badge className={viewUser?.user_role_assignments?.[0]?.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+          <span className="text-muted-foreground">Status</span>
+          <Badge className={viewUser?.user_role_assignments?.[0]?.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-foreground/80'}>
             {viewUser?.user_role_assignments?.[0]?.is_active ? 'Active' : 'Inactive'}
           </Badge>
         </div>
         <div className="flex justify-between p-3 border rounded-xl">
-          <span className="text-[#0F0F0F]/60">Expires</span>
+          <span className="text-muted-foreground">Expires</span>
           <span className="font-medium">
             {viewUser?.user_role_assignments?.[0]?.expires_at 
               ? new Date(viewUser.user_role_assignments[0].expires_at).toLocaleDateString()
@@ -1168,7 +1168,7 @@ function ViewUserDetails({ user: viewUser, roles }) {
           </span>
         </div>
         <div className="flex justify-between p-3 border rounded-xl">
-          <span className="text-[#0F0F0F]/60">Created</span>
+          <span className="text-muted-foreground">Created</span>
           <span className="font-medium">
             {viewUser?.created_at ? new Date(viewUser.created_at).toLocaleDateString() : '-'}
           </span>
@@ -1176,7 +1176,7 @@ function ViewUserDetails({ user: viewUser, roles }) {
       </div>
 
       {role && (
-        <div className="p-4 bg-[#F4F6FA] rounded-xl">
+        <div className="p-4 bg-muted rounded-xl">
           <h4 className="font-medium mb-2">Permissions</h4>
           <div className="grid grid-cols-2 gap-2 text-sm">
             {role.can_create_users && <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-600" /> Create Users</span>}

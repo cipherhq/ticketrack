@@ -52,8 +52,8 @@ export function RevenueByCountry() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Revenue by Country</h1>
-          <p className="text-[#0F0F0F]/60">Platform revenue breakdown by country</p>
+          <h1 className="text-2xl font-bold text-foreground">Revenue by Country</h1>
+          <p className="text-muted-foreground">Platform revenue breakdown by country</p>
         </div>
         <Button onClick={loadData} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />Refresh
@@ -63,13 +63,13 @@ export function RevenueByCountry() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Globe className="w-5 h-5" />Revenue by Country</CardTitle>
           </CardHeader>
           <CardContent>
             {revenueByCountry.length === 0 ? (
-              <p className="text-center text-[#0F0F0F]/60 py-8">No data available</p>
+              <p className="text-center text-muted-foreground py-8">No data available</p>
             ) : (
               <div className="space-y-3">
                 {revenueByCountry.map((item, idx) => {
@@ -81,14 +81,14 @@ export function RevenueByCountry() {
                           <div className="w-10 h-10 rounded-lg bg-[#2969FF]/10 flex items-center justify-center font-semibold text-[#2969FF]">
                             {item.country?.slice(0, 2) || '??'}
                           </div>
-                          <p className="font-medium text-[#0F0F0F]">{item.country || 'Unknown'}</p>
+                          <p className="font-medium text-foreground">{item.country || 'Unknown'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(item.revenueByCurrency)}</p>
-                          <p className="text-xs text-[#0F0F0F]/60">{percentage.toFixed(1)}%</p>
+                          <p className="font-bold text-foreground">{formatMultiCurrencyCompact(item.revenueByCurrency)}</p>
+                          <p className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</p>
                         </div>
                       </div>
-                      <div className="w-full bg-[#F4F6FA] rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div className="bg-[#2969FF] h-2 rounded-full" style={{ width: `${percentage}%` }} />
                       </div>
                     </div>

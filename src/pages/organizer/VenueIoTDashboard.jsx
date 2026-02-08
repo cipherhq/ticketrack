@@ -169,9 +169,9 @@ export function VenueIoTDashboard() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center py-12">
-          <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Smart Venues</h2>
-          <p className="text-gray-600 mb-6">
+          <Activity className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">No Smart Venues</h2>
+          <p className="text-muted-foreground mb-6">
             You haven't set up any IoT-enabled venues yet.
           </p>
           <Button onClick={() => navigate('/organizer/venues')}>
@@ -194,8 +194,8 @@ export function VenueIoTDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#0F0F0F]">Smart Venue Dashboard</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Smart Venue Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
             Real-time monitoring and management of your IoT-enabled venues
           </p>
         </div>
@@ -215,7 +215,7 @@ export function VenueIoTDashboard() {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
-            <label className="font-medium text-[#0F0F0F]">Select Venue:</label>
+            <label className="font-medium text-foreground">Select Venue:</label>
             <div className="flex gap-2">
               {venues.map(venue => (
                 <Button
@@ -449,8 +449,8 @@ export function VenueIoTDashboard() {
               {maintenanceAlerts.length === 0 ? (
                 <div className="text-center py-8">
                   <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">All Systems Operational</h3>
-                  <p className="text-gray-500">No maintenance alerts at this time.</p>
+                  <h3 className="text-lg font-medium text-foreground mb-2">All Systems Operational</h3>
+                  <p className="text-muted-foreground">No maintenance alerts at this time.</p>
                 </div>
               ) : (
                 <div className="space-y-4">

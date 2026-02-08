@@ -280,7 +280,7 @@ export function EventAccessSettings({
     <div className="space-y-3">
       <div className="mb-2">
         <Label className="text-base font-medium">Event Visibility</Label>
-        <p className="text-sm text-[#0F0F0F]/60">Control who can discover and access your event</p>
+        <p className="text-sm text-muted-foreground">Control who can discover and access your event</p>
       </div>
       
       {VISIBILITY_OPTIONS.map((option) => {
@@ -294,32 +294,32 @@ export function EventAccessSettings({
             onClick={() => onVisibilityChange(option.value)}
             className={`
               relative rounded-xl border-2 cursor-pointer transition-all overflow-hidden
-              ${isSelected ? `${colorClasses.border} ${colorClasses.bg}` : 'border-[#0F0F0F]/10 bg-white hover:border-[#0F0F0F]/20'}
+              ${isSelected ? `${colorClasses.border} ${colorClasses.bg}` : 'border-border/10 bg-card hover:border-border/20'}
             `}
           >
             {/* Option Header */}
             <div className="flex items-center gap-4 p-4">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSelected ? colorClasses.icon : 'bg-gray-100 text-gray-500'}`}>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSelected ? colorClasses.icon : 'bg-muted text-muted-foreground'}`}>
                 <Icon className="w-5 h-5" />
               </div>
               
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-medium text-[#0F0F0F]">{option.label}</h4>
+                  <h4 className="font-medium text-foreground">{option.label}</h4>
                   {isSelected && <Badge className="bg-[#2969FF] text-white text-xs">Selected</Badge>}
                 </div>
-                <p className="text-sm text-[#0F0F0F]/60">{option.description}</p>
+                <p className="text-sm text-muted-foreground">{option.description}</p>
               </div>
               
               {/* Radio indicator */}
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#2969FF] bg-[#2969FF]' : 'border-[#0F0F0F]/20'}`}>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-[#2969FF] bg-[#2969FF]' : 'border-border/20'}`}>
                 {isSelected && <Check className="w-3 h-3 text-white" />}
               </div>
             </div>
             
             {/* INLINE Fields - Password */}
             {isSelected && option.value === 'password' && (
-              <div className="px-4 pb-4 pt-2 border-t border-[#0F0F0F]/10 space-y-3" onClick={(e) => e.stopPropagation()}>
+              <div className="px-4 pb-4 pt-2 border-t border-border/10 space-y-3" onClick={(e) => e.stopPropagation()}>
                 <div className="space-y-2">
                   <Label className="text-sm">Event Password <span className="text-red-500">*</span></Label>
                   <div className="relative">
@@ -328,17 +328,17 @@ export function EventAccessSettings({
                       value={accessPassword}
                       onChange={(e) => onPasswordChange(e.target.value)}
                       placeholder="Enter a password for this event"
-                      className="rounded-xl pr-10 bg-white"
+                      className="rounded-xl pr-10 bg-card"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]/60"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <p className="text-xs text-[#0F0F0F]/50 flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Info className="w-3 h-3" />
                     Share this password with your intended guests
                   </p>
@@ -348,7 +348,7 @@ export function EventAccessSettings({
             
             {/* INLINE Fields - Unlisted Info */}
             {isSelected && option.value === 'unlisted' && (
-              <div className="px-4 pb-4 pt-2 border-t border-[#0F0F0F]/10" onClick={(e) => e.stopPropagation()}>
+              <div className="px-4 pb-4 pt-2 border-t border-border/10" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-start gap-2 p-3 bg-blue-100/50 rounded-lg">
                   <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                   <p className="text-sm text-blue-800">
@@ -360,9 +360,9 @@ export function EventAccessSettings({
             
             {/* INLINE Fields - Invite Codes */}
             {isSelected && option.value === 'invite_only' && (
-              <div className="px-4 pb-4 pt-2 border-t border-[#0F0F0F]/10 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="px-4 pb-4 pt-2 border-t border-border/10 space-y-4" onClick={(e) => e.stopPropagation()}>
                 {/* Add new code form */}
-                <div className="p-3 bg-white rounded-lg border border-[#0F0F0F]/10 space-y-3">
+                <div className="p-3 bg-card rounded-lg border border-border/10 space-y-3">
                   <Label className="text-sm font-medium">Add Invite Code</Label>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex gap-2">
@@ -411,13 +411,13 @@ export function EventAccessSettings({
                 {inviteCodes.length > 0 && (
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {inviteCodes.map((code) => (
-                      <div key={code.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-[#0F0F0F]/10">
+                      <div key={code.id} className="flex items-center justify-between p-2 bg-card rounded-lg border border-border/10">
                         <div className="flex items-center gap-2">
                           <code className="font-mono font-bold text-[#2969FF] text-sm">{code.code}</code>
                           {code.name && <Badge variant="outline" className="text-xs">{code.name}</Badge>}
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-[#0F0F0F]/50">{code.current_uses || 0}{code.max_uses ? `/${code.max_uses}` : ''}</span>
+                          <span className="text-xs text-muted-foreground">{code.current_uses || 0}{code.max_uses ? `/${code.max_uses}` : ''}</span>
                           <Button type="button" variant="ghost" size="icon" onClick={() => copyCode(code.code)} className="h-7 w-7">
                             {copiedCode === code.code ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
                           </Button>
@@ -431,21 +431,21 @@ export function EventAccessSettings({
                 )}
                 
                 {inviteCodes.length === 0 && (
-                  <p className="text-xs text-[#0F0F0F]/50 text-center py-2">No codes yet. Add one above.</p>
+                  <p className="text-xs text-muted-foreground text-center py-2">No codes yet. Add one above.</p>
                 )}
               </div>
             )}
             
             {/* INLINE Fields - Email Whitelist */}
             {isSelected && option.value === 'email_whitelist' && (
-              <div className="px-4 pb-4 pt-2 border-t border-[#0F0F0F]/10 space-y-3" onClick={(e) => e.stopPropagation()}>
+              <div className="px-4 pb-4 pt-2 border-t border-border/10 space-y-3" onClick={(e) => e.stopPropagation()}>
                 <div className="space-y-2">
                   <Label className="text-sm">Add Email Addresses</Label>
                   <Textarea
                     value={newEmails}
                     onChange={(e) => setNewEmails(e.target.value)}
                     placeholder="Enter emails (one per line or comma-separated)"
-                    className="rounded-lg min-h-[80px] font-mono text-sm bg-white"
+                    className="rounded-lg min-h-[80px] font-mono text-sm bg-card"
                   />
                   <Button type="button" onClick={addEmails} disabled={!newEmails.trim()} className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-lg text-sm">
                     <Plus className="w-4 h-4 mr-1" />
@@ -456,9 +456,9 @@ export function EventAccessSettings({
                 {/* List of emails */}
                 {emailWhitelist.length > 0 && (
                   <div className="space-y-1 max-h-32 overflow-y-auto">
-                    <Label className="text-xs text-[#0F0F0F]/60">{emailWhitelist.length} email{emailWhitelist.length !== 1 ? 's' : ''}</Label>
+                    <Label className="text-xs text-muted-foreground">{emailWhitelist.length} email{emailWhitelist.length !== 1 ? 's' : ''}</Label>
                     {emailWhitelist.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between py-1.5 px-2 bg-white rounded-lg border border-[#0F0F0F]/10">
+                      <div key={item.id} className="flex items-center justify-between py-1.5 px-2 bg-card rounded-lg border border-border/10">
                         <span className="text-sm font-mono truncate">{item.email}</span>
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeEmail(item.id)} className="h-6 w-6 text-red-500 shrink-0">
                           <Trash2 className="w-3 h-3" />
@@ -469,7 +469,7 @@ export function EventAccessSettings({
                 )}
                 
                 {emailWhitelist.length === 0 && (
-                  <p className="text-xs text-[#0F0F0F]/50 text-center py-2">No emails yet. Add some above.</p>
+                  <p className="text-xs text-muted-foreground text-center py-2">No emails yet. Add some above.</p>
                 )}
               </div>
             )}

@@ -711,11 +711,11 @@ export function CheckInByEvents() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             Check-In
             <HelpTip>Scan QR codes or enter ticket codes to check in attendees. Works on multiple devices at once - perfect for events with multiple entry points!</HelpTip>
           </h2>
-          <p className="text-[#0F0F0F]/60 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage attendee check-ins • Device: {deviceId.current.slice(-8)}
           </p>
         </div>
@@ -748,7 +748,7 @@ export function CheckInByEvents() {
           <Button
             onClick={() => setManualCheckInDialog(true)}
             variant="outline"
-            className="rounded-xl border-[#0F0F0F]/10"
+            className="rounded-xl border-border/10"
           >
             <UserCheck className="w-4 h-4 mr-2" />
             Manual
@@ -757,18 +757,18 @@ export function CheckInByEvents() {
       </div>
 
       {/* Event Selection with Search */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <Calendar className="w-5 h-5 text-[#2969FF]" />
             <Select value={selectedEvent} onValueChange={(val) => { setSelectedEvent(val); setEventSearchTerm(''); }}>
-              <SelectTrigger className="flex-1 rounded-xl border-[#0F0F0F]/10 h-12">
+              <SelectTrigger className="flex-1 rounded-xl border-border/10 h-12">
                 <SelectValue placeholder="Select an event" />
               </SelectTrigger>
               <SelectContent className="rounded-xl max-h-80">
-                <div className="p-2 border-b border-[#0F0F0F]/10 sticky top-0 bg-white z-10">
+                <div className="p-2 border-b border-border/10 sticky top-0 bg-card z-10">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       placeholder="Search events..."
                       value={eventSearchTerm}
@@ -787,7 +787,7 @@ export function CheckInByEvents() {
                   <SelectItem key={event.id} value={event.id}>
                     <div className="flex flex-col">
                       <span>{event.title}</span>
-                      <span className="text-xs text-[#0F0F0F]/60">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(event.start_date).toLocaleDateString('en-NG', { 
                           month: 'short', day: 'numeric', year: 'numeric' 
                         })}
@@ -799,7 +799,7 @@ export function CheckInByEvents() {
                   event.title?.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
                   event.venue_name?.toLowerCase().includes(eventSearchTerm.toLowerCase())
                 ).length === 0 && (
-                  <div className="p-4 text-center text-sm text-[#0F0F0F]/60">No events found</div>
+                  <div className="p-4 text-center text-sm text-muted-foreground">No events found</div>
                 )}
               </SelectContent>
             </Select>
@@ -811,12 +811,12 @@ export function CheckInByEvents() {
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[#0F0F0F]/60 text-sm">Total</p>
-                    <h3 className="text-2xl font-semibold text-[#0F0F0F]">{eventStats.total}</h3>
+                    <p className="text-muted-foreground text-sm">Total</p>
+                    <h3 className="text-2xl font-semibold text-foreground">{eventStats.total}</h3>
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                     <Users className="w-5 h-5 text-[#2969FF]" />
@@ -825,11 +825,11 @@ export function CheckInByEvents() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-2xl border-green-200 bg-green-50/50">
+            <Card className="border-border/10 rounded-2xl border-green-200 bg-green-50/50">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[#0F0F0F]/60 text-sm">Checked In</p>
+                    <p className="text-muted-foreground text-sm">Checked In</p>
                     <h3 className="text-2xl font-semibold text-green-600">{eventStats.checkedIn}</h3>
                     <p className="text-xs text-green-600">
                       {eventStats.total > 0 ? Math.round((eventStats.checkedIn / eventStats.total) * 100) : 0}%
@@ -842,13 +842,13 @@ export function CheckInByEvents() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[#0F0F0F]/60 text-sm">Pending</p>
-                    <h3 className="text-2xl font-semibold text-[#0F0F0F]">{eventStats.pending}</h3>
-                    <p className="text-xs text-[#0F0F0F]/40">
+                    <p className="text-muted-foreground text-sm">Pending</p>
+                    <h3 className="text-2xl font-semibold text-foreground">{eventStats.pending}</h3>
+                    <p className="text-xs text-muted-foreground">
                       {eventStats.total > 0 ? Math.round((eventStats.pending / eventStats.total) * 100) : 0}%
                     </p>
                   </div>
@@ -859,12 +859,12 @@ export function CheckInByEvents() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div>
-                  <p className="text-[#0F0F0F]/60 text-sm">Venue</p>
-                  <p className="font-medium text-[#0F0F0F] truncate">{currentEvent?.venue_name || 'N/A'}</p>
-                  <p className="text-xs text-[#0F0F0F]/40">
+                  <p className="text-muted-foreground text-sm">Venue</p>
+                  <p className="font-medium text-foreground truncate">{currentEvent?.venue_name || 'N/A'}</p>
+                  <p className="text-xs text-muted-foreground">
                     {currentEvent?.start_date ? new Date(currentEvent.start_date).toLocaleDateString() : ''}
                   </p>
                 </div>
@@ -873,15 +873,15 @@ export function CheckInByEvents() {
           </div>
 
           {/* Progress Bar */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-[#0F0F0F]/60">Check-in Progress</span>
-                <span className="text-sm font-medium text-[#0F0F0F]">
+                <span className="text-sm text-muted-foreground">Check-in Progress</span>
+                <span className="text-sm font-medium text-foreground">
                   {eventStats.checkedIn} / {eventStats.total}
                 </span>
               </div>
-              <div className="w-full bg-[#F4F6FA] rounded-full h-4 overflow-hidden">
+              <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#2969FF] to-green-500 transition-all duration-500"
                   style={{ width: `${eventStats.total > 0 ? (eventStats.checkedIn / eventStats.total) * 100 : 0}%` }}
@@ -892,7 +892,7 @@ export function CheckInByEvents() {
 
           {/* Tabs: Attendees & Audit Log */}
           <Tabs defaultValue="attendees" className="space-y-4">
-            <TabsList className="bg-white border border-[#0F0F0F]/10 rounded-xl p-1">
+            <TabsList className="bg-card border border-border/10 rounded-xl p-1">
               <TabsTrigger value="attendees" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">
                 <Users className="w-4 h-4 mr-2" />
                 Attendees
@@ -906,20 +906,20 @@ export function CheckInByEvents() {
             {/* Attendees Tab */}
             <TabsContent value="attendees" className="space-y-4">
               {/* Search & Filter */}
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex flex-col md:flex-row gap-3">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
                         placeholder="Search by name, email, or ticket code..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl"
+                        className="pl-10 h-12 bg-muted border-0 rounded-xl"
                       />
                     </div>
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="md:w-40 h-12 rounded-xl border-[#0F0F0F]/10">
+                      <SelectTrigger className="md:w-40 h-12 rounded-xl border-border/10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -933,17 +933,17 @@ export function CheckInByEvents() {
               </Card>
 
               {/* Attendees List */}
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-[#0F0F0F] text-lg">
+                  <CardTitle className="text-foreground text-lg">
                     Attendees ({filteredAttendees.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {filteredAttendees.length === 0 ? (
                     <div className="text-center py-12">
-                      <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                      <p className="text-[#0F0F0F]/60">
+                      <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                      <p className="text-muted-foreground">
                         {attendees.length === 0 ? 'No attendees for this event' : 'No attendees match your filters'}
                       </p>
                     </div>
@@ -953,7 +953,7 @@ export function CheckInByEvents() {
                         <div
                           key={attendee.id}
                           className={`p-4 rounded-xl flex items-center justify-between ${
-                            attendee.checkedIn ? 'bg-green-50 border border-green-200' : 'bg-[#F4F6FA]'
+                            attendee.checkedIn ? 'bg-green-50 border border-green-200' : 'bg-muted'
                           }`}
                         >
                           <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -968,13 +968,13 @@ export function CheckInByEvents() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="font-medium text-[#0F0F0F] truncate">{attendee.name}</p>
-                                <Badge className="bg-[#0F0F0F]/10 text-[#0F0F0F] text-xs">
+                                <p className="font-medium text-foreground truncate">{attendee.name}</p>
+                                <Badge className="bg-[#0F0F0F]/10 text-foreground text-xs">
                                   {attendee.ticketType}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-[#0F0F0F]/60 truncate">{attendee.email}</p>
-                              <p className="text-xs text-[#0F0F0F]/40 font-mono">{attendee.ticketCode}</p>
+                              <p className="text-sm text-muted-foreground truncate">{attendee.email}</p>
+                              <p className="text-xs text-muted-foreground font-mono">{attendee.ticketCode}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -982,13 +982,13 @@ export function CheckInByEvents() {
                               <>
                                 <div className="text-right mr-2 hidden md:block">
                                   <p className="text-xs text-green-600">Checked in</p>
-                                  <p className="text-xs text-[#0F0F0F]/40">{formatTime(attendee.checkInTime)}</p>
+                                  <p className="text-xs text-muted-foreground">{formatTime(attendee.checkInTime)}</p>
                                 </div>
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => performCheckIn(attendee.id, true)}
-                                  className="rounded-xl border-[#0F0F0F]/10"
+                                  className="rounded-xl border-border/10"
                                 >
                                   <Undo2 className="w-4 h-4" />
                                 </Button>
@@ -1014,9 +1014,9 @@ export function CheckInByEvents() {
 
             {/* Audit Log Tab */}
             <TabsContent value="audit">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+                  <CardTitle className="text-foreground flex items-center gap-2">
                     <History className="w-5 h-5" />
                     Activity Log
                   </CardTitle>
@@ -1024,15 +1024,15 @@ export function CheckInByEvents() {
                 <CardContent>
                   {auditLog.length === 0 ? (
                     <div className="text-center py-12">
-                      <History className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                      <p className="text-[#0F0F0F]/60">No check-in activity yet</p>
+                      <History className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                      <p className="text-muted-foreground">No check-in activity yet</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {auditLog.map((log, index) => (
                         <div
                           key={`${log.id}-${index}`}
-                          className="p-3 rounded-xl bg-[#F4F6FA] flex items-center justify-between"
+                          className="p-3 rounded-xl bg-muted flex items-center justify-between"
                         >
                           <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -1045,14 +1045,14 @@ export function CheckInByEvents() {
                               )}
                             </div>
                             <div>
-                              <p className="font-medium text-[#0F0F0F] text-sm">{log.attendeeName}</p>
-                              <p className="text-xs text-[#0F0F0F]/40 font-mono">{log.ticketCode}</p>
+                              <p className="font-medium text-foreground text-sm">{log.attendeeName}</p>
+                              <p className="text-xs text-muted-foreground font-mono">{log.ticketCode}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs text-[#0F0F0F]/60">{formatDateTime(log.timestamp)}</p>
+                            <p className="text-xs text-muted-foreground">{formatDateTime(log.timestamp)}</p>
                             {log.deviceId && (
-                              <p className="text-xs text-[#0F0F0F]/40 flex items-center gap-1 justify-end">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
                                 <Smartphone className="w-3 h-3" />
                                 {log.deviceId.slice(-8)}
                               </p>
@@ -1080,7 +1080,7 @@ export function CheckInByEvents() {
       }}>
         <DialogContent className="rounded-2xl max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-[#0F0F0F]">Scan QR Code</DialogTitle>
+            <DialogTitle className="text-foreground">Scan QR Code</DialogTitle>
             <DialogDescription>
               Position the ticket QR code within the frame
             </DialogDescription>
@@ -1088,13 +1088,13 @@ export function CheckInByEvents() {
           
           {/* Processing Overlay - Full screen within dialog */}
           {scannerProcessing && (
-            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
+            <div className="absolute inset-0 bg-card/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
               <div className="relative">
                 <div className="w-20 h-20 rounded-full border-4 border-[#2969FF]/20 border-t-[#2969FF] animate-spin" />
                 <QrCode className="w-8 h-8 text-[#2969FF] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               </div>
-              <p className="mt-4 text-lg font-medium text-[#0F0F0F]">Processing...</p>
-              <p className="text-sm text-[#0F0F0F]/60 mt-1">Verifying ticket</p>
+              <p className="mt-4 text-lg font-medium text-foreground">Processing...</p>
+              <p className="text-sm text-muted-foreground mt-1">Verifying ticket</p>
             </div>
           )}
           
@@ -1226,7 +1226,7 @@ export function CheckInByEvents() {
       }}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-[#0F0F0F]">Manual Check-In</DialogTitle>
+            <DialogTitle className="text-foreground">Manual Check-In</DialogTitle>
             <DialogDescription>
               Enter the ticket code (e.g., TRABCD12) to check in an attendee
             </DialogDescription>
@@ -1234,13 +1234,13 @@ export function CheckInByEvents() {
 
           {/* Processing Overlay */}
           {processing && (
-            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
+            <div className="absolute inset-0 bg-card/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
               <div className="relative">
                 <div className="w-16 h-16 rounded-full border-4 border-[#2969FF]/20 border-t-[#2969FF] animate-spin" />
                 <UserCheck className="w-6 h-6 text-[#2969FF] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               </div>
-              <p className="mt-4 text-lg font-medium text-[#0F0F0F]">Checking In...</p>
-              <p className="text-sm text-[#0F0F0F]/60 mt-1">Verifying ticket code</p>
+              <p className="mt-4 text-lg font-medium text-foreground">Checking In...</p>
+              <p className="text-sm text-muted-foreground mt-1">Verifying ticket code</p>
             </div>
           )}
 
@@ -1290,11 +1290,11 @@ export function CheckInByEvents() {
                 value={ticketCode}
                 onChange={(e) => setTicketCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === 'Enter' && !processing && handleManualCheckIn()}
-                className="rounded-xl border-[#0F0F0F]/10 h-14 font-mono text-lg text-center tracking-widest"
+                className="rounded-xl border-border/10 h-14 font-mono text-lg text-center tracking-widest"
                 autoFocus
                 disabled={processing}
               />
-              <p className="text-xs text-[#0F0F0F]/40 text-center mt-2">
+              <p className="text-xs text-muted-foreground text-center mt-2">
                 Enter the 8-character code from the ticket
               </p>
             </div>
@@ -1306,7 +1306,7 @@ export function CheckInByEvents() {
                   setTicketCode('');
                   setCheckInResult(null);
                 }}
-                className="rounded-xl border-[#0F0F0F]/10 flex-1"
+                className="rounded-xl border-border/10 flex-1"
                 disabled={processing}
               >
                 Close

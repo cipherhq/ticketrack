@@ -79,7 +79,7 @@ export function LayoutEditor() {
         <ObjectPalette />
 
         {/* Center: Canvas */}
-        <div className="flex-1 relative overflow-hidden bg-gray-200">
+        <div className="flex-1 relative overflow-hidden bg-muted">
           <EditorCanvas ref={canvasRef} />
         </div>
 

@@ -199,15 +199,15 @@ export function OrganizerFollowers() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Followers</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage your followers and send them notifications</p>
+          <h2 className="text-2xl font-semibold text-foreground">Followers</h2>
+          <p className="text-muted-foreground mt-1">Manage your followers and send them notifications</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
             onClick={loadFollowers}
-            className="rounded-xl border-[#0F0F0F]/10"
+            className="rounded-xl border-border/10"
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -224,12 +224,12 @@ export function OrganizerFollowers() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Followers</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{totalFollowers.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground mb-1">Total Followers</p>
+                <p className="text-2xl font-semibold text-foreground">{totalFollowers.toLocaleString()}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Users className="w-5 h-5 text-[#2969FF]" />
@@ -237,11 +237,11 @@ export function OrganizerFollowers() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">New This Month</p>
+                <p className="text-sm text-muted-foreground mb-1">New This Month</p>
                 <p className="text-2xl font-semibold text-green-600">{newFollowersThisMonth}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
@@ -250,12 +250,12 @@ export function OrganizerFollowers() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Active (30 days)</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{activeFollowers}</p>
+                <p className="text-sm text-muted-foreground mb-1">Active (30 days)</p>
+                <p className="text-2xl font-semibold text-foreground">{activeFollowers}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-purple-600" />
@@ -263,12 +263,12 @@ export function OrganizerFollowers() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Notifications On</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{notificationsOn}</p>
+                <p className="text-sm text-muted-foreground mb-1">Notifications On</p>
+                <p className="text-2xl font-semibold text-foreground">{notificationsOn}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Bell className="w-5 h-5 text-orange-600" />
@@ -278,7 +278,7 @@ export function OrganizerFollowers() {
         </Card>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="grid md:grid-cols-3 gap-3">
             <Button
@@ -293,33 +293,33 @@ export function OrganizerFollowers() {
             </Button>
             <Button
               variant="outline"
-              className="rounded-xl h-auto py-4 border-[#0F0F0F]/10"
+              className="rounded-xl h-auto py-4 border-border/10"
               onClick={() => navigate('/organizer/sms')}
             >
               <MessageSquare className="w-5 h-5 mr-3" />
               <div className="text-left">
                 <p className="font-medium">SMS Campaign</p>
-                <p className="text-xs text-[#0F0F0F]/60">Send SMS messages</p>
+                <p className="text-xs text-muted-foreground">Send SMS messages</p>
               </div>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search followers by name or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl"
+                className="pl-10 h-12 bg-muted border-0 rounded-xl"
               />
             </div>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="md:w-48 h-12 rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="md:w-48 h-12 rounded-xl border-border/10">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
@@ -335,10 +335,10 @@ export function OrganizerFollowers() {
       </Card>
 
       {filteredFollowers.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-12 text-center">
-            <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">
+            <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground">
               {followers.length === 0 ? 'No followers yet' : 'No followers match your search'}
             </p>
           </CardContent>
@@ -346,7 +346,7 @@ export function OrganizerFollowers() {
       ) : (
         <div className="space-y-3">
           {filteredFollowers.map((follower) => (
-            <Card key={follower.id} className="border-[#0F0F0F]/10 rounded-2xl hover:shadow-md transition-shadow">
+            <Card key={follower.id} className="border-border/10 rounded-2xl hover:shadow-md transition-shadow">
               <CardContent className="p-4 md:p-6">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium flex-shrink-0">
@@ -355,7 +355,7 @@ export function OrganizerFollowers() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-medium text-[#0F0F0F]">{follower.name}</h3>
+                      <h3 className="font-medium text-foreground">{follower.name}</h3>
                       {follower.notificationsEnabled && (
                         <Badge className="bg-green-100 text-green-700 text-xs">
                           <Bell className="w-3 h-3 mr-1" />
@@ -363,7 +363,7 @@ export function OrganizerFollowers() {
                         </Badge>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1 truncate">
                         <Mail className="w-4 h-4 flex-shrink-0" />
                         {follower.email}
@@ -376,17 +376,17 @@ export function OrganizerFollowers() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="p-2 bg-[#F4F6FA] rounded-lg">
-                      <p className="text-xs text-[#0F0F0F]/60">Events</p>
-                      <p className="text-lg font-semibold text-[#0F0F0F]">{follower.eventsAttended}</p>
+                    <div className="p-2 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground">Events</p>
+                      <p className="text-lg font-semibold text-foreground">{follower.eventsAttended}</p>
                     </div>
-                    <div className="p-2 bg-[#F4F6FA] rounded-lg">
-                      <p className="text-xs text-[#0F0F0F]/60">Spent</p>
-                      <p className="text-lg font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(follower.totalSpentByCurrency)}</p>
+                    <div className="p-2 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground">Spent</p>
+                      <p className="text-lg font-semibold text-foreground">{formatMultiCurrencyCompact(follower.totalSpentByCurrency)}</p>
                     </div>
-                    <div className="p-2 bg-[#F4F6FA] rounded-lg">
-                      <p className="text-xs text-[#0F0F0F]/60">Last Active</p>
-                      <p className="text-sm font-medium text-[#0F0F0F]">
+                    <div className="p-2 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground">Last Active</p>
+                      <p className="text-sm font-medium text-foreground">
                         {new Date(follower.lastActivity).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </p>
                     </div>

@@ -582,10 +582,10 @@ export function SegmentBuilder() {
           Back
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">
+          <h1 className="text-2xl font-bold text-foreground">
             {isEditing ? 'Edit Segment' : 'Create Segment'}
           </h1>
-          <p className="text-[#0F0F0F]/60">Define audience segments for targeted campaigns</p>
+          <p className="text-muted-foreground">Define audience segments for targeted campaigns</p>
         </div>
         <Button onClick={saveSegment} disabled={saving} className="bg-[#2969FF] text-white">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
@@ -597,7 +597,7 @@ export function SegmentBuilder() {
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Basic Info */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle>Segment Details</CardTitle>
             </CardHeader>
@@ -641,7 +641,7 @@ export function SegmentBuilder() {
           </Card>
 
           {/* Conditions */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Conditions</CardTitle>
               <Button variant="outline" size="sm" onClick={addCondition}>
@@ -651,7 +651,7 @@ export function SegmentBuilder() {
             </CardHeader>
             <CardContent>
               {form.conditions.length === 0 ? (
-                <div className="text-center py-8 text-[#0F0F0F]/40">
+                <div className="text-center py-8 text-muted-foreground">
                   <Filter className="w-12 h-12 mx-auto mb-2" />
                   <p>No conditions yet</p>
                   <p className="text-sm">Add conditions to filter contacts</p>
@@ -667,7 +667,7 @@ export function SegmentBuilder() {
                     const operators = field ? OPERATORS[field.type] : [];
 
                     return (
-                      <div key={condition.id} className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-lg">
+                      <div key={condition.id} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                         {index > 0 && (
                           <Badge variant="secondary" className="mr-2">
                             {form.logic.toUpperCase()}
@@ -730,7 +730,7 @@ export function SegmentBuilder() {
 
                   {form.conditions.length > 1 && (
                     <div className="flex items-center gap-2 pt-2">
-                      <span className="text-sm text-[#0F0F0F]/60">Match</span>
+                      <span className="text-sm text-muted-foreground">Match</span>
                       <Select value={form.logic} onValueChange={(v) => setForm(f => ({ ...f, logic: v }))}>
                         <SelectTrigger className="w-[100px]">
                           <SelectValue />
@@ -740,7 +740,7 @@ export function SegmentBuilder() {
                           <SelectItem value="or">ANY</SelectItem>
                         </SelectContent>
                       </Select>
-                      <span className="text-sm text-[#0F0F0F]/60">of the conditions</span>
+                      <span className="text-sm text-muted-foreground">of the conditions</span>
                     </div>
                   )}
                 </div>
@@ -752,10 +752,10 @@ export function SegmentBuilder() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Preview */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-[#0F0F0F]/60">Matching Contacts</span>
+                <span className="text-muted-foreground">Matching Contacts</span>
                 <Button variant="ghost" size="sm" onClick={calculateMatchingCount}>
                   <RefreshCw className="w-4 h-4" />
                 </Button>
@@ -773,20 +773,20 @@ export function SegmentBuilder() {
           </Card>
 
           {/* Existing Segments */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle className="text-base">Your Segments</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {segments.length === 0 ? (
-                <div className="text-center py-8 text-[#0F0F0F]/40 px-4">
+                <div className="text-center py-8 text-muted-foreground px-4">
                   <Target className="w-8 h-8 mx-auto mb-2" />
                   <p className="text-sm">No segments yet</p>
                 </div>
               ) : (
                 <div className="divide-y divide-[#0F0F0F]/5">
                   {segments.slice(0, 5).map((segment) => (
-                    <div key={segment.id} className="flex items-center justify-between p-3 hover:bg-[#F4F6FA]/50">
+                    <div key={segment.id} className="flex items-center justify-between p-3 hover:bg-muted/50">
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
@@ -794,7 +794,7 @@ export function SegmentBuilder() {
                         />
                         <div>
                           <p className="text-sm font-medium">{segment.name}</p>
-                          <p className="text-xs text-[#0F0F0F]/40">
+                          <p className="text-xs text-muted-foreground">
                             {segment.contact_count || 0} contacts
                           </p>
                         </div>
@@ -838,14 +838,14 @@ export function SegmentBuilder() {
 
           <div className="max-h-[400px] overflow-y-auto">
             {previewContacts.length === 0 ? (
-              <div className="text-center py-8 text-[#0F0F0F]/40">
+              <div className="text-center py-8 text-muted-foreground">
                 <Users className="w-8 h-8 mx-auto mb-2" />
                 <p>No matching contacts</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {previewContacts.map((contact) => (
-                  <div key={contact.id} className="flex items-center gap-4 p-3 bg-[#F4F6FA] rounded-lg">
+                  <div key={contact.id} className="flex items-center gap-4 p-3 bg-muted rounded-lg">
                     <div className="w-10 h-10 rounded-full bg-[#2969FF]/10 flex items-center justify-center">
                       <span className="font-semibold text-[#2969FF]">
                         {(contact.full_name || 'U')[0].toUpperCase()}
@@ -853,13 +853,13 @@ export function SegmentBuilder() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{contact.full_name || 'Unknown'}</p>
-                      <p className="text-sm text-[#0F0F0F]/60 truncate">
+                      <p className="text-sm text-muted-foreground truncate">
                         {contact.email || contact.phone}
                       </p>
                     </div>
                     <div className="text-right text-sm">
-                      <p className="text-[#0F0F0F]/60">{contact.total_events_attended || 0} events</p>
-                      <p className="text-[#0F0F0F]/40">₦{(contact.total_spent || 0).toLocaleString()}</p>
+                      <p className="text-muted-foreground">{contact.total_events_attended || 0} events</p>
+                      <p className="text-muted-foreground">₦{(contact.total_spent || 0).toLocaleString()}</p>
                     </div>
                   </div>
                 ))}

@@ -68,8 +68,8 @@ const PLATFORMS = {
     id: 'csv',
     name: 'CSV/Excel File',
     icon: FileText,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
     description: 'Upload a CSV or Excel file with contact data',
     helpText: 'Supports .csv, .xlsx formats',
     sampleUrl: null,
@@ -347,8 +347,8 @@ const PLATFORMS = {
     id: 'dice',
     name: 'DICE',
     icon: () => <span className="text-lg font-bold text-black">D</span>,
-    color: 'text-gray-900',
-    bgColor: 'bg-gray-200',
+    color: 'text-foreground',
+    bgColor: 'bg-muted',
     description: 'Import from DICE export',
     helpText: 'Go to Events → Guest List → Export',
     sampleUrl: 'https://dice.fm',
@@ -506,8 +506,8 @@ const PLATFORMS = {
     id: 'resident_advisor',
     name: 'Resident Advisor',
     icon: () => <span className="text-lg font-bold text-black">RA</span>,
-    color: 'text-gray-900',
-    bgColor: 'bg-gray-200',
+    color: 'text-foreground',
+    bgColor: 'bg-muted',
     description: 'Import from Resident Advisor export',
     helpText: 'Go to Promoter Tools → Guest Lists → Export',
     sampleUrl: 'https://ra.co',
@@ -951,7 +951,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
 
   const renderDataTypeStep = () => (
     <div className="space-y-4">
-      <p className="text-sm text-[#0F0F0F]/60 mb-4">
+      <p className="text-sm text-muted-foreground mb-4">
         What type of data are you importing? This helps us set up the right fields.
       </p>
       
@@ -968,20 +968,20 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
               className={`p-4 rounded-xl border-2 text-left transition-all hover:border-[#2969FF] hover:bg-[#2969FF]/5 ${
                 importType === type.id
                   ? 'border-[#2969FF] bg-[#2969FF]/5'
-                  : 'border-[#0F0F0F]/10'
+                  : 'border-border/10'
               }`}
             >
               <div className={`w-10 h-10 rounded-lg ${type.bgColor} flex items-center justify-center mb-2`}>
                 <IconComponent className={`w-5 h-5 ${type.color}`} />
               </div>
               <p className="font-medium text-sm">{type.name}</p>
-              <p className="text-xs text-[#0F0F0F]/50 mt-1">{type.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{type.description}</p>
             </button>
           );
         })}
       </div>
 
-      <div className="pt-4 border-t border-[#0F0F0F]/10">
+      <div className="pt-4 border-t border-border/10">
         <button
           onClick={() => {
             setImportType('general');
@@ -1018,12 +1018,12 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
             value={searchPlatform}
             onChange={(e) => setSearchPlatform(e.target.value)}
             placeholder="Search platforms (e.g., Eventbrite, Tix.Africa, PartyVest...)"
-            className="w-full px-4 py-2 border border-[#0F0F0F]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2969FF]/50"
+            className="w-full px-4 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
           {searchPlatform && (
             <button
               onClick={() => setSearchPlatform('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="w-4 h-4" />
             </button>
@@ -1037,14 +1037,14 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
               setSelectedPlatform('csv');
               setStep('upload');
             }}
-            className="w-full p-3 rounded-xl border-2 border-dashed border-[#0F0F0F]/20 text-left transition-all hover:border-[#2969FF] hover:bg-[#2969FF]/5 flex items-center gap-3"
+            className="w-full p-3 rounded-xl border-2 border-dashed border-border/20 text-left transition-all hover:border-[#2969FF] hover:bg-[#2969FF]/5 flex items-center gap-3"
           >
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-gray-600" />
+            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+              <FileText className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
               <p className="font-medium text-sm">Upload CSV/Excel File</p>
-              <p className="text-xs text-[#0F0F0F]/50">Any format - we'll help you map the fields</p>
+              <p className="text-xs text-muted-foreground">Any format - we'll help you map the fields</p>
             </div>
           </button>
         )}
@@ -1052,7 +1052,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
         {/* Ticketing Platforms */}
         {ticketingPlatforms.length > 0 && (
           <div>
-            <h4 className="text-xs font-medium text-[#0F0F0F]/60 uppercase tracking-wider mb-2">
+            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               Event & Ticketing Platforms
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -1068,7 +1068,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
                     className={`p-3 rounded-xl border-2 text-left transition-all hover:border-[#2969FF] hover:bg-[#2969FF]/5 ${
                       selectedPlatform === platform.id
                         ? 'border-[#2969FF] bg-[#2969FF]/5'
-                        : 'border-[#0F0F0F]/10'
+                        : 'border-border/10'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -1093,7 +1093,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
         {/* CRM & Marketing */}
         {crmPlatforms.length > 0 && !searchPlatform && (
           <div>
-            <h4 className="text-xs font-medium text-[#0F0F0F]/60 uppercase tracking-wider mb-2">
+            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               CRM & Marketing Tools
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -1109,7 +1109,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
                     className={`p-3 rounded-xl border-2 text-left transition-all hover:border-[#2969FF] hover:bg-[#2969FF]/5 ${
                       selectedPlatform === platform.id
                         ? 'border-[#2969FF] bg-[#2969FF]/5'
-                        : 'border-[#0F0F0F]/10'
+                        : 'border-border/10'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -1134,7 +1134,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
         {/* No results */}
         {searchPlatform && filteredPlatforms.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-[#0F0F0F]/60 mb-2">No platforms found for "{searchPlatform}"</p>
+            <p className="text-muted-foreground mb-2">No platforms found for "{searchPlatform}"</p>
             <button
               onClick={() => {
                 setSearchPlatform('');
@@ -1150,7 +1150,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
 
         {/* Can't find your platform? */}
         {!searchPlatform && (
-          <p className="text-xs text-center text-[#0F0F0F]/50 pt-2">
+          <p className="text-xs text-center text-muted-foreground pt-2">
             Don't see your platform? Export your data as CSV and use the generic upload option.
           </p>
         )}
@@ -1163,7 +1163,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
     
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3 p-3 bg-[#F4F6FA] rounded-lg">
+        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
           <div className={`w-10 h-10 rounded-lg ${platform?.bgColor} flex items-center justify-center`}>
             {platform?.icon && (
               typeof platform.icon === 'function' 
@@ -1173,11 +1173,11 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
           </div>
           <div>
             <p className="font-medium">{platform?.name}</p>
-            <p className="text-sm text-[#0F0F0F]/60">{platform?.helpText}</p>
+            <p className="text-sm text-muted-foreground">{platform?.helpText}</p>
           </div>
         </div>
 
-        <div className="border-2 border-dashed border-[#0F0F0F]/20 rounded-xl p-8 text-center">
+        <div className="border-2 border-dashed border-border/20 rounded-xl p-8 text-center">
           <input
             type="file"
             accept=".csv,.xlsx,.xls"
@@ -1188,16 +1188,16 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
           
           {!file ? (
             <label htmlFor="file-upload" className="cursor-pointer">
-              <Upload className="w-12 h-12 text-[#0F0F0F]/30 mx-auto mb-4" />
+              <Upload className="w-12 h-12 text-foreground/30 mx-auto mb-4" />
               <p className="font-medium mb-1">Drop your file here or click to browse</p>
-              <p className="text-sm text-[#0F0F0F]/50">Supports CSV and Excel files</p>
+              <p className="text-sm text-muted-foreground">Supports CSV and Excel files</p>
             </label>
           ) : (
             <div className="flex items-center justify-center gap-3">
               <FileText className="w-8 h-8 text-[#2969FF]" />
               <div className="text-left">
                 <p className="font-medium">{file.name}</p>
-                <p className="text-sm text-[#0F0F0F]/60">{(file.size / 1024).toFixed(1)} KB</p>
+                <p className="text-sm text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setFile(null)}>
                 <X className="w-4 h-4" />
@@ -1207,7 +1207,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
         </div>
 
         {platform?.sampleUrl && (
-          <p className="text-sm text-[#0F0F0F]/50">
+          <p className="text-sm text-muted-foreground">
             Not sure how to export? <a href={platform.sampleUrl} target="_blank" rel="noopener noreferrer" className="text-[#2969FF] hover:underline">See instructions</a>
           </p>
         )}
@@ -1233,15 +1233,15 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
           <Badge variant="secondary">{parsedData.length} contacts</Badge>
         </div>
 
-        <p className="text-sm text-[#0F0F0F]/60">
+        <p className="text-sm text-muted-foreground">
           Map your CSV columns to contact fields. We've auto-detected common fields.
         </p>
 
         <div className="max-h-[300px] overflow-y-auto space-y-2">
           {headers.map((header) => (
-            <div key={header} className="flex items-center gap-3 p-2 rounded-lg bg-[#F4F6FA]">
+            <div key={header} className="flex items-center gap-3 p-2 rounded-lg bg-muted">
               <div className="flex-1 font-mono text-sm">{header}</div>
-              <ChevronRight className="w-4 h-4 text-[#0F0F0F]/40" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
               <Select
                 value={fieldMapping[header] || 'skip'}
                 onValueChange={(value) => setFieldMapping(prev => ({
@@ -1280,7 +1280,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs text-[#0F0F0F]/60">Communication Opt-in (for imported contacts)</p>
+              <p className="text-xs text-muted-foreground">Communication Opt-in (for imported contacts)</p>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Checkbox id="email-opt" checked={setEmailOptIn} onCheckedChange={setSetEmailOptIn} />
@@ -1298,7 +1298,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
             </div>
 
             <div>
-              <p className="text-xs text-[#0F0F0F]/60 mb-2">Add tags to all imported contacts</p>
+              <p className="text-xs text-muted-foreground mb-2">Add tags to all imported contacts</p>
               <div className="flex gap-2">
                 <Input
                   value={newTag}
@@ -1358,7 +1358,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
 
         <div className="overflow-x-auto border rounded-lg">
           <table className="w-full text-sm">
-            <thead className="bg-[#F4F6FA]">
+            <thead className="bg-muted">
               <tr>
                 <th className="px-3 py-2 text-left">Name</th>
                 <th className="px-3 py-2 text-left">Email</th>
@@ -1412,9 +1412,9 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
     <div className="py-8 text-center">
       <Loader2 className="w-12 h-12 text-[#2969FF] animate-spin mx-auto mb-4" />
       <h3 className="text-lg font-semibold mb-2">Importing Contacts...</h3>
-      <p className="text-[#0F0F0F]/60 mb-4">Please wait while we import your contacts</p>
+      <p className="text-muted-foreground mb-4">Please wait while we import your contacts</p>
       <Progress value={progress} className="max-w-xs mx-auto" />
-      <p className="text-sm text-[#0F0F0F]/60 mt-2">{progress}% complete</p>
+      <p className="text-sm text-muted-foreground mt-2">{progress}% complete</p>
     </div>
   );
 
@@ -1426,17 +1426,17 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
       <h3 className="text-lg font-semibold mb-2">Import Complete!</h3>
       
       <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto my-6">
-        <div className="p-3 bg-[#F4F6FA] rounded-lg">
+        <div className="p-3 bg-muted rounded-lg">
           <p className="text-2xl font-bold text-green-600">{importResult?.imported || 0}</p>
-          <p className="text-xs text-[#0F0F0F]/60">Imported</p>
+          <p className="text-xs text-muted-foreground">Imported</p>
         </div>
-        <div className="p-3 bg-[#F4F6FA] rounded-lg">
+        <div className="p-3 bg-muted rounded-lg">
           <p className="text-2xl font-bold text-amber-600">{importResult?.skipped || 0}</p>
-          <p className="text-xs text-[#0F0F0F]/60">Skipped</p>
+          <p className="text-xs text-muted-foreground">Skipped</p>
         </div>
-        <div className="p-3 bg-[#F4F6FA] rounded-lg">
+        <div className="p-3 bg-muted rounded-lg">
           <p className="text-2xl font-bold text-red-600">{importResult?.errors || 0}</p>
-          <p className="text-xs text-[#0F0F0F]/60">Errors</p>
+          <p className="text-xs text-muted-foreground">Errors</p>
         </div>
       </div>
 
@@ -1447,7 +1447,7 @@ export function ContactImportDialog({ open, onOpenChange, organizerId, onImportC
             <p key={i} className="text-xs text-red-600">{err.reason}</p>
           ))}
           {errors.length > 5 && (
-            <p className="text-xs text-[#0F0F0F]/60">...and {errors.length - 5} more</p>
+            <p className="text-xs text-muted-foreground">...and {errors.length - 5} more</p>
           )}
         </div>
       )}

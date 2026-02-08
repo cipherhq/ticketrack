@@ -259,7 +259,7 @@ export function ExpenseTracking() {
       approved: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800'
     };
-    return <Badge className={styles[status] || 'bg-gray-100'}>{status}</Badge>;
+    return <Badge className={styles[status] || 'bg-muted'}>{status}</Badge>;
   };
 
   const getCategoryColor = (category) => {
@@ -268,13 +268,13 @@ export function ExpenseTracking() {
       marketing: 'bg-purple-100 text-purple-800',
       payroll: 'bg-green-100 text-green-800',
       software: 'bg-indigo-100 text-indigo-800',
-      legal: 'bg-gray-100 text-gray-800',
+      legal: 'bg-muted text-foreground',
       office: 'bg-orange-100 text-orange-800',
       travel: 'bg-cyan-100 text-cyan-800',
       payment_fees: 'bg-red-100 text-red-800',
-      other: 'bg-gray-100 text-gray-800'
+      other: 'bg-muted text-foreground'
     };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+    return colors[category] || 'bg-muted text-foreground';
   };
 
   const formatCategory = (category) => {
@@ -293,8 +293,8 @@ export function ExpenseTracking() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Expense Tracking</h1>
-          <p className="text-[#0F0F0F]/60">Track and manage platform operating expenses</p>
+          <h1 className="text-2xl font-bold text-foreground">Expense Tracking</h1>
+          <p className="text-muted-foreground">Track and manage platform operating expenses</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport} className="rounded-xl">
@@ -313,14 +313,14 @@ export function ExpenseTracking() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
                 <TrendingDown className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Expenses</p>
+                <p className="text-sm text-muted-foreground">Total Expenses</p>
                 <p className="text-2xl font-bold">
                   {formatMultiCurrencyCompact(stats.totalByCurrency)}
                 </p>
@@ -329,14 +329,14 @@ export function ExpenseTracking() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold">
                   {formatMultiCurrencyCompact(stats.pendingByCurrency)}
                 </p>
@@ -345,14 +345,14 @@ export function ExpenseTracking() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Approved</p>
+                <p className="text-sm text-muted-foreground">Approved</p>
                 <p className="text-2xl font-bold">
                   {formatMultiCurrencyCompact(stats.approvedByCurrency)}
                 </p>
@@ -361,14 +361,14 @@ export function ExpenseTracking() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">This Month</p>
+                <p className="text-sm text-muted-foreground">This Month</p>
                 <p className="text-2xl font-bold">
                   {formatMultiCurrencyCompact(stats.thisMonthByCurrency)}
                 </p>
@@ -379,7 +379,7 @@ export function ExpenseTracking() {
       </div>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -405,14 +405,14 @@ export function ExpenseTracking() {
               </SelectContent>
             </Select>
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#0F0F0F]/40" />
+              <Calendar className="w-4 h-4 text-muted-foreground" />
               <Input
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
                 className="w-[140px] rounded-xl"
               />
-              <span className="text-[#0F0F0F]/40">to</span>
+              <span className="text-muted-foreground">to</span>
               <Input
                 type="date"
                 value={dateRange.end}
@@ -428,7 +428,7 @@ export function ExpenseTracking() {
       </Card>
 
       {/* Expenses Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Expenses ({expenses.length})</CardTitle>
         </CardHeader>
@@ -486,7 +486,7 @@ export function ExpenseTracking() {
                         <Receipt className="w-4 h-4" />
                       </Button>
                     ) : (
-                      <span className="text-[#0F0F0F]/40">-</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -514,7 +514,7 @@ export function ExpenseTracking() {
               ))}
               {expenses.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No expenses found
                   </TableCell>
                 </TableRow>

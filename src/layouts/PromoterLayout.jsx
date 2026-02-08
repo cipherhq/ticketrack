@@ -202,7 +202,7 @@ export function PromoterLayout() {
                 <NotificationBadge
                   count={counts[item.notificationKey]}
                   size="sm"
-                  className={location.pathname === item.path ? 'bg-white text-primary' : ''}
+                  className={location.pathname === item.path ? 'bg-card text-primary' : ''}
                 />
               )}
             </Link>
@@ -244,7 +244,7 @@ export function PromoterLayout() {
                 <NotificationBadge
                   count={counts[item.notificationKey]}
                   size="sm"
-                  className={location.pathname === item.path ? 'bg-white text-primary' : ''}
+                  className={location.pathname === item.path ? 'bg-card text-primary' : ''}
                 />
               )}
             </Link>

@@ -75,15 +75,15 @@ export function AdminRefundSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Refund Fee Settings</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Configure refund processing fees by country</p>
+          <h2 className="text-2xl font-semibold text-foreground">Refund Fee Settings</h2>
+          <p className="text-muted-foreground mt-1">Configure refund processing fees by country</p>
         </div>
         <Button variant="outline" onClick={loadData} className="rounded-xl"><RotateCcw className="w-4 h-4 mr-2" /> Refresh</Button>
       </div>
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Refund Fee by Country</CardTitle>
-          <p className="text-sm text-[#0F0F0F]/60">Fee deducted from refunds to cover payment gateway charges.</p>
+          <p className="text-sm text-muted-foreground">Fee deducted from refunds to cover payment gateway charges.</p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -93,19 +93,19 @@ export function AdminRefundSettings() {
               const sample = calcRefund(10000, cfg);
               const sym = cur?.symbol || '$';
               return (
-                <div key={country.code} className="p-4 rounded-xl bg-[#F4F6FA]">
+                <div key={country.code} className="p-4 rounded-xl bg-muted">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold text-sm">{country.code}</div>
-                      <div><h4 className="font-medium text-[#0F0F0F]">{country.name}</h4><p className="text-sm text-[#0F0F0F]/60">{sym} {cur?.name}</p></div>
+                      <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center font-bold text-sm">{country.code}</div>
+                      <div><h4 className="font-medium text-foreground">{country.name}</h4><p className="text-sm text-muted-foreground">{sym} {cur?.name}</p></div>
                     </div>
                     <Button variant="outline" onClick={() => setRefundModal({ open: true, data: { country_code: country.code, country_name: country.name, currency_symbol: sym, ...cfg }})} className="rounded-xl"><Edit2 className="w-4 h-4 mr-2" /> Configure</Button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="p-3 bg-white rounded-lg"><p className="text-xs text-[#0F0F0F]/60">Fee Type</p><p className="font-semibold capitalize">{cfg.fee_type}</p></div>
-                    <div className="p-3 bg-white rounded-lg"><p className="text-xs text-[#0F0F0F]/60">Fee Value</p><p className="font-semibold">{cfg.fee_type === 'percentage' ? cfg.fee_value + '%' : sym + cfg.fee_value}</p></div>
-                    <div className="p-3 bg-white rounded-lg"><p className="text-xs text-[#0F0F0F]/60">Min Fee</p><p className="font-semibold">{sym}{Number(cfg.min_fee || 0).toLocaleString()}</p></div>
-                    <div className="p-3 bg-white rounded-lg"><p className="text-xs text-[#0F0F0F]/60">Max Fee</p><p className="font-semibold">{sym}{Number(cfg.max_fee || 0).toLocaleString()}</p></div>
+                    <div className="p-3 bg-card rounded-lg"><p className="text-xs text-muted-foreground">Fee Type</p><p className="font-semibold capitalize">{cfg.fee_type}</p></div>
+                    <div className="p-3 bg-card rounded-lg"><p className="text-xs text-muted-foreground">Fee Value</p><p className="font-semibold">{cfg.fee_type === 'percentage' ? cfg.fee_value + '%' : sym + cfg.fee_value}</p></div>
+                    <div className="p-3 bg-card rounded-lg"><p className="text-xs text-muted-foreground">Min Fee</p><p className="font-semibold">{sym}{Number(cfg.min_fee || 0).toLocaleString()}</p></div>
+                    <div className="p-3 bg-card rounded-lg"><p className="text-xs text-muted-foreground">Max Fee</p><p className="font-semibold">{sym}{Number(cfg.max_fee || 0).toLocaleString()}</p></div>
                   </div>
                   <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-xs text-blue-700 font-medium">Example: {sym}10,000 refund</p>
@@ -128,7 +128,7 @@ export function AdminRefundSettings() {
                 <div><Label>Min Fee ({refundModal.data.currency_symbol})</Label><Input type="number" value={refundModal.data.min_fee} onChange={(e) => updateModal('min_fee', e.target.value)} className="rounded-xl mt-1" /></div>
                 <div><Label>Max Fee ({refundModal.data.currency_symbol})</Label><Input type="number" value={refundModal.data.max_fee} onChange={(e) => updateModal('max_fee', e.target.value)} className="rounded-xl mt-1" /></div>
               </div>
-              <div className="p-4 bg-[#F4F6FA] rounded-xl"><p className="text-sm font-medium mb-2">Preview</p>{[1000, 5000, 10000].map(amt => { const p = calcRefund(amt, refundModal.data); return <div key={amt} className="flex justify-between text-sm py-1"><span className="text-[#0F0F0F]/60">{refundModal.data.currency_symbol}{amt.toLocaleString()}:</span><span>Fee: {refundModal.data.currency_symbol}{parseFloat(p.fee).toLocaleString()} → <span className="text-green-600 font-medium">{refundModal.data.currency_symbol}{parseFloat(p.refund).toLocaleString()}</span></span></div>; })}</div>
+              <div className="p-4 bg-muted rounded-xl"><p className="text-sm font-medium mb-2">Preview</p>{[1000, 5000, 10000].map(amt => { const p = calcRefund(amt, refundModal.data); return <div key={amt} className="flex justify-between text-sm py-1"><span className="text-muted-foreground">{refundModal.data.currency_symbol}{amt.toLocaleString()}:</span><span>Fee: {refundModal.data.currency_symbol}{parseFloat(p.fee).toLocaleString()} → <span className="text-green-600 font-medium">{refundModal.data.currency_symbol}{parseFloat(p.refund).toLocaleString()}</span></span></div>; })}</div>
             </div>
           )}
           <DialogFooter>

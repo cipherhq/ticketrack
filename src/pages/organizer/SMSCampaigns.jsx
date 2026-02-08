@@ -246,7 +246,7 @@ export function SMSCampaigns() {
       case 'sending':
         return <Badge className="bg-blue-100 text-blue-700">Sending</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-700">{status}</Badge>;
+        return <Badge className="bg-muted text-foreground/80">{status}</Badge>;
     }
   };
 
@@ -262,11 +262,11 @@ export function SMSCampaigns() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-2">SMS Campaigns</h2>
-          <p className="text-[#0F0F0F]/60">Send SMS messages to your attendees and followers</p>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">SMS Campaigns</h2>
+          <p className="text-muted-foreground">Send SMS messages to your attendees and followers</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl border-[#0F0F0F]/10">
+          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl border-border/10">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button variant="outline" className="rounded-xl" onClick={() => navigate('/organizer/sms/credits')}>
@@ -285,45 +285,45 @@ export function SMSCampaigns() {
       </div>
 
       <div className="grid md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">SMS Credits</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{smsCredits.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground mb-1">SMS Credits</p>
+                <p className="text-2xl font-semibold text-foreground">{smsCredits.toLocaleString()}</p>
               </div>
               <CreditCard className="w-8 h-8 text-[#2969FF]" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Messages Sent</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalSent.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground mb-1">Messages Sent</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.totalSent.toLocaleString()}</p>
               </div>
               <Send className="w-8 h-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Delivery Rate</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.deliveryRate}%</p>
+                <p className="text-sm text-muted-foreground mb-1">Delivery Rate</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.deliveryRate}%</p>
               </div>
               <Bell className="w-8 h-8 text-[#2969FF]" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Campaigns</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalCampaigns}</p>
+                <p className="text-sm text-muted-foreground mb-1">Campaigns</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.totalCampaigns}</p>
               </div>
               <Users className="w-8 h-8 text-[#2969FF]" />
             </div>
@@ -349,7 +349,7 @@ export function SMSCampaigns() {
       {showCompose && (
         <Card className="border-[#2969FF] border-2 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <Bell className="w-5 h-5 text-[#2969FF]" />
               Compose SMS Campaign
             </CardTitle>
@@ -387,7 +387,7 @@ export function SMSCampaigns() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-[#0F0F0F]/50">
+              <p className="text-xs text-muted-foreground">
                 📱 Phone numbers are protected - only delivery counts are visible
               </p>
             </div>
@@ -418,13 +418,13 @@ Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at
                 className="rounded-xl min-h-[120px]" 
                 maxLength={480} 
               />
-              <div className="flex justify-between text-sm text-[#0F0F0F]/60">
+              <div className="flex justify-between text-sm text-muted-foreground">
                 <span>{messageLength}/480 characters</span>
                 <span className={smsSegments > 1 ? 'text-orange-600 font-medium' : ''}>
                   {smsSegments} SMS {smsSegments > 1 ? '(Long message - costs more)' : '(Standard)'}
                 </span>
               </div>
-              <div className="text-xs text-[#0F0F0F]/50 space-y-1">
+              <div className="text-xs text-muted-foreground space-y-1">
                 <p>💡 <strong>Tips for Nigerian SMS:</strong></p>
                 <p>• Keep messages under 160 characters to save costs</p>
                 <p>• Include your business name for trust</p>
@@ -432,33 +432,33 @@ Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at
               </div>
             </div>
 
-            <div className="p-4 bg-[#F4F6FA] rounded-xl">
+            <div className="p-4 bg-muted rounded-xl">
               <div className="flex justify-between items-center mb-3">
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Campaign Cost</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Nigerian SMS via Termii</p>
+                  <p className="font-medium text-foreground">Campaign Cost</p>
+                  <p className="text-sm text-muted-foreground">Nigerian SMS via Termii</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-semibold text-[#0F0F0F]">{creditsNeeded.toLocaleString()} credits</p>
-                  <p className="text-sm text-[#0F0F0F]/60">{recipientCount.toLocaleString()} recipients × {smsSegments} SMS</p>
+                  <p className="text-2xl font-semibold text-foreground">{creditsNeeded.toLocaleString()} credits</p>
+                  <p className="text-sm text-muted-foreground">{recipientCount.toLocaleString()} recipients × {smsSegments} SMS</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="p-2 bg-white rounded-lg">
-                  <p className="text-[#0F0F0F]/60">Recipients</p>
+                <div className="p-2 bg-card rounded-lg">
+                  <p className="text-muted-foreground">Recipients</p>
                   <p className="font-semibold">{recipientCount.toLocaleString()}</p>
                 </div>
-                <div className="p-2 bg-white rounded-lg">
-                  <p className="text-[#0F0F0F]/60">SMS Segments</p>
+                <div className="p-2 bg-card rounded-lg">
+                  <p className="text-muted-foreground">SMS Segments</p>
                   <p className="font-semibold">{smsSegments}</p>
                 </div>
-                <div className="p-2 bg-white rounded-lg">
-                  <p className="text-[#0F0F0F]/60">Current Balance</p>
+                <div className="p-2 bg-card rounded-lg">
+                  <p className="text-muted-foreground">Current Balance</p>
                   <p className="font-semibold text-blue-600">{smsCredits.toLocaleString()}</p>
                 </div>
-                <div className="p-2 bg-white rounded-lg">
-                  <p className="text-[#0F0F0F]/60">After Campaign</p>
+                <div className="p-2 bg-card rounded-lg">
+                  <p className="text-muted-foreground">After Campaign</p>
                   <p className={`font-semibold ${hasEnoughCredits ? 'text-green-600' : 'text-red-600'}`}>
                     {hasEnoughCredits ? (smsCredits - creditsNeeded).toLocaleString() : 'Insufficient'}
                   </p>
@@ -501,9 +501,9 @@ Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at
         </Card>
       )}
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <History className="w-5 h-5" />
             Recent Campaigns
           </CardTitle>
@@ -511,21 +511,21 @@ Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at
         <CardContent>
           {campaigns.length === 0 ? (
             <div className="text-center py-8">
-              <Send className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No campaigns sent yet</p>
+              <Send className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">No campaigns sent yet</p>
             </div>
           ) : (
             <div className="space-y-3">
               {campaigns.map((campaign) => (
-                <div key={campaign.id} className="p-4 rounded-xl bg-[#F4F6FA]">
+                <div key={campaign.id} className="p-4 rounded-xl bg-muted">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h4 className="font-medium text-[#0F0F0F]">{campaign.campaign_name}</h4>
-                      <p className="text-sm text-[#0F0F0F]/60 line-clamp-1">{campaign.message}</p>
+                      <h4 className="font-medium text-foreground">{campaign.campaign_name}</h4>
+                      <p className="text-sm text-muted-foreground line-clamp-1">{campaign.message}</p>
                     </div>
                     {getStatusBadge(campaign.status)}
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm text-[#0F0F0F]/60">
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     <span>{campaign.recipient_count} recipients</span>
                     <span className="flex items-center gap-1">
                       <CheckCircle className="w-3 h-3 text-green-600" />
@@ -549,9 +549,9 @@ Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at
 
       {/* SMS Delivery Logs */}
       {showLogs && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-[#0F0F0F] flex items-center justify-between">
+            <CardTitle className="text-foreground flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-600" />
                 SMS Delivery Logs
@@ -574,19 +574,19 @@ Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at
             
             {smsLogs.length === 0 ? (
               <div className="text-center py-8">
-                <Phone className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                <p className="text-[#0F0F0F]/60">No SMS logs yet</p>
+                <Phone className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                <p className="text-muted-foreground">No SMS logs yet</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {smsLogs.map((log, index) => (
-                  <div key={index} className="p-3 rounded-xl bg-[#F4F6FA] border border-[#0F0F0F]/5">
+                  <div key={index} className="p-3 rounded-xl bg-muted border border-border/5">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm text-[#0F0F0F]/80">
+                        <span className="font-mono text-sm text-foreground/80">
                           {log.masked_phone || '+234•••••••••'}
                         </span>
-                        <span className="text-sm text-[#0F0F0F]/60">{log.recipient_name}</span>
+                        <span className="text-sm text-muted-foreground">{log.recipient_name}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {log.status === 'delivered' ? (
@@ -594,13 +594,13 @@ Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at
                         ) : (
                           <Badge className="bg-red-100 text-red-700 text-xs">Failed</Badge>
                         )}
-                        <span className="text-xs text-[#0F0F0F]/40 capitalize">{log.provider}</span>
+                        <span className="text-xs text-muted-foreground capitalize">{log.provider}</span>
                       </div>
                     </div>
                     {log.error_message && (
                       <p className="text-xs text-red-600 mt-1">{log.error_message}</p>
                     )}
-                    <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {new Date(log.created_at).toLocaleString('en-NG')}
                     </p>
                   </div>
@@ -619,19 +619,19 @@ Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at
           </DialogHeader>
           <div className="space-y-3 py-4">
             <div className="flex justify-between text-sm">
-              <span className="text-[#0F0F0F]/60">Recipients:</span>
+              <span className="text-muted-foreground">Recipients:</span>
               <span className="font-medium">{recipientCount.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-[#0F0F0F]/60">Credits to use:</span>
+              <span className="text-muted-foreground">Credits to use:</span>
               <span className="font-medium">{creditsNeeded.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-[#0F0F0F]/60">Balance after:</span>
+              <span className="text-muted-foreground">Balance after:</span>
               <span className="font-medium">{(smsCredits - creditsNeeded).toLocaleString()}</span>
             </div>
-            <div className="p-3 bg-[#F4F6FA] rounded-xl">
-              <p className="text-xs text-[#0F0F0F]/60 mb-1">Message:</p>
+            <div className="p-3 bg-muted rounded-xl">
+              <p className="text-xs text-muted-foreground mb-1">Message:</p>
               <p className="text-sm">{message}</p>
             </div>
           </div>

@@ -217,8 +217,8 @@ export function AdminAttendees() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">All Attendees</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">View all ticket purchasers across the platform</p>
+          <h2 className="text-2xl font-semibold text-foreground">All Attendees</h2>
+          <p className="text-muted-foreground mt-1">View all ticket purchasers across the platform</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl">
@@ -233,33 +233,33 @@ export function AdminAttendees() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Attendees</p>
+                <p className="text-sm text-muted-foreground">Total Attendees</p>
                 <p className="text-2xl font-semibold">{stats.total.toLocaleString()}</p>
               </div>
               <Users className="w-8 h-8 text-[#2969FF]/20" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Tickets (this page)</p>
+                <p className="text-sm text-muted-foreground">Tickets (this page)</p>
                 <p className="text-2xl font-semibold">{stats.totalTickets.toLocaleString()}</p>
               </div>
               <Ticket className="w-8 h-8 text-purple-200" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Checked In (this page)</p>
+                <p className="text-sm text-muted-foreground">Checked In (this page)</p>
                 <p className="text-2xl font-semibold">{stats.checkedIn.toLocaleString()}</p>
               </div>
               <Calendar className="w-8 h-8 text-blue-200" />
@@ -269,21 +269,21 @@ export function AdminAttendees() {
       </div>
 
       {/* Search & Filter */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search by name, email, or phone..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                className="pl-10 bg-white border-[#0F0F0F]/10 rounded-xl"
+                className="pl-10 bg-card border-border/10 rounded-xl"
               />
             </div>
             <Select value={organizerFilter} onValueChange={(v) => { setOrganizerFilter(v); setPage(1); }}>
               <SelectTrigger className="w-52 rounded-xl">
-                <Building className="w-4 h-4 mr-2 text-[#0F0F0F]/40" />
+                <Building className="w-4 h-4 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="All Organizers" />
               </SelectTrigger>
               <SelectContent className="rounded-xl max-h-64">
@@ -313,9 +313,9 @@ export function AdminAttendees() {
       </Card>
 
       {/* Attendees Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Attendees ({totalCount.toLocaleString()})</CardTitle>
+          <CardTitle className="text-foreground">Attendees ({totalCount.toLocaleString()})</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
@@ -327,23 +327,23 @@ export function AdminAttendees() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#0F0F0F]/10 bg-[#F4F6FA]">
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium text-sm">Attendee</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium text-sm">Event</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium text-sm">Organizer</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium text-sm">Tickets</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium text-sm">Amount</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium text-sm">Status</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium text-sm">Date</th>
+                    <tr className="border-b border-border/10 bg-muted">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Attendee</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Event</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Organizer</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Tickets</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Amount</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Status</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {attendees.map((attendee) => (
-                      <tr key={attendee.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                      <tr key={attendee.id} className="border-b border-border/5 hover:bg-muted/50">
                         <td className="py-3 px-4">
                           <div>
-                            <p className="text-[#0F0F0F] font-medium">{attendee.name}</p>
-                            <div className="flex items-center gap-3 text-xs text-[#0F0F0F]/60">
+                            <p className="text-foreground font-medium">{attendee.name}</p>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Mail className="w-3 h-3" />
                                 {attendee.email}
@@ -361,7 +361,7 @@ export function AdminAttendees() {
                           <p className="text-sm">{attendee.eventName}</p>
                         </td>
                         <td className="py-3 px-4">
-                          <p className="text-sm text-[#0F0F0F]/60">{attendee.organizerName}</p>
+                          <p className="text-sm text-muted-foreground">{attendee.organizerName}</p>
                         </td>
                         <td className="py-3 px-4">
                           <p>{attendee.tickets}</p>
@@ -373,11 +373,11 @@ export function AdminAttendees() {
                           {attendee.checkedIn ? (
                             <Badge className="bg-green-100 text-green-700 text-xs">Checked In</Badge>
                           ) : (
-                            <Badge className="bg-gray-100 text-gray-700 text-xs">Pending</Badge>
+                            <Badge className="bg-muted text-foreground/80 text-xs">Pending</Badge>
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-sm text-muted-foreground">
                             {attendee.purchaseDate ? format(new Date(attendee.purchaseDate), 'MMM d, yyyy') : '—'}
                           </p>
                         </td>
@@ -385,8 +385,8 @@ export function AdminAttendees() {
                     ))}
                     {attendees.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-[#0F0F0F]/60">
-                          <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
+                        <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                          <Users className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
                           No attendees found
                         </td>
                       </tr>
@@ -397,8 +397,8 @@ export function AdminAttendees() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-[#0F0F0F]/10">
-                  <p className="text-sm text-[#0F0F0F]/60">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border/10">
+                  <p className="text-sm text-muted-foreground">
                     Page {page} of {totalPages}
                   </p>
                   <div className="flex items-center gap-2">

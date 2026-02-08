@@ -217,12 +217,12 @@ export function WebResources() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-[#2969FF] to-[#1e4fd6] text-white py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center">
+            <div className="w-20 h-20 bg-card/10 rounded-2xl flex items-center justify-center">
               <BookOpen className="w-10 h-10" />
             </div>
           </div>
@@ -236,17 +236,17 @@ export function WebResources() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Platform Features Overview */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6">Platform Features</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Platform Features</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {platformFeatures.map((feature, index) => {
               const Icon = feature.icon
               return (
-                <div key={index} className="bg-white rounded-xl border border-[#0F0F0F]/10 p-4 hover:shadow-md transition-shadow">
+                <div key={index} className="bg-card rounded-xl border border-border/10 p-4 hover:shadow-md transition-shadow">
                   <div className="w-10 h-10 bg-[#2969FF]/10 rounded-lg flex items-center justify-center mb-3">
                     <Icon className="w-5 h-5 text-[#2969FF]" />
                   </div>
-                  <h3 className="font-semibold text-[#0F0F0F] mb-2">{feature.title}</h3>
-                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                  <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                 </div>
               )
             })}
@@ -256,19 +256,19 @@ export function WebResources() {
         {/* Supported Countries & Currencies */}
         <section className="mb-12">
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-6">
+            <div className="bg-card rounded-2xl border border-border/10 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Globe className="w-6 h-6 text-[#2969FF]" />
-                <h2 className="text-xl font-bold text-[#0F0F0F]">Supported Countries</h2>
+                <h2 className="text-xl font-bold text-foreground">Supported Countries</h2>
               </div>
               <div className="space-y-3">
                 {supportedCountries.map((country, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{country.flag}</span>
                       <div>
-                        <div className="font-medium text-[#0F0F0F]">{country.name}</div>
-                        <div className="text-xs text-[#0F0F0F]/60">{country.currency} • {country.provider}</div>
+                        <div className="font-medium text-foreground">{country.name}</div>
+                        <div className="text-xs text-muted-foreground">{country.currency} • {country.provider}</div>
                       </div>
                     </div>
                   </div>
@@ -276,18 +276,18 @@ export function WebResources() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-6">
+            <div className="bg-card rounded-2xl border border-border/10 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <CreditCard className="w-6 h-6 text-[#2969FF]" />
-                <h2 className="text-xl font-bold text-[#0F0F0F]">Payment Methods</h2>
+                <h2 className="text-xl font-bold text-foreground">Payment Methods</h2>
               </div>
               <div className="space-y-3">
                 {supportedCurrencies.map((currency, index) => (
-                  <div key={index} className="p-3 bg-[#F4F6FA] rounded-lg">
-                    <div className="font-medium text-[#0F0F0F] mb-2">{currency.name} ({currency.code})</div>
+                  <div key={index} className="p-3 bg-muted rounded-lg">
+                    <div className="font-medium text-foreground mb-2">{currency.name} ({currency.code})</div>
                     <div className="flex flex-wrap gap-2">
                       {currency.methods.map((method, idx) => (
-                        <span key={idx} className="text-xs bg-white px-2 py-1 rounded border border-[#0F0F0F]/10">
+                        <span key={idx} className="text-xs bg-card px-2 py-1 rounded border border-border/10">
                           {method}
                         </span>
                       ))}
@@ -304,7 +304,7 @@ export function WebResources() {
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-8">
             <div className="flex items-center gap-3 mb-6">
               <Zap className="w-6 h-6 text-amber-600" />
-              <h2 className="text-xl font-bold text-[#0F0F0F]">Quick Tips for Success</h2>
+              <h2 className="text-xl font-bold text-foreground">Quick Tips for Success</h2>
             </div>
             <div className="grid md:grid-cols-2 gap-3">
               {quickTips.map((tip, index) => (
@@ -312,7 +312,7 @@ export function WebResources() {
                   <span className="w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
                     {index + 1}
                   </span>
-                  <p className="text-[#0F0F0F]/70 text-sm">{tip}</p>
+                  <p className="text-foreground/70 text-sm">{tip}</p>
                 </div>
               ))}
             </div>
@@ -322,7 +322,7 @@ export function WebResources() {
         {/* Guides */}
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[#0F0F0F]">Organizer Guides</h2>
+            <h2 className="text-2xl font-bold text-foreground">Organizer Guides</h2>
             <Link to="/help-center" className="text-[#2969FF] hover:underline text-sm font-medium">
               View All Help Articles <ArrowRight className="w-4 h-4 inline ml-1" />
             </Link>
@@ -334,7 +334,7 @@ export function WebResources() {
                 <Link 
                   key={index} 
                   to={guide.link}
-                  className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-6 hover:border-[#2969FF]/30 hover:shadow-md transition-all cursor-pointer group"
+                  className="bg-card rounded-2xl border border-border/10 p-6 hover:border-[#2969FF]/30 hover:shadow-md transition-all cursor-pointer group"
                 >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-[#2969FF]/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#2969FF]/20 transition-colors">
@@ -342,20 +342,20 @@ export function WebResources() {
                   </div>
                   <div className="flex-1">
                     <span className="text-xs font-medium text-[#2969FF] uppercase tracking-wide">{guide.category}</span>
-                    <h3 className="text-lg font-semibold text-[#0F0F0F] mt-1 mb-2 group-hover:text-[#2969FF] transition-colors">{guide.title}</h3>
-                    <p className="text-[#0F0F0F]/60 text-sm mb-3">{guide.description}</p>
+                    <h3 className="text-lg font-semibold text-foreground mt-1 mb-2 group-hover:text-[#2969FF] transition-colors">{guide.title}</h3>
+                    <p className="text-muted-foreground text-sm mb-3">{guide.description}</p>
                       <div className="flex flex-wrap gap-2 mb-3">
                         {guide.topics.slice(0, 3).map((topic, idx) => (
-                          <span key={idx} className="text-xs bg-[#F4F6FA] text-[#0F0F0F]/60 px-2 py-1 rounded">
+                          <span key={idx} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
                             {topic}
                           </span>
                         ))}
                         {guide.topics.length > 3 && (
-                          <span className="text-xs text-[#0F0F0F]/40 px-2 py-1">+{guide.topics.length - 3} more</span>
+                          <span className="text-xs text-muted-foreground px-2 py-1">+{guide.topics.length - 3} more</span>
                         )}
                       </div>
                       <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#0F0F0F]/40">{guide.readTime}</span>
+                    <span className="text-xs text-muted-foreground">{guide.readTime}</span>
                         <ArrowRight className="w-4 h-4 text-[#2969FF] opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
@@ -368,14 +368,14 @@ export function WebResources() {
 
         {/* Developer Resources */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6">Developer Resources</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Developer Resources</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {developerResources.map((resource, index) => {
               const Icon = resource.icon
               const content = (
-                <div className={`bg-white rounded-2xl border border-[#0F0F0F]/10 p-6 ${resource.link ? 'hover:shadow-md transition-shadow cursor-pointer group' : ''} ${resource.comingSoon ? 'opacity-60' : ''}`}>
+                <div className={`bg-card rounded-2xl border border-border/10 p-6 ${resource.link ? 'hover:shadow-md transition-shadow cursor-pointer group' : ''} ${resource.comingSoon ? 'opacity-60' : ''}`}>
                   {resource.comingSoon && (
-                    <span className="inline-block bg-[#F4F6FA] text-[#0F0F0F]/50 text-xs px-2 py-1 rounded-full mb-3">
+                    <span className="inline-block bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full mb-3">
                       Coming Soon
                     </span>
                   )}
@@ -384,8 +384,8 @@ export function WebResources() {
                       <Icon className="w-5 h-5 text-[#2969FF]" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-[#0F0F0F] mb-2">{resource.title}</h3>
-                      <p className="text-[#0F0F0F]/60 text-sm">{resource.description}</p>
+                      <h3 className="font-semibold text-foreground mb-2">{resource.title}</h3>
+                      <p className="text-muted-foreground text-sm">{resource.description}</p>
                       {resource.link && (
                         <div className="mt-3 flex items-center gap-2 text-[#2969FF] text-sm font-medium">
                           <span>View Documentation</span>
@@ -409,22 +409,22 @@ export function WebResources() {
 
         {/* Tools & Templates */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6">Tools & Templates</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Tools & Templates</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {featuredTools.map((tool, index) => {
               const Icon = tool.icon
               return (
-              <div key={index} className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-6 relative overflow-hidden">
+              <div key={index} className="bg-card rounded-2xl border border-border/10 p-6 relative overflow-hidden">
                 {tool.comingSoon && (
-                  <span className="absolute top-3 right-3 bg-[#F4F6FA] text-[#0F0F0F]/50 text-xs px-2 py-1 rounded-full">
+                  <span className="absolute top-3 right-3 bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
                     Coming Soon
                   </span>
                 )}
-                <div className="w-10 h-10 bg-[#F4F6FA] rounded-xl flex items-center justify-center mb-4">
-                    <Icon className="w-5 h-5 text-[#0F0F0F]/60" />
+                <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center mb-4">
+                    <Icon className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <h3 className="font-semibold text-[#0F0F0F] mb-2">{tool.title}</h3>
-                <p className="text-[#0F0F0F]/60 text-sm">{tool.description}</p>
+                <h3 className="font-semibold text-foreground mb-2">{tool.title}</h3>
+                <p className="text-muted-foreground text-sm">{tool.description}</p>
               </div>
               )
             })}
@@ -433,19 +433,19 @@ export function WebResources() {
 
         {/* FAQ Categories */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6">Frequently Asked Questions</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Frequently Asked Questions</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {faqCategories.map((category, index) => (
               <Link
                 key={index}
                 to={category.link}
-                className="bg-white rounded-xl border border-[#0F0F0F]/10 p-4 hover:border-[#2969FF]/30 hover:shadow-md transition-all group"
+                className="bg-card rounded-xl border border-border/10 p-4 hover:border-[#2969FF]/30 hover:shadow-md transition-all group"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-[#0F0F0F] group-hover:text-[#2969FF] transition-colors">{category.title}</h3>
+                  <h3 className="font-semibold text-foreground group-hover:text-[#2969FF] transition-colors">{category.title}</h3>
                   <ArrowRight className="w-4 h-4 text-[#2969FF] opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <p className="text-sm text-[#0F0F0F]/60">{category.count} articles</p>
+                <p className="text-sm text-muted-foreground">{category.count} articles</p>
               </Link>
             ))}
           </div>
@@ -453,13 +453,13 @@ export function WebResources() {
 
         {/* Help Center CTA */}
         <section className="mb-12">
-          <div className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8 flex flex-col md:flex-row items-center gap-6">
+          <div className="bg-card rounded-2xl border border-border/10 p-8 flex flex-col md:flex-row items-center gap-6">
             <div className="w-16 h-16 bg-[#2969FF]/10 rounded-2xl flex items-center justify-center flex-shrink-0">
               <PlayCircle className="w-8 h-8 text-[#2969FF]" />
             </div>
             <div className="flex-1 text-center md:text-left">
-              <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Need Step-by-Step Help?</h3>
-              <p className="text-[#0F0F0F]/60">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Need Step-by-Step Help?</h3>
+              <p className="text-muted-foreground">
                 Our Help Center has detailed instructions for every feature on Ticketrack, with searchable articles and video tutorials.
               </p>
             </div>
@@ -478,11 +478,11 @@ export function WebResources() {
               Our support team is here to help you succeed. Reach out anytime via email, chat, or phone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/contact" className="inline-flex items-center gap-2 bg-white text-[#0F0F0F] px-6 py-3 rounded-xl font-semibold hover:bg-white/90 transition-colors">
+            <Link to="/contact" className="inline-flex items-center gap-2 bg-card text-foreground px-6 py-3 rounded-xl font-semibold hover:bg-card/90 transition-colors">
               Contact Us
               <ArrowRight className="w-5 h-5" />
             </Link>
-              <a href={`mailto:${brand.emails.support}`} className="inline-flex items-center gap-2 bg-white/10 text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/20 transition-colors">
+              <a href={`mailto:${brand.emails.support}`} className="inline-flex items-center gap-2 bg-card/10 text-white px-6 py-3 rounded-xl font-semibold hover:bg-card/20 transition-colors">
                 <Mail className="w-5 h-5" />
                 {brand.emails.support}
               </a>

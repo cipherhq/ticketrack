@@ -1869,22 +1869,22 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-card rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-[#0F0F0F]/10">
+        <div className="p-6 border-b border-border/10">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-[#0F0F0F]">Create Event — Full Details</h2>
-              <p className="text-[#0F0F0F]/60">Fill in all event information to get started</p>
+              <h2 className="text-2xl font-semibold text-foreground">Create Event — Full Details</h2>
+              <p className="text-muted-foreground">Fill in all event information to get started</p>
             </div>
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-[#F4F6FA] rounded-xl">
-              <X className="w-6 h-6 text-[#0F0F0F]/60" />
+            <button onClick={() => navigate(-1)} className="p-2 hover:bg-muted rounded-xl">
+              <X className="w-6 h-6 text-muted-foreground" />
             </button>
           </div>
         </div>
 
         {/* Tabs - Horizontally scrollable on mobile */}
-        <div className="border-b border-[#0F0F0F]/10 -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="border-b border-border/10 -mx-4 sm:mx-0 px-4 sm:px-0">
           <div className="flex overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {tabs.map((tab, index) => (
               <button
@@ -1893,7 +1893,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 className={`flex items-center gap-1.5 px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${tabErrors[tab.id] ? "border-red-500 text-red-500" : ""} ${
                   activeTab === tab.id
                     ? 'border-[#2969FF] text-[#2969FF]'
-                    : 'border-transparent text-[#0F0F0F]/60 hover:text-[#0F0F0F]'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <tab.icon className="w-4 h-4 flex-shrink-0" />
@@ -1922,20 +1922,20 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   placeholder="Enter event title"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors.title ? 'border-2 border-red-500' : 'border-0'}`}
+                  className={`h-12 rounded-xl bg-muted ${fieldErrors.title ? 'border-2 border-red-500' : 'border-0'}`}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Custom Event URL <span className="text-red-500">*</span></Label>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-[#0F0F0F]/60 whitespace-nowrap">ticketrack.com/e/</span>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">ticketrack.com/e/</span>
                   <Input
                     placeholder={formData.title?.trim() ? "my-awesome-event" : "Enter event title first"}
                     value={formData.slug}
                     onChange={(e) => handleInputChange("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
                     disabled={!formData.title?.trim()}
-                    className={`h-12 rounded-xl bg-[#F4F6FA] flex-1 ${!formData.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''} ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
+                    className={`h-12 rounded-xl bg-muted flex-1 ${!formData.title?.trim() ? 'opacity-50 cursor-not-allowed' : ''} ${urlStatus.available === false ? 'border-2 border-red-500' : urlStatus.available === true ? 'border-2 border-green-500' : 'border-0'}`}
                   />
                   <Button
                     type="button"
@@ -1969,7 +1969,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     </span>
                   )}
                   {formData.title?.trim() && !urlStatus.checking && urlStatus.available === null && (
-                    <span className="text-xs text-[#0F0F0F]/40">Required - this will be your shareable event link</span>
+                    <span className="text-xs text-muted-foreground">Required - this will be your shareable event link</span>
                   )}
                 </div>
               </div>
@@ -1977,9 +1977,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               <div className="space-y-2">
                 <Label>Event Category <span className="text-red-500">*</span></Label>
                 {loadingCategories ? (
-                  <div className="flex items-center justify-center p-8 border border-[#0F0F0F]/10 rounded-xl bg-[#F4F6FA]">
+                  <div className="flex items-center justify-center p-8 border border-border/10 rounded-xl bg-muted">
                     <Loader2 className="w-5 h-5 animate-spin text-[#2969FF] mr-2" />
-                    <span className="text-sm text-[#0F0F0F]/60">Loading categories...</span>
+                    <span className="text-sm text-muted-foreground">Loading categories...</span>
                   </div>
                 ) : categories.length === 0 ? (
                   <div className="space-y-3">
@@ -1992,7 +1992,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       placeholder="Enter event category manually"
                       value={formData.eventType}
                       onChange={(e) => handleInputChange('eventType', e.target.value)}
-                      className="h-12 rounded-xl bg-[#F4F6FA]"
+                      className="h-12 rounded-xl bg-muted"
                     />
                   </div>
                 ) : (
@@ -2005,7 +2005,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         className={`p-3 rounded-xl border text-center transition-all ${
                           formData.eventType === category.name
                             ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
-                            : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                            : 'border-border/10 hover:border-border/20'
                         }`}
                       >
                         {category.icon} {category.name}
@@ -2017,7 +2017,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between"><Label>Event Description <span className="text-red-500">*</span></Label><button type="button" onClick={() => setIsAIComposeOpen(true)} className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"><Sparkles className="w-4 h-4" />AI Compose</button></div>
-                <div className="rounded-xl overflow-hidden border border-[#E5E7EB] bg-white">
+                <div className="rounded-xl overflow-hidden border border-[#E5E7EB] bg-card">
                   <ReactQuill
                     theme="snow"
                     value={formData.description}
@@ -2033,7 +2033,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       ]
                     }}
                     formats={['header', 'bold', 'italic', 'underline', 'list', 'bullet', 'link']}
-                    className="bg-[#F4F6FA] [&_.ql-editor]:min-h-[150px] [&_.ql-toolbar]:bg-white [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-[#E5E7EB] [&_.ql-container]:border-0"
+                    className="bg-muted [&_.ql-editor]:min-h-[150px] [&_.ql-toolbar]:bg-card [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-[#E5E7EB] [&_.ql-container]:border-0"
                   />
                 </div>
               </div>
@@ -2052,7 +2052,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   className="hidden"
                 />
                 
-                <div className="border-2 border-dashed border-[#0F0F0F]/10 rounded-xl p-6">
+                <div className="border-2 border-dashed border-border/10 rounded-xl p-6">
                   {bannerPreview ? (
                     <div className="relative">
                       <img 
@@ -2082,9 +2082,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     </div>
                   ) : (
                     <div className="text-center py-6">
-                      <ImageIcon className="w-12 h-12 text-[#0F0F0F]/30 mx-auto mb-3" />
-                      <p className="text-[#0F0F0F]/60 mb-1">Upload event banner image <span class="text-red-500">*</span></p>
-                      <p className="text-[#0F0F0F]/40 text-sm mb-4">Recommended: 1920x1080px (16:9), Max 5MB</p>
+                      <ImageIcon className="w-12 h-12 text-foreground/30 mx-auto mb-3" />
+                      <p className="text-muted-foreground mb-1">Upload event banner image <span class="text-red-500">*</span></p>
+                      <p className="text-muted-foreground text-sm mb-4">Recommended: 1920x1080px (16:9), Max 5MB</p>
                       <Button
                         type="button"
                         variant="outline"
@@ -2100,10 +2100,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               </div>
 
               {/* Event Access/Visibility Section */}
-              <div className="pt-6 border-t border-[#0F0F0F]/10">
+              <div className="pt-6 border-t border-border/10">
                 <div className="flex items-center gap-2 mb-4">
                   <Shield className="w-5 h-5 text-[#2969FF]" />
-                  <h3 className="font-semibold text-[#0F0F0F]">Event Access</h3>
+                  <h3 className="font-semibold text-foreground">Event Access</h3>
                 </div>
                 <EventAccessSettings
                   visibility={formData.visibility}
@@ -2130,7 +2130,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     min={new Date().toISOString().split('T')[0]}
                     value={formData.startDate}
                     onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors.startDate ? 'border-2 border-red-500' : 'border-0'}`}
+                    className={`h-12 rounded-xl bg-muted ${fieldErrors.startDate ? 'border-2 border-red-500' : 'border-0'}`}
                   />
                 </div>
                 <div className="space-y-2">
@@ -2139,7 +2139,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     type="time"
                     value={formData.startTime}
                     onChange={(e) => handleInputChange('startTime', e.target.value)}
-                    className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors.startTime ? 'border-2 border-red-500' : 'border-0'}`}
+                    className={`h-12 rounded-xl bg-muted ${fieldErrors.startTime ? 'border-2 border-red-500' : 'border-0'}`}
                   />
                 </div>
               </div>
@@ -2153,7 +2153,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       value={formData.endDate}
                       min={formData.startDate || new Date().toISOString().split('T')[0]}
                       onChange={(e) => handleInputChange('endDate', e.target.value)}
-                      className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors.endDate ? 'border-2 border-red-500' : 'border-0'}`}
+                      className={`h-12 rounded-xl bg-muted ${fieldErrors.endDate ? 'border-2 border-red-500' : 'border-0'}`}
                     />
                   </div>
                 )}
@@ -2164,10 +2164,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       type="time"
                       value={formData.endTime}
                       onChange={(e) => handleInputChange('endTime', e.target.value)}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                      className="h-12 rounded-xl bg-muted border-0"
                     />
                     {formData.isRecurring && (
-                      <p className="text-xs text-[#0F0F0F]/60">Each recurring event will end at this time on the same day</p>
+                      <p className="text-xs text-muted-foreground">Each recurring event will end at this time on the same day</p>
                     )}
                   </div>
                 </div>
@@ -2180,17 +2180,17 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     type="time"
                     value={formData.gateOpeningTime}
                     onChange={(e) => handleInputChange('gateOpeningTime', e.target.value)}
-                    className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                    className="h-12 rounded-xl bg-muted border-0"
                     placeholder="Optional"
                   />
-                  <p className="text-xs text-[#0F0F0F]/40">Optional - when gates open for attendees</p>
+                  <p className="text-xs text-muted-foreground">Optional - when gates open for attendees</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Timezone <span className="text-red-500">*</span></Label>
                   <select
                     value={formData.timezone}
                     onChange={(e) => handleInputChange('timezone', e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
+                    className="w-full h-12 px-4 rounded-xl bg-muted border-0"
                   >
                     {Object.entries(getTimezonesByRegion()).map(([region, tzList]) => (
                       <optgroup key={region} label={region}>
@@ -2218,9 +2218,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         }
                       }}
                     />
-                    <Label htmlFor="multiday" className={`cursor-pointer ${formData.isRecurring ? 'text-gray-400' : ''}`}>
+                    <Label htmlFor="multiday" className={`cursor-pointer ${formData.isRecurring ? 'text-muted-foreground' : ''}`}>
                       Multi-day event
-                      {formData.isRecurring && <span className="text-xs text-gray-500 ml-2">(cannot combine with recurring)</span>}
+                      {formData.isRecurring && <span className="text-xs text-muted-foreground ml-2">(cannot combine with recurring)</span>}
                     </Label>
                 </div>                
                 {/* Multi-Day Event UI - Shows when checkbox is checked */}
@@ -2228,7 +2228,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   <div className="mt-4 p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30 space-y-5">
                     {/* Header */}
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-[#0F0F0F] text-lg flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground text-lg flex items-center gap-2">
                         📅 Multi-Day Schedule
                       </h3>
                     </div>
@@ -2236,7 +2236,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     {/* Quick Start Buttons - Only show if no days exist */}
                     {formData.eventDays.length === 0 && (
                       <div className="space-y-3">
-                        <p className="text-sm text-gray-600">How would you like to set up your event days?</p>
+                        <p className="text-sm text-muted-foreground">How would you like to set up your event days?</p>
                         <div className="flex flex-wrap gap-3">
                           <button
                             type="button"
@@ -2255,7 +2255,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                           <button
                             type="button"
                             onClick={addEventDay}
-                            className="px-4 py-2 bg-white border-2 border-[#2969FF] text-[#2969FF] rounded-xl hover:bg-[#2969FF]/5 transition-colors text-sm font-medium"
+                            className="px-4 py-2 bg-card border-2 border-[#2969FF] text-[#2969FF] rounded-xl hover:bg-[#2969FF]/5 transition-colors text-sm font-medium"
                           >
                             ✋ Add Manually
                           </button>
@@ -2267,7 +2267,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     {formData.eventDays.length > 0 && (
                       <div className="space-y-4">
                         {formData.eventDays.map((day, dayIndex) => (
-                          <div key={day.id} className="bg-white rounded-xl p-4 border border-gray-200 space-y-4">
+                          <div key={day.id} className="bg-card rounded-xl p-4 border border-border/20 space-y-4">
                             {/* Day Header */}
                             <div className="flex items-center justify-between">
                               <h4 className="font-semibold text-[#2969FF]">Day {day.dayNumber}</h4>
@@ -2289,7 +2289,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                   type="date"
                                   value={day.date}
                                   onChange={(e) => updateEventDay(dayIndex, 'date', e.target.value)}
-                                  className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                                  className="h-10 rounded-lg bg-muted border-0"
                                 />
                               </div>
                               <div className="space-y-1.5">
@@ -2298,7 +2298,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                   placeholder="e.g., Opening Day"
                                   value={day.title}
                                   onChange={(e) => updateEventDay(dayIndex, 'title', e.target.value)}
-                                  className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                                  className="h-10 rounded-lg bg-muted border-0"
                                 />
                               </div>
                             </div>
@@ -2310,7 +2310,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                   type="time"
                                   value={day.startTime}
                                   onChange={(e) => updateEventDay(dayIndex, 'startTime', e.target.value)}
-                                  className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                                  className="h-10 rounded-lg bg-muted border-0"
                                 />
                               </div>
                               <div className="space-y-1.5">
@@ -2319,7 +2319,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                   type="time"
                                   value={day.endTime}
                                   onChange={(e) => updateEventDay(dayIndex, 'endTime', e.target.value)}
-                                  className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                                  className="h-10 rounded-lg bg-muted border-0"
                                 />
                               </div>
                             </div>
@@ -2330,33 +2330,33 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 placeholder="What's happening on this day?"
                                 value={day.description}
                                 onChange={(e) => updateEventDay(dayIndex, 'description', e.target.value)}
-                                className="w-full min-h-[80px] px-3 py-2 rounded-lg bg-[#F4F6FA] border-0 resize-none text-sm"
+                                className="w-full min-h-[80px] px-3 py-2 rounded-lg bg-muted border-0 resize-none text-sm"
                               />
                             </div>
 
                             {/* Activities Section */}
-                            <div className="space-y-3 pt-2 border-t border-gray-100">
+                            <div className="space-y-3 pt-2 border-t border-border/10">
                               <div className="flex items-center justify-between">
-                                <Label className="text-sm font-medium text-gray-700">Activities / Schedule (optional)</Label>
+                                <Label className="text-sm font-medium text-foreground/80">Activities / Schedule (optional)</Label>
                               </div>
                               
                               {day.activities.length > 0 && (
                                 <div className="space-y-2">
                                   {day.activities.map((activity, actIndex) => (
-                                    <div key={activity.id} className="flex items-start gap-2 p-2 bg-[#F4F6FA] rounded-lg">
+                                    <div key={activity.id} className="flex items-start gap-2 p-2 bg-muted rounded-lg">
                                       <div className="flex-1 grid grid-cols-3 gap-2">
                                         <Input
                                           type="time"
                                           value={activity.startTime}
                                           onChange={(e) => updateActivity(dayIndex, actIndex, 'startTime', e.target.value)}
-                                          className="h-8 rounded-md bg-white border-0 text-sm"
+                                          className="h-8 rounded-md bg-card border-0 text-sm"
                                           placeholder="Time"
                                         />
                                         <Input
                                           placeholder="Activity title"
                                           value={activity.title}
                                           onChange={(e) => updateActivity(dayIndex, actIndex, 'title', e.target.value)}
-                                          className="h-8 rounded-md bg-white border-0 text-sm col-span-2"
+                                          className="h-8 rounded-md bg-card border-0 text-sm col-span-2"
                                         />
                                       </div>
                                       <button
@@ -2413,12 +2413,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   </div>
                   
                   {formData.isRecurring && (
-                    <div className="ml-7 space-y-4 p-4 bg-[#F4F6FA] rounded-xl">
+                    <div className="ml-7 space-y-4 p-4 bg-muted rounded-xl">
                       {/* Frequency */}
                       <div className="space-y-2">
                         <Label>Frequency</Label>
                         <Select value={formData.recurringType} onValueChange={(v) => handleInputChange('recurringType', v)}>
-                          <SelectTrigger className="h-12 rounded-xl bg-white border-0">
+                          <SelectTrigger className="h-12 rounded-xl bg-card border-0">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -2448,7 +2448,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                                   formData.recurringDays.includes(idx)
                                     ? 'bg-[#2969FF] text-white'
-                                    : 'bg-white text-[#0F0F0F]/60 hover:bg-[#0F0F0F]/5'
+                                    : 'bg-card text-muted-foreground hover:bg-[#0F0F0F]/5'
                                 }`}
                               >
                                 {day}
@@ -2462,7 +2462,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       <div className="space-y-2">
                         <Label>Ends</Label>
                         <Select value={formData.recurringEndType} onValueChange={(v) => handleInputChange('recurringEndType', v)}>
-                          <SelectTrigger className="h-12 rounded-xl bg-white border-0">
+                          <SelectTrigger className="h-12 rounded-xl bg-card border-0">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -2482,7 +2482,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                             max="52"
                             value={formData.recurringOccurrences}
                             onChange={(e) => handleInputChange('recurringOccurrences', e.target.value === '' ? '' : parseInt(e.target.value))}
-                            className="h-12 rounded-xl bg-white border-0 w-32"
+                            className="h-12 rounded-xl bg-card border-0 w-32"
                           />
                         </div>
                       )}
@@ -2495,15 +2495,15 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                             value={formData.recurringEndDate}
                             min={formData.startDate || new Date().toISOString().split('T')[0]}
                             onChange={(e) => handleInputChange('recurringEndDate', e.target.value)}
-                            className="h-12 rounded-xl bg-white border-0"
+                            className="h-12 rounded-xl bg-card border-0"
                           />
                         </div>
                       )}
 
                       {/* Preview */}
-                      <div className="p-3 bg-white rounded-xl border border-[#0F0F0F]/10">
-                        <p className="text-sm font-medium text-[#0F0F0F] mb-2">Preview</p>
-                        <p className="text-sm text-[#0F0F0F]/60">
+                      <div className="p-3 bg-card rounded-xl border border-border/10">
+                        <p className="text-sm font-medium text-foreground mb-2">Preview</p>
+                        <p className="text-sm text-muted-foreground">
                           {formData.recurringType === 'daily' && 'Every day'}
                           {formData.recurringType === 'weekly' && `Every week on ${formData.recurringDays.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ') || '(select days)'}`}
                           {formData.recurringType === 'biweekly' && `Every 2 weeks on ${formData.recurringDays.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ') || '(select days)'}`}
@@ -2531,8 +2531,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       <Monitor className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-[#0F0F0F]">Virtual / Online Event</h4>
-                      <p className="text-sm text-[#0F0F0F]/60">Enable if this event will be streamed online</p>
+                      <h4 className="font-medium text-foreground">Virtual / Online Event</h4>
+                      <p className="text-sm text-muted-foreground">Enable if this event will be streamed online</p>
                     </div>
                   </div>
                   <Checkbox
@@ -2550,7 +2550,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       <select
                         value={formData.streamingPlatform}
                         onChange={(e) => handleInputChange('streamingPlatform', e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl bg-white border border-[#0F0F0F]/10 text-[#0F0F0F]"
+                        className="w-full h-12 px-4 rounded-xl bg-card border border-border/10 text-foreground"
                       >
                         <option value="">Select platform...</option>
                         <option value="zoom">Zoom</option>
@@ -2570,9 +2570,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         placeholder="https://zoom.us/j/123456789 or YouTube Live URL"
                         value={formData.streamingUrl}
                         onChange={(e) => handleInputChange('streamingUrl', e.target.value)}
-                        className="h-12 rounded-xl bg-white border border-[#0F0F0F]/10"
+                        className="h-12 rounded-xl bg-card border border-border/10"
                       />
-                      <p className="text-xs text-[#0F0F0F]/50 flex items-center gap-1">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Info className="w-3 h-3" />
                         This link will only be shared with ticket holders. You can update it anytime.
                       </p>
@@ -2590,7 +2590,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       placeholder="Enter venue name"
                       value={formData.venueName}
                       onChange={(e) => handleInputChange('venueName', e.target.value)}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                      className="h-12 rounded-xl bg-muted border-0"
                     />
                   </div>
 
@@ -2602,7 +2602,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       onPlaceSelect={handlePlaceSelect}
                       placeholder="Search for venue address..."
                     />
-                    <p className="text-xs text-[#0F0F0F]/50">Start typing to search for venues and addresses</p>
+                    <p className="text-xs text-muted-foreground">Start typing to search for venues and addresses</p>
                   </div>
 
                   <div className="space-y-2">
@@ -2616,7 +2616,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                           className={`p-4 rounded-xl border text-center capitalize transition-all ${
                             formData.venueType === type
                               ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]'
-                              : 'border-[#0F0F0F]/10'
+                              : 'border-border/10'
                           }`}
                         >
                           {type}
@@ -2627,7 +2627,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Venue Capacity <span className="text-[#0F0F0F]/40">(Optional)</span></Label>
+                      <Label>Venue Capacity <span className="text-muted-foreground">(Optional)</span></Label>
                       <Input
                         type="number"
                         placeholder="Maximum attendees (leave blank if no limit)"
@@ -2635,15 +2635,15 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         value={formData.venueCapacity}
                         onChange={(e) => handleInputChange('venueCapacity', e.target.value)}
                         onBlur={(e) => { if (e.target.value === '0') handleInputChange('venueCapacity', ''); }}
-                        className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                        className="h-12 rounded-xl bg-muted border-0"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Seating Type <span className="text-[#0F0F0F]/40 text-xs font-normal">(optional)</span></Label>
+                      <Label>Seating Type <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
                       <select
                         value={formData.seatingType || ''}
                         onChange={(e) => handleInputChange('seatingType', e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
+                        className="w-full h-12 px-4 rounded-xl bg-muted border-0"
                       >
                         <option value="">Not specified</option>
                         {seatingTypes.map((type) => (
@@ -2663,9 +2663,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       value={formData.maxTicketsPerOrder}
                       onChange={(e) => handleInputChange('maxTicketsPerOrder', e.target.value)}
                       onBlur={(e) => { if (e.target.value === '0' || e.target.value === '') handleInputChange('maxTicketsPerOrder', '10'); }}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0 w-48"
+                      className="h-12 rounded-xl bg-muted border-0 w-48"
                     />
-                    <p className="text-xs text-[#0F0F0F]/60">Limit how many tickets one customer can buy at once</p>
+                    <p className="text-xs text-muted-foreground">Limit how many tickets one customer can buy at once</p>
                   </div>
 
                   {/* Venue Layout Map - FIXED */}
@@ -2680,13 +2680,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   className="hidden"
                 />
                 
-                <div className="border-2 border-dashed border-[#0F0F0F]/10 rounded-xl p-6">
+                <div className="border-2 border-dashed border-border/10 rounded-xl p-6">
                   {venueLayoutPreview ? (
                     <div className="relative">
                       <img 
                         src={venueLayoutPreview} 
                         alt="Venue layout preview" 
-                        className="w-full h-40 object-contain rounded-xl bg-[#F4F6FA]"
+                        className="w-full h-40 object-contain rounded-xl bg-muted"
                       />
                       <div className="absolute top-2 right-2 flex gap-2">
                         <button
@@ -2707,8 +2707,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     </div>
                   ) : (
                     <div className="text-center py-4">
-                      <Upload className="w-8 h-8 text-[#0F0F0F]/30 mx-auto mb-2" />
-                      <p className="text-[#0F0F0F]/60 text-sm mb-3">Upload venue seating layout or floor plan</p>
+                      <Upload className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
+                      <p className="text-muted-foreground text-sm mb-3">Upload venue seating layout or floor plan</p>
                       <Button 
                         type="button" 
                         variant="outline" 
@@ -2722,9 +2722,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 </div>
               </div>
 
-              <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <Card className="border-border/10 rounded-xl">
                 <CardContent className="p-4 space-y-3">
-                  <p className="font-medium text-[#0F0F0F]">Additional Options</p>
+                  <p className="font-medium text-foreground">Additional Options</p>
                   <div className="flex items-center gap-3">
                     <Checkbox
                       id="adult"
@@ -2787,7 +2787,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       placeholder="e.g., Smart Casual, Black Tie, Traditional"
                       value={formData.dressCode}
                       onChange={(e) => handleInputChange('dressCode', e.target.value)}
-                      className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                      className="h-12 rounded-xl bg-muted border-0"
                     />
                   </div>
                 </CardContent>
@@ -2804,10 +2804,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               <div className="p-5 bg-gradient-to-r from-green-500/10 to-green-500/5 rounded-xl border-2 border-green-500/30">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="font-semibold text-[#0F0F0F] text-lg flex items-center gap-2">
+                    <Label className="font-semibold text-foreground text-lg flex items-center gap-2">
                       <span className="text-xl">🎉</span> Free Event
                     </Label>
-                    <p className="text-sm text-[#0F0F0F]/60 mt-1">No ticket purchase required - attendees just RSVP</p>
+                    <p className="text-sm text-muted-foreground mt-1">No ticket purchase required - attendees just RSVP</p>
                   </div>
                   <Checkbox
                     id="isFree"
@@ -2822,10 +2822,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   <div className="mt-4 pt-4 border-t border-green-500/20 space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label className="font-medium text-[#0F0F0F] flex items-center gap-2">
+                        <Label className="font-medium text-foreground flex items-center gap-2">
                           <span>💝</span> Accept Donations
                         </Label>
-                        <p className="text-sm text-[#0F0F0F]/60">Allow attendees to support your event</p>
+                        <p className="text-sm text-muted-foreground">Allow attendees to support your event</p>
                       </div>
                       <Checkbox
                         id="acceptsDonations"
@@ -2840,7 +2840,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       <div className="space-y-3 pl-4 border-l-2 border-green-500/30">
                         <div>
                           <Label className="text-sm font-medium">Donation Amounts (up to 5)</Label>
-                          <p className="text-xs text-[#0F0F0F]/50">Click to edit, press + to add more</p>
+                          <p className="text-xs text-muted-foreground">Click to edit, press + to add more</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {formData.donationAmounts.map((amount, idx) => (
@@ -2853,7 +2853,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                   newAmounts[idx] = e.target.value === '' ? '' : parseInt(e.target.value);
                                   handleInputChange('donationAmounts', newAmounts);
                                 }}
-                                className="w-24 px-3 py-2 rounded-lg bg-white border border-green-500/30 text-center font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
+                                className="w-24 px-3 py-2 rounded-lg bg-card border border-green-500/30 text-center font-medium focus:outline-none focus:ring-2 focus:ring-green-500"
                               />
                               {formData.donationAmounts.length > 1 && (
                                 <button
@@ -2896,9 +2896,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         </div>
                         
                         {/* Donation Fee Handling */}
-                        <div className="mt-4 p-3 bg-white rounded-lg border border-green-500/30">
+                        <div className="mt-4 p-3 bg-card rounded-lg border border-green-500/30">
                           <Label className="text-sm font-medium mb-2 block">Who pays donation processing fees?</Label>
-                          <p className="text-xs text-[#0F0F0F]/50 mb-3">
+                          <p className="text-xs text-muted-foreground mb-3">
                             Processing fees include platform fee and payment processing
                           </p>
                           <div className="flex gap-3">
@@ -2908,11 +2908,11 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                               className={`flex-1 p-3 rounded-lg border-2 text-sm transition-all ${
                                 formData.donationFeeHandling === 'absorb'
                                   ? 'border-green-500 bg-green-50 text-green-700'
-                                  : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'
+                                  : 'border-border/10 hover:border-[#0F0F0F]/30'
                               }`}
                             >
                               <div className="font-medium">I'll absorb fees</div>
-                              <div className="text-xs mt-1 text-[#0F0F0F]/50">
+                              <div className="text-xs mt-1 text-muted-foreground">
                                 Fees deducted from donation
                               </div>
                             </button>
@@ -2922,11 +2922,11 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                               className={`flex-1 p-3 rounded-lg border-2 text-sm transition-all ${
                                 formData.donationFeeHandling === 'pass_to_attendee'
                                   ? 'border-green-500 bg-green-50 text-green-700'
-                                  : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'
+                                  : 'border-border/10 hover:border-[#0F0F0F]/30'
                               }`}
                             >
                               <div className="font-medium">Donor pays fees</div>
-                              <div className="text-xs mt-1 text-[#0F0F0F]/50">
+                              <div className="text-xs mt-1 text-muted-foreground">
                                 Fees added on top
                               </div>
                             </button>
@@ -2940,16 +2940,16 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
               {!formData.isFree && (
               <div className="p-5 bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-xl border-2 border-[#2969FF]/30">
-                <Label className="font-semibold text-[#0F0F0F] text-lg flex items-center gap-2 mb-3">
+                <Label className="font-semibold text-foreground text-lg flex items-center gap-2 mb-3">
                   <span className="text-xl">💰</span> Event Currency
                 </Label>
                 {formData.currency ? (
                   <div className="flex items-center gap-3">
-                    <div className="px-4 py-3 rounded-xl border-2 border-[#2969FF]/30 bg-white text-base font-medium">
+                    <div className="px-4 py-3 rounded-xl border-2 border-[#2969FF]/30 bg-card text-base font-medium">
                       {currencies[formData.currency]?.symbol} - {currencies[formData.currency]?.name}
                     </div>
                     <div className="group relative">
-                      <Info className="w-5 h-5 text-[#0F0F0F]/40 cursor-help" />
+                      <Info className="w-5 h-5 text-muted-foreground cursor-help" />
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#0F0F0F] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                         Currency is based on your account country. Contact support to change.
                       </div>
@@ -2957,7 +2957,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   </div>
                 ) : !organizer?.country_code ? (
                   <div className="space-y-3">
-                    <p className="text-sm text-[#0F0F0F]/60">Select your country to set your event currency (this cannot be changed later):</p>
+                    <p className="text-sm text-muted-foreground">Select your country to set your event currency (this cannot be changed later):</p>
                     <div className="flex flex-wrap gap-2">
                       {[
                         { code: "NG", name: "Nigeria", flag: "🇳🇬" },
@@ -2971,7 +2971,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                           type="button"
                           onClick={() => handleCountrySelect(country.code)}
                           disabled={savingCountry}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-[#0F0F0F]/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-border/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all disabled:opacity-50"
                         >
                           <span className="text-xl">{country.flag}</span>
                           <span className="text-sm font-medium">{country.name}</span>
@@ -3000,19 +3000,19 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   </p>
                 </div>
               ) : !formData.currency ? (
-                <div className="text-center py-12 bg-[#F4F6FA] rounded-xl border-2 border-dashed border-[#0F0F0F]/20">
-                  <p className="text-[#0F0F0F]/50 text-lg">Select a currency above to add tickets</p>
+                <div className="text-center py-12 bg-muted rounded-xl border-2 border-dashed border-border/20">
+                  <p className="text-muted-foreground text-lg">Select a currency above to add tickets</p>
                 </div>
               ) : (
                 <>
                   {/* Regular Tickets */}
                   <div>
-                    <h3 className="font-semibold text-[#0F0F0F]">Ticket Categories</h3>
-                    <p className="text-sm text-[#0F0F0F]/60">Create unlimited ticket types for your event</p>
+                    <h3 className="font-semibold text-foreground">Ticket Categories</h3>
+                    <p className="text-sm text-muted-foreground">Create unlimited ticket types for your event</p>
                   </div>
 
                   {tickets.map((ticket, index) => (
-                <Card key={ticket.id} className="border-[#0F0F0F]/10 rounded-xl">
+                <Card key={ticket.id} className="border-border/10 rounded-xl">
                   <CardContent className="p-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-[#2969FF]">Ticket {index + 1}</span>
@@ -3029,13 +3029,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                           placeholder="e.g., GA, VIP, VVIP, Early Bird"
                           value={ticket.name}
                           onChange={(e) => updateTicket(ticket.id, 'name', e.target.value)}
-                          className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                          className="h-12 rounded-xl bg-muted border-0"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Price <span className="text-red-500">*</span></Label>
                         <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
                             {currencies[formData.currency]?.symbol || '$'}
                           </span>
                           <Input
@@ -3045,7 +3045,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                             step="0.01"
                             value={ticket.price}
                             onChange={(e) => updateTicket(ticket.id, 'price', e.target.value)}
-                            className={`h-12 rounded-xl bg-[#F4F6FA] pl-10 ${fieldErrors['ticket_price_' + ticket.id] ? 'border-2 border-red-500' : 'border-0'}`}
+                            className={`h-12 rounded-xl bg-muted pl-10 ${fieldErrors['ticket_price_' + ticket.id] ? 'border-2 border-red-500' : 'border-0'}`}
                           />
                         </div>
                       </div>
@@ -3059,7 +3059,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                           min="1"
                           value={ticket.quantity}
                           onChange={(e) => updateTicket(ticket.id, 'quantity', e.target.value)}
-                          className={`h-12 rounded-xl bg-[#F4F6FA] ${fieldErrors['ticket_quantity_' + ticket.id] ? 'border-2 border-red-500' : 'border-0'}`}
+                          className={`h-12 rounded-xl bg-muted ${fieldErrors['ticket_quantity_' + ticket.id] ? 'border-2 border-red-500' : 'border-0'}`}
                         />
                       </div>
                       <div className="space-y-2">
@@ -3094,7 +3094,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         placeholder="Describe what's included in this ticket..."
                         value={ticket.description}
                         onChange={(e) => updateTicket(ticket.id, 'description', e.target.value)}
-                        className="rounded-xl bg-[#F4F6FA] border-0"
+                        className="rounded-xl bg-muted border-0"
                       />
                     </div>
                   </CardContent>
@@ -3111,13 +3111,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     Add another ticket type
                   </button>
 
-              <hr className="border-[#0F0F0F]/10" />
+              <hr className="border-border/10" />
 
               {/* Table Tickets */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-[#0F0F0F]">Table Tickets</h3>
-                  <p className="text-sm text-[#0F0F0F]/60">Add VIP tables or group seating options</p>
+                  <h3 className="font-semibold text-foreground">Table Tickets</h3>
+                  <p className="text-sm text-muted-foreground">Add VIP tables or group seating options</p>
                 </div>
                 <Button onClick={addTableTicket} variant="outline" className="rounded-xl">
                   <Plus className="w-4 h-4 mr-2" />Add Table
@@ -3125,12 +3125,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               </div>
 
               {tableTickets.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/40 py-4">
+                <p className="text-center text-muted-foreground py-4">
                   No table tickets added yet. Click "Add Table" to create one.
                 </p>
               ) : (
                 tableTickets.map((table, index) => (
-                  <Card key={table.id} className="border-[#0F0F0F]/10 rounded-xl">
+                  <Card key={table.id} className="border-border/10 rounded-xl">
                     <CardContent className="p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-[#2969FF] flex items-center gap-2">
@@ -3148,13 +3148,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                             placeholder="e.g., VIP Table, VVIP Table"
                             value={table.name}
                             onChange={(e) => updateTableTicket(table.id, 'name', e.target.value)}
-                            className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                            className="h-12 rounded-xl bg-muted border-0"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label>Price per Table <span className="text-red-500">*</span></Label>
                           <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
                               {currencies[formData.currency]?.symbol || '$'}
                             </span>
                             <Input
@@ -3162,7 +3162,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                               placeholder="0.00"
                               value={table.price}
                               onChange={(e) => updateTableTicket(table.id, 'price', e.target.value)}
-                              className="h-12 rounded-xl bg-[#F4F6FA] border-0 pl-10"
+                              className="h-12 rounded-xl bg-muted border-0 pl-10"
                             />
                           </div>
                         </div>
@@ -3175,7 +3175,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                             placeholder="e.g., 6, 8, 10"
                             value={table.seatsPerTable}
                             onChange={(e) => updateTableTicket(table.id, 'seatsPerTable', e.target.value)}
-                            className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                            className="h-12 rounded-xl bg-muted border-0"
                           />
                         </div>
                         <div className="space-y-2">
@@ -3185,7 +3185,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                             placeholder="Available tables"
                             value={table.quantity}
                             onChange={(e) => updateTableTicket(table.id, 'quantity', e.target.value)}
-                            className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                            className="h-12 rounded-xl bg-muted border-0"
                           />
                         </div>
                       </div>
@@ -3195,7 +3195,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                           placeholder="Describe what's included (e.g., bottles, mixers, server)..."
                           value={table.description}
                           onChange={(e) => updateTableTicket(table.id, 'description', e.target.value)}
-                          className="rounded-xl bg-[#F4F6FA] border-0"
+                          className="rounded-xl bg-muted border-0"
                         />
                       </div>
                     </CardContent>
@@ -3203,16 +3203,16 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 ))
               )}
 
-              <hr className="border-[#0F0F0F]/10" />
+              <hr className="border-border/10" />
 
               {/* Fee Handling */}
-              <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <Card className="border-border/10 rounded-xl">
                 <CardContent className="p-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-[#0F0F0F]/60" />
+                    <DollarSign className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <h3 className="font-semibold text-[#0F0F0F]">Transaction Fee Handling</h3>
-                      <p className="text-sm text-[#0F0F0F]/60">Choose who pays the Ticketrack platform fees</p>
+                      <h3 className="font-semibold text-foreground">Transaction Fee Handling</h3>
+                      <p className="text-sm text-muted-foreground">Choose who pays the Ticketrack platform fees</p>
                     </div>
                   </div>
 
@@ -3221,7 +3221,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                         formData.feeHandling === 'pass_to_attendee'
                           ? 'border-[#2969FF] bg-[#2969FF]/5'
-                          : 'border-[#0F0F0F]/10'
+                          : 'border-border/10'
                       }`}
                     >
                       <input
@@ -3235,7 +3235,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       <div>
                         <span className="font-medium">Pass fees to attendees</span>
                         <span className="ml-2 text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">Recommended</span>
-                        <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Attendees pay a small service fee on top of the ticket price. You receive the full ticket amount.
                         </p>
                       </div>
@@ -3245,7 +3245,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                         formData.feeHandling === 'absorb'
                           ? 'border-[#2969FF] bg-[#2969FF]/5'
-                          : 'border-[#0F0F0F]/10'
+                          : 'border-border/10'
                       }`}
                     >
                       <input
@@ -3258,7 +3258,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       />
                       <div>
                         <span className="font-medium">Absorb fees (Organizer pays)</span>
-                        <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           You cover the platform fees. Attendees pay exactly the ticket price with no additional charges.
                         </p>
                       </div>
@@ -3275,20 +3275,20 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               )}
 
               {/* Email Notification Settings */}
-              <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <Card className="border-border/10 rounded-xl">
                 <CardContent className="p-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <Info className="w-5 h-5 text-[#0F0F0F]/60" />
+                    <Info className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <h3 className="font-semibold text-[#0F0F0F]">Email Notifications</h3>
-                      <p className="text-sm text-[#0F0F0F]/60">Control email notifications for this event</p>
+                      <h3 className="font-semibold text-foreground">Email Notifications</h3>
+                      <p className="text-sm text-muted-foreground">Control email notifications for this event</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 rounded-xl border border-[#0F0F0F]/10">
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-border/10">
                     <div>
                       <Label className="font-medium">Notify me on ticket sales/RSVPs</Label>
-                      <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Receive an email notification for each ticket purchase or RSVP
                       </p>
                     </div>
@@ -3324,8 +3324,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-[#0F0F0F]">Speakers, Artists & Headliners</h3>
-                  <p className="text-sm text-[#0F0F0F]/60">Add speakers, performers, or headliners to showcase on your event page (optional)</p>
+                  <h3 className="font-semibold text-foreground">Speakers, Artists & Headliners</h3>
+                  <p className="text-sm text-muted-foreground">Add speakers, performers, or headliners to showcase on your event page (optional)</p>
                 </div>
                 <Button onClick={addSpeaker} variant="outline" className="rounded-xl">
                   <Plus className="w-4 h-4 mr-2" />
@@ -3334,10 +3334,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               </div>
 
               {speakers.length === 0 ? (
-                <div className="text-center py-16 bg-[#F4F6FA] rounded-xl border-2 border-dashed border-[#0F0F0F]/10">
-                  <Mic className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                  <p className="text-[#0F0F0F]/60 text-lg mb-2">No speakers added yet</p>
-                  <p className="text-[#0F0F0F]/40 text-sm mb-4">Click "Add Speaker" to feature speakers, artists, or headliners on your event page</p>
+                <div className="text-center py-16 bg-muted rounded-xl border-2 border-dashed border-border/10">
+                  <Mic className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground text-lg mb-2">No speakers added yet</p>
+                  <p className="text-muted-foreground text-sm mb-4">Click "Add Speaker" to feature speakers, artists, or headliners on your event page</p>
                   <Button onClick={addSpeaker} variant="outline" className="rounded-xl">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Your First Speaker
@@ -3346,7 +3346,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               ) : (
                 <div className="space-y-4">
                   {speakers.map((speaker, index) => (
-                    <Card key={speaker.tempId} className="border-[#0F0F0F]/10 rounded-xl overflow-hidden">
+                    <Card key={speaker.tempId} className="border-border/10 rounded-xl overflow-hidden">
                       <CardContent className="p-5 space-y-4">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-[#2969FF] flex items-center gap-2">
@@ -3369,7 +3369,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                               className="hidden"
                               id={`speaker-image-${speaker.tempId}`}
                             />
-                            <div className="w-32 h-32 rounded-xl border-2 border-dashed border-[#0F0F0F]/20 bg-[#F4F6FA] flex items-center justify-center overflow-hidden relative group">
+                            <div className="w-32 h-32 rounded-xl border-2 border-dashed border-border/20 bg-muted flex items-center justify-center overflow-hidden relative group">
                               {(speaker.imagePreview || speaker.image_url) ? (
                                 <>
                                   <img
@@ -3381,9 +3381,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                     <button
                                       type="button"
                                       onClick={() => document.getElementById(`speaker-image-${speaker.tempId}`)?.click()}
-                                      className="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-100"
+                                      className="w-8 h-8 bg-card rounded-full flex items-center justify-center hover:bg-muted"
                                     >
-                                      <Pencil className="w-4 h-4 text-[#0F0F0F]" />
+                                      <Pencil className="w-4 h-4 text-foreground" />
                                     </button>
                                     <button
                                       type="button"
@@ -3398,14 +3398,14 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 <button
                                   type="button"
                                   onClick={() => document.getElementById(`speaker-image-${speaker.tempId}`)?.click()}
-                                  className="flex flex-col items-center justify-center text-[#0F0F0F]/40 hover:text-[#2969FF] transition-colors p-2"
+                                  className="flex flex-col items-center justify-center text-muted-foreground hover:text-[#2969FF] transition-colors p-2"
                                 >
                                   <Upload className="w-6 h-6 mb-1" />
                                   <span className="text-xs text-center">Add Photo</span>
                                 </button>
                               )}
                             </div>
-                            <p className="text-xs text-[#0F0F0F]/40 mt-1 text-center">Max 5MB</p>
+                            <p className="text-xs text-muted-foreground mt-1 text-center">Max 5MB</p>
                           </div>
 
                           {/* Name & Role */}
@@ -3417,7 +3417,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                   placeholder="Speaker name"
                                   value={speaker.name}
                                   onChange={(e) => updateSpeaker(speaker.tempId, 'name', e.target.value)}
-                                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                                  className="h-12 rounded-xl bg-muted border-0"
                                 />
                               </div>
                               <div className="space-y-2">
@@ -3426,7 +3426,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                   placeholder="e.g., Keynote Speaker, DJ, Artist"
                                   value={speaker.role}
                                   onChange={(e) => updateSpeaker(speaker.tempId, 'role', e.target.value)}
-                                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                                  className="h-12 rounded-xl bg-muted border-0"
                                 />
                               </div>
                             </div>
@@ -3437,14 +3437,14 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 value={speaker.bio}
                                 onChange={(e) => updateSpeaker(speaker.tempId, 'bio', e.target.value)}
                                 rows={3}
-                                className="rounded-xl bg-[#F4F6FA] border-0 resize-none"
+                                className="rounded-xl bg-muted border-0 resize-none"
                               />
                             </div>
                           </div>
                         </div>
 
                         {/* Social Links */}
-                        <div className="border-t border-[#0F0F0F]/10 pt-4">
+                        <div className="border-t border-border/10 pt-4">
                           <Label className="text-sm font-medium mb-3 block">Social Links (optional)</Label>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="flex items-center gap-2">
@@ -3453,7 +3453,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 placeholder="twitter.com/username"
                                 value={speaker.social_links?.twitter || ''}
                                 onChange={(e) => updateSpeakerSocialLink(speaker.tempId, 'twitter', e.target.value)}
-                                className="h-10 rounded-lg bg-[#F4F6FA] border-0 text-sm"
+                                className="h-10 rounded-lg bg-muted border-0 text-sm"
                               />
                             </div>
                             <div className="flex items-center gap-2">
@@ -3462,7 +3462,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 placeholder="instagram.com/username"
                                 value={speaker.social_links?.instagram || ''}
                                 onChange={(e) => updateSpeakerSocialLink(speaker.tempId, 'instagram', e.target.value)}
-                                className="h-10 rounded-lg bg-[#F4F6FA] border-0 text-sm"
+                                className="h-10 rounded-lg bg-muted border-0 text-sm"
                               />
                             </div>
                             <div className="flex items-center gap-2">
@@ -3471,16 +3471,16 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 placeholder="linkedin.com/in/username"
                                 value={speaker.social_links?.linkedin || ''}
                                 onChange={(e) => updateSpeakerSocialLink(speaker.tempId, 'linkedin', e.target.value)}
-                                className="h-10 rounded-lg bg-[#F4F6FA] border-0 text-sm"
+                                className="h-10 rounded-lg bg-muted border-0 text-sm"
                               />
                             </div>
                             <div className="flex items-center gap-2">
-                              <Globe className="w-4 h-4 text-[#0F0F0F]/60 flex-shrink-0" />
+                              <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                               <Input
                                 placeholder="Website URL"
                                 value={speaker.social_links?.website || ''}
                                 onChange={(e) => updateSpeakerSocialLink(speaker.tempId, 'website', e.target.value)}
-                                className="h-10 rounded-lg bg-[#F4F6FA] border-0 text-sm"
+                                className="h-10 rounded-lg bg-muted border-0 text-sm"
                               />
                             </div>
                           </div>
@@ -3516,16 +3516,16 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   placeholder="YouTube, Instagram Reel, or TikTok URL"
                   value={formData.promoVideoUrl}
                   onChange={(e) => handleInputChange('promoVideoUrl', e.target.value)}
-                  className="h-12 rounded-xl bg-[#F4F6FA] border-0"
+                  className="h-12 rounded-xl bg-muted border-0"
                 />
-                <p className="text-sm text-[#0F0F0F]/60">Paste a link to your event promo video from YouTube, Instagram, or TikTok</p>
+                <p className="text-sm text-muted-foreground">Paste a link to your event promo video from YouTube, Instagram, or TikTok</p>
               </div>
 
-              <hr className="border-[#0F0F0F]/10" />
+              <hr className="border-border/10" />
 
               <div>
-                <h3 className="font-semibold text-[#0F0F0F] mb-1">Sponsor Logos</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mb-4">Add up to 5 sponsor logos • These logos will appear on event tickets</p>
+                <h3 className="font-semibold text-foreground mb-1">Sponsor Logos</h3>
+                <p className="text-sm text-muted-foreground mb-4">Add up to 5 sponsor logos • These logos will appear on event tickets</p>
                 
                 <input
                   ref={sponsorInputRef}
@@ -3536,12 +3536,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   className="hidden"
                 />
                 
-                <div className="border-2 border-dashed border-[#0F0F0F]/10 rounded-xl p-8">
+                <div className="border-2 border-dashed border-border/10 rounded-xl p-8">
                   {sponsorLogos.length > 0 && (
                     <div className="flex flex-wrap gap-3 mb-4">
                       {sponsorLogos.map((logo, index) => (
                         <div key={index} className="relative w-20 h-20">
-                          <img src={logo.preview} alt="" className="w-full h-full object-contain rounded-lg bg-white border" />
+                          <img src={logo.preview} alt="" className="w-full h-full object-contain rounded-lg bg-card border" />
                           <button
                             onClick={() => removeSponsorLogo(index)}
                             className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
@@ -3553,9 +3553,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     </div>
                   )}
                   <div className="text-center">
-                    <Upload className="w-8 h-8 text-[#0F0F0F]/30 mx-auto mb-2" />
-                    <p className="text-[#0F0F0F]/60 text-sm mb-1">Add Sponsor Logo</p>
-                    <p className="text-[#0F0F0F]/40 text-xs mb-3">PNG format recommended for best quality on tickets</p>
+                    <Upload className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm mb-1">Add Sponsor Logo</p>
+                    <p className="text-muted-foreground text-xs mb-3">PNG format recommended for best quality on tickets</p>
                     <Button
                       type="button"
                       variant="outline"
@@ -3569,7 +3569,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 </div>
 
                 {sponsorLogos.length === 0 && (
-                  <p className="text-center text-[#0F0F0F]/40 text-sm mt-4">No sponsor logos added yet</p>
+                  <p className="text-center text-muted-foreground text-sm mt-4">No sponsor logos added yet</p>
                 )}
 
                 <div className="flex items-center gap-2 p-3 bg-[#2969FF]/5 rounded-xl text-sm text-[#2969FF] mt-4">
@@ -3580,8 +3580,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
               
               {/* When to Publish */}
-              <div className="mt-8 p-6 bg-white rounded-2xl border border-[#0F0F0F]/10">
-                <h3 className="text-lg font-semibold text-[#0F0F0F] mb-4 flex items-center gap-2">
+              <div className="mt-8 p-6 bg-card rounded-2xl border border-border/10">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-[#2969FF]" />
                   When to Publish
                 </h3>
@@ -3589,50 +3589,50 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div 
                       onClick={() => setFormData({ ...formData, publishOption: 'now' })}
-                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'now' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'}`}
+                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'now' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-border/10 hover:border-[#0F0F0F]/30'}`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.publishOption === 'now' ? 'border-[#2969FF]' : 'border-[#0F0F0F]/30'}`}>
                           {formData.publishOption === 'now' && <div className="w-3 h-3 rounded-full bg-[#2969FF]" />}
                         </div>
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">Publish Now</p>
-                          <p className="text-sm text-[#0F0F0F]/60">Event goes live immediately</p>
+                          <p className="font-medium text-foreground">Publish Now</p>
+                          <p className="text-sm text-muted-foreground">Event goes live immediately</p>
                         </div>
                       </div>
                     </div>
                     <div 
                       onClick={() => setFormData({ ...formData, publishOption: 'schedule' })}
-                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'schedule' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'}`}
+                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'schedule' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-border/10 hover:border-[#0F0F0F]/30'}`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.publishOption === 'schedule' ? 'border-[#2969FF]' : 'border-[#0F0F0F]/30'}`}>
                           {formData.publishOption === 'schedule' && <div className="w-3 h-3 rounded-full bg-[#2969FF]" />}
                         </div>
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">Schedule for Later</p>
-                          <p className="text-sm text-[#0F0F0F]/60">Choose when to go live</p>
+                          <p className="font-medium text-foreground">Schedule for Later</p>
+                          <p className="text-sm text-muted-foreground">Choose when to go live</p>
                         </div>
                       </div>
                     </div>
                     <div 
                       onClick={() => setFormData({ ...formData, publishOption: 'draft' })}
-                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'draft' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/30'}`}
+                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.publishOption === 'draft' ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-border/10 hover:border-[#0F0F0F]/30'}`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.publishOption === 'draft' ? 'border-[#2969FF]' : 'border-[#0F0F0F]/30'}`}>
                           {formData.publishOption === 'draft' && <div className="w-3 h-3 rounded-full bg-[#2969FF]" />}
                         </div>
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">Save as Draft</p>
-                          <p className="text-sm text-[#0F0F0F]/60">Finish editing later</p>
+                          <p className="font-medium text-foreground">Save as Draft</p>
+                          <p className="text-sm text-muted-foreground">Finish editing later</p>
                         </div>
                       </div>
                     </div>
                   </div>
                   
                   {formData.publishOption === 'schedule' && (
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-4">
+                    <div className="p-4 bg-muted rounded-xl space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                           <Label className="text-sm font-medium mb-2 block">Publish Date *</Label>
@@ -3668,7 +3668,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               </div>
 
 {/* Terms and Conditions */}
-              <div className="mt-8 p-4 bg-[#F4F6FA] rounded-xl">
+              <div className="mt-8 p-4 bg-muted rounded-xl">
                 <div className="flex items-start gap-3">
                   <Checkbox
                     id="terms"
@@ -3676,7 +3676,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     onCheckedChange={(checked) => handleInputChange('agreedToTerms', checked)}
                     className="mt-1"
                   />
-                  <label htmlFor="terms" className="text-sm text-[#0F0F0F]/80 cursor-pointer">
+                  <label htmlFor="terms" className="text-sm text-foreground/80 cursor-pointer">
                     I agree to the{' '}
                     <a href="/terms" target="_blank" className="text-[#2969FF] hover:underline">
                       Terms and Conditions
@@ -3694,7 +3694,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-[#0F0F0F]/10 flex justify-between">
+        <div className="p-6 border-t border-border/10 flex justify-between">
           <Button
             type="button"
             variant="outline"
@@ -3729,8 +3729,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       {/* AI Compose Dialog */}
       {isAIComposeOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl">
-            <div className="p-6 border-b border-gray-100">
+          <div className="bg-card rounded-2xl w-full max-w-lg shadow-xl">
+            <div className="p-6 border-b border-border/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-500" />
@@ -3738,12 +3738,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 </div>
                 <button 
                   onClick={() => { setIsAIComposeOpen(false); setAiPrompt(""); setAiError(""); }} 
-                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  className="p-2 hover:bg-muted rounded-lg"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-sm text-gray-500 mt-1">Describe the event description you want to generate</p>
+              <p className="text-sm text-muted-foreground mt-1">Describe the event description you want to generate</p>
             </div>
             <div className="p-6 space-y-4">
               <div className="flex flex-wrap gap-2">
@@ -3752,7 +3752,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     key={idx} 
                     type="button" 
                     onClick={() => setAiPrompt(suggestion)} 
-                    className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                    className="px-3 py-1.5 text-xs bg-muted hover:bg-muted rounded-full transition-colors"
                   >
                     {suggestion}
                   </button>
@@ -3767,7 +3767,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               />
               {aiError && <p className="text-sm text-red-500">{aiError}</p>}
             </div>
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+            <div className="p-6 border-t border-border/10 flex justify-end gap-3">
               <Button 
                 type="button" 
                 variant="outline" 

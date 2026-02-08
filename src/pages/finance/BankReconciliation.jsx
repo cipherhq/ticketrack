@@ -270,8 +270,8 @@ export function BankReconciliation() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Bank Reconciliation</h1>
-          <p className="text-[#0F0F0F]/60">Match payouts with bank transactions</p>
+          <h1 className="text-2xl font-bold text-foreground">Bank Reconciliation</h1>
+          <p className="text-muted-foreground">Match payouts with bank transactions</p>
         </div>
         <div className="flex gap-2">
           <label className="cursor-pointer">
@@ -297,56 +297,56 @@ export function BankReconciliation() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <FileSpreadsheet className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Lines</p>
+                <p className="text-sm text-muted-foreground">Total Lines</p>
                 <p className="text-2xl font-bold">{stats.totalLines}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Matched</p>
+                <p className="text-sm text-muted-foreground">Matched</p>
                 <p className="text-2xl font-bold">{stats.matchedLines}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Unmatched</p>
+                <p className="text-sm text-muted-foreground">Unmatched</p>
                 <p className="text-2xl font-bold">{stats.unmatchedLines}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Link2 className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Match Rate</p>
+                <p className="text-sm text-muted-foreground">Match Rate</p>
                 <p className="text-2xl font-bold">
                   {stats.totalLines > 0
                     ? ((stats.matchedLines / stats.totalLines) * 100).toFixed(1)
@@ -359,7 +359,7 @@ export function BankReconciliation() {
       </div>
 
       {/* Statement Selector */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex gap-4">
             <Select value={selectedStatement || ''} onValueChange={setSelectedStatement}>
@@ -379,7 +379,7 @@ export function BankReconciliation() {
       </Card>
 
       {/* Statement Lines */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Bank Transactions</CardTitle>
         </CardHeader>
@@ -459,7 +459,7 @@ export function BankReconciliation() {
               ))}
               {statementLines.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     {selectedStatement
                       ? 'No transactions in this statement'
                       : 'Select a statement to view transactions'}
@@ -479,25 +479,25 @@ export function BankReconciliation() {
           </DialogHeader>
           {selectedLine && (
             <div className="space-y-4">
-              <Card className="border rounded-xl bg-gray-50">
+              <Card className="border rounded-xl bg-background">
                 <CardContent className="p-4">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-[#0F0F0F]/60">Bank Description</p>
+                      <p className="text-muted-foreground">Bank Description</p>
                       <p className="font-medium">{selectedLine.description}</p>
                     </div>
                     <div>
-                      <p className="text-[#0F0F0F]/60">Amount</p>
+                      <p className="text-muted-foreground">Amount</p>
                       <p className="font-medium">
                         {formatPrice(selectedLine.amount, selectedLine.currency)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[#0F0F0F]/60">Reference</p>
+                      <p className="text-muted-foreground">Reference</p>
                       <p className="font-mono">{selectedLine.reference}</p>
                     </div>
                     <div>
-                      <p className="text-[#0F0F0F]/60">Date</p>
+                      <p className="text-muted-foreground">Date</p>
                       <p>{new Date(selectedLine.transaction_date).toLocaleDateString()}</p>
                     </div>
                   </div>
@@ -505,7 +505,7 @@ export function BankReconciliation() {
               </Card>
 
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search payouts by reference or organizer..."
                   value={searchPayout}
@@ -525,7 +525,7 @@ export function BankReconciliation() {
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="font-medium">{payout.organizers?.business_name}</p>
-                          <p className="text-sm font-mono text-[#0F0F0F]/60">
+                          <p className="text-sm font-mono text-muted-foreground">
                             {payout.payout_reference}
                           </p>
                         </div>
@@ -533,7 +533,7 @@ export function BankReconciliation() {
                           <p className="font-bold">
                             {formatPrice(payout.amount, payout.currency)}
                           </p>
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-sm text-muted-foreground">
                             {payout.completed_at
                               ? new Date(payout.completed_at).toLocaleDateString()
                               : '-'}
@@ -544,7 +544,7 @@ export function BankReconciliation() {
                   </Card>
                 ))}
                 {filteredPayouts.length === 0 && (
-                  <p className="text-center py-8 text-[#0F0F0F]/60">
+                  <p className="text-center py-8 text-muted-foreground">
                     No matching payouts found
                   </p>
                 )}

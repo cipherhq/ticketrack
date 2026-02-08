@@ -172,8 +172,8 @@ export function OrganizerProfile() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-semibold text-[#0F0F0F]">Organizer Profile</h2>
-        <p className="text-[#0F0F0F]/60 mt-1">Manage your public profile and business information</p>
+        <h2 className="text-2xl font-semibold text-foreground">Organizer Profile</h2>
+        <p className="text-muted-foreground mt-1">Manage your public profile and business information</p>
       </div>
 
       {saved && (
@@ -189,9 +189,9 @@ export function OrganizerProfile() {
         </div>
       )}
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Business Logo</CardTitle>
+          <CardTitle className="text-foreground">Business Logo</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6">
@@ -215,7 +215,7 @@ export function OrganizerProfile() {
               )}
             </div>
             <div className="flex-1">
-              <p className="text-sm text-[#0F0F0F]/60 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 Upload a logo for your business. Recommended size: 200x200px. Max 2MB.
               </p>
               <input
@@ -248,9 +248,9 @@ export function OrganizerProfile() {
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Business Information</CardTitle>
+          <CardTitle className="text-foreground">Business Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -333,9 +333,9 @@ export function OrganizerProfile() {
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Social Media Links</CardTitle>
+          <CardTitle className="text-foreground">Social Media Links</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">

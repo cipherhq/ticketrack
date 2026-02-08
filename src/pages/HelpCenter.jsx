@@ -844,7 +844,7 @@ const helpContent = {
     title: 'General',
     icon: Settings,
     description: 'Account settings, security, notifications, and getting help.',
-    color: 'bg-gray-500',
+    color: 'bg-background0',
     articles: [
       {
         id: 'account-settings',
@@ -909,36 +909,36 @@ const helpContent = {
 // Accordion Component
 function Accordion({ article, isOpen, onToggle }) {
   return (
-    <div className="border border-[#0F0F0F]/10 rounded-xl overflow-hidden mb-3">
+    <div className="border border-border/10 rounded-xl overflow-hidden mb-3">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-4 bg-white hover:bg-[#F4F6FA]/50 transition-colors text-left"
+        className="w-full flex items-center justify-between p-4 bg-card hover:bg-muted/50 transition-colors text-left"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-[#2969FF]/10 flex items-center justify-center">
             <article.icon className="w-5 h-5 text-[#2969FF]" />
           </div>
-          <span className="font-medium text-[#0F0F0F]">{article.title}</span>
+          <span className="font-medium text-foreground">{article.title}</span>
         </div>
         {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-[#0F0F0F]/60" />
+          <ChevronUp className="w-5 h-5 text-muted-foreground" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-[#0F0F0F]/60" />
+          <ChevronDown className="w-5 h-5 text-muted-foreground" />
         )}
       </button>
       
       {isOpen && (
-        <div className="p-4 pt-0 bg-white">
+        <div className="p-4 pt-0 bg-card">
           {/* Steps */}
           <div className="mb-4">
-            <h4 className="text-sm font-semibold text-[#0F0F0F]/60 uppercase tracking-wide mb-3">Steps</h4>
+            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Steps</h4>
             <ol className="space-y-2">
               {article.steps.map((step, idx) => (
                 <li key={idx} className="flex gap-3">
                   <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#2969FF] text-white text-sm flex items-center justify-center font-medium">
                     {idx + 1}
                   </span>
-                  <span className="text-[#0F0F0F]/80 pt-0.5">{step}</span>
+                  <span className="text-foreground/80 pt-0.5">{step}</span>
                 </li>
               ))}
             </ol>
@@ -946,10 +946,10 @@ function Accordion({ article, isOpen, onToggle }) {
 
           {/* Screenshot Placeholder */}
           {article.screenshot && (
-            <div className="mb-4 p-6 bg-[#F4F6FA] rounded-xl border-2 border-dashed border-[#0F0F0F]/20 text-center">
-              <ImageIcon className="w-8 h-8 text-[#0F0F0F]/30 mx-auto mb-2" />
-              <p className="text-sm text-[#0F0F0F]/50">Screenshot: {article.screenshot}</p>
-              <p className="text-xs text-[#0F0F0F]/40 mt-1">Image will be added here</p>
+            <div className="mb-4 p-6 bg-muted rounded-xl border-2 border-dashed border-border/20 text-center">
+              <ImageIcon className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Screenshot: {article.screenshot}</p>
+              <p className="text-xs text-muted-foreground mt-1">Image will be added here</p>
             </div>
           )}
 
@@ -1027,7 +1027,7 @@ export function HelpCenter() {
   const currentCategory = helpContent[activeTab];
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
       <div className="bg-gradient-to-br from-[#2969FF] to-[#1a4fd6] text-white py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -1038,13 +1038,13 @@ export function HelpCenter() {
           
           {/* Search */}
           <div className="relative max-w-xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search for help articles..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-4 py-3 h-14 rounded-2xl bg-white text-[#0F0F0F] border-0 shadow-lg text-lg"
+              className="pl-12 pr-4 py-3 h-14 rounded-2xl bg-card text-foreground border-0 shadow-lg text-lg"
             />
           </div>
         </div>
@@ -1055,7 +1055,7 @@ export function HelpCenter() {
         {filteredContent && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-[#0F0F0F]">
+              <h2 className="text-xl font-semibold text-foreground">
                 Search Results ({filteredContent.length})
               </h2>
               <Button 
@@ -1068,11 +1068,11 @@ export function HelpCenter() {
             </div>
             
             {filteredContent.length === 0 ? (
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-8 text-center">
-                  <Search className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                  <p className="text-[#0F0F0F]/60">No results found for "{searchTerm}"</p>
-                  <p className="text-sm text-[#0F0F0F]/40 mt-2">Try different keywords or browse categories below</p>
+                  <Search className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No results found for "{searchTerm}"</p>
+                  <p className="text-sm text-muted-foreground mt-2">Try different keywords or browse categories below</p>
                 </CardContent>
               </Card>
             ) : (
@@ -1107,7 +1107,7 @@ export function HelpCenter() {
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all ${
                       activeTab === key
                         ? 'bg-[#2969FF] text-white shadow-lg shadow-[#2969FF]/25'
-                        : 'bg-white text-[#0F0F0F]/70 hover:bg-[#0F0F0F]/5 border border-[#0F0F0F]/10'
+                        : 'bg-card text-foreground/70 hover:bg-[#0F0F0F]/5 border border-border/10'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -1118,10 +1118,10 @@ export function HelpCenter() {
             </div>
 
             {/* Category Header */}
-            <Card className="border-[#0F0F0F]/10 rounded-2xl mb-6 overflow-hidden">
+            <Card className="border-border/10 rounded-2xl mb-6 overflow-hidden">
               <div className={`${currentCategory.color} p-6`}>
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-xl bg-card/20 flex items-center justify-center">
                     <currentCategory.icon className="w-7 h-7 text-white" />
                   </div>
                   <div>
@@ -1147,13 +1147,13 @@ export function HelpCenter() {
         )}
 
         {/* Still Need Help */}
-        <Card className="border-[#0F0F0F]/10 rounded-2xl mt-8 overflow-hidden">
+        <Card className="border-border/10 rounded-2xl mt-8 overflow-hidden">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-[#2969FF]/10 flex items-center justify-center mx-auto mb-4">
               <Mail className="w-8 h-8 text-[#2969FF]" />
             </div>
-            <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Still Need Help?</h3>
-            <p className="text-[#0F0F0F]/60 mb-6">
+            <h3 className="text-xl font-semibold text-foreground mb-2">Still Need Help?</h3>
+            <p className="text-muted-foreground mb-6">
               Cannot find what you are looking for? Our support team is here to help.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -1167,7 +1167,7 @@ export function HelpCenter() {
               </Button>
               <Button 
                 variant="outline" 
-                className="rounded-xl px-6 border-[#0F0F0F]/20"
+                className="rounded-xl px-6 border-border/20"
                 asChild
               >
                 <Link to="/contact">
@@ -1179,7 +1179,7 @@ export function HelpCenter() {
         </Card>
 
         {/* Footer Note */}
-        <p className="text-center text-sm text-[#0F0F0F]/40 mt-8">
+        <p className="text-center text-sm text-muted-foreground mt-8">
           Last updated: January 2025 • Ticketrack Help Center
         </p>
       </div>

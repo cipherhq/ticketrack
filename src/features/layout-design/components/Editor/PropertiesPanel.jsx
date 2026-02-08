@@ -67,9 +67,9 @@ export function PropertiesPanel() {
 
   if (selectedObjects.length === 0) {
     return (
-      <div className="w-64 bg-white border-l border-gray-200 p-4">
-        <h3 className="font-semibold text-gray-900 text-sm mb-2">Properties</h3>
-        <p className="text-sm text-gray-500">
+      <div className="w-64 bg-card border-l border-border/20 p-4">
+        <h3 className="font-semibold text-foreground text-sm mb-2">Properties</h3>
+        <p className="text-sm text-muted-foreground">
           Select an object to view and edit its properties
         </p>
       </div>
@@ -78,9 +78,9 @@ export function PropertiesPanel() {
 
   if (selectedObjects.length > 1) {
     return (
-      <div className="w-64 bg-white border-l border-gray-200 p-4">
-        <h3 className="font-semibold text-gray-900 text-sm mb-2">Properties</h3>
-        <p className="text-sm text-gray-500 mb-4">
+      <div className="w-64 bg-card border-l border-border/20 p-4">
+        <h3 className="font-semibold text-foreground text-sm mb-2">Properties</h3>
+        <p className="text-sm text-muted-foreground mb-4">
           {selectedObjects.length} objects selected
         </p>
 
@@ -108,10 +108,10 @@ export function PropertiesPanel() {
   }
 
   return (
-    <div className="w-64 bg-white border-l border-gray-200 overflow-y-auto">
+    <div className="w-64 bg-card border-l border-border/20 overflow-y-auto">
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900 text-sm">Properties</h3>
+          <h3 className="font-semibold text-foreground text-sm">Properties</h3>
           <div className="flex gap-1">
             <Button
               variant="ghost"
@@ -139,7 +139,7 @@ export function PropertiesPanel() {
               className="w-4 h-4 rounded"
               style={{ backgroundColor: localValues.color }}
             />
-            <span className="text-sm text-gray-600 capitalize">
+            <span className="text-sm text-muted-foreground capitalize">
               {selectedObject.object_type?.replace('_', ' ')}
             </span>
           </div>
@@ -169,7 +169,7 @@ export function PropertiesPanel() {
             <Label className="text-xs">Position</Label>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div>
-                <Label htmlFor="x" className="text-xs text-gray-500">
+                <Label htmlFor="x" className="text-xs text-muted-foreground">
                   X
                 </Label>
                 <Input
@@ -183,7 +183,7 @@ export function PropertiesPanel() {
                 />
               </div>
               <div>
-                <Label htmlFor="y" className="text-xs text-gray-500">
+                <Label htmlFor="y" className="text-xs text-muted-foreground">
                   Y
                 </Label>
                 <Input
@@ -204,7 +204,7 @@ export function PropertiesPanel() {
             <Label className="text-xs">Size</Label>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div>
-                <Label htmlFor="width" className="text-xs text-gray-500">
+                <Label htmlFor="width" className="text-xs text-muted-foreground">
                   Width
                 </Label>
                 <Input
@@ -218,7 +218,7 @@ export function PropertiesPanel() {
                 />
               </div>
               <div>
-                <Label htmlFor="height" className="text-xs text-gray-500">
+                <Label htmlFor="height" className="text-xs text-muted-foreground">
                   Height
                 </Label>
                 <Input

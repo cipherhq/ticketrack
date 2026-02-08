@@ -171,9 +171,9 @@ export function AddressAutocomplete({
         <Input
           placeholder="Loading maps..."
           disabled
-          className="h-12 rounded-xl bg-white border border-[#0F0F0F]/10 pl-10"
+          className="h-12 rounded-xl bg-card border border-border/10 pl-10"
         />
-        <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40 animate-spin" />
+        <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
       </div>
     );
   }
@@ -185,14 +185,14 @@ export function AddressAutocomplete({
         value={inputValue}
         onChange={handleInputChange}
         placeholder={placeholder}
-        className="h-12 rounded-xl bg-white border border-[#0F0F0F]/10 pl-10 pr-10"
+        className="h-12 rounded-xl bg-card border border-border/10 pl-10 pr-10"
       />
-      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40 pointer-events-none" />
+      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
       {inputValue && (
         <button
           type="button"
           onClick={clearInput}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40 hover:text-[#0F0F0F]/60 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground hover:text-muted-foreground transition-colors"
         >
           <X className="w-5 h-5" />
         </button>

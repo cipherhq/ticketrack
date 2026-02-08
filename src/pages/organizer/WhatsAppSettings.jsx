@@ -116,20 +116,20 @@ export function WhatsAppSettings() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-semibold text-[#0F0F0F]">WhatsApp Settings</h2>
-        <p className="text-[#0F0F0F]/60 mt-1">Configure your WhatsApp Business integration</p>
+        <h2 className="text-2xl font-semibold text-foreground">WhatsApp Settings</h2>
+        <p className="text-muted-foreground mt-1">Configure your WhatsApp Business integration</p>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${config.is_verified ? 'bg-green-100' : 'bg-gray-100'}`}>
-                <MessageSquare className={`w-6 h-6 ${config.is_verified ? 'text-green-600' : 'text-gray-400'}`} />
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${config.is_verified ? 'bg-green-100' : 'bg-muted'}`}>
+                <MessageSquare className={`w-6 h-6 ${config.is_verified ? 'text-green-600' : 'text-muted-foreground'}`} />
               </div>
               <div>
-                <p className="font-medium text-[#0F0F0F]">WhatsApp Integration</p>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="font-medium text-foreground">WhatsApp Integration</p>
+                <p className="text-sm text-muted-foreground">
                   {config.provider === 'manual' ? 'Using manual wa.me links' : 'Connected via ' + (providers.find(p => p.value === config.provider)?.label || '')}
                 </p>
               </div>
@@ -139,13 +139,13 @@ export function WhatsAppSettings() {
             ) : config.provider !== 'manual' ? (
               <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>
             ) : (
-              <Badge className="bg-gray-100 text-gray-700">Manual Mode</Badge>
+              <Badge className="bg-muted text-foreground/80">Manual Mode</Badge>
             )}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Select Provider</CardTitle>
           <CardDescription>Choose how you want to send WhatsApp messages</CardDescription>
@@ -157,7 +157,7 @@ export function WhatsAppSettings() {
                 key={provider.value}
                 onClick={() => setConfig({ ...config, provider: provider.value })}
                 className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  config.provider === provider.value ? 'border-green-500 bg-green-50' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                  config.provider === provider.value ? 'border-green-500 bg-green-50' : 'border-border/10 hover:border-border/20'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -167,11 +167,11 @@ export function WhatsAppSettings() {
                     {config.provider === provider.value && <CheckCircle className="w-3 h-3 text-white" />}
                   </div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">
+                    <p className="font-medium text-foreground">
                       {provider.label}
                       {provider.free && <Badge className="ml-2 bg-blue-100 text-blue-700 text-xs">Free</Badge>}
                     </p>
-                    <p className="text-sm text-[#0F0F0F]/60">{provider.description}</p>
+                    <p className="text-sm text-muted-foreground">{provider.description}</p>
                   </div>
                 </div>
               </div>
@@ -181,7 +181,7 @@ export function WhatsAppSettings() {
       </Card>
 
       {config.provider !== 'manual' && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Key className="w-5 h-5" />
@@ -228,7 +228,7 @@ export function WhatsAppSettings() {
         </Card>
       )}
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>How It Works</CardTitle>
         </CardHeader>
@@ -237,30 +237,30 @@ export function WhatsAppSettings() {
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-[#2969FF] text-white flex items-center justify-center text-sm font-medium">1</div>
-                <p className="text-[#0F0F0F]/80">Go to Communications and select WhatsApp</p>
+                <p className="text-foreground/80">Go to Communications and select WhatsApp</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-[#2969FF] text-white flex items-center justify-center text-sm font-medium">2</div>
-                <p className="text-[#0F0F0F]/80">Select an event and compose your message</p>
+                <p className="text-foreground/80">Select an event and compose your message</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-[#2969FF] text-white flex items-center justify-center text-sm font-medium">3</div>
-                <p className="text-[#0F0F0F]/80">Click Open for each attendee to send via WhatsApp</p>
+                <p className="text-foreground/80">Click Open for each attendee to send via WhatsApp</p>
               </div>
             </div>
           ) : (
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-medium">1</div>
-                <p className="text-[#0F0F0F]/80">Configure your API credentials above</p>
+                <p className="text-foreground/80">Configure your API credentials above</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-medium">2</div>
-                <p className="text-[#0F0F0F]/80">Messages will be sent automatically via the API</p>
+                <p className="text-foreground/80">Messages will be sent automatically via the API</p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-medium">3</div>
-                <p className="text-[#0F0F0F]/80">Track delivery status in your Communications history</p>
+                <p className="text-foreground/80">Track delivery status in your Communications history</p>
               </div>
             </div>
           )}

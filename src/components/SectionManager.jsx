@@ -128,8 +128,8 @@ export function SectionManager({ sections, onSectionsChange, eventId }) {
                 style={{ backgroundColor: section.display_color }}
               />
               <div>
-                <h4 className="font-medium text-gray-900">{section.name}</h4>
-                <p className="text-sm text-gray-500">{typeInfo.label}</p>
+                <h4 className="font-medium text-foreground">{section.name}</h4>
+                <p className="text-sm text-muted-foreground">{typeInfo.label}</p>
               </div>
             </div>
             <div className="flex items-center space-x-1">
@@ -159,14 +159,14 @@ export function SectionManager({ sections, onSectionsChange, eventId }) {
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <div className="flex items-center text-gray-600 mb-1">
+              <div className="flex items-center text-muted-foreground mb-1">
                 <Users className="w-3 h-3 mr-1" />
                 Capacity
               </div>
               <div className="font-medium">{section.capacity || 0}</div>
             </div>
             <div>
-              <div className="flex items-center text-gray-600 mb-1">
+              <div className="flex items-center text-muted-foreground mb-1">
                 <DollarSign className="w-3 h-3 mr-1" />
                 Multiplier
               </div>
@@ -175,8 +175,8 @@ export function SectionManager({ sections, onSectionsChange, eventId }) {
           </div>
 
           {area > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="text-xs text-gray-500">
+            <div className="mt-3 pt-3 border-t border-border/10">
+              <div className="text-xs text-muted-foreground">
                 Area: {area.toFixed(1)} m²
               </div>
             </div>
@@ -317,23 +317,23 @@ export function SectionManager({ sections, onSectionsChange, eventId }) {
             </div>
 
             {/* Section Statistics */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Section Statistics</h4>
+            <div className="bg-background p-4 rounded-lg">
+              <h4 className="font-medium text-foreground mb-2">Section Statistics</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Area:</span>
+                  <span className="text-muted-foreground">Area:</span>
                   <span className="ml-2 font-medium">
                     {calculateSectionArea(selectedSection.coordinates).toFixed(1)} m²
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Coordinates:</span>
+                  <span className="text-muted-foreground">Coordinates:</span>
                   <span className="ml-2 font-medium">
                     {selectedSection.coordinates?.length || 0} points
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Density:</span>
+                  <span className="text-muted-foreground">Density:</span>
                   <span className="ml-2 font-medium">
                     {selectedSection.capacity && selectedSection.coordinates ?
                       (selectedSection.capacity / calculateSectionArea(selectedSection.coordinates)).toFixed(1) :
@@ -341,7 +341,7 @@ export function SectionManager({ sections, onSectionsChange, eventId }) {
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Ticket Types:</span>
+                  <span className="text-muted-foreground">Ticket Types:</span>
                   <span className="ml-2 font-medium">{ticketTypes.length}</span>
                 </div>
               </div>
@@ -357,8 +357,8 @@ export function SectionManager({ sections, onSectionsChange, eventId }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">Section Management</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-medium text-foreground">Section Management</h3>
+          <p className="text-sm text-muted-foreground">
             Configure sections with pricing, capacity, and accessibility
           </p>
         </div>
@@ -372,9 +372,9 @@ export function SectionManager({ sections, onSectionsChange, eventId }) {
       {sections.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Sections Yet</h3>
-            <p className="text-gray-500 mb-4">
+            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No Sections Yet</h3>
+            <p className="text-muted-foreground mb-4">
               Create sections to organize your venue layout
             </p>
             <Button onClick={handleAddSection}>
@@ -404,25 +404,25 @@ export function SectionManager({ sections, onSectionsChange, eventId }) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-blue-600">{sections.length}</div>
-                <div className="text-sm text-gray-500">Total Sections</div>
+                <div className="text-sm text-muted-foreground">Total Sections</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600">
                   {sections.reduce((sum, s) => sum + (s.capacity || 0), 0)}
                 </div>
-                <div className="text-sm text-gray-500">Total Capacity</div>
+                <div className="text-sm text-muted-foreground">Total Capacity</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-purple-600">
                   {sections.filter(s => s.accessibility_features?.length > 0).length}
                 </div>
-                <div className="text-sm text-gray-500">Accessible Sections</div>
+                <div className="text-sm text-muted-foreground">Accessible Sections</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-orange-600">
                   {sections.reduce((sum, s) => sum + calculateSectionArea(s.coordinates), 0).toFixed(0)}
                 </div>
-                <div className="text-sm text-gray-500">Total Area (m²)</div>
+                <div className="text-sm text-muted-foreground">Total Area (m²)</div>
               </div>
             </div>
           </CardContent>

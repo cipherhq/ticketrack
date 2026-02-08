@@ -428,7 +428,7 @@ export function OrganizerCommunications() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Communications</h1>
-            <p className="text-[#0F0F0F]/60">Send emails to your attendees, followers, and team</p>
+            <p className="text-muted-foreground">Send emails to your attendees, followers, and team</p>
           </div>
           <Button onClick={() => setView('create')} className="bg-[#2969FF] text-white rounded-xl">
             <Mail className="w-4 h-4 mr-2" />
@@ -438,36 +438,36 @@ export function OrganizerCommunications() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
                 <Mail className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-2xl font-semibold">{campaigns.length}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Total Campaigns</p>
+                <p className="text-xs text-muted-foreground">Total Campaigns</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <Send className="w-5 h-5 text-green-600" />
               </div>
               <div>
                 <p className="text-2xl font-semibold">{campaigns.reduce((sum, c) => sum + (c.total_sent || 0), 0)}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Emails Sent</p>
+                <p className="text-xs text-muted-foreground">Emails Sent</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-purple-600" />
               </div>
               <div>
                 <p className="text-2xl font-semibold">{campaigns.filter(c => c.status === 'scheduled').length}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Scheduled</p>
+                <p className="text-xs text-muted-foreground">Scheduled</p>
               </div>
             </CardContent>
           </Card>
@@ -479,10 +479,10 @@ export function OrganizerCommunications() {
             <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
           </div>
         ) : campaigns.length === 0 ? (
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="py-12 text-center">
-              <Mail className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
-              <p className="text-[#0F0F0F]/60 mb-4">No campaigns yet</p>
+              <Mail className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">No campaigns yet</p>
               <Button onClick={() => setView('create')} className="bg-[#2969FF] text-white rounded-xl">
                 Create Your First Campaign
               </Button>
@@ -491,7 +491,7 @@ export function OrganizerCommunications() {
         ) : (
           <div className="space-y-3">
             {campaigns.map(campaign => (
-              <Card key={campaign.id} className="rounded-2xl border-[#0F0F0F]/10 hover:shadow-md transition-shadow">
+              <Card key={campaign.id} className="rounded-2xl border-border/10 hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
@@ -501,14 +501,14 @@ export function OrganizerCommunications() {
                           campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
                           campaign.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
                           campaign.status === 'sending' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-700'
+                          'bg-muted text-foreground/80'
                         }>
                           {campaign.status === 'sent' && <CheckCircle className="w-3 h-3 mr-1" />}
                           {campaign.status === 'scheduled' && <Clock className="w-3 h-3 mr-1" />}
                           {campaign.status}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Users className="w-3.5 h-3.5" />
                           {campaign.total_sent || campaign.total_recipients || 0} recipients
@@ -541,7 +541,7 @@ export function OrganizerCommunications() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">New Campaign</h1>
-          <p className="text-[#0F0F0F]/60">
+          <p className="text-muted-foreground">
             Step {step} of 3: {step === 1 ? 'Select Recipients' : step === 2 ? 'Compose Message' : 'Review & Send'}
           </p>
         </div>
@@ -556,18 +556,18 @@ export function OrganizerCommunications() {
           <div key={s} className="flex items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               s === step ? 'bg-[#2969FF] text-white' : 
-              s < step ? 'bg-green-500 text-white' : 'bg-[#F4F6FA] text-[#0F0F0F]/40'
+              s < step ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'
             }`}>
               {s < step ? <CheckCircle className="w-4 h-4" /> : s}
             </div>
-            {s < 3 && <div className={`w-16 h-1 mx-2 rounded ${s < step ? 'bg-green-500' : 'bg-[#F4F6FA]'}`} />}
+            {s < 3 && <div className={`w-16 h-1 mx-2 rounded ${s < step ? 'bg-green-500' : 'bg-muted'}`} />}
           </div>
         ))}
       </div>
 
       {/* Step 1: Recipients */}
       {step === 1 && (
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-6 space-y-6">
             <div>
               <Label className="text-base font-medium mb-3 block">Who do you want to email?</Label>
@@ -579,18 +579,18 @@ export function OrganizerCommunications() {
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
                       form.recipientType === type.id 
                         ? 'border-[#2969FF] bg-[#2969FF]/5' 
-                        : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                        : 'border-border/10 hover:border-border/20'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        form.recipientType === type.id ? 'bg-[#2969FF] text-white' : 'bg-[#F4F6FA]'
+                        form.recipientType === type.id ? 'bg-[#2969FF] text-white' : 'bg-muted'
                       }`}>
                         <type.icon className="w-5 h-5" />
                       </div>
                       <div>
                         <p className="font-medium">{type.label}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">{type.description}</p>
+                        <p className="text-sm text-muted-foreground">{type.description}</p>
                       </div>
                     </div>
                   </button>
@@ -640,7 +640,7 @@ export function OrganizerCommunications() {
       {step === 2 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Editor */}
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="p-6 space-y-4">
               {/* Template Selection */}
               <div>
@@ -653,7 +653,7 @@ export function OrganizerCommunications() {
                       className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all ${
                         form.template === t.id 
                           ? 'bg-[#2969FF] text-white' 
-                          : 'bg-[#F4F6FA] hover:bg-[#E8EBF0]'
+                          : 'bg-muted hover:bg-[#E8EBF0]'
                       }`}
                     >
                       <t.icon className="w-3.5 h-3.5" />
@@ -700,7 +700,7 @@ export function OrganizerCommunications() {
               {/* Body */}
               <div>
                 <Label>Message</Label>
-                <div className="mt-1 rounded-xl overflow-hidden border border-[#0F0F0F]/10">
+                <div className="mt-1 rounded-xl overflow-hidden border border-border/10">
                   <ReactQuill
                     theme="snow"
                     value={form.body}
@@ -720,7 +720,7 @@ export function OrganizerCommunications() {
                     <button
                       key={v.key}
                       onClick={() => setForm(f => ({ ...f, body: f.body + v.key }))}
-                      className="px-2 py-1 bg-[#F4F6FA] hover:bg-[#E8EBF0] rounded text-xs font-mono"
+                      className="px-2 py-1 bg-muted hover:bg-[#E8EBF0] rounded text-xs font-mono"
                       title={v.label}
                     >
                       {v.key}
@@ -745,19 +745,19 @@ export function OrganizerCommunications() {
           </Card>
 
           {/* Preview */}
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Eye className="w-4 h-4 text-[#0F0F0F]/60" />
+                <Eye className="w-4 h-4 text-muted-foreground" />
                 <Label>Preview</Label>
               </div>
-              <div className="border border-[#0F0F0F]/10 rounded-xl overflow-hidden">
-                <div className="bg-[#F4F6FA] p-3 border-b border-[#0F0F0F]/10">
+              <div className="border border-border/10 rounded-xl overflow-hidden">
+                <div className="bg-muted p-3 border-b border-border/10">
                   <p className="text-sm"><strong>Subject:</strong> {form.subject || '(No subject)'}</p>
                 </div>
                 <div
                   className="p-4 prose prose-sm max-w-none min-h-[300px]"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml || '<p class="text-gray-400">Your message will appear here...</p>', { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml || '<p class="text-muted-foreground">Your message will appear here...</p>', { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
                 />
               </div>
             </CardContent>
@@ -767,26 +767,26 @@ export function OrganizerCommunications() {
 
       {/* Step 3: Review & Send */}
       {step === 3 && (
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-6 space-y-6">
             <div className="text-center py-4">
               <div className="w-16 h-16 rounded-full bg-[#2969FF]/10 flex items-center justify-center mx-auto mb-4">
                 <Send className="w-8 h-8 text-[#2969FF]" />
               </div>
               <h2 className="text-xl font-semibold mb-2">Ready to Send</h2>
-              <p className="text-[#0F0F0F]/60">
+              <p className="text-muted-foreground">
                 Your campaign will be sent to <strong>{recipientCount}</strong> recipients
               </p>
             </div>
 
             {/* Summary */}
-            <div className="bg-[#F4F6FA] rounded-xl p-4 space-y-2">
+            <div className="bg-muted rounded-xl p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Recipients</span>
+                <span className="text-muted-foreground">Recipients</span>
                 <span className="font-medium">{RECIPIENT_TYPES.find(t => t.id === form.recipientType)?.label} ({recipientCount})</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Subject</span>
+                <span className="text-muted-foreground">Subject</span>
                 <span className="font-medium truncate max-w-[200px]">{form.subject}</span>
               </div>
             </div>
@@ -800,7 +800,7 @@ export function OrganizerCommunications() {
                 onChange={e => setForm(f => ({ ...f, scheduleFor: e.target.value }))}
                 className="rounded-xl mt-1"
               />
-              <p className="text-xs text-[#0F0F0F]/40 mt-1">Leave empty to send immediately</p>
+              <p className="text-xs text-muted-foreground mt-1">Leave empty to send immediately</p>
             </div>
 
             <div className="flex justify-between pt-4">

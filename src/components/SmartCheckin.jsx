@@ -185,7 +185,7 @@ export function SmartCheckin() {
       case 'error':
         return <XCircle className="w-16 h-16 text-red-500" />
       default:
-        return <Smartphone className="w-16 h-16 text-gray-400" />
+        return <Smartphone className="w-16 h-16 text-muted-foreground" />
     }
   }
 
@@ -195,7 +195,7 @@ export function SmartCheckin() {
         return (
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2">Ready to Check In</h2>
-            <p className="text-gray-600 mb-4">Use your phone's NFC, scan QR code, or tap to check in manually</p>
+            <p className="text-muted-foreground mb-4">Use your phone's NFC, scan QR code, or tap to check in manually</p>
             <div className="flex justify-center gap-4 mb-4">
               <Badge variant="outline" className="flex items-center gap-1">
                 <Zap className="w-3 h-3" />
@@ -215,46 +215,46 @@ export function SmartCheckin() {
         return (
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2">Processing...</h2>
-            <p className="text-gray-600">{message}</p>
+            <p className="text-muted-foreground">{message}</p>
           </div>
         )
       case 'success':
         return (
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2 text-green-600">Check-in Successful!</h2>
-            <p className="text-gray-600 mb-4">{message}</p>
+            <p className="text-muted-foreground mb-4">{message}</p>
             {checkinData && (
               <div className="bg-green-50 p-4 rounded-lg mb-4">
                 <p className="font-medium">{checkinData.ticketType}</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Checked in at {new Date(checkinData.checkinTime).toLocaleTimeString()}
                 </p>
               </div>
             )}
-            <p className="text-sm text-gray-500">Enjoy the event!</p>
+            <p className="text-sm text-muted-foreground">Enjoy the event!</p>
           </div>
         )
       case 'checked_out':
         return (
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2 text-blue-600">Checked Out</h2>
-            <p className="text-gray-600 mb-4">{message}</p>
+            <p className="text-muted-foreground mb-4">{message}</p>
             {checkinData && (
               <div className="bg-blue-50 p-4 rounded-lg mb-4">
                 <p className="font-medium">Session Summary</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Duration: {Math.floor(checkinData.duration / 60)}h {checkinData.duration % 60}m
                 </p>
               </div>
             )}
-            <p className="text-sm text-gray-500">Thanks for attending!</p>
+            <p className="text-sm text-muted-foreground">Thanks for attending!</p>
           </div>
         )
       case 'error':
         return (
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2 text-red-600">Check-in Failed</h2>
-            <p className="text-gray-600 mb-4">{message}</p>
+            <p className="text-muted-foreground mb-4">{message}</p>
             <Button onClick={() => setStatus('scanning')} variant="outline">
               Try Again
             </Button>
@@ -265,7 +265,7 @@ export function SmartCheckin() {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
@@ -277,13 +277,13 @@ export function SmartCheckin() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-lg">
             {event.title}
           </CardTitle>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             {event.venues?.iot_enabled ? 'Smart Venue Check-in' : 'Standard Check-in'}
           </p>
         </CardHeader>

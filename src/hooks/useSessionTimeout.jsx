@@ -186,23 +186,23 @@ export function SessionTimeoutProvider({ children, ...options }) {
       {/* Session Timeout Warning Modal */}
       {showWarning && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-          <div className="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-xl">
+          <div className="bg-card rounded-2xl p-6 max-w-md mx-4 shadow-xl">
             <div className="text-center">
               <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl font-semibold text-foreground mb-2">
                 Session Expiring Soon
               </h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Your session will expire in <span className="font-bold text-orange-600">{formatRemainingTime()}</span> due to inactivity.
               </p>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => window.location.href = '/login'}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 text-foreground/80 bg-muted rounded-xl hover:bg-muted transition-colors"
                 >
                   Log Out
                 </button>

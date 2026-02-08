@@ -139,7 +139,7 @@ export function AdminPayouts() {
       case 'rejected':
         return <Badge className="bg-red-500 text-white rounded-lg">{status === 'failed' ? 'Failed' : 'Rejected'}</Badge>;
       default:
-        return <Badge className="bg-gray-500 text-white rounded-lg">{status}</Badge>;
+        return <Badge className="bg-background0 text-white rounded-lg">{status}</Badge>;
     }
   };
 
@@ -191,8 +191,8 @@ export function AdminPayouts() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Payout Management</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage organizer payouts</p>
+          <h2 className="text-2xl font-semibold text-foreground">Payout Management</h2>
+          <p className="text-muted-foreground mt-1">Manage organizer payouts</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" onClick={loadPayouts} className="rounded-xl">
@@ -210,13 +210,13 @@ export function AdminPayouts() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Pending Payouts</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.pending}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatMultiCurrency(stats.pendingByCurrency)}</p>
+                <p className="text-muted-foreground mb-1">Pending Payouts</p>
+                <h3 className="text-2xl font-semibold text-foreground">{stats.pending}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{formatMultiCurrency(stats.pendingByCurrency)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-yellow-500" />
@@ -225,13 +225,13 @@ export function AdminPayouts() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Processing</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.processing}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatMultiCurrency(stats.processingByCurrency)}</p>
+                <p className="text-muted-foreground mb-1">Processing</p>
+                <h3 className="text-2xl font-semibold text-foreground">{stats.processing}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{formatMultiCurrency(stats.processingByCurrency)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-[#2969FF]" />
@@ -240,13 +240,13 @@ export function AdminPayouts() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Completed</p>
+                <p className="text-muted-foreground mb-1">Completed</p>
                 <h3 className="text-2xl font-semibold text-green-600">{stats.completed}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatMultiCurrency(stats.completedByCurrency)}</p>
+                <p className="text-sm text-muted-foreground mt-1">{formatMultiCurrency(stats.completedByCurrency)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-500" />
@@ -255,13 +255,13 @@ export function AdminPayouts() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Failed</p>
+                <p className="text-muted-foreground mb-1">Failed</p>
                 <h3 className="text-2xl font-semibold text-red-600">{stats.failed}</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{formatMultiCurrency(stats.failedByCurrency)}</p>
+                <p className="text-sm text-muted-foreground mt-1">{formatMultiCurrency(stats.failedByCurrency)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
                 <AlertCircle className="w-5 h-5 text-red-500" />
@@ -272,16 +272,16 @@ export function AdminPayouts() {
       </div>
 
       {/* Search & Filter */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search payouts..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white border-[#0F0F0F]/10 rounded-xl"
+                className="pl-10 bg-card border-border/10 rounded-xl"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -301,46 +301,46 @@ export function AdminPayouts() {
       </Card>
 
       {/* Payouts Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">All Payout Requests ({filteredPayouts.length})</CardTitle>
+          <CardTitle className="text-foreground">All Payout Requests ({filteredPayouts.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#0F0F0F]/10">
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Organizer</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Event</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Amount</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Fee</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Net Payout</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Bank Account</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Date</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                  <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                <tr className="border-b border-border/10">
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Organizer</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Event</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Amount</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Fee</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Net Payout</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Bank Account</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Date</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Status</th>
+                  <th className="text-right py-4 px-4 text-muted-foreground font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPayouts.map((payout) => (
-                  <tr key={payout.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                  <tr key={payout.id} className="border-b border-border/5 hover:bg-muted/50">
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F] font-medium">{payout.organizers?.business_name || 'Unknown'}</p>
+                      <p className="text-foreground font-medium">{payout.organizers?.business_name || 'Unknown'}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/80">{payout.events?.title || 'N/A'}</p>
+                      <p className="text-foreground/80">{payout.events?.title || 'N/A'}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]">{formatCurrency(payout.amount, payout.currency)}</p>
+                      <p className="text-foreground">{formatCurrency(payout.amount, payout.currency)}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/60">{formatCurrency(payout.fee, payout.currency)}</p>
+                      <p className="text-muted-foreground">{formatCurrency(payout.fee, payout.currency)}</p>
                     </td>
                     <td className="py-4 px-4">
                       <p className="text-[#2969FF] font-medium">{formatCurrency(payout.net_amount, payout.currency)}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/80 text-sm">
+                      <p className="text-foreground/80 text-sm">
                         {payout.bank_accounts?.bank_name || 'N/A'}
                         {payout.bank_accounts?.account_number && (
                           <span> ••••{payout.bank_accounts.account_number.slice(-4)}</span>
@@ -348,7 +348,7 @@ export function AdminPayouts() {
                       </p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/60">
+                      <p className="text-muted-foreground">
                         {new Date(payout.created_at).toLocaleDateString()}
                       </p>
                     </td>
@@ -357,7 +357,7 @@ export function AdminPayouts() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="rounded-xl">
-                            <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                            <MoreVertical className="w-5 h-5 text-muted-foreground" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
@@ -389,7 +389,7 @@ export function AdminPayouts() {
                 ))}
                 {filteredPayouts.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-[#0F0F0F]/60">
+                    <td colSpan={9} className="py-8 text-center text-muted-foreground">
                       No payouts found
                     </td>
                   </tr>
@@ -404,7 +404,7 @@ export function AdminPayouts() {
       <Dialog open={!!actionDialog} onOpenChange={() => setActionDialog(null)}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-[#0F0F0F]">
+            <DialogTitle className="text-foreground">
               {actionDialog === 'approve' && 'Approve Payout'}
               {actionDialog === 'reject' && 'Reject Payout'}
               {actionDialog === 'complete' && 'Complete Payout'}
@@ -424,38 +424,38 @@ export function AdminPayouts() {
           {actionDialog === 'details' && selectedPayout && (
             <div className="space-y-3 py-4">
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Organizer:</span>
-                <span className="text-[#0F0F0F]">{selectedPayout.organizers?.business_name}</span>
+                <span className="text-muted-foreground">Organizer:</span>
+                <span className="text-foreground">{selectedPayout.organizers?.business_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Event:</span>
-                <span className="text-[#0F0F0F]">{selectedPayout.events?.title || 'N/A'}</span>
+                <span className="text-muted-foreground">Event:</span>
+                <span className="text-foreground">{selectedPayout.events?.title || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Gross Amount:</span>
-                <span className="text-[#0F0F0F]">{formatCurrency(selectedPayout.amount, selectedPayout.currency)}</span>
+                <span className="text-muted-foreground">Gross Amount:</span>
+                <span className="text-foreground">{formatCurrency(selectedPayout.amount, selectedPayout.currency)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Platform Fee:</span>
-                <span className="text-[#0F0F0F]">{formatCurrency(selectedPayout.fee, selectedPayout.currency)}</span>
+                <span className="text-muted-foreground">Platform Fee:</span>
+                <span className="text-foreground">{formatCurrency(selectedPayout.fee, selectedPayout.currency)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Net Payout:</span>
+                <span className="text-muted-foreground">Net Payout:</span>
                 <span className="text-[#2969FF] font-medium">{formatCurrency(selectedPayout.net_amount, selectedPayout.currency)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Bank Account:</span>
-                <span className="text-[#0F0F0F]">
+                <span className="text-muted-foreground">Bank Account:</span>
+                <span className="text-foreground">
                   {selectedPayout.bank_accounts?.bank_name} - {selectedPayout.bank_accounts?.account_name}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#0F0F0F]/60">Status:</span>
+                <span className="text-muted-foreground">Status:</span>
                 {getStatusBadge(selectedPayout.status)}
               </div>
               {selectedPayout.failure_reason && (
                 <div className="flex justify-between">
-                  <span className="text-[#0F0F0F]/60">Failure Reason:</span>
+                  <span className="text-muted-foreground">Failure Reason:</span>
                   <span className="text-red-600">{selectedPayout.failure_reason}</span>
                 </div>
               )}
@@ -465,7 +465,7 @@ export function AdminPayouts() {
             <Button
               variant="outline"
               onClick={() => setActionDialog(null)}
-              className="rounded-xl border-[#0F0F0F]/10"
+              className="rounded-xl border-border/10"
             >
               {actionDialog === 'details' ? 'Close' : 'Cancel'}
             </Button>

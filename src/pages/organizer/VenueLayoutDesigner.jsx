@@ -2673,7 +2673,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           variant="ghost"
           size="sm"
           onClick={() => navigate(`/organizer/venues`)}
-          className="text-white/70 hover:text-white hover:bg-white/10"
+          className="text-white/70 hover:text-white hover:bg-card/10"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back
@@ -2698,7 +2698,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           size="icon"
           onClick={undo}
           disabled={historyIndex <= 0}
-          className="text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30"
+          className="text-white/60 hover:text-white hover:bg-card/10 disabled:opacity-30"
         >
           <Undo className="w-4 h-4" />
         </Button>
@@ -2707,7 +2707,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           size="icon"
           onClick={redo}
           disabled={historyIndex >= history.length - 1}
-          className="text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30"
+          className="text-white/60 hover:text-white hover:bg-card/10 disabled:opacity-30"
         >
           <Redo className="w-4 h-4" />
         </Button>
@@ -2719,7 +2719,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           variant="ghost"
           size="icon"
           onClick={() => setZoom(z => Math.max(25, z - 10))}
-          className="text-white/60 hover:text-white hover:bg-white/10"
+          className="text-white/60 hover:text-white hover:bg-card/10"
         >
           <ZoomOut className="w-4 h-4" />
         </Button>
@@ -2728,7 +2728,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           variant="ghost"
           size="icon"
           onClick={() => setZoom(z => Math.min(150, z + 10))}
-          className="text-white/60 hover:text-white hover:bg-white/10"
+          className="text-white/60 hover:text-white hover:bg-card/10"
         >
           <ZoomIn className="w-4 h-4" />
         </Button>
@@ -2740,7 +2740,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           variant="ghost"
           size="icon"
           onClick={() => setShowGrid(!showGrid)}
-          className={`${showGrid ? 'text-[#2969FF]' : 'text-white/60'} hover:text-white hover:bg-white/10`}
+          className={`${showGrid ? 'text-[#2969FF]' : 'text-white/60'} hover:text-white hover:bg-card/10`}
         >
           <Grid className="w-4 h-4" />
         </Button>
@@ -2752,7 +2752,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           variant="ghost"
           size="sm"
           onClick={() => setAiPanelOpen(!aiPanelOpen)}
-          className={`${aiPanelOpen ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-white/10'}`}
+          className={`${aiPanelOpen ? 'bg-[#2969FF] text-white' : 'text-white/60 hover:text-white hover:bg-card/10'}`}
         >
           <Bot className="w-4 h-4 mr-1" />
           AI Help
@@ -2765,7 +2765,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           variant="ghost"
           size="sm"
           onClick={exportToPDF}
-          className="text-white/60 hover:text-white hover:bg-white/10"
+          className="text-white/60 hover:text-white hover:bg-card/10"
         >
           <Download className="w-4 h-4 mr-1" />
           Export PDF
@@ -2778,7 +2778,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           variant="ghost"
           size="sm"
           onClick={() => setShowQuestionnaire(true)}
-          className="text-white/60 hover:text-white hover:bg-white/10"
+          className="text-white/60 hover:text-white hover:bg-card/10"
         >
           <Wand2 className="w-4 h-4 mr-1" />
           Generate Layout
@@ -2791,7 +2791,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           variant="ghost"
           size="sm"
           onClick={loadSampleDesign}
-          className="text-white/60 hover:text-white hover:bg-white/10"
+          className="text-white/60 hover:text-white hover:bg-card/10"
         >
           <Star className="w-4 h-4 mr-1" />
           Sample
@@ -2853,7 +2853,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                   <div key={category.id}>
                     <button
                       className={`w-full flex items-center gap-2 px-3 py-2 text-xs ${
-                        activeCategory === category.id ? 'bg-[#2969FF]/20 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
+                        activeCategory === category.id ? 'bg-[#2969FF]/20 text-white' : 'text-white/60 hover:bg-card/5 hover:text-white'
                       }`}
                       onClick={() => setActiveCategory(activeCategory === category.id ? '' : category.id)}
                     >
@@ -2902,7 +2902,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           ) : (
             <button
               onClick={() => setLeftPanelOpen(true)}
-              className="flex-1 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5"
+              className="flex-1 flex items-center justify-center text-white/40 hover:text-white hover:bg-card/5"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -2923,7 +2923,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
               width={canvasWidth * (zoom / 100)}
               height={canvasHeight * (zoom / 100)}
               viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
-              className="bg-white rounded shadow-xl"
+              className="bg-card rounded shadow-xl"
               onMouseDown={handleCanvasMouseDown}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
@@ -3086,7 +3086,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                   variant="ghost"
                   size="sm"
                   onClick={() => handleAiQuery('What\'s my current capacity?')}
-                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-white/10"
+                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-card/10"
                 >
                   <Users className="w-3 h-3 mr-1" />
                   Capacity
@@ -3095,7 +3095,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                   variant="ghost"
                   size="sm"
                   onClick={() => handleAiQuery('Check spacing between tables')}
-                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-white/10"
+                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-card/10"
                 >
                   <Grid className="w-3 h-3 mr-1" />
                   Spacing
@@ -3104,7 +3104,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                   variant="ghost"
                   size="sm"
                   onClick={() => handleAiQuery('Optimize traffic flow')}
-                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-white/10"
+                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-card/10"
                 >
                   <Zap className="w-3 h-3 mr-1" />
                   Flow
@@ -3113,7 +3113,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                   variant="ghost"
                   size="sm"
                   onClick={() => handleAiQuery('Suggest a wedding layout')}
-                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-white/10"
+                  className="h-7 text-[10px] text-white/70 hover:text-white hover:bg-card/10"
                 >
                   <Lightbulb className="w-3 h-3 mr-1" />
                   Ideas
@@ -3252,7 +3252,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
                         variant="ghost"
                         size="icon"
                         onClick={() => updateObject(selectedObject.id, { rotation: ((selectedObject.rotation || 0) + 45) % 360 })}
-                        className="w-7 h-7 text-white/60 hover:text-white hover:bg-white/10"
+                        className="w-7 h-7 text-white/60 hover:text-white hover:bg-card/10"
                       >
                         <RotateCw className="w-3 h-3" />
                       </Button>
@@ -3313,7 +3313,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
           ) : (
             <button
               onClick={() => setRightPanelOpen(true)}
-              className="flex-1 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5"
+              className="flex-1 flex items-center justify-center text-white/40 hover:text-white hover:bg-card/5"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>

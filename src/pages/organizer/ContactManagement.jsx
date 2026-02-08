@@ -35,7 +35,7 @@ const SOURCE_CONFIG = {
   team: { label: 'Team Member', icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-100' },
   imported: { label: 'Imported', icon: Upload, color: 'text-green-600', bgColor: 'bg-green-100' },
   manual: { label: 'Manual', icon: UserPlus, color: 'text-orange-600', bgColor: 'bg-orange-100' },
-  external: { label: 'External', icon: ExternalLink, color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  external: { label: 'External', icon: ExternalLink, color: 'text-muted-foreground', bgColor: 'bg-muted' },
 };
 
 export function ContactManagement() {
@@ -558,8 +558,8 @@ export function ContactManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Contacts</h1>
-          <p className="text-[#0F0F0F]/60">Manage your audience contacts</p>
+          <h1 className="text-2xl font-bold text-foreground">Contacts</h1>
+          <p className="text-muted-foreground">Manage your audience contacts</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={syncContacts} disabled={syncing}>
@@ -583,7 +583,7 @@ export function ContactManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -591,13 +591,13 @@ export function ContactManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.total.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Total</p>
+                <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -605,13 +605,13 @@ export function ContactManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.withEmail.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">With Email</p>
+                <p className="text-xs text-muted-foreground">With Email</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -619,13 +619,13 @@ export function ContactManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.withPhone.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">With Phone</p>
+                <p className="text-xs text-muted-foreground">With Phone</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -633,13 +633,13 @@ export function ContactManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.emailOptIn.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Email Opt-in</p>
+                <p className="text-xs text-muted-foreground">Email Opt-in</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -647,13 +647,13 @@ export function ContactManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.smsOptIn.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">SMS Opt-in</p>
+                <p className="text-xs text-muted-foreground">SMS Opt-in</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -661,7 +661,7 @@ export function ContactManagement() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.whatsappOptIn.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">WhatsApp</p>
+                <p className="text-xs text-muted-foreground">WhatsApp</p>
               </div>
             </div>
           </CardContent>
@@ -669,12 +669,12 @@ export function ContactManagement() {
       </div>
 
       {/* Filters & Search */}
-      <Card className="border-[#0F0F0F]/10 rounded-xl">
+      <Card className="border-border/10 rounded-xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -726,11 +726,11 @@ export function ContactManagement() {
       </Card>
 
       {/* Contacts Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-xl">
+      <Card className="border-border/10 rounded-xl">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#F4F6FA] border-b border-[#0F0F0F]/10">
+              <thead className="bg-muted border-b border-border/10">
                 <tr>
                   <th className="px-4 py-3 text-left">
                     <Checkbox
@@ -738,19 +738,19 @@ export function ContactManagement() {
                       onCheckedChange={selectAll}
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#0F0F0F]/60 uppercase">Contact</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#0F0F0F]/60 uppercase">Source</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#0F0F0F]/60 uppercase">Channels</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#0F0F0F]/60 uppercase">Tags</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#0F0F0F]/60 uppercase">Added</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-[#0F0F0F]/60 uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Contact</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Source</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Channels</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Tags</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Added</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#0F0F0F]/5">
                 {paginatedContacts.map((contact) => {
                   const source = SOURCE_CONFIG[contact.source_type] || SOURCE_CONFIG.manual;
                   return (
-                    <tr key={contact.id} className="hover:bg-[#F4F6FA]/50">
+                    <tr key={contact.id} className="hover:bg-muted/50">
                       <td className="px-4 py-3">
                         <Checkbox
                           checked={selectedContacts.includes(contact.id)}
@@ -759,8 +759,8 @@ export function ContactManagement() {
                       </td>
                       <td className="px-4 py-3">
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">{contact.full_name || 'Unknown'}</p>
-                          <div className="flex items-center gap-3 text-sm text-[#0F0F0F]/60">
+                          <p className="font-medium text-foreground">{contact.full_name || 'Unknown'}</p>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
                             {contact.email && (
                               <span className="flex items-center gap-1">
                                 <Mail className="w-3 h-3" />
@@ -790,8 +790,8 @@ export function ContactManagement() {
                             </div>
                           )}
                           {contact.email_opt_in === false && contact.email && (
-                            <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center" title="Email unsubscribed">
-                              <Mail className="w-3 h-3 text-gray-400" />
+                            <div className="w-6 h-6 rounded bg-muted flex items-center justify-center" title="Email unsubscribed">
+                              <Mail className="w-3 h-3 text-muted-foreground" />
                             </div>
                           )}
                           {contact.sms_opt_in !== false && contact.phone && (
@@ -800,8 +800,8 @@ export function ContactManagement() {
                             </div>
                           )}
                           {contact.sms_opt_in === false && contact.phone && (
-                            <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center" title="SMS unsubscribed">
-                              <Phone className="w-3 h-3 text-gray-400" />
+                            <div className="w-6 h-6 rounded bg-muted flex items-center justify-center" title="SMS unsubscribed">
+                              <Phone className="w-3 h-3 text-muted-foreground" />
                             </div>
                           )}
                           {contact.whatsapp_opt_in !== false && contact.phone && (
@@ -810,8 +810,8 @@ export function ContactManagement() {
                             </div>
                           )}
                           {contact.whatsapp_opt_in === false && contact.phone && (
-                            <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center" title="WhatsApp unsubscribed">
-                              <MessageSquare className="w-3 h-3 text-gray-400" />
+                            <div className="w-6 h-6 rounded bg-muted flex items-center justify-center" title="WhatsApp unsubscribed">
+                              <MessageSquare className="w-3 h-3 text-muted-foreground" />
                             </div>
                           )}
                         </div>
@@ -830,7 +830,7 @@ export function ContactManagement() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-[#0F0F0F]/60">
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
                         {format(new Date(contact.created_at), 'MMM d, yyyy')}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -866,8 +866,8 @@ export function ContactManagement() {
 
           {filteredContacts.length === 0 && (
             <div className="text-center py-12">
-              <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60 mb-4">
+              <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground mb-4">
                 {searchQuery || sourceFilter !== 'all' || tagFilter !== 'all'
                   ? 'No contacts match your filters'
                   : 'No contacts yet'}
@@ -880,7 +880,7 @@ export function ContactManagement() {
           )}
 
           {filteredContacts.length > pagination.pageSize && (
-            <div className="p-4 border-t border-[#0F0F0F]/10">
+            <div className="p-4 border-t border-border/10">
               <Pagination 
                 currentPage={pagination.page}
                 totalPages={Math.ceil(filteredContacts.length / pagination.pageSize)}
@@ -948,7 +948,7 @@ export function ContactManagement() {
                     className={`px-2 py-1 rounded text-xs ${
                       addForm.tags.includes(tag)
                         ? 'bg-[#2969FF] text-white'
-                        : 'bg-[#F4F6FA] hover:bg-[#E8EBF0]'
+                        : 'bg-muted hover:bg-[#E8EBF0]'
                     }`}
                   >
                     {tag}
@@ -990,14 +990,14 @@ export function ContactManagement() {
             />
             {allTags.length > 0 && (
               <div className="mt-3">
-                <p className="text-sm text-[#0F0F0F]/60 mb-2">Or select existing:</p>
+                <p className="text-sm text-muted-foreground mb-2">Or select existing:</p>
                 <div className="flex flex-wrap gap-2">
                   {allTags.map(tag => (
                     <button
                       key={tag}
                       onClick={() => setNewTag(tag)}
                       className={`px-2 py-1 rounded text-xs ${
-                        newTag === tag ? 'bg-[#2969FF] text-white' : 'bg-[#F4F6FA] hover:bg-[#E8EBF0]'
+                        newTag === tag ? 'bg-[#2969FF] text-white' : 'bg-muted hover:bg-[#E8EBF0]'
                       }`}
                     >
                       {tag}
@@ -1039,7 +1039,7 @@ export function ContactManagement() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">{selectedContact.full_name || 'Unknown'}</h3>
-                  <div className="flex items-center gap-1 text-sm text-[#0F0F0F]/60">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     {(() => {
                       const source = SOURCE_CONFIG[selectedContact.source_type] || SOURCE_CONFIG.manual;
                       return (
@@ -1054,26 +1054,26 @@ export function ContactManagement() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                  <p className="text-xs text-[#0F0F0F]/60">Email</p>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground">Email</p>
                   <p className="font-medium">{selectedContact.email || 'N/A'}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                  <p className="text-xs text-[#0F0F0F]/60">Phone</p>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground">Phone</p>
                   <p className="font-medium">{selectedContact.phone || 'N/A'}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                  <p className="text-xs text-[#0F0F0F]/60">Events Attended</p>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground">Events Attended</p>
                   <p className="font-medium">{selectedContact.total_events_attended || 0}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                  <p className="text-xs text-[#0F0F0F]/60">Total Spent</p>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xs text-muted-foreground">Total Spent</p>
                   <p className="font-medium">₦{(selectedContact.total_spent || 0).toLocaleString()}</p>
                 </div>
               </div>
 
               <div>
-                <p className="text-sm font-medium mb-2">Communication Preferences <span className="text-xs font-normal text-[#0F0F0F]/50">(click to toggle)</span></p>
+                <p className="text-sm font-medium mb-2">Communication Preferences <span className="text-xs font-normal text-muted-foreground">(click to toggle)</span></p>
                 <div className="flex items-center gap-3">
                   <Badge 
                     className={`cursor-pointer hover:opacity-80 transition-opacity ${selectedContact.email_opt_in !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
@@ -1112,11 +1112,11 @@ export function ContactManagement() {
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-[#0F0F0F]/60">First Contact</p>
+                  <p className="text-muted-foreground">First Contact</p>
                   <p>{selectedContact.first_contact_at ? format(new Date(selectedContact.first_contact_at), 'MMM d, yyyy') : 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F]/60">Last Contact</p>
+                  <p className="text-muted-foreground">Last Contact</p>
                   <p>{selectedContact.last_contact_at ? format(new Date(selectedContact.last_contact_at), 'MMM d, yyyy') : 'N/A'}</p>
                 </div>
               </div>

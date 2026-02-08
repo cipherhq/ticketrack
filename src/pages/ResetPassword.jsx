@@ -115,7 +115,7 @@ export function ResetPassword() {
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto mb-4" />
-          <p className="text-[#0F0F0F]/60">Verifying your reset link...</p>
+          <p className="text-muted-foreground">Verifying your reset link...</p>
         </div>
       </div>
     )
@@ -126,15 +126,15 @@ export function ResetPassword() {
     return (
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-8 text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Password Updated!
               </h2>
-              <p className="text-[#0F0F0F]/60 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Your password has been successfully updated. You can now log in with your new password.
               </p>
               <Button
@@ -155,15 +155,15 @@ export function ResetPassword() {
     return (
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-8 text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
-              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Link Expired
               </h2>
-              <p className="text-[#0F0F0F]/60 mb-6">
+              <p className="text-muted-foreground mb-6">
                 {error}
               </p>
               <Button
@@ -183,10 +183,10 @@ export function ResetPassword() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-[#0F0F0F]">Set New Password</CardTitle>
-            <p className="text-[#0F0F0F]/60 mt-2">
+            <CardTitle className="text-2xl text-foreground">Set New Password</CardTitle>
+            <p className="text-muted-foreground mt-2">
               Enter your new password below
             </p>
           </CardHeader>
@@ -202,14 +202,14 @@ export function ResetPassword() {
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     id="newPassword"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter new password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="pl-10 pr-10 rounded-xl border-[#0F0F0F]/10"
+                    className="pl-10 pr-10 rounded-xl border-border/10"
                     required
                     autoFocus
                     autoComplete="new-password"
@@ -217,12 +217,12 @@ export function ResetPassword() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-[#0F0F0F]/50">
+                <p className="text-xs text-muted-foreground">
                   Must be at least 8 characters with uppercase, lowercase, number, and special character
                 </p>
               </div>
@@ -230,14 +230,14 @@ export function ResetPassword() {
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Confirm new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                    className="pl-10 rounded-xl border-border/10"
                     required
                     autoComplete="new-password"
                   />

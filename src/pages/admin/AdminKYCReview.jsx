@@ -472,8 +472,8 @@ export function AdminKYCReview() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F0F0F]">KYC Document Review</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Review and approve organizer identity documents</p>
+          <h1 className="text-2xl font-semibold text-foreground">KYC Document Review</h1>
+          <p className="text-muted-foreground mt-1">Review and approve organizer identity documents</p>
         </div>
         <Button variant="outline" onClick={loadDocuments} className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" /> Refresh
@@ -482,47 +482,47 @@ export function AdminKYCReview() {
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card 
-          className={`border-[#0F0F0F]/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'pending' ? 'ring-2 ring-yellow-500' : ''}`}
+          className={`border-border/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'pending' ? 'ring-2 ring-yellow-500' : ''}`}
           onClick={() => setStatusFilter('pending')}
         >
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">Pending Review</p>
+            <p className="text-sm text-muted-foreground">Pending Review</p>
             <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
           </CardContent>
         </Card>
         <Card 
-          className={`border-[#0F0F0F]/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'awaiting_info' ? 'ring-2 ring-orange-500' : ''}`}
+          className={`border-border/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'awaiting_info' ? 'ring-2 ring-orange-500' : ''}`}
           onClick={() => setStatusFilter('awaiting_info')}
         >
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">Awaiting Info</p>
+            <p className="text-sm text-muted-foreground">Awaiting Info</p>
             <p className="text-2xl font-bold text-orange-600">{stats.awaitingInfo}</p>
           </CardContent>
         </Card>
         <Card 
-          className={`border-[#0F0F0F]/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'approved' ? 'ring-2 ring-green-500' : ''}`}
+          className={`border-border/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'approved' ? 'ring-2 ring-green-500' : ''}`}
           onClick={() => setStatusFilter('approved')}
         >
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">Approved</p>
+            <p className="text-sm text-muted-foreground">Approved</p>
             <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
           </CardContent>
         </Card>
         <Card 
-          className={`border-[#0F0F0F]/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'rejected' ? 'ring-2 ring-red-500' : ''}`}
+          className={`border-border/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'rejected' ? 'ring-2 ring-red-500' : ''}`}
           onClick={() => setStatusFilter('rejected')}
         >
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">Rejected</p>
+            <p className="text-sm text-muted-foreground">Rejected</p>
             <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
           </CardContent>
         </Card>
         <Card 
-          className={`border-[#0F0F0F]/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'all' ? 'ring-2 ring-[#2969FF]' : ''}`}
+          className={`border-border/10 rounded-2xl cursor-pointer transition-all ${statusFilter === 'all' ? 'ring-2 ring-[#2969FF]' : ''}`}
           onClick={() => setStatusFilter('all')}
         >
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">Total Documents</p>
+            <p className="text-sm text-muted-foreground">Total Documents</p>
             <p className="text-2xl font-bold text-[#2969FF]">{stats.total}</p>
           </CardContent>
         </Card>
@@ -530,7 +530,7 @@ export function AdminKYCReview() {
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by organizer name, email..."
             value={searchTerm}
@@ -554,12 +554,12 @@ export function AdminKYCReview() {
         </Select>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-0">
           {filteredDocuments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <FileText className="w-12 h-12 text-[#0F0F0F]/20 mb-4" />
-              <p className="text-[#0F0F0F]/60">No documents found</p>
+              <FileText className="w-12 h-12 text-foreground/20 mb-4" />
+              <p className="text-muted-foreground">No documents found</p>
               {statusFilter === 'pending' && (
                 <p className="text-sm text-green-600 mt-2">All caught up! 🎉</p>
               )}
@@ -567,9 +567,9 @@ export function AdminKYCReview() {
           ) : (
             <div className="divide-y divide-[#0F0F0F]/10">
               {filteredDocuments.map(doc => (
-                <div key={doc.id} className="p-4 hover:bg-[#F4F6FA]/50 transition-colors">
+                <div key={doc.id} className="p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#F4F6FA] flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
                       <FileText className="w-6 h-6 text-[#2969FF]" />
                     </div>
 
@@ -577,12 +577,12 @@ export function AdminKYCReview() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-[#0F0F0F]">
+                            <h3 className="font-medium text-foreground">
                               {doc.organizer?.business_name || 'Unknown Organizer'}
                             </h3>
                             <span className="text-lg">{getCountryFlag(doc.organizer?.country_code)}</span>
                           </div>
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-sm text-muted-foreground">
                             {doc.organizer?.profiles?.full_name} • {doc.organizer?.profiles?.email}
                           </p>
                         </div>
@@ -590,17 +590,17 @@ export function AdminKYCReview() {
                       </div>
 
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                        <span className="text-[#0F0F0F]/60">
-                          Document: <span className="text-[#0F0F0F] font-medium">
+                        <span className="text-muted-foreground">
+                          Document: <span className="text-foreground font-medium">
                             {DOCUMENT_TYPE_LABELS[doc.document_type] || doc.document_type}
                           </span>
                         </span>
-                        <span className="text-[#0F0F0F]/60">
-                          Submitted: <span className="text-[#0F0F0F]">{formatDate(doc.created_at)}</span>
+                        <span className="text-muted-foreground">
+                          Submitted: <span className="text-foreground">{formatDate(doc.created_at)}</span>
                         </span>
                         {doc.reviewed_at && (
-                          <span className="text-[#0F0F0F]/60">
-                            Reviewed: <span className="text-[#0F0F0F]">{formatDate(doc.reviewed_at)}</span>
+                          <span className="text-muted-foreground">
+                            Reviewed: <span className="text-foreground">{formatDate(doc.reviewed_at)}</span>
                           </span>
                         )}
                       </div>
@@ -661,24 +661,24 @@ export function AdminKYCReview() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-[#0F0F0F]/60">Document Type</p>
+                  <p className="text-muted-foreground">Document Type</p>
                   <p className="font-medium">{DOCUMENT_TYPE_LABELS[viewDocModal.document.document_type] || viewDocModal.document.document_type}</p>
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F]/60">File Name</p>
+                  <p className="text-muted-foreground">File Name</p>
                   <p className="font-medium truncate">{viewDocModal.document.file_name}</p>
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F]/60">Organizer</p>
+                  <p className="text-muted-foreground">Organizer</p>
                   <p className="font-medium">{viewDocModal.document.organizer?.business_name}</p>
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F]/60">Status</p>
+                  <p className="text-muted-foreground">Status</p>
                   {getStatusBadge(viewDocModal.document.status)}
                 </div>
               </div>
 
-              <div className="border rounded-xl overflow-hidden bg-gray-50">
+              <div className="border rounded-xl overflow-hidden bg-background">
                 {viewDocModal.signedUrl ? (
                   viewDocModal.document.file_name?.toLowerCase().endsWith('.pdf') ? (
                     <iframe
@@ -730,31 +730,31 @@ export function AdminKYCReview() {
 
           {reviewModal.document && (
             <div className="space-y-6">
-              <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-3">
+              <div className="p-4 bg-muted rounded-xl space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-card flex items-center justify-center">
                     <Building2 className="w-5 h-5 text-[#2969FF]" />
                   </div>
                   <div>
                     <p className="font-medium">{reviewModal.document.organizer?.business_name}</p>
-                    <p className="text-sm text-[#0F0F0F]/60">{reviewModal.document.organizer?.profiles?.email}</p>
+                    <p className="text-sm text-muted-foreground">{reviewModal.document.organizer?.profiles?.email}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <span className="text-[#0F0F0F]/60">Country:</span>{' '}
+                    <span className="text-muted-foreground">Country:</span>{' '}
                     <span>{getCountryFlag(reviewModal.document.organizer?.country_code)} {reviewModal.document.organizer?.country_code}</span>
                   </div>
                   <div>
-                    <span className="text-[#0F0F0F]/60">Document:</span>{' '}
+                    <span className="text-muted-foreground">Document:</span>{' '}
                     <span>{DOCUMENT_TYPE_LABELS[reviewModal.document.document_type]}</span>
                   </div>
                   <div>
-                    <span className="text-[#0F0F0F]/60">Submitted:</span>{' '}
+                    <span className="text-muted-foreground">Submitted:</span>{' '}
                     <span>{formatDate(reviewModal.document.created_at)}</span>
                   </div>
                   <div>
-                    <span className="text-[#0F0F0F]/60">Connect Status:</span>{' '}
+                    <span className="text-muted-foreground">Connect Status:</span>{' '}
                     <span className="capitalize">{reviewModal.document.organizer?.stripe_connect_status || 'N/A'}</span>
                   </div>
                 </div>
@@ -844,7 +844,7 @@ export function AdminKYCReview() {
                 <div>
                   <button
                     onClick={() => setShowAuditLog(!showAuditLog)}
-                    className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 hover:text-[#0F0F0F]"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
                   >
                     <Clock className="w-4 h-4" />
                     Review History ({auditLog.length})
@@ -853,12 +853,12 @@ export function AdminKYCReview() {
                   {showAuditLog && (
                     <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
                       {auditLog.map(log => (
-                        <div key={log.id} className="text-xs p-2 bg-[#F4F6FA] rounded-lg">
+                        <div key={log.id} className="text-xs p-2 bg-muted rounded-lg">
                           <div className="flex justify-between">
                             <span className="font-medium">{log.action.replace(/_/g, ' ')}</span>
-                            <span className="text-[#0F0F0F]/40">{formatDate(log.created_at)}</span>
+                            <span className="text-muted-foreground">{formatDate(log.created_at)}</span>
                           </div>
-                          <p className="text-[#0F0F0F]/60">by {log.admin?.full_name || 'System'}</p>
+                          <p className="text-muted-foreground">by {log.admin?.full_name || 'System'}</p>
                           {log.details?.rejection_reason && (
                             <p className="text-red-600 mt-1">Reason: {log.details.rejection_reason}</p>
                           )}

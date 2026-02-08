@@ -488,17 +488,17 @@ export function ManageAttendees() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             Manage Attendees
             <HelpTip>View all ticket holders, resend tickets, and export attendee lists. You can filter by event, check-in status, and search by name or email.</HelpTip>
           </h2>
-          <p className="text-[#0F0F0F]/60 mt-1">View and manage all your event attendees</p>
+          <p className="text-muted-foreground mt-1">View and manage all your event attendees</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={loadData} variant="outline" size="icon" className="rounded-xl border-[#0F0F0F]/10">
+          <Button onClick={loadData} variant="outline" size="icon" className="rounded-xl border-border/10">
             <RefreshCw className="w-4 h-4" />
           </Button>
-          <Button onClick={exportToCSV} variant="outline" className="rounded-xl border-[#0F0F0F]/10" disabled={groupedAttendees.length === 0}>
+          <Button onClick={exportToCSV} variant="outline" className="rounded-xl border-border/10" disabled={groupedAttendees.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
@@ -512,69 +512,69 @@ export function ManageAttendees() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Users className="w-5 h-5 text-[#2969FF]" />
               </div>
               <div>
-                <p className="text-[#0F0F0F]/60 text-sm">Unique Attendees</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{uniqueAttendeesCount}</h3>
+                <p className="text-muted-foreground text-sm">Unique Attendees</p>
+                <h3 className="text-2xl font-semibold text-foreground">{uniqueAttendeesCount}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Ticket className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-[#0F0F0F]/60 text-sm">Total Tickets</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{totalTickets}</h3>
+                <p className="text-muted-foreground text-sm">Total Tickets</p>
+                <h3 className="text-2xl font-semibold text-foreground">{totalTickets}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-[#0F0F0F]/60 text-sm">Checked In</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{checkedInCount}</h3>
+                <p className="text-muted-foreground text-sm">Checked In</p>
+                <h3 className="text-2xl font-semibold text-foreground">{checkedInCount}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-[#0F0F0F]/60 text-sm">Pending</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{pendingCount}</h3>
+                <p className="text-muted-foreground text-sm">Pending</p>
+                <h3 className="text-2xl font-semibold text-foreground">{pendingCount}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-              <Input placeholder="Search by name, email, or ticket ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input placeholder="Search by name, email, or ticket ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-12 bg-muted border-0 rounded-xl" />
             </div>
             <Select value={eventFilter} onValueChange={setEventFilter}>
-              <SelectTrigger className="md:w-64 h-12 rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="md:w-64 h-12 rounded-xl border-border/10">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Filter by event" />
               </SelectTrigger>
@@ -586,7 +586,7 @@ export function ManageAttendees() {
               </SelectContent>
             </Select>
             <Select value={checkInFilter} onValueChange={setCheckInFilter}>
-              <SelectTrigger className="md:w-48 h-12 rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="md:w-48 h-12 rounded-xl border-border/10">
                 <SelectValue placeholder="Check-in Status" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -599,9 +599,9 @@ export function ManageAttendees() {
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F] flex items-center justify-between">
+          <CardTitle className="text-foreground flex items-center justify-between">
             <span>Attendees ({groupedAttendees.length})</span>
             {groupedAttendees.length > 0 && (
               <Button variant="ghost" size="sm" onClick={toggleSelectAll} className="rounded-xl text-[#2969FF]">
@@ -613,29 +613,29 @@ export function ManageAttendees() {
         <CardContent>
           {groupedAttendees.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">{attendees.length === 0 ? 'No attendees yet' : 'No attendees match your filters'}</p>
+              <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">{attendees.length === 0 ? 'No attendees yet' : 'No attendees match your filters'}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#0F0F0F]/10">
-                    <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium w-12">
+                  <tr className="border-b border-border/10">
+                    <th className="text-left py-4 px-4 text-muted-foreground font-medium w-12">
                       <input type="checkbox" checked={selectedAttendees.length === attendees.length && attendees.length > 0} onChange={toggleSelectAll} className="rounded" />
                     </th>
-                    <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Attendee</th>
-                    <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium hidden md:table-cell">Email</th>
-                    <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium hidden lg:table-cell">Events</th>
-                    <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Tickets</th>
-                    <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Check-in Status</th>
-                    <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                    <th className="text-left py-4 px-4 text-muted-foreground font-medium">Attendee</th>
+                    <th className="text-left py-4 px-4 text-muted-foreground font-medium hidden md:table-cell">Email</th>
+                    <th className="text-left py-4 px-4 text-muted-foreground font-medium hidden lg:table-cell">Events</th>
+                    <th className="text-left py-4 px-4 text-muted-foreground font-medium">Tickets</th>
+                    <th className="text-left py-4 px-4 text-muted-foreground font-medium">Check-in Status</th>
+                    <th className="text-right py-4 px-4 text-muted-foreground font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedAttendees.map((group) => (
                     <React.Fragment key={group.email}>
-                      <tr className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                      <tr className="border-b border-border/5 hover:bg-muted/50">
                         <td className="py-4 px-4">
                           <input 
                             type="checkbox" 
@@ -645,19 +645,19 @@ export function ManageAttendees() {
                           />
                         </td>
                         <td className="py-4 px-4">
-                          <p className="font-medium text-[#0F0F0F]">{group.name}</p>
-                          <p className="text-[#0F0F0F]/60 text-sm md:hidden">{group.email}</p>
+                          <p className="font-medium text-foreground">{group.name}</p>
+                          <p className="text-muted-foreground text-sm md:hidden">{group.email}</p>
                         </td>
                         <td className="py-4 px-4 hidden md:table-cell">
-                          <p className="text-[#0F0F0F]/60 text-sm">{group.email}</p>
+                          <p className="text-muted-foreground text-sm">{group.email}</p>
                         </td>
                         <td className="py-4 px-4 hidden lg:table-cell">
                           <div className="max-w-[200px]">
                             {group.events.slice(0, 2).map((event, idx) => (
-                              <p key={idx} className="text-[#0F0F0F]/60 truncate text-sm">{event}</p>
+                              <p key={idx} className="text-muted-foreground truncate text-sm">{event}</p>
                             ))}
                             {group.events.length > 2 && (
-                              <p className="text-[#0F0F0F]/40 text-xs">+{group.events.length - 2} more</p>
+                              <p className="text-muted-foreground text-xs">+{group.events.length - 2} more</p>
                             )}
                           </div>
                         </td>
@@ -677,7 +677,7 @@ export function ManageAttendees() {
                               {group.checkedInCount}/{group.totalTickets} Checked In
                             </Badge>
                           ) : (
-                            <Badge className="bg-gray-200 text-gray-700 rounded-lg">
+                            <Badge className="bg-muted text-foreground/80 rounded-lg">
                               0/{group.totalTickets} Checked In
                             </Badge>
                           )}
@@ -694,13 +694,13 @@ export function ManageAttendees() {
                               {expandedRows.includes(group.email) ? (
                                 <ChevronUp className="w-5 h-5 text-[#2969FF]" />
                               ) : (
-                                <ChevronDown className="w-5 h-5 text-[#0F0F0F]/60" />
+                                <ChevronDown className="w-5 h-5 text-muted-foreground" />
                               )}
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="rounded-xl">
-                                  <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                                  <MoreVertical className="w-5 h-5 text-muted-foreground" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="rounded-xl">
@@ -724,19 +724,19 @@ export function ManageAttendees() {
                       </tr>
                       {/* Expanded row showing individual tickets */}
                       {expandedRows.includes(group.email) && (
-                        <tr className="bg-[#F4F6FA]/50">
+                        <tr className="bg-muted/50">
                           <td colSpan="7" className="py-4 px-8">
                             <div className="space-y-2">
-                              <p className="text-sm font-medium text-[#0F0F0F] mb-3">Individual Tickets</p>
+                              <p className="text-sm font-medium text-foreground mb-3">Individual Tickets</p>
                               <div className="grid gap-2">
                                 {group.tickets.map(ticket => (
-                                  <div key={ticket.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#0F0F0F]/10">
+                                  <div key={ticket.id} className="flex items-center justify-between bg-card p-3 rounded-xl border border-border/10">
                                     <div className="flex items-center gap-4">
                                       <div>
-                                        <p className="font-mono text-sm text-[#0F0F0F]">{ticket.ticketId}</p>
-                                        <p className="text-xs text-[#0F0F0F]/60">{ticket.event}</p>
+                                        <p className="font-mono text-sm text-foreground">{ticket.ticketId}</p>
+                                        <p className="text-xs text-muted-foreground">{ticket.event}</p>
                                       </div>
-                                      <Badge className="bg-[#F4F6FA] text-[#0F0F0F] rounded-lg">{ticket.ticketType}</Badge>
+                                      <Badge className="bg-muted text-foreground rounded-lg">{ticket.ticketType}</Badge>
                                     </div>
                                     <div className="flex items-center gap-3">
                                       {ticket.checkedIn ? (
@@ -747,7 +747,7 @@ export function ManageAttendees() {
                                       <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                           <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8">
-                                            <MoreVertical className="w-4 h-4 text-[#0F0F0F]/60" />
+                                            <MoreVertical className="w-4 h-4 text-muted-foreground" />
                                           </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="rounded-xl">
@@ -771,16 +771,16 @@ export function ManageAttendees() {
                               </div>
                               {/* Custom form responses */}
                               {group.tickets.some(t => customResponses[t.id]?.length > 0) && (
-                                <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10">
-                                  <p className="text-sm font-medium text-[#0F0F0F] mb-2">Custom Form Responses</p>
+                                <div className="mt-4 pt-4 border-t border-border/10">
+                                  <p className="text-sm font-medium text-foreground mb-2">Custom Form Responses</p>
                                   {group.tickets.filter(t => customResponses[t.id]?.length > 0).map(ticket => (
                                     <div key={ticket.id} className="mb-3">
-                                      <p className="text-xs text-[#0F0F0F]/60 mb-1">{ticket.ticketId}</p>
+                                      <p className="text-xs text-muted-foreground mb-1">{ticket.ticketId}</p>
                                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                         {customResponses[ticket.id].map((response, idx) => (
-                                          <div key={idx} className="bg-white p-2 rounded-lg border border-[#0F0F0F]/10">
-                                            <p className="text-xs text-[#0F0F0F]/60">{response.label}</p>
-                                            <p className="text-sm font-medium text-[#0F0F0F]">{response.value}</p>
+                                          <div key={idx} className="bg-card p-2 rounded-lg border border-border/10">
+                                            <p className="text-xs text-muted-foreground">{response.label}</p>
+                                            <p className="text-sm font-medium text-foreground">{response.value}</p>
                                           </div>
                                         ))}
                                       </div>

@@ -351,8 +351,8 @@ export function OrganizerPromoters() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl text-[#0F0F0F] mb-2">Event Promoters & Affiliates</h2>
-          <p className="text-[#0F0F0F]/60">Manage your event promoters and track their performance</p>
+          <h2 className="text-2xl text-foreground mb-2">Event Promoters & Affiliates</h2>
+          <p className="text-muted-foreground">Manage your event promoters and track their performance</p>
         </div>
         <Button onClick={() => setIsAddOpen(true)} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
           <Plus className="w-4 h-4 mr-2" />
@@ -362,56 +362,56 @@ export function OrganizerPromoters() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Promoters</p>
-            <p className="text-2xl text-[#0F0F0F]">{stats.total}</p>
+            <p className="text-sm text-muted-foreground mb-1">Total Promoters</p>
+            <p className="text-2xl text-foreground">{stats.total}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60 mb-1">Active</p>
+            <p className="text-sm text-muted-foreground mb-1">Active</p>
             <p className="text-2xl text-green-600">{stats.active}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Clicks</p>
-            <p className="text-2xl text-[#0F0F0F]">{stats.totalClicks.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground mb-1">Total Clicks</p>
+            <p className="text-2xl text-foreground">{stats.totalClicks.toLocaleString()}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60 mb-1">Tickets Sold</p>
-            <p className="text-2xl text-[#0F0F0F]">{stats.ticketsSold}</p>
+            <p className="text-sm text-muted-foreground mb-1">Tickets Sold</p>
+            <p className="text-2xl text-foreground">{stats.ticketsSold}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Revenue</p>
-            <p className="text-xl text-[#0F0F0F]">{formatMultiCurrencyCompact(statsByCurrency.revenue)}</p>
+            <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
+            <p className="text-xl text-foreground">{formatMultiCurrencyCompact(statsByCurrency.revenue)}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60 mb-1">Commissions</p>
-            <p className="text-xl text-[#0F0F0F]">{formatMultiCurrencyCompact(statsByCurrency.commissions)}</p>
+            <p className="text-sm text-muted-foreground mb-1">Commissions</p>
+            <p className="text-xl text-foreground">{formatMultiCurrencyCompact(statsByCurrency.commissions)}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60 mb-1">Unpaid</p>
+            <p className="text-sm text-muted-foreground mb-1">Unpaid</p>
             <p className="text-xl text-red-600">{formatMultiCurrencyCompact(statsByCurrency.unpaid)}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Search and Filter */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0F0F0F]/40 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
                 placeholder="Search by name, email, or code..."
                 value={searchQuery}
@@ -437,16 +437,16 @@ export function OrganizerPromoters() {
       </Card>
 
       {/* Promoters List */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>All Promoters ({filteredPromoters.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {filteredPromoters.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-16 h-16 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <h3 className="text-lg text-[#0F0F0F] mb-2">No Promoters Found</h3>
-              <p className="text-[#0F0F0F]/60 mb-4">Add promoters to help spread the word about your events</p>
+              <Users className="w-16 h-16 text-foreground/20 mx-auto mb-4" />
+              <h3 className="text-lg text-foreground mb-2">No Promoters Found</h3>
+              <p className="text-muted-foreground mb-4">Add promoters to help spread the word about your events</p>
               <Button onClick={() => setIsAddOpen(true)} className="bg-[#2969FF] text-white rounded-xl">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Promoter
@@ -461,12 +461,12 @@ export function OrganizerPromoters() {
                 const hasUnpaid = Object.keys(promoter.unpaidByCurrency || {}).length > 0;
 
                 return (
-                  <div key={promoter.id} className="p-6 border border-[#0F0F0F]/10 rounded-2xl">
+                  <div key={promoter.id} className="p-6 border border-border/10 rounded-2xl">
                     {/* Promoter Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold text-[#0F0F0F]">{promoter.full_name}</h3>
+                          <h3 className="text-lg font-semibold text-foreground">{promoter.full_name}</h3>
                           <Badge className={promoter.status === 'active' ? 'bg-green-600' : 'bg-yellow-600'}>
                             {promoter.status}
                           </Badge>
@@ -476,7 +476,7 @@ export function OrganizerPromoters() {
                             <Badge className="bg-green-600">Paid</Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Mail className="w-4 h-4" />
                             {promoter.email}
@@ -490,7 +490,7 @@ export function OrganizerPromoters() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-semibold text-[#0F0F0F]">{promoter.commission_rate}% Commission</p>
+                        <p className="text-lg font-semibold text-foreground">{promoter.commission_rate}% Commission</p>
                         {hasUnpaid && (
                           <p className="text-sm text-red-600">Unpaid: {formatMultiCurrency(promoter.unpaidByCurrency)}</p>
                         )}
@@ -498,9 +498,9 @@ export function OrganizerPromoters() {
                     </div>
 
                     {/* Promo Link */}
-                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl mb-4">
-                      <ExternalLink className="w-4 h-4 text-[#0F0F0F]/40" />
-                      <code className="flex-1 text-sm text-[#0F0F0F] truncate">
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-xl mb-4">
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                      <code className="flex-1 text-sm text-foreground truncate">
                         {window.location.origin}/events?ref={promoter.short_code}
                       </code>
                       <Button
@@ -529,32 +529,32 @@ export function OrganizerPromoters() {
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
                       <div className="p-3 bg-blue-50 rounded-xl text-center">
                         <Eye className="w-4 h-4 text-blue-600 mx-auto mb-1" />
-                        <p className="text-xs text-[#0F0F0F]/60">Clicks</p>
-                        <p className="text-lg font-semibold text-[#0F0F0F]">{promoter.total_clicks || 0}</p>
+                        <p className="text-xs text-muted-foreground">Clicks</p>
+                        <p className="text-lg font-semibold text-foreground">{promoter.total_clicks || 0}</p>
                       </div>
                       <div className="p-3 bg-purple-50 rounded-xl text-center">
                         <Users className="w-4 h-4 text-purple-600 mx-auto mb-1" />
-                        <p className="text-xs text-[#0F0F0F]/60">Visitors</p>
-                        <p className="text-lg font-semibold text-[#0F0F0F]">{Math.floor((promoter.total_clicks || 0) * 0.7)}</p>
+                        <p className="text-xs text-muted-foreground">Visitors</p>
+                        <p className="text-lg font-semibold text-foreground">{Math.floor((promoter.total_clicks || 0) * 0.7)}</p>
                       </div>
                       <div className="p-3 bg-green-50 rounded-xl text-center">
                         <ShoppingCart className="w-4 h-4 text-green-600 mx-auto mb-1" />
-                        <p className="text-xs text-[#0F0F0F]/60">Sold</p>
+                        <p className="text-xs text-muted-foreground">Sold</p>
                         <p className="text-lg font-semibold text-green-600">{promoter.total_sales || 0}</p>
                       </div>
                       <div className="p-3 bg-orange-50 rounded-xl text-center">
                         <TrendingUp className="w-4 h-4 text-orange-600 mx-auto mb-1" />
-                        <p className="text-xs text-[#0F0F0F]/60">Conv. Rate</p>
+                        <p className="text-xs text-muted-foreground">Conv. Rate</p>
                         <p className="text-lg font-semibold text-orange-600">{convRate}%</p>
                       </div>
                       <div className="p-3 bg-indigo-50 rounded-xl text-center">
                         <DollarSign className="w-4 h-4 text-indigo-600 mx-auto mb-1" />
-                        <p className="text-xs text-[#0F0F0F]/60">Revenue</p>
-                        <p className="text-lg font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(promoter.revenueByCurrency)}</p>
+                        <p className="text-xs text-muted-foreground">Revenue</p>
+                        <p className="text-lg font-semibold text-foreground">{formatMultiCurrencyCompact(promoter.revenueByCurrency)}</p>
                       </div>
                       <div className="p-3 bg-[#2969FF]/10 rounded-xl text-center">
                         <DollarSign className="w-4 h-4 text-[#2969FF] mx-auto mb-1" />
-                        <p className="text-xs text-[#0F0F0F]/60">Commission</p>
+                        <p className="text-xs text-muted-foreground">Commission</p>
                         <p className="text-lg font-semibold text-[#2969FF]">{formatMultiCurrencyCompact(promoter.earnedByCurrency)}</p>
                       </div>
                     </div>
@@ -668,7 +668,7 @@ export function OrganizerPromoters() {
               <Label>Assign to Events</Label>
               <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
                 {events.map((event) => (
-                  <label key={event.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#F4F6FA] cursor-pointer">
+                  <label key={event.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted cursor-pointer">
                     <input
                       type="checkbox"
                       checked={newPromoter.event_ids.includes(event.id)}
@@ -779,10 +779,10 @@ export function OrganizerPromoters() {
           </DialogHeader>
           {selectedPromoter && (
             <form onSubmit={handlePayCommission} className="space-y-4">
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60">Paying commission to</p>
-                <p className="text-lg font-semibold text-[#0F0F0F]">{selectedPromoter.full_name}</p>
-                <p className="text-sm text-[#0F0F0F]/60">{selectedPromoter.email}</p>
+              <div className="p-4 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground">Paying commission to</p>
+                <p className="text-lg font-semibold text-foreground">{selectedPromoter.full_name}</p>
+                <p className="text-sm text-muted-foreground">{selectedPromoter.email}</p>
                 <p className="text-sm text-red-600 mt-2">Unpaid: {formatMultiCurrency(selectedPromoter.unpaidByCurrency)}</p>
               </div>
               <div>
@@ -795,7 +795,7 @@ export function OrganizerPromoters() {
                   className="rounded-xl mt-1"
                   required
                 />
-                <p className="text-xs text-[#0F0F0F]/60 mt-1">Note: Payouts are currently processed in the local currency</p>
+                <p className="text-xs text-muted-foreground mt-1">Note: Payouts are currently processed in the local currency</p>
               </div>
               <div>
                 <Label>Notes (optional)</Label>

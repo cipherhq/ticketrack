@@ -413,8 +413,8 @@ export function TaxDocuments() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#0F0F0F]">Tax Documents</h1>
-        <p className="text-[#0F0F0F]/60">Download your annual earnings statements for tax purposes</p>
+        <h1 className="text-2xl font-bold text-foreground">Tax Documents</h1>
+        <p className="text-muted-foreground">Download your annual earnings statements for tax purposes</p>
       </div>
 
       {/* Info Card */}
@@ -433,7 +433,7 @@ export function TaxDocuments() {
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#2969FF]" />
@@ -445,7 +445,7 @@ export function TaxDocuments() {
           {/* Year Selector */}
           <div className="flex items-center gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[#0F0F0F]">Tax Year</label>
+              <label className="text-sm font-medium text-foreground">Tax Year</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger className="w-40 rounded-xl">
                   <Calendar className="w-4 h-4 mr-2" />
@@ -478,40 +478,40 @@ export function TaxDocuments() {
             </div>
           ) : yearSummary && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-[#0F0F0F]">{selectedYear} Summary</h3>
+              <h3 className="font-semibold text-foreground">{selectedYear} Summary</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="p-4 bg-blue-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-blue-600">{formatPrice(yearSummary.grossEarnings, yearSummary.currency)}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Gross Sales</p>
+                  <p className="text-xs text-muted-foreground">Gross Sales</p>
                 </div>
                 <div className="p-4 bg-red-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-red-600">{formatPrice(yearSummary.platformFees, yearSummary.currency)}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Platform Fees</p>
+                  <p className="text-xs text-muted-foreground">Platform Fees</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-green-600">{formatPrice(yearSummary.netEarnings, yearSummary.currency)}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Net Earnings</p>
+                  <p className="text-xs text-muted-foreground">Net Earnings</p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-orange-600">{formatPrice(yearSummary.payouts, yearSummary.currency)}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Payouts Received</p>
+                  <p className="text-xs text-muted-foreground">Payouts Received</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-purple-600">{yearSummary.transactions}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Total Orders</p>
+                  <p className="text-xs text-muted-foreground">Total Orders</p>
                 </div>
               </div>
 
               {/* Events List Preview */}
               {eventsData.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="text-sm font-medium text-[#0F0F0F]/60 mb-2">Events ({eventsData.length})</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Events ({eventsData.length})</h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {eventsData.map((event, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                      <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">{event.title}</p>
-                          <p className="text-xs text-[#0F0F0F]/60">{new Date(event.date).toLocaleDateString()}</p>
+                          <p className="font-medium text-foreground">{event.title}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(event.date).toLocaleDateString()}</p>
                         </div>
                         <p className="font-semibold text-green-600">{formatPrice(event.netEarnings, event.currency)}</p>
                       </div>
@@ -542,7 +542,7 @@ export function TaxDocuments() {
               onClick={generateCSV}
               disabled={!available || generatingCSV || !yearSummary}
               variant="outline"
-              className={`h-14 rounded-xl text-lg border-2 ${available ? 'border-green-600 text-green-600 hover:bg-green-50' : 'border-gray-300 text-gray-400 cursor-not-allowed'}`}
+              className={`h-14 rounded-xl text-lg border-2 ${available ? 'border-green-600 text-green-600 hover:bg-green-50' : 'border-border/30 text-muted-foreground cursor-not-allowed'}`}
             >
               {generatingCSV ? (
                 <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Generating...</>
@@ -555,13 +555,13 @@ export function TaxDocuments() {
           </div>
 
           {/* Country Tax Note */}
-          <div className="p-4 bg-[#F4F6FA] border border-[#0F0F0F]/10 rounded-xl">
+          <div className="p-4 bg-muted border border-border/10 rounded-xl">
             <div className="flex items-start gap-3">
               <Globe className="w-5 h-5 text-[#2969FF] mt-0.5" />
               <div>
-                <p className="font-medium text-[#0F0F0F]">{countryConfig.name} Tax Information</p>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{countryConfig.notes}</p>
-                <p className="text-sm text-[#0F0F0F]/40 mt-1">Tax ID Type: {countryConfig.taxId} • Document: {countryConfig.taxDocument}</p>
+                <p className="font-medium text-foreground">{countryConfig.name} Tax Information</p>
+                <p className="text-sm text-muted-foreground mt-1">{countryConfig.notes}</p>
+                <p className="text-sm text-muted-foreground mt-1">Tax ID Type: {countryConfig.taxId} • Document: {countryConfig.taxDocument}</p>
               </div>
             </div>
           </div>

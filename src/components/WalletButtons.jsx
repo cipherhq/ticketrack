@@ -95,7 +95,7 @@ export function WalletButtons({ ticket, event, size = 'default', className = '',
           size={size}
           onClick={() => handleAddToWallet(platform)}
           disabled={loading !== null}
-          className={`${buttonClass} ${isApple ? 'bg-black text-white border-black hover:bg-gray-800 hover:text-white' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'}`}
+          className={`${buttonClass} ${isApple ? 'bg-black text-white border-black hover:bg-gray-800 hover:text-white' : 'bg-card text-foreground border-border/30 hover:bg-background'}`}
         >
           {loading === platform ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -171,7 +171,7 @@ export function WalletButtons({ ticket, event, size = 'default', className = '',
           size={size}
           onClick={() => handleAddToWallet('google')}
           disabled={loading !== null}
-          className={`${buttonClass} bg-white text-gray-800 border-gray-300 hover:bg-gray-50`}
+          className={`${buttonClass} bg-card text-foreground border-border/30 hover:bg-background`}
         >
           {loading === 'google' ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />

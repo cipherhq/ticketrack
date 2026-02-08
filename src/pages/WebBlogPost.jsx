@@ -772,10 +772,10 @@ export function WebBlogPost() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-[#0F0F0F] mb-4">Post Not Found</h1>
-          <p className="text-[#0F0F0F]/60 mb-6">The blog post you're looking for doesn't exist.</p>
+          <h1 className="text-4xl font-bold text-foreground mb-4">Post Not Found</h1>
+          <p className="text-muted-foreground mb-6">The blog post you're looking for doesn't exist.</p>
           <Link to="/blog" className="inline-flex items-center gap-2 bg-[#2969FF] text-white px-6 py-3 rounded-xl hover:bg-[#1e4fd6] transition-colors">
             <ArrowLeft className="w-5 h-5" />
             Back to Blog
@@ -816,9 +816,9 @@ export function WebBlogPost() {
     .slice(0, 3)
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <div className="bg-white border-b border-[#0F0F0F]/10 sticky top-0 z-50">
+      <div className="bg-card border-b border-border/10 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link 
             to="/blog" 
@@ -872,17 +872,17 @@ export function WebBlogPost() {
       {/* Content */}
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div 
-          className="prose prose-lg max-w-none prose-headings:text-[#0F0F0F] prose-p:text-[#0F0F0F]/80 prose-li:text-[#0F0F0F]/80 prose-strong:text-[#0F0F0F] prose-a:text-[#2969FF] prose-a:no-underline hover:prose-a:underline"
+          className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-foreground/80 prose-li:text-foreground/80 prose-strong:text-foreground prose-a:text-[#2969FF] prose-a:no-underline hover:prose-a:underline"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span', 'pre', 'code'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
         />
 
         {/* Tags */}
-        <div className="mt-12 pt-8 border-t border-[#0F0F0F]/10">
+        <div className="mt-12 pt-8 border-t border-border/10">
           <div className="flex flex-wrap gap-2">
             {post.tags.map((tag, index) => (
               <span
                 key={index}
-                className="inline-flex items-center gap-1 bg-[#F4F6FA] text-[#0F0F0F]/60 px-3 py-1 rounded-full text-sm"
+                className="inline-flex items-center gap-1 bg-muted text-muted-foreground px-3 py-1 rounded-full text-sm"
               >
                 <Tag className="w-3 h-3" />
                 {tag}
@@ -894,9 +894,9 @@ export function WebBlogPost() {
 
       {/* Related Posts */}
       {relatedPosts.length > 0 && (
-        <section className="bg-white border-t border-[#0F0F0F]/10 py-12">
+        <section className="bg-card border-t border-border/10 py-12">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6">Related Articles</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-6">Related Articles</h2>
             <div className="grid md:grid-cols-3 gap-6">
               {relatedPosts.map((relatedPost) => (
                 <Link
@@ -904,7 +904,7 @@ export function WebBlogPost() {
                   to={`/blog/${relatedPost.slug}`}
                   className="group"
                 >
-                  <Card className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
+                  <Card className="border-border/10 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="relative h-40 overflow-hidden">
                       <img
                         src={relatedPost.image}
@@ -913,10 +913,10 @@ export function WebBlogPost() {
                       />
                     </div>
                     <CardContent className="p-5">
-                      <h3 className="text-lg font-bold text-[#0F0F0F] mb-2 group-hover:text-[#2969FF] transition-colors line-clamp-2">
+                      <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-[#2969FF] transition-colors line-clamp-2">
                         {relatedPost.title}
                       </h3>
-                      <p className="text-[#0F0F0F]/60 text-sm line-clamp-2">
+                      <p className="text-muted-foreground text-sm line-clamp-2">
                         {relatedPost.excerpt}
                       </p>
                       <div className="mt-4 flex items-center gap-2 text-sm text-[#2969FF] font-medium">
@@ -942,13 +942,13 @@ export function WebBlogPost() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/organizer"
-              className="inline-flex items-center justify-center bg-white text-[#2969FF] px-8 py-4 rounded-xl font-semibold hover:bg-white/90 transition-colors"
+              className="inline-flex items-center justify-center bg-card text-[#2969FF] px-8 py-4 rounded-xl font-semibold hover:bg-card/90 transition-colors"
             >
               Create Your Event
             </Link>
             <Link
               to="/blog"
-              className="inline-flex items-center justify-center bg-white/10 text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/20 transition-colors"
+              className="inline-flex items-center justify-center bg-card/10 text-white px-8 py-4 rounded-xl font-semibold hover:bg-card/20 transition-colors"
             >
               Read More Articles
             </Link>

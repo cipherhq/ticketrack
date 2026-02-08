@@ -22,7 +22,7 @@ export function ImageWithFallback({ src, alt, className, fallbackClassName, ...p
   return (
     <>
       {loading && (
-        <div className={cn('bg-[#F4F6FA] animate-pulse', className)} {...props} />
+        <div className={cn('bg-muted animate-pulse', className)} {...props} />
       )}
       <img
         src={src}

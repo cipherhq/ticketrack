@@ -9,8 +9,8 @@ export function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, 
   if (totalItems === 0) return null;
   
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 border-t border-[#0F0F0F]/10">
-      <span className="text-sm text-[#0F0F0F]/60">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 border-t border-border/10">
+      <span className="text-sm text-muted-foreground">
         Showing {startItem}-{endItem} of {totalItems}
       </span>
       <div className="flex items-center gap-2">
@@ -19,7 +19,7 @@ export function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, 
           size="sm" 
           onClick={() => onPageChange(currentPage - 1)} 
           disabled={currentPage === 1}
-          className="rounded-xl border-[#0F0F0F]/10"
+          className="rounded-xl border-border/10"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Previous
@@ -32,7 +32,7 @@ export function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, 
           size="sm" 
           onClick={() => onPageChange(currentPage + 1)} 
           disabled={currentPage === totalPages}
-          className="rounded-xl border-[#0F0F0F]/10"
+          className="rounded-xl border-border/10"
         >
           Next
           <ChevronRight className="w-4 h-4 ml-1" />

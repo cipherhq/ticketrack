@@ -92,23 +92,23 @@ export function WebPrivacy() {
         <div className="flex justify-center mb-6">
           <div className="w-16 h-16 bg-[#2969FF]/10 rounded-2xl flex items-center justify-center"><Shield className="w-8 h-8 text-[#2969FF]" /></div>
         </div>
-        <h1 className="text-4xl font-bold text-[#0F0F0F] mb-4">Privacy Policy</h1>
-        <p className="text-[#0F0F0F]/60">Last updated: January 20, 2026</p>
+        <h1 className="text-4xl font-bold text-foreground mb-4">Privacy Policy</h1>
+        <p className="text-muted-foreground">Last updated: January 20, 2026</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8 mb-8">
-        <p className="text-[#0F0F0F]/70 leading-relaxed">
+      <div className="bg-card rounded-2xl border border-border/10 p-8 mb-8">
+        <p className="text-foreground/70 leading-relaxed">
           At Ticketrack, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. Please read this policy carefully to understand our practices regarding your personal data.
         </p>
       </div>
 
       <div className="space-y-8">
         {sections.map((section, index) => (
-          <div key={index} className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8">
-            <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-4">{section.title}</h2>
+          <div key={index} className="bg-card rounded-2xl border border-border/10 p-8">
+            <h2 className="text-2xl font-semibold text-foreground mb-4">{section.title}</h2>
             <ul className="space-y-3">
               {section.content.map((item, itemIndex) => (
-                <li key={itemIndex} className="text-[#0F0F0F]/70 leading-relaxed flex items-start gap-3">
+                <li key={itemIndex} className="text-foreground/70 leading-relaxed flex items-start gap-3">
                   <span className="w-1.5 h-1.5 bg-[#2969FF] rounded-full mt-2 flex-shrink-0"></span>
                   <span>{item}</span>
                 </li>
@@ -120,8 +120,8 @@ export function WebPrivacy() {
 
       {/* SMS Consent Summary Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-2xl p-8 mt-8">
-        <h3 className="text-xl font-semibold text-[#0F0F0F] mb-4">📱 SMS Messaging Summary</h3>
-        <div className="text-[#0F0F0F]/70 space-y-2">
+        <h3 className="text-xl font-semibold text-foreground mb-4">📱 SMS Messaging Summary</h3>
+        <div className="text-foreground/70 space-y-2">
           <p><strong>What:</strong> Transactional messages only (ticket confirmations, reminders, check-in codes)</p>
           <p><strong>Frequency:</strong> 1-5 messages per event purchase</p>
           <p><strong>Cost:</strong> Message and data rates may apply</p>
@@ -131,9 +131,9 @@ export function WebPrivacy() {
         </div>
       </div>
 
-      <div className="bg-[#F4F6FA] rounded-2xl p-8 mt-8 text-center">
-        <h3 className="text-xl font-semibold text-[#0F0F0F] mb-4">Contact Us About Privacy</h3>
-        <p className="text-[#0F0F0F]/70 mb-4">If you have any questions about this Privacy Policy or our data practices, please contact us:</p>
+      <div className="bg-muted rounded-2xl p-8 mt-8 text-center">
+        <h3 className="text-xl font-semibold text-foreground mb-4">Contact Us About Privacy</h3>
+        <p className="text-foreground/70 mb-4">If you have any questions about this Privacy Policy or our data practices, please contact us:</p>
         <p className="text-[#2969FF]">privacy@ticketrack.com</p>
       </div>
     </div>

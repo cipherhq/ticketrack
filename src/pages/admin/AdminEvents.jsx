@@ -322,7 +322,7 @@ export function AdminEvents() {
       case 'published':
         return <Badge className="bg-green-500 text-white rounded-lg">Published</Badge>;
       case 'draft':
-        return <Badge className="bg-gray-500 text-white rounded-lg">Draft</Badge>;
+        return <Badge className="bg-background0 text-white rounded-lg">Draft</Badge>;
       case 'pending':
         return <Badge className="bg-yellow-500 text-white rounded-lg">Pending</Badge>;
       case 'suspended':
@@ -332,7 +332,7 @@ export function AdminEvents() {
       case 'cancelled':
         return <Badge className="bg-gray-700 text-white rounded-lg">Cancelled</Badge>;
       default:
-        return <Badge className="bg-gray-500 text-white rounded-lg">{status}</Badge>;
+        return <Badge className="bg-background0 text-white rounded-lg">{status}</Badge>;
     }
   };
 
@@ -365,8 +365,8 @@ export function AdminEvents() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Event Management</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage all platform events</p>
+          <h2 className="text-2xl font-semibold text-foreground">Event Management</h2>
+          <p className="text-muted-foreground mt-1">Manage all platform events</p>
         </div>
         <Button variant="outline" size="icon" onClick={loadEvents} className="rounded-xl">
           <RefreshCw className="w-4 h-4" />
@@ -375,12 +375,12 @@ export function AdminEvents() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Total Events</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.total}</h3>
+                <p className="text-muted-foreground mb-1">Total Events</p>
+                <h3 className="text-2xl font-semibold text-foreground">{stats.total}</h3>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-[#2969FF]" />
@@ -389,11 +389,11 @@ export function AdminEvents() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Published</p>
+                <p className="text-muted-foreground mb-1">Published</p>
                 <h3 className="text-2xl font-semibold text-green-600">{stats.published}</h3>
               </div>
               <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
@@ -403,11 +403,11 @@ export function AdminEvents() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Pending Review</p>
+                <p className="text-muted-foreground mb-1">Pending Review</p>
                 <h3 className="text-2xl font-semibold text-yellow-600">{stats.pending}</h3>
               </div>
               <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
@@ -417,11 +417,11 @@ export function AdminEvents() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#0F0F0F]/60 mb-1">Suspended</p>
+                <p className="text-muted-foreground mb-1">Suspended</p>
                 <h3 className="text-2xl font-semibold text-red-600">{stats.suspended}</h3>
               </div>
               <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
@@ -433,16 +433,16 @@ export function AdminEvents() {
       </div>
 
       {/* Search & Filter */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search events..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white border-[#0F0F0F]/10 rounded-xl"
+                className="pl-10 bg-card border-border/10 rounded-xl"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -463,28 +463,28 @@ export function AdminEvents() {
       </Card>
 
       {/* Events Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">All Events ({filteredEvents.length})</CardTitle>
+          <CardTitle className="text-foreground">All Events ({filteredEvents.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#0F0F0F]/10">
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Event</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Organizer</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Date</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Tickets Sold</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Engagement</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Revenue</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                  <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                <tr className="border-b border-border/10">
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Event</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Organizer</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Date</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Tickets Sold</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Engagement</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Revenue</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Status</th>
+                  <th className="text-right py-4 px-4 text-muted-foreground font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredEvents.map((event) => (
-                  <tr key={event.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                  <tr key={event.id} className="border-b border-border/5 hover:bg-muted/50">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         {event.cover_image_url ? (
@@ -495,21 +495,21 @@ export function AdminEvents() {
                           </div>
                         )}
                         <div>
-                          <p className="text-[#0F0F0F] font-medium">{event.title}</p>
-                          <p className="text-sm text-[#0F0F0F]/60">{event.category || 'Uncategorized'}</p>
+                          <p className="text-foreground font-medium">{event.title}</p>
+                          <p className="text-sm text-muted-foreground">{event.category || 'Uncategorized'}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/80">{event.organizers?.business_name || 'Unknown'}</p>
+                      <p className="text-foreground/80">{event.organizers?.business_name || 'Unknown'}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/80">
+                      <p className="text-foreground/80">
                         {event.start_date ? new Date(event.start_date).toLocaleDateString() : 'TBD'}
                       </p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/80">{event.ticketsSold.toLocaleString()}</p>
+                      <p className="text-foreground/80">{event.ticketsSold.toLocaleString()}</p>
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2 text-xs">
@@ -522,14 +522,14 @@ export function AdminEvents() {
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F] font-medium">{formatCurrency(event.revenue)}</p>
+                      <p className="text-foreground font-medium">{formatCurrency(event.revenue)}</p>
                     </td>
                     <td className="py-4 px-4">{getStatusBadge(event.status)}</td>
                     <td className="py-4 px-4 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="rounded-xl">
-                            <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                            <MoreVertical className="w-5 h-5 text-muted-foreground" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
@@ -580,7 +580,7 @@ export function AdminEvents() {
                 ))}
                 {filteredEvents.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-[#0F0F0F]/60">
+                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
                       No events found
                     </td>
                   </tr>
@@ -610,11 +610,11 @@ export function AdminEvents() {
                 )}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-semibold text-[#0F0F0F]">{selectedEvent.title}</h3>
+                    <h3 className="text-2xl font-semibold text-foreground">{selectedEvent.title}</h3>
                     {getStatusBadge(selectedEvent.status)}
                   </div>
-                  <p className="text-[#0F0F0F]/60 mb-2">{selectedEvent.description || 'No description'}</p>
-                  <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
+                  <p className="text-muted-foreground mb-2">{selectedEvent.description || 'No description'}</p>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className="flex items-start gap-1">
                       <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                       <span className="break-words">
@@ -634,24 +634,24 @@ export function AdminEvents() {
                 <div className="p-4 bg-blue-50 rounded-xl text-center">
                   <Ticket className="w-6 h-6 text-[#2969FF] mx-auto mb-2" />
                   <p className="text-2xl font-semibold text-[#2969FF]">{selectedEvent.ticketsSold}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Tickets Sold</p>
+                  <p className="text-sm text-muted-foreground">Tickets Sold</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-xl text-center">
                   <DollarSign className="w-6 h-6 text-green-600 mx-auto mb-2" />
                   <p className="text-lg font-semibold text-green-600">{formatCurrency(selectedEvent.revenue)}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Revenue</p>
+                  <p className="text-sm text-muted-foreground">Revenue</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
                   <Users className="w-6 h-6 text-purple-600 mx-auto mb-2" />
                   <p className="text-2xl font-semibold text-purple-600">{selectedEvent.capacity || 0}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Capacity</p>
+                  <p className="text-sm text-muted-foreground">Capacity</p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-xl text-center">
                   <TrendingUp className="w-6 h-6 text-orange-600 mx-auto mb-2" />
                   <p className="text-2xl font-semibold text-orange-600">
                     {selectedEvent.capacity ? Math.round((selectedEvent.ticketsSold / selectedEvent.capacity) * 100) : 0}%
                   </p>
-                  <p className="text-sm text-[#0F0F0F]/60">Fill Rate</p>
+                  <p className="text-sm text-muted-foreground">Fill Rate</p>
                 </div>
               </div>
 
@@ -678,7 +678,7 @@ export function AdminEvents() {
               </div>
 
               <Tabs defaultValue="info" className="w-full">
-                <TabsList className="bg-[#F4F6FA] rounded-xl">
+                <TabsList className="bg-muted rounded-xl">
                   <TabsTrigger value="info" className="rounded-lg">Event Info</TabsTrigger>
                   <TabsTrigger value="attendees" className="rounded-lg">Attendees ({eventAttendees.length})</TabsTrigger>
                   <TabsTrigger value="tickets" className="rounded-lg">Ticket Types</TabsTrigger>
@@ -687,41 +687,41 @@ export function AdminEvents() {
 
                 <TabsContent value="info" className="mt-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-1">Category</p>
-                      <p className="text-[#0F0F0F]">{selectedEvent.category || 'Uncategorized'}</p>
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-1">Category</p>
+                      <p className="text-foreground">{selectedEvent.category || 'Uncategorized'}</p>
                     </div>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-1">Ticket Price</p>
-                      <p className="text-[#0F0F0F]">{formatCurrency(selectedEvent.ticket_price)}</p>
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-1">Ticket Price</p>
+                      <p className="text-foreground">{formatCurrency(selectedEvent.ticket_price)}</p>
                     </div>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-1">Start Date</p>
-                      <p className="text-[#0F0F0F]">
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-1">Start Date</p>
+                      <p className="text-foreground">
                         {selectedEvent.start_date ? new Date(selectedEvent.start_date).toLocaleString() : 'TBD'}
                       </p>
                     </div>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-1">End Date</p>
-                      <p className="text-[#0F0F0F]">
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-1">End Date</p>
+                      <p className="text-foreground">
                         {selectedEvent.end_date ? new Date(selectedEvent.end_date).toLocaleString() : 'TBD'}
                       </p>
                     </div>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-1">Location</p>
-                      <p className="text-[#0F0F0F]">{selectedEvent.location || 'N/A'}</p>
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-1">Location</p>
+                      <p className="text-foreground">{selectedEvent.location || 'N/A'}</p>
                     </div>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-1">Venue</p>
-                      <p className="text-[#0F0F0F]">{selectedEvent.venue_name || 'N/A'}</p>
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-1">Venue</p>
+                      <p className="text-foreground">{selectedEvent.venue_name || 'N/A'}</p>
                     </div>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-1">Created</p>
-                      <p className="text-[#0F0F0F]">{new Date(selectedEvent.created_at).toLocaleDateString()}</p>
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-1">Created</p>
+                      <p className="text-foreground">{new Date(selectedEvent.created_at).toLocaleDateString()}</p>
                     </div>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-1">Event ID</p>
-                      <p className="text-[#0F0F0F] text-xs font-mono">{selectedEvent.id}</p>
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-1">Event ID</p>
+                      <p className="text-foreground text-xs font-mono">{selectedEvent.id}</p>
                     </div>
                   </div>
                   {selectedEvent.status === 'suspended' && selectedEvent.suspension_reason && (
@@ -737,18 +737,18 @@ export function AdminEvents() {
 
                 <TabsContent value="attendees" className="mt-4">
                   {eventAttendees.length === 0 ? (
-                    <p className="text-center text-[#0F0F0F]/60 py-8">No attendees yet</p>
+                    <p className="text-center text-muted-foreground py-8">No attendees yet</p>
                   ) : (
                     <div className="space-y-2 max-h-80 overflow-y-auto">
                       {eventAttendees.map((attendee) => (
-                        <div key={attendee.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                        <div key={attendee.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                           <div>
-                            <p className="text-[#0F0F0F] font-medium">{attendee.customer_name}</p>
-                            <p className="text-sm text-[#0F0F0F]/60">{attendee.customer_email}</p>
+                            <p className="text-foreground font-medium">{attendee.customer_name}</p>
+                            <p className="text-sm text-muted-foreground">{attendee.customer_email}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[#0F0F0F]">{attendee.quantity} ticket(s)</p>
-                            <Badge className={attendee.checked_in ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                            <p className="text-foreground">{attendee.quantity} ticket(s)</p>
+                            <Badge className={attendee.checked_in ? 'bg-green-100 text-green-700' : 'bg-muted text-foreground/80'}>
                               {attendee.checked_in ? 'Checked In' : 'Not Checked In'}
                             </Badge>
                           </div>
@@ -760,18 +760,18 @@ export function AdminEvents() {
 
                 <TabsContent value="tickets" className="mt-4">
                   {eventTicketTypes.length === 0 ? (
-                    <p className="text-center text-[#0F0F0F]/60 py-8">No ticket types configured</p>
+                    <p className="text-center text-muted-foreground py-8">No ticket types configured</p>
                   ) : (
                     <div className="space-y-2">
                       {eventTicketTypes.map((type) => (
-                        <div key={type.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                        <div key={type.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                           <div>
-                            <p className="text-[#0F0F0F] font-medium">{type.name}</p>
-                            <p className="text-sm text-[#0F0F0F]/60">{type.description || 'No description'}</p>
+                            <p className="text-foreground font-medium">{type.name}</p>
+                            <p className="text-sm text-muted-foreground">{type.description || 'No description'}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[#0F0F0F] font-medium">{formatCurrency(type.price)}</p>
-                            <p className="text-sm text-[#0F0F0F]/60">{type.quantity_available || 0} available</p>
+                            <p className="text-foreground font-medium">{formatCurrency(type.price)}</p>
+                            <p className="text-sm text-muted-foreground">{type.quantity_available || 0} available</p>
                           </div>
                         </div>
                       ))}
@@ -780,24 +780,24 @@ export function AdminEvents() {
                 </TabsContent>
 
                 <TabsContent value="organizer" className="mt-4">
-                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                  <div className="p-4 bg-muted rounded-xl">
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-12 h-12 rounded-full bg-[#2969FF] flex items-center justify-center text-white text-xl font-medium">
                         {selectedEvent.organizers?.business_name?.charAt(0) || 'O'}
                       </div>
                       <div>
-                        <p className="text-[#0F0F0F] font-medium">{selectedEvent.organizers?.business_name || 'Unknown'}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">{selectedEvent.organizers?.email || 'N/A'}</p>
+                        <p className="text-foreground font-medium">{selectedEvent.organizers?.business_name || 'Unknown'}</p>
+                        <p className="text-sm text-muted-foreground">{selectedEvent.organizers?.email || 'N/A'}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-[#0F0F0F]/60">Email</p>
-                        <p className="text-[#0F0F0F]">{selectedEvent.organizers?.email || 'N/A'}</p>
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="text-foreground">{selectedEvent.organizers?.email || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-[#0F0F0F]/60">Phone</p>
-                        <p className="text-[#0F0F0F]">{selectedEvent.organizers?.phone || 'N/A'}</p>
+                        <p className="text-sm text-muted-foreground">Phone</p>
+                        <p className="text-foreground">{selectedEvent.organizers?.phone || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -805,7 +805,7 @@ export function AdminEvents() {
               </Tabs>
 
               {/* Quick Actions */}
-              <div className="flex gap-3 pt-4 border-t border-[#0F0F0F]/10">
+              <div className="flex gap-3 pt-4 border-t border-border/10">
                 {selectedEvent.status !== 'suspended' && selectedEvent.status !== 'cancelled' && (
                   <Button
                     variant="outline"
@@ -1001,7 +1001,7 @@ export function AdminEvents() {
       <Dialog open={!!actionDialog} onOpenChange={() => setActionDialog(null)}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-[#0F0F0F]">
+            <DialogTitle className="text-foreground">
               {actionDialog === 'approve' && 'Approve Event'}
               {actionDialog === 'suspend' && 'Suspend Event'}
               {actionDialog === 'unsuspend' && 'Unsuspend Event'}
@@ -1019,10 +1019,10 @@ export function AdminEvents() {
             )}
           </DialogHeader>
           {actionDialog === 'suspend' && (
-            <div className="text-sm text-[#0F0F0F]/60 space-y-4 mt-4 text-left">
+            <div className="text-sm text-muted-foreground space-y-4 mt-4 text-left">
               <p>Are you sure you want to suspend "{selectedEvent?.title}"? This event will be hidden from users.</p>
-              <div className="space-y-3 p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-[#0F0F0F] font-medium">Select reason(s) for suspension:</p>
+              <div className="space-y-3 p-4 bg-muted rounded-xl">
+                <p className="text-foreground font-medium">Select reason(s) for suspension:</p>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -1086,7 +1086,7 @@ export function AdminEvents() {
                 setSuspendReasons({ refunds: false, attendeesReport: false, policy: false, fraud: false, other: false });
                 setSuspendNote('');
               }}
-              className="rounded-xl border-[#0F0F0F]/10"
+              className="rounded-xl border-border/10"
             >
               Cancel
             </Button>

@@ -164,34 +164,34 @@ export function AcceptInvitation() {
 
   if (authLoading || status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-[#2969FF] mx-auto mb-4" />
-          <p className="text-[#0F0F0F]/60">Processing your invitation...</p>
+          <p className="text-muted-foreground">Processing your invitation...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA] px-4">
-      <Card className="w-full max-w-md border-[#0F0F0F]/10 rounded-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-muted px-4">
+      <Card className="w-full max-w-md border-border/10 rounded-2xl">
         <CardContent className="p-8 text-center">
           {status === 'success' && (
             <>
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <PartyPopper className="w-10 h-10 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Welcome Aboard!</h2>
-              <p className="text-[#0F0F0F]/60 mb-6">{message}</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Welcome Aboard!</h2>
+              <p className="text-muted-foreground mb-6">{message}</p>
               {promoterData && (
-                <div className="bg-[#F4F6FA] rounded-xl p-4 mb-6 text-left">
-                  <div className="flex justify-between py-2 border-b border-[#0F0F0F]/10">
-                    <span className="text-[#0F0F0F]/60">Your Promo Code</span>
+                <div className="bg-muted rounded-xl p-4 mb-6 text-left">
+                  <div className="flex justify-between py-2 border-b border-border/10">
+                    <span className="text-muted-foreground">Your Promo Code</span>
                     <span className="font-bold text-[#2969FF]">{promoCode}</span>
                   </div>
                   <div className="flex justify-between py-2">
-                    <span className="text-[#0F0F0F]/60">Commission</span>
+                    <span className="text-muted-foreground">Commission</span>
                     <span className="font-semibold">
                       {promoterData.commission_value || promoterData.commission_rate}
                       {promoterData.commission_type === 'percentage' ? '%' : ' per sale'}
@@ -213,8 +213,8 @@ export function AcceptInvitation() {
               <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <XCircle className="w-10 h-10 text-red-600" />
               </div>
-              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Oops!</h2>
-              <p className="text-[#0F0F0F]/60 mb-6">{message}</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Oops!</h2>
+              <p className="text-muted-foreground mb-6">{message}</p>
               <Button 
                 onClick={() => navigate('/')} 
                 variant="outline"
@@ -230,8 +230,8 @@ export function AcceptInvitation() {
               <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <XCircle className="w-10 h-10 text-yellow-600" />
               </div>
-              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Invitation Not Found</h2>
-              <p className="text-[#0F0F0F]/60 mb-6">{message}</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Invitation Not Found</h2>
+              <p className="text-muted-foreground mb-6">{message}</p>
               <Button 
                 onClick={() => navigate('/')} 
                 variant="outline"

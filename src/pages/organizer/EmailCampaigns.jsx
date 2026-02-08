@@ -585,7 +585,7 @@ export function EmailCampaigns() {
       case 'scheduled':
         return <Badge className="bg-purple-100 text-purple-700"><Clock className="w-3 h-3 mr-1" />Scheduled</Badge>;
       case 'draft':
-        return <Badge className="bg-gray-100 text-gray-700"><FileText className="w-3 h-3 mr-1" />Draft</Badge>;
+        return <Badge className="bg-muted text-foreground/80"><FileText className="w-3 h-3 mr-1" />Draft</Badge>;
       case 'failed':
         return <Badge className="bg-red-100 text-red-700"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
       default:
@@ -618,15 +618,15 @@ export function EmailCampaigns() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Email Campaigns</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Create and manage email campaigns for your audience</p>
+          <h2 className="text-2xl font-semibold text-foreground">Email Campaigns</h2>
+          <p className="text-muted-foreground mt-1">Create and manage email campaigns for your audience</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
             onClick={loadData}
-            className="rounded-xl border-[#0F0F0F]/10"
+            className="rounded-xl border-border/10"
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -649,7 +649,7 @@ export function EmailCampaigns() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5 text-[#2969FF]" />
-              <p className="text-[#0F0F0F]">
+              <p className="text-foreground">
                 <span className="font-medium">{preSelectedAttendeeIds.length} attendees</span> selected from Manage Attendees page
               </p>
               <Button
@@ -670,12 +670,12 @@ export function EmailCampaigns() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Campaigns</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.total}</p>
+                <p className="text-sm text-muted-foreground mb-1">Total Campaigns</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.total}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Mail className="w-5 h-5 text-[#2969FF]" />
@@ -683,12 +683,12 @@ export function EmailCampaigns() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Emails Sent</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalSent.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground mb-1">Emails Sent</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.totalSent.toLocaleString()}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <Send className="w-5 h-5 text-green-600" />
@@ -696,12 +696,12 @@ export function EmailCampaigns() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Avg. Open Rate</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{avgOpenRate.toFixed(1)}%</p>
+                <p className="text-sm text-muted-foreground mb-1">Avg. Open Rate</p>
+                <p className="text-2xl font-semibold text-foreground">{avgOpenRate.toFixed(1)}%</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Eye className="w-5 h-5 text-purple-600" />
@@ -709,12 +709,12 @@ export function EmailCampaigns() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Avg. Click Rate</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{avgClickRate.toFixed(1)}%</p>
+                <p className="text-sm text-muted-foreground mb-1">Avg. Click Rate</p>
+                <p className="text-2xl font-semibold text-foreground">{avgClickRate.toFixed(1)}%</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                 <BarChart3 className="w-5 h-5 text-orange-600" />
@@ -725,20 +725,20 @@ export function EmailCampaigns() {
       </div>
 
       {/* Search & Filter */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search campaigns..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl"
+                className="pl-10 h-12 bg-muted border-0 rounded-xl"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="md:w-40 h-12 rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="md:w-40 h-12 rounded-xl border-border/10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -755,10 +755,10 @@ export function EmailCampaigns() {
 
       {/* Campaigns List */}
       {filteredCampaigns.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-12 text-center">
-            <Mail className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60 mb-4">
+            <Mail className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground mb-4">
               {campaigns.length === 0 ? 'No campaigns yet' : 'No campaigns match your filters'}
             </p>
             {campaigns.length === 0 && (
@@ -778,12 +778,12 @@ export function EmailCampaigns() {
       ) : (
         <div className="space-y-3">
           {filteredCampaigns.map((campaign) => (
-            <Card key={campaign.id} className="border-[#0F0F0F]/10 rounded-2xl hover:shadow-md transition-shadow">
+            <Card key={campaign.id} className="border-border/10 rounded-2xl hover:shadow-md transition-shadow">
               <CardContent className="p-4 md:p-6">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="font-medium text-[#0F0F0F] truncate">{campaign.name}</h3>
+                      <h3 className="font-medium text-foreground truncate">{campaign.name}</h3>
                       {getStatusBadge(campaign.status)}
                       {campaign.events && (
                         <Badge variant="outline" className="text-xs">
@@ -791,8 +791,8 @@ export function EmailCampaigns() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-[#0F0F0F]/60 mb-2 truncate">{campaign.subject}</p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                    <p className="text-sm text-muted-foreground mb-2 truncate">{campaign.subject}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
                         {campaign.total_recipients > 0 ? `${campaign.total_recipients} recipients` : 'No recipients'}
@@ -835,7 +835,7 @@ export function EmailCampaigns() {
                         setPreviewCampaign(campaign);
                         setIsPreviewOpen(true);
                       }}
-                      className="rounded-xl border-[#0F0F0F]/10"
+                      className="rounded-xl border-border/10"
                     >
                       <Eye className="w-4 h-4 mr-1" />
                       Preview
@@ -982,7 +982,7 @@ export function EmailCampaigns() {
             {recipientCount > 0 && (
               <div className="p-3 bg-[#2969FF]/5 rounded-xl flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#2969FF]" />
-                <span className="text-sm text-[#0F0F0F]">
+                <span className="text-sm text-foreground">
                   This campaign will be sent to <strong>{recipientCount}</strong> recipients
                 </span>
               </div>
@@ -996,7 +996,7 @@ export function EmailCampaigns() {
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 className="rounded-xl h-12"
               />
-              <p className="text-xs text-[#0F0F0F]/40">
+              <p className="text-xs text-muted-foreground">
                 Variables: {'{{attendee_name}}'}, {'{{event_name}}'}, {'{{event_date}}'}, {'{{event_venue}}'}
               </p>
             </div>
@@ -1019,7 +1019,7 @@ export function EmailCampaigns() {
                 onChange={(e) => setFormData({ ...formData, scheduledFor: e.target.value })}
                 className="rounded-xl h-12"
               />
-              <p className="text-xs text-[#0F0F0F]/40">
+              <p className="text-xs text-muted-foreground">
                 Leave empty to save as draft or send immediately
               </p>
             </div>
@@ -1070,12 +1070,12 @@ export function EmailCampaigns() {
           </DialogHeader>
           {previewCampaign && (
             <div className="space-y-4">
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Subject:</p>
-                <p className="font-medium text-[#0F0F0F]">{previewCampaign.subject}</p>
+              <div className="p-4 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground mb-1">Subject:</p>
+                <p className="font-medium text-foreground">{previewCampaign.subject}</p>
               </div>
-              <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl">
-                <pre className="whitespace-pre-wrap font-sans text-[#0F0F0F]">
+              <div className="p-4 bg-card border border-border/10 rounded-xl">
+                <pre className="whitespace-pre-wrap font-sans text-foreground">
                   {previewCampaign.body}
                 </pre>
               </div>

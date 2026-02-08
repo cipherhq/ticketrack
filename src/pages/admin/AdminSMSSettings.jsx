@@ -172,8 +172,8 @@ export function AdminSMSSettings() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">SMS Settings</h1>
-          <p className="text-[#0F0F0F]/60">Configure SMS provider and pricing</p>
+          <h1 className="text-2xl font-bold text-foreground">SMS Settings</h1>
+          <p className="text-muted-foreground">Configure SMS provider and pricing</p>
         </div>
         {saved && (
           <Badge className="bg-green-100 text-green-700 gap-1">
@@ -184,13 +184,13 @@ export function AdminSMSSettings() {
 
       {/* Pricing Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10">
+        <Card className="border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Your Cost</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(parseFloat(config.cost_per_sms), config.currency)}</p>
-                <p className="text-xs text-[#0F0F0F]/40">per SMS</p>
+                <p className="text-sm text-muted-foreground">Your Cost</p>
+                <p className="text-2xl font-bold text-foreground">{formatPrice(parseFloat(config.cost_per_sms), config.currency)}</p>
+                <p className="text-xs text-muted-foreground">per SMS</p>
               </div>
               <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-red-500" />
@@ -199,13 +199,13 @@ export function AdminSMSSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10">
+        <Card className="border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Selling Price</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatPrice(parseFloat(config.selling_price), config.currency)}</p>
-                <p className="text-xs text-[#0F0F0F]/40">per SMS</p>
+                <p className="text-sm text-muted-foreground">Selling Price</p>
+                <p className="text-2xl font-bold text-foreground">{formatPrice(parseFloat(config.selling_price), config.currency)}</p>
+                <p className="text-xs text-muted-foreground">per SMS</p>
               </div>
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-blue-500" />
@@ -214,13 +214,13 @@ export function AdminSMSSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10">
+        <Card className="border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Profit</p>
+                <p className="text-sm text-muted-foreground">Profit</p>
                 <p className="text-2xl font-bold text-green-600">{formatPrice(profitPerSms, config.currency)}</p>
-                <p className="text-xs text-[#0F0F0F]/40">per SMS</p>
+                <p className="text-xs text-muted-foreground">per SMS</p>
               </div>
               <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-500" />
@@ -229,13 +229,13 @@ export function AdminSMSSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10">
+        <Card className="border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Markup</p>
+                <p className="text-sm text-muted-foreground">Markup</p>
                 <p className="text-2xl font-bold text-purple-600">{markupPercent}%</p>
-                <p className="text-xs text-[#0F0F0F]/40">profit margin</p>
+                <p className="text-xs text-muted-foreground">profit margin</p>
               </div>
               <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-purple-500" />
@@ -246,7 +246,7 @@ export function AdminSMSSettings() {
       </div>
 
       {/* Pricing Configuration */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-green-600" />
@@ -270,7 +270,7 @@ export function AdminSMSSettings() {
                 className="h-12 rounded-xl"
                 placeholder="0.85"
               />
-              <p className="text-xs text-[#0F0F0F]/40">What you pay your SMS provider per message</p>
+              <p className="text-xs text-muted-foreground">What you pay your SMS provider per message</p>
             </div>
 
             <div className="space-y-2">
@@ -285,7 +285,7 @@ export function AdminSMSSettings() {
                 className="h-12 rounded-xl"
                 placeholder="4.00"
               />
-              <p className="text-xs text-[#0F0F0F]/40">What organizers pay per SMS credit</p>
+              <p className="text-xs text-muted-foreground">What organizers pay per SMS credit</p>
             </div>
           </div>
 
@@ -311,7 +311,7 @@ export function AdminSMSSettings() {
       </Card>
 
       {/* Provider Configuration */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -335,7 +335,7 @@ export function AdminSMSSettings() {
             <div className="space-y-2">
               <Label htmlFor="api_key">API Key</Label>
               <div className="relative">
-                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="api_key"
                   type="password"
@@ -357,7 +357,7 @@ export function AdminSMSSettings() {
                 placeholder="Ticketrack"
                 maxLength={11}
               />
-              <p className="text-xs text-[#0F0F0F]/40">Max 11 characters, no spaces</p>
+              <p className="text-xs text-muted-foreground">Max 11 characters, no spaces</p>
             </div>
           </div>
 

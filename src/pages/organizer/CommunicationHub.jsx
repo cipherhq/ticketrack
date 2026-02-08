@@ -1352,8 +1352,8 @@ export function CommunicationHub() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Communication Hub</h1>
-          <p className="text-[#0F0F0F]/60">Send emails, SMS, and WhatsApp messages to your audience</p>
+          <h1 className="text-2xl font-bold text-foreground">Communication Hub</h1>
+          <p className="text-muted-foreground">Send emails, SMS, and WhatsApp messages to your audience</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => navigate('/organizer/contacts')}>
@@ -1369,7 +1369,7 @@ export function CommunicationHub() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -1377,13 +1377,13 @@ export function CommunicationHub() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.totalContacts.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Contacts</p>
+                <p className="text-xs text-muted-foreground">Contacts</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -1391,13 +1391,13 @@ export function CommunicationHub() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{campaigns.length}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Campaigns</p>
+                <p className="text-xs text-muted-foreground">Campaigns</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -1405,13 +1405,13 @@ export function CommunicationHub() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.emailsSent.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Emails Sent</p>
+                <p className="text-xs text-muted-foreground">Emails Sent</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl cursor-pointer hover:border-[#2969FF]/30 transition-colors" onClick={() => navigate('/organizer/credits')}>
+        <Card className="border-border/10 rounded-xl cursor-pointer hover:border-[#2969FF]/30 transition-colors" onClick={() => navigate('/organizer/credits')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -1419,13 +1419,13 @@ export function CommunicationHub() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-[#2969FF]">{stats.messageCredits.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Message Credits</p>
+                <p className="text-xs text-muted-foreground">Message Credits</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -1433,13 +1433,13 @@ export function CommunicationHub() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.smsCredits.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">SMS Available</p>
+                <p className="text-xs text-muted-foreground">SMS Available</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -1447,13 +1447,13 @@ export function CommunicationHub() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.whatsappCredits.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">WhatsApp Available</p>
+                <p className="text-xs text-muted-foreground">WhatsApp Available</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -1461,7 +1461,7 @@ export function CommunicationHub() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{segments.length}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Segments</p>
+                <p className="text-xs text-muted-foreground">Segments</p>
               </div>
             </div>
           </CardContent>
@@ -1484,11 +1484,11 @@ export function CommunicationHub() {
         {/* Campaigns Tab */}
         <TabsContent value="campaigns" className="space-y-4">
           {campaigns.length === 0 ? (
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="py-12 text-center">
-                <Send className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-[#0F0F0F] mb-2">No campaigns yet</h3>
-                <p className="text-[#0F0F0F]/60 mb-4">Create your first campaign to reach your audience</p>
+                <Send className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No campaigns yet</h3>
+                <p className="text-muted-foreground mb-4">Create your first campaign to reach your audience</p>
                 <Button onClick={() => setShowCreateWizard(true)} className="bg-[#2969FF] text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Campaign
@@ -1498,7 +1498,7 @@ export function CommunicationHub() {
           ) : (
             <div className="space-y-3">
               {campaigns.map(campaign => (
-                <Card key={campaign.id} className="border-[#0F0F0F]/10 rounded-xl hover:shadow-md transition-shadow">
+                <Card key={campaign.id} className="border-border/10 rounded-xl hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
@@ -1510,14 +1510,14 @@ export function CommunicationHub() {
                             campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
                             campaign.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
                             campaign.status === 'sending' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
+                            'bg-muted text-foreground/80'
                           }>
                             {campaign.status === 'sent' && <CheckCircle className="w-3 h-3 mr-1" />}
                             {campaign.status === 'scheduled' && <Clock className="w-3 h-3 mr-1" />}
                             {campaign.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             {(campaign.channels || ['email']).map(ch => {
                               const channel = CHANNELS.find(c => c.id === ch);
@@ -1588,7 +1588,7 @@ export function CommunicationHub() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {savedTemplates.map(template => (
-                  <Card key={template.id} className="border-[#0F0F0F]/10 rounded-xl hover:shadow-md transition-shadow">
+                  <Card key={template.id} className="border-border/10 rounded-xl hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
@@ -1597,7 +1597,7 @@ export function CommunicationHub() {
                           </div>
                           <div>
                             <h3 className="font-medium">{template.name}</h3>
-                            <p className="text-xs text-[#0F0F0F]/60">
+                            <p className="text-xs text-muted-foreground">
                               {format(new Date(template.created_at), 'MMM d, yyyy')}
                             </p>
                           </div>
@@ -1679,7 +1679,7 @@ export function CommunicationHub() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {TEMPLATES.filter(t => t.id !== 'custom').map(template => (
-                <Card key={template.id} className="border-[#0F0F0F]/10 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
+                <Card key={template.id} className="border-border/10 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => {
                     selectTemplate(template.id);
                     setShowCreateWizard(true);
@@ -1693,7 +1693,7 @@ export function CommunicationHub() {
                       </div>
                       <div>
                         <h3 className="font-medium">{template.name}</h3>
-                        <p className="text-xs text-[#0F0F0F]/60">{template.category}</p>
+                        <p className="text-xs text-muted-foreground">{template.category}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1711,11 +1711,11 @@ export function CommunicationHub() {
 
           {/* Empty State */}
           {savedTemplates.length === 0 && (
-            <Card className="border-dashed border-2 border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-dashed border-2 border-border/10 rounded-xl">
               <CardContent className="py-8 text-center">
-                <FileText className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+                <FileText className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
                 <h3 className="font-medium mb-2">No custom templates yet</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   Create your own templates to save time when composing campaigns
                 </p>
                 <Button
@@ -1742,17 +1742,17 @@ export function CommunicationHub() {
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
           {analytics.loading ? (
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="py-12 text-center">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto mb-4" />
-                <p className="text-[#0F0F0F]/60">Loading analytics...</p>
+                <p className="text-muted-foreground">Loading analytics...</p>
               </CardContent>
             </Card>
           ) : (
             <>
               {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -1760,13 +1760,13 @@ export function CommunicationHub() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold">{analytics.deliveryStats.sent.toLocaleString()}</p>
-                        <p className="text-xs text-[#0F0F0F]/60">Messages Sent (30d)</p>
+                        <p className="text-xs text-muted-foreground">Messages Sent (30d)</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -1778,13 +1778,13 @@ export function CommunicationHub() {
                             ? Math.round((analytics.deliveryStats.delivered / analytics.deliveryStats.sent) * 100)
                             : 0}%
                         </p>
-                        <p className="text-xs text-[#0F0F0F]/60">Delivery Rate</p>
+                        <p className="text-xs text-muted-foreground">Delivery Rate</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -1792,13 +1792,13 @@ export function CommunicationHub() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold">{analytics.creditsUsedThisMonth.toLocaleString()}</p>
-                        <p className="text-xs text-[#0F0F0F]/60">Credits Used (Month)</p>
+                        <p className="text-xs text-muted-foreground">Credits Used (Month)</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -1806,7 +1806,7 @@ export function CommunicationHub() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold">{analytics.campaignPerformance.length}</p>
-                        <p className="text-xs text-[#0F0F0F]/60">Recent Campaigns</p>
+                        <p className="text-xs text-muted-foreground">Recent Campaigns</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1816,7 +1816,7 @@ export function CommunicationHub() {
               {/* Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Messages Over Time */}
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-[#2969FF]" />
@@ -1851,13 +1851,13 @@ export function CommunicationHub() {
                             );
                           })}
                         </div>
-                        <div className="flex justify-between text-xs text-[#0F0F0F]/50">
+                        <div className="flex justify-between text-xs text-muted-foreground">
                           <span>{analytics.dailySends[0]?.date?.slice(5)}</span>
                           <span>{analytics.dailySends[analytics.dailySends.length - 1]?.date?.slice(5)}</span>
                         </div>
                       </div>
                     ) : (
-                      <div className="h-32 flex items-center justify-center text-[#0F0F0F]/40">
+                      <div className="h-32 flex items-center justify-center text-muted-foreground">
                         No message data yet
                       </div>
                     )}
@@ -1865,7 +1865,7 @@ export function CommunicationHub() {
                 </Card>
 
                 {/* Channel Breakdown */}
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Target className="w-4 h-4 text-[#2969FF]" />
@@ -1933,7 +1933,7 @@ export function CommunicationHub() {
                         </div>
                       </div>
                     ) : (
-                      <div className="h-32 flex items-center justify-center text-[#0F0F0F]/40">
+                      <div className="h-32 flex items-center justify-center text-muted-foreground">
                         No channel data yet
                       </div>
                     )}
@@ -1944,7 +1944,7 @@ export function CommunicationHub() {
               {/* Delivery Stats & Top Campaigns */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Delivery Stats */}
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-600" />
@@ -1970,7 +1970,7 @@ export function CommunicationHub() {
                     {/* Delivery rate visual */}
                     <div className="mt-4">
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-[#0F0F0F]/60">Overall Delivery Rate</span>
+                        <span className="text-muted-foreground">Overall Delivery Rate</span>
                         <span className="font-medium">
                           {analytics.deliveryStats.sent > 0 
                             ? Math.round((analytics.deliveryStats.delivered / analytics.deliveryStats.sent) * 100)
@@ -2002,7 +2002,7 @@ export function CommunicationHub() {
                 </Card>
 
                 {/* Top Campaigns */}
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-amber-600" />
@@ -2016,22 +2016,22 @@ export function CommunicationHub() {
                           <div key={campaign.id} className="flex items-center gap-3">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                               idx === 0 ? 'bg-amber-100 text-amber-700' :
-                              idx === 1 ? 'bg-gray-200 text-gray-600' :
+                              idx === 1 ? 'bg-muted text-muted-foreground' :
                               idx === 2 ? 'bg-orange-100 text-orange-700' :
-                              'bg-[#F4F6FA] text-[#0F0F0F]/60'
+                              'bg-muted text-muted-foreground'
                             }`}>
                               {idx + 1}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{campaign.name || 'Untitled Campaign'}</p>
-                              <p className="text-xs text-[#0F0F0F]/50">{campaign.sent_count?.toLocaleString() || 0} messages</p>
+                              <p className="text-xs text-muted-foreground">{campaign.sent_count?.toLocaleString() || 0} messages</p>
                             </div>
                             <div className="flex gap-1">
                               {campaign.channels?.map(ch => {
                                 const channel = CHANNELS.find(c => c.id === ch);
                                 const Icon = channel?.icon || Mail;
                                 return (
-                                  <Icon key={ch} className={`w-3 h-3 ${channel?.color || 'text-gray-400'}`} />
+                                  <Icon key={ch} className={`w-3 h-3 ${channel?.color || 'text-muted-foreground'}`} />
                                 );
                               })}
                             </div>
@@ -2039,7 +2039,7 @@ export function CommunicationHub() {
                         ))}
                       </div>
                     ) : (
-                      <div className="h-32 flex items-center justify-center text-[#0F0F0F]/40">
+                      <div className="h-32 flex items-center justify-center text-muted-foreground">
                         <div className="text-center">
                           <Send className="w-8 h-8 mx-auto mb-2 opacity-30" />
                           <p>No campaigns with sends yet</p>
@@ -2051,7 +2051,7 @@ export function CommunicationHub() {
               </div>
 
               {/* Recent Campaign Activity */}
-              <Card className="border-[#0F0F0F]/10 rounded-xl">
+              <Card className="border-border/10 rounded-xl">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[#2969FF]" />
@@ -2063,17 +2063,17 @@ export function CommunicationHub() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-[#0F0F0F]/10">
-                            <th className="text-left py-2 font-medium text-[#0F0F0F]/60">Campaign</th>
-                            <th className="text-left py-2 font-medium text-[#0F0F0F]/60">Channels</th>
-                            <th className="text-right py-2 font-medium text-[#0F0F0F]/60">Sent</th>
-                            <th className="text-right py-2 font-medium text-[#0F0F0F]/60">Status</th>
-                            <th className="text-right py-2 font-medium text-[#0F0F0F]/60">Date</th>
+                          <tr className="border-b border-border/10">
+                            <th className="text-left py-2 font-medium text-muted-foreground">Campaign</th>
+                            <th className="text-left py-2 font-medium text-muted-foreground">Channels</th>
+                            <th className="text-right py-2 font-medium text-muted-foreground">Sent</th>
+                            <th className="text-right py-2 font-medium text-muted-foreground">Status</th>
+                            <th className="text-right py-2 font-medium text-muted-foreground">Date</th>
                           </tr>
                         </thead>
                         <tbody>
                           {analytics.campaignPerformance.slice(0, 8).map(campaign => (
-                            <tr key={campaign.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                            <tr key={campaign.id} className="border-b border-border/5 hover:bg-muted/50">
                               <td className="py-3">
                                 <p className="font-medium truncate max-w-[200px]">{campaign.name || 'Untitled'}</p>
                               </td>
@@ -2098,13 +2098,13 @@ export function CommunicationHub() {
                                   campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
                                   campaign.status === 'sending' ? 'bg-blue-100 text-blue-700' :
                                   campaign.status === 'scheduled' ? 'bg-purple-100 text-purple-700' :
-                                  campaign.status === 'draft' ? 'bg-gray-100 text-gray-600' :
-                                  'bg-gray-100 text-gray-600'
+                                  campaign.status === 'draft' ? 'bg-muted text-muted-foreground' :
+                                  'bg-muted text-muted-foreground'
                                 }>
                                   {campaign.status}
                                 </Badge>
                               </td>
-                              <td className="py-3 text-right text-[#0F0F0F]/60">
+                              <td className="py-3 text-right text-muted-foreground">
                                 {campaign.sent_at 
                                   ? format(new Date(campaign.sent_at), 'MMM d, yyyy')
                                   : format(new Date(campaign.created_at), 'MMM d, yyyy')
@@ -2116,7 +2116,7 @@ export function CommunicationHub() {
                       </table>
                     </div>
                   ) : (
-                    <div className="py-8 text-center text-[#0F0F0F]/40">
+                    <div className="py-8 text-center text-muted-foreground">
                       <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
                       <p>No campaigns yet. Create your first campaign to see analytics.</p>
                     </div>
@@ -2161,11 +2161,11 @@ export function CommunicationHub() {
               <div key={s} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   s === wizardStep ? 'bg-[#2969FF] text-white' :
-                  s < wizardStep ? 'bg-green-500 text-white' : 'bg-[#F4F6FA] text-[#0F0F0F]/40'
+                  s < wizardStep ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'
                 }`}>
                   {s < wizardStep ? <CheckCircle className="w-4 h-4" /> : s}
                 </div>
-                {s < 4 && <div className={`w-12 h-1 mx-1 rounded ${s < wizardStep ? 'bg-green-500' : 'bg-[#F4F6FA]'}`} />}
+                {s < 4 && <div className={`w-12 h-1 mx-1 rounded ${s < wizardStep ? 'bg-green-500' : 'bg-muted'}`} />}
               </div>
             ))}
           </div>
@@ -2182,7 +2182,7 @@ export function CommunicationHub() {
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
                       form.channels.includes(channel.id)
                         ? 'border-[#2969FF] bg-[#2969FF]/5'
-                        : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                        : 'border-border/10 hover:border-border/20'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -2193,7 +2193,7 @@ export function CommunicationHub() {
                       </div>
                       <div>
                         <p className="font-medium">{channel.name}</p>
-                        <p className="text-xs text-[#0F0F0F]/60">{channel.description}</p>
+                        <p className="text-xs text-muted-foreground">{channel.description}</p>
                       </div>
                     </div>
                   </button>
@@ -2224,18 +2224,18 @@ export function CommunicationHub() {
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
                       form.audienceType === type.id
                         ? 'border-[#2969FF] bg-[#2969FF]/5'
-                        : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                        : 'border-border/10 hover:border-border/20'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        form.audienceType === type.id ? 'bg-[#2969FF] text-white' : 'bg-[#F4F6FA]'
+                        form.audienceType === type.id ? 'bg-[#2969FF] text-white' : 'bg-muted'
                       }`}>
                         <type.icon className="w-5 h-5" />
                       </div>
                       <div>
                         <p className="font-medium">{type.label}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">{type.description}</p>
+                        <p className="text-sm text-muted-foreground">{type.description}</p>
                       </div>
                     </div>
                   </button>
@@ -2323,7 +2323,7 @@ export function CommunicationHub() {
                       className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all ${
                         form.template === t.id
                           ? 'bg-[#2969FF] text-white'
-                          : 'bg-[#F4F6FA] hover:bg-[#E8EBF0]'
+                          : 'bg-muted hover:bg-[#E8EBF0]'
                       }`}
                     >
                       <t.icon className="w-3.5 h-3.5" />
@@ -2383,7 +2383,7 @@ export function CommunicationHub() {
                     </div>
                     <div>
                       <Label>Message Body</Label>
-                      <div className="mt-1 rounded-xl overflow-hidden border border-[#0F0F0F]/10">
+                      <div className="mt-1 rounded-xl overflow-hidden border border-border/10">
                         <ReactQuill
                           theme="snow"
                           value={form.content.email.body}
@@ -2401,7 +2401,7 @@ export function CommunicationHub() {
                           <button
                             key={v.key}
                             onClick={() => insertVariable('email', v.key)}
-                            className="px-2 py-1 bg-[#F4F6FA] hover:bg-[#E8EBF0] rounded text-xs font-mono"
+                            className="px-2 py-1 bg-muted hover:bg-[#E8EBF0] rounded text-xs font-mono"
                             title={v.label}
                           >
                             {v.key}
@@ -2415,7 +2415,7 @@ export function CommunicationHub() {
                 {form.channels.includes('sms') && (
                   <TabsContent value="sms" className="space-y-4 mt-4">
                     <div>
-                      <Label>SMS Message <span className="text-[#0F0F0F]/40">({(form.content.sms.message || '').length}/160)</span></Label>
+                      <Label>SMS Message <span className="text-muted-foreground">({(form.content.sms.message || '').length}/160)</span></Label>
                       <Textarea
                         value={form.content.sms.message}
                         onChange={e => updateContent('sms', 'message', e.target.value)}
@@ -2431,7 +2431,7 @@ export function CommunicationHub() {
                           <button
                             key={v.key}
                             onClick={() => insertVariable('sms', v.key)}
-                            className="px-2 py-1 bg-[#F4F6FA] hover:bg-[#E8EBF0] rounded text-xs font-mono"
+                            className="px-2 py-1 bg-muted hover:bg-[#E8EBF0] rounded text-xs font-mono"
                           >
                             {v.key}
                           </button>
@@ -2451,7 +2451,7 @@ export function CommunicationHub() {
                         placeholder="Write your WhatsApp message..."
                         className="mt-1 min-h-[150px]"
                       />
-                      <p className="text-xs text-[#0F0F0F]/40 mt-1">Use *bold* and _italic_ for formatting</p>
+                      <p className="text-xs text-muted-foreground mt-1">Use *bold* and _italic_ for formatting</p>
                     </div>
                     <div>
                       <Label className="mb-2 block text-sm">Insert Variable</Label>
@@ -2460,7 +2460,7 @@ export function CommunicationHub() {
                           <button
                             key={v.key}
                             onClick={() => insertVariable('whatsapp', v.key)}
-                            className="px-2 py-1 bg-[#F4F6FA] hover:bg-[#E8EBF0] rounded text-xs font-mono"
+                            className="px-2 py-1 bg-muted hover:bg-[#E8EBF0] rounded text-xs font-mono"
                           >
                             {v.key}
                           </button>
@@ -2472,8 +2472,8 @@ export function CommunicationHub() {
               </Tabs>
 
               {/* Save as Template Button */}
-              <div className="flex items-center justify-between pt-4 border-t border-[#0F0F0F]/10">
-                <p className="text-sm text-[#0F0F0F]/60">
+              <div className="flex items-center justify-between pt-4 border-t border-border/10">
+                <p className="text-sm text-muted-foreground">
                   {editingTemplate ? `Editing: ${editingTemplate.name}` : 'Save this content as a reusable template'}
                 </p>
                 <Button
@@ -2502,13 +2502,13 @@ export function CommunicationHub() {
                   <Send className="w-8 h-8 text-[#2969FF]" />
                 </div>
                 <h2 className="text-xl font-semibold mb-2">Ready to Send</h2>
-                <p className="text-[#0F0F0F]/60">Review your campaign before sending</p>
+                <p className="text-muted-foreground">Review your campaign before sending</p>
               </div>
 
               {/* Summary */}
-              <div className="bg-[#F4F6FA] rounded-xl p-4 space-y-3">
+              <div className="bg-muted rounded-xl p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-[#0F0F0F]/60">Channels</span>
+                  <span className="text-muted-foreground">Channels</span>
                   <div className="flex items-center gap-2">
                     {form.channels.map(ch => {
                       const channel = CHANNELS.find(c => c.id === ch);
@@ -2522,27 +2522,27 @@ export function CommunicationHub() {
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#0F0F0F]/60">Audience</span>
+                  <span className="text-muted-foreground">Audience</span>
                   <span className="font-medium">
                     {AUDIENCE_TYPES.find(t => t.id === form.audienceType)?.label}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#0F0F0F]/60">Recipients</span>
+                  <span className="text-muted-foreground">Recipients</span>
                   <span className="font-medium">{recipientCount.toLocaleString()}</span>
                 </div>
                 {form.channels.includes('email') && (
                   <div className="flex justify-between">
-                    <span className="text-[#0F0F0F]/60">Email Subject</span>
+                    <span className="text-muted-foreground">Email Subject</span>
                     <span className="font-medium truncate max-w-[200px]">{form.content.email.subject}</span>
                   </div>
                 )}
               </div>
 
               {/* Preview */}
-              <div className="border border-[#0F0F0F]/10 rounded-xl overflow-hidden">
-                <div className="bg-[#F4F6FA] p-3 border-b border-[#0F0F0F]/10 flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-[#0F0F0F]/60" />
+              <div className="border border-border/10 rounded-xl overflow-hidden">
+                <div className="bg-muted p-3 border-b border-border/10 flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Preview</span>
                 </div>
                 <div className="p-4">
@@ -2561,7 +2561,7 @@ export function CommunicationHub() {
                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(getPreviewContent('email')) }}
                           />
                         ) : (
-                          <div className="bg-gray-100 rounded-xl p-4 max-w-sm">
+                          <div className="bg-muted rounded-xl p-4 max-w-sm">
                             <p className="whitespace-pre-wrap text-sm">{getPreviewContent(ch)}</p>
                           </div>
                         )}
@@ -2580,7 +2580,7 @@ export function CommunicationHub() {
                   onChange={e => setForm(f => ({ ...f, scheduleFor: e.target.value }))}
                   className="mt-1"
                 />
-                <p className="text-xs text-[#0F0F0F]/40 mt-1">Leave empty to send immediately</p>
+                <p className="text-xs text-muted-foreground mt-1">Leave empty to send immediately</p>
               </div>
             </div>
           )}
@@ -2682,8 +2682,8 @@ export function CommunicationHub() {
               </div>
             </div>
 
-            <div className="bg-[#F4F6FA] rounded-lg p-3 text-sm text-[#0F0F0F]/60">
-              <p className="font-medium text-[#0F0F0F] mb-1">Content Preview</p>
+            <div className="bg-muted rounded-lg p-3 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">Content Preview</p>
               {form.channels.includes('email') && form.content.email.subject && (
                 <p>Email: {form.content.email.subject}</p>
               )}

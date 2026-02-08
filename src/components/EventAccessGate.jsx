@@ -207,15 +207,15 @@ export function EventAccessGate({ event, onAccessGranted, onBack }) {
   if (success) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+        <Card className="max-w-md w-full border-border/10 rounded-2xl overflow-hidden">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-xl font-semibold text-[#0F0F0F] mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               Access Granted!
             </h2>
-            <p className="text-[#0F0F0F]/60">
+            <p className="text-muted-foreground">
               Loading event details...
             </p>
           </CardContent>
@@ -226,10 +226,10 @@ export function EventAccessGate({ event, onAccessGranted, onBack }) {
   
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-4">
-      <Card className="max-w-md w-full border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+      <Card className="max-w-md w-full border-border/10 rounded-2xl overflow-hidden">
         {/* Header with event image (if available and settings allow) */}
         {event?.image_url && event?.access_settings?.showDetailsBeforeAuth && (
-          <div className="relative h-32 bg-[#F4F6FA]">
+          <div className="relative h-32 bg-muted">
             <img
               src={event.image_url}
               alt={event.title}
@@ -245,7 +245,7 @@ export function EventAccessGate({ event, onAccessGranted, onBack }) {
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="mb-6 -ml-2 text-[#0F0F0F]/60 hover:text-[#0F0F0F]"
+            className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to events
@@ -257,23 +257,23 @@ export function EventAccessGate({ event, onAccessGranted, onBack }) {
             ${config.color === 'orange' ? 'bg-orange-100' : ''}
             ${config.color === 'purple' ? 'bg-purple-100' : ''}
             ${config.color === 'pink' ? 'bg-pink-100' : ''}
-            ${config.color === 'gray' ? 'bg-gray-100' : ''}
+            ${config.color === 'gray' ? 'bg-muted' : ''}
           `}>
             <Icon className={`
               w-8 h-8
               ${config.color === 'orange' ? 'text-orange-600' : ''}
               ${config.color === 'purple' ? 'text-purple-600' : ''}
               ${config.color === 'pink' ? 'text-pink-600' : ''}
-              ${config.color === 'gray' ? 'text-gray-600' : ''}
+              ${config.color === 'gray' ? 'text-muted-foreground' : ''}
             `} />
           </div>
           
           {/* Title & subtitle */}
           <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold text-[#0F0F0F] mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               {config.title}
             </h2>
-            <p className="text-[#0F0F0F]/60">
+            <p className="text-muted-foreground">
               {config.subtitle}
             </p>
             
@@ -306,7 +306,7 @@ export function EventAccessGate({ event, onAccessGranted, onBack }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]/60"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -377,7 +377,7 @@ export function EventAccessGate({ event, onAccessGranted, onBack }) {
           </form>
           
           {/* Help text */}
-          <p className="text-xs text-[#0F0F0F]/40 text-center mt-6">
+          <p className="text-xs text-muted-foreground text-center mt-6">
             {visibility === 'password' && "Don't have the password? Contact the event organizer."}
             {visibility === 'invite_only' && "Don't have a code? Contact the event organizer for an invite."}
             {visibility === 'email_whitelist' && "Not on the list? Contact the event organizer to request access."}

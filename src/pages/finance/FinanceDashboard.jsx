@@ -156,8 +156,8 @@ export function FinanceDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#0F0F0F]">Finance Dashboard</h1>
-        <p className="text-[#0F0F0F]/60">Welcome back, {financeUser?.email}</p>
+        <h1 className="text-2xl font-bold text-foreground">Finance Dashboard</h1>
+        <p className="text-muted-foreground">Welcome back, {financeUser?.email}</p>
       </div>
 
       {/* Alert for pending payouts */}
@@ -183,57 +183,57 @@ export function FinanceDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Platform Revenue</p>
-                <p className="text-xl font-bold text-[#0F0F0F]">{formatCurrencyBreakdown(stats.revenueByCurrency)}</p>
+                <p className="text-sm text-muted-foreground">Platform Revenue</p>
+                <p className="text-xl font-bold text-foreground">{formatCurrencyBreakdown(stats.revenueByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
-                <p className="text-xl font-bold text-[#0F0F0F]">{formatCurrencyBreakdown(stats.pendingPayoutsByCurrency)}</p>
+                <p className="text-sm text-muted-foreground">Pending Payouts</p>
+                <p className="text-xl font-bold text-foreground">{formatCurrencyBreakdown(stats.pendingPayoutsByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Paid Out</p>
-                <p className="text-xl font-bold text-[#0F0F0F]">{formatCurrencyBreakdown(stats.completedPayoutsByCurrency)}</p>
+                <p className="text-sm text-muted-foreground">Total Paid Out</p>
+                <p className="text-xl font-bold text-foreground">{formatCurrencyBreakdown(stats.completedPayoutsByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Events</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{stats.pendingEventCount}</p>
+                <p className="text-sm text-muted-foreground">Pending Events</p>
+                <p className="text-2xl font-bold text-foreground">{stats.pendingEventCount}</p>
               </div>
             </div>
           </CardContent>
@@ -243,7 +243,7 @@ export function FinanceDashboard() {
       {/* Quick Actions & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
@@ -311,7 +311,7 @@ export function FinanceDashboard() {
         </Card>
 
         {/* Recent Payouts */}
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Payouts</CardTitle>
             <Button 
@@ -325,14 +325,14 @@ export function FinanceDashboard() {
           </CardHeader>
           <CardContent>
             {stats.recentPayouts.length === 0 ? (
-              <p className="text-center text-[#0F0F0F]/60 py-8">No payouts yet</p>
+              <p className="text-center text-muted-foreground py-8">No payouts yet</p>
             ) : (
               <div className="space-y-3">
                 {stats.recentPayouts.map((payout) => (
-                  <div key={payout.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                  <div key={payout.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                     <div>
-                      <p className="font-medium text-[#0F0F0F]">{payout.organizers?.business_name}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">
+                      <p className="font-medium text-foreground">{payout.organizers?.business_name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {new Date(payout.processed_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -349,7 +349,7 @@ export function FinanceDashboard() {
       </div>
 
       {/* Finance Tools Grid */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Finance Tools</CardTitle>
         </CardHeader>
@@ -400,7 +400,7 @@ export function FinanceDashboard() {
               className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl"
               onClick={() => navigate('/finance/audit-log')}
             >
-              <Receipt className="w-5 h-5 text-gray-600" />
+              <Receipt className="w-5 h-5 text-muted-foreground" />
               <span className="text-xs">Audit Log</span>
             </Button>
             <Button
@@ -441,7 +441,7 @@ export function FinanceDashboard() {
 
       {/* Escrow Summary */}
       {Object.keys(stats.escrowByCurrency).length > 0 && Object.values(stats.escrowByCurrency).some(v => v > 0) && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50">
+        <Card className="border-border/10 rounded-2xl bg-blue-50">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Lock className="w-5 h-5 text-blue-600" />

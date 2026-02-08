@@ -64,12 +64,12 @@ const SideAd = ({ ad }) => {
 
   return (
     <div className="relative">
-      <div className="absolute -top-6 right-0 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+      <div className="absolute -top-6 right-0 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
         Ad
       </div>
       <div 
         onClick={handleClick}
-        className="w-[300px] h-[600px] bg-gray-100 rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-xl transition-shadow"
+        className="w-[300px] h-[600px] bg-muted rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-xl transition-shadow"
       >
         {ad.media_type === 'video' ? (
           <video 
@@ -113,12 +113,12 @@ const BannerAd = ({ ad }) => {
 
   return (
     <div className="relative max-w-[1200px] mx-auto my-8">
-      <div className="absolute -top-5 right-2 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+      <div className="absolute -top-5 right-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
         Ad
       </div>
       <div 
         onClick={handleClick}
-        className="w-full h-[200px] md:h-[300px] bg-gray-100 rounded-xl overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-shadow"
+        className="w-full h-[200px] md:h-[300px] bg-muted rounded-xl overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-shadow"
       >
         {ad.media_type === 'video' ? (
           <video 
@@ -155,7 +155,7 @@ const EventCard = ({ event, showDistance = false }) => {
   return (
     <Link 
       to={`/e/${event.slug || event.id}`}
-      className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col min-w-[280px] max-w-[280px]"
+      className="group bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col min-w-[280px] max-w-[280px]"
     >
       <div className="relative h-[160px] overflow-hidden">
         <img 
@@ -164,7 +164,7 @@ const EventCard = ({ event, showDistance = false }) => {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         {event.category && (
-          <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
+          <span className="absolute top-3 left-3 bg-card/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
             {event.category}
           </span>
         )}
@@ -190,21 +190,21 @@ const EventCard = ({ event, showDistance = false }) => {
         )}
       </div>
       <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
+        <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
           {event.title}
         </h3>
-        <div className="flex items-center gap-1 text-gray-500 text-sm mb-1">
+        <div className="flex items-center gap-1 text-muted-foreground text-sm mb-1">
           <Calendar size={14} />
           <span>{formatDate(event.start_date)}</span>
         </div>
-        <div className="flex items-start gap-1 text-gray-500 text-sm mb-3">
+        <div className="flex items-start gap-1 text-muted-foreground text-sm mb-3">
           <MapPin size={14} className="mt-0.5 flex-shrink-0" />
           <span className="line-clamp-2">
             {event.is_virtual ? 'Virtual Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}
           </span>
         </div>
         <div className="mt-auto flex items-center justify-between">
-          <span className="text-sm text-gray-500">From</span>
+          <span className="text-sm text-muted-foreground">From</span>
           <span className="font-bold text-blue-600">
             {event.is_free || event.min_price === 0 || event.min_price === null 
               ? 'Free' 
@@ -232,8 +232,8 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
         <div className="flex items-center gap-3">
           {Icon && <Icon className="text-blue-600" size={24} />}
           <div>
-            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+            <h2 className="text-xl font-bold text-foreground">{title}</h2>
+            {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           </div>
         </div>
         {viewAllLink && (
@@ -248,7 +248,7 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
           <Link 
             key={event.id}
             to={`/e/${event.slug || event.id}`}
-            className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col"
+            className="group bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col"
           >
             <div className="relative h-[160px] overflow-hidden">
               <img 
@@ -257,7 +257,7 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
               {event.category && (
-                <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
+                <span className="absolute top-3 left-3 bg-card/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
                   {event.category}
                 </span>
               )}
@@ -273,21 +273,21 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
               )}
             </div>
             <div className="p-4 flex flex-col flex-1">
-              <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
+              <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
                 {event.title}
               </h3>
-              <div className="flex items-center gap-1 text-gray-500 text-sm mb-1">
+              <div className="flex items-center gap-1 text-muted-foreground text-sm mb-1">
                 <Calendar size={14} />
                 <span>{new Date(event.start_date).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               </div>
-              <div className="flex items-start gap-1 text-gray-500 text-sm mb-3">
+              <div className="flex items-start gap-1 text-muted-foreground text-sm mb-3">
                 <MapPin size={14} className="mt-0.5 flex-shrink-0" />
                 <span className="line-clamp-2">
                   {event.is_virtual ? 'Virtual Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}
                 </span>
               </div>
               <div className="mt-auto flex items-center justify-between">
-                <span className="text-sm text-gray-500">From</span>
+                <span className="text-sm text-muted-foreground">From</span>
                 <span className="font-bold text-blue-600">
                   {event.is_free || event.min_price === 0 || event.min_price === null 
                     ? 'Free' 
@@ -325,11 +325,11 @@ const CategoryCard = ({ category }) => {
       className="relative min-w-[160px] h-[140px] rounded-2xl overflow-hidden group cursor-pointer bg-gradient-to-br from-[#2969FF] to-[#1a4fd8] p-4 flex flex-col justify-between shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
     >
       {/* Decorative circles */}
-      <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
-      <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
+      <div className="absolute -top-6 -right-6 w-24 h-24 bg-card/10 rounded-full" />
+      <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-card/10 rounded-full" />
 
       {/* Icon */}
-      <div className="relative z-10 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+      <div className="relative z-10 w-12 h-12 bg-card/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
         <IconComponent className="w-6 h-6 text-white" strokeWidth={2} />
       </div>
 
@@ -517,7 +517,7 @@ export function WebHome() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative min-h-[600px] md:min-h-[700px] overflow-hidden">
         {/* Background Image */}
@@ -547,29 +547,29 @@ export function WebHome() {
             </h1>
             
             {/* Subtitle */}
-            <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-xl">
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl">
               From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening worldwide.
             </p>
             
             {/* New Search Bar */}
-            <div className="bg-white rounded-2xl p-2 flex flex-col lg:flex-row gap-2 max-w-4xl mb-12">
+            <div className="bg-card rounded-2xl p-2 flex flex-col lg:flex-row gap-2 max-w-4xl mb-12">
               {/* Location Input */}
               <div className="flex-1 relative">
-                <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl">
+                <div className="flex items-center gap-2 px-4 py-3 border border-border/20 rounded-xl">
                   <MapPin className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium">Location</div>
+                    <div className="text-xs text-muted-foreground uppercase font-medium">Location</div>
                     <input
                       type="text"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="City or Venue"
-                      className="w-full outline-none text-sm text-gray-900 placeholder-gray-400"
+                      className="w-full outline-none text-sm text-foreground placeholder-muted-foreground"
                     />
                   </div>
                   {location && (
-                    <button onClick={() => setLocation('')} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={() => setLocation('')} className="text-muted-foreground hover:text-muted-foreground">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -579,23 +579,23 @@ export function WebHome() {
               {/* Date Filter */}
               <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
                 <div 
-                  className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl cursor-pointer hover:border-blue-500/50"
+                  className="flex items-center gap-2 px-4 py-3 border border-border/20 rounded-xl cursor-pointer hover:border-blue-500/50"
                   onClick={() => setShowDateDropdown(!showDateDropdown)}
                 >
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium">Dates</div>
-                    <div className="text-sm text-gray-900">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
+                    <div className="text-xs text-muted-foreground uppercase font-medium">Dates</div>
+                    <div className="text-sm text-foreground">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </div>
                 {showDateDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/20 rounded-xl shadow-lg z-20">
                     {dateOptions.map((option) => (
                       <button
                         key={option.value}
                         onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
-                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 text-sm ${dateFilter === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-900'}`}
+                        className={`w-full text-left px-4 py-3 hover:bg-background text-sm ${dateFilter === option.value ? 'bg-blue-50 text-blue-600' : 'text-foreground'}`}
                       >
                         {option.label}
                       </button>
@@ -606,21 +606,21 @@ export function WebHome() {
 
               {/* Search Input */}
               <div className="flex-[2] relative">
-                <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl">
+                <div className="flex items-center gap-2 px-4 py-3 border border-border/20 rounded-xl">
                   <Search className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium">Search</div>
+                    <div className="text-xs text-muted-foreground uppercase font-medium">Search</div>
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Artist, Event or Venue"
-                      className="w-full outline-none text-sm text-gray-900 placeholder-gray-400"
+                      className="w-full outline-none text-sm text-foreground placeholder-muted-foreground"
                     />
                   </div>
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={() => setSearchQuery('')} className="text-muted-foreground hover:text-muted-foreground">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -640,15 +640,15 @@ export function WebHome() {
             <div className="flex flex-wrap gap-8 md:gap-12">
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.eventsHosted}</div>
-                <div className="text-gray-400 text-sm">Events Hosted</div>
+                <div className="text-muted-foreground text-sm">Events Hosted</div>
               </div>
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.ticketsSold}</div>
-                <div className="text-gray-400 text-sm">Tickets Sold</div>
+                <div className="text-muted-foreground text-sm">Tickets Sold</div>
               </div>
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.organizers}</div>
-                <div className="text-gray-400 text-sm">Organizers</div>
+                <div className="text-muted-foreground text-sm">Organizers</div>
               </div>
             </div>
           </div>
@@ -669,7 +669,7 @@ export function WebHome() {
           {/* Popular Categories */}
           <section className="py-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Popular categories</h2>
+              <h2 className="text-xl font-bold text-foreground">Popular categories</h2>
               <Link to="/categories" className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
                 View All <ChevronRight size={16} />
               </Link>
@@ -744,54 +744,54 @@ export function WebHome() {
           />
 
           {/* Stats Section */}
-          <section className="py-12 my-8 bg-white rounded-2xl shadow-sm">
+          <section className="py-12 my-8 bg-card rounded-2xl shadow-sm">
             <div className="grid grid-cols-3 gap-8 text-center">
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.eventsHosted}</div>
-                <div className="text-gray-500 mt-1">Events</div>
+                <div className="text-muted-foreground mt-1">Events</div>
               </div>
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.ticketsSold}</div>
-                <div className="text-gray-500 mt-1">Tickets Sold</div>
+                <div className="text-muted-foreground mt-1">Tickets Sold</div>
               </div>
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.organizers}</div>
-                <div className="text-gray-500 mt-1">Organizers</div>
+                <div className="text-muted-foreground mt-1">Organizers</div>
               </div>
             </div>
           </section>
 
           {/* Why Choose Us */}
           <section className="py-12">
-            <h2 className="text-2xl font-bold text-gray-900 text-center mb-10">Why Choose Ticketrack</h2>
+            <h2 className="text-2xl font-bold text-foreground text-center mb-10">Why Choose Ticketrack</h2>
             <div className="grid md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm text-center">
+              <div className="bg-card p-6 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Shield className="text-blue-600" size={24} />
                 </div>
                 <h3 className="font-semibold mb-2">Secure Payments</h3>
-                <p className="text-sm text-gray-500">Your transactions are protected with bank-level security</p>
+                <p className="text-sm text-muted-foreground">Your transactions are protected with bank-level security</p>
               </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm text-center">
+              <div className="bg-card p-6 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Ticket className="text-blue-600" size={24} />
                 </div>
                 <h3 className="font-semibold mb-2">Instant Delivery</h3>
-                <p className="text-sm text-gray-500">Get your tickets delivered to your email instantly</p>
+                <p className="text-sm text-muted-foreground">Get your tickets delivered to your email instantly</p>
               </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm text-center">
+              <div className="bg-card p-6 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CreditCard className="text-blue-600" size={24} />
                 </div>
                 <h3 className="font-semibold mb-2">Easy Refunds</h3>
-                <p className="text-sm text-gray-500">Hassle-free refund process for eligible events</p>
+                <p className="text-sm text-muted-foreground">Hassle-free refund process for eligible events</p>
               </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm text-center">
+              <div className="bg-card p-6 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Headphones className="text-blue-600" size={24} />
                 </div>
                 <h3 className="font-semibold mb-2">24/7 Support</h3>
-                <p className="text-sm text-gray-500">Our team is always here to help you</p>
+                <p className="text-sm text-muted-foreground">Our team is always here to help you</p>
               </div>
             </div>
           </section>
@@ -821,12 +821,12 @@ export function WebHome() {
                 </span>
                 Coming Soon
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Ticketrack Mobile App</h2>
-              <p className="text-gray-600 mb-6 max-w-md">
+              <h2 className="text-3xl font-bold text-foreground mb-4">Ticketrack Mobile App</h2>
+              <p className="text-muted-foreground mb-6 max-w-md">
                 We're building something amazing! Soon you'll be able to manage your tickets, get exclusive deals, and check in to events - all from your pocket.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <div className="bg-gray-200 text-gray-500 px-6 py-3 rounded-lg flex items-center gap-2 cursor-not-allowed">
+                <div className="bg-muted text-muted-foreground px-6 py-3 rounded-lg flex items-center gap-2 cursor-not-allowed">
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                   </svg>
@@ -835,7 +835,7 @@ export function WebHome() {
                     <div className="font-semibold">App Store</div>
                   </div>
                 </div>
-                <div className="bg-gray-200 text-gray-500 px-6 py-3 rounded-lg flex items-center gap-2 cursor-not-allowed">
+                <div className="bg-muted text-muted-foreground px-6 py-3 rounded-lg flex items-center gap-2 cursor-not-allowed">
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/>
                   </svg>
@@ -845,7 +845,7 @@ export function WebHome() {
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mt-4">
+              <p className="text-sm text-muted-foreground mt-4">
                 Want to be notified when we launch? Stay tuned!
               </p>
             </div>
@@ -862,13 +862,13 @@ export function WebHome() {
                     <span>9:41</span>
                     <div className="flex gap-1 items-center">
                       <div className="w-4 h-2 flex gap-0.5">
-                        <div className="w-0.5 h-1 bg-white/80 rounded-full"></div>
-                        <div className="w-0.5 h-1.5 bg-white/80 rounded-full"></div>
-                        <div className="w-0.5 h-2 bg-white/80 rounded-full"></div>
-                        <div className="w-0.5 h-2 bg-white/60 rounded-full"></div>
+                        <div className="w-0.5 h-1 bg-card/80 rounded-full"></div>
+                        <div className="w-0.5 h-1.5 bg-card/80 rounded-full"></div>
+                        <div className="w-0.5 h-2 bg-card/80 rounded-full"></div>
+                        <div className="w-0.5 h-2 bg-card/60 rounded-full"></div>
                       </div>
                       <div className="w-6 h-2.5 border border-white/80 rounded-sm relative">
-                        <div className="absolute inset-0.5 bg-white/80 rounded-[1px]" style={{width: '70%'}}></div>
+                        <div className="absolute inset-0.5 bg-card/80 rounded-[1px]" style={{width: '70%'}}></div>
                       </div>
                     </div>
                   </div>
@@ -877,7 +877,7 @@ export function WebHome() {
                   <div className="px-4 pt-4">
                     {/* Logo */}
                     <div className="flex items-center gap-2 mb-6">
-                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-card rounded-lg flex items-center justify-center">
                         <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#2969FF]" fill="currentColor">
                           <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/>
                         </svg>
@@ -887,33 +887,33 @@ export function WebHome() {
                     
                     {/* Placeholder Cards */}
                     <div className="space-y-3">
-                      <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+                      <div className="bg-card/20 backdrop-blur rounded-xl p-3">
                         <div className="flex gap-3">
-                          <div className="w-14 h-14 bg-white/30 rounded-lg"></div>
+                          <div className="w-14 h-14 bg-card/30 rounded-lg"></div>
                           <div className="flex-1 space-y-2">
-                            <div className="h-3 bg-white/40 rounded w-3/4"></div>
-                            <div className="h-2 bg-white/30 rounded w-1/2"></div>
-                            <div className="h-2 bg-white/20 rounded w-2/3"></div>
+                            <div className="h-3 bg-card/40 rounded w-3/4"></div>
+                            <div className="h-2 bg-card/30 rounded w-1/2"></div>
+                            <div className="h-2 bg-card/20 rounded w-2/3"></div>
                           </div>
                         </div>
                       </div>
-                      <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+                      <div className="bg-card/20 backdrop-blur rounded-xl p-3">
                         <div className="flex gap-3">
-                          <div className="w-14 h-14 bg-white/30 rounded-lg"></div>
+                          <div className="w-14 h-14 bg-card/30 rounded-lg"></div>
                           <div className="flex-1 space-y-2">
-                            <div className="h-3 bg-white/40 rounded w-2/3"></div>
-                            <div className="h-2 bg-white/30 rounded w-1/3"></div>
-                            <div className="h-2 bg-white/20 rounded w-1/2"></div>
+                            <div className="h-3 bg-card/40 rounded w-2/3"></div>
+                            <div className="h-2 bg-card/30 rounded w-1/3"></div>
+                            <div className="h-2 bg-card/20 rounded w-1/2"></div>
                           </div>
                         </div>
                       </div>
-                      <div className="bg-white/20 backdrop-blur rounded-xl p-3">
+                      <div className="bg-card/20 backdrop-blur rounded-xl p-3">
                         <div className="flex gap-3">
-                          <div className="w-14 h-14 bg-white/30 rounded-lg"></div>
+                          <div className="w-14 h-14 bg-card/30 rounded-lg"></div>
                           <div className="flex-1 space-y-2">
-                            <div className="h-3 bg-white/40 rounded w-4/5"></div>
-                            <div className="h-2 bg-white/30 rounded w-2/5"></div>
-                            <div className="h-2 bg-white/20 rounded w-3/5"></div>
+                            <div className="h-3 bg-card/40 rounded w-4/5"></div>
+                            <div className="h-2 bg-card/30 rounded w-2/5"></div>
+                            <div className="h-2 bg-card/20 rounded w-3/5"></div>
                           </div>
                         </div>
                       </div>
@@ -921,22 +921,22 @@ export function WebHome() {
                   </div>
                   
                   {/* Bottom Nav */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-white/10 backdrop-blur rounded-2xl p-3 flex justify-around">
-                    <div className="w-6 h-6 bg-white/60 rounded-full"></div>
-                    <div className="w-6 h-6 bg-white/40 rounded-full"></div>
-                    <div className="w-6 h-6 bg-white/40 rounded-full"></div>
-                    <div className="w-6 h-6 bg-white/40 rounded-full"></div>
+                  <div className="absolute bottom-4 left-4 right-4 bg-card/10 backdrop-blur rounded-2xl p-3 flex justify-around">
+                    <div className="w-6 h-6 bg-card/60 rounded-full"></div>
+                    <div className="w-6 h-6 bg-card/40 rounded-full"></div>
+                    <div className="w-6 h-6 bg-card/40 rounded-full"></div>
+                    <div className="w-6 h-6 bg-card/40 rounded-full"></div>
                   </div>
                 </div>
               </div>
               
               {/* Floating Badge */}
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white shadow-lg rounded-full px-4 py-2 flex items-center gap-2">
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-card shadow-lg rounded-full px-4 py-2 flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2969FF] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2969FF]"></span>
                 </span>
-                <span className="text-sm font-medium text-gray-800">Coming Soon</span>
+                <span className="text-sm font-medium text-foreground">Coming Soon</span>
               </div>
             </div>
           </div>
@@ -958,7 +958,7 @@ export function WebHome() {
                 navigate('/login', { state: { from: '/create-event' } });
               }
             }}
-            className="inline-block bg-white text-blue-600 font-semibold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer"
+            className="inline-block bg-card text-blue-600 font-semibold px-8 py-4 rounded-xl hover:bg-blue-50 transition-colors cursor-pointer"
           >
             Create Your Event
           </button>

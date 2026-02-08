@@ -189,10 +189,10 @@ export function WaitlistPurchase() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-[#2969FF] mx-auto mb-4" />
-          <p className="text-[#0F0F0F]/60">Validating your purchase link...</p>
+          <p className="text-muted-foreground">Validating your purchase link...</p>
         </div>
       </div>
     );
@@ -200,14 +200,14 @@ export function WaitlistPurchase() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <Card className="max-w-md w-full rounded-2xl border-0 shadow-lg">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-red-600" />
             </div>
-            <h1 className="text-xl font-bold text-[#0F0F0F] mb-2">Unable to Process</h1>
-            <p className="text-[#0F0F0F]/60 mb-6">{error}</p>
+            <h1 className="text-xl font-bold text-foreground mb-2">Unable to Process</h1>
+            <p className="text-muted-foreground mb-6">{error}</p>
             <Button onClick={() => navigate('/')} className="rounded-xl bg-[#2969FF]">
               Browse Events
             </Button>
@@ -218,7 +218,7 @@ export function WaitlistPurchase() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#2969FF] to-[#1a4fd8] text-white py-4 px-4">
         <div className="max-w-3xl mx-auto flex items-center justify-center gap-3">
@@ -272,8 +272,8 @@ export function WaitlistPurchase() {
             )}
             <div className="p-6">
               <Badge className="bg-green-100 text-green-700 mb-3">Reserved for {waitlistEntry?.name}</Badge>
-              <h1 className="text-2xl font-bold text-[#0F0F0F] mb-4">{event?.title}</h1>
-              <div className="space-y-2 text-sm text-[#0F0F0F]/70">
+              <h1 className="text-2xl font-bold text-foreground mb-4">{event?.title}</h1>
+              <div className="space-y-2 text-sm text-foreground/70">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#2969FF]" />
                   <span>{formatDate(event?.start_date)} • {formatTime(event?.start_date)}</span>
@@ -294,7 +294,7 @@ export function WaitlistPurchase() {
         {/* Ticket Selection */}
         <Card className="rounded-2xl border-0 shadow-lg mb-6">
           <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-[#0F0F0F] mb-4">Select Tickets</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Select Tickets</h2>
             <div className="space-y-4">
               {ticketTypes.map(ticket => {
                 const remaining = (ticket.quantity_available || ticket.quantity_total || 0) - (ticket.quantity_sold || 0);
@@ -302,17 +302,17 @@ export function WaitlistPurchase() {
                 const qty = selectedTickets[ticket.id] || 0;
                 
                 return (
-                  <div key={ticket.id} className={`p-4 rounded-xl border ${isSoldOut ? 'bg-gray-50 opacity-60' : 'bg-white'}`}>
+                  <div key={ticket.id} className={`p-4 rounded-xl border ${isSoldOut ? 'bg-background opacity-60' : 'bg-card'}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-[#0F0F0F]">{ticket.name}</h3>
+                        <h3 className="font-semibold text-foreground">{ticket.name}</h3>
                         {ticket.description && (
-                          <p className="text-sm text-[#0F0F0F]/60 mt-1">{ticket.description}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{ticket.description}</p>
                         )}
                         <p className="text-xl font-bold text-[#2969FF] mt-2">
                           {formatPrice(ticket.price, event?.currency)}
                         </p>
-                        {!isSoldOut && <p className="text-xs text-[#0F0F0F]/50">{remaining} available</p>}
+                        {!isSoldOut && <p className="text-xs text-muted-foreground">{remaining} available</p>}
                       </div>
                       {isSoldOut ? (
                         <Badge className="bg-red-100 text-red-600">Sold Out</Badge>
@@ -351,7 +351,7 @@ export function WaitlistPurchase() {
         {totalTickets > 0 && (
           <Card className="rounded-2xl border-0 shadow-lg mb-6">
             <CardContent className="p-6">
-              <h2 className="text-lg font-semibold text-[#0F0F0F] mb-4">Order Summary</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Order Summary</h2>
               <div className="space-y-2">
                 {ticketTypes.filter(t => selectedTickets[t.id] > 0).map(ticket => (
                   <div key={ticket.id} className="flex justify-between text-sm">

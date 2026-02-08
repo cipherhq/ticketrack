@@ -131,7 +131,7 @@ function StatusBadge({ status, label }) {
   const configs = {
     active: { color: 'bg-green-100 text-green-700', icon: CheckCircle },
     pending: { color: 'bg-yellow-100 text-yellow-700', icon: AlertCircle },
-    inactive: { color: 'bg-gray-100 text-gray-700', icon: XCircle },
+    inactive: { color: 'bg-muted text-foreground/80', icon: XCircle },
     restricted: { color: 'bg-red-100 text-red-700', icon: AlertCircle },
   };
 
@@ -294,14 +294,14 @@ export function StripeConnectV2Demo() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA] p-6">
+    <div className="min-h-screen bg-muted p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#0F0F0F] mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Stripe Connect Demo
           </h1>
-          <p className="text-[#0F0F0F]/60">
+          <p className="text-muted-foreground">
             Express accounts with Stripe-hosted onboarding, products, and checkout
           </p>
         </div>
@@ -373,7 +373,7 @@ export function StripeConnectV2Demo() {
                   id="country"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full h-10 px-3 border border-gray-300 rounded-lg"
+                  className="w-full h-10 px-3 border border-border/30 rounded-lg"
                 >
                   <option value="US">United States</option>
                   <option value="GB">United Kingdom</option>
@@ -393,8 +393,8 @@ export function StripeConnectV2Demo() {
 
             {/* Show created account ID */}
             {accountId && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-[#0F0F0F]/60">Connected Account ID:</p>
+              <div className="mt-4 p-4 bg-background rounded-lg">
+                <p className="text-sm text-muted-foreground">Connected Account ID:</p>
                 <code className="text-sm font-mono text-[#2969FF]">{accountId}</code>
               </div>
             )}
@@ -418,7 +418,7 @@ export function StripeConnectV2Demo() {
             <CardContent className="space-y-4">
               {/* Account Status */}
               {accountStatus && (
-                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="bg-background rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Account Status</span>
                     <Button
@@ -432,28 +432,28 @@ export function StripeConnectV2Demo() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <p className="text-xs text-[#0F0F0F]/60 mb-1">Details Submitted</p>
+                      <p className="text-xs text-muted-foreground mb-1">Details Submitted</p>
                       <StatusBadge
                         status={accountStatus.status.detailsSubmitted ? 'active' : 'pending'}
                         label={accountStatus.status.detailsSubmitted ? 'Yes' : 'No'}
                       />
                     </div>
                     <div>
-                      <p className="text-xs text-[#0F0F0F]/60 mb-1">Charges Enabled</p>
+                      <p className="text-xs text-muted-foreground mb-1">Charges Enabled</p>
                       <StatusBadge
                         status={accountStatus.status.chargesEnabled ? 'active' : 'pending'}
                         label={accountStatus.status.chargesEnabled ? 'Yes' : 'No'}
                       />
                     </div>
                     <div>
-                      <p className="text-xs text-[#0F0F0F]/60 mb-1">Payouts Enabled</p>
+                      <p className="text-xs text-muted-foreground mb-1">Payouts Enabled</p>
                       <StatusBadge
                         status={accountStatus.status.payoutsEnabled ? 'active' : 'pending'}
                         label={accountStatus.status.payoutsEnabled ? 'Yes' : 'No'}
                       />
                     </div>
                     <div>
-                      <p className="text-xs text-[#0F0F0F]/60 mb-1">Card Payments</p>
+                      <p className="text-xs text-muted-foreground mb-1">Card Payments</p>
                       <StatusBadge
                         status={accountStatus.status.cardPaymentsStatus}
                         label={accountStatus.status.cardPaymentsStatus}
@@ -594,8 +594,8 @@ export function StripeConnectV2Demo() {
                             className="w-12 h-12 rounded object-cover"
                           />
                         ) : (
-                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                            <Store className="w-6 h-6 text-gray-400" />
+                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                            <Store className="w-6 h-6 text-muted-foreground" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -634,7 +634,7 @@ export function StripeConnectV2Demo() {
                   Open Storefront
                 </Button>
               </Link>
-              <p className="text-xs text-[#0F0F0F]/60 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 {/* IMPORTANT: In production, use a different identifier (like a slug or username)
                     instead of exposing the Stripe account ID in the URL */}
                 Storefront URL: /connect/store/{accountId}
@@ -650,7 +650,7 @@ export function StripeConnectV2Demo() {
             <p className="text-white/80 text-sm mb-4">
               To listen for account updates, set up webhooks for Connect events:
             </p>
-            <pre className="bg-white/10 p-3 rounded text-xs overflow-x-auto">
+            <pre className="bg-card/10 p-3 rounded text-xs overflow-x-auto">
               {`# Local development
 stripe listen --forward-to localhost:54321/functions/v1/stripe-connect-v2/webhook
 

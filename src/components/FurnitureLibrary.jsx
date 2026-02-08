@@ -145,21 +145,21 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
 
             {/* Furniture Details */}
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-medium text-gray-900 truncate">
+              <h4 className="text-sm font-medium text-foreground truncate">
                 {item.name}
               </h4>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {item.description}
               </p>
               <div className="flex items-center space-x-2 mt-1">
                 <Badge variant="outline" className="text-xs">
                   {item.category}
                 </Badge>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   {item.default_width}×{item.default_height}m
                 </span>
                 {item.default_capacity > 0 && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted-foreground">
                     {item.default_capacity} people
                   </span>
                 )}
@@ -168,8 +168,8 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
           </div>
 
           {/* Quick Stats */}
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+          <div className="mt-3 pt-3 border-t border-border/10">
+            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
               <div>
                 <span className="font-medium">Size:</span>
                 <br />
@@ -204,7 +204,7 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
       <CardContent className="space-y-4">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
             placeholder="Search furniture..."
             value={searchTerm}
@@ -222,7 +222,7 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
               className={`px-3 py-1 text-xs rounded-full transition-colors ${
                 selectedCategory === category
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-muted text-foreground/80 hover:bg-muted'
               }`}
             >
               {category === 'all' ? 'All' : category.charAt(0).toUpperCase() + category.slice(1)}
@@ -234,8 +234,8 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
         {renderFurnitureGrid(filteredFurniture)}
 
         {/* Quick Add Buttons */}
-        <div className="pt-4 border-t border-gray-200">
-          <h4 className="text-sm font-medium text-gray-900 mb-3">Quick Add</h4>
+        <div className="pt-4 border-t border-border/20">
+          <h4 className="text-sm font-medium text-foreground mb-3">Quick Add</h4>
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
@@ -263,8 +263,8 @@ export function FurnitureLibrary({ onItemSelect, onItemDragStart }) {
         </div>
 
         {/* Library Stats */}
-        <div className="pt-4 border-t border-gray-200">
-          <div className="text-xs text-gray-500 space-y-1">
+        <div className="pt-4 border-t border-border/20">
+          <div className="text-xs text-muted-foreground space-y-1">
             <div>Total Items: {furnitureTypes.length}</div>
             <div>Categories: {categories.length - 1}</div>
             {searchTerm && (
@@ -285,7 +285,7 @@ export function FurniturePreview({ item, size = 48 }) {
 
   return (
     <div
-      className="flex items-center justify-center rounded border-2 border-dashed border-gray-300 bg-gray-50"
+      className="flex items-center justify-center rounded border-2 border-dashed border-border/30 bg-background"
       style={{
         width: size,
         height: size,
@@ -309,7 +309,7 @@ export function FurnitureDragOverlay({ item }) {
             <FurniturePreview item={item} size={32} />
             <div>
               <div className="text-sm font-medium">{item.name}</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-muted-foreground">
                 {item.default_width}×{item.default_height}m
               </div>
             </div>

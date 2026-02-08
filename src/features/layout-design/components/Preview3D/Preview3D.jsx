@@ -148,7 +148,7 @@ export function Preview3D() {
           >
             {/* Floor */}
             <div
-              className="absolute bg-gray-200 border border-gray-300"
+              className="absolute bg-muted border border-border/30"
               style={{
                 width: canvasWidth * scale,
                 height: canvasHeight * scale,

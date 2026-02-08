@@ -114,13 +114,13 @@ export function FinanceLogin() {
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-[#2969FF]/20 bg-white rounded-2xl shadow-2xl">
+      <Card className="w-full max-w-md border-[#2969FF]/20 bg-card rounded-2xl shadow-2xl">
         <CardHeader className="text-center pb-2">
           <div className="w-16 h-16 bg-[#2969FF] rounded-2xl flex items-center justify-center mx-auto mb-4">
             <DollarSign className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-[#0F0F0F]">Finance Portal</CardTitle>
-          <CardDescription className="flex items-center justify-center gap-2 text-[#0F0F0F]/60">
+          <CardTitle className="text-2xl font-bold text-foreground">Finance Portal</CardTitle>
+          <CardDescription className="flex items-center justify-center gap-2 text-muted-foreground">
             <Shield className="w-4 h-4" />
             Secure Access Only
           </CardDescription>
@@ -179,8 +179,8 @@ export function FinanceLogin() {
             </Button>
           </form>
           
-          <div className="mt-6 p-3 bg-[#F4F6FA] rounded-xl">
-            <p className="text-xs text-[#0F0F0F]/60 text-center">
+          <div className="mt-6 p-3 bg-muted rounded-xl">
+            <p className="text-xs text-muted-foreground text-center">
               🔒 This portal is restricted to authorized finance personnel only. 
               All access attempts are logged and monitored.
             </p>

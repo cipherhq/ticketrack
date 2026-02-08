@@ -99,8 +99,8 @@ export function RevenueOverview() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Revenue Overview</h1>
-          <p className="text-[#0F0F0F]/60">Platform financial performance</p>
+          <h1 className="text-2xl font-bold text-foreground">Revenue Overview</h1>
+          <p className="text-muted-foreground">Platform financial performance</p>
         </div>
         <Button onClick={loadRevenueData} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />Refresh
@@ -109,41 +109,41 @@ export function RevenueOverview() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Platform Revenue</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.totalRevenueByCurrency)}</p>
+                <p className="text-sm text-muted-foreground">Total Platform Revenue</p>
+                <p className="text-2xl font-bold text-foreground">{formatMultiCurrencyCompact(stats.totalRevenueByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Paid Out</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.totalPaidOutByCurrency)}</p>
+                <p className="text-sm text-muted-foreground">Total Paid Out</p>
+                <p className="text-2xl font-bold text-foreground">{formatMultiCurrencyCompact(stats.totalPaidOutByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.pendingPayoutsByCurrency)}</p>
+                <p className="text-sm text-muted-foreground">Pending Payouts</p>
+                <p className="text-2xl font-bold text-foreground">{formatMultiCurrencyCompact(stats.pendingPayoutsByCurrency)}</p>
               </div>
             </div>
           </CardContent>
@@ -151,7 +151,7 @@ export function RevenueOverview() {
       </div>
 
       {/* Revenue Chart */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Monthly Revenue (Last 12 Months)</CardTitle>
         </CardHeader>
@@ -161,14 +161,14 @@ export function RevenueOverview() {
               const height = (month.revenue / maxRevenue) * 100;
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full bg-[#F4F6FA] rounded-t-lg relative" style={{ height: '200px' }}>
+                  <div className="w-full bg-muted rounded-t-lg relative" style={{ height: '200px' }}>
                     <div 
                       className="absolute bottom-0 w-full bg-[#2969FF] rounded-t-lg transition-all hover:bg-[#2969FF]/80"
                       style={{ height: `${Math.max(height, 3)}%` }}
                       title={formatMultiCurrencyCompact(month.revenueByCurrency)}
                     />
                   </div>
-                  <p className="text-xs text-[#0F0F0F]/60 whitespace-nowrap">{month.month}</p>
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">{month.month}</p>
                 </div>
               );
             })}

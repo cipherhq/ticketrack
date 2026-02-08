@@ -235,7 +235,7 @@ export function TaxDocuments({ type, recipientId, countryCode = 'NG' }) {
   const daysLeft = available ? 0 : daysUntilAvailable(yearNum);
 
   return (
-    <Card className="border-[#0F0F0F]/10 rounded-2xl">
+    <Card className="border-border/10 rounded-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-[#2969FF]" />
@@ -267,21 +267,21 @@ export function TaxDocuments({ type, recipientId, countryCode = 'NG' }) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="p-3 bg-green-50 rounded-xl text-center">
               <p className="text-lg font-bold text-green-600">{formatPrice(yearSummary.netEarnings, yearSummary.currency)}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Net Earnings</p>
+              <p className="text-xs text-muted-foreground">Net Earnings</p>
             </div>
             {type === 'organizer' && (
               <div className="p-3 bg-red-50 rounded-xl text-center">
                 <p className="text-lg font-bold text-red-600">{formatPrice(yearSummary.platformFees, yearSummary.currency)}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Platform Fees</p>
+                <p className="text-xs text-muted-foreground">Platform Fees</p>
               </div>
             )}
             <div className="p-3 bg-blue-50 rounded-xl text-center">
               <p className="text-lg font-bold text-blue-600">{formatPrice(yearSummary.payouts, yearSummary.currency)}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Payouts</p>
+              <p className="text-xs text-muted-foreground">Payouts</p>
             </div>
             <div className="p-3 bg-purple-50 rounded-xl text-center">
               <p className="text-lg font-bold text-purple-600">{yearSummary.transactions}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Transactions</p>
+              <p className="text-xs text-muted-foreground">Transactions</p>
             </div>
           </div>
         )}

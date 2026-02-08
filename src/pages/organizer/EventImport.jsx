@@ -313,7 +313,7 @@ export default function EventImport() {
   const getStatusBadge = (status) => {
     const styles = {
       connected: 'bg-green-100 text-green-800',
-      disconnected: 'bg-gray-100 text-gray-800',
+      disconnected: 'bg-muted text-foreground',
       expired: 'bg-yellow-100 text-yellow-800',
       error: 'bg-red-100 text-red-800',
     }
@@ -322,7 +322,7 @@ export default function EventImport() {
 
   const getJobStatusBadge = (status) => {
     const styles = {
-      pending: 'bg-gray-100 text-gray-800',
+      pending: 'bg-muted text-foreground',
       running: 'bg-blue-100 text-blue-800',
       completed: 'bg-green-100 text-green-800',
       failed: 'bg-red-100 text-red-800',
@@ -385,7 +385,7 @@ export default function EventImport() {
                       className="flex items-center justify-between p-4 border rounded-lg"
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-lg ${platform?.color || 'bg-gray-500'} flex items-center justify-center`}>
+                        <div className={`w-12 h-12 rounded-lg ${platform?.color || 'bg-background0'} flex items-center justify-center`}>
                           {platform?.logo ? (
                             <img src={platform.logo} alt={conn.platform_name} className="w-8 h-8 object-contain" />
                           ) : (
@@ -524,8 +524,8 @@ export default function EventImport() {
                             className="w-16 h-16 rounded-lg object-cover"
                           />
                         ) : (
-                          <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <Calendar className="w-6 h-6 text-gray-400" />
+                          <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                            <Calendar className="w-6 h-6 text-muted-foreground" />
                           </div>
                         )}
                         <div>
@@ -543,7 +543,7 @@ export default function EventImport() {
                           className={
                             item.import_status === 'imported' ? 'bg-green-100 text-green-800' :
                             item.import_status === 'updated' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
+                            'bg-muted text-foreground'
                           }
                         >
                           {item.import_status}

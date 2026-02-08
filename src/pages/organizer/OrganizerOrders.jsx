@@ -230,9 +230,9 @@ export function OrganizerOrders() {
       case 'refunded':
         return <Badge className="bg-red-100 text-red-700"><RotateCcw className="w-3 h-3 mr-1" />Refunded</Badge>;
       case 'cancelled':
-        return <Badge className="bg-gray-100 text-gray-700"><XCircle className="w-3 h-3 mr-1" />Cancelled</Badge>;
+        return <Badge className="bg-muted text-foreground/80"><XCircle className="w-3 h-3 mr-1" />Cancelled</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-700">{status}</Badge>;
+        return <Badge className="bg-muted text-foreground/80">{status}</Badge>;
     }
   };
 
@@ -374,14 +374,14 @@ export function OrganizerOrders() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Orders</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">View and manage all ticket orders</p>
+          <h2 className="text-2xl font-semibold text-foreground">Orders</h2>
+          <p className="text-muted-foreground mt-1">View and manage all ticket orders</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={loadData} variant="outline" size="icon" className="rounded-xl border-[#0F0F0F]/10">
+          <Button onClick={loadData} variant="outline" size="icon" className="rounded-xl border-border/10">
             <RefreshCw className="w-4 h-4" />
           </Button>
-          <Button onClick={exportToCSV} variant="outline" className="rounded-xl border-[#0F0F0F]/10" disabled={filteredOrders.length === 0}>
+          <Button onClick={exportToCSV} variant="outline" className="rounded-xl border-border/10" disabled={filteredOrders.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
@@ -390,54 +390,54 @@ export function OrganizerOrders() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Receipt className="w-5 h-5 text-[#2969FF]" />
               </div>
               <div>
-                <p className="text-[#0F0F0F]/60 text-sm">Total Orders</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalOrders}</h3>
+                <p className="text-muted-foreground text-sm">Total Orders</p>
+                <h3 className="text-2xl font-semibold text-foreground">{stats.totalOrders}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <CreditCard className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-[#0F0F0F]/60 text-sm">Revenue</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{Object.entries(stats.revenueByCurrency || {}).map(([currency, amount]) => formatPrice(amount, currency)).join(' | ') || formatPrice(0, getDefaultCurrency(organizer?.country_code || organizer?.country))}</h3>
+                <p className="text-muted-foreground text-sm">Revenue</p>
+                <h3 className="text-2xl font-semibold text-foreground">{Object.entries(stats.revenueByCurrency || {}).map(([currency, amount]) => formatPrice(amount, currency)).join(' | ') || formatPrice(0, getDefaultCurrency(organizer?.country_code || organizer?.country))}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-[#0F0F0F]/60 text-sm">Completed</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.completedOrders}</h3>
+                <p className="text-muted-foreground text-sm">Completed</p>
+                <h3 className="text-2xl font-semibold text-foreground">{stats.completedOrders}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-[#0F0F0F]/60 text-sm">Pending</p>
-                <h3 className="text-2xl font-semibold text-[#0F0F0F]">{stats.pendingOrders}</h3>
+                <p className="text-muted-foreground text-sm">Pending</p>
+                <h3 className="text-2xl font-semibold text-foreground">{stats.pendingOrders}</h3>
               </div>
             </div>
           </CardContent>
@@ -445,20 +445,20 @@ export function OrganizerOrders() {
       </div>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input 
                 placeholder="Search by order number, name, or email..." 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
-                className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl" 
+                className="pl-10 h-12 bg-muted border-0 rounded-xl" 
               />
             </div>
             <Select value={eventFilter} onValueChange={setEventFilter}>
-              <SelectTrigger className="md:w-64 h-12 rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="md:w-64 h-12 rounded-xl border-border/10">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Filter by event" />
               </SelectTrigger>
@@ -470,7 +470,7 @@ export function OrganizerOrders() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="md:w-48 h-12 rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="md:w-48 h-12 rounded-xl border-border/10">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -486,32 +486,32 @@ export function OrganizerOrders() {
       </Card>
 
       {/* Orders List */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">All Orders ({filteredOrders.length})</CardTitle>
+          <CardTitle className="text-foreground">All Orders ({filteredOrders.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {filteredOrders.length === 0 ? (
             <div className="text-center py-12">
-              <Receipt className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">{orders.length === 0 ? 'No orders yet' : 'No orders match your filters'}</p>
+              <Receipt className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">{orders.length === 0 ? 'No orders yet' : 'No orders match your filters'}</p>
             </div>
           ) : (
             <div className="space-y-3">
               {paginatedOrders.map((order) => (
-                <div key={order.id} className="border border-[#0F0F0F]/10 rounded-xl overflow-hidden">
+                <div key={order.id} className="border border-border/10 rounded-xl overflow-hidden">
                   {/* Order Row */}
                   <div 
-                    className="p-4 hover:bg-[#F4F6FA]/50 cursor-pointer flex flex-col md:flex-row md:items-center gap-4"
+                    className="p-4 hover:bg-muted/50 cursor-pointer flex flex-col md:flex-row md:items-center gap-4"
                     onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono font-medium text-[#0F0F0F]">{order.order_number}</span>
+                        <span className="font-mono font-medium text-foreground">{order.order_number}</span>
                         {getStatusBadge(order.status)}
                         {order.is_stripe_connect && <Badge className="bg-purple-100 text-purple-700 ml-1"><CreditCard className="w-3 h-3 mr-1" />Connect</Badge>}
                       </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                         {order.event?.title && (
                           <span className="flex items-center gap-1" title="Event">
                             <Calendar className="w-4 h-4" />
@@ -536,47 +536,47 @@ export function OrganizerOrders() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="font-semibold text-[#0F0F0F]">
+                        <p className="font-semibold text-foreground">
                           {formatPrice(order.total_amount, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}
                         </p>
-                        <p className="text-sm text-[#0F0F0F]/60">{order.ticketCount} ticket(s)</p>
+                        <p className="text-sm text-muted-foreground">{order.ticketCount} ticket(s)</p>
                       </div>
                       {expandedOrder === order.id ? (
-                        <ChevronUp className="w-5 h-5 text-[#0F0F0F]/40" />
+                        <ChevronUp className="w-5 h-5 text-muted-foreground" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-[#0F0F0F]/40" />
+                        <ChevronDown className="w-5 h-5 text-muted-foreground" />
                       )}
                     </div>
                   </div>
 
                   {/* Expanded Details */}
                   {expandedOrder === order.id && (
-                    <div className="border-t border-[#0F0F0F]/10 bg-[#F4F6FA]/30 p-4">
+                    <div className="border-t border-border/10 bg-muted/30 p-4">
                       <div className="grid md:grid-cols-2 gap-6">
                         {/* Order Details */}
                         <div>
-                          <h4 className="font-medium text-[#0F0F0F] mb-3">Order Details</h4>
+                          <h4 className="font-medium text-foreground mb-3">Order Details</h4>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-[#0F0F0F]/60">Event</span>
+                              <span className="text-muted-foreground">Event</span>
                               <span className="font-medium">{order.event?.title || 'Unknown'}</span>
                             </div>
                             {order.event?.start_date && (
                               <div className="flex justify-between">
-                                <span className="text-[#0F0F0F]/60">Event Date</span>
+                                <span className="text-muted-foreground">Event Date</span>
                                 <span className="font-medium">{formatDate(order.event.start_date)}</span>
                               </div>
                             )}
                             <div className="flex justify-between">
-                              <span className="text-[#0F0F0F]/60">Payment Method</span>
+                              <span className="text-muted-foreground">Payment Method</span>
                               <span className="font-medium capitalize">{order.payment_method || 'N/A'}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-[#0F0F0F]/60">Payment Reference</span>
+                              <span className="text-muted-foreground">Payment Reference</span>
                               <span className="font-mono text-xs">{maskPaymentRef(order.payment_reference)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-[#0F0F0F]/60">Subtotal</span>
+                              <span className="text-muted-foreground">Subtotal</span>
                               <span>{formatPrice(order.subtotal, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}</span>
                             </div>
                             {parseFloat(order.discount_amount) > 0 && (
@@ -586,10 +586,10 @@ export function OrganizerOrders() {
                               </div>
                             )}
                             <div className="flex justify-between">
-                              <span className="text-[#0F0F0F]/60">Platform Fee</span>
+                              <span className="text-muted-foreground">Platform Fee</span>
                               <span>{formatPrice(order.platform_fee || 0, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}</span>
                             </div>
-                            <div className="flex justify-between font-semibold border-t border-[#0F0F0F]/10 pt-2 mt-2">
+                            <div className="flex justify-between font-semibold border-t border-border/10 pt-2 mt-2">
                               <span>Total</span>
                               <span>{formatPrice(order.total_amount, order.currency || order.event?.currency || getDefaultCurrency(order.event?.country_code || order.event?.country))}</span>
                             </div>
@@ -598,15 +598,15 @@ export function OrganizerOrders() {
 
                         {/* Attendees */}
                         <div>
-                          <h4 className="font-medium text-[#0F0F0F] mb-3">Attendees ({order.tickets.length})</h4>
+                          <h4 className="font-medium text-foreground mb-3">Attendees ({order.tickets.length})</h4>
                           <div className="space-y-2">
                             {order.tickets.map((ticket) => (
-                              <div key={ticket.id} className="p-3 bg-white rounded-lg border border-[#0F0F0F]/10">
+                              <div key={ticket.id} className="p-3 bg-card rounded-lg border border-border/10">
                                 <div className="flex justify-between items-start">
                                   <div>
-                                    <p className="font-medium text-[#0F0F0F]">{ticket.attendee_name}</p>
-                                    <p className="text-xs text-[#0F0F0F]/60">{ticket.attendee_email}</p>
-                                    <p className="text-xs text-[#0F0F0F]/60 mt-1">
+                                    <p className="font-medium text-foreground">{ticket.attendee_name}</p>
+                                    <p className="text-xs text-muted-foreground">{ticket.attendee_email}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
                                       {ticket.ticket_types?.name || 'Standard'} • {ticket.ticket_code}
                                     </p>
                                   </div>
@@ -614,7 +614,7 @@ export function OrganizerOrders() {
                                     {ticket.is_checked_in ? (
                                       <Badge className="bg-green-100 text-green-700 text-xs">Checked In</Badge>
                                     ) : (
-                                      <Badge className="bg-gray-100 text-gray-600 text-xs">Not Checked In</Badge>
+                                      <Badge className="bg-muted text-muted-foreground text-xs">Not Checked In</Badge>
                                     )}
                                   </div>
                                 </div>
@@ -626,7 +626,7 @@ export function OrganizerOrders() {
 
                       {/* Actions */}
                       {((order.status === 'completed' && parseFloat(order.total_amount) > 0) || order.status === 'refund_pending' || order.status === 'refunded') && (
-                        <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10 flex justify-end items-center gap-3">
+                        <div className="mt-4 pt-4 border-t border-border/10 flex justify-end items-center gap-3">
                           {order.status === 'completed' && parseFloat(order.total_amount) > 0 && (
                             <Button 
                               variant="outline" 
@@ -681,13 +681,13 @@ export function OrganizerOrders() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-3 bg-[#F4F6FA] rounded-xl">
+            <div className="p-3 bg-muted rounded-xl">
               <div className="flex justify-between text-sm">
-                <span className="text-[#0F0F0F]/60">Order</span>
+                <span className="text-muted-foreground">Order</span>
                 <span className="font-mono">{refundOrder?.order_number}</span>
               </div>
               <div className="flex justify-between text-sm mt-1">
-                <span className="text-[#0F0F0F]/60">Amount</span>
+                <span className="text-muted-foreground">Amount</span>
                 <span className="font-semibold">{formatPrice(refundOrder?.total_amount, refundOrder?.currency || refundOrder?.event?.currency || getDefaultCurrency(refundOrder?.event?.country_code || refundOrder?.event?.country))}</span>
               </div>
             </div>

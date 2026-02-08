@@ -47,7 +47,7 @@ const getAdStatus = (ad) => {
   const start = new Date(ad.start_date);
   const end = new Date(ad.end_date);
   
-  if (!ad.is_active) return { label: 'Inactive', color: 'bg-gray-100 text-gray-600' };
+  if (!ad.is_active) return { label: 'Inactive', color: 'bg-muted text-muted-foreground' };
   if (now < start) return { label: 'Scheduled', color: 'bg-blue-100 text-blue-600' };
   if (now > end) return { label: 'Expired', color: 'bg-red-100 text-red-600' };
   return { label: 'Active', color: 'bg-green-100 text-green-600' };
@@ -311,8 +311,8 @@ export default function AdminAdverts() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Platform Adverts</h1>
-          <p className="text-gray-500">Manage homepage advertisements</p>
+          <h1 className="text-2xl font-bold text-foreground">Platform Adverts</h1>
+          <p className="text-muted-foreground">Manage homepage advertisements</p>
         </div>
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
@@ -325,79 +325,79 @@ export default function AdminAdverts() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-xl shadow-sm">
+        <div className="bg-card p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Monitor className="text-blue-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Ads</p>
+              <p className="text-sm text-muted-foreground">Total Ads</p>
               <p className="text-xl font-bold">{stats.totalAds}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm">
+        <div className="bg-card p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <Eye className="text-green-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Active Now</p>
+              <p className="text-sm text-muted-foreground">Active Now</p>
               <p className="text-xl font-bold">{stats.activeAds}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm">
+        <div className="bg-card p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-100 rounded-lg">
               <DollarSign className="text-emerald-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Revenue</p>
+              <p className="text-sm text-muted-foreground">Total Revenue</p>
               <p className="text-xl font-bold">{formatPrice(stats.totalRevenue, stats.primaryCurrency)}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm">
+        <div className="bg-card p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <CheckCircle className="text-green-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Paid</p>
+              <p className="text-sm text-muted-foreground">Paid</p>
               <p className="text-xl font-bold text-green-600">{formatPrice(stats.paidRevenue, stats.primaryCurrency)}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm">
+        <div className="bg-card p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Clock className="text-yellow-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Unpaid</p>
+              <p className="text-sm text-muted-foreground">Unpaid</p>
               <p className="text-xl font-bold text-yellow-600">{formatPrice(stats.unpaidRevenue, stats.primaryCurrency)}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm">
+        <div className="bg-card p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <TrendingUp className="text-purple-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Impressions</p>
+              <p className="text-sm text-muted-foreground">Impressions</p>
               <p className="text-xl font-bold">{stats.totalImpressions.toLocaleString()}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm">
+        <div className="bg-card p-4 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 rounded-lg">
               <MousePointer className="text-orange-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Clicks</p>
+              <p className="text-sm text-muted-foreground">Clicks</p>
               <p className="text-xl font-bold">{stats.totalClicks.toLocaleString()}</p>
             </div>
           </div>
@@ -409,38 +409,38 @@ export default function AdminAdverts() {
         <h3 className="font-semibold text-blue-900 mb-3">Ad Specifications</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {AD_POSITIONS.map(pos => (
-            <div key={pos.value} className="bg-white rounded-lg p-3">
+            <div key={pos.value} className="bg-card rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{pos.icon}</span>
                 <span className="font-medium text-sm">{pos.label}</span>
               </div>
               <p className="text-blue-600 font-mono text-sm">{pos.size}</p>
-              <p className="text-xs text-gray-500 mt-1">{pos.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{pos.description}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Ads Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-background">
             <tr>
-              <th className="text-left p-4 font-medium text-gray-600">Preview</th>
-              <th className="text-left p-4 font-medium text-gray-600">Advertiser</th>
-              <th className="text-left p-4 font-medium text-gray-600">Position</th>
-              <th className="text-left p-4 font-medium text-gray-600">Price</th>
-              <th className="text-left p-4 font-medium text-gray-600">Duration</th>
-              <th className="text-left p-4 font-medium text-gray-600">Performance</th>
-              <th className="text-left p-4 font-medium text-gray-600">Payment</th>
-              <th className="text-left p-4 font-medium text-gray-600">Status</th>
-              <th className="text-left p-4 font-medium text-gray-600">Actions</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Preview</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Advertiser</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Position</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Price</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Duration</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Performance</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Payment</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody>
             {ads.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-gray-500">
+                <td colSpan={9} className="p-8 text-center text-muted-foreground">
                   No advertisements yet. Click "Add New Ad" to create one.
                 </td>
               </tr>
@@ -449,9 +449,9 @@ export default function AdminAdverts() {
                 const status = getAdStatus(ad);
                 const posInfo = getPositionInfo(ad.position);
                 return (
-                  <tr key={ad.id} className="border-t hover:bg-gray-50">
+                  <tr key={ad.id} className="border-t hover:bg-background">
                     <td className="p-4">
-                      <div className="w-20 h-16 bg-gray-100 rounded overflow-hidden">
+                      <div className="w-20 h-16 bg-muted rounded overflow-hidden">
                         {ad.media_type === 'video' ? (
                           <video src={ad.image_url} className="w-full h-full object-cover" muted />
                         ) : (
@@ -478,7 +478,7 @@ export default function AdminAdverts() {
                     <td className="p-4">
                       <div>
                         <p className="font-medium">{posInfo.label}</p>
-                        <p className="text-xs text-gray-500">{posInfo.size}</p>
+                        <p className="text-xs text-muted-foreground">{posInfo.size}</p>
                       </div>
                     </td>
                     <td className="p-4">
@@ -487,14 +487,14 @@ export default function AdminAdverts() {
                     <td className="p-4">
                       <div className="text-sm">
                         <p>{new Date(ad.start_date).toLocaleDateString()}</p>
-                        <p className="text-gray-500">to {new Date(ad.end_date).toLocaleDateString()}</p>
+                        <p className="text-muted-foreground">to {new Date(ad.end_date).toLocaleDateString()}</p>
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="text-sm">
-                        <p><span className="text-gray-500">Impressions:</span> {(ad.impressions || 0).toLocaleString()}</p>
-                        <p><span className="text-gray-500">Clicks:</span> {(ad.clicks || 0).toLocaleString()}</p>
-                        <p><span className="text-gray-500">CTR:</span> {calculateCTR(ad.clicks, ad.impressions)}%</p>
+                        <p><span className="text-muted-foreground">Impressions:</span> {(ad.impressions || 0).toLocaleString()}</p>
+                        <p><span className="text-muted-foreground">Clicks:</span> {(ad.clicks || 0).toLocaleString()}</p>
+                        <p><span className="text-muted-foreground">CTR:</span> {calculateCTR(ad.clicks, ad.impressions)}%</p>
                       </div>
                     </td>
                     <td className="p-4">
@@ -515,7 +515,7 @@ export default function AdminAdverts() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => toggleActive(ad)}
-                          className={`p-2 rounded-lg ${ad.is_active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'} hover:opacity-80`}
+                          className={`p-2 rounded-lg ${ad.is_active ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'} hover:opacity-80`}
                           title={ad.is_active ? 'Deactivate' : 'Activate'}
                         >
                           {ad.is_active ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -547,12 +547,12 @@ export default function AdminAdverts() {
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold">
                 {editingAd ? 'Edit Advertisement' : 'New Advertisement'}
               </h2>
-              <button onClick={() => { setShowModal(false); resetForm(); }} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => { setShowModal(false); resetForm(); }} className="p-2 hover:bg-muted rounded-lg">
                 <X size={20} />
               </button>
             </div>
@@ -570,7 +570,7 @@ export default function AdminAdverts() {
                       className={`p-3 rounded-lg border-2 text-left transition-all ${
                         formData.position === pos.value 
                           ? 'border-blue-600 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-border/20 hover:border-border/30'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -600,7 +600,7 @@ export default function AdminAdverts() {
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium mb-2">Ad Creative *</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                <div className="border-2 border-dashed border-border/30 rounded-lg p-4">
                   {previewUrl ? (
                     <div className="relative">
                       {formData.media_type === 'video' ? (
@@ -618,9 +618,9 @@ export default function AdminAdverts() {
                     </div>
                   ) : (
                     <label className="flex flex-col items-center cursor-pointer py-4">
-                      <Upload className="text-gray-400 mb-2" size={32} />
-                      <span className="text-sm text-gray-600">Click to upload image or video</span>
-                      <span className="text-xs text-gray-400 mt-1">
+                      <Upload className="text-muted-foreground mb-2" size={32} />
+                      <span className="text-sm text-muted-foreground">Click to upload image or video</span>
+                      <span className="text-xs text-muted-foreground mt-1">
                         {formData.position === 'left' || formData.position === 'right' 
                           ? 'Recommended: 300 x 600 px' 
                           : 'Recommended: 1200 x 300 px'}
@@ -637,7 +637,7 @@ export default function AdminAdverts() {
                   {uploading && (
                     <div className="text-center py-2">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="text-sm text-gray-500 mt-2">Uploading...</p>
+                      <p className="text-sm text-muted-foreground mt-2">Uploading...</p>
                     </div>
                   )}
                 </div>
@@ -696,7 +696,7 @@ export default function AdminAdverts() {
                     className={`flex-1 px-4 py-2 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
                       formData.payment_status === 'pending' 
                         ? 'border-yellow-500 bg-yellow-50 text-yellow-700' 
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-border/20 hover:border-border/30'
                     }`}
                   >
                     <Clock size={16} />
@@ -708,7 +708,7 @@ export default function AdminAdverts() {
                     className={`flex-1 px-4 py-2 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
                       formData.payment_status === 'paid' 
                         ? 'border-green-500 bg-green-50 text-green-700' 
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-border/20 hover:border-border/30'
                     }`}
                   >
                     <CheckCircle size={16} />
@@ -760,7 +760,7 @@ export default function AdminAdverts() {
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); resetForm(); }}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-background"
                 >
                   Cancel
                 </button>

@@ -230,8 +230,8 @@ export function PromoterPayouts() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Promoter Payouts</h1>
-          <p className="text-[#0F0F0F]/60">Process commission payouts for promoters</p>
+          <h1 className="text-2xl font-bold text-foreground">Promoter Payouts</h1>
+          <p className="text-muted-foreground">Process commission payouts for promoters</p>
         </div>
         <Button onClick={loadPromoterPayouts} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />Refresh
@@ -240,40 +240,40 @@ export function PromoterPayouts() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                 <Users className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Promoters</p>
-                <p className="font-bold text-[#0F0F0F]">{promoterPayouts.length}</p>
+                <p className="text-sm text-muted-foreground">Total Promoters</p>
+                <p className="font-bold text-foreground">{promoterPayouts.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Pending</p>
+                <p className="text-sm text-muted-foreground">Total Pending</p>
                 <p className="font-bold text-yellow-600">{formatMultiCurrencyCompact(totalPendingByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Paid</p>
+                <p className="text-sm text-muted-foreground">Total Paid</p>
                 <p className="font-bold text-green-600">{formatMultiCurrencyCompact(totalPaidByCurrency)}</p>
               </div>
             </div>
@@ -284,7 +284,7 @@ export function PromoterPayouts() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search promoters..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -303,10 +303,10 @@ export function PromoterPayouts() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : filteredPromoters.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">No promoter payouts found</p>
+            <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground">No promoter payouts found</p>
           </CardContent>
         </Card>
       ) : (
@@ -316,7 +316,7 @@ export function PromoterPayouts() {
             const currency = Array.from(item.currencies)[0] || getDefaultCurrency(item.sales[0]?.events?.country_code || item.sales[0]?.events?.country);
             
             return (
-              <Card key={idx} className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card key={idx} className="border-border/10 rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                     {/* Promoter Info */}
@@ -325,17 +325,17 @@ export function PromoterPayouts() {
                         <User className="w-6 h-6 text-purple-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-[#0F0F0F]">{item.promoter?.full_name}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">{item.promoter?.email}</p>
+                        <p className="font-semibold text-foreground">{item.promoter?.full_name}</p>
+                        <p className="text-sm text-muted-foreground">{item.promoter?.email}</p>
                         {item.promoter?.phone && (
-                          <p className="text-sm text-[#0F0F0F]/60">{item.promoter?.phone}</p>
+                          <p className="text-sm text-muted-foreground">{item.promoter?.phone}</p>
                         )}
                         
                         {/* Bank Details */}
                         {bankAccount ? (
-                          <div className="mt-2 p-2 bg-[#F4F6FA] rounded-lg text-sm">
-                            <p className="font-medium text-[#0F0F0F]">{bankAccount.bank_name}</p>
-                            <p className="text-[#0F0F0F]/60">
+                          <div className="mt-2 p-2 bg-muted rounded-lg text-sm">
+                            <p className="font-medium text-foreground">{bankAccount.bank_name}</p>
+                            <p className="text-muted-foreground">
                               {bankAccount.account_number} • {bankAccount.account_name}
                             </p>
                             {bankAccount.is_verified && (
@@ -368,15 +368,15 @@ export function PromoterPayouts() {
                     {/* Stats & Action */}
                     <div className="flex items-center gap-6 flex-wrap lg:flex-nowrap">
                       <div className="text-right">
-                        <p className="text-sm text-[#0F0F0F]/60">Total Earned</p>
-                        <p className="font-semibold text-[#0F0F0F]">{formatPrice(item.totalEarned, currency)}</p>
+                        <p className="text-sm text-muted-foreground">Total Earned</p>
+                        <p className="font-semibold text-foreground">{formatPrice(item.totalEarned, currency)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                        <p className="text-sm text-muted-foreground">Pending</p>
                         <p className="font-bold text-yellow-600">{formatPrice(item.totalPending, currency)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-[#0F0F0F]/60">Paid</p>
+                        <p className="text-sm text-muted-foreground">Paid</p>
                         <p className="font-semibold text-green-600">{formatPrice(item.totalPaid, currency)}</p>
                       </div>
                       
@@ -412,24 +412,24 @@ export function PromoterPayouts() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* Payment Info */}
-            <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-3">
+            <div className="p-4 bg-muted rounded-xl space-y-3">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
                   <User className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-[#0F0F0F]">{paymentDialog.promoter?.promoter?.full_name}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">{paymentDialog.promoter?.promoter?.email}</p>
+                  <p className="font-semibold text-foreground">{paymentDialog.promoter?.promoter?.full_name}</p>
+                  <p className="text-sm text-muted-foreground">{paymentDialog.promoter?.promoter?.email}</p>
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 text-sm border-t border-[#0F0F0F]/10 pt-3">
+              <div className="grid grid-cols-2 gap-4 text-sm border-t border-border/10 pt-3">
                 <div>
-                  <p className="text-[#0F0F0F]/60">Events</p>
-                  <p className="font-medium text-[#0F0F0F]">{paymentDialog.promoter?.pendingSales?.length || 0} events</p>
+                  <p className="text-muted-foreground">Events</p>
+                  <p className="font-medium text-foreground">{paymentDialog.promoter?.pendingSales?.length || 0} events</p>
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F]/60">Amount</p>
+                  <p className="text-muted-foreground">Amount</p>
                   <p className="font-bold text-green-600 text-lg">
                     {formatPrice(paymentDialog.promoter?.totalPending, Array.from(paymentDialog.promoter?.currencies || ['USD'])[0])}
                   </p>
@@ -438,12 +438,12 @@ export function PromoterPayouts() {
 
               {/* Bank Details */}
               {paymentDialog.promoter?.promoter?.promoter_bank_accounts?.[0] && (
-                <div className="border-t border-[#0F0F0F]/10 pt-3">
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Bank Details</p>
+                <div className="border-t border-border/10 pt-3">
+                  <p className="text-xs text-muted-foreground mb-2">Bank Details</p>
                   <div className="text-sm space-y-1">
-                    <p><span className="text-[#0F0F0F]/60">Bank:</span> <span className="font-medium">{paymentDialog.promoter.promoter.promoter_bank_accounts[0].bank_name}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono font-medium">{paymentDialog.promoter.promoter.promoter_bank_accounts[0].account_number}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Name:</span> <span className="font-medium">{paymentDialog.promoter.promoter.promoter_bank_accounts[0].account_name}</span></p>
+                    <p><span className="text-muted-foreground">Bank:</span> <span className="font-medium">{paymentDialog.promoter.promoter.promoter_bank_accounts[0].bank_name}</span></p>
+                    <p><span className="text-muted-foreground">Account:</span> <span className="font-mono font-medium">{paymentDialog.promoter.promoter.promoter_bank_accounts[0].account_number}</span></p>
+                    <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{paymentDialog.promoter.promoter.promoter_bank_accounts[0].account_name}</span></p>
                   </div>
                 </div>
               )}

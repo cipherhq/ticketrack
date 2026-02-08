@@ -358,7 +358,7 @@ export function WebPaymentLink() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto mb-4" />
-          <p className="text-gray-600">Loading payment details...</p>
+          <p className="text-muted-foreground">Loading payment details...</p>
         </div>
       </div>
     )
@@ -370,8 +370,8 @@ export function WebPaymentLink() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">Payment Link Error</h1>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <h1 className="text-xl font-semibold text-foreground mb-2">Payment Link Error</h1>
+            <p className="text-muted-foreground mb-6">{error}</p>
             <Button onClick={() => navigate('/')} variant="outline">
               Go to Homepage
             </Button>
@@ -387,10 +387,10 @@ export function WebPaymentLink() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Complete!</h1>
-            <p className="text-gray-600 mb-4">This payment has already been processed.</p>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Payment Complete!</h1>
+            <p className="text-muted-foreground mb-4">This payment has already been processed.</p>
             {ticketCode && (
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 Ticket Code: <span className="font-mono font-semibold">{ticketCode}</span>
               </p>
             )}
@@ -416,13 +416,13 @@ export function WebPaymentLink() {
         {/* Event Header */}
         <Card className="mb-6 overflow-hidden">
           {event?.image_url && (
-            <div className="h-40 bg-gray-200">
+            <div className="h-40 bg-muted">
               <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
             </div>
           )}
           <CardContent className="p-6">
-            <h1 className="text-xl font-bold text-gray-900 mb-3">{event?.title}</h1>
-            <div className="space-y-2 text-sm text-gray-600">
+            <h1 className="text-xl font-bold text-foreground mb-3">{event?.title}</h1>
+            <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 <span>{new Date(event?.start_date).toLocaleDateString('en-US', {
@@ -446,18 +446,18 @@ export function WebPaymentLink() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Attendee Info */}
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="bg-background rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm">
-                <User className="w-4 h-4 text-gray-500" />
+                <User className="w-4 h-4 text-muted-foreground" />
                 <span className="font-medium">{order?.buyer_name}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mail className="w-4 h-4 text-gray-500" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="w-4 h-4 text-muted-foreground" />
                 <span>{order?.buyer_email}</span>
               </div>
               {order?.buyer_phone && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Phone className="w-4 h-4 text-gray-500" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
                   <span>{order.buyer_phone}</span>
                 </div>
               )}
@@ -469,7 +469,7 @@ export function WebPaymentLink() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="font-medium">{ticketType?.name || 'Ticket'}</p>
-                <p className="text-sm text-gray-500">Qty: {order?.order_items?.[0]?.quantity || 1}</p>
+                <p className="text-sm text-muted-foreground">Qty: {order?.order_items?.[0]?.quantity || 1}</p>
               </div>
               <p className="font-semibold">{formatPrice(order?.total_amount || 0, currency)}</p>
             </div>
@@ -487,7 +487,7 @@ export function WebPaymentLink() {
         {/* Payment Button */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
               <Lock className="w-4 h-4" />
               <span>Secure payment powered by {getProviderInfo(paymentMethod)?.name || 'Paystack'}</span>
             </div>
@@ -510,7 +510,7 @@ export function WebPaymentLink() {
               )}
             </Button>
 
-            <p className="text-xs text-center text-gray-400 mt-4">
+            <p className="text-xs text-center text-muted-foreground mt-4">
               By completing this payment, you agree to the event's terms and conditions.
             </p>
           </CardContent>

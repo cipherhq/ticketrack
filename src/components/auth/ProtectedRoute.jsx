@@ -14,10 +14,10 @@ export function ProtectedRoute({ children }) {
   // Show loading spinner while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto mb-4" />
-          <p className="text-[#0F0F0F]/60">Loading...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     )

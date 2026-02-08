@@ -452,45 +452,45 @@ export function AdminSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Platform Settings</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage currencies, countries, fees, payments, and features</p>
+          <h2 className="text-2xl font-semibold text-foreground">Platform Settings</h2>
+          <p className="text-muted-foreground mt-1">Manage currencies, countries, fees, payments, and features</p>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#F4F6FA] p-1 rounded-xl flex-wrap h-auto gap-1">
-          <TabsTrigger value="currencies" className="rounded-lg data-[state=active]:bg-white">
+        <TabsList className="bg-muted p-1 rounded-xl flex-wrap h-auto gap-1">
+          <TabsTrigger value="currencies" className="rounded-lg data-[state=active]:bg-card">
             <DollarSign className="w-4 h-4 mr-2" /> Currencies
           </TabsTrigger>
-          <TabsTrigger value="countries" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="countries" className="rounded-lg data-[state=active]:bg-card">
             <Globe className="w-4 h-4 mr-2" /> Countries
           </TabsTrigger>
-          <TabsTrigger value="features" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="features" className="rounded-lg data-[state=active]:bg-card">
             <ToggleLeft className="w-4 h-4 mr-2" /> Features
           </TabsTrigger>
-          <TabsTrigger value="branding" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="branding" className="rounded-lg data-[state=active]:bg-card">
             <Palette className="w-4 h-4 mr-2" /> Branding
           </TabsTrigger>
-          <TabsTrigger value="legal" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="legal" className="rounded-lg data-[state=active]:bg-card">
             <FileText className="w-4 h-4 mr-2" /> Legal
           </TabsTrigger>
-          <TabsTrigger value="limits" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="limits" className="rounded-lg data-[state=active]:bg-card">
             <Gauge className="w-4 h-4 mr-2" /> Limits
           </TabsTrigger>
-          <TabsTrigger value="connect" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="connect" className="rounded-lg data-[state=active]:bg-card">
             <Zap className="w-4 h-4 mr-2" /> Stripe Connect
           </TabsTrigger>
-          <TabsTrigger value="fastpayout" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="fastpayout" className="rounded-lg data-[state=active]:bg-card">
             <Banknote className="w-4 h-4 mr-2" /> Fast Payout
           </TabsTrigger>
-          <TabsTrigger value="apis" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="apis" className="rounded-lg data-[state=active]:bg-card">
             <Key className="w-4 h-4 mr-2" /> APIs
           </TabsTrigger>
         </TabsList>
 
         {/* CURRENCIES TAB */}
         <TabsContent value="currencies" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Supported Currencies</CardTitle>
               <Button 
@@ -507,18 +507,18 @@ export function AdminSettings() {
             <CardContent>
               <div className="space-y-3">
                 {currencies.map(currency => (
-                  <div key={currency.code} className="flex items-center justify-between p-4 rounded-xl bg-[#F4F6FA]">
+                  <div key={currency.code} className="flex items-center justify-between p-4 rounded-xl bg-muted">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-xl font-bold">
+                      <div className="w-12 h-12 rounded-xl bg-card flex items-center justify-center text-xl font-bold">
                         {currency.symbol}
                       </div>
                       <div>
-                        <h4 className="font-medium text-[#0F0F0F]">{currency.name}</h4>
-                        <p className="text-sm text-[#0F0F0F]/60">{currency.code} • {currency.locale}</p>
+                        <h4 className="font-medium text-foreground">{currency.name}</h4>
+                        <p className="text-sm text-muted-foreground">{currency.code} • {currency.locale}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge className={currency.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                      <Badge className={currency.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                         {currency.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                       <Switch 
@@ -542,7 +542,7 @@ export function AdminSettings() {
 
         {/* COUNTRIES TAB - UPDATED: Only 2 fees displayed */}
         <TabsContent value="countries" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Countries & Fee Configuration</CardTitle>
               <Button
@@ -567,19 +567,19 @@ export function AdminSettings() {
                 {countries.map(country => {
                   const currency = currencies.find(c => c.code === country.default_currency);
                   return (
-                    <div key={country.code} className="p-4 rounded-xl bg-[#F4F6FA]">
+                    <div key={country.code} className="p-4 rounded-xl bg-muted">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold text-sm">
+                          <div className="w-10 h-10 rounded-xl bg-card flex items-center justify-center font-bold text-sm">
                             {country.code}
                           </div>
                           <div>
-                            <h4 className="font-medium text-[#0F0F0F]">{country.name}</h4>
-                            <p className="text-sm text-[#0F0F0F]/60">{currency?.symbol} {currency?.name} • {country.payment_provider}</p>
+                            <h4 className="font-medium text-foreground">{country.name}</h4>
+                            <p className="text-sm text-muted-foreground">{currency?.symbol} {currency?.name} • {country.payment_provider}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <Badge className={country.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                          <Badge className={country.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                             {country.is_active ? 'Active' : 'Inactive'}
                           </Badge>
                           <Switch 
@@ -597,15 +597,15 @@ export function AdminSettings() {
                       </div>
                       {/* Fee fields - read-only, managed in Fee Management */}
                       <div className="grid grid-cols-3 gap-3">
-                        <div className="p-3 bg-white rounded-lg">
-                          <p className="text-xs text-[#0F0F0F]/60">Service Fee (%)</p>
-                          <p className="font-semibold text-[#0F0F0F]">{country.service_fee_percentage || 0}%</p>
+                        <div className="p-3 bg-card rounded-lg">
+                          <p className="text-xs text-muted-foreground">Service Fee (%)</p>
+                          <p className="font-semibold text-foreground">{country.service_fee_percentage || 0}%</p>
                         </div>
-                        <div className="p-3 bg-white rounded-lg">
-                          <p className="text-xs text-[#0F0F0F]/60">Service Fee (Fixed)</p>
-                          <p className="font-semibold text-[#0F0F0F]">{currency?.symbol}{country.service_fee_fixed_per_ticket || country.service_fee_fixed || 0}</p>
+                        <div className="p-3 bg-card rounded-lg">
+                          <p className="text-xs text-muted-foreground">Service Fee (Fixed)</p>
+                          <p className="font-semibold text-foreground">{currency?.symbol}{country.service_fee_fixed_per_ticket || country.service_fee_fixed || 0}</p>
                         </div>
-                        <div className="p-3 bg-white rounded-lg flex items-center justify-center">
+                        <div className="p-3 bg-card rounded-lg flex items-center justify-center">
                           <a
                             href="/admin/fees"
                             className="text-xs text-[#2969FF] hover:underline flex items-center gap-1"
@@ -625,7 +625,7 @@ export function AdminSettings() {
 
         {/* FEATURES TAB */}
         <TabsContent value="features" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Feature Flags by Country</CardTitle>
@@ -650,18 +650,18 @@ export function AdminSettings() {
                     
                     return (
                       <div key={category}>
-                        <h4 className="text-sm font-medium text-[#0F0F0F]/60 uppercase mb-3">{category}</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground uppercase mb-3">{category}</h4>
                         <div className="space-y-2">
                           {categoryFeatures.map(feature => {
                             const status = getFeatureStatus(selectedCountry, feature.id);
                             return (
-                              <div key={feature.id} className="flex items-center justify-between p-4 rounded-xl bg-[#F4F6FA]">
+                              <div key={feature.id} className="flex items-center justify-between p-4 rounded-xl bg-muted">
                                 <div>
-                                  <h5 className="font-medium text-[#0F0F0F]">{feature.name}</h5>
-                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                  <h5 className="font-medium text-foreground">{feature.name}</h5>
+                                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <Badge className={status.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                                  <Badge className={status.enabled ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                                     {status.enabled ? 'Enabled' : 'Disabled'}
                                   </Badge>
                                   <Switch 
@@ -684,7 +684,7 @@ export function AdminSettings() {
 
         {/* BRANDING TAB */}
         <TabsContent value="branding" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Platform Branding</CardTitle>
               <Button onClick={saveBranding} disabled={saving} className="bg-[#2969FF] hover:bg-[#2969FF]/90 rounded-xl">
@@ -819,16 +819,16 @@ export function AdminSettings() {
 
         {/* LEGAL TAB */}
         <TabsContent value="legal" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Legal Documents & Terms</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {legalDocs.map(doc => (
-                  <div key={doc.id} className="flex items-center justify-between p-4 rounded-xl bg-[#F4F6FA]">
+                  <div key={doc.id} className="flex items-center justify-between p-4 rounded-xl bg-muted">
                     <div>
-                      <h4 className="font-medium text-[#0F0F0F]">{doc.title}</h4>
+                      <h4 className="font-medium text-foreground">{doc.title}</h4>
                       <div className="flex gap-2 mt-1">
                         <Badge variant="outline">{doc.applies_to}</Badge>
                         <Badge variant="outline">v{doc.version}</Badge>
@@ -850,7 +850,7 @@ export function AdminSettings() {
 
         {/* LIMITS TAB */}
         <TabsContent value="limits" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Platform Limits</CardTitle>
               <Button 
@@ -877,14 +877,14 @@ export function AdminSettings() {
                   if (countryLimits.length === 0) return null;
                   
                   return (
-                    <div key={country.code} className="p-4 rounded-xl bg-[#F4F6FA]">
-                      <h4 className="font-medium text-[#0F0F0F] mb-3">{country.name}</h4>
+                    <div key={country.code} className="p-4 rounded-xl bg-muted">
+                      <h4 className="font-medium text-foreground mb-3">{country.name}</h4>
                       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {countryLimits.map(limit => (
-                          <div key={limit.id} className="p-3 bg-white rounded-lg flex items-center justify-between">
+                          <div key={limit.id} className="p-3 bg-card rounded-lg flex items-center justify-between">
                             <div>
-                              <p className="text-xs text-[#0F0F0F]/60">{limit.description || limit.limit_key}</p>
-                              <p className="font-semibold text-[#0F0F0F]">{limit.limit_value.toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground">{limit.description || limit.limit_key}</p>
+                              <p className="font-semibold text-foreground">{limit.limit_value.toLocaleString()}</p>
                             </div>
                             <Button 
                               variant="ghost" 
@@ -902,15 +902,15 @@ export function AdminSettings() {
               </div>
 
               {/* Platform Settings Section */}
-              <div className="mt-6 pt-6 border-t border-[#0F0F0F]/10">
-                <h4 className="font-medium text-[#0F0F0F] mb-4">Global Platform Settings (RSVP & Free Events)</h4>
+              <div className="mt-6 pt-6 border-t border-border/10">
+                <h4 className="font-medium text-foreground mb-4">Global Platform Settings (RSVP & Free Events)</h4>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {platformSettings.map(setting => (
-                    <div key={setting.key} className="p-4 bg-white rounded-xl border border-[#0F0F0F]/10">
+                    <div key={setting.key} className="p-4 bg-card rounded-xl border border-border/10">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs text-[#0F0F0F]/60 uppercase">{setting.category}</p>
+                        <p className="text-xs text-muted-foreground uppercase">{setting.category}</p>
                       </div>
-                      <p className="text-sm text-[#0F0F0F]/80 mb-2">{setting.description}</p>
+                      <p className="text-sm text-foreground/80 mb-2">{setting.description}</p>
                       {setting.value === 'true' || setting.value === 'false' ? (
                         <div className="flex items-center gap-2">
                           <Switch
@@ -957,7 +957,7 @@ export function AdminSettings() {
 
         {/* STRIPE CONNECT TAB */}
         <TabsContent value="connect" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="w-5 h-5 text-purple-600" />
@@ -988,9 +988,9 @@ export function AdminSettings() {
               {/* Settings Grid */}
               <div className="grid md:grid-cols-2 gap-4">
                 {/* Platform Fee */}
-                <div className="p-4 bg-white rounded-xl border border-[#0F0F0F]/10">
+                <div className="p-4 bg-card rounded-xl border border-border/10">
                   <Label className="text-sm font-medium">Platform Fee (%)</Label>
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Percentage charged on each Connect transaction</p>
+                  <p className="text-xs text-muted-foreground mb-2">Percentage charged on each Connect transaction</p>
                   <Input
                     type="number"
                     min="0"
@@ -1011,9 +1011,9 @@ export function AdminSettings() {
                 </div>
 
                 {/* Minimum Payout */}
-                <div className="p-4 bg-white rounded-xl border border-[#0F0F0F]/10">
+                <div className="p-4 bg-card rounded-xl border border-border/10">
                   <Label className="text-sm font-medium">Minimum Payout ($)</Label>
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Minimum balance required before auto-payout triggers</p>
+                  <p className="text-xs text-muted-foreground mb-2">Minimum balance required before auto-payout triggers</p>
                   <Input
                     type="number"
                     min="1"
@@ -1033,9 +1033,9 @@ export function AdminSettings() {
                 </div>
 
                 {/* Payout Delay */}
-                <div className="p-4 bg-white rounded-xl border border-[#0F0F0F]/10">
+                <div className="p-4 bg-card rounded-xl border border-border/10">
                   <Label className="text-sm font-medium">Payout Delay (days)</Label>
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Days after event ends before payout is released</p>
+                  <p className="text-xs text-muted-foreground mb-2">Days after event ends before payout is released</p>
                   <Input
                     type="number"
                     min="0"
@@ -1056,9 +1056,9 @@ export function AdminSettings() {
                 </div>
 
                 {/* Supported Countries */}
-                <div className="p-4 bg-white rounded-xl border border-[#0F0F0F]/10">
+                <div className="p-4 bg-card rounded-xl border border-border/10">
                   <Label className="text-sm font-medium">Supported Countries</Label>
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Countries where Connect is available (JSON array)</p>
+                  <p className="text-xs text-muted-foreground mb-2">Countries where Connect is available (JSON array)</p>
                   <Input
                     value={platformSettings.find(s => s.key === 'stripe_connect_countries')?.value || '["US","GB","CA"]'}
                     onChange={(e) => {
@@ -1091,14 +1091,14 @@ export function AdminSettings() {
 
         {/* FAST PAYOUT TAB */}
         <TabsContent value="fastpayout" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Banknote className="w-5 h-5 text-amber-600" />
                   Fast Payout Settings
                 </CardTitle>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Configure early payout options for organizers
                 </p>
               </div>
@@ -1116,7 +1116,7 @@ export function AdminSettings() {
               <div className="flex items-center justify-between p-4 bg-amber-50 rounded-xl">
                 <div>
                   <Label className="text-base font-medium">Enable Fast Payout</Label>
-                  <p className="text-sm text-[#0F0F0F]/60">Allow organizers to request early payouts</p>
+                  <p className="text-sm text-muted-foreground">Allow organizers to request early payouts</p>
                 </div>
                 <Switch
                   checked={fastPayoutSettings.enabled}
@@ -1128,7 +1128,7 @@ export function AdminSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label className="text-sm font-medium">Processing Fee (%)</Label>
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Fee charged for fast payout (e.g., 0.5 = 0.5%)</p>
+                  <p className="text-xs text-muted-foreground mb-2">Fee charged for fast payout (e.g., 0.5 = 0.5%)</p>
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
@@ -1142,7 +1142,7 @@ export function AdminSettings() {
                       }))}
                       className="rounded-xl w-24"
                     />
-                    <span className="text-[#0F0F0F]/60">%</span>
+                    <span className="text-muted-foreground">%</span>
                     <Badge variant="outline" className="ml-2">
                       Current: {(fastPayoutSettings.fee_percentage * 100).toFixed(1)}%
                     </Badge>
@@ -1151,7 +1151,7 @@ export function AdminSettings() {
 
                 <div>
                   <Label className="text-sm font-medium">Minimum Ticket Sales (%)</Label>
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Required ticket sales to be eligible</p>
+                  <p className="text-xs text-muted-foreground mb-2">Required ticket sales to be eligible</p>
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
@@ -1165,7 +1165,7 @@ export function AdminSettings() {
                       }))}
                       className="rounded-xl w-24"
                     />
-                    <span className="text-[#0F0F0F]/60">%</span>
+                    <span className="text-muted-foreground">%</span>
                   </div>
                 </div>
               </div>
@@ -1173,9 +1173,9 @@ export function AdminSettings() {
               {/* Payout Caps */}
               <div>
                 <Label className="text-base font-medium mb-3 block">Payout Caps by Trust Level</Label>
-                <p className="text-xs text-[#0F0F0F]/60 mb-4">Maximum percentage of available earnings organizers can withdraw early</p>
+                <p className="text-xs text-muted-foreground mb-4">Maximum percentage of available earnings organizers can withdraw early</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                  <div className="p-4 bg-muted rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-amber-600" />
                       <span className="text-sm font-medium">Bronze</span>
@@ -1189,10 +1189,10 @@ export function AdminSettings() {
                         onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_bronze: e.target.value === '' ? '' : parseFloat(e.target.value) }))}
                         className="rounded-lg w-16 h-8 text-center"
                       />
-                      <span className="text-sm text-[#0F0F0F]/60">%</span>
+                      <span className="text-sm text-muted-foreground">%</span>
                     </div>
                   </div>
-                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                  <div className="p-4 bg-muted rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-gray-400" />
                       <span className="text-sm font-medium">Silver</span>
@@ -1206,10 +1206,10 @@ export function AdminSettings() {
                         onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_silver: e.target.value === '' ? '' : parseFloat(e.target.value) }))}
                         className="rounded-lg w-16 h-8 text-center"
                       />
-                      <span className="text-sm text-[#0F0F0F]/60">%</span>
+                      <span className="text-sm text-muted-foreground">%</span>
                     </div>
                   </div>
-                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                  <div className="p-4 bg-muted rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-yellow-500" />
                       <span className="text-sm font-medium">Gold</span>
@@ -1223,10 +1223,10 @@ export function AdminSettings() {
                         onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_gold: e.target.value === '' ? '' : parseFloat(e.target.value) }))}
                         className="rounded-lg w-16 h-8 text-center"
                       />
-                      <span className="text-sm text-[#0F0F0F]/60">%</span>
+                      <span className="text-sm text-muted-foreground">%</span>
                     </div>
                   </div>
-                  <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                  <div className="p-4 bg-muted rounded-xl">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-3 h-3 rounded-full bg-green-500" />
                       <span className="text-sm font-medium">Trusted</span>
@@ -1240,7 +1240,7 @@ export function AdminSettings() {
                         onChange={(e) => setFastPayoutSettings(prev => ({ ...prev, cap_trusted: e.target.value === '' ? '' : parseFloat(e.target.value) }))}
                         className="rounded-lg w-16 h-8 text-center"
                       />
-                      <span className="text-sm text-[#0F0F0F]/60">%</span>
+                      <span className="text-sm text-muted-foreground">%</span>
                     </div>
                   </div>
                 </div>
@@ -1250,20 +1250,20 @@ export function AdminSettings() {
               <div>
                 <Label className="text-base font-medium mb-3 block">Requirements</Label>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-xl">
                     <div>
                       <span className="text-sm font-medium">Require KYC Verification</span>
-                      <p className="text-xs text-[#0F0F0F]/60">Organizer must complete KYC before fast payout</p>
+                      <p className="text-xs text-muted-foreground">Organizer must complete KYC before fast payout</p>
                     </div>
                     <Switch
                       checked={fastPayoutSettings.require_kyc}
                       onCheckedChange={(checked) => setFastPayoutSettings(prev => ({ ...prev, require_kyc: checked }))}
                     />
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-xl">
                     <div>
                       <span className="text-sm font-medium">Require Bank Verified</span>
-                      <p className="text-xs text-[#0F0F0F]/60">Bank account must be verified</p>
+                      <p className="text-xs text-muted-foreground">Bank account must be verified</p>
                     </div>
                     <Switch
                       checked={fastPayoutSettings.require_bank_verified}
@@ -1277,7 +1277,7 @@ export function AdminSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label className="text-sm font-medium">Max Requests Per Event</Label>
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">How many times can organizer request fast payout per event</p>
+                  <p className="text-xs text-muted-foreground mb-2">How many times can organizer request fast payout per event</p>
                   <Input
                     type="number"
                     min="1"
@@ -1289,7 +1289,7 @@ export function AdminSettings() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Cooldown Period (hours)</Label>
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Minimum hours between fast payout requests</p>
+                  <p className="text-xs text-muted-foreground mb-2">Minimum hours between fast payout requests</p>
                   <Input
                     type="number"
                     min="0"
@@ -1319,54 +1319,54 @@ export function AdminSettings() {
         <TabsContent value="apis" className="mt-6 space-y-6">
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentGateways.some(g => g.is_active) ? 'bg-green-100' : 'bg-gray-100'}`}>
-                    <CreditCard className={`w-5 h-5 ${paymentGateways.some(g => g.is_active) ? 'text-green-600' : 'text-gray-400'}`} />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentGateways.some(g => g.is_active) ? 'bg-green-100' : 'bg-muted'}`}>
+                    <CreditCard className={`w-5 h-5 ${paymentGateways.some(g => g.is_active) ? 'text-green-600' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">Payments</p>
-                    <p className="text-xs text-[#0F0F0F]/60">{paymentGateways.filter(g => g.is_active).length} active gateways</p>
+                    <p className="font-medium text-foreground">Payments</p>
+                    <p className="text-xs text-muted-foreground">{paymentGateways.filter(g => g.is_active).length} active gateways</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${emailConfig.api_key ? 'bg-green-100' : 'bg-yellow-100'}`}>
                     <Mail className={`w-5 h-5 ${emailConfig.api_key ? 'text-green-600' : 'text-yellow-600'}`} />
                   </div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">Email</p>
-                    <p className="text-xs text-[#0F0F0F]/60">{emailConfig.api_key ? 'Resend configured' : 'Not configured'}</p>
+                    <p className="font-medium text-foreground">Email</p>
+                    <p className="text-xs text-muted-foreground">{emailConfig.api_key ? 'Resend configured' : 'Not configured'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${smsConfig.api_key ? 'bg-green-100' : 'bg-yellow-100'}`}>
                     <Smartphone className={`w-5 h-5 ${smsConfig.api_key ? 'text-green-600' : 'text-yellow-600'}`} />
                   </div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">SMS</p>
-                    <p className="text-xs text-[#0F0F0F]/60">{smsConfig.api_key ? 'Termii configured' : 'Not configured'}</p>
+                    <p className="font-medium text-foreground">SMS</p>
+                    <p className="text-xs text-muted-foreground">{smsConfig.api_key ? 'Termii configured' : 'Not configured'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${whatsappConfig.provider !== 'manual' && whatsappConfig.api_key ? 'bg-green-100' : 'bg-gray-100'}`}>
-                    <MessageSquare className={`w-5 h-5 ${whatsappConfig.provider !== 'manual' && whatsappConfig.api_key ? 'text-green-600' : 'text-gray-400'}`} />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${whatsappConfig.provider !== 'manual' && whatsappConfig.api_key ? 'bg-green-100' : 'bg-muted'}`}>
+                    <MessageSquare className={`w-5 h-5 ${whatsappConfig.provider !== 'manual' && whatsappConfig.api_key ? 'text-green-600' : 'text-muted-foreground'}`} />
                   </div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">WhatsApp</p>
-                    <p className="text-xs text-[#0F0F0F]/60">{whatsappConfig.provider === 'manual' ? 'Manual mode' : whatsappConfig.api_key ? 'Connected' : 'Not configured'}</p>
+                    <p className="font-medium text-foreground">WhatsApp</p>
+                    <p className="text-xs text-muted-foreground">{whatsappConfig.provider === 'manual' ? 'Manual mode' : whatsappConfig.api_key ? 'Connected' : 'Not configured'}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1374,7 +1374,7 @@ export function AdminSettings() {
           </div>
 
           {/* Payment Gateways */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-[#2969FF]" />
@@ -1404,15 +1404,15 @@ export function AdminSettings() {
             <CardContent>
               <div className="space-y-4">
                 {countries.length === 0 && (
-                  <p className="text-[#0F0F0F]/60 text-center py-8">No countries configured. Add countries first.</p>
+                  <p className="text-muted-foreground text-center py-8">No countries configured. Add countries first.</p>
                 )}
                 {countries.map(country => {
                   const countryGateways = paymentGateways.filter(g => g.country_code === country.code);
 
                   return (
-                    <div key={country.code} className="p-4 rounded-xl bg-[#F4F6FA]">
+                    <div key={country.code} className="p-4 rounded-xl bg-muted">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-[#0F0F0F]">{country.name} ({country.code})</h4>
+                        <h4 className="font-medium text-foreground">{country.name} ({country.code})</h4>
                         <Button
                           variant="outline"
                           size="sm"
@@ -1436,23 +1436,23 @@ export function AdminSettings() {
                         </Button>
                       </div>
                       {countryGateways.length === 0 ? (
-                        <p className="text-[#0F0F0F]/40 text-sm">No payment gateways configured</p>
+                        <p className="text-muted-foreground text-sm">No payment gateways configured</p>
                       ) : (
                         <div className="space-y-3">
                           {countryGateways.map(gw => (
-                            <div key={gw.id} className="p-4 bg-white rounded-xl">
+                            <div key={gw.id} className="p-4 bg-card rounded-xl">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-[#F4F6FA] flex items-center justify-center">
+                                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                                     <CreditCard className="w-5 h-5 text-[#2969FF]" />
                                   </div>
                                   <div>
-                                    <h5 className="font-medium text-[#0F0F0F] capitalize">{gw.provider}</h5>
+                                    <h5 className="font-medium text-foreground capitalize">{gw.provider}</h5>
                                     <div className="flex gap-2 mt-1">
                                       <Badge className={gw.sandbox_mode ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}>
                                         {gw.sandbox_mode ? 'Sandbox' : 'Live'}
                                       </Badge>
-                                      <Badge className={gw.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                                      <Badge className={gw.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                                         {gw.is_active ? 'Active' : 'Inactive'}
                                       </Badge>
                                     </div>
@@ -1474,16 +1474,16 @@ export function AdminSettings() {
                               </div>
                               <div className={`grid gap-3 text-sm ${gw.provider === 'flutterwave' ? 'grid-cols-3' : 'grid-cols-2'}`}>
                                 <div>
-                                  <p className="text-[#0F0F0F]/60">Public Key</p>
+                                  <p className="text-muted-foreground">Public Key</p>
                                   <p className="font-mono text-xs">{maskSecret(gw.public_key) || 'Not set'}</p>
                                 </div>
                                 <div>
-                                  <p className="text-[#0F0F0F]/60">Secret Key</p>
+                                  <p className="text-muted-foreground">Secret Key</p>
                                   <p className="font-mono text-xs">{maskSecret(gw.secret_key_encrypted) || 'Not set'}</p>
                                 </div>
                                 {gw.provider === 'flutterwave' && (
                                   <div>
-                                    <p className="text-[#0F0F0F]/60">Encryption Key</p>
+                                    <p className="text-muted-foreground">Encryption Key</p>
                                     <p className="font-mono text-xs">{maskSecret(gw.config?.encryption_key_encrypted) || 'Not set'}</p>
                                   </div>
                                 )}
@@ -1500,7 +1500,7 @@ export function AdminSettings() {
           </Card>
 
           {/* Email Service (Resend) */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <Mail className="w-5 h-5 text-purple-600" />
@@ -1581,7 +1581,7 @@ export function AdminSettings() {
           </Card>
 
           {/* SMS Service (Termii) */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-green-600" />
@@ -1631,7 +1631,7 @@ export function AdminSettings() {
                     className="rounded-xl mt-1"
                     placeholder="Ticketrack"
                   />
-                  <p className="text-xs text-[#0F0F0F]/60 mt-1">Max 11 characters, alphanumeric</p>
+                  <p className="text-xs text-muted-foreground mt-1">Max 11 characters, alphanumeric</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -1656,7 +1656,7 @@ export function AdminSettings() {
           </Card>
 
           {/* WhatsApp Service */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-green-500" />
@@ -1692,7 +1692,7 @@ export function AdminSettings() {
                       className={`p-3 rounded-xl border-2 cursor-pointer text-center text-sm transition-all ${
                         whatsappConfig.provider === provider.value
                           ? 'border-green-500 bg-green-50'
-                          : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                          : 'border-border/10 hover:border-border/20'
                       }`}
                     >
                       {provider.label}
@@ -2051,7 +2051,7 @@ export function AdminSettings() {
                       {showSecrets.encryption ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
                   </div>
-                  <p className="text-xs text-[#0F0F0F]/60 mt-1">Required for Flutterwave payment encryption</p>
+                  <p className="text-xs text-muted-foreground mt-1">Required for Flutterwave payment encryption</p>
                 </div>
               )}
               <div>
@@ -2075,10 +2075,10 @@ export function AdminSettings() {
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-xl">
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Sandbox Mode</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Use test environment</p>
+                  <p className="font-medium text-foreground">Sandbox Mode</p>
+                  <p className="text-sm text-muted-foreground">Use test environment</p>
                 </div>
                 <Switch 
                   checked={gatewayModal.data.sandbox_mode} 

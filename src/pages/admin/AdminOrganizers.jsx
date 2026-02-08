@@ -596,7 +596,7 @@ export function AdminOrganizers() {
 
   const getTierBadge = (tier) => {
     const tierConfig = {
-      emerging: { label: 'Emerging', color: 'bg-gray-100 text-gray-700', icon: Sparkles },
+      emerging: { label: 'Emerging', color: 'bg-muted text-foreground/80', icon: Sparkles },
       established: { label: 'Established', color: 'bg-blue-100 text-blue-700', icon: Star },
       premier: { label: 'Premier', color: 'bg-amber-100 text-amber-700', icon: Trophy },
     };
@@ -626,7 +626,7 @@ export function AdminOrganizers() {
     } else if (status === 'rejected') {
       return <Badge className="bg-red-100 text-red-700">Rejected</Badge>;
     }
-    return <Badge className="bg-gray-100 text-gray-700">No KYC</Badge>;
+    return <Badge className="bg-muted text-foreground/80">No KYC</Badge>;
   };
 
   const filteredOrganizers = organizers.filter((org) => {
@@ -675,8 +675,8 @@ export function AdminOrganizers() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">All Organizers</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage all platform organizers</p>
+          <h2 className="text-2xl font-semibold text-foreground">All Organizers</h2>
+          <p className="text-muted-foreground mt-1">Manage all platform organizers</p>
         </div>
         <Button variant="outline" size="icon" onClick={loadOrganizers} className="rounded-xl">
           <RefreshCw className="w-4 h-4" />
@@ -685,44 +685,44 @@ export function AdminOrganizers() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total</p>
+                <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-2xl font-semibold">{stats.total}</p>
               </div>
               <Building className="w-8 h-8 text-[#2969FF]/20" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Verified</p>
+                <p className="text-sm text-muted-foreground">Verified</p>
                 <p className="text-2xl font-semibold text-green-600">{stats.verified}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-200" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending KYC</p>
+                <p className="text-sm text-muted-foreground">Pending KYC</p>
                 <p className="text-2xl font-semibold text-yellow-600">{stats.pending}</p>
               </div>
               <Shield className="w-8 h-8 text-yellow-200" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Suspended</p>
+                <p className="text-sm text-muted-foreground">Suspended</p>
                 <p className="text-2xl font-semibold text-red-600">{stats.suspended}</p>
               </div>
               <Ban className="w-8 h-8 text-red-200" />
@@ -732,16 +732,16 @@ export function AdminOrganizers() {
       </div>
 
       {/* Search & Filter */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search organizers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white border-[#0F0F0F]/10 rounded-xl"
+                className="pl-10 bg-card border-border/10 rounded-xl"
               />
             </div>
             <Select value={filter} onValueChange={setFilter}>
@@ -777,30 +777,30 @@ export function AdminOrganizers() {
       </Card>
 
       {/* Organizers Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Organizers ({filteredOrganizers.length})</CardTitle>
+          <CardTitle className="text-foreground">Organizers ({filteredOrganizers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#0F0F0F]/10">
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Organizer</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Contact</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Country</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Events</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Revenue</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">KYC</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Connect</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Tier</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                  <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                <tr className="border-b border-border/10">
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Organizer</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Contact</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Country</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Events</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Revenue</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">KYC</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Connect</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Tier</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Status</th>
+                  <th className="text-right py-4 px-4 text-muted-foreground font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedOrganizers.map((org) => (
-                  <tr key={org.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                  <tr key={org.id} className="border-b border-border/5 hover:bg-muted/50">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         {org.logo_url ? (
@@ -811,32 +811,32 @@ export function AdminOrganizers() {
                           </div>
                         )}
                         <div>
-                          <p className="text-[#0F0F0F] font-medium">{org.business_name || 'Unnamed'}</p>
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-foreground font-medium">{org.business_name || 'Unnamed'}</p>
+                          <p className="text-sm text-muted-foreground">
                             Joined {new Date(org.created_at).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/80 text-sm">{org.email || org.business_email || 'N/A'}</p>
-                      <p className="text-[#0F0F0F]/60 text-sm">{org.phone || org.business_phone || 'N/A'}</p>
+                      <p className="text-foreground/80 text-sm">{org.email || org.business_email || 'N/A'}</p>
+                      <p className="text-muted-foreground text-sm">{org.phone || org.business_phone || 'N/A'}</p>
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{COUNTRY_CURRENCY_MAP[org.country_code]?.flag || '🌍'}</span>
                         <div>
-                          <p className="text-[#0F0F0F] text-sm font-medium">{org.country_code || 'N/A'}</p>
-                          <p className="text-xs text-[#0F0F0F]/60">{getCurrencyForCountry(org.country_code)}</p>
+                          <p className="text-foreground text-sm font-medium">{org.country_code || 'N/A'}</p>
+                          <p className="text-xs text-muted-foreground">{getCurrencyForCountry(org.country_code)}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]">{org.eventCount}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{org.totalTickets} tickets</p>
+                      <p className="text-foreground">{org.eventCount}</p>
+                      <p className="text-sm text-muted-foreground">{org.totalTickets} tickets</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F] font-medium">{formatCurrency(org.totalRevenue)}</p>
+                      <p className="text-foreground font-medium">{formatCurrency(org.totalRevenue)}</p>
                     </td>
                     <td className="py-4 px-4">
                       {getKYCBadge(org.kyc_status, org.kyc_level)}
@@ -849,7 +849,7 @@ export function AdminOrganizers() {
                       ) : org.stripe_connect_status === 'pending' ? (
                         <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>
                       ) : (
-                        <span className="text-[#0F0F0F]/30">—</span>
+                        <span className="text-foreground/30">—</span>
                       )}
                     </td>
                     <td className="py-4 px-4">
@@ -877,7 +877,7 @@ export function AdminOrganizers() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="rounded-xl">
-                            <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                            <MoreVertical className="w-5 h-5 text-muted-foreground" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
@@ -922,7 +922,7 @@ export function AdminOrganizers() {
                 ))}
                 {filteredOrganizers.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="py-8 text-center text-[#0F0F0F]/60">
+                    <td colSpan={10} className="py-8 text-center text-muted-foreground">
                       No organizers found
                     </td>
                   </tr>
@@ -960,7 +960,7 @@ export function AdminOrganizers() {
                 )}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h3 className="text-2xl font-semibold text-[#0F0F0F]">{selectedOrganizer.business_name}</h3>
+                    <h3 className="text-2xl font-semibold text-foreground">{selectedOrganizer.business_name}</h3>
                     {selectedOrganizer.is_active !== false ? (
                       <Badge className="bg-green-100 text-green-700">Active</Badge>
                     ) : (
@@ -968,7 +968,7 @@ export function AdminOrganizers() {
                     )}
                     {getKYCBadge(selectedOrganizer.kyc_status, selectedOrganizer.kyc_level)}
                   </div>
-                  <p className="text-[#0F0F0F]/60 mt-1">{selectedOrganizer.description || 'No description provided'}</p>
+                  <p className="text-muted-foreground mt-1">{selectedOrganizer.description || 'No description provided'}</p>
                 </div>
               </div>
 
@@ -977,22 +977,22 @@ export function AdminOrganizers() {
                 <div className="p-4 bg-blue-50 rounded-xl text-center">
                   <Calendar className="w-6 h-6 text-[#2969FF] mx-auto mb-2" />
                   <p className="text-2xl font-semibold text-[#2969FF]">{selectedOrganizer.eventCount}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Events</p>
+                  <p className="text-sm text-muted-foreground">Events</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-xl text-center">
                   <Ticket className="w-6 h-6 text-green-600 mx-auto mb-2" />
                   <p className="text-2xl font-semibold text-green-600">{selectedOrganizer.totalTickets}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Tickets Sold</p>
+                  <p className="text-sm text-muted-foreground">Tickets Sold</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
                   <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-2" />
                   <p className="text-lg font-semibold text-purple-600">{formatCurrency(selectedOrganizer.totalRevenue)}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Total Revenue</p>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-xl text-center">
                   <DollarSign className="w-6 h-6 text-orange-600 mx-auto mb-2" />
                   <p className="text-lg font-semibold text-orange-600">{formatCurrency(selectedOrganizer.available_balance)}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Balance</p>
+                  <p className="text-sm text-muted-foreground">Balance</p>
                 </div>
               </div>
 
@@ -1002,7 +1002,7 @@ export function AdminOrganizers() {
                 </div>
               ) : (
                 <Tabs defaultValue="info" className="w-full">
-                  <TabsList className="bg-[#F4F6FA] rounded-xl flex-wrap">
+                  <TabsList className="bg-muted rounded-xl flex-wrap">
                     <TabsTrigger value="info" className="rounded-lg">Contact Info</TabsTrigger>
                     <TabsTrigger value="account" className="rounded-lg">Account</TabsTrigger>
                     <TabsTrigger value="events" className="rounded-lg">Events ({organizerEvents.length})</TabsTrigger>
@@ -1014,43 +1014,43 @@ export function AdminOrganizers() {
 
                   <TabsContent value="info" className="mt-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-1">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <Mail className="w-4 h-4" />
                           <span className="text-sm">Email</span>
                         </div>
-                        <p className="text-[#0F0F0F]">{selectedOrganizer.email || selectedOrganizer.business_email || 'N/A'}</p>
+                        <p className="text-foreground">{selectedOrganizer.email || selectedOrganizer.business_email || 'N/A'}</p>
                       </div>
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-1">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <Phone className="w-4 h-4" />
                           <span className="text-sm">Phone</span>
                         </div>
-                        <p className="text-[#0F0F0F]">{selectedOrganizer.phone || selectedOrganizer.business_phone || 'N/A'}</p>
+                        <p className="text-foreground">{selectedOrganizer.phone || selectedOrganizer.business_phone || 'N/A'}</p>
                       </div>
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-1">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <MapPin className="w-4 h-4" />
                           <span className="text-sm">Location</span>
                         </div>
-                        <p className="text-[#0F0F0F]">{selectedOrganizer.location || 'N/A'}</p>
+                        <p className="text-foreground">{selectedOrganizer.location || 'N/A'}</p>
                       </div>
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-1">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <Globe className="w-4 h-4" />
                           <span className="text-sm">Website</span>
                         </div>
-                        <p className="text-[#0F0F0F]">{selectedOrganizer.website || selectedOrganizer.website_url || 'N/A'}</p>
+                        <p className="text-foreground">{selectedOrganizer.website || selectedOrganizer.website_url || 'N/A'}</p>
                       </div>
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-1">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <Calendar className="w-4 h-4" />
                           <span className="text-sm">Joined</span>
                         </div>
-                        <p className="text-[#0F0F0F]">{new Date(selectedOrganizer.created_at).toLocaleDateString()}</p>
+                        <p className="text-foreground">{new Date(selectedOrganizer.created_at).toLocaleDateString()}</p>
                       </div>
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-1">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <Shield className="w-4 h-4" />
                           <span className="text-sm">KYC Status</span>
                         </div>
@@ -1059,26 +1059,26 @@ export function AdminOrganizers() {
                     </div>
 
                     {/* Social Links */}
-                    <div className="mt-4 p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 mb-3">Social Media</p>
+                    <div className="mt-4 p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground mb-3">Social Media</p>
                       <div className="flex gap-3">
                         {(selectedOrganizer.instagram || selectedOrganizer.social_instagram) && (
-                          <a href={selectedOrganizer.instagram || selectedOrganizer.social_instagram} target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-lg hover:bg-pink-50">
+                          <a href={selectedOrganizer.instagram || selectedOrganizer.social_instagram} target="_blank" rel="noopener noreferrer" className="p-2 bg-card rounded-lg hover:bg-pink-50">
                             <Instagram className="w-5 h-5 text-pink-600" />
                           </a>
                         )}
                         {(selectedOrganizer.twitter || selectedOrganizer.social_twitter) && (
-                          <a href={selectedOrganizer.twitter || selectedOrganizer.social_twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-lg hover:bg-blue-50">
+                          <a href={selectedOrganizer.twitter || selectedOrganizer.social_twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-card rounded-lg hover:bg-blue-50">
                             <Twitter className="w-5 h-5 text-blue-400" />
                           </a>
                         )}
                         {(selectedOrganizer.facebook || selectedOrganizer.social_facebook) && (
-                          <a href={selectedOrganizer.facebook || selectedOrganizer.social_facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-lg hover:bg-blue-50">
+                          <a href={selectedOrganizer.facebook || selectedOrganizer.social_facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-card rounded-lg hover:bg-blue-50">
                             <Facebook className="w-5 h-5 text-blue-600" />
                           </a>
                         )}
                         {(selectedOrganizer.linkedin || selectedOrganizer.social_linkedin) && (
-                          <a href={selectedOrganizer.linkedin || selectedOrganizer.social_linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-white rounded-lg hover:bg-blue-50">
+                          <a href={selectedOrganizer.linkedin || selectedOrganizer.social_linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-card rounded-lg hover:bg-blue-50">
                             <Linkedin className="w-5 h-5 text-blue-700" />
                           </a>
                         )}
@@ -1086,7 +1086,7 @@ export function AdminOrganizers() {
                          !selectedOrganizer.twitter && !selectedOrganizer.social_twitter &&
                          !selectedOrganizer.facebook && !selectedOrganizer.social_facebook &&
                          !selectedOrganizer.linkedin && !selectedOrganizer.social_linkedin && (
-                          <p className="text-[#0F0F0F]/60 text-sm">No social links added</p>
+                          <p className="text-muted-foreground text-sm">No social links added</p>
                         )}
                       </div>
                     </div>
@@ -1094,15 +1094,15 @@ export function AdminOrganizers() {
 
                   <TabsContent value="account" className="mt-4 space-y-4">
                     {/* Country & Currency Settings */}
-                    <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl space-y-4">
-                      <h4 className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+                    <div className="p-4 bg-card border border-border/10 rounded-xl space-y-4">
+                      <h4 className="font-semibold text-foreground flex items-center gap-2">
                         <Globe className="w-5 h-5 text-[#2969FF]" />
                         Country & Currency
                       </h4>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm text-[#0F0F0F]/60 mb-2 block">Country</label>
+                          <label className="text-sm text-muted-foreground mb-2 block">Country</label>
                           <Select
                             value={accountData.country_code}
                             onValueChange={(value) => setAccountData(prev => ({
@@ -1128,14 +1128,14 @@ export function AdminOrganizers() {
                         </div>
 
                         <div>
-                          <label className="text-sm text-[#0F0F0F]/60 mb-2 block">Currency</label>
-                          <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                          <label className="text-sm text-muted-foreground mb-2 block">Currency</label>
+                          <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
                             <span className="text-2xl">{COUNTRY_CURRENCY_MAP[accountData.country_code]?.symbol || '$'}</span>
                             <div>
-                              <p className="font-semibold text-[#0F0F0F]">
+                              <p className="font-semibold text-foreground">
                                 {getCurrencyForCountry(accountData.country_code)}
                               </p>
-                              <p className="text-xs text-[#0F0F0F]/60">
+                              <p className="text-xs text-muted-foreground">
                                 Based on selected country
                               </p>
                             </div>
@@ -1178,51 +1178,51 @@ export function AdminOrganizers() {
                     </div>
 
                     {/* Payment Gateway Info */}
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <h4 className="font-semibold text-[#0F0F0F] mb-3">Payment Gateway Routing</h4>
+                    <div className="p-4 bg-muted rounded-xl">
+                      <h4 className="font-semibold text-foreground mb-3">Payment Gateway Routing</h4>
                       <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="p-3 bg-white rounded-lg">
-                          <p className="text-[#0F0F0F]/60 mb-1">Africa (NG, GH, KE, ZA)</p>
+                        <div className="p-3 bg-card rounded-lg">
+                          <p className="text-muted-foreground mb-1">Africa (NG, GH, KE, ZA)</p>
                           <div className="flex items-center gap-2">
                             <Zap className="w-4 h-4 text-blue-600" />
                             <span className="font-medium">Paystack / Flutterwave</span>
                           </div>
                         </div>
-                        <div className="p-3 bg-white rounded-lg">
-                          <p className="text-[#0F0F0F]/60 mb-1">International (US, GB, CA, AU)</p>
+                        <div className="p-3 bg-card rounded-lg">
+                          <p className="text-muted-foreground mb-1">International (US, GB, CA, AU)</p>
                           <div className="flex items-center gap-2">
                             <CreditCard className="w-4 h-4 text-purple-600" />
                             <span className="font-medium">Stripe Connect</span>
                           </div>
                         </div>
                       </div>
-                      <p className="text-xs text-[#0F0F0F]/40 mt-3">
+                      <p className="text-xs text-muted-foreground mt-3">
                         Payment gateway is automatically determined by the organizer's country.
                       </p>
                     </div>
 
                     {/* Current Connection Status */}
-                    <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl">
-                      <h4 className="font-semibold text-[#0F0F0F] mb-3">Payment Connections</h4>
+                    <div className="p-4 bg-card border border-border/10 rounded-xl">
+                      <h4 className="font-semibold text-foreground mb-3">Payment Connections</h4>
                       <div className="grid grid-cols-3 gap-3">
-                        <div className="p-3 bg-[#F4F6FA] rounded-lg text-center">
+                        <div className="p-3 bg-muted rounded-lg text-center">
                           <CreditCard className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-                          <p className="text-xs text-[#0F0F0F]/60">Stripe</p>
-                          <Badge className={selectedOrganizer.stripe_connect_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                          <p className="text-xs text-muted-foreground">Stripe</p>
+                          <Badge className={selectedOrganizer.stripe_connect_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                             {selectedOrganizer.stripe_connect_status || 'Not Connected'}
                           </Badge>
                         </div>
-                        <div className="p-3 bg-[#F4F6FA] rounded-lg text-center">
+                        <div className="p-3 bg-muted rounded-lg text-center">
                           <Zap className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                          <p className="text-xs text-[#0F0F0F]/60">Paystack</p>
-                          <Badge className={selectedOrganizer.paystack_subaccount_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                          <p className="text-xs text-muted-foreground">Paystack</p>
+                          <Badge className={selectedOrganizer.paystack_subaccount_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                             {selectedOrganizer.paystack_subaccount_status || 'Not Connected'}
                           </Badge>
                         </div>
-                        <div className="p-3 bg-[#F4F6FA] rounded-lg text-center">
+                        <div className="p-3 bg-muted rounded-lg text-center">
                           <Globe className="w-5 h-5 text-orange-600 mx-auto mb-1" />
-                          <p className="text-xs text-[#0F0F0F]/60">Flutterwave</p>
-                          <Badge className={selectedOrganizer.flutterwave_subaccount_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                          <p className="text-xs text-muted-foreground">Flutterwave</p>
+                          <Badge className={selectedOrganizer.flutterwave_subaccount_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                             {selectedOrganizer.flutterwave_subaccount_status || 'Not Connected'}
                           </Badge>
                         </div>
@@ -1232,18 +1232,18 @@ export function AdminOrganizers() {
 
                   <TabsContent value="events" className="mt-4">
                     {organizerEvents.length === 0 ? (
-                      <p className="text-center text-[#0F0F0F]/60 py-8">No events yet</p>
+                      <p className="text-center text-muted-foreground py-8">No events yet</p>
                     ) : (
                       <div className="space-y-2">
                         {organizerEvents.map((event) => (
-                          <div key={event.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                          <div key={event.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                             <div>
-                              <p className="text-[#0F0F0F] font-medium">{event.title}</p>
-                              <p className="text-sm text-[#0F0F0F]/60">
+                              <p className="text-foreground font-medium">{event.title}</p>
+                              <p className="text-sm text-muted-foreground">
                                 {new Date(event.start_date).toLocaleDateString()} • {formatCurrency(event.ticket_price)}
                               </p>
                             </div>
-                            <Badge className={event.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                            <Badge className={event.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-foreground/80'}>
                               {event.status}
                             </Badge>
                           </div>
@@ -1254,14 +1254,14 @@ export function AdminOrganizers() {
 
                   <TabsContent value="payouts" className="mt-4">
                     {organizerPayouts.length === 0 ? (
-                      <p className="text-center text-[#0F0F0F]/60 py-8">No payouts yet</p>
+                      <p className="text-center text-muted-foreground py-8">No payouts yet</p>
                     ) : (
                       <div className="space-y-2">
                         {organizerPayouts.map((payout) => (
-                          <div key={payout.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                          <div key={payout.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                             <div>
-                              <p className="text-[#0F0F0F] font-medium">{formatCurrency(payout.net_amount)}</p>
-                              <p className="text-sm text-[#0F0F0F]/60">
+                              <p className="text-foreground font-medium">{formatCurrency(payout.net_amount)}</p>
+                              <p className="text-sm text-muted-foreground">
                                 {new Date(payout.created_at).toLocaleDateString()}
                               </p>
                             </div>
@@ -1282,33 +1282,33 @@ export function AdminOrganizers() {
                   <TabsContent value="tier" className="mt-4 space-y-4">
                     {/* Tier Info */}
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <p className="text-sm text-[#0F0F0F]/60 mb-2">Organizer Tier</p>
+                      <div className="p-4 bg-muted rounded-xl">
+                        <p className="text-sm text-muted-foreground mb-2">Organizer Tier</p>
                         {getTierBadge(selectedOrganizer.organizer_tier)}
                         {selectedOrganizer.tier_calculated_at && (
-                          <p className="text-xs text-[#0F0F0F]/40 mt-2">
+                          <p className="text-xs text-muted-foreground mt-2">
                             Last updated: {new Date(selectedOrganizer.tier_calculated_at).toLocaleDateString()}
                           </p>
                         )}
                       </div>
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <p className="text-sm text-[#0F0F0F]/60 mb-2">Completed Events</p>
-                        <p className="text-2xl font-semibold text-[#0F0F0F]">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <p className="text-sm text-muted-foreground mb-2">Completed Events</p>
+                        <p className="text-2xl font-semibold text-foreground">
                           {selectedOrganizer.completed_events_count || 0}
                         </p>
-                        <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           Required for direct payout: {selectedOrganizer.required_events_for_payout || 5}
                         </p>
                       </div>
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <p className="text-sm text-[#0F0F0F]/60 mb-2">Refund Rate</p>
-                        <p className="text-2xl font-semibold text-[#0F0F0F]">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <p className="text-sm text-muted-foreground mb-2">Refund Rate</p>
+                        <p className="text-2xl font-semibold text-foreground">
                           {selectedOrganizer.refund_rate || 0}%
                         </p>
                       </div>
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                        <p className="text-sm text-[#0F0F0F]/60 mb-2">Cancellation Rate</p>
-                        <p className="text-2xl font-semibold text-[#0F0F0F]">
+                      <div className="p-4 bg-muted rounded-xl">
+                        <p className="text-sm text-muted-foreground mb-2">Cancellation Rate</p>
+                        <p className="text-2xl font-semibold text-foreground">
                           {selectedOrganizer.cancellation_rate || 0}%
                         </p>
                       </div>
@@ -1327,7 +1327,7 @@ export function AdminOrganizers() {
                           ) : (
                             <Lock className="w-5 h-5 text-amber-600" />
                           )}
-                          <span className="font-semibold text-[#0F0F0F]">
+                          <span className="font-semibold text-foreground">
                             Direct Payout {selectedOrganizer.direct_payout_eligible ? 'Unlocked' : 'Locked'}
                           </span>
                         </div>
@@ -1360,15 +1360,15 @@ export function AdminOrganizers() {
                     </div>
 
                     {/* Admin Override */}
-                    <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl">
-                      <h4 className="font-semibold text-[#0F0F0F] mb-3 flex items-center gap-2">
+                    <div className="p-4 bg-card border border-border/10 rounded-xl">
+                      <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                         <Shield className="w-4 h-4 text-[#2969FF]" />
                         Admin Override
                       </h4>
 
                       {selectedOrganizer.direct_payout_override ? (
                         <div className="space-y-3">
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-sm text-muted-foreground">
                             Direct payout is currently enabled via admin override.
                           </p>
                           <Button
@@ -1387,7 +1387,7 @@ export function AdminOrganizers() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-sm text-muted-foreground">
                             Enable direct payout for this organizer before they complete the required events.
                           </p>
                           <Textarea
@@ -1437,11 +1437,11 @@ export function AdminOrganizers() {
                     {/* Feature Flags Header */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+                        <h4 className="font-semibold text-foreground flex items-center gap-2">
                           <Settings2 className="w-5 h-5 text-[#2969FF]" />
                           Feature Management
                         </h4>
-                        <p className="text-sm text-[#0F0F0F]/60">
+                        <p className="text-sm text-muted-foreground">
                           Enable or disable specific features for this organizer
                         </p>
                       </div>
@@ -1461,7 +1461,7 @@ export function AdminOrganizers() {
 
                     {/* Payments Section */}
                     <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                      <h5 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                         Payments & Payouts
                       </h5>
                       <div className="grid gap-3">
@@ -1472,7 +1472,7 @@ export function AdminOrganizers() {
                             <div
                               key={feature.key}
                               className={`flex items-center justify-between p-4 rounded-xl border ${
-                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-card border-border/10'
                               }`}
                             >
                               <div className="flex items-center gap-3">
@@ -1483,12 +1483,12 @@ export function AdminOrganizers() {
                                 </div>
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
+                                    <p className="font-medium text-foreground">{feature.label}</p>
                                     {feature.warning && !isEnabled && (
                                       <Badge className="bg-red-100 text-red-700 text-xs">Escrow Only</Badge>
                                     )}
                                   </div>
-                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                                 </div>
                               </div>
                               <Switch
@@ -1503,7 +1503,7 @@ export function AdminOrganizers() {
 
                     {/* Notifications Section */}
                     <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                      <h5 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                         Notifications
                       </h5>
                       <div className="grid gap-3">
@@ -1514,7 +1514,7 @@ export function AdminOrganizers() {
                             <div
                               key={feature.key}
                               className={`flex items-center justify-between p-4 rounded-xl border ${
-                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-card border-border/10'
                               }`}
                             >
                               <div className="flex items-center gap-3">
@@ -1524,8 +1524,8 @@ export function AdminOrganizers() {
                                   <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-green-600'}`} />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
-                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                  <p className="font-medium text-foreground">{feature.label}</p>
+                                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                                 </div>
                               </div>
                               <Switch
@@ -1540,7 +1540,7 @@ export function AdminOrganizers() {
 
                     {/* Tickets Section */}
                     <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                      <h5 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                         Tickets & Sales
                       </h5>
                       <div className="grid gap-3">
@@ -1551,7 +1551,7 @@ export function AdminOrganizers() {
                             <div
                               key={feature.key}
                               className={`flex items-center justify-between p-4 rounded-xl border ${
-                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-card border-border/10'
                               }`}
                             >
                               <div className="flex items-center gap-3">
@@ -1561,8 +1561,8 @@ export function AdminOrganizers() {
                                   <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-purple-600'}`} />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
-                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                  <p className="font-medium text-foreground">{feature.label}</p>
+                                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                                 </div>
                               </div>
                               <Switch
@@ -1577,7 +1577,7 @@ export function AdminOrganizers() {
 
                     {/* Events Section */}
                     <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                      <h5 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                         Event Features
                       </h5>
                       <div className="grid gap-3">
@@ -1588,7 +1588,7 @@ export function AdminOrganizers() {
                             <div
                               key={feature.key}
                               className={`flex items-center justify-between p-4 rounded-xl border ${
-                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-card border-border/10'
                               }`}
                             >
                               <div className="flex items-center gap-3">
@@ -1598,8 +1598,8 @@ export function AdminOrganizers() {
                                   <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-orange-600'}`} />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
-                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                  <p className="font-medium text-foreground">{feature.label}</p>
+                                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                                 </div>
                               </div>
                               <Switch
@@ -1614,7 +1614,7 @@ export function AdminOrganizers() {
 
                     {/* Marketing Section */}
                     <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-[#0F0F0F]/60 uppercase tracking-wide">
+                      <h5 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                         Marketing & Promotion
                       </h5>
                       <div className="grid gap-3">
@@ -1625,7 +1625,7 @@ export function AdminOrganizers() {
                             <div
                               key={feature.key}
                               className={`flex items-center justify-between p-4 rounded-xl border ${
-                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-white border-[#0F0F0F]/10'
+                                !isEnabled ? 'bg-red-50 border-red-200' : 'bg-card border-border/10'
                               }`}
                             >
                               <div className="flex items-center gap-3">
@@ -1635,8 +1635,8 @@ export function AdminOrganizers() {
                                   <Icon className={`w-5 h-5 ${!isEnabled ? 'text-red-600' : 'text-pink-600'}`} />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-[#0F0F0F]">{feature.label}</p>
-                                  <p className="text-sm text-[#0F0F0F]/60">{feature.description}</p>
+                                  <p className="font-medium text-foreground">{feature.label}</p>
+                                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                                 </div>
                               </div>
                               <Switch
@@ -1664,7 +1664,7 @@ export function AdminOrganizers() {
 
                     {/* Last Updated */}
                     {selectedOrganizer.feature_flags_updated_at && (
-                      <p className="text-xs text-[#0F0F0F]/40 text-right">
+                      <p className="text-xs text-muted-foreground text-right">
                         Last updated: {new Date(selectedOrganizer.feature_flags_updated_at).toLocaleString()}
                       </p>
                     )}
@@ -1672,14 +1672,14 @@ export function AdminOrganizers() {
 
                   <TabsContent value="pricing" className="mt-4 space-y-4">
                     {/* Custom Fee Settings */}
-                    <div className="p-4 bg-white border border-[#0F0F0F]/10 rounded-xl space-y-4">
+                    <div className="p-4 bg-card border border-border/10 rounded-xl space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+                          <h4 className="font-semibold text-foreground flex items-center gap-2">
                             <Percent className="w-5 h-5 text-[#2969FF]" />
                             Custom Service Fees
                           </h4>
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-sm text-muted-foreground">
                             Override platform default fees for this organizer
                           </p>
                         </div>
@@ -1690,9 +1690,9 @@ export function AdminOrganizers() {
                       </div>
 
                       {customFeeData.enabled && (
-                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-[#0F0F0F]/10">
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-border/10">
                           <div>
-                            <label className="text-sm text-[#0F0F0F]/60 mb-2 block">Percentage Fee (%)</label>
+                            <label className="text-sm text-muted-foreground mb-2 block">Percentage Fee (%)</label>
                             <Input
                               type="number"
                               step="0.1"
@@ -1705,7 +1705,7 @@ export function AdminOrganizers() {
                             />
                           </div>
                           <div>
-                            <label className="text-sm text-[#0F0F0F]/60 mb-2 block">Fixed Fee (₦)</label>
+                            <label className="text-sm text-muted-foreground mb-2 block">Fixed Fee (₦)</label>
                             <Input
                               type="number"
                               step="1"
@@ -1743,16 +1743,16 @@ export function AdminOrganizers() {
                       </Button>
 
                       {selectedOrganizer.custom_fee_set_at && (
-                        <p className="text-xs text-[#0F0F0F]/40">
+                        <p className="text-xs text-muted-foreground">
                           Last updated: {new Date(selectedOrganizer.custom_fee_set_at).toLocaleString()}
                         </p>
                       )}
                     </div>
 
                     {/* Platform Default Fees Info */}
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <h4 className="font-semibold text-[#0F0F0F] mb-2">Platform Default Fees</h4>
-                      <p className="text-sm text-[#0F0F0F]/60">
+                    <div className="p-4 bg-muted rounded-xl">
+                      <h4 className="font-semibold text-foreground mb-2">Platform Default Fees</h4>
+                      <p className="text-sm text-muted-foreground">
                         If custom fees are disabled, the platform default fees will apply.
                         Check the Fee Management page for current platform defaults.
                       </p>
@@ -1762,7 +1762,7 @@ export function AdminOrganizers() {
               )}
 
               {/* Quick Actions */}
-              <div className="flex gap-3 pt-4 border-t border-[#0F0F0F]/10">
+              <div className="flex gap-3 pt-4 border-t border-border/10">
                 <Button
                   onClick={() => {
                     setDetailsDialogOpen(false);
@@ -1811,7 +1811,7 @@ export function AdminOrganizers() {
               {actionType === 'suspend' ? 'Suspend Organizer' : 'Activate Organizer'}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-[#0F0F0F]/60">
+          <p className="text-muted-foreground">
             {actionType === 'suspend'
               ? `Are you sure you want to suspend "${selectedOrganizer?.business_name}"? They will not be able to access their dashboard or receive payouts.`
               : `Are you sure you want to activate "${selectedOrganizer?.business_name}"? They will regain full access to their account.`}

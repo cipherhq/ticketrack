@@ -216,10 +216,10 @@ export function ChargebackDetail() {
       under_review: 'bg-blue-100 text-blue-800',
       won: 'bg-green-100 text-green-800',
       lost: 'bg-red-100 text-red-800',
-      closed: 'bg-gray-100 text-gray-800',
+      closed: 'bg-muted text-foreground',
       withdrawn: 'bg-purple-100 text-purple-800'
     };
-    return <Badge className={styles[status] || 'bg-gray-100'}>{status?.replace('_', ' ')}</Badge>;
+    return <Badge className={styles[status] || 'bg-muted'}>{status?.replace('_', ' ')}</Badge>;
   };
 
   const getEvidenceDueStatus = (dueDate) => {
@@ -248,7 +248,7 @@ export function ChargebackDetail() {
   if (!chargeback) {
     return (
       <div className="text-center py-12">
-        <p className="text-[#0F0F0F]/60">Chargeback not found</p>
+        <p className="text-muted-foreground">Chargeback not found</p>
         <Button onClick={() => navigate('/finance/chargebacks')} className="mt-4">
           Back to Chargebacks
         </Button>
@@ -271,8 +271,8 @@ export function ChargebackDetail() {
           Back
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Chargeback Details</h1>
-          <p className="text-[#0F0F0F]/60">Dispute ID: {chargeback.provider_dispute_id || 'N/A'}</p>
+          <h1 className="text-2xl font-bold text-foreground">Chargeback Details</h1>
+          <p className="text-muted-foreground">Dispute ID: {chargeback.provider_dispute_id || 'N/A'}</p>
         </div>
       </div>
 
@@ -299,7 +299,7 @@ export function ChargebackDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Details */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 Dispute Information
@@ -309,55 +309,55 @@ export function ChargebackDetail() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Disputed Amount</p>
+                  <p className="text-sm text-muted-foreground">Disputed Amount</p>
                   <p className="text-2xl font-bold text-red-600">
                     {formatPrice(chargeback.disputed_amount, chargeback.currency)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Fee Amount</p>
+                  <p className="text-sm text-muted-foreground">Fee Amount</p>
                   <p className="text-lg font-semibold">
                     {formatPrice(chargeback.fee_amount || 0, chargeback.currency)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Payment Provider</p>
+                  <p className="text-sm text-muted-foreground">Payment Provider</p>
                   <Badge variant="outline">{chargeback.payment_provider}</Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Opened</p>
+                  <p className="text-sm text-muted-foreground">Opened</p>
                   <p className="font-medium">{new Date(chargeback.opened_at).toLocaleString()}</p>
                 </div>
               </div>
               <div className="pt-4 border-t">
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Reason</p>
+                <p className="text-sm text-muted-foreground mb-1">Reason</p>
                 <p className="font-medium">{chargeback.reason || 'Not specified'}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Order Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Order Number</p>
+                  <p className="text-sm text-muted-foreground">Order Number</p>
                   <p className="font-mono font-medium">{chargeback.orders?.order_number || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Order Total</p>
+                  <p className="text-sm text-muted-foreground">Order Total</p>
                   <p className="font-medium">
                     {formatPrice(chargeback.orders?.total_amount || 0, chargeback.currency)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Buyer Name</p>
+                  <p className="text-sm text-muted-foreground">Buyer Name</p>
                   <p className="font-medium">{chargeback.orders?.buyer_name || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Buyer Email</p>
+                  <p className="text-sm text-muted-foreground">Buyer Email</p>
                   <p className="font-medium">{chargeback.orders?.buyer_email || '-'}</p>
                 </div>
               </div>
@@ -365,7 +365,7 @@ export function ChargebackDetail() {
           </Card>
 
           {/* Evidence Section */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
@@ -376,9 +376,9 @@ export function ChargebackDetail() {
               {chargeback.evidence_documents?.length > 0 ? (
                 <div className="space-y-2">
                   {chargeback.evidence_documents.map((doc, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={idx} className="flex items-center justify-between p-3 bg-background rounded-lg">
                       <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-[#0F0F0F]/60" />
+                        <FileText className="w-4 h-4 text-muted-foreground" />
                         <span>{doc.name}</span>
                       </div>
                       <Button
@@ -392,7 +392,7 @@ export function ChargebackDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="text-[#0F0F0F]/60 text-center py-4">No evidence uploaded yet</p>
+                <p className="text-muted-foreground text-center py-4">No evidence uploaded yet</p>
               )}
 
               {isActive && (
@@ -428,7 +428,7 @@ export function ChargebackDetail() {
           </Card>
 
           {/* Activity Log */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
@@ -456,14 +456,14 @@ export function ChargebackDetail() {
               )}
               <div className="space-y-3">
                 {activities.map((activity) => (
-                  <div key={activity.id} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Clock className="w-4 h-4 text-[#0F0F0F]/40 mt-1 flex-shrink-0" />
+                  <div key={activity.id} className="flex gap-3 p-3 bg-background rounded-lg">
+                    <Clock className="w-4 h-4 text-muted-foreground mt-1 flex-shrink-0" />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
                           {activity.action?.replace(/_/g, ' ')}
                         </Badge>
-                        <span className="text-xs text-[#0F0F0F]/50">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(activity.created_at).toLocaleString()}
                         </span>
                       </div>
@@ -474,7 +474,7 @@ export function ChargebackDetail() {
                   </div>
                 ))}
                 {activities.length === 0 && (
-                  <p className="text-center text-[#0F0F0F]/60 py-4">No activity yet</p>
+                  <p className="text-center text-muted-foreground py-4">No activity yet</p>
                 )}
               </div>
             </CardContent>
@@ -483,17 +483,17 @@ export function ChargebackDetail() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Organizer</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="font-medium">{chargeback.organizers?.business_name || 'Unknown'}</p>
-              <p className="text-sm text-[#0F0F0F]/60">{chargeback.organizers?.email}</p>
+              <p className="text-sm text-muted-foreground">{chargeback.organizers?.email}</p>
             </CardContent>
           </Card>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Event</CardTitle>
             </CardHeader>
@@ -503,7 +503,7 @@ export function ChargebackDetail() {
           </Card>
 
           {isActive && (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardHeader>
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
@@ -517,7 +517,7 @@ export function ChargebackDetail() {
                   <XCircle className="w-4 h-4 mr-2" />
                   Accept Chargeback
                 </Button>
-                <p className="text-xs text-[#0F0F0F]/50 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   Accepting will deduct the disputed amount from organizer balance
                 </p>
               </CardContent>

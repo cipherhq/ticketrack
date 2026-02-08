@@ -53,7 +53,7 @@ import { Pagination } from '@/components/ui/pagination';
 const STATUS_CONFIG = {
   active: { label: 'Active', color: 'bg-green-100 text-green-700', icon: CheckCircle },
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
-  not_started: { label: 'Not Connected', color: 'bg-gray-100 text-gray-600', icon: XCircle },
+  not_started: { label: 'Not Connected', color: 'bg-muted text-muted-foreground', icon: XCircle },
   restricted: { label: 'Restricted', color: 'bg-orange-100 text-orange-700', icon: AlertCircle },
   disabled: { label: 'Disabled', color: 'bg-red-100 text-red-700', icon: XCircle },
 };
@@ -479,8 +479,8 @@ export function AdminPaymentConnections() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Payment Connections</h1>
-          <p className="text-[#0F0F0F]/60">Manage organizer payment provider connections</p>
+          <h1 className="text-2xl font-bold text-foreground">Payment Connections</h1>
+          <p className="text-muted-foreground">Manage organizer payment provider connections</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={exportData}>
@@ -503,12 +503,12 @@ export function AdminPaymentConnections() {
 
         <TabsContent value="connections">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-[#0F0F0F]/10">
+            <Card className="border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Total Connected</p>
-                    <p className="text-2xl font-bold text-[#0F0F0F]">{stats.totalConnected}</p>
+                    <p className="text-sm text-muted-foreground">Total Connected</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.totalConnected}</p>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                     <CheckCircle className="w-5 h-5 text-green-600" />
@@ -517,11 +517,11 @@ export function AdminPaymentConnections() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10">
+            <Card className="border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Stripe Connect</p>
+                    <p className="text-sm text-muted-foreground">Stripe Connect</p>
                     <p className="text-2xl font-bold text-purple-600">{stats.stripeConnected}</p>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -531,11 +531,11 @@ export function AdminPaymentConnections() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10">
+            <Card className="border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Paystack</p>
+                    <p className="text-sm text-muted-foreground">Paystack</p>
                     <p className="text-2xl font-bold text-blue-600">{stats.paystackConnected}</p>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -545,11 +545,11 @@ export function AdminPaymentConnections() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10">
+            <Card className="border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Flutterwave</p>
+                    <p className="text-sm text-muted-foreground">Flutterwave</p>
                     <p className="text-2xl font-bold text-orange-600">{stats.flutterwaveConnected}</p>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
@@ -563,12 +563,12 @@ export function AdminPaymentConnections() {
 
         <TabsContent value="revenue">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <Card className="border-[#0F0F0F]/10 md:col-span-1">
+            <Card className="border-border/10 md:col-span-1">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Total Revenue</p>
-                    <p className="text-xl font-bold text-[#0F0F0F]">
+                    <p className="text-sm text-muted-foreground">Total Revenue</p>
+                    <p className="text-xl font-bold text-foreground">
                       {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.totalRevenue)}
                     </p>
                   </div>
@@ -579,16 +579,16 @@ export function AdminPaymentConnections() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10">
+            <Card className="border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Stripe Revenue</p>
+                    <p className="text-sm text-muted-foreground">Stripe Revenue</p>
                     <p className="text-xl font-bold text-purple-600">
                       {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.stripeRevenue)}
                     </p>
                     {revenueStats.totalRevenue > 0 && (
-                      <p className="text-xs text-[#0F0F0F]/40">
+                      <p className="text-xs text-muted-foreground">
                         {((revenueStats.stripeRevenue / revenueStats.totalRevenue) * 100).toFixed(1)}%
                       </p>
                     )}
@@ -600,16 +600,16 @@ export function AdminPaymentConnections() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10">
+            <Card className="border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Paystack Revenue</p>
+                    <p className="text-sm text-muted-foreground">Paystack Revenue</p>
                     <p className="text-xl font-bold text-blue-600">
                       {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.paystackRevenue)}
                     </p>
                     {revenueStats.totalRevenue > 0 && (
-                      <p className="text-xs text-[#0F0F0F]/40">
+                      <p className="text-xs text-muted-foreground">
                         {((revenueStats.paystackRevenue / revenueStats.totalRevenue) * 100).toFixed(1)}%
                       </p>
                     )}
@@ -621,16 +621,16 @@ export function AdminPaymentConnections() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10">
+            <Card className="border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Flutterwave Revenue</p>
+                    <p className="text-sm text-muted-foreground">Flutterwave Revenue</p>
                     <p className="text-xl font-bold text-orange-600">
                       {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.flutterwaveRevenue)}
                     </p>
                     {revenueStats.totalRevenue > 0 && (
-                      <p className="text-xs text-[#0F0F0F]/40">
+                      <p className="text-xs text-muted-foreground">
                         {((revenueStats.flutterwaveRevenue / revenueStats.totalRevenue) * 100).toFixed(1)}%
                       </p>
                     )}
@@ -642,22 +642,22 @@ export function AdminPaymentConnections() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10">
+            <Card className="border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Standard/Other</p>
-                    <p className="text-xl font-bold text-gray-600">
+                    <p className="text-sm text-muted-foreground">Standard/Other</p>
+                    <p className="text-xl font-bold text-muted-foreground">
                       {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.standardRevenue)}
                     </p>
                     {revenueStats.totalRevenue > 0 && (
-                      <p className="text-xs text-[#0F0F0F]/40">
+                      <p className="text-xs text-muted-foreground">
                         {((revenueStats.standardRevenue / revenueStats.totalRevenue) * 100).toFixed(1)}%
                       </p>
                     )}
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Building className="w-5 h-5 text-gray-600" />
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                    <Building className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
               </CardContent>
@@ -667,12 +667,12 @@ export function AdminPaymentConnections() {
       </Tabs>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10">
+      <Card className="border-border/10">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -730,37 +730,37 @@ export function AdminPaymentConnections() {
       </Card>
 
       {/* Organizers Table */}
-      <Card className="border-[#0F0F0F]/10">
+      <Card className="border-border/10">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#F4F6FA] border-b border-[#0F0F0F]/10">
+              <thead className="bg-muted border-b border-border/10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#0F0F0F]/60 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                     Organizer
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#0F0F0F]/60 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                     Country
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-[#0F0F0F]/60 uppercase">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">
                     <span className="flex items-center justify-center gap-1">
                       <CreditCard className="w-3 h-3 text-purple-600" />
                       Stripe
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-[#0F0F0F]/60 uppercase">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">
                     <span className="flex items-center justify-center gap-1">
                       <Zap className="w-3 h-3 text-blue-600" />
                       Paystack
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-[#0F0F0F]/60 uppercase">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">
                     <span className="flex items-center justify-center gap-1">
                       <Globe className="w-3 h-3 text-orange-600" />
                       Flutterwave
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-[#0F0F0F]/60 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
                     Actions
                   </th>
                 </tr>
@@ -772,16 +772,16 @@ export function AdminPaymentConnections() {
                   const flutterwave = getProviderStatus(org, 'flutterwave');
 
                   return (
-                    <tr key={org.id} className="hover:bg-[#F4F6FA]/50">
+                    <tr key={org.id} className="hover:bg-muted/50">
                       <td className="px-4 py-3">
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">{org.business_name}</p>
-                          <p className="text-sm text-[#0F0F0F]/60">{org.business_email}</p>
+                          <p className="font-medium text-foreground">{org.business_name}</p>
+                          <p className="text-sm text-muted-foreground">{org.business_email}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-lg">{COUNTRY_FLAGS[org.country_code] || '🌍'}</span>
-                        <span className="ml-1 text-sm text-[#0F0F0F]/60">{org.country_code}</span>
+                        <span className="ml-1 text-sm text-muted-foreground">{org.country_code}</span>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center gap-1">
@@ -789,13 +789,13 @@ export function AdminPaymentConnections() {
                           {stripe.status === 'active' && (
                             <button
                               onClick={() => toggleProviderEnabled(org.id, 'stripe_connect', stripe.enabled)}
-                              className="text-xs flex items-center gap-1 text-[#0F0F0F]/60 hover:text-[#0F0F0F]"
+                              className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
                               disabled={processing}
                             >
                               {stripe.enabled ? (
                                 <ToggleRight className="w-4 h-4 text-green-600" />
                               ) : (
-                                <ToggleLeft className="w-4 h-4 text-gray-400" />
+                                <ToggleLeft className="w-4 h-4 text-muted-foreground" />
                               )}
                               {stripe.enabled ? 'Enabled' : 'Disabled'}
                             </button>
@@ -808,13 +808,13 @@ export function AdminPaymentConnections() {
                           {paystack.status === 'active' && (
                             <button
                               onClick={() => toggleProviderEnabled(org.id, 'paystack_subaccount', paystack.enabled)}
-                              className="text-xs flex items-center gap-1 text-[#0F0F0F]/60 hover:text-[#0F0F0F]"
+                              className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
                               disabled={processing}
                             >
                               {paystack.enabled ? (
                                 <ToggleRight className="w-4 h-4 text-green-600" />
                               ) : (
-                                <ToggleLeft className="w-4 h-4 text-gray-400" />
+                                <ToggleLeft className="w-4 h-4 text-muted-foreground" />
                               )}
                               {paystack.enabled ? 'Enabled' : 'Disabled'}
                             </button>
@@ -827,13 +827,13 @@ export function AdminPaymentConnections() {
                           {flutterwave.status === 'active' && (
                             <button
                               onClick={() => toggleProviderEnabled(org.id, 'flutterwave_subaccount', flutterwave.enabled)}
-                              className="text-xs flex items-center gap-1 text-[#0F0F0F]/60 hover:text-[#0F0F0F]"
+                              className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground"
                               disabled={processing}
                             >
                               {flutterwave.enabled ? (
                                 <ToggleRight className="w-4 h-4 text-green-600" />
                               ) : (
-                                <ToggleLeft className="w-4 h-4 text-gray-400" />
+                                <ToggleLeft className="w-4 h-4 text-muted-foreground" />
                               )}
                               {flutterwave.enabled ? 'Enabled' : 'Disabled'}
                             </button>
@@ -895,13 +895,13 @@ export function AdminPaymentConnections() {
 
           {filteredOrganizers.length === 0 && (
             <div className="text-center py-12">
-              <Building className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No organizers found matching your filters</p>
+              <Building className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">No organizers found matching your filters</p>
             </div>
           )}
 
           {filteredOrganizers.length > pageSize && (
-            <div className="p-4 border-t border-[#0F0F0F]/10">
+            <div className="p-4 border-t border-border/10">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -946,34 +946,34 @@ export function AdminPaymentConnections() {
                 return (
                   <TabsContent key={provider} value={provider} className="space-y-4 mt-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Status</p>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Status</p>
                         <StatusBadge status={data.status} />
                       </div>
-                      <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Admin Enabled</p>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Admin Enabled</p>
                         <p className="font-medium">{data.enabled ? 'Yes' : 'No'}</p>
                       </div>
-                      <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Payouts</p>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Payouts</p>
                         <p className="font-medium">{data.payoutsEnabled ? 'Enabled' : 'Disabled'}</p>
                       </div>
-                      <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Charges</p>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Charges</p>
                         <p className="font-medium">{data.chargesEnabled ? 'Enabled' : 'Disabled'}</p>
                       </div>
                     </div>
 
                     {data.id && (
-                      <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Account ID</p>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Account ID</p>
                         <p className="font-mono text-sm break-all">{data.id}</p>
                       </div>
                     )}
 
                     {data.onboardedAt && (
-                      <div className="p-3 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Connected On</p>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Connected On</p>
                         <p className="font-medium">
                           {new Date(data.onboardedAt).toLocaleDateString('en-US', {
                             year: 'numeric',

@@ -195,8 +195,8 @@ export function AffiliatePayouts() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Affiliate Payouts</h1>
-          <p className="text-[#0F0F0F]/60">Process commission payouts for affiliates</p>
+          <h1 className="text-2xl font-bold text-foreground">Affiliate Payouts</h1>
+          <p className="text-muted-foreground">Process commission payouts for affiliates</p>
         </div>
         <Button onClick={loadAffiliatePayouts} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />Refresh
@@ -205,40 +205,40 @@ export function AffiliatePayouts() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                 <Link2 className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Affiliates</p>
-                <p className="font-bold text-[#0F0F0F]">{affiliatePayouts.length}</p>
+                <p className="text-sm text-muted-foreground">Total Affiliates</p>
+                <p className="font-bold text-foreground">{affiliatePayouts.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Pending</p>
+                <p className="text-sm text-muted-foreground">Total Pending</p>
                 <p className="font-bold text-yellow-600">{formatMultiCurrencyCompact(totalPendingByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Paid</p>
+                <p className="text-sm text-muted-foreground">Total Paid</p>
                 <p className="font-bold text-green-600">{formatMultiCurrencyCompact(totalPaidByCurrency)}</p>
               </div>
             </div>
@@ -249,7 +249,7 @@ export function AffiliatePayouts() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search affiliates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -268,16 +268,16 @@ export function AffiliatePayouts() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : filteredAffiliates.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <Link2 className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">No affiliate payouts found</p>
+            <Link2 className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground">No affiliate payouts found</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {filteredAffiliates.map((affiliate, idx) => (
-            <Card key={idx} className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card key={idx} className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4">
@@ -285,22 +285,22 @@ export function AffiliatePayouts() {
                       <User className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-[#0F0F0F]">{affiliate.affiliate?.first_name} {affiliate.affiliate?.last_name}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{affiliate.affiliate?.email}</p>
+                      <p className="font-semibold text-foreground">{affiliate.affiliate?.first_name} {affiliate.affiliate?.last_name}</p>
+                      <p className="text-sm text-muted-foreground">{affiliate.affiliate?.email}</p>
                       <p className="text-xs text-[#2969FF]">Code: {affiliate.affiliate?.referral_code}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6 flex-wrap">
                     <div className="text-right">
-                      <p className="text-sm text-[#0F0F0F]/60">Total Earned</p>
-                      <p className="font-semibold text-[#0F0F0F]">{formatPrice(affiliate.totalEarned, affiliate.currency)}</p>
+                      <p className="text-sm text-muted-foreground">Total Earned</p>
+                      <p className="font-semibold text-foreground">{formatPrice(affiliate.totalEarned, affiliate.currency)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                      <p className="text-sm text-muted-foreground">Pending</p>
                       <p className="font-bold text-yellow-600">{formatPrice(affiliate.totalPending, affiliate.currency)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-[#0F0F0F]/60">Paid</p>
+                      <p className="text-sm text-muted-foreground">Paid</p>
                       <p className="font-semibold text-green-600">{formatPrice(affiliate.totalPaid, affiliate.currency)}</p>
                     </div>
                     {affiliate.totalPending > 0 ? (
@@ -326,17 +326,17 @@ export function AffiliatePayouts() {
             <DialogDescription>Record payment to affiliate</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-[#F4F6FA] rounded-xl">
+            <div className="p-4 bg-muted rounded-xl">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-[#0F0F0F]/60">Recipient</p>
-                  <p className="font-medium text-[#0F0F0F]">
+                  <p className="text-muted-foreground">Recipient</p>
+                  <p className="font-medium text-foreground">
                     {paymentDialog.affiliate?.affiliate?.first_name} {paymentDialog.affiliate?.affiliate?.last_name}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">{paymentDialog.affiliate?.affiliate?.email}</p>
+                  <p className="text-xs text-muted-foreground">{paymentDialog.affiliate?.affiliate?.email}</p>
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F]/60">Amount</p>
+                  <p className="text-muted-foreground">Amount</p>
                   <p className="font-bold text-green-600 text-lg">
                     {formatPrice(paymentDialog.affiliate?.totalPending, paymentDialog.affiliate?.currency)}
                   </p>

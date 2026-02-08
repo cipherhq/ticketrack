@@ -256,8 +256,8 @@ export function AgingReports() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Aging Reports</h1>
-          <p className="text-[#0F0F0F]/60">Track outstanding items by age</p>
+          <h1 className="text-2xl font-bold text-foreground">Aging Reports</h1>
+          <p className="text-muted-foreground">Track outstanding items by age</p>
         </div>
         <div className="flex gap-2">
           <Select value={reportType} onValueChange={setReportType}>
@@ -296,68 +296,68 @@ export function AgingReports() {
 
       {/* Aging Summary Buckets */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl border-l-4 border-l-green-500">
+        <Card className="border-border/10 rounded-2xl border-l-4 border-l-green-500">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-[#0F0F0F]/60">Current (0-7 days)</span>
+              <span className="text-sm text-muted-foreground">Current (0-7 days)</span>
             </div>
             <p className="text-xl font-bold">{formatPrice(summary.current, currency)}</p>
-            <p className="text-xs text-[#0F0F0F]/50">
+            <p className="text-xs text-muted-foreground">
               {agingData.filter(d => d.agingBucket === 'current').length} items
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl border-l-4 border-l-yellow-500">
+        <Card className="border-border/10 rounded-2xl border-l-4 border-l-yellow-500">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-yellow-600" />
-              <span className="text-sm text-[#0F0F0F]/60">7-30 days</span>
+              <span className="text-sm text-muted-foreground">7-30 days</span>
             </div>
             <p className="text-xl font-bold">{formatPrice(summary.aging7, currency)}</p>
-            <p className="text-xs text-[#0F0F0F]/50">
+            <p className="text-xs text-muted-foreground">
               {agingData.filter(d => d.agingBucket === '7-30').length} items
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl border-l-4 border-l-orange-500">
+        <Card className="border-border/10 rounded-2xl border-l-4 border-l-orange-500">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-orange-600" />
-              <span className="text-sm text-[#0F0F0F]/60">30-60 days</span>
+              <span className="text-sm text-muted-foreground">30-60 days</span>
             </div>
             <p className="text-xl font-bold">{formatPrice(summary.aging30, currency)}</p>
-            <p className="text-xs text-[#0F0F0F]/50">
+            <p className="text-xs text-muted-foreground">
               {agingData.filter(d => d.agingBucket === '30-60').length} items
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl border-l-4 border-l-red-400">
+        <Card className="border-border/10 rounded-2xl border-l-4 border-l-red-400">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-[#0F0F0F]/60">60-90 days</span>
+              <span className="text-sm text-muted-foreground">60-90 days</span>
             </div>
             <p className="text-xl font-bold">{formatPrice(summary.aging60, currency)}</p>
-            <p className="text-xs text-[#0F0F0F]/50">
+            <p className="text-xs text-muted-foreground">
               {agingData.filter(d => d.agingBucket === '60-90').length} items
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl border-l-4 border-l-red-600">
+        <Card className="border-border/10 rounded-2xl border-l-4 border-l-red-600">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-red-700" />
-              <span className="text-sm text-[#0F0F0F]/60">90+ days</span>
+              <span className="text-sm text-muted-foreground">90+ days</span>
             </div>
             <p className="text-xl font-bold text-red-600">
               {formatPrice(summary.aging90Plus, currency)}
             </p>
-            <p className="text-xs text-[#0F0F0F]/50">
+            <p className="text-xs text-muted-foreground">
               {agingData.filter(d => d.agingBucket === '90+').length} items
             </p>
           </CardContent>
@@ -365,21 +365,21 @@ export function AgingReports() {
       </div>
 
       {/* Total Summary */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gray-50">
+      <Card className="border-border/10 rounded-2xl bg-background">
         <CardContent className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <TrendingDown className="w-5 h-5 text-[#0F0F0F]/60" />
+            <TrendingDown className="w-5 h-5 text-muted-foreground" />
             <span className="font-medium">Total {getReportTitle()}</span>
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold">{formatPrice(summary.total, currency)}</p>
-            <p className="text-sm text-[#0F0F0F]/60">{agingData.length} total items</p>
+            <p className="text-sm text-muted-foreground">{agingData.length} total items</p>
           </div>
         </CardContent>
       </Card>
 
       {/* Detailed Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>{getReportTitle()} Detail</CardTitle>
         </CardHeader>
@@ -400,7 +400,7 @@ export function AgingReports() {
               {agingData.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell className="text-sm text-[#0F0F0F]/60">
+                  <TableCell className="text-sm text-muted-foreground">
                     {item.email || '-'}
                   </TableCell>
                   <TableCell className="text-right font-bold">
@@ -422,7 +422,7 @@ export function AgingReports() {
               ))}
               {agingData.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No outstanding items found
                   </TableCell>
                 </TableRow>
@@ -433,7 +433,7 @@ export function AgingReports() {
       </Card>
 
       {/* Aging Distribution Chart */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Aging Distribution</CardTitle>
         </CardHeader>

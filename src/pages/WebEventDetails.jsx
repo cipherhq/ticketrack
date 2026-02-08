@@ -643,8 +643,8 @@ export function WebEventDetails() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
         <div className="text-6xl mb-4">😢</div>
-        <h1 className="text-2xl font-bold text-[#0F0F0F] mb-2">Event Not Found</h1>
-        <p className="text-[#0F0F0F]/60 mb-6">The event you're looking for doesn't exist or has been removed.</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">Event Not Found</h1>
+        <p className="text-muted-foreground mb-6">The event you're looking for doesn't exist or has been removed.</p>
         <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
           Browse Events
         </Button>
@@ -672,7 +672,7 @@ export function WebEventDetails() {
       {/* Back Button */}
       <Button 
         variant="ghost" 
-        className="mb-6 text-[#0F0F0F]/60 hover:text-[#0F0F0F]"
+        className="mb-6 text-muted-foreground hover:text-foreground"
         onClick={() => navigate(-1)}
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -683,7 +683,7 @@ export function WebEventDetails() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Event Image */}
-          <div className="aspect-video rounded-2xl overflow-hidden bg-[#F4F6FA]">
+          <div className="aspect-video rounded-2xl overflow-hidden bg-muted">
             <img 
               src={event.image_url} 
               alt={event.title}
@@ -739,8 +739,8 @@ export function WebEventDetails() {
                   </Badge>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#0F0F0F] mb-4">{event.title}</h1>
-              <div className="flex flex-wrap gap-4 text-[#0F0F0F]/60">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">{event.title}</h1>
+              <div className="flex flex-wrap gap-4 text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 flex-shrink-0" />
                   <span>{formatDate(event.start_date)}</span>
@@ -760,12 +760,12 @@ export function WebEventDetails() {
                       <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
                       <div className="flex flex-col">
                         {event.venue_name && (
-                          <span className="font-medium text-[#0F0F0F]">{event.venue_name}</span>
+                          <span className="font-medium text-foreground">{event.venue_name}</span>
                         )}
                         {event.venue_address && (
-                          <span className="text-[#0F0F0F]/80 text-sm">{event.venue_address}</span>
+                          <span className="text-foreground/80 text-sm">{event.venue_address}</span>
                         )}
-                        <span className="text-[#0F0F0F]/60 text-sm">
+                        <span className="text-muted-foreground text-sm">
                           {[event.city, event.state, event.country].filter(Boolean).join(', ') || (!event.venue_name && !event.venue_address && 'Location TBA')}
                         </span>
                       </div>
@@ -780,12 +780,12 @@ export function WebEventDetails() {
 
           {/* Mobile Ticket Selection - Shown only on mobile, before Organizer */}
           <div className="lg:hidden">
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-4 space-y-4">
                 {/* Recurring Event Date Selector */}
                 {event?.is_recurring && (childEvents.length > 0 || event) && (
                   <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl">
-                    <label className="text-sm font-medium text-[#0F0F0F] mb-2 block">
+                    <label className="text-sm font-medium text-foreground mb-2 block">
                       📅 Select Event Date
                     </label>
                     <select
@@ -795,7 +795,7 @@ export function WebEventDetails() {
                         setSelectedDate(eventId);
                         loadTicketsForEvent(eventId);
                       }}
-                      className="w-full p-2 rounded-lg border border-purple-300 bg-white text-[#0F0F0F] focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                      className="w-full p-2 rounded-lg border border-purple-300 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                     >
                       <option value={event.id}>
                         {new Date(event.start_date).toLocaleDateString('en-US', {
@@ -816,7 +816,7 @@ export function WebEventDetails() {
                 )}
 
                 <div>
-                  <h2 className="text-xl font-bold text-[#0F0F0F] mb-3">
+                  <h2 className="text-xl font-bold text-foreground mb-3">
                     {isFreeEvent ? 'Register' : 'Select Tickets'}
                   </h2>
 
@@ -826,7 +826,7 @@ export function WebEventDetails() {
                         <Badge className="bg-green-100 text-green-700 border-0 text-base px-3 py-1.5">
                           🎉 Free Event
                         </Badge>
-                        <p className="text-[#0F0F0F]/60 mt-2 text-sm">This event is free to attend!</p>
+                        <p className="text-muted-foreground mt-2 text-sm">This event is free to attend!</p>
                       </div>
                     </div>
                   ) : (
@@ -841,15 +841,15 @@ export function WebEventDetails() {
                             className={`p-3 border rounded-xl space-y-2 ${
                               isSoldOut
                                 ? 'border-red-200 bg-red-50/50 opacity-75'
-                                : 'border-[#0F0F0F]/10'
+                                : 'border-border/10'
                             }`}
                           >
                             <div className="flex items-start justify-between">
                               <div>
-                                <h3 className={`font-semibold text-sm ${isSoldOut ? 'text-[#0F0F0F]/50' : 'text-[#0F0F0F]'}`}>
+                                <h3 className={`font-semibold text-sm ${isSoldOut ? 'text-muted-foreground' : 'text-foreground'}`}>
                                   {tier.name}
                                 </h3>
-                                <p className={`text-lg font-bold ${isSoldOut ? 'text-[#0F0F0F]/40' : 'text-[#2969FF]'}`}>
+                                <p className={`text-lg font-bold ${isSoldOut ? 'text-muted-foreground' : 'text-[#2969FF]'}`}>
                                   {formatPrice(tier.price, event?.currency)}
                                 </p>
                               </div>
@@ -868,7 +868,7 @@ export function WebEventDetails() {
                                     className={`rounded-lg text-xs ${
                                       isLowStock
                                         ? 'bg-amber-50 text-amber-600 border-amber-300'
-                                        : 'border-[#0F0F0F]/20 text-[#0F0F0F]/60'
+                                        : 'border-border/20 text-muted-foreground'
                                     }`}
                                   >
                                     {isLowStock ? 'Few left' : `${remaining} left`}
@@ -878,7 +878,7 @@ export function WebEventDetails() {
                             </div>
                             {!isSoldOut && (
                               <div className="flex items-center justify-between">
-                                <span className="text-xs text-[#0F0F0F]/60">Quantity</span>
+                                <span className="text-xs text-muted-foreground">Quantity</span>
                                 <div className="flex items-center gap-2">
                                   <Button
                                     size="icon"
@@ -889,7 +889,7 @@ export function WebEventDetails() {
                                   >
                                     <Minus className="w-4 h-4" />
                                   </Button>
-                                  <span className="w-6 text-center font-medium text-[#0F0F0F]">
+                                  <span className="w-6 text-center font-medium text-foreground">
                                     {selectedTickets[tier.id] || 0}
                                   </span>
                                   <Button
@@ -916,16 +916,16 @@ export function WebEventDetails() {
 
                 {/* Totals for paid events */}
                 {!isFreeEvent && totalTickets > 0 && (
-                  <div className="space-y-2 pt-3 border-t border-[#0F0F0F]/10">
-                    <div className="flex justify-between text-sm text-[#0F0F0F]/60">
+                  <div className="space-y-2 pt-3 border-t border-border/10">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Tickets ({totalTickets})</span>
                       <span>{formatPrice(totalAmount, event?.currency)}</span>
                     </div>
-                    <div className="flex justify-between text-sm text-[#0F0F0F]/60">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Service Fee</span>
                       <span>{formatPrice(serviceFee, event?.currency)}</span>
                     </div>
-                    <div className="flex justify-between font-bold text-[#0F0F0F] pt-2 border-t border-[#0F0F0F]/10">
+                    <div className="flex justify-between font-bold text-foreground pt-2 border-t border-border/10">
                       <span>Total</span>
                       <span>{formatPrice(totalWithFees, event?.currency)}</span>
                     </div>
@@ -966,8 +966,8 @@ export function WebEventDetails() {
 
           {/* Organizer */}
           <div>
-            <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Organized By</h2>
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <h2 className="text-2xl font-bold text-foreground mb-4">Organized By</h2>
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div 
@@ -987,12 +987,12 @@ export function WebEventDetails() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-[#0F0F0F] truncate">{event.organizer?.business_name}</h3>
+                        <h3 className="font-semibold text-foreground truncate">{event.organizer?.business_name}</h3>
                         {event.organizer?.is_verified && (
                           <CheckCircle className="w-4 h-4 text-[#2969FF] flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-sm text-[#0F0F0F]/60">{event.organizer?.total_events || 0} events hosted</p>
+                      <p className="text-sm text-muted-foreground">{event.organizer?.total_events || 0} events hosted</p>
                     </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
@@ -1045,9 +1045,9 @@ export function WebEventDetails() {
 
           {/* About */}
           <div>
-            <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">About This Event</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4">About This Event</h2>
             <div
-              className="text-[#0F0F0F]/80 prose prose-sm max-w-none"
+              className="text-foreground/80 prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description || '', { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
             />
           </div>
@@ -1057,13 +1057,13 @@ export function WebEventDetails() {
             <>
               <Separator />
               <div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
                   <Mic className="w-6 h-6 text-[#2969FF]" />
                   Speakers & Artists
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {speakers.map((speaker) => (
-                    <Card key={speaker.id} className="border-[#0F0F0F]/10 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+                    <Card key={speaker.id} className="border-border/10 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
                       <CardContent className="p-0">
                         {/* Speaker Image */}
                         <div className="aspect-square bg-gradient-to-br from-[#2969FF]/10 to-purple-500/10 flex items-center justify-center overflow-hidden">
@@ -1078,22 +1078,22 @@ export function WebEventDetails() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <Users className="w-16 h-16 text-[#0F0F0F]/20" />
+                              <Users className="w-16 h-16 text-foreground/20" />
                             </div>
                           )}
                         </div>
                         {/* Speaker Info */}
                         <div className="p-4">
-                          <h3 className="font-semibold text-[#0F0F0F] text-lg">{speaker.name}</h3>
+                          <h3 className="font-semibold text-foreground text-lg">{speaker.name}</h3>
                           {speaker.role && (
                             <p className="text-[#2969FF] text-sm font-medium">{speaker.role}</p>
                           )}
                           {speaker.bio && (
-                            <p className="text-[#0F0F0F]/60 text-sm mt-2 line-clamp-3">{speaker.bio}</p>
+                            <p className="text-muted-foreground text-sm mt-2 line-clamp-3">{speaker.bio}</p>
                           )}
                           {/* Social Links */}
                           {speaker.social_links && Object.values(speaker.social_links).some(v => v) && (
-                            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#0F0F0F]/10">
+                            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/10">
                               {speaker.social_links.twitter && (
                                 <a
                                   href={speaker.social_links.twitter.startsWith('http') ? speaker.social_links.twitter : `https://${speaker.social_links.twitter}`}
@@ -1129,7 +1129,7 @@ export function WebEventDetails() {
                                   href={speaker.social_links.website.startsWith('http') ? speaker.social_links.website : `https://${speaker.social_links.website}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-[#0F0F0F]/60 hover:text-[#0F0F0F] transition-colors"
+                                  className="text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                   <Globe className="w-4 h-4" />
                                 </a>
@@ -1151,7 +1151,7 @@ export function WebEventDetails() {
               <Separator />
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-[#0F0F0F]">🔄 Upcoming Dates</h2>
+                  <h2 className="text-2xl font-bold text-foreground">🔄 Upcoming Dates</h2>
                   <div className="flex items-center gap-2">
                     <Button
                       variant={recurringViewMode === 'grid' ? 'default' : 'outline'}
@@ -1179,7 +1179,7 @@ export function WebEventDetails() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-[#0F0F0F]/60 mb-4">This is a recurring event. Select a date to purchase tickets for that specific occurrence:</p>
+                <p className="text-muted-foreground mb-4">This is a recurring event. Select a date to purchase tickets for that specific occurrence:</p>
                 {recurringViewMode === 'grid' ? (
                   <>
                         {(() => {
@@ -1211,7 +1211,7 @@ export function WebEventDetails() {
                                 className={`rounded-xl cursor-pointer transition-all overflow-hidden ${
                                   selectedDate === evt.id
                         ? 'bg-[#2969FF]/10 border-2 border-[#2969FF] shadow-md'
-                        : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
+                        : 'bg-muted hover:bg-[#2969FF]/5 border border-border/10'
                     }`}
                   >
                                 {/* Event Image */}
@@ -1233,17 +1233,17 @@ export function WebEventDetails() {
                                 <div className="p-4">
                                   <div className="flex items-center justify-between mb-2">
                                     <div className="flex-1 min-w-0">
-                                      <p className="font-semibold text-[#0F0F0F] text-sm truncate">
+                                      <p className="font-semibold text-foreground text-sm truncate">
                                         {new Date(evt.start_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                                       </p>
-                                      <p className="text-xs text-[#0F0F0F]/60 mt-0.5">
+                                      <p className="text-xs text-muted-foreground mt-0.5">
                                         {new Date(evt.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(evt.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                         </p>
                       </div>
                                     {selectedDate === evt.id ? (
                                       <Badge className="bg-[#2969FF] text-white ml-2 flex-shrink-0">Selected</Badge>
                       ) : (
-                                      <Badge variant="outline" className="border-[#0F0F0F]/20 ml-2 flex-shrink-0">Select</Badge>
+                                      <Badge variant="outline" className="border-border/20 ml-2 flex-shrink-0">Select</Badge>
                       )}
                     </div>
                                 </div>
@@ -1253,7 +1253,7 @@ export function WebEventDetails() {
                   
                           {/* Pagination Controls */}
                           {totalPages > 1 && (
-                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#0F0F0F]/10">
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/10">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1264,7 +1264,7 @@ export function WebEventDetails() {
                                 <ChevronLeft className="w-4 h-4 mr-1" />
                                 Previous
                               </Button>
-                              <span className="text-sm text-[#0F0F0F]/60">
+                              <span className="text-sm text-muted-foreground">
                                 Page {recurringPage} of {totalPages}
                               </span>
                               <Button
@@ -1335,11 +1335,11 @@ export function WebEventDetails() {
                         
                         return (
                           <div key={monthKey} className="space-y-3">
-                            <h3 className="text-lg font-semibold text-[#0F0F0F]">{monthName}</h3>
+                            <h3 className="text-lg font-semibold text-foreground">{monthName}</h3>
                             <div className="grid grid-cols-7 gap-2">
                               {/* Day headers */}
                               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                <div key={day} className="text-center text-sm font-medium text-[#0F0F0F]/60 py-2">
+                                <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
                                   {day}
                                 </div>
                               ))}
@@ -1357,8 +1357,8 @@ export function WebEventDetails() {
                                             : 'bg-[#2969FF]/10 text-[#2969FF] hover:bg-[#2969FF]/20'
                                         }`
                                       : dayData.isToday
-                                      ? 'bg-[#F4F6FA] border-2 border-[#2969FF]/30 text-[#0F0F0F]'
-                                      : 'bg-[#F4F6FA] text-[#0F0F0F]/40'
+                                      ? 'bg-muted border-2 border-[#2969FF]/30 text-foreground'
+                                      : 'bg-muted text-muted-foreground'
                                   }`}
                                   onClick={dayData?.event ? () => {
                                     setSelectedDate(dayData.event.id);
@@ -1389,15 +1389,15 @@ export function WebEventDetails() {
                                   className={`p-3 rounded-lg cursor-pointer transition-all ${
                                     selectedDate === evt.id
                                       ? 'bg-[#2969FF]/10 border-2 border-[#2969FF]'
-                          : 'bg-[#F4F6FA] hover:bg-[#2969FF]/5 border border-[#0F0F0F]/10'
+                          : 'bg-muted hover:bg-[#2969FF]/5 border border-border/10'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                                      <p className="font-medium text-[#0F0F0F]">
+                                      <p className="font-medium text-foreground">
                                         {new Date(evt.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                           </p>
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-sm text-muted-foreground">
                                         {new Date(evt.start_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - {new Date(evt.end_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                           </p>
                         </div>
@@ -1447,8 +1447,8 @@ export function WebEventDetails() {
             <>
               <Separator />
               <div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Event Video</h2>
-                <div className="aspect-video rounded-2xl overflow-hidden bg-[#F4F6FA]">
+                <h2 className="text-2xl font-bold text-foreground mb-4">Event Video</h2>
+                <div className="aspect-video rounded-2xl overflow-hidden bg-muted">
                   {event.promo_video_url.includes('youtube.com') || event.promo_video_url.includes('youtu.be') ? (
                     <iframe
                       src={`https://www.youtube.com/embed/${event.promo_video_url.includes('youtu.be') 
@@ -1489,29 +1489,29 @@ export function WebEventDetails() {
             <>
               <Separator />
               <div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Event Schedule</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-4">Event Schedule</h2>
                 <div className="space-y-4">
                   {event.event_days
                     .sort((a, b) => a.day_number - b.day_number)
                     .map((day) => (
-                    <Card key={day.id} className="border-[#0F0F0F]/10 rounded-xl overflow-hidden">
+                    <Card key={day.id} className="border-border/10 rounded-xl overflow-hidden">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-10 h-10 rounded-full bg-[#2969FF]/10 flex items-center justify-center">
                             <span className="text-[#2969FF] font-bold">{day.day_number}</span>
                           </div>
                           <div>
-                            <h3 className="font-semibold text-[#0F0F0F]">
+                            <h3 className="font-semibold text-foreground">
                               {day.title || `Day ${day.day_number}`}
                             </h3>
-                            <p className="text-sm text-[#0F0F0F]/60">
+                            <p className="text-sm text-muted-foreground">
                               {new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                               {day.start_time && ` • ${day.start_time.slice(0,5)} - ${day.end_time?.slice(0,5) || 'Late'}`}
                             </p>
                           </div>
                         </div>
                         {day.description && (
-                          <p className="text-[#0F0F0F]/70 text-sm ml-13 pl-13">{day.description}</p>
+                          <p className="text-foreground/70 text-sm ml-13 pl-13">{day.description}</p>
                         )}
                         {day.event_day_activities && day.event_day_activities.length > 0 && (
                           <div className="mt-3 ml-13 pl-4 border-l-2 border-[#2969FF]/20 space-y-2">
@@ -1520,8 +1520,8 @@ export function WebEventDetails() {
                               .map((activity) => (
                               <div key={activity.id} className="text-sm">
                                 <span className="text-[#2969FF] font-medium">{activity.start_time?.slice(0,5)}</span>
-                                <span className="mx-2 text-[#0F0F0F]/40">•</span>
-                                <span className="text-[#0F0F0F]">{activity.title}</span>
+                                <span className="mx-2 text-muted-foreground">•</span>
+                                <span className="text-foreground">{activity.title}</span>
                               </div>
                             ))}
                           </div>
@@ -1539,22 +1539,22 @@ export function WebEventDetails() {
             <>
               <Separator />
               <div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Event Information</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-4">Event Information</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {event.gate_opening_time && (
-                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
                       <DoorOpen className="w-5 h-5 text-[#2969FF]" />
                       <div>
-                        <p className="text-xs text-[#0F0F0F]/60">Gates Open</p>
+                        <p className="text-xs text-muted-foreground">Gates Open</p>
                         <p className="text-sm font-medium">{event.gate_opening_time.slice(0,5)}</p>
                       </div>
                     </div>
                   )}
                   {event.dress_code && (
-                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
                       <Users className="w-5 h-5 text-[#2969FF]" />
                       <div>
-                        <p className="text-xs text-[#0F0F0F]/60">Dress Code</p>
+                        <p className="text-xs text-muted-foreground">Dress Code</p>
                         <p className="text-sm font-medium">{event.dress_code}</p>
                       </div>
                     </div>
@@ -1572,19 +1572,19 @@ export function WebEventDetails() {
                     </div>
                   )}
                   {event.is_parking_available && (
-                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
                       <Car className="w-5 h-5 text-[#2969FF]" />
                       <p className="text-sm font-medium">Parking Available</p>
                     </div>
                   )}
                   {event.is_byob && (
-                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
                       <Wine className="w-5 h-5 text-[#2969FF]" />
                       <p className="text-sm font-medium">BYOB Allowed</p>
                     </div>
                   )}
                   {event.is_outside_food_allowed && (
-                    <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
                       <UtensilsCrossed className="w-5 h-5 text-[#2969FF]" />
                       <p className="text-sm font-medium">Outside Food Allowed</p>
                     </div>
@@ -1610,8 +1610,8 @@ export function WebEventDetails() {
 
           {/* Location */}
           <div>
-            <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Location</h2>
-            <Card className="border-[#0F0F0F]/10 rounded-xl overflow-hidden">
+            <h2 className="text-2xl font-bold text-foreground mb-4">Location</h2>
+            <Card className="border-border/10 rounded-xl overflow-hidden">
               {event.google_map_link ? (
                 <div className="h-40">
                   <iframe
@@ -1634,22 +1634,22 @@ export function WebEventDetails() {
                   />
                 </div>
               ) : (
-                <div className="h-24 bg-[#F4F6FA] flex items-center justify-center">
-                  <MapPin className="w-8 h-8 text-[#0F0F0F]/20" />
+                <div className="h-24 bg-muted flex items-center justify-center">
+                  <MapPin className="w-8 h-8 text-foreground/20" />
                 </div>
               )}
               <CardContent className="p-4">
                 <div className="space-y-3">
                   {event.venue_name && (
                     <div>
-                      <h3 className="font-semibold text-[#0F0F0F] mb-1">{event.venue_name}</h3>
+                      <h3 className="font-semibold text-foreground mb-1">{event.venue_name}</h3>
                     </div>
                   )}
                   <div className="space-y-1">
                     {event.venue_address && (
-                      <p className="text-sm text-[#0F0F0F]">{event.venue_address}</p>
+                      <p className="text-sm text-foreground">{event.venue_address}</p>
                     )}
-                    <p className="text-sm text-[#0F0F0F]/60">
+                    <p className="text-sm text-muted-foreground">
                       {[event.city, event.state, event.country].filter(Boolean).join(', ') || 'Address TBA'}
                     </p>
                   </div>
@@ -1672,12 +1672,12 @@ export function WebEventDetails() {
             <>
               <Separator />
               <div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">Sponsors</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-4">Sponsors</h2>
                 <div className="flex flex-wrap gap-6 items-center">
                   {event.event_sponsors
                     .sort((a, b) => a.sort_order - b.sort_order)
                     .map((sponsor) => (
-                    <div key={sponsor.id} className="bg-white rounded-xl p-4 border border-[#0F0F0F]/10 hover:shadow-md transition-shadow">
+                    <div key={sponsor.id} className="bg-card rounded-xl p-4 border border-border/10 hover:shadow-md transition-shadow">
                       <img 
                         src={sponsor.logo_url} 
                         alt={sponsor.name || 'Sponsor'}
@@ -1696,12 +1696,12 @@ export function WebEventDetails() {
 
         {/* Ticket Sidebar - Hidden on mobile, shown on desktop */}
         <div className="hidden lg:block lg:col-span-1">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
+          <Card className="border-border/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
             <CardContent className="p-6 space-y-6">
               {/* Recurring Event Date Selector */}
               {event?.is_recurring && (childEvents.length > 0 || event) && (
                 <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-xl">
-                  <label className="text-sm font-medium text-[#0F0F0F] mb-2 block">
+                  <label className="text-sm font-medium text-foreground mb-2 block">
                     📅 Select Event Date
                   </label>
                   <select
@@ -1711,7 +1711,7 @@ export function WebEventDetails() {
                       setSelectedDate(eventId);
                       loadTicketsForEvent(eventId);
                     }}
-                    className="w-full p-2 rounded-lg border border-purple-300 bg-white text-[#0F0F0F] focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-2 rounded-lg border border-purple-300 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value={event.id}>
                       {new Date(event.start_date).toLocaleDateString('en-US', { 
@@ -1743,7 +1743,7 @@ export function WebEventDetails() {
               )}
               
               <div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-4">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
                   {isFreeEvent ? 'Register' : 'Select Tickets'}
                 </h2>
                 
@@ -1754,14 +1754,14 @@ export function WebEventDetails() {
                       <Badge className="bg-green-100 text-green-700 border-0 text-lg px-4 py-2">
                         🎉 Free Event
                       </Badge>
-                      <p className="text-[#0F0F0F]/60 mt-2">This event is free to attend!</p>
+                      <p className="text-muted-foreground mt-2">This event is free to attend!</p>
                     </div>
                     
                     {/* Donation Options */}
                     {/* Donation Options */}
                     {event.accepts_donations && event.donation_amounts?.length > 0 && (
                       <div className="space-y-3 pt-2 border-t border-green-200">
-                        <p className="text-sm font-medium text-[#0F0F0F] flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground flex items-center gap-2">
                           <span>💝</span> Support This Event (Optional)
                         </p>
                         <div className="grid grid-cols-2 gap-2">
@@ -1775,7 +1775,7 @@ export function WebEventDetails() {
                           ))}
                         </div>
                         {event.allow_custom_donation && (
-                          <p className="text-xs text-[#0F0F0F]/50 text-center">Custom amount available on next page</p>
+                          <p className="text-xs text-muted-foreground text-center">Custom amount available on next page</p>
                         )}
                       </div>
                     )}
@@ -1793,15 +1793,15 @@ export function WebEventDetails() {
                           className={`p-4 border rounded-xl space-y-3 ${
                             isSoldOut 
                               ? 'border-red-200 bg-red-50/50 opacity-75' 
-                              : 'border-[#0F0F0F]/10'
+                              : 'border-border/10'
                           }`}
                         >
                           <div className="flex items-start justify-between">
                             <div>
-                              <h3 className={`font-semibold ${isSoldOut ? 'text-[#0F0F0F]/50' : 'text-[#0F0F0F]'}`}>
+                              <h3 className={`font-semibold ${isSoldOut ? 'text-muted-foreground' : 'text-foreground'}`}>
                                 {tier.name}
                               </h3>
-                              <p className={`text-2xl font-bold mt-1 ${isSoldOut ? 'text-[#0F0F0F]/40' : 'text-[#2969FF]'}`}>
+                              <p className={`text-2xl font-bold mt-1 ${isSoldOut ? 'text-muted-foreground' : 'text-[#2969FF]'}`}>
                                 {formatPrice(tier.price, event?.currency)}
                               </p>
                             </div>
@@ -1820,7 +1820,7 @@ export function WebEventDetails() {
                                   className={`rounded-lg ${
                                     isLowStock 
                                       ? 'bg-amber-50 text-amber-600 border-amber-300' 
-                                      : 'border-[#0F0F0F]/20 text-[#0F0F0F]/60'
+                                      : 'border-border/20 text-muted-foreground'
                                   }`}
                                 >
                                   {isLowStock ? <><AlertCircle className="w-3 h-3 inline mr-1" />Few left</> : `${remaining} left`}
@@ -1830,7 +1830,7 @@ export function WebEventDetails() {
                           </div>
                           {!isSoldOut && (
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-[#0F0F0F]/60">Quantity</span>
+                              <span className="text-sm text-muted-foreground">Quantity</span>
                               <div className="flex items-center gap-3">
                                 <Button 
                                   size="icon" 
@@ -1841,7 +1841,7 @@ export function WebEventDetails() {
                                 >
                                   <Minus className="w-5 h-5 min-w-5 min-h-5" />
                                 </Button>
-                                <span className="w-8 text-center font-medium text-[#0F0F0F] text-lg">
+                                <span className="w-8 text-center font-medium text-foreground text-lg">
                                   {selectedTickets[tier.id] || 0}
                                 </span>
                                 <Button 
@@ -1872,16 +1872,16 @@ export function WebEventDetails() {
                   <Separator />
                   
                   <div className="space-y-3">
-                    <div className="flex justify-between text-[#0F0F0F]/60">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>Tickets ({totalTickets})</span>
                       <span>{formatPrice(totalAmount, event?.currency)}</span>
                     </div>
-                    <div className="flex justify-between text-[#0F0F0F]/60">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>Service Fee</span>
                       <span>{formatPrice(serviceFee, event?.currency)}</span>
                     </div>
                     <Separator />
-                    <div className="flex justify-between font-bold text-lg text-[#0F0F0F]">
+                    <div className="flex justify-between font-bold text-lg text-foreground">
                       <span>Total</span>
                       <span>{formatPrice(totalWithFees, event?.currency)}</span>
                     </div>
@@ -1932,7 +1932,7 @@ export function WebEventDetails() {
                 Buy with Friends
               </Button>
 
-              <p className="text-xs text-center text-[#0F0F0F]/40">
+              <p className="text-xs text-center text-muted-foreground">
                 By {isFreeEvent ? 'registering' : 'purchasing'}, you agree to our Terms of Service
               </p>
             </CardContent>
@@ -1950,7 +1950,7 @@ export function WebEventDetails() {
       {/* Recommended Events */}
       {recommendedEvents.length > 0 && (
         <div className="max-w-6xl mx-auto px-4 py-12">
-          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6">You Might Also Like</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">You Might Also Like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {recommendedEvents.map(recEvent => (
               <Card 
@@ -1977,10 +1977,10 @@ export function WebEventDetails() {
                   )}
                 </div>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-[#0F0F0F] line-clamp-2 mb-2 group-hover:text-[#2969FF] transition-colors">
+                  <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-[#2969FF] transition-colors">
                     {recEvent.title}
                   </h3>
-                  <div className="space-y-1 text-sm text-[#0F0F0F]/60">
+                  <div className="space-y-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 flex-shrink-0" />
                       <span>{new Date(recEvent.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>

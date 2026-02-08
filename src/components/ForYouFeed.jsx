@@ -73,7 +73,7 @@ function FeedEventCard({ event, onSaveToggle }) {
     <Link 
       to={`/e/${event.slug || event.id}`}
       onClick={handleClick}
-      className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col"
+      className="group bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col"
     >
       {/* Image */}
       <div className="relative h-[180px] overflow-hidden">
@@ -91,7 +91,7 @@ function FeedEventCard({ event, onSaveToggle }) {
           className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
             isSaved 
               ? 'bg-red-500 text-white' 
-              : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500'
+              : 'bg-card/90 text-muted-foreground hover:bg-card hover:text-red-500'
           }`}
         >
           {saving ? (
@@ -113,7 +113,7 @@ function FeedEventCard({ event, onSaveToggle }) {
 
         {/* Price Badge */}
         <div className="absolute bottom-3 left-3">
-          <Badge className="bg-white/95 text-[#0F0F0F] font-semibold">
+          <Badge className="bg-card/95 text-foreground font-semibold">
             {event.is_free || event.min_price === 0 || event.min_price === null || event.min_price === undefined
               ? 'Free'
               : `From ${formatPrice(event.min_price, event.currency || 'USD')}`
@@ -124,11 +124,11 @@ function FeedEventCard({ event, onSaveToggle }) {
 
       {/* Content */}
       <div className="p-4 flex-1 flex flex-col">
-        <h3 className="font-semibold text-[#0F0F0F] line-clamp-2 mb-2 group-hover:text-[#2969FF] transition-colors">
+        <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-[#2969FF] transition-colors">
           {event.title}
         </h3>
         
-        <div className="space-y-1.5 text-sm text-[#0F0F0F]/60 mt-auto">
+        <div className="space-y-1.5 text-sm text-muted-foreground mt-auto">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{formatDate(event.start_date)}</span>
@@ -188,13 +188,13 @@ export function ForYouFeed({ limit = 12, showHeader = true, className = '' }) {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-500" />
-              <h2 className="text-xl font-semibold text-[#0F0F0F]">For You</h2>
+              <h2 className="text-xl font-semibold text-foreground">For You</h2>
             </div>
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-gray-100 rounded-xl h-[320px] animate-pulse" />
+            <div key={i} className="bg-muted rounded-xl h-[320px] animate-pulse" />
           ))}
         </div>
       </div>
@@ -204,7 +204,7 @@ export function ForYouFeed({ limit = 12, showHeader = true, className = '' }) {
   if (error) {
     return (
       <div className={`text-center py-12 ${className}`}>
-        <p className="text-[#0F0F0F]/60">{error}</p>
+        <p className="text-muted-foreground">{error}</p>
         <Button onClick={loadFeed} variant="outline" className="mt-4">
           Try Again
         </Button>
@@ -216,8 +216,8 @@ export function ForYouFeed({ limit = 12, showHeader = true, className = '' }) {
     return (
       <div className={`text-center py-12 ${className}`}>
         <Sparkles className="w-12 h-12 text-purple-200 mx-auto mb-4" />
-        <p className="text-[#0F0F0F]/60">No recommendations yet</p>
-        <p className="text-sm text-[#0F0F0F]/40 mt-1">
+        <p className="text-muted-foreground">No recommendations yet</p>
+        <p className="text-sm text-muted-foreground mt-1">
           Browse and purchase events to get personalized suggestions
         </p>
       </div>
@@ -230,7 +230,7 @@ export function ForYouFeed({ limit = 12, showHeader = true, className = '' }) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
-            <h2 className="text-xl font-semibold text-[#0F0F0F]">For You</h2>
+            <h2 className="text-xl font-semibold text-foreground">For You</h2>
             {user && (
               <Badge variant="outline" className="text-xs">
                 Personalized
@@ -292,7 +292,7 @@ export function ForYouFeedHorizontal({ limit = 10, showHeader = true }) {
         <div className="flex items-center justify-between mb-4 px-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
-            <h2 className="text-lg font-semibold text-[#0F0F0F]">For You</h2>
+            <h2 className="text-lg font-semibold text-foreground">For You</h2>
           </div>
           <Link 
             to="/discover" 

@@ -161,7 +161,7 @@ export function GroupInviteModal({ open, onClose, session, userName }) {
         </DialogHeader>
 
         <Tabs value={inviteMethod} onValueChange={setInviteMethod} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 bg-[#F4F6FA] rounded-xl p-1">
+          <TabsList className="w-full grid grid-cols-3 bg-muted rounded-xl p-1">
             <TabsTrigger value="link" className="rounded-lg text-sm">
               <Link2 className="w-4 h-4 mr-1" />
               Link
@@ -179,21 +179,21 @@ export function GroupInviteModal({ open, onClose, session, userName }) {
           {/* Link sharing */}
           <TabsContent value="link" className="mt-4 space-y-4">
             <div>
-              <Label className="text-sm text-[#0F0F0F]/60">Group Code</Label>
+              <Label className="text-sm text-muted-foreground">Group Code</Label>
               <div className="flex items-center gap-2 mt-1">
-                <div className="flex-1 bg-[#F4F6FA] rounded-xl px-4 py-3 font-mono text-lg font-bold text-center">
+                <div className="flex-1 bg-muted rounded-xl px-4 py-3 font-mono text-lg font-bold text-center">
                   {session?.code}
                 </div>
               </div>
             </div>
 
             <div>
-              <Label className="text-sm text-[#0F0F0F]/60">Share Link</Label>
+              <Label className="text-sm text-muted-foreground">Share Link</Label>
               <div className="flex gap-2 mt-1">
                 <Input 
                   value={shareLink} 
                   readOnly 
-                  className="rounded-xl text-sm bg-[#F4F6FA]"
+                  className="rounded-xl text-sm bg-muted"
                 />
                 <Button
                   onClick={handleCopyLink}
@@ -305,14 +305,14 @@ export function GroupInviteModal({ open, onClose, session, userName }) {
 
         {/* Sent confirmations */}
         {sent.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10">
+          <div className="mt-4 pt-4 border-t border-border/10">
             <p className="text-sm font-medium text-green-600 flex items-center gap-2">
               <Check className="w-4 h-4" />
               Invitations Sent
             </p>
             <div className="mt-2 space-y-1">
               {sent.map((s, i) => (
-                <p key={i} className="text-sm text-[#0F0F0F]/60">
+                <p key={i} className="text-sm text-muted-foreground">
                   {s.type === 'email' ? <Mail className="w-3 h-3 inline mr-1" /> : <Phone className="w-3 h-3 inline mr-1" />}
                   {s.value}
                 </p>

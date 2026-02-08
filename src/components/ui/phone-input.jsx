@@ -116,20 +116,20 @@ export function PhoneInput({
         <div className="relative">
           {isLocked ? (
             // Locked display - no dropdown
-            <div className="flex items-center gap-1 px-3 h-10 bg-[#F4F6FA] border border-r-0 border-[#0F0F0F]/10 rounded-l-xl">
+            <div className="flex items-center gap-1 px-3 h-10 bg-muted border border-r-0 border-border/10 rounded-l-xl">
               <span className="text-lg">{selectedCountry.flag}</span>
-              <span className="text-sm text-[#0F0F0F]/60">{selectedCountry.dial}</span>
+              <span className="text-sm text-muted-foreground">{selectedCountry.dial}</span>
             </div>
           ) : (
             // Unlocked - show dropdown button
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center gap-1 px-3 h-10 bg-[#F4F6FA] border border-r-0 border-[#0F0F0F]/10 rounded-l-xl hover:bg-[#E8EBF0] transition-colors"
+              className="flex items-center gap-1 px-3 h-10 bg-muted border border-r-0 border-border/10 rounded-l-xl hover:bg-[#E8EBF0] transition-colors"
             >
               <span className="text-lg">{selectedCountry.flag}</span>
-              <span className="text-sm text-[#0F0F0F]/60">{selectedCountry.dial}</span>
-              <ChevronDown className="w-4 h-4 text-[#0F0F0F]/40" />
+              <span className="text-sm text-muted-foreground">{selectedCountry.dial}</span>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
 
@@ -139,19 +139,19 @@ export function PhoneInput({
                 className="fixed inset-0 z-10" 
                 onClick={() => setIsOpen(false)}
               />
-              <div className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-y-auto bg-white border border-[#0F0F0F]/10 rounded-xl shadow-lg z-20">
+              <div className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-y-auto bg-card border border-border/10 rounded-xl shadow-lg z-20">
                 {COUNTRIES.map((country) => (
                   <button
                     key={country.code + country.dial}
                     type="button"
                     onClick={() => handleCountrySelect(country)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-[#F4F6FA] transition-colors ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-muted transition-colors ${
                       selectedCountry.code === country.code ? 'bg-[#2969FF]/10' : ''
                     }`}
                   >
                     <span className="text-lg">{country.flag}</span>
-                    <span className="text-sm text-[#0F0F0F] flex-1 text-left">{country.name}</span>
-                    <span className="text-sm text-[#0F0F0F]/60">{country.dial}</span>
+                    <span className="text-sm text-foreground flex-1 text-left">{country.name}</span>
+                    <span className="text-sm text-muted-foreground">{country.dial}</span>
                   </button>
                 ))}
               </div>
@@ -165,7 +165,7 @@ export function PhoneInput({
           onChange={handlePhoneChange}
           placeholder="801 234 5678"
           required={required}
-          className="flex-1 h-10 px-3 border border-[#0F0F0F]/10 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-[#2969FF]/20 focus:border-[#2969FF]"
+          className="flex-1 h-10 px-3 border border-border/10 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-[#2969FF]"
         />
       </div>
     </div>

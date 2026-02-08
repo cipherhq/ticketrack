@@ -171,7 +171,7 @@ export function AdminWhatsApp() {
       case 'failed':
         return <Badge className="bg-red-100 text-red-700">Failed</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-700">{status}</Badge>;
+        return <Badge className="bg-muted text-foreground/80">{status}</Badge>;
     }
   };
 
@@ -184,21 +184,21 @@ export function AdminWhatsApp() {
   if (sent) {
     return (
       <div className="max-w-2xl mx-auto">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-2">Broadcast Ready!</h2>
-            <p className="text-[#0F0F0F]/60 mb-6">
+            <h2 className="text-2xl font-semibold text-foreground mb-2">Broadcast Ready!</h2>
+            <p className="text-muted-foreground mb-6">
               Click on each recipient below to open WhatsApp and send the message.
             </p>
             <div className="max-h-64 overflow-y-auto mb-6 space-y-2">
               {recipients.map((r) => (
-                <div key={r.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                <div key={r.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                   <div>
-                    <p className="text-[#0F0F0F] font-medium">{r.customer_name}</p>
-                    <p className="text-sm text-[#0F0F0F]/60">{r.customer_phone}</p>
+                    <p className="text-foreground font-medium">{r.customer_name}</p>
+                    <p className="text-sm text-muted-foreground">{r.customer_phone}</p>
                   </div>
                   <Button
                     size="sm"
@@ -224,8 +224,8 @@ export function AdminWhatsApp() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">WhatsApp Broadcasts</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Send WhatsApp messages and view history</p>
+          <h2 className="text-2xl font-semibold text-foreground">WhatsApp Broadcasts</h2>
+          <p className="text-muted-foreground mt-1">Send WhatsApp messages and view history</p>
         </div>
         <Button variant="outline" size="icon" onClick={loadWhatsappHistory} className="rounded-xl">
           <RefreshCw className="w-4 h-4" />
@@ -233,7 +233,7 @@ export function AdminWhatsApp() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#F4F6FA] rounded-xl">
+        <TabsList className="bg-muted rounded-xl">
           <TabsTrigger value="compose" className="rounded-lg">
             <Send className="w-4 h-4 mr-2" />
             Compose
@@ -247,7 +247,7 @@ export function AdminWhatsApp() {
         <TabsContent value="compose" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-green-500" />
@@ -270,9 +270,9 @@ export function AdminWhatsApp() {
                   </div>
 
                   {form.eventId && (
-                    <div className="p-3 bg-[#F4F6FA] rounded-xl flex items-center gap-2">
+                    <div className="p-3 bg-muted rounded-xl flex items-center gap-2">
                       <Users className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-[#0F0F0F]/60">
+                      <span className="text-sm text-muted-foreground">
                         {loading ? 'Loading...' : `${recipients.length} recipient(s) with phone numbers`}
                       </span>
                     </div>
@@ -301,7 +301,7 @@ export function AdminWhatsApp() {
             </div>
 
             <div>
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle className="text-base">Quick Templates</CardTitle>
                 </CardHeader>
@@ -315,7 +315,7 @@ export function AdminWhatsApp() {
                     >
                       <div>
                         <p className="font-medium">{template.name}</p>
-                        <p className="text-xs text-[#0F0F0F]/60 truncate">{template.message.slice(0, 40)}...</p>
+                        <p className="text-xs text-muted-foreground truncate">{template.message.slice(0, 40)}...</p>
                       </div>
                     </Button>
                   ))}
@@ -326,7 +326,7 @@ export function AdminWhatsApp() {
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>WhatsApp History</CardTitle>
             </CardHeader>
@@ -336,35 +336,35 @@ export function AdminWhatsApp() {
                   <Loader2 className="w-6 h-6 animate-spin text-green-500" />
                 </div>
               ) : whatsappHistory.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No WhatsApp broadcasts sent yet</p>
+                <p className="text-center text-muted-foreground py-8">No WhatsApp broadcasts sent yet</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#0F0F0F]/10">
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Event</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Message</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Recipients</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Date</th>
-                        <th className="text-right py-3 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                      <tr className="border-b border-border/10">
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Event</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Message</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Recipients</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Status</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Date</th>
+                        <th className="text-right py-3 px-4 text-muted-foreground font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {whatsappHistory.map((msg) => (
-                        <tr key={msg.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                        <tr key={msg.id} className="border-b border-border/5 hover:bg-muted/50">
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]">{msg.events?.title || 'N/A'}</p>
+                            <p className="text-foreground">{msg.events?.title || 'N/A'}</p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F] truncate max-w-[200px]">{msg.message}</p>
+                            <p className="text-foreground truncate max-w-[200px]">{msg.message}</p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]">{msg.recipient_count}</p>
+                            <p className="text-foreground">{msg.recipient_count}</p>
                           </td>
                           <td className="py-3 px-4">{getStatusBadge(msg.status)}</td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]/60 text-sm">
+                            <p className="text-muted-foreground text-sm">
                               {new Date(msg.created_at).toLocaleDateString()}
                             </p>
                           </td>
@@ -401,26 +401,26 @@ export function AdminWhatsApp() {
           {selectedMessage && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Event</p>
-                  <p className="text-[#0F0F0F] font-medium">{selectedMessage.events?.title || 'N/A'}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Event</p>
+                  <p className="text-foreground font-medium">{selectedMessage.events?.title || 'N/A'}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Recipients</p>
-                  <p className="text-[#0F0F0F] font-medium">{selectedMessage.recipient_count}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Recipients</p>
+                  <p className="text-foreground font-medium">{selectedMessage.recipient_count}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Status</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Status</p>
                   {getStatusBadge(selectedMessage.status)}
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Date</p>
-                  <p className="text-[#0F0F0F]">{new Date(selectedMessage.created_at).toLocaleString()}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="text-foreground">{new Date(selectedMessage.created_at).toLocaleString()}</p>
                 </div>
               </div>
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Message</p>
-                <p className="text-[#0F0F0F] whitespace-pre-wrap">{selectedMessage.message}</p>
+              <div className="p-4 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground mb-1">Message</p>
+                <p className="text-foreground whitespace-pre-wrap">{selectedMessage.message}</p>
               </div>
             </div>
           )}

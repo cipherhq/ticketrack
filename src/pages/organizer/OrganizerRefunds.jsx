@@ -307,11 +307,11 @@ export function OrganizerRefunds() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             Refund Requests
             <HelpTip>Attendees can request refunds for tickets. Review each request and approve or reject. Approved refunds are processed automatically.</HelpTip>
           </h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Review and manage refund requests from attendees</p>
+          <p className="text-muted-foreground mt-1">Review and manage refund requests from attendees</p>
         </div>
         <Button variant="outline" onClick={loadRefunds} className="rounded-xl">
           <RotateCcw className="w-4 h-4 mr-2" /> Refresh
@@ -320,47 +320,47 @@ export function OrganizerRefunds() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
               </div>
               <AlertCircle className="w-8 h-8 text-yellow-500/30" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Processed</p>
+                <p className="text-sm text-muted-foreground">Processed</p>
                 <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500/30" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Rejected</p>
+                <p className="text-sm text-muted-foreground">Rejected</p>
                 <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
               </div>
               <XCircle className="w-8 h-8 text-red-500/30" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{stats.total}</p>
+                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
               </div>
-              <RotateCcw className="w-8 h-8 text-[#0F0F0F]/10" />
+              <RotateCcw className="w-8 h-8 text-foreground/10" />
             </div>
           </CardContent>
         </Card>
@@ -369,7 +369,7 @@ export function OrganizerRefunds() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, or event..."
             value={search}
@@ -392,25 +392,25 @@ export function OrganizerRefunds() {
       </div>
 
       {/* Refund List */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-0">
           {filteredRefunds.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <RotateCcw className="w-12 h-12 text-[#0F0F0F]/20 mb-4" />
-              <p className="text-[#0F0F0F]/60">No refund requests found</p>
+              <RotateCcw className="w-12 h-12 text-foreground/20 mb-4" />
+              <p className="text-muted-foreground">No refund requests found</p>
             </div>
           ) : (
             <div className="divide-y divide-[#0F0F0F]/10">
               {paginatedRefunds.map(refund => (
-                <div key={refund.id} className="p-4 hover:bg-[#F4F6FA]/50 transition-colors">
+                <div key={refund.id} className="p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex flex-col md:flex-row md:items-center gap-4">
                     {/* Event Image */}
-                    <div className="w-16 h-16 rounded-xl bg-[#F4F6FA] overflow-hidden flex-shrink-0">
+                    <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden flex-shrink-0">
                       {refund.event?.image_url ? (
                         <img src={refund.event.image_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <RotateCcw className="w-6 h-6 text-[#0F0F0F]/20" />
+                          <RotateCcw className="w-6 h-6 text-foreground/20" />
                         </div>
                       )}
                     </div>
@@ -419,8 +419,8 @@ export function OrganizerRefunds() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-medium text-[#0F0F0F] truncate">{refund.event?.title}</h3>
-                          <p className="text-sm text-[#0F0F0F]/60">{refund.ticket?.attendee_name} • {refund.ticket?.attendee_email}</p>
+                          <h3 className="font-medium text-foreground truncate">{refund.event?.title}</h3>
+                          <p className="text-sm text-muted-foreground">{refund.ticket?.attendee_name} • {refund.ticket?.attendee_email}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {refund.isStripeConnect && (
@@ -433,13 +433,13 @@ export function OrganizerRefunds() {
                       </div>
                       
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                        <span className="text-[#0F0F0F]/60">Requested: {formatDate(refund.created_at)}</span>
-                        <span className="text-[#0F0F0F]/60">Amount: <span className="text-[#0F0F0F] font-medium">{formatPrice(refund.amount || refund.refund_amount, refund.currency)}</span></span>
+                        <span className="text-muted-foreground">Requested: {formatDate(refund.created_at)}</span>
+                        <span className="text-muted-foreground">Amount: <span className="text-foreground font-medium">{formatPrice(refund.amount || refund.refund_amount, refund.currency)}</span></span>
                       </div>
 
                       {/* Reason */}
-                      <div className="mt-2 p-2 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-sm text-[#0F0F0F]/80 line-clamp-2">
+                      <div className="mt-2 p-2 bg-muted rounded-lg">
+                        <p className="text-sm text-foreground/80 line-clamp-2">
                           <span className="font-medium">Reason:</span> {refund.reason}
                         </p>
                       </div>
@@ -495,7 +495,7 @@ export function OrganizerRefunds() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="rounded-xl text-[#0F0F0F]/60"
+                          className="rounded-xl text-muted-foreground"
                           onClick={() => alert('Notes: ' + (refund.organizer_notes || refund.admin_notes))}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" /> View Notes
@@ -536,16 +536,16 @@ export function OrganizerRefunds() {
 
           {actionModal.refund && (
             <div className="space-y-4">
-              <div className="p-3 bg-[#F4F6FA] rounded-xl">
+              <div className="p-3 bg-muted rounded-xl">
                 <p className="font-medium">{actionModal.refund.ticket?.attendee_name}</p>
-                <p className="text-sm text-[#0F0F0F]/60">{actionModal.refund.event?.title}</p>
+                <p className="text-sm text-muted-foreground">{actionModal.refund.event?.title}</p>
                 <p className="text-sm font-medium text-[#2969FF] mt-1">
                   Refund: {formatPrice(actionModal.refund.amount || actionModal.refund.refund_amount, actionModal.refund.currency)}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-[#0F0F0F]">
+                <label className="text-sm font-medium text-foreground">
                   Notes {actionModal.action === 'rejected' ? '(recommended)' : '(optional)'}
                 </label>
                 <Textarea
@@ -607,16 +607,16 @@ export function OrganizerRefunds() {
 
           {connectRefundModal.refund && (
             <div className="space-y-4">
-              <div className="p-3 bg-[#F4F6FA] rounded-xl">
+              <div className="p-3 bg-muted rounded-xl">
                 <p className="font-medium">{connectRefundModal.refund.ticket?.attendee_name}</p>
-                <p className="text-sm text-[#0F0F0F]/60">{connectRefundModal.refund.event?.title}</p>
+                <p className="text-sm text-muted-foreground">{connectRefundModal.refund.event?.title}</p>
                 <p className="text-sm font-medium text-purple-600 mt-1">
                   Refund: {formatPrice(connectRefundModal.refund.amount || connectRefundModal.refund.refund_amount, connectRefundModal.refund.currency)}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-[#0F0F0F]">
+                <label className="text-sm font-medium text-foreground">
                   Notes {connectRefundModal.action === 'reject' ? '(recommended)' : '(optional)'}
                 </label>
                 <Textarea

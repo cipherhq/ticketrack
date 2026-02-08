@@ -427,8 +427,8 @@ export function EventPayouts() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Event Payouts</h1>
-          <p className="text-[#0F0F0F]/60">Process payouts for completed events</p>
+          <h1 className="text-2xl font-bold text-foreground">Event Payouts</h1>
+          <p className="text-muted-foreground">Process payouts for completed events</p>
         </div>
         <Button onClick={loadEventPayouts} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />Refresh
@@ -438,7 +438,7 @@ export function EventPayouts() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search events or organizers..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -457,18 +457,18 @@ export function EventPayouts() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : filteredEvents.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <Calendar className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">No completed events with pending payouts</p>
+            <Calendar className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground">No completed events with pending payouts</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           {filteredEvents.map(event => (
-            <Card key={event.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+            <Card key={event.id} className="border-border/10 rounded-2xl overflow-hidden">
               <div 
-                className="p-4 flex items-center justify-between hover:bg-[#F4F6FA]/50 transition-colors cursor-pointer"
+                className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => toggleEventExpanded(event.id)}
               >
                 <div className="flex items-center gap-4">
@@ -476,71 +476,71 @@ export function EventPayouts() {
                     <Calendar className="w-6 h-6 text-[#2969FF]" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-semibold text-[#0F0F0F]">{event.title}</h3>
-                    <p className="text-sm text-[#0F0F0F]/60">{event.organizers?.business_name} • {new Date(event.end_date).toLocaleDateString()}</p>
+                    <h3 className="font-semibold text-foreground">{event.title}</h3>
+                    <p className="text-sm text-muted-foreground">{event.organizers?.business_name} • {new Date(event.end_date).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(event.totalSales, event.currency)}</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Total Sales</p>
+                    <p className="text-lg font-bold text-foreground">{formatPrice(event.totalSales, event.currency)}</p>
+                    <p className="text-sm text-muted-foreground">Total Sales</p>
                   </div>
                   {event.payout_status === 'paid' ? (
                     <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>
                   ) : (
                     <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>
                   )}
-                  {expandedEvents[event.id] ? <ChevronUp className="w-5 h-5 text-[#0F0F0F]/40" /> : <ChevronDown className="w-5 h-5 text-[#0F0F0F]/40" />}
+                  {expandedEvents[event.id] ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
                 </div>
               </div>
 
               {expandedEvents[event.id] && (
-                <div className="px-4 pb-4 border-t border-[#0F0F0F]/10">
+                <div className="px-4 pb-4 border-t border-border/10">
                   {/* Summary */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-b border-[#0F0F0F]/10">
-                    <div className="text-center p-3 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(event.totalSales, event.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">Total Sales</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-b border-border/10">
+                    <div className="text-center p-3 bg-muted rounded-xl">
+                      <p className="text-lg font-bold text-foreground">{formatPrice(event.totalSales, event.currency)}</p>
+                      <p className="text-xs text-muted-foreground">Total Sales</p>
                     </div>
                     <div className="text-center p-3 bg-blue-50 rounded-xl">
                       <p className="text-lg font-bold text-blue-600">{formatPrice(event.platformFees, event.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">Platform Fees</p>
+                      <p className="text-xs text-muted-foreground">Platform Fees</p>
                     </div>
                     <div className="text-center p-3 bg-purple-50 rounded-xl">
                       <p className="text-lg font-bold text-purple-600">{formatPrice(event.totalPromoterCommission, event.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">Promoter Commission</p>
+                      <p className="text-xs text-muted-foreground">Promoter Commission</p>
                     </div>
                     <div className="text-center p-3 bg-green-50 rounded-xl">
                       <p className="text-lg font-bold text-green-600">{formatPrice(event.organizerNet, event.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">Organizer Net</p>
+                      <p className="text-xs text-muted-foreground">Organizer Net</p>
                     </div>
                   </div>
 
                   {/* Organizer Section */}
-                  <div className="py-4 border-b border-[#0F0F0F]/10">
-                    <h4 className="font-medium text-[#0F0F0F] mb-3 flex items-center gap-2">
+                  <div className="py-4 border-b border-border/10">
+                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-blue-600" />Organizer Details
                     </h4>
                     
-                    <div className="bg-[#F4F6FA] rounded-xl p-4 space-y-4">
+                    <div className="bg-muted rounded-xl p-4 space-y-4">
                       {/* Organizer Info */}
                       <div className="flex items-start justify-between flex-wrap gap-4">
                         <div>
-                          <p className="font-semibold text-[#0F0F0F] text-lg">{event.organizers?.business_name}</p>
-                          <p className="text-sm text-[#0F0F0F]/60">{event.organizers?.email}</p>
+                          <p className="font-semibold text-foreground text-lg">{event.organizers?.business_name}</p>
+                          <p className="text-sm text-muted-foreground">{event.organizers?.email}</p>
                           {event.organizers?.phone && (
-                            <p className="text-sm text-[#0F0F0F]/60">{event.organizers?.phone}</p>
+                            <p className="text-sm text-muted-foreground">{event.organizers?.phone}</p>
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-[#0F0F0F]/60">Amount to Pay</p>
+                          <p className="text-sm text-muted-foreground">Amount to Pay</p>
                           <p className="text-2xl font-bold text-green-600">{formatPrice(event.organizerNet, event.currency)}</p>
                         </div>
                       </div>
 
                       {/* Bank Account Details */}
-                      <div className="border-t border-[#0F0F0F]/10 pt-4">
-                        <h5 className="font-medium text-[#0F0F0F] mb-3 flex items-center gap-2">
+                      <div className="border-t border-border/10 pt-4">
+                        <h5 className="font-medium text-foreground mb-3 flex items-center gap-2">
                           <CreditCard className="w-4 h-4 text-[#2969FF]" />
                           Bank Account Details
                         </h5>
@@ -550,12 +550,12 @@ export function EventPayouts() {
                             {event.bankAccounts.map((bank, idx) => (
                               <div 
                                 key={bank.id || idx} 
-                                className={`p-3 rounded-lg border-2 ${bank.is_default ? 'border-[#2969FF] bg-white' : 'border-transparent bg-white/50'}`}
+                                className={`p-3 rounded-lg border-2 ${bank.is_default ? 'border-[#2969FF] bg-card' : 'border-transparent bg-card/50'}`}
                               >
                                 <div className="flex items-start justify-between">
                                   <div className="space-y-1">
                                     <div className="flex items-center gap-2">
-                                      <p className="font-semibold text-[#0F0F0F]">{bank.bank_name}</p>
+                                      <p className="font-semibold text-foreground">{bank.bank_name}</p>
                                       {bank.is_default && (
                                         <Badge className="bg-[#2969FF] text-white text-xs">Primary</Badge>
                                       )}
@@ -567,12 +567,12 @@ export function EventPayouts() {
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
                                       <div>
-                                        <span className="text-[#0F0F0F]/60">Account Name: </span>
-                                        <span className="font-medium text-[#0F0F0F]">{bank.account_name || 'N/A'}</span>
+                                        <span className="text-muted-foreground">Account Name: </span>
+                                        <span className="font-medium text-foreground">{bank.account_name || 'N/A'}</span>
                                       </div>
                                       <div>
-                                        <span className="text-[#0F0F0F]/60">Account Number: </span>
-                                        <span className="font-mono font-medium text-[#0F0F0F]">{bank.account_number || 'N/A'}</span>
+                                        <span className="text-muted-foreground">Account Number: </span>
+                                        <span className="font-mono font-medium text-foreground">{bank.account_number || 'N/A'}</span>
                                       </div>
                                     </div>
                                   </div>
@@ -614,27 +614,27 @@ export function EventPayouts() {
                   {/* Promoters */}
                   {event.promoterEarnings.length > 0 && (
                     <div className="py-4">
-                      <h4 className="font-medium text-[#0F0F0F] mb-3 flex items-center gap-2">
+                      <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
                         <Users className="w-4 h-4 text-purple-600" />Promoters ({event.promoterEarnings.length})
                       </h4>
                       <div className="space-y-2">
                         {event.promoterEarnings.map((promo, idx) => (
-                          <div key={idx} className="p-4 bg-[#F4F6FA] rounded-xl">
+                          <div key={idx} className="p-4 bg-muted rounded-xl">
                             <div className="flex items-start justify-between flex-wrap gap-4">
                               <div>
-                                <p className="font-semibold text-[#0F0F0F]">{promo.promoter?.full_name}</p>
-                                <p className="text-sm text-[#0F0F0F]/60">{promo.promoter?.email}</p>
+                                <p className="font-semibold text-foreground">{promo.promoter?.full_name}</p>
+                                <p className="text-sm text-muted-foreground">{promo.promoter?.email}</p>
                                 {promo.promoter?.promoter_bank_accounts?.[0] && (
                                   <div className="mt-2 text-sm">
-                                    <p className="text-[#0F0F0F]/60">
+                                    <p className="text-muted-foreground">
                                       {promo.promoter.promoter_bank_accounts[0].bank_name} - {promo.promoter.promoter_bank_accounts[0].account_number}
                                     </p>
-                                    <p className="text-[#0F0F0F]/60">{promo.promoter.promoter_bank_accounts[0].account_name}</p>
+                                    <p className="text-muted-foreground">{promo.promoter.promoter_bank_accounts[0].account_name}</p>
                                   </div>
                                 )}
                               </div>
                               <div className="flex items-center gap-3">
-                                <p className="font-bold text-[#0F0F0F]">{formatPrice(promo.totalCommission, event.currency)}</p>
+                                <p className="font-bold text-foreground">{formatPrice(promo.totalCommission, event.currency)}</p>
                                 {promo.isPaid ? (
                                   <Badge className="bg-green-100 text-green-800">Paid</Badge>
                                 ) : (
@@ -652,7 +652,7 @@ export function EventPayouts() {
 
                   {/* Pay All */}
                   {event.payout_status !== 'paid' && (
-                    <div className="pt-4 border-t border-[#0F0F0F]/10">
+                    <div className="pt-4 border-t border-border/10">
                       <Button 
                         onClick={(e) => { e.stopPropagation(); payAllForEvent(event); }} 
                         disabled={processing || (!event.bankAccounts || event.bankAccounts.length === 0)} 
@@ -679,17 +679,17 @@ export function EventPayouts() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* Payment Info */}
-            <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-3">
+            <div className="p-4 bg-muted rounded-xl space-y-3">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-[#0F0F0F]/60">Recipient</p>
-                  <p className="font-medium text-[#0F0F0F]">
+                  <p className="text-muted-foreground">Recipient</p>
+                  <p className="font-medium text-foreground">
                     {paymentDialog.type === 'organizer' && paymentDialog.event?.organizers?.business_name}
                     {paymentDialog.type === 'promoter' && paymentDialog.recipient?.promoter?.full_name}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F]/60">Amount</p>
+                  <p className="text-muted-foreground">Amount</p>
                   <p className="font-bold text-green-600 text-lg">
                     {paymentDialog.type === 'organizer' && formatPrice(paymentDialog.event?.organizerNet, paymentDialog.event?.currency)}
                     {paymentDialog.type === 'promoter' && formatPrice(paymentDialog.recipient?.totalCommission, paymentDialog.event?.currency)}
@@ -699,23 +699,23 @@ export function EventPayouts() {
               
               {/* Bank Details in Dialog */}
               {paymentDialog.type === 'organizer' && paymentDialog.event?.primaryBankAccount && (
-                <div className="border-t border-[#0F0F0F]/10 pt-3">
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Bank Details</p>
+                <div className="border-t border-border/10 pt-3">
+                  <p className="text-xs text-muted-foreground mb-2">Bank Details</p>
                   <div className="text-sm space-y-1">
-                    <p><span className="text-[#0F0F0F]/60">Bank:</span> <span className="font-medium">{paymentDialog.event.primaryBankAccount.bank_name}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono font-medium">{paymentDialog.event.primaryBankAccount.account_number}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Name:</span> <span className="font-medium">{paymentDialog.event.primaryBankAccount.account_name}</span></p>
+                    <p><span className="text-muted-foreground">Bank:</span> <span className="font-medium">{paymentDialog.event.primaryBankAccount.bank_name}</span></p>
+                    <p><span className="text-muted-foreground">Account:</span> <span className="font-mono font-medium">{paymentDialog.event.primaryBankAccount.account_number}</span></p>
+                    <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{paymentDialog.event.primaryBankAccount.account_name}</span></p>
                   </div>
                 </div>
               )}
               
               {paymentDialog.type === 'promoter' && paymentDialog.recipient?.promoter?.promoter_bank_accounts?.[0] && (
-                <div className="border-t border-[#0F0F0F]/10 pt-3">
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">Bank Details</p>
+                <div className="border-t border-border/10 pt-3">
+                  <p className="text-xs text-muted-foreground mb-2">Bank Details</p>
                   <div className="text-sm space-y-1">
-                    <p><span className="text-[#0F0F0F]/60">Bank:</span> <span className="font-medium">{paymentDialog.recipient.promoter.promoter_bank_accounts[0].bank_name}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono font-medium">{paymentDialog.recipient.promoter.promoter_bank_accounts[0].account_number}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Name:</span> <span className="font-medium">{paymentDialog.recipient.promoter.promoter_bank_accounts[0].account_name}</span></p>
+                    <p><span className="text-muted-foreground">Bank:</span> <span className="font-medium">{paymentDialog.recipient.promoter.promoter_bank_accounts[0].bank_name}</span></p>
+                    <p><span className="text-muted-foreground">Account:</span> <span className="font-mono font-medium">{paymentDialog.recipient.promoter.promoter_bank_accounts[0].account_number}</span></p>
+                    <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{paymentDialog.recipient.promoter.promoter_bank_accounts[0].account_name}</span></p>
                   </div>
                 </div>
               )}

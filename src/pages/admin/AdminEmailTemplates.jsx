@@ -181,12 +181,12 @@ export function AdminEmailTemplates() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-[#0F0F0F]">Email Templates</h2>
-        <p className="text-[#0F0F0F]/60 mt-1">Customize email templates sent to users</p>
+        <h2 className="text-2xl font-semibold text-foreground">Email Templates</h2>
+        <p className="text-muted-foreground mt-1">Customize email templates sent to users</p>
       </div>
 
       <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate}>
-        <TabsList className="bg-[#F4F6FA] rounded-xl">
+        <TabsList className="bg-muted rounded-xl">
           <TabsTrigger value="purchaseCustomer" className="rounded-lg">
             Purchase (Customer)
           </TabsTrigger>
@@ -202,15 +202,15 @@ export function AdminEmailTemplates() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Editor */}
             <div className="lg:col-span-2">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-[#0F0F0F]">Template Editor</CardTitle>
+                  <CardTitle className="text-foreground">Template Editor</CardTitle>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowPreview(!showPreview)}
-                      className="rounded-xl border-[#0F0F0F]/10"
+                      className="rounded-xl border-border/10"
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       {showPreview ? 'Hide' : 'Show'} Preview
@@ -219,7 +219,7 @@ export function AdminEmailTemplates() {
                       variant="outline"
                       size="sm"
                       onClick={resetTemplate}
-                      className="rounded-xl border-[#0F0F0F]/10"
+                      className="rounded-xl border-border/10"
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
                       Reset
@@ -233,7 +233,7 @@ export function AdminEmailTemplates() {
                       id="subject"
                       value={currentTemplate.subject}
                       onChange={(e) => updateTemplate('subject', e.target.value)}
-                      className="rounded-xl border-[#0F0F0F]/10"
+                      className="rounded-xl border-border/10"
                     />
                   </div>
 
@@ -243,7 +243,7 @@ export function AdminEmailTemplates() {
                       id="body"
                       value={currentTemplate.body}
                       onChange={(e) => updateTemplate('body', e.target.value)}
-                      className="rounded-xl border-[#0F0F0F]/10 min-h-[400px] font-mono text-sm"
+                      className="rounded-xl border-border/10 min-h-[400px] font-mono text-sm"
                     />
                   </div>
 
@@ -266,20 +266,20 @@ export function AdminEmailTemplates() {
 
               {/* Preview */}
               {showPreview && (
-                <Card className="border-[#0F0F0F]/10 rounded-2xl mt-6">
+                <Card className="border-border/10 rounded-2xl mt-6">
                   <CardHeader>
-                    <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+                    <CardTitle className="text-foreground flex items-center gap-2">
                       <Mail className="w-5 h-5" />
                       Email Preview
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="border border-[#0F0F0F]/10 rounded-xl p-6 bg-white">
-                      <div className="border-b border-[#0F0F0F]/10 pb-4 mb-4">
-                        <p className="text-sm text-[#0F0F0F]/60 mb-1">Subject:</p>
-                        <p className="text-[#0F0F0F]">{currentTemplate.subject}</p>
+                    <div className="border border-border/10 rounded-xl p-6 bg-card">
+                      <div className="border-b border-border/10 pb-4 mb-4">
+                        <p className="text-sm text-muted-foreground mb-1">Subject:</p>
+                        <p className="text-foreground">{currentTemplate.subject}</p>
                       </div>
-                      <div className="whitespace-pre-wrap text-[#0F0F0F]">
+                      <div className="whitespace-pre-wrap text-foreground">
                         {currentTemplate.body}
                       </div>
                     </div>
@@ -290,12 +290,12 @@ export function AdminEmailTemplates() {
 
             {/* Variables Sidebar */}
             <div className="space-y-6">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-[#0F0F0F]">Available Variables</CardTitle>
+                  <CardTitle className="text-foreground">Available Variables</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="text-sm text-muted-foreground">
                     Click to insert a variable into your template
                   </p>
                   {availableVariables[selectedTemplate]?.map((variable) => (
@@ -303,7 +303,7 @@ export function AdminEmailTemplates() {
                       key={variable}
                       variant="outline"
                       onClick={() => insertVariable(variable)}
-                      className="w-full justify-start rounded-xl border-[#0F0F0F]/10 hover:border-[#2969FF] hover:text-[#2969FF] font-mono text-sm"
+                      className="w-full justify-start rounded-xl border-border/10 hover:border-[#2969FF] hover:text-[#2969FF] font-mono text-sm"
                     >
                       {`{{${variable}}}`}
                     </Button>
@@ -311,10 +311,10 @@ export function AdminEmailTemplates() {
                 </CardContent>
               </Card>
 
-              <Card className="border-[#0F0F0F]/10 rounded-2xl bg-[#2969FF]/5">
+              <Card className="border-border/10 rounded-2xl bg-[#2969FF]/5">
                 <CardContent className="p-4">
-                  <h4 className="text-[#0F0F0F] font-medium mb-2">Template Tips</h4>
-                  <ul className="space-y-2 text-sm text-[#0F0F0F]/80">
+                  <h4 className="text-foreground font-medium mb-2">Template Tips</h4>
+                  <ul className="space-y-2 text-sm text-foreground/80">
                     <li>• Use variables in double curly braces</li>
                     <li>• Keep subject lines under 60 characters</li>
                     <li>• Test your templates before saving</li>
@@ -323,13 +323,13 @@ export function AdminEmailTemplates() {
                 </CardContent>
               </Card>
 
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-[#0F0F0F]">Template Info</CardTitle>
+                  <CardTitle className="text-foreground">Template Info</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60 mb-1">Status</p>
+                    <p className="text-sm text-muted-foreground mb-1">Status</p>
                     <Badge className="bg-green-500 text-white rounded-lg">Active</Badge>
                   </div>
                 </CardContent>

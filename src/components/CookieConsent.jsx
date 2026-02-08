@@ -71,7 +71,7 @@ export function CookieConsent() {
   return (
     <>
       {/* Cookie Banner */}
-      <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-white border-t border-[#0F0F0F]/10 shadow-2xl">
+      <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 bg-card border-t border-border/10 shadow-2xl">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
             <div className="flex items-start gap-3 flex-1">
@@ -79,8 +79,8 @@ export function CookieConsent() {
                 <Cookie className="w-5 h-5 text-[#2969FF]" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#0F0F0F] mb-1">We value your privacy</h3>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <h3 className="font-semibold text-foreground mb-1">We value your privacy</h3>
+                <p className="text-sm text-muted-foreground">
                   We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. 
                   By clicking "Accept All", you consent to our use of cookies as described in our{' '}
                   <a href="/privacy" className="text-[#2969FF] hover:underline">Privacy Policy</a> and{' '}
@@ -119,23 +119,23 @@ export function CookieConsent() {
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 z-[10000] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-[#0F0F0F]/10">
+          <div className="bg-card rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-border/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-[#2969FF]/10 rounded-xl flex items-center justify-center">
                     <Shield className="w-5 h-5 text-[#2969FF]" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-[#0F0F0F]">Cookie Preferences</h2>
-                    <p className="text-sm text-[#0F0F0F]/60">Manage your cookie settings</p>
+                    <h2 className="text-lg font-semibold text-foreground">Cookie Preferences</h2>
+                    <p className="text-sm text-muted-foreground">Manage your cookie settings</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowSettings(false)}
                   className="p-2 hover:bg-[#0F0F0F]/5 rounded-lg"
                 >
-                  <X className="w-5 h-5 text-[#0F0F0F]/60" />
+                  <X className="w-5 h-5 text-muted-foreground" />
                 </button>
               </div>
             </div>
@@ -144,14 +144,14 @@ export function CookieConsent() {
               {/* Essential Cookies */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="font-medium text-[#0F0F0F]">Essential Cookies</h3>
-                  <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                  <h3 className="font-medium text-foreground">Essential Cookies</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Required for the website to function. These cannot be disabled.
                   </p>
                 </div>
                 <div className="flex items-center">
                   <div className="w-12 h-6 bg-[#2969FF] rounded-full flex items-center justify-end px-1">
-                    <div className="w-4 h-4 bg-white rounded-full" />
+                    <div className="w-4 h-4 bg-card rounded-full" />
                   </div>
                 </div>
               </div>
@@ -159,8 +159,8 @@ export function CookieConsent() {
               {/* Functional Cookies */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="font-medium text-[#0F0F0F]">Functional Cookies</h3>
-                  <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                  <h3 className="font-medium text-foreground">Functional Cookies</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Enable personalized features like saved preferences and language settings.
                   </p>
                 </div>
@@ -170,15 +170,15 @@ export function CookieConsent() {
                     preferences.functional ? 'bg-[#2969FF] justify-end' : 'bg-[#0F0F0F]/20 justify-start'
                   }`}
                 >
-                  <div className="w-4 h-4 bg-white rounded-full" />
+                  <div className="w-4 h-4 bg-card rounded-full" />
                 </button>
               </div>
 
               {/* Analytics Cookies */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="font-medium text-[#0F0F0F]">Analytics Cookies</h3>
-                  <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                  <h3 className="font-medium text-foreground">Analytics Cookies</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Help us understand how visitors interact with our website to improve it.
                   </p>
                 </div>
@@ -188,15 +188,15 @@ export function CookieConsent() {
                     preferences.analytics ? 'bg-[#2969FF] justify-end' : 'bg-[#0F0F0F]/20 justify-start'
                   }`}
                 >
-                  <div className="w-4 h-4 bg-white rounded-full" />
+                  <div className="w-4 h-4 bg-card rounded-full" />
                 </button>
               </div>
 
               {/* Marketing Cookies */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="font-medium text-[#0F0F0F]">Marketing Cookies</h3>
-                  <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                  <h3 className="font-medium text-foreground">Marketing Cookies</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Used to deliver relevant advertisements and track their effectiveness.
                   </p>
                 </div>
@@ -206,13 +206,13 @@ export function CookieConsent() {
                     preferences.marketing ? 'bg-[#2969FF] justify-end' : 'bg-[#0F0F0F]/20 justify-start'
                   }`}
                 >
-                  <div className="w-4 h-4 bg-white rounded-full" />
+                  <div className="w-4 h-4 bg-card rounded-full" />
                 </button>
               </div>
 
               {/* GDPR Info */}
-              <div className="bg-[#F4F6FA] rounded-xl p-4 text-sm text-[#0F0F0F]/70">
-                <p className="font-medium text-[#0F0F0F] mb-2">Your Privacy Rights (GDPR/UK GDPR)</p>
+              <div className="bg-muted rounded-xl p-4 text-sm text-foreground/70">
+                <p className="font-medium text-foreground mb-2">Your Privacy Rights (GDPR/UK GDPR)</p>
                 <ul className="space-y-1 list-disc pl-4">
                   <li>You can withdraw consent at any time</li>
                   <li>You can request access to your personal data</li>
@@ -225,7 +225,7 @@ export function CookieConsent() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-[#0F0F0F]/10 flex gap-3">
+            <div className="p-6 border-t border-border/10 flex gap-3">
               <Button
                 variant="outline"
                 onClick={acceptEssential}

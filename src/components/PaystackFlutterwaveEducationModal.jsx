@@ -62,12 +62,12 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
         {/* Header with gradient - Paystack/Flutterwave colors */}
         <div className="bg-gradient-to-br from-[#00C3F7] via-[#0BA4DB] to-[#F5A623] p-6 text-white">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-card/20 rounded-xl flex items-center justify-center">
               <Wallet className="w-6 h-6" />
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-full bg-card/10 hover:bg-card/20 flex items-center justify-center transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -86,36 +86,36 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
         <div className="p-6 space-y-6">
           {/* How it works */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#00C3F7]" />
               How Payments Work
             </h3>
             
             {/* Flow diagram */}
-            <div className="bg-[#F4F6FA] rounded-xl p-4">
+            <div className="bg-muted rounded-xl p-4">
               <div className="flex items-center justify-between text-sm">
                 <div className="text-center flex-1">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
+                  <div className="w-10 h-10 bg-card rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
                     <CreditCard className="w-5 h-5 text-[#00C3F7]" />
                   </div>
-                  <p className="font-medium text-[#0F0F0F] text-xs">Attendee Pays</p>
-                  <p className="text-[10px] text-[#0F0F0F]/60">Card/Bank/USSD</p>
+                  <p className="font-medium text-foreground text-xs">Attendee Pays</p>
+                  <p className="text-[10px] text-muted-foreground">Card/Bank/USSD</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#0F0F0F]/30 flex-shrink-0" />
+                <ArrowRight className="w-4 h-4 text-foreground/30 flex-shrink-0" />
                 <div className="text-center flex-1">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
+                  <div className="w-10 h-10 bg-card rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
                     <Shield className="w-5 h-5 text-[#00C3F7]" />
                   </div>
-                  <p className="font-medium text-[#0F0F0F] text-xs">Secure Hold</p>
-                  <p className="text-[10px] text-[#0F0F0F]/60">Protected funds</p>
+                  <p className="font-medium text-foreground text-xs">Secure Hold</p>
+                  <p className="text-[10px] text-muted-foreground">Protected funds</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#0F0F0F]/30 flex-shrink-0" />
+                <ArrowRight className="w-4 h-4 text-foreground/30 flex-shrink-0" />
                 <div className="text-center flex-1">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
                     <Banknote className="w-5 h-5 text-green-600" />
                   </div>
                   <p className="font-medium text-green-600 text-xs">You Get Paid!</p>
-                  <p className="text-[10px] text-[#0F0F0F]/60">To your bank</p>
+                  <p className="text-[10px] text-muted-foreground">To your bank</p>
                 </div>
               </div>
             </div>
@@ -123,13 +123,13 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
 
           {/* Benefits */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-[#0F0F0F]">Why This Works Great</h3>
+            <h3 className="font-semibold text-foreground">Why This Works Great</h3>
             <ul className="space-y-2">
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Multiple Payment Options</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Multiple Payment Options</p>
+                  <p className="text-sm text-muted-foreground">
                     Accept cards, bank transfers, USSD, and mobile money
                   </p>
                 </div>
@@ -137,8 +137,8 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Secure & Protected</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Secure & Protected</p>
+                  <p className="text-sm text-muted-foreground">
                     Funds are held securely until you request payout
                   </p>
                 </div>
@@ -146,8 +146,8 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Fast Bank Payouts</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Fast Bank Payouts</p>
+                  <p className="text-sm text-muted-foreground">
                     Request payouts anytime - usually processed within 24-48 hours
                   </p>
                 </div>
@@ -155,8 +155,8 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Real-Time Dashboard</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Real-Time Dashboard</p>
+                  <p className="text-sm text-muted-foreground">
                     Track all sales, refunds, and payouts in one place
                   </p>
                 </div>
@@ -204,7 +204,7 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
           </div>
 
           {/* Setup time note */}
-          <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-4 h-4" />
             <span>Setup takes less than 2 minutes</span>
           </div>
@@ -229,7 +229,7 @@ export function PaystackFlutterwaveEducationModal({ open, onClose, organizerCoun
 
           <button
             onClick={handleDismiss}
-            className="w-full text-center text-sm text-[#0F0F0F]/40 hover:text-[#0F0F0F]/60"
+            className="w-full text-center text-sm text-muted-foreground hover:text-muted-foreground"
           >
             Don't show this again
           </button>

@@ -248,8 +248,8 @@ export function PayYourShare() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-[#0F0F0F] mb-2">Invalid Link</h2>
-            <p className="text-[#0F0F0F]/60 mb-6">{error}</p>
+            <h2 className="text-xl font-bold text-foreground mb-2">Invalid Link</h2>
+            <p className="text-muted-foreground mb-6">{error}</p>
             <Button onClick={() => navigate('/')} className="rounded-xl">
               Go Home
             </Button>
@@ -270,8 +270,8 @@ export function PayYourShare() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-[#0F0F0F] mb-2">Payment Complete!</h2>
-            <p className="text-[#0F0F0F]/60 mb-6">
+            <h2 className="text-xl font-bold text-foreground mb-2">Payment Complete!</h2>
+            <p className="text-muted-foreground mb-6">
               You've paid your share for <strong>{event?.title}</strong>
             </p>
             <div className="bg-green-50 rounded-xl p-4 mb-6">
@@ -280,7 +280,7 @@ export function PayYourShare() {
               </div>
               <div className="text-sm text-green-600">Paid on {new Date(share?.paid_at).toLocaleDateString()}</div>
             </div>
-            <p className="text-sm text-[#0F0F0F]/50 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               {splitPayment?.status === 'completed' 
                 ? 'All shares have been paid! Tickets will be sent to your email.'
                 : 'Waiting for other members to pay their shares...'}
@@ -300,8 +300,8 @@ export function PayYourShare() {
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-[#0F0F0F] mb-2">Payment Expired</h2>
-            <p className="text-[#0F0F0F]/60 mb-6">
+            <h2 className="text-xl font-bold text-foreground mb-2">Payment Expired</h2>
+            <p className="text-muted-foreground mb-6">
               This split payment has expired. The deadline was {new Date(splitPayment?.expires_at).toLocaleString()}.
             </p>
             <Button onClick={() => navigate(`/e/${event?.slug}`)} className="rounded-xl">
@@ -318,8 +318,8 @@ export function PayYourShare() {
       <div className="max-w-lg mx-auto space-y-6">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Pay Your Share</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Pay Your Share</h1>
+          <p className="text-muted-foreground mt-1">
             {share?.name || 'Friend'}, here's your share of the tickets
           </p>
         </div>
@@ -334,8 +334,8 @@ export function PayYourShare() {
             />
           )}
           <CardContent className="p-4">
-            <h2 className="font-semibold text-lg text-[#0F0F0F]">{event?.title}</h2>
-            <div className="mt-2 space-y-1 text-sm text-[#0F0F0F]/60">
+            <h2 className="font-semibold text-lg text-foreground">{event?.title}</h2>
+            <div className="mt-2 space-y-1 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 {new Date(event?.start_date).toLocaleDateString('en-US', {
@@ -369,7 +369,7 @@ export function PayYourShare() {
               {splitPayment?.ticket_selection?.map((ticket, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <span>{ticket.quantity}x {ticket.name}</span>
-                  <span className="text-[#0F0F0F]/60">
+                  <span className="text-muted-foreground">
                     {formatPrice(ticket.price * ticket.quantity, splitPayment.currency)}
                   </span>
                 </div>
@@ -385,7 +385,7 @@ export function PayYourShare() {
             {/* Your Share */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4">
               <div className="text-center">
-                <div className="text-sm text-[#0F0F0F]/60 mb-1">Your Share</div>
+                <div className="text-sm text-muted-foreground mb-1">Your Share</div>
                 <div className="text-3xl font-bold text-[#2969FF]">
                   {formatPrice(share?.share_amount, splitPayment?.currency)}
                 </div>
@@ -416,7 +416,7 @@ export function PayYourShare() {
         </Button>
 
         {/* Info */}
-        <p className="text-center text-xs text-[#0F0F0F]/50">
+        <p className="text-center text-xs text-muted-foreground">
           Secure payment powered by {providerInfo.name}. Tickets will be issued once all {splitPayment?.member_count} members have paid.
         </p>
       </div>

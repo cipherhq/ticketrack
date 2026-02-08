@@ -149,15 +149,15 @@ export function WaitlistDialog({ open, onOpenChange, event }) {
               <div className="w-16 h-16 bg-[#2969FF] rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-white">#{existingEntry.position}</span>
               </div>
-              <h3 className="font-semibold text-lg text-[#0F0F0F]">Your Position</h3>
-              <p className="text-[#0F0F0F]/60 text-sm mt-1">
+              <h3 className="font-semibold text-lg text-foreground">Your Position</h3>
+              <p className="text-muted-foreground text-sm mt-1">
                 {existingEntry.status === 'notified' 
                   ? "Check your email! Tickets are available for you."
                   : "We'll notify you when tickets become available."}
               </p>
             </div>
 
-            <div className="flex items-center justify-between text-sm text-[#0F0F0F]/60">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 {waitlistCount} people waiting
@@ -186,8 +186,8 @@ export function WaitlistDialog({ open, onOpenChange, event }) {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="font-semibold text-lg text-[#0F0F0F]">You're on the list!</h3>
-            <p className="text-[#0F0F0F]/60 text-sm mt-2">
+            <h3 className="font-semibold text-lg text-foreground">You're on the list!</h3>
+            <p className="text-muted-foreground text-sm mt-2">
               We'll email you at {formData.email} when tickets become available.
             </p>
             <Button className="mt-4 rounded-xl" onClick={handleClose}>

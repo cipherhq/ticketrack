@@ -59,14 +59,14 @@ const PHASES = {
 };
 
 const PRIORITIES = {
-  low: { label: 'Low', color: 'text-gray-500 bg-gray-100', dotColor: 'bg-gray-400' },
+  low: { label: 'Low', color: 'text-muted-foreground bg-muted', dotColor: 'bg-gray-400' },
   medium: { label: 'Medium', color: 'text-blue-600 bg-blue-100', dotColor: 'bg-blue-500' },
   high: { label: 'High', color: 'text-orange-600 bg-orange-100', dotColor: 'bg-orange-500' },
   urgent: { label: 'Urgent', color: 'text-red-600 bg-red-100', dotColor: 'bg-red-500' },
 };
 
 const STATUSES = {
-  pending: { label: 'To Do', icon: Circle, color: 'text-gray-400', bg: 'bg-gray-100', headerBg: 'bg-gray-50' },
+  pending: { label: 'To Do', icon: Circle, color: 'text-muted-foreground', bg: 'bg-muted', headerBg: 'bg-background' },
   in_progress: { label: 'In Progress', icon: Clock, color: 'text-blue-500', bg: 'bg-blue-100', headerBg: 'bg-blue-50' },
   completed: { label: 'Done', icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-100', headerBg: 'bg-green-50' },
   blocked: { label: 'Blocked', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-100', headerBg: 'bg-red-50' },
@@ -101,7 +101,7 @@ function DroppableColumn({ id, status, children, taskCount, onAddTask }) {
   return (
     <div className="min-w-[260px] flex flex-col">
       {/* Column Header */}
-      <div className={`p-3 rounded-t-xl ${status.headerBg} border border-b-0 border-[#0F0F0F]/10`}>
+      <div className={`p-3 rounded-t-xl ${status.headerBg} border border-b-0 border-border/10`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <status.icon className={`w-4 h-4 ${status.color}`} />
@@ -115,7 +115,7 @@ function DroppableColumn({ id, status, children, taskCount, onAddTask }) {
       <div 
         ref={setNodeRef}
         className={`flex-1 rounded-b-xl p-2 min-h-[400px] space-y-2 border border-t-0 transition-colors ${
-          isOver ? 'bg-[#2969FF]/10 border-[#2969FF]/30' : 'bg-[#F8F9FB] border-[#0F0F0F]/10'
+          isOver ? 'bg-[#2969FF]/10 border-[#2969FF]/30' : 'bg-[#F8F9FB] border-border/10'
         }`}
       >
         {children}
@@ -124,7 +124,7 @@ function DroppableColumn({ id, status, children, taskCount, onAddTask }) {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full text-[#0F0F0F]/40 hover:text-[#0F0F0F] hover:bg-white border-2 border-dashed border-[#0F0F0F]/10"
+            className="w-full text-muted-foreground hover:text-foreground hover:bg-card border-2 border-dashed border-border/10"
             onClick={onAddTask}
           >
             <Plus className="w-4 h-4 mr-1" />
@@ -154,7 +154,7 @@ function DraggableTaskCard({ task, onEdit, onStatusChange, onDelete, subtasksCou
     <div
       ref={setNodeRef}
       style={style}
-      className={`group p-3 rounded-xl border bg-white shadow-sm transition-all ${
+      className={`group p-3 rounded-xl border bg-card shadow-sm transition-all ${
         isDragging ? 'opacity-50 shadow-lg ring-2 ring-[#2969FF]' : 'hover:shadow-md'
       }`}
     >
@@ -163,24 +163,24 @@ function DraggableTaskCard({ task, onEdit, onStatusChange, onDelete, subtasksCou
         <button
           {...attributes}
           {...listeners}
-          className="mt-1 cursor-grab active:cursor-grabbing p-1 rounded hover:bg-[#F4F6FA] touch-none"
+          className="mt-1 cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted touch-none"
         >
-          <GripVertical className="w-4 h-4 text-[#0F0F0F]/30" />
+          <GripVertical className="w-4 h-4 text-foreground/30" />
         </button>
 
         {/* Task content */}
         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onEdit(task)}>
           <div className="flex items-start justify-between gap-2">
             <p className={`font-medium text-sm ${
-              task.status === 'completed' ? 'line-through text-[#0F0F0F]/40' : 'text-[#0F0F0F]'
+              task.status === 'completed' ? 'line-through text-muted-foreground' : 'text-foreground'
             }`}>
               {task.title}
             </p>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <button className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#F4F6FA]">
-                  <MoreHorizontal className="w-4 h-4 text-[#0F0F0F]/40" />
+                <button className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted">
+                  <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-xl">
@@ -225,7 +225,7 @@ function DraggableTaskCard({ task, onEdit, onStatusChange, onDelete, subtasksCou
               <span className={`flex items-center gap-0.5 text-[10px] ${
                 dueDateStatus === 'overdue' ? 'text-red-600 font-medium' :
                 dueDateStatus === 'today' ? 'text-orange-600' :
-                'text-[#0F0F0F]/50'
+                'text-muted-foreground'
               }`}>
                 <CalendarDays className="w-3 h-3" />
                 {format(new Date(task.due_date), 'MMM d')}
@@ -233,21 +233,21 @@ function DraggableTaskCard({ task, onEdit, onStatusChange, onDelete, subtasksCou
             )}
 
             {task.assigned_member && (
-              <span className="flex items-center gap-0.5 text-[10px] text-[#0F0F0F]/50">
+              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                 <User className="w-3 h-3" />
                 {task.assigned_member.name?.split(' ')[0]}
               </span>
             )}
 
             {subtasksCount > 0 && (
-              <span className="flex items-center gap-0.5 text-[10px] text-[#0F0F0F]/50">
+              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                 <CheckSquare className="w-3 h-3" />
                 {subtasksCount}
               </span>
             )}
 
             {commentsCount > 0 && (
-              <span className="flex items-center gap-0.5 text-[10px] text-[#0F0F0F]/50">
+              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                 <MessageSquare className="w-3 h-3" />
                 {commentsCount}
               </span>
@@ -674,7 +674,7 @@ export function ProjectManager() {
 
         <DragOverlay>
           {activeTask ? (
-            <div className="p-3 rounded-xl border-2 border-[#2969FF] bg-white shadow-2xl w-[240px]">
+            <div className="p-3 rounded-xl border-2 border-[#2969FF] bg-card shadow-2xl w-[240px]">
               <p className="font-medium text-sm">{activeTask.title}</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className={`px-1.5 py-0.5 rounded text-[10px] ${PRIORITIES[activeTask.priority]?.color}`}>
@@ -700,7 +700,7 @@ export function ProjectManager() {
       <div
         key={task.id}
         className={`group p-3 rounded-xl border cursor-pointer hover:shadow-md ${
-          task.status === 'completed' ? 'bg-green-50/50 border-green-200' : 'bg-white border-[#0F0F0F]/10'
+          task.status === 'completed' ? 'bg-green-50/50 border-green-200' : 'bg-card border-border/10'
         }`}
         onClick={() => openTaskModal(task)}
       >
@@ -709,17 +709,17 @@ export function ProjectManager() {
             <StatusIcon className={`w-5 h-5 ${STATUSES[task.status]?.color}`} />
           </button>
           <div className="flex-1">
-            <p className={`font-medium text-sm ${task.status === 'completed' ? 'line-through text-[#0F0F0F]/40' : ''}`}>{task.title}</p>
+            <p className={`font-medium text-sm ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className={`px-2 py-0.5 rounded text-xs ${PRIORITIES[task.priority]?.color}`}>{PRIORITIES[task.priority]?.label}</span>
               <span className={`px-2 py-0.5 rounded text-xs ${PHASES[task.phase]?.bgLight} ${PHASES[task.phase]?.textColor}`}>{PHASES[task.phase]?.label}</span>
               {task.due_date && (
-                <span className={`flex items-center gap-1 text-xs ${dueDateStatus === 'overdue' ? 'text-red-600' : 'text-[#0F0F0F]/60'}`}>
+                <span className={`flex items-center gap-1 text-xs ${dueDateStatus === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
                   <CalendarDays className="w-3 h-3" />{format(new Date(task.due_date), 'MMM d')}
                 </span>
               )}
-              {task.assigned_member && <span className="text-xs text-[#0F0F0F]/60"><User className="w-3 h-3 inline mr-1" />{task.assigned_member.name?.split(' ')[0]}</span>}
-              {taskSubtasks.length > 0 && <span className="text-xs text-[#0F0F0F]/60"><CheckSquare className="w-3 h-3 inline mr-1" />{completedSubtasks}/{taskSubtasks.length}</span>}
+              {task.assigned_member && <span className="text-xs text-muted-foreground"><User className="w-3 h-3 inline mr-1" />{task.assigned_member.name?.split(' ')[0]}</span>}
+              {taskSubtasks.length > 0 && <span className="text-xs text-muted-foreground"><CheckSquare className="w-3 h-3 inline mr-1" />{completedSubtasks}/{taskSubtasks.length}</span>}
             </div>
           </div>
         </div>
@@ -740,18 +740,18 @@ export function ProjectManager() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F0F0F]">Project Manager</h1>
-          <p className="text-[#0F0F0F]/60">Track tasks and timelines for all your events</p>
+          <h1 className="text-2xl font-semibold text-foreground">Project Manager</h1>
+          <p className="text-muted-foreground">Track tasks and timelines for all your events</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search tasks..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl w-64" />
           </div>
-          <div className="flex rounded-xl border border-[#0F0F0F]/10 overflow-hidden">
-            <button onClick={() => setViewMode('timeline')} className={`p-2 ${viewMode === 'timeline' ? 'bg-[#2969FF] text-white' : 'bg-white'}`}><Calendar className="w-4 h-4" /></button>
-            <button onClick={() => setViewMode('kanban')} className={`p-2 ${viewMode === 'kanban' ? 'bg-[#2969FF] text-white' : 'bg-white'}`}><Columns className="w-4 h-4" /></button>
-            <button onClick={() => setViewMode('list')} className={`p-2 ${viewMode === 'list' ? 'bg-[#2969FF] text-white' : 'bg-white'}`}><List className="w-4 h-4" /></button>
+          <div className="flex rounded-xl border border-border/10 overflow-hidden">
+            <button onClick={() => setViewMode('timeline')} className={`p-2 ${viewMode === 'timeline' ? 'bg-[#2969FF] text-white' : 'bg-card'}`}><Calendar className="w-4 h-4" /></button>
+            <button onClick={() => setViewMode('kanban')} className={`p-2 ${viewMode === 'kanban' ? 'bg-[#2969FF] text-white' : 'bg-card'}`}><Columns className="w-4 h-4" /></button>
+            <button onClick={() => setViewMode('list')} className={`p-2 ${viewMode === 'list' ? 'bg-[#2969FF] text-white' : 'bg-card'}`}><List className="w-4 h-4" /></button>
           </div>
         </div>
       </div>
@@ -760,12 +760,12 @@ export function ProjectManager() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { icon: Calendar, count: events.length, label: 'Events', bg: 'bg-blue-100', iconColor: 'text-blue-600' },
-          { icon: Circle, count: tasks.filter(t => t.status === 'pending').length, label: 'To Do', bg: 'bg-gray-100', iconColor: 'text-gray-600' },
+          { icon: Circle, count: tasks.filter(t => t.status === 'pending').length, label: 'To Do', bg: 'bg-muted', iconColor: 'text-muted-foreground' },
           { icon: Clock, count: tasks.filter(t => t.status === 'in_progress').length, label: 'In Progress', bg: 'bg-blue-100', iconColor: 'text-blue-600' },
           { icon: CheckCircle2, count: tasks.filter(t => t.status === 'completed').length, label: 'Completed', bg: 'bg-green-100', iconColor: 'text-green-600' },
           { icon: AlertTriangle, count: tasks.filter(t => t.due_date && isPast(new Date(t.due_date)) && t.status !== 'completed').length, label: 'Overdue', bg: 'bg-red-100', iconColor: 'text-red-600' },
         ].map((stat, i) => (
-          <Card key={i} className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card key={i} className="border-border/10 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center`}>
@@ -773,7 +773,7 @@ export function ProjectManager() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold">{stat.count}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">{stat.label}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
             </CardContent>
@@ -804,10 +804,10 @@ export function ProjectManager() {
 
       {/* Events */}
       {events.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="py-12 text-center">
-            <Calendar className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
-            <p className="text-[#0F0F0F]/60 mb-4">No events yet</p>
+            <Calendar className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
+            <p className="text-muted-foreground mb-4">No events yet</p>
             <Button onClick={() => navigate('/organizer/events/create')} className="bg-[#2969FF] text-white rounded-xl">
               <Plus className="w-4 h-4 mr-2" />Create Event
             </Button>
@@ -822,14 +822,14 @@ export function ProjectManager() {
             const eventTasks = getEventTasks(event.id);
 
             return (
-              <Card key={event.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
-                <div className="p-4 cursor-pointer hover:bg-[#F4F6FA]/50" onClick={() => setExpandedEvents({ ...expandedEvents, [event.id]: !isExpanded })}>
+              <Card key={event.id} className="border-border/10 rounded-2xl overflow-hidden">
+                <div className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => setExpandedEvents({ ...expandedEvents, [event.id]: !isExpanded })}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {isExpanded ? <ChevronDown className="w-5 h-5 text-[#0F0F0F]/40" /> : <ChevronRight className="w-5 h-5 text-[#0F0F0F]/40" />}
+                      {isExpanded ? <ChevronDown className="w-5 h-5 text-muted-foreground" /> : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
                       <div>
                         <h3 className="font-medium">{event.title}</h3>
-                        <div className="flex items-center gap-3 text-sm text-[#0F0F0F]/60">
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
                           <span>{format(new Date(event.start_date), 'MMM d, yyyy')}</span>
                           <span className={`px-2 py-0.5 rounded-full text-xs ${PHASES[currentPhase].bgLight} border`}>{PHASES[currentPhase].label}</span>
                         </div>
@@ -838,9 +838,9 @@ export function ProjectManager() {
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="text-sm font-medium">{progress}%</p>
-                        <p className="text-xs text-[#0F0F0F]/60">{eventTasks.filter(t => t.status === 'completed').length}/{eventTasks.length}</p>
+                        <p className="text-xs text-muted-foreground">{eventTasks.filter(t => t.status === 'completed').length}/{eventTasks.length}</p>
                       </div>
-                      <div className="w-24 h-2 bg-[#F4F6FA] rounded-full overflow-hidden">
+                      <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-[#2969FF]" style={{ width: `${progress}%` }} />
                       </div>
                     </div>
@@ -848,32 +848,32 @@ export function ProjectManager() {
                 </div>
 
                 {isExpanded && (
-                  <div className="border-t border-[#0F0F0F]/10 p-4">
+                  <div className="border-t border-border/10 p-4">
                     {viewMode === 'kanban' ? renderKanbanBoard(event.id) : viewMode === 'timeline' ? (
                       // Timeline/Gantt View
                       <div className="space-y-3">
-                        <div className="flex items-center gap-4 text-xs text-[#0F0F0F]/60 border-b pb-2">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground border-b pb-2">
                           <div className="w-48 font-medium">Task</div>
                           <div className="flex-1 font-medium">Timeline</div>
                           <div className="w-20 font-medium text-center">Status</div>
                         </div>
                         {getFilteredTasks(event.id).length === 0 ? (
-                          <p className="text-center text-[#0F0F0F]/40 py-8">No tasks</p>
+                          <p className="text-center text-muted-foreground py-8">No tasks</p>
                         ) : (
                           getFilteredTasks(event.id).map(task => {
                             const dueDateStatus = getDueDateStatus(task.due_date);
                             const StatusIcon = STATUSES[task.status]?.icon || Circle;
                             return (
-                              <div key={task.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-[#F4F6FA] cursor-pointer" onClick={() => openTaskModal(task)}>
+                              <div key={task.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted cursor-pointer" onClick={() => openTaskModal(task)}>
                                 <div className="w-48 truncate">
-                                  <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-[#0F0F0F]/40' : ''}`}>{task.title}</p>
-                                  <p className="text-xs text-[#0F0F0F]/50">{task.assigned_member?.name || 'Unassigned'}</p>
+                                  <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
+                                  <p className="text-xs text-muted-foreground">{task.assigned_member?.name || 'Unassigned'}</p>
                                 </div>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
                                     <span className={`px-2 py-0.5 rounded text-xs ${PHASES[task.phase]?.bgLight} ${PHASES[task.phase]?.textColor} border`}>{PHASES[task.phase]?.label}</span>
                                     {task.due_date && (
-                                      <span className={`flex items-center gap-1 text-xs ${dueDateStatus === 'overdue' ? 'text-red-600 font-medium' : dueDateStatus === 'today' ? 'text-orange-600' : 'text-[#0F0F0F]/60'}`}>
+                                      <span className={`flex items-center gap-1 text-xs ${dueDateStatus === 'overdue' ? 'text-red-600 font-medium' : dueDateStatus === 'today' ? 'text-orange-600' : 'text-muted-foreground'}`}>
                                         <CalendarDays className="w-3 h-3" />
                                         {format(new Date(task.due_date), 'MMM d, yyyy')}
                                       </span>
@@ -899,7 +899,7 @@ export function ProjectManager() {
                     ) : (
                       // List View
                       <div className="space-y-2">
-                        {getFilteredTasks(event.id).length === 0 ? <p className="text-center text-[#0F0F0F]/40 py-8">No tasks</p> : getFilteredTasks(event.id).map(renderTaskCard)}
+                        {getFilteredTasks(event.id).length === 0 ? <p className="text-center text-muted-foreground py-8">No tasks</p> : getFilteredTasks(event.id).map(renderTaskCard)}
                         <div className="flex gap-2 pt-2">
                           <Button variant="outline" size="sm" onClick={() => openTaskModal(null, event.id)} className="rounded-xl"><Plus className="w-4 h-4 mr-1" />Add Task</Button>
                           {eventTasks.length === 0 && <Button variant="outline" size="sm" onClick={() => applyTemplates(event.id)} className="rounded-xl"><LayoutGrid className="w-4 h-4 mr-1" />Apply Templates</Button>}
@@ -960,7 +960,7 @@ export function ProjectManager() {
               <div className="flex flex-wrap gap-2 mt-2">
                 {LABELS.map(label => (
                   <button key={label.id} type="button" onClick={() => setTaskForm({ ...taskForm, labels: taskForm.labels?.includes(label.id) ? taskForm.labels.filter(l => l !== label.id) : [...(taskForm.labels || []), label.id] })}
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${taskForm.labels?.includes(label.id) ? `${label.color} text-white` : 'bg-[#F4F6FA]'}`}>{label.name}</button>
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${taskForm.labels?.includes(label.id) ? `${label.color} text-white` : 'bg-muted'}`}>{label.name}</button>
                 ))}
               </div>
             </div>
@@ -970,9 +970,9 @@ export function ProjectManager() {
                 <div><Label><ListTodo className="w-4 h-4 inline mr-2" />Subtasks</Label>
                   <div className="space-y-2 mt-2">
                     {getTaskSubtasks(editingTask.id).map(s => (
-                      <div key={s.id} className="flex items-center gap-2 p-2 bg-[#F4F6FA] rounded-lg">
-                        <button onClick={() => toggleSubtask(s.id, s.is_completed)}>{s.is_completed ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-gray-400" />}</button>
-                        <span className={`flex-1 text-sm ${s.is_completed ? 'line-through text-[#0F0F0F]/40' : ''}`}>{s.title}</span>
+                      <div key={s.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                        <button onClick={() => toggleSubtask(s.id, s.is_completed)}>{s.is_completed ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Circle className="w-4 h-4 text-muted-foreground" />}</button>
+                        <span className={`flex-1 text-sm ${s.is_completed ? 'line-through text-muted-foreground' : ''}`}>{s.title}</span>
                         <button onClick={() => deleteSubtask(s.id)} className="text-red-500"><X className="w-4 h-4" /></button>
                       </div>
                     ))}
@@ -990,8 +990,8 @@ export function ProjectManager() {
                       <Button size="sm" variant="outline" onClick={() => addComment(editingTask.id)} className="rounded-xl">Send</Button>
                     </div>
                     {getTaskComments(editingTask.id).map(c => (
-                      <div key={c.id} className="p-3 bg-[#F4F6FA] rounded-xl">
-                        <div className="flex justify-between text-xs mb-1"><span className="font-medium">{c.author?.full_name || 'Unknown'}</span><span className="text-[#0F0F0F]/40">{format(new Date(c.created_at), 'MMM d, h:mm a')}</span></div>
+                      <div key={c.id} className="p-3 bg-muted rounded-xl">
+                        <div className="flex justify-between text-xs mb-1"><span className="font-medium">{c.author?.full_name || 'Unknown'}</span><span className="text-muted-foreground">{format(new Date(c.created_at), 'MMM d, h:mm a')}</span></div>
                         <p className="text-sm">{c.content}</p>
                       </div>
                     ))}

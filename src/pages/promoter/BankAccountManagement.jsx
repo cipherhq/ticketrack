@@ -56,26 +56,26 @@ export function BankAccountManagement() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div><h2 className="text-2xl text-[#0F0F0F] mb-2">Bank Account Management</h2><p className="text-[#0F0F0F]/60">Manage your bank accounts for receiving payments</p></div>
+        <div><h2 className="text-2xl text-foreground mb-2">Bank Account Management</h2><p className="text-muted-foreground">Manage your bank accounts for receiving payments</p></div>
         <Button onClick={() => setIsAddOpen(true)} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"><Plus className="w-4 h-4 mr-2" />Add Account</Button>
       </div>
 
-      <Card className="border-blue-200 bg-blue-50 rounded-2xl"><CardContent className="p-4"><div className="flex items-start gap-3"><Building2 className="w-5 h-5 text-blue-600 mt-0.5" /><div><h3 className="text-[#0F0F0F] mb-1">Payment Information</h3><p className="text-sm text-[#0F0F0F]/60">Your commission payments will be sent to your primary bank account.</p></div></div></CardContent></Card>
+      <Card className="border-blue-200 bg-blue-50 rounded-2xl"><CardContent className="p-4"><div className="flex items-start gap-3"><Building2 className="w-5 h-5 text-blue-600 mt-0.5" /><div><h3 className="text-foreground mb-1">Payment Information</h3><p className="text-sm text-muted-foreground">Your commission payments will be sent to your primary bank account.</p></div></div></CardContent></Card>
 
       {accounts.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-12 text-center"><Building2 className="w-16 h-16 text-[#0F0F0F]/20 mx-auto mb-4" /><h3 className="text-lg text-[#0F0F0F] mb-2">No Bank Accounts Added</h3><p className="text-[#0F0F0F]/60 mb-4">Add your bank account to receive payments</p><Button onClick={() => setIsAddOpen(true)} className="bg-[#2969FF] text-white rounded-xl"><Plus className="w-4 h-4 mr-2" />Add Account</Button></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-12 text-center"><Building2 className="w-16 h-16 text-foreground/20 mx-auto mb-4" /><h3 className="text-lg text-foreground mb-2">No Bank Accounts Added</h3><p className="text-muted-foreground mb-4">Add your bank account to receive payments</p><Button onClick={() => setIsAddOpen(true)} className="bg-[#2969FF] text-white rounded-xl"><Plus className="w-4 h-4 mr-2" />Add Account</Button></CardContent></Card>
       ) : (
         <div className="space-y-4">
           {accounts.map((acc) => (
-            <Card key={acc.id} className={`border-[#0F0F0F]/10 rounded-2xl ${acc.is_primary ? 'border-[#2969FF] border-2' : ''}`}>
+            <Card key={acc.id} className={`border-border/10 rounded-2xl ${acc.is_primary ? 'border-[#2969FF] border-2' : ''}`}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div><div className="flex items-center gap-2 mb-2"><h3 className="text-lg text-[#0F0F0F]">{acc.bank_name}</h3>{acc.is_primary && <Badge className="bg-[#2969FF]">Primary</Badge>}{acc.is_verified ? <Badge className="bg-green-600">Verified</Badge> : <Badge className="bg-yellow-600">Pending</Badge>}</div></div>
+                  <div><div className="flex items-center gap-2 mb-2"><h3 className="text-lg text-foreground">{acc.bank_name}</h3>{acc.is_primary && <Badge className="bg-[#2969FF]">Primary</Badge>}{acc.is_verified ? <Badge className="bg-green-600">Verified</Badge> : <Badge className="bg-yellow-600">Pending</Badge>}</div></div>
                   {acc.is_verified && <CheckCircle className="w-6 h-6 text-green-600" />}
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <div className="p-3 bg-[#F4F6FA] rounded-lg"><p className="text-sm text-[#0F0F0F]/60 mb-1">Account Number</p><p>{acc.account_number}</p></div>
-                  <div className="p-3 bg-[#F4F6FA] rounded-lg"><p className="text-sm text-[#0F0F0F]/60 mb-1">Account Name</p><p>{acc.account_name}</p></div>
+                  <div className="p-3 bg-muted rounded-lg"><p className="text-sm text-muted-foreground mb-1">Account Number</p><p>{acc.account_number}</p></div>
+                  <div className="p-3 bg-muted rounded-lg"><p className="text-sm text-muted-foreground mb-1">Account Name</p><p>{acc.account_name}</p></div>
                 </div>
                 <div className="flex gap-2">
                   {!acc.is_primary && acc.is_verified && <Button size="sm" onClick={() => handleSetPrimary(acc.id)} className="bg-[#2969FF] text-white rounded-xl">Set as Primary</Button>}

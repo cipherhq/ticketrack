@@ -21,7 +21,7 @@ const SOURCE_CONFIG = {
   team: { label: 'Team', icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-100' },
   imported: { label: 'Imported', icon: Upload, color: 'text-green-600', bgColor: 'bg-green-100' },
   manual: { label: 'Manual', icon: UserPlus, color: 'text-orange-600', bgColor: 'bg-orange-100' },
-  external: { label: 'External', icon: ExternalLink, color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  external: { label: 'External', icon: ExternalLink, color: 'text-muted-foreground', bgColor: 'bg-muted' },
 };
 
 export function AdminContacts() {
@@ -204,8 +204,8 @@ export function AdminContacts() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F0F0F]">All Contacts</h1>
-          <p className="text-[#0F0F0F]/60">View all contacts across all organizers</p>
+          <h1 className="text-2xl font-semibold text-foreground">All Contacts</h1>
+          <p className="text-muted-foreground">View all contacts across all organizers</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={loadContacts} className="rounded-xl">
@@ -221,58 +221,58 @@ export function AdminContacts() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
               <Users className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <p className="text-2xl font-semibold">{stats.total.toLocaleString()}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Total Contacts</p>
+              <p className="text-xs text-muted-foreground">Total Contacts</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
               <Mail className="w-5 h-5 text-green-600" />
             </div>
             <div>
               <p className="text-2xl font-semibold">{stats.withEmail.toLocaleString()}</p>
-              <p className="text-xs text-[#0F0F0F]/60">With Email</p>
+              <p className="text-xs text-muted-foreground">With Email</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
               <Phone className="w-5 h-5 text-purple-600" />
             </div>
             <div>
               <p className="text-2xl font-semibold">{stats.withPhone.toLocaleString()}</p>
-              <p className="text-xs text-[#0F0F0F]/60">With Phone</p>
+              <p className="text-xs text-muted-foreground">With Phone</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-orange-600" />
             </div>
             <div>
               <p className="text-2xl font-semibold">{stats.emailOptIn.toLocaleString()}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Email Opt-In</p>
+              <p className="text-xs text-muted-foreground">Email Opt-In</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card className="rounded-2xl border-[#0F0F0F]/10">
+      <Card className="rounded-2xl border-border/10">
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
@@ -282,7 +282,7 @@ export function AdminContacts() {
             </div>
             <Select value={organizerFilter} onValueChange={(v) => { setOrganizerFilter(v); setPage(1); }}>
               <SelectTrigger className="w-[200px] rounded-xl">
-                <Building className="w-4 h-4 mr-2 text-[#0F0F0F]/40" />
+                <Building className="w-4 h-4 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="All Organizers" />
               </SelectTrigger>
               <SelectContent>
@@ -294,7 +294,7 @@ export function AdminContacts() {
             </Select>
             <Select value={sourceFilter} onValueChange={(v) => { setSourceFilter(v); setPage(1); }}>
               <SelectTrigger className="w-[150px] rounded-xl">
-                <Filter className="w-4 h-4 mr-2 text-[#0F0F0F]/40" />
+                <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="All Sources" />
               </SelectTrigger>
               <SelectContent>
@@ -309,7 +309,7 @@ export function AdminContacts() {
       </Card>
 
       {/* Contacts Table */}
-      <Card className="rounded-2xl border-[#0F0F0F]/10">
+      <Card className="rounded-2xl border-border/10">
         <CardContent className="p-0">
           {loading ? (
             <div className="flex justify-center py-12">
@@ -317,30 +317,30 @@ export function AdminContacts() {
             </div>
           ) : contacts.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
-              <p className="text-[#0F0F0F]/60">No contacts found</p>
+              <Users className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground">No contacts found</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#0F0F0F]/10 bg-[#F4F6FA]">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Contact</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Organizer</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Source</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Opt-In</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Activity</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Created</th>
+                    <tr className="border-b border-border/10 bg-muted">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Contact</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Organizer</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Source</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Opt-In</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Activity</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Created</th>
                     </tr>
                   </thead>
                   <tbody>
                     {contacts.map(contact => (
-                      <tr key={contact.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                      <tr key={contact.id} className="border-b border-border/5 hover:bg-muted/50">
                         <td className="py-3 px-4">
                           <div>
-                            <p className="font-medium text-[#0F0F0F]">{contact.full_name || '—'}</p>
-                            <div className="flex items-center gap-3 text-sm text-[#0F0F0F]/60">
+                            <p className="font-medium text-foreground">{contact.full_name || '—'}</p>
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
                               {contact.email && (
                                 <span className="flex items-center gap-1">
                                   <Mail className="w-3 h-3" />
@@ -383,17 +383,17 @@ export function AdminContacts() {
                               </Badge>
                             )}
                             {!contact.email_opt_in && !contact.sms_opt_in && !contact.whatsapp_opt_in && (
-                              <span className="text-xs text-[#0F0F0F]/40">None</span>
+                              <span className="text-xs text-muted-foreground">None</span>
                             )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-sm">
-                            <span className="text-[#0F0F0F]/60">{contact.total_tickets || 0} tickets</span>
+                            <span className="text-muted-foreground">{contact.total_tickets || 0} tickets</span>
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="text-sm text-[#0F0F0F]/60">
+                          <span className="text-sm text-muted-foreground">
                             {contact.created_at ? format(new Date(contact.created_at), 'MMM d, yyyy') : '—'}
                           </span>
                         </td>
@@ -405,8 +405,8 @@ export function AdminContacts() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-[#0F0F0F]/10">
-                  <p className="text-sm text-[#0F0F0F]/60">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border/10">
+                  <p className="text-sm text-muted-foreground">
                     Page {page} of {totalPages}
                   </p>
                   <div className="flex items-center gap-2">

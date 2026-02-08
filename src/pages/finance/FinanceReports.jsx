@@ -122,37 +122,37 @@ function OrganizerSearchDropdown({ organizers, selectedOrganizer, onSelect }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full h-10 px-3 py-2 text-sm bg-white border border-[#0F0F0F]/10 rounded-xl hover:border-[#2969FF]/50 focus:outline-none focus:ring-2 focus:ring-[#2969FF] focus:ring-offset-2 transition-colors"
+        className="flex items-center justify-between w-full h-10 px-3 py-2 text-sm bg-card border border-border/10 rounded-xl hover:border-[#2969FF]/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
       >
         <div className="flex items-center gap-2 truncate">
-          <Building2 className="w-4 h-4 text-[#0F0F0F]/40 flex-shrink-0" />
+          <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           {selectedOrganizerData ? (
-            <span className="truncate text-[#0F0F0F]">{selectedOrganizerData.business_name}</span>
+            <span className="truncate text-foreground">{selectedOrganizerData.business_name}</span>
           ) : (
-            <span className="text-[#0F0F0F]/40">Select organizer</span>
+            <span className="text-muted-foreground">Select organizer</span>
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {selectedOrganizer && (
             <button
               onClick={clearSelection}
-              className="p-1 hover:bg-[#F4F6FA] rounded-full"
+              className="p-1 hover:bg-muted rounded-full"
               title="Clear selection"
             >
-              <X className="w-3 h-3 text-[#0F0F0F]/40" />
+              <X className="w-3 h-3 text-muted-foreground" />
             </button>
           )}
-          <ChevronDown className={`w-4 h-4 text-[#0F0F0F]/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-[#0F0F0F]/10 rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-card border border-border/10 rounded-xl shadow-lg overflow-hidden">
           {/* Search Input */}
-          <div className="p-2 border-b border-[#0F0F0F]/10">
+          <div className="p-2 border-b border-border/10">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 ref={inputRef}
                 type="text"
@@ -167,7 +167,7 @@ function OrganizerSearchDropdown({ organizers, selectedOrganizer, onSelect }) {
           {/* Organizer List */}
           <div className="max-h-60 overflow-y-auto">
             {filteredOrganizers.length === 0 ? (
-              <div className="p-4 text-center text-sm text-[#0F0F0F]/60">
+              <div className="p-4 text-center text-sm text-muted-foreground">
                 No organizers found
               </div>
             ) : (
@@ -176,18 +176,18 @@ function OrganizerSearchDropdown({ organizers, selectedOrganizer, onSelect }) {
                   key={org.id}
                   type="button"
                   onClick={() => handleSelect(org.id)}
-                  className={`w-full px-3 py-2 text-left hover:bg-[#F4F6FA] transition-colors ${
+                  className={`w-full px-3 py-2 text-left hover:bg-muted transition-colors ${
                     selectedOrganizer === org.id ? 'bg-[#2969FF]/10' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
                       <p className={`text-sm font-medium truncate ${
-                        selectedOrganizer === org.id ? 'text-[#2969FF]' : 'text-[#0F0F0F]'
+                        selectedOrganizer === org.id ? 'text-[#2969FF]' : 'text-foreground'
                       }`}>
                         {org.business_name}
                       </p>
-                      <p className="text-xs text-[#0F0F0F]/60 truncate">{org.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{org.email}</p>
                     </div>
                     {org.country_code && (
                       <Badge variant="outline" className="ml-2 text-xs flex-shrink-0">
@@ -201,8 +201,8 @@ function OrganizerSearchDropdown({ organizers, selectedOrganizer, onSelect }) {
           </div>
 
           {/* Footer showing count */}
-          <div className="p-2 border-t border-[#0F0F0F]/10 bg-[#F4F6FA]">
-            <p className="text-xs text-[#0F0F0F]/60 text-center">
+          <div className="p-2 border-t border-border/10 bg-muted">
+            <p className="text-xs text-muted-foreground text-center">
               {filteredOrganizers.length} of {organizers.length} organizers
             </p>
           </div>
@@ -582,8 +582,8 @@ export function FinanceReports() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#0F0F0F]">Financial Reports</h1>
-        <p className="text-[#0F0F0F]/60">Generate tax documents and earnings statements</p>
+        <h1 className="text-2xl font-bold text-foreground">Financial Reports</h1>
+        <p className="text-muted-foreground">Generate tax documents and earnings statements</p>
       </div>
 
       {/* Country Compliance Info */}
@@ -592,10 +592,10 @@ export function FinanceReports() {
           <h3 className="font-semibold text-blue-800 mb-3">📋 Country Tax Requirements</h3>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             {Object.entries(COUNTRY_CONFIG).map(([code, config]) => (
-              <div key={code} className="p-2 bg-white rounded-lg text-sm">
-                <p className="font-medium text-[#0F0F0F]">{config.name}</p>
-                <p className="text-xs text-[#0F0F0F]/60">{config.taxDocument}</p>
-                <p className="text-xs text-[#0F0F0F]/40">{config.notes}</p>
+              <div key={code} className="p-2 bg-card rounded-lg text-sm">
+                <p className="font-medium text-foreground">{config.name}</p>
+                <p className="text-xs text-muted-foreground">{config.taxDocument}</p>
+                <p className="text-xs text-muted-foreground">{config.notes}</p>
               </div>
             ))}
           </div>
@@ -604,18 +604,18 @@ export function FinanceReports() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#F4F6FA] rounded-xl p-1">
-          <TabsTrigger value="organizer" className="rounded-lg data-[state=active]:bg-white">
+        <TabsList className="bg-muted rounded-xl p-1">
+          <TabsTrigger value="organizer" className="rounded-lg data-[state=active]:bg-card">
             <Building2 className="w-4 h-4 mr-2" />Organizer Reports
           </TabsTrigger>
-          <TabsTrigger value="platform" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="platform" className="rounded-lg data-[state=active]:bg-card">
             <TrendingUp className="w-4 h-4 mr-2" />Platform Reports
           </TabsTrigger>
         </TabsList>
 
         {/* Organizer Reports Tab */}
         <TabsContent value="organizer" className="mt-4 space-y-4">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-[#2969FF]" />
@@ -686,7 +686,7 @@ export function FinanceReports() {
           </Card>
 
           {/* Bulk Generate */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-purple-600" />
@@ -731,7 +731,7 @@ export function FinanceReports() {
 
         {/* Platform Reports Tab */}
         <TabsContent value="platform" className="mt-4 space-y-4">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-green-600" />
@@ -802,33 +802,33 @@ export function FinanceReports() {
 
           {/* Quick Reports */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-[#0F0F0F]/10 rounded-2xl hover:border-[#2969FF]/50 cursor-pointer transition-colors">
+            <Card className="border-border/10 rounded-2xl hover:border-[#2969FF]/50 cursor-pointer transition-colors">
               <CardContent className="p-6 text-center">
                 <FileSpreadsheet className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                <h3 className="font-semibold text-[#0F0F0F] mb-2">Transaction Report</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mb-4">All transactions with full details</p>
+                <h3 className="font-semibold text-foreground mb-2">Transaction Report</h3>
+                <p className="text-sm text-muted-foreground mb-4">All transactions with full details</p>
                 <Button variant="outline" className="rounded-xl w-full">
                   <Download className="w-4 h-4 mr-2" />Generate
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-2xl hover:border-[#2969FF]/50 cursor-pointer transition-colors">
+            <Card className="border-border/10 rounded-2xl hover:border-[#2969FF]/50 cursor-pointer transition-colors">
               <CardContent className="p-6 text-center">
                 <Users className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-                <h3 className="font-semibold text-[#0F0F0F] mb-2">Payout Summary</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mb-4">All payouts to organizers & promoters</p>
+                <h3 className="font-semibold text-foreground mb-2">Payout Summary</h3>
+                <p className="text-sm text-muted-foreground mb-4">All payouts to organizers & promoters</p>
                 <Button variant="outline" className="rounded-xl w-full">
                   <Download className="w-4 h-4 mr-2" />Generate
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-2xl hover:border-[#2969FF]/50 cursor-pointer transition-colors">
+            <Card className="border-border/10 rounded-2xl hover:border-[#2969FF]/50 cursor-pointer transition-colors">
               <CardContent className="p-6 text-center">
                 <Globe className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                <h3 className="font-semibold text-[#0F0F0F] mb-2">Country Summary</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mb-4">Revenue breakdown by country</p>
+                <h3 className="font-semibold text-foreground mb-2">Country Summary</h3>
+                <p className="text-sm text-muted-foreground mb-4">Revenue breakdown by country</p>
                 <Button variant="outline" className="rounded-xl w-full">
                   <Download className="w-4 h-4 mr-2" />Generate
                 </Button>
@@ -853,84 +853,84 @@ export function FinanceReports() {
           {reportPreview?.type === 'annual_earnings' && (
             <div className="space-y-6 py-4">
               <div className="text-center border-b pb-4">
-                <h2 className="text-2xl font-bold text-[#0F0F0F]">ANNUAL EARNINGS STATEMENT</h2>
-                <p className="text-lg text-[#0F0F0F]/60">Tax Year {reportPreview.year}</p>
-                <p className="text-sm text-[#0F0F0F]/40 mt-2">
+                <h2 className="text-2xl font-bold text-foreground">ANNUAL EARNINGS STATEMENT</h2>
+                <p className="text-lg text-muted-foreground">Tax Year {reportPreview.year}</p>
+                <p className="text-sm text-muted-foreground mt-2">
                   Generated: {new Date(reportPreview.generatedAt).toLocaleString()}
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 p-4 bg-[#F4F6FA] rounded-xl">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-xl">
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Business Name</p>
-                  <p className="font-semibold text-[#0F0F0F]">{reportPreview.organizer.businessName}</p>
+                  <p className="text-sm text-muted-foreground">Business Name</p>
+                  <p className="font-semibold text-foreground">{reportPreview.organizer.businessName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Email</p>
-                  <p className="font-medium text-[#0F0F0F]">{reportPreview.organizer.email}</p>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium text-foreground">{reportPreview.organizer.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Country</p>
-                  <p className="font-medium text-[#0F0F0F]">{reportPreview.organizer.countryName}</p>
+                  <p className="text-sm text-muted-foreground">Country</p>
+                  <p className="font-medium text-foreground">{reportPreview.organizer.countryName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Tax ID Type</p>
-                  <p className="font-medium text-[#0F0F0F]">{reportPreview.organizer.taxIdType}</p>
+                  <p className="text-sm text-muted-foreground">Tax ID Type</p>
+                  <p className="font-medium text-foreground">{reportPreview.organizer.taxIdType}</p>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-semibold text-[#0F0F0F] mb-3">Summary</h3>
+                <h3 className="font-semibold text-foreground mb-3">Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="p-3 bg-blue-50 rounded-xl text-center">
                     <p className="text-2xl font-bold text-blue-600">
                       {formatPrice(reportPreview.summary.grossSales, reportPreview.summary.currency)}
                     </p>
-                    <p className="text-xs text-[#0F0F0F]/60">Gross Sales</p>
+                    <p className="text-xs text-muted-foreground">Gross Sales</p>
                   </div>
                   <div className="p-3 bg-red-50 rounded-xl text-center">
                     <p className="text-2xl font-bold text-red-600">
                       {formatPrice(reportPreview.summary.platformFees, reportPreview.summary.currency)}
                     </p>
-                    <p className="text-xs text-[#0F0F0F]/60">Platform Fees</p>
+                    <p className="text-xs text-muted-foreground">Platform Fees</p>
                   </div>
                   <div className="p-3 bg-green-50 rounded-xl text-center">
                     <p className="text-2xl font-bold text-green-600">
                       {formatPrice(reportPreview.summary.netEarnings, reportPreview.summary.currency)}
                     </p>
-                    <p className="text-xs text-[#0F0F0F]/60">Net Earnings</p>
+                    <p className="text-xs text-muted-foreground">Net Earnings</p>
                   </div>
                   <div className="p-3 bg-purple-50 rounded-xl text-center">
                     <p className="text-2xl font-bold text-purple-600">
                       {formatPrice(reportPreview.summary.payoutsReceived, reportPreview.summary.currency)}
                     </p>
-                    <p className="text-xs text-[#0F0F0F]/60">Total Payouts</p>
+                    <p className="text-xs text-muted-foreground">Total Payouts</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 mt-3">
-                  <div className="p-2 bg-[#F4F6FA] rounded-lg text-center">
-                    <p className="font-bold text-[#0F0F0F]">{reportPreview.summary.eventCount}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Events</p>
+                  <div className="p-2 bg-muted rounded-lg text-center">
+                    <p className="font-bold text-foreground">{reportPreview.summary.eventCount}</p>
+                    <p className="text-xs text-muted-foreground">Events</p>
                   </div>
-                  <div className="p-2 bg-[#F4F6FA] rounded-lg text-center">
-                    <p className="font-bold text-[#0F0F0F]">{reportPreview.summary.transactionCount}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Transactions</p>
+                  <div className="p-2 bg-muted rounded-lg text-center">
+                    <p className="font-bold text-foreground">{reportPreview.summary.transactionCount}</p>
+                    <p className="text-xs text-muted-foreground">Transactions</p>
                   </div>
-                  <div className="p-2 bg-[#F4F6FA] rounded-lg text-center">
+                  <div className="p-2 bg-muted rounded-lg text-center">
                     <p className="font-bold text-yellow-600">
                       {formatPrice(reportPreview.summary.advancesReceived, reportPreview.summary.currency)}
                     </p>
-                    <p className="text-xs text-[#0F0F0F]/60">Advances</p>
+                    <p className="text-xs text-muted-foreground">Advances</p>
                   </div>
                 </div>
               </div>
 
               {reportPreview.events.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-[#0F0F0F] mb-3">Events Breakdown</h3>
+                  <h3 className="font-semibold text-foreground mb-3">Events Breakdown</h3>
                   <div className="border rounded-xl overflow-hidden">
                     <table className="w-full text-sm">
-                      <thead className="bg-[#F4F6FA]">
+                      <thead className="bg-muted">
                         <tr>
                           <th className="text-left p-3">Event</th>
                           <th className="text-left p-3">Date</th>
@@ -944,7 +944,7 @@ export function FinanceReports() {
                         {reportPreview.events.map((event, idx) => (
                           <tr key={idx} className="border-t">
                             <td className="p-3 font-medium">{event.title}</td>
-                            <td className="p-3 text-[#0F0F0F]/60">{new Date(event.date).toLocaleDateString()}</td>
+                            <td className="p-3 text-muted-foreground">{new Date(event.date).toLocaleDateString()}</td>
                             <td className="p-3 text-right">{formatPrice(event.grossSales, event.currency)}</td>
                             <td className="p-3 text-right text-red-600">{formatPrice(event.platformFees, event.currency)}</td>
                             <td className="p-3 text-right font-medium text-green-600">{formatPrice(event.netEarnings, event.currency)}</td>
@@ -971,7 +971,7 @@ export function FinanceReports() {
                 </p>
               </div>
 
-              <div className="text-center text-sm text-[#0F0F0F]/40 border-t pt-4">
+              <div className="text-center text-sm text-muted-foreground border-t pt-4">
                 <p>Generated by {reportPreview.platform.name}</p>
                 <p>{reportPreview.platform.website} • {reportPreview.platform.supportEmail}</p>
               </div>
@@ -985,38 +985,38 @@ export function FinanceReports() {
                   <p className="text-2xl font-bold text-blue-600">
                     {formatPrice(reportPreview.summary.totalGrossSales, 'NGN')}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">Total Gross Sales</p>
+                  <p className="text-xs text-muted-foreground">Total Gross Sales</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-xl text-center">
                   <p className="text-2xl font-bold text-green-600">
                     {formatPrice(reportPreview.summary.totalPlatformRevenue, 'NGN')}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">Platform Revenue</p>
+                  <p className="text-xs text-muted-foreground">Platform Revenue</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
                   <p className="text-2xl font-bold text-purple-600">
                     {reportPreview.summary.totalTransactions}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">Transactions</p>
+                  <p className="text-xs text-muted-foreground">Transactions</p>
                 </div>
                 <div className="p-4 bg-yellow-50 rounded-xl text-center">
                   <p className="text-2xl font-bold text-yellow-600">
                     {reportPreview.summary.averageFeeRate}%
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">Avg Fee Rate</p>
+                  <p className="text-xs text-muted-foreground">Avg Fee Rate</p>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-semibold text-[#0F0F0F] mb-3">By Country</h3>
+                <h3 className="font-semibold text-foreground mb-3">By Country</h3>
                 <div className="space-y-2">
                   {reportPreview.byCountry.map((country, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                    <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                       <span className="font-medium">{country.countryName}</span>
                       <div className="flex items-center gap-4 text-sm">
                         <span>Sales: {formatPrice(country.grossSales, country.currency)}</span>
                         <span className="text-green-600">Revenue: {formatPrice(country.platformFees, country.currency)}</span>
-                        <span className="text-[#0F0F0F]/60">{country.transactionCount} txns</span>
+                        <span className="text-muted-foreground">{country.transactionCount} txns</span>
                       </div>
                     </div>
                   ))}
@@ -1024,11 +1024,11 @@ export function FinanceReports() {
               </div>
 
               <div>
-                <h3 className="font-semibold text-[#0F0F0F] mb-3">By Month</h3>
+                <h3 className="font-semibold text-foreground mb-3">By Month</h3>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                   {reportPreview.byMonth.map((month, idx) => (
-                    <div key={idx} className="p-2 bg-[#F4F6FA] rounded-lg text-center text-sm">
-                      <p className="font-medium text-[#0F0F0F]">{month.month}</p>
+                    <div key={idx} className="p-2 bg-muted rounded-lg text-center text-sm">
+                      <p className="font-medium text-foreground">{month.month}</p>
                       <p className="text-green-600">{formatPrice(month.platformFees, 'NGN')}</p>
                     </div>
                   ))}

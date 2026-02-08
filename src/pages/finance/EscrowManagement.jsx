@@ -196,8 +196,8 @@ export function EscrowManagement() {
     const styles = {
       pending: { bg: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Active Events' },
       eligible: { bg: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Ready for Payout' },
-      paid: { bg: 'bg-gray-100 text-gray-800', icon: CheckCircle, label: 'All Paid' },
-      none: { bg: 'bg-gray-100 text-gray-800', icon: AlertCircle, label: 'No Escrow' }
+      paid: { bg: 'bg-muted text-foreground', icon: CheckCircle, label: 'All Paid' },
+      none: { bg: 'bg-muted text-foreground', icon: AlertCircle, label: 'No Escrow' }
     };
     const s = styles[status] || styles.none;
     const Icon = s.icon;
@@ -236,8 +236,8 @@ export function EscrowManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Escrow Management</h1>
-          <p className="text-[#0F0F0F]/60">View organizer funds held in escrow from ticket sales</p>
+          <h1 className="text-2xl font-bold text-foreground">Escrow Management</h1>
+          <p className="text-muted-foreground">View organizer funds held in escrow from ticket sales</p>
         </div>
         <Button onClick={loadEscrowData} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -247,56 +247,56 @@ export function EscrowManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total in Escrow</p>
+                <p className="text-sm text-muted-foreground">Total in Escrow</p>
                 <p className="text-xl font-bold">{formatMultiCurrencyCompact(stats.totalEscrowByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">From Active Events</p>
+                <p className="text-sm text-muted-foreground">From Active Events</p>
                 <p className="text-xl font-bold">{formatMultiCurrencyCompact(stats.pendingByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Paid Out</p>
+                <p className="text-sm text-muted-foreground">Total Paid Out</p>
                 <p className="text-xl font-bold">{formatMultiCurrencyCompact(stats.paidOutByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Organizers</p>
+                <p className="text-sm text-muted-foreground">Organizers</p>
                 <p className="text-2xl font-bold">{stats.organizerCount}</p>
               </div>
             </div>
@@ -305,11 +305,11 @@ export function EscrowManagement() {
       </div>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search organizer..."
                 value={search}
@@ -335,9 +335,9 @@ export function EscrowManagement() {
       {/* Organizers List */}
       <div className="space-y-4">
         {filteredOrganizers.map(org => (
-          <Card key={org.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+          <Card key={org.id} className="border-border/10 rounded-2xl overflow-hidden">
             <div
-              className="p-4 flex items-center justify-between cursor-pointer hover:bg-[#F4F6FA]/50"
+              className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/50"
               onClick={() => toggleExpanded(org.id)}
             >
               <div className="flex items-center gap-4">
@@ -345,14 +345,14 @@ export function EscrowManagement() {
                   <Building2 className="w-6 h-6 text-[#2969FF]" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#0F0F0F]">{org.business_name}</h3>
-                  <p className="text-sm text-[#0F0F0F]/60">{org.email}</p>
+                  <h3 className="font-semibold text-foreground">{org.business_name}</h3>
+                  <p className="text-sm text-muted-foreground">{org.email}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-lg font-bold text-green-600">{formatPrice(org.availableEscrow, org.currency)}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Available Escrow</p>
+                  <p className="text-xs text-muted-foreground">Available Escrow</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   {getStatusBadge(org.status)}
@@ -363,35 +363,35 @@ export function EscrowManagement() {
             </div>
 
             {expandedOrganizers[org.id] && (
-              <div className="px-4 pb-4 border-t border-[#0F0F0F]/10">
+              <div className="px-4 pb-4 border-t border-border/10">
                 {/* Summary */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 py-4">
-                  <div className="text-center p-3 bg-[#F4F6FA] rounded-xl">
+                  <div className="text-center p-3 bg-muted rounded-xl">
                     <p className="text-lg font-bold">{formatPrice(org.totalEarnings, org.currency)}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Total Earnings</p>
+                    <p className="text-xs text-muted-foreground">Total Earnings</p>
                   </div>
                   <div className="text-center p-3 bg-yellow-50 rounded-xl">
                     <p className="text-lg font-bold text-yellow-700">{formatPrice(org.pendingEscrow, org.currency)}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Active Events</p>
+                    <p className="text-xs text-muted-foreground">Active Events</p>
                   </div>
                   <div className="text-center p-3 bg-green-50 rounded-xl">
                     <p className="text-lg font-bold text-green-600">{formatPrice(org.eligibleEscrow, org.currency)}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Ready for Payout</p>
+                    <p className="text-xs text-muted-foreground">Ready for Payout</p>
                   </div>
                   <div className="text-center p-3 bg-blue-50 rounded-xl">
                     <p className="text-lg font-bold text-blue-600">{formatPrice(org.paidOut, org.currency)}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Paid Out</p>
+                    <p className="text-xs text-muted-foreground">Paid Out</p>
                   </div>
                   <div className="text-center p-3 bg-purple-50 rounded-xl">
                     <p className="text-lg font-bold text-purple-600">{formatPrice(org.advances, org.currency)}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Advances</p>
+                    <p className="text-xs text-muted-foreground">Advances</p>
                   </div>
                 </div>
 
                 {/* Events Ready for Payout */}
                 {org.completedUnpaidEvents.length > 0 && (
                   <div className="mb-4">
-                    <h4 className="font-medium text-[#0F0F0F] mb-2 flex items-center gap-2">
+                    <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-600" />
                       Events Ready for Payout ({org.completedUnpaidEvents.length})
                     </h4>
@@ -400,13 +400,13 @@ export function EscrowManagement() {
                         <div key={event.id} className="p-3 bg-green-50 rounded-lg flex items-center justify-between">
                           <div>
                             <p className="font-medium">{event.title}</p>
-                            <p className="text-sm text-[#0F0F0F]/60">
+                            <p className="text-sm text-muted-foreground">
                               Ended {new Date(event.end_date).toLocaleDateString()}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="font-bold text-green-600">{formatPrice(event.netEarnings, org.currency)}</p>
-                            <p className="text-xs text-[#0F0F0F]/60">
+                            <p className="text-xs text-muted-foreground">
                               Sales: {formatPrice(event.totalSales, org.currency)} | Fees: {formatPrice(event.platformFees, org.currency)}
                             </p>
                           </div>
@@ -419,7 +419,7 @@ export function EscrowManagement() {
                 {/* Active Events */}
                 {org.activeEvents.length > 0 && (
                   <div className="mb-4">
-                    <h4 className="font-medium text-[#0F0F0F] mb-2 flex items-center gap-2">
+                    <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-yellow-600" />
                       Active Events ({org.activeEvents.length})
                     </h4>
@@ -428,13 +428,13 @@ export function EscrowManagement() {
                         <div key={event.id} className="p-3 bg-yellow-50 rounded-lg flex items-center justify-between">
                           <div>
                             <p className="font-medium">{event.title}</p>
-                            <p className="text-sm text-[#0F0F0F]/60">
+                            <p className="text-sm text-muted-foreground">
                               Ends {new Date(event.end_date).toLocaleDateString()}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="font-bold text-yellow-700">{formatPrice(event.netEarnings, org.currency)}</p>
-                            <p className="text-xs text-[#0F0F0F]/60">Current earnings</p>
+                            <p className="text-xs text-muted-foreground">Current earnings</p>
                           </div>
                         </div>
                       ))}
@@ -444,7 +444,7 @@ export function EscrowManagement() {
 
                 {/* Action Buttons */}
                 {org.eligibleEscrow > 0 && (
-                  <div className="pt-3 border-t border-[#0F0F0F]/10 flex gap-3">
+                  <div className="pt-3 border-t border-border/10 flex gap-3">
                     <Button
                       onClick={() => navigate('/finance/payouts/events')}
                       className="bg-green-600 hover:bg-green-700 rounded-xl"
@@ -470,10 +470,10 @@ export function EscrowManagement() {
         ))}
 
         {filteredOrganizers.length === 0 && (
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-8 text-center">
-              <Building2 className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No organizers with escrow balance found</p>
+              <Building2 className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">No organizers with escrow balance found</p>
             </CardContent>
           </Card>
         )}

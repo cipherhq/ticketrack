@@ -174,7 +174,7 @@ export function OrganizerTransfers() {
   const CopyButton = ({ text, field }) => (
     <button 
       onClick={() => copyToClipboard(text, field)}
-      className="ml-2 text-[#0F0F0F]/40 hover:text-[#2969FF]"
+      className="ml-2 text-muted-foreground hover:text-[#2969FF]"
     >
       {copied === field ? <CheckCircle className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
     </button>
@@ -185,11 +185,11 @@ export function OrganizerTransfers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F] flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             Ticket Transfers
             <HelpTip>Attendees can transfer tickets to friends or family. View all transfer history for your events here.</HelpTip>
           </h1>
-          <p className="text-[#0F0F0F]/60">Track ticket transfers for your events</p>
+          <p className="text-muted-foreground">Track ticket transfers for your events</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={() => { setPage(0); loadTransfers(); loadStats(); }} className="rounded-xl">
@@ -209,8 +209,8 @@ export function OrganizerTransfers() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Transfers</p>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{stats.total}</p>
+                <p className="text-sm text-muted-foreground">Total Transfers</p>
+                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
               </div>
               <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
                 <ArrowRightLeft className="w-5 h-5 text-purple-600" />
@@ -223,7 +223,7 @@ export function OrganizerTransfers() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Paid Transfers</p>
+                <p className="text-sm text-muted-foreground">Paid Transfers</p>
                 <p className="text-2xl font-bold text-green-600">{stats.paid}</p>
               </div>
               <Badge className="bg-green-100 text-green-700 border-0">Paid</Badge>
@@ -235,7 +235,7 @@ export function OrganizerTransfers() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Free Transfers</p>
+                <p className="text-sm text-muted-foreground">Free Transfers</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.free}</p>
               </div>
               <Badge className="bg-blue-100 text-blue-700 border-0">Free</Badge>
@@ -246,7 +246,7 @@ export function OrganizerTransfers() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Search by transfer ID, ticket code, attendee name..."
           value={searchTerm}
@@ -264,15 +264,15 @@ export function OrganizerTransfers() {
             </div>
           ) : filteredTransfers.length === 0 ? (
             <div className="text-center py-12">
-              <ArrowRightLeft className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No transfers yet</p>
-              <p className="text-sm text-[#0F0F0F]/40">Transfers for your events will appear here</p>
+              <ArrowRightLeft className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">No transfers yet</p>
+              <p className="text-sm text-muted-foreground">Transfers for your events will appear here</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-[#F4F6FA]">
+                  <TableRow className="bg-muted">
                     <TableHead>Transfer ID</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Event</TableHead>
@@ -284,13 +284,13 @@ export function OrganizerTransfers() {
                 </TableHeader>
                 <TableBody>
                   {filteredTransfers.map((transfer) => (
-                    <TableRow key={transfer.id} className="hover:bg-[#F4F6FA]/50">
+                    <TableRow key={transfer.id} className="hover:bg-muted/50">
                       <TableCell className="font-mono text-xs text-purple-600">
                         {transfer.transfer_reference || '-'}
                       </TableCell>
                       <TableCell className="text-sm">
                         {new Date(transfer.created_at).toLocaleDateString()}<br/>
-                        <span className="text-xs text-[#0F0F0F]/50">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(transfer.created_at).toLocaleTimeString()}
                         </span>
                       </TableCell>
@@ -301,7 +301,7 @@ export function OrganizerTransfers() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">{transfer.from_user?.full_name || '-'}</div>
-                        <div className="text-xs text-[#0F0F0F]/50">↓</div>
+                        <div className="text-xs text-muted-foreground">↓</div>
                         <div className="text-sm text-green-600">{transfer.to_user?.full_name || '-'}</div>
                       </TableCell>
                       <TableCell>
@@ -339,7 +339,7 @@ export function OrganizerTransfers() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-[#0F0F0F]/60">
+          <p className="text-sm text-muted-foreground">
             Showing {page * PAGE_SIZE + 1} - {Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
           </p>
           <div className="flex items-center gap-2">
@@ -383,18 +383,18 @@ export function OrganizerTransfers() {
                 <h3 className="font-semibold text-purple-800">Transfer Information</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-[#0F0F0F]/60">Transfer ID</p>
+                    <p className="text-muted-foreground">Transfer ID</p>
                     <p className="font-mono flex items-center">
                       {detailModal.transfer.transfer_reference || '-'}
                       {detailModal.transfer.transfer_reference && <CopyButton text={detailModal.transfer.transfer_reference} field="transfer_ref" />}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[#0F0F0F]/60">Date & Time</p>
+                    <p className="text-muted-foreground">Date & Time</p>
                     <p>{new Date(detailModal.transfer.created_at).toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-[#0F0F0F]/60">Status</p>
+                    <p className="text-muted-foreground">Status</p>
                     <Badge className={
                       detailModal.transfer.payment_status === 'paid' 
                         ? 'bg-green-100 text-green-700 border-0'
@@ -404,14 +404,14 @@ export function OrganizerTransfers() {
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-[#0F0F0F]/60">Event</p>
+                    <p className="text-muted-foreground">Event</p>
                     <p className="font-medium">{detailModal.transfer.ticket?.event?.title || '-'}</p>
                   </div>
                 </div>
               </div>
 
               {/* Ticket Codes */}
-              <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-3">
+              <div className="p-4 bg-muted rounded-xl space-y-3">
                 <h3 className="font-semibold">Ticket Codes</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-red-50 rounded-lg border border-red-200">
@@ -437,11 +437,11 @@ export function OrganizerTransfers() {
                 <h3 className="font-semibold text-red-800">From (Original Buyer)</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-[#0F0F0F]/60">Name</p>
+                    <p className="text-muted-foreground">Name</p>
                     <p className="font-medium">{detailModal.transfer.from_user?.full_name || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-[#0F0F0F]/60">Email</p>
+                    <p className="text-muted-foreground">Email</p>
                     <p>{detailModal.transfer.from_user?.email || '-'}</p>
                   </div>
                 </div>
@@ -452,11 +452,11 @@ export function OrganizerTransfers() {
                 <h3 className="font-semibold text-green-800">To (New Ticket Holder)</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-[#0F0F0F]/60">Name</p>
+                    <p className="text-muted-foreground">Name</p>
                     <p className="font-medium">{detailModal.transfer.to_user?.full_name || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-[#0F0F0F]/60">Email</p>
+                    <p className="text-muted-foreground">Email</p>
                     <p>{detailModal.transfer.to_user?.email || '-'}</p>
                   </div>
                 </div>

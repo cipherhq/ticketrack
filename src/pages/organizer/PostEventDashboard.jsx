@@ -203,16 +203,16 @@ export function PostEventDashboard() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/organizer/events')}><ArrowLeft className="w-5 h-5" /></Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-[#0F0F0F]">{event.title}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{event.title}</h1>
             <Badge className="bg-green-100 text-green-700">Completed</Badge>
           </div>
-          <p className="text-[#0F0F0F]/60">{new Date(event.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+          <p className="text-muted-foreground">{new Date(event.start_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
         </div>
         <Button onClick={exportFinancialReport} className="bg-[#2969FF] hover:bg-[#1a4fd8] rounded-xl"><Download className="w-4 h-4 mr-2" />Export</Button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-[#0F0F0F]/10 pb-2 overflow-x-auto">
+      <div className="flex gap-2 border-b border-border/10 pb-2 overflow-x-auto">
         {[{ id: 'summary', label: 'Summary', icon: BarChart3 }, { id: 'insights', label: 'Insights', icon: PieChart }, { id: 'followup', label: 'Follow-up', icon: Mail }, { id: 'reports', label: 'Reports', icon: FileText }].map(tab => (
           <Button key={tab.id} variant={activeTab === tab.id ? 'default' : 'ghost'} className={`rounded-xl whitespace-nowrap ${activeTab === tab.id ? 'bg-[#2969FF] text-white' : ''}`} onClick={() => setActiveTab(tab.id)}>
             <tab.icon className="w-4 h-4 mr-2" />{tab.label}
@@ -224,44 +224,44 @@ export function PostEventDashboard() {
       {activeTab === 'summary' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <Card className="rounded-2xl border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-xl"><DollarSign className="w-5 h-5 text-green-600" /></div>
-                  <div><p className="text-sm text-[#0F0F0F]/60">Net Revenue</p><p className="text-xl font-bold">{formatPrice(summary.netRevenue, event.currency)}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Net Revenue</p><p className="text-xl font-bold">{formatPrice(summary.netRevenue, event.currency)}</p></div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <Card className="rounded-2xl border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 rounded-xl"><Ticket className="w-5 h-5 text-blue-600" /></div>
-                  <div><p className="text-sm text-[#0F0F0F]/60">Tickets Sold</p><p className="text-xl font-bold">{summary.ticketsSold} <span className="text-sm font-normal text-[#0F0F0F]/60">({fillRate.toFixed(0)}%)</span></p></div>
+                  <div><p className="text-sm text-muted-foreground">Tickets Sold</p><p className="text-xl font-bold">{summary.ticketsSold} <span className="text-sm font-normal text-muted-foreground">({fillRate.toFixed(0)}%)</span></p></div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <Card className="rounded-2xl border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-100 rounded-xl"><CheckCircle className="w-5 h-5 text-purple-600" /></div>
-                  <div><p className="text-sm text-[#0F0F0F]/60">Check-in Rate</p><p className="text-xl font-bold">{checkInRate.toFixed(0)}%</p></div>
+                  <div><p className="text-sm text-muted-foreground">Check-in Rate</p><p className="text-xl font-bold">{checkInRate.toFixed(0)}%</p></div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="rounded-2xl border-[#0F0F0F]/10">
+            <Card className="rounded-2xl border-border/10">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-orange-100 rounded-xl"><RefreshCw className="w-5 h-5 text-orange-600" /></div>
-                  <div><p className="text-sm text-[#0F0F0F]/60">Refunds</p><p className="text-xl font-bold">{summary.refundCount}</p></div>
+                  <div><p className="text-sm text-muted-foreground">Refunds</p><p className="text-xl font-bold">{summary.refundCount}</p></div>
                 </div>
               </CardContent>
             </Card>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="rounded-2xl bg-[#F4F6FA]"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Gross Revenue</p><p className="text-lg font-semibold">{formatPrice(summary.totalRevenue, event.currency)}</p></CardContent></Card>
-            <Card className="rounded-2xl bg-[#F4F6FA]"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Platform Fees</p><p className="text-lg font-semibold">{formatPrice(summary.platformFees, event.currency)}</p></CardContent></Card>
-            <Card className="rounded-2xl bg-[#F4F6FA]"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Avg. Price</p><p className="text-lg font-semibold">{formatPrice(summary.avgTicketPrice, event.currency)}</p></CardContent></Card>
-            <Card className="rounded-2xl bg-[#F4F6FA]"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Page Views</p><p className="text-lg font-semibold">{summary.pageViews.toLocaleString()}</p></CardContent></Card>
+            <Card className="rounded-2xl bg-muted"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Gross Revenue</p><p className="text-lg font-semibold">{formatPrice(summary.totalRevenue, event.currency)}</p></CardContent></Card>
+            <Card className="rounded-2xl bg-muted"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Platform Fees</p><p className="text-lg font-semibold">{formatPrice(summary.platformFees, event.currency)}</p></CardContent></Card>
+            <Card className="rounded-2xl bg-muted"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Avg. Price</p><p className="text-lg font-semibold">{formatPrice(summary.avgTicketPrice, event.currency)}</p></CardContent></Card>
+            <Card className="rounded-2xl bg-muted"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Page Views</p><p className="text-lg font-semibold">{summary.pageViews.toLocaleString()}</p></CardContent></Card>
           </div>
         </div>
       )}
@@ -269,7 +269,7 @@ export function PostEventDashboard() {
       {/* Insights Tab */}
       {activeTab === 'insights' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><MapPin className="w-5 h-5 text-[#2969FF]" />Attendee Locations</CardTitle></CardHeader>
             <CardContent>
               {insights.locationBreakdown.length > 0 ? (
@@ -278,19 +278,19 @@ export function PostEventDashboard() {
                     <div key={loc.code} className="flex items-center justify-between">
                       <span>{loc.name}</span>
                       <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 bg-[#F4F6FA] rounded-full overflow-hidden">
+                        <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                           <div className="h-full bg-[#2969FF] rounded-full" style={{ width: `${(loc.count / summary.ticketsSold) * 100}%` }} />
                         </div>
-                        <span className="text-sm text-[#0F0F0F]/60 w-12 text-right">{loc.count}</span>
+                        <span className="text-sm text-muted-foreground w-12 text-right">{loc.count}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-center py-4 text-[#0F0F0F]/60">No data</p>}
+              ) : <p className="text-center py-4 text-muted-foreground">No data</p>}
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Ticket className="w-5 h-5 text-[#2969FF]" />Ticket Types</CardTitle></CardHeader>
             <CardContent>
               {insights.ticketTypeBreakdown.length > 0 ? (
@@ -299,19 +299,19 @@ export function PostEventDashboard() {
                     <div key={type.name} className="flex items-center justify-between">
                       <span>{type.name}</span>
                       <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 bg-[#F4F6FA] rounded-full overflow-hidden">
+                        <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                           <div className="h-full bg-[#2969FF] rounded-full" style={{ width: `${(type.count / summary.ticketsSold) * 100}%` }} />
                         </div>
-                        <span className="text-sm text-[#0F0F0F]/60 w-12 text-right">{type.count}</span>
+                        <span className="text-sm text-muted-foreground w-12 text-right">{type.count}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-center py-4 text-[#0F0F0F]/60">No data</p>}
+              ) : <p className="text-center py-4 text-muted-foreground">No data</p>}
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><CreditCard className="w-5 h-5 text-[#2969FF]" />Payment Methods</CardTitle></CardHeader>
             <CardContent>
               {insights.paymentMethods.length > 0 ? (
@@ -323,11 +323,11 @@ export function PostEventDashboard() {
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-center py-4 text-[#0F0F0F]/60">No data</p>}
+              ) : <p className="text-center py-4 text-muted-foreground">No data</p>}
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Clock className="w-5 h-5 text-[#2969FF]" />Purchase Times</CardTitle></CardHeader>
             <CardContent>
               <div className="flex items-end gap-1 h-32">
@@ -336,12 +336,12 @@ export function PostEventDashboard() {
                   return (
                     <div key={h.hour} className="flex-1 flex flex-col items-center">
                       <div className="w-full bg-[#2969FF] rounded-t" style={{ height: `${(h.count / max) * 100}%`, minHeight: h.count > 0 ? '4px' : '0' }} title={`${h.hour}:00 - ${h.count} orders`} />
-                      {h.hour % 6 === 0 && <span className="text-xs text-[#0F0F0F]/40 mt-1">{h.hour}</span>}
+                      {h.hour % 6 === 0 && <span className="text-xs text-muted-foreground mt-1">{h.hour}</span>}
                     </div>
                   )
                 })}
               </div>
-              <p className="text-xs text-center mt-2 text-[#0F0F0F]/60">Hour of day (24h)</p>
+              <p className="text-xs text-center mt-2 text-muted-foreground">Hour of day (24h)</p>
             </CardContent>
           </Card>
         </div>
@@ -350,16 +350,16 @@ export function PostEventDashboard() {
       {/* Follow-up Tab */}
       {activeTab === 'followup' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Mail className="w-5 h-5 text-[#2969FF]" />Send Thank You</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Message</Label>
-                <Textarea value={thankYouMessage} onChange={(e) => setThankYouMessage(e.target.value)} className="min-h-[100px] rounded-xl bg-[#F4F6FA] border-0" />
+                <Textarea value={thankYouMessage} onChange={(e) => setThankYouMessage(e.target.value)} className="min-h-[100px] rounded-xl bg-muted border-0" />
               </div>
               <div className="space-y-2">
                 <Label>Photos Link (optional)</Label>
-                <Input value={photosLink} onChange={(e) => setPhotosLink(e.target.value)} className="h-12 rounded-xl bg-[#F4F6FA] border-0" placeholder="https://..." />
+                <Input value={photosLink} onChange={(e) => setPhotosLink(e.target.value)} className="h-12 rounded-xl bg-muted border-0" placeholder="https://..." />
               </div>
               <Button onClick={sendThankYouEmail} disabled={sending} className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] rounded-xl">
                 {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}Send to {attendees.length} Attendees
@@ -367,13 +367,13 @@ export function PostEventDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Star className="w-5 h-5 text-[#2969FF]" />Request Feedback</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Feedback Form Link</Label>
-                <Input value={feedbackLink} onChange={(e) => setFeedbackLink(e.target.value)} className="h-12 rounded-xl bg-[#F4F6FA] border-0" placeholder="https://forms.google.com/..." />
-                <p className="text-xs text-[#0F0F0F]/60">Use Google Forms, Typeform, etc.</p>
+                <Input value={feedbackLink} onChange={(e) => setFeedbackLink(e.target.value)} className="h-12 rounded-xl bg-muted border-0" placeholder="https://forms.google.com/..." />
+                <p className="text-xs text-muted-foreground">Use Google Forms, Typeform, etc.</p>
               </div>
               <Button onClick={sendFeedbackRequest} disabled={sending || !feedbackLink} className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] rounded-xl">
                 {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <MessageSquare className="w-4 h-4 mr-2" />}Send Request
@@ -381,14 +381,14 @@ export function PostEventDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[#0F0F0F]/10 md:col-span-2">
+          <Card className="rounded-2xl border-border/10 md:col-span-2">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Megaphone className="w-5 h-5 text-[#2969FF]" />Announce Next Event</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {nextEvents.length > 0 ? (
                 <>
                   <div className="space-y-2">
                     <Label>Select Event</Label>
-                    <select value={nextEventId} onChange={(e) => setNextEventId(e.target.value)} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0">
+                    <select value={nextEventId} onChange={(e) => setNextEventId(e.target.value)} className="w-full h-12 px-4 rounded-xl bg-muted border-0">
                       <option value="">Choose...</option>
                       {nextEvents.map(e => <option key={e.id} value={e.id}>{e.title} - {new Date(e.start_date).toLocaleDateString()}</option>)}
                     </select>
@@ -399,8 +399,8 @@ export function PostEventDashboard() {
                 </>
               ) : (
                 <div className="text-center py-6">
-                  <Calendar className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-2" />
-                  <p className="text-[#0F0F0F]/60">No upcoming events</p>
+                  <Calendar className="w-12 h-12 text-foreground/20 mx-auto mb-2" />
+                  <p className="text-muted-foreground">No upcoming events</p>
                   <Button onClick={() => navigate('/organizer/create-event')} className="mt-4 bg-[#2969FF] rounded-xl">Create Event</Button>
                 </div>
               )}
@@ -412,35 +412,35 @@ export function PostEventDashboard() {
       {/* Reports Tab */}
       {activeTab === 'reports' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><DollarSign className="w-5 h-5 text-[#2969FF]" />Payout Summary</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex justify-between py-2 border-b border-[#0F0F0F]/10"><span className="text-[#0F0F0F]/60">Gross Revenue</span><span className="font-medium">{formatPrice(summary.totalRevenue, event.currency)}</span></div>
-                <div className="flex justify-between py-2 border-b border-[#0F0F0F]/10"><span className="text-[#0F0F0F]/60">Platform Fees</span><span className="font-medium text-red-600">-{formatPrice(summary.platformFees, event.currency)}</span></div>
-                <div className="flex justify-between py-2 border-b border-[#0F0F0F]/10"><span className="text-[#0F0F0F]/60">Refunds</span><span className="font-medium text-red-600">-{formatPrice(summary.refundAmount, event.currency)}</span></div>
+                <div className="flex justify-between py-2 border-b border-border/10"><span className="text-muted-foreground">Gross Revenue</span><span className="font-medium">{formatPrice(summary.totalRevenue, event.currency)}</span></div>
+                <div className="flex justify-between py-2 border-b border-border/10"><span className="text-muted-foreground">Platform Fees</span><span className="font-medium text-red-600">-{formatPrice(summary.platformFees, event.currency)}</span></div>
+                <div className="flex justify-between py-2 border-b border-border/10"><span className="text-muted-foreground">Refunds</span><span className="font-medium text-red-600">-{formatPrice(summary.refundAmount, event.currency)}</span></div>
                 <div className="flex justify-between py-2"><span className="font-semibold">Net Payout</span><span className="font-bold text-green-600 text-lg">{formatPrice(summary.netRevenue, event.currency)}</span></div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Download className="w-5 h-5 text-[#2969FF]" />Export Data</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <Button onClick={exportCSV} variant="outline" className="w-full rounded-xl justify-start"><FileText className="w-4 h-4 mr-2" />Attendee List (CSV)</Button>
               <Button onClick={exportFinancialReport} variant="outline" className="w-full rounded-xl justify-start"><FileText className="w-4 h-4 mr-2" />Financial Report (TXT)</Button>
-              <p className="text-xs text-[#0F0F0F]/60">For accounting and tax filing.</p>
+              <p className="text-xs text-muted-foreground">For accounting and tax filing.</p>
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[#0F0F0F]/10 md:col-span-2">
+          <Card className="rounded-2xl border-border/10 md:col-span-2">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><BarChart3 className="w-5 h-5 text-[#2969FF]" />Performance</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-[#F4F6FA] rounded-xl"><p className="text-2xl font-bold">{fillRate.toFixed(0)}%</p><p className="text-sm text-[#0F0F0F]/60">Fill Rate</p></div>
-                <div className="text-center p-4 bg-[#F4F6FA] rounded-xl"><p className="text-2xl font-bold">{checkInRate.toFixed(0)}%</p><p className="text-sm text-[#0F0F0F]/60">Check-in Rate</p></div>
-                <div className="text-center p-4 bg-[#F4F6FA] rounded-xl"><p className="text-2xl font-bold">{summary.ticketsSold > 0 ? ((summary.refundCount / summary.ticketsSold) * 100).toFixed(1) : 0}%</p><p className="text-sm text-[#0F0F0F]/60">Refund Rate</p></div>
-                <div className="text-center p-4 bg-[#F4F6FA] rounded-xl"><p className="text-2xl font-bold">{summary.pageViews > 0 ? ((summary.ticketsSold / summary.pageViews) * 100).toFixed(1) : 0}%</p><p className="text-sm text-[#0F0F0F]/60">Conversion</p></div>
+                <div className="text-center p-4 bg-muted rounded-xl"><p className="text-2xl font-bold">{fillRate.toFixed(0)}%</p><p className="text-sm text-muted-foreground">Fill Rate</p></div>
+                <div className="text-center p-4 bg-muted rounded-xl"><p className="text-2xl font-bold">{checkInRate.toFixed(0)}%</p><p className="text-sm text-muted-foreground">Check-in Rate</p></div>
+                <div className="text-center p-4 bg-muted rounded-xl"><p className="text-2xl font-bold">{summary.ticketsSold > 0 ? ((summary.refundCount / summary.ticketsSold) * 100).toFixed(1) : 0}%</p><p className="text-sm text-muted-foreground">Refund Rate</p></div>
+                <div className="text-center p-4 bg-muted rounded-xl"><p className="text-2xl font-bold">{summary.pageViews > 0 ? ((summary.ticketsSold / summary.pageViews) * 100).toFixed(1) : 0}%</p><p className="text-sm text-muted-foreground">Conversion</p></div>
               </div>
             </CardContent>
           </Card>

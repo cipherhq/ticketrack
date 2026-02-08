@@ -108,10 +108,10 @@ export function ChargebacksManagement() {
       under_review: 'bg-blue-100 text-blue-800',
       won: 'bg-green-100 text-green-800',
       lost: 'bg-red-100 text-red-800',
-      closed: 'bg-gray-100 text-gray-800',
+      closed: 'bg-muted text-foreground',
       withdrawn: 'bg-purple-100 text-purple-800'
     };
-    return <Badge className={styles[status] || 'bg-gray-100'}>{status.replace('_', ' ')}</Badge>;
+    return <Badge className={styles[status] || 'bg-muted'}>{status.replace('_', ' ')}</Badge>;
   };
 
   const getEvidenceDueStatus = (dueDate) => {
@@ -146,63 +146,63 @@ export function ChargebacksManagement() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#0F0F0F]">Chargebacks & Disputes</h1>
-        <p className="text-[#0F0F0F]/60">Manage payment disputes and chargebacks</p>
+        <h1 className="text-2xl font-bold text-foreground">Chargebacks & Disputes</h1>
+        <p className="text-muted-foreground">Manage payment disputes and chargebacks</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold">{stats.pending}</p>
-                <p className="text-xs text-[#0F0F0F]/50">{formatMultiCurrencyCompact(stats.pendingAmountByCurrency)}</p>
+                <p className="text-xs text-muted-foreground">{formatMultiCurrencyCompact(stats.pendingAmountByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Won</p>
+                <p className="text-sm text-muted-foreground">Won</p>
                 <p className="text-2xl font-bold">{stats.won}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Lost</p>
+                <p className="text-sm text-muted-foreground">Lost</p>
                 <p className="text-2xl font-bold">{stats.lost}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <TrendingDown className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Disputed</p>
+                <p className="text-sm text-muted-foreground">Total Disputed</p>
                 <p className="text-2xl font-bold">{formatMultiCurrencyCompact(stats.totalAmountByCurrency)}</p>
               </div>
             </div>
@@ -225,11 +225,11 @@ export function ChargebacksManagement() {
       )}
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by organizer, order, or dispute ID..."
                 value={search}
@@ -266,7 +266,7 @@ export function ChargebacksManagement() {
       </Card>
 
       {/* Chargebacks Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Disputes ({filteredChargebacks.length})</CardTitle>
         </CardHeader>
@@ -326,7 +326,7 @@ export function ChargebacksManagement() {
               ))}
               {filteredChargebacks.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No chargebacks found
                   </TableCell>
                 </TableRow>

@@ -13,7 +13,7 @@ export function StatusBar() {
   const exits = objects.filter((o) => o.object_type === 'exit').length;
 
   return (
-    <div className="h-8 bg-white border-t border-gray-200 flex items-center px-4 text-xs text-gray-600">
+    <div className="h-8 bg-card border-t border-border/20 flex items-center px-4 text-xs text-muted-foreground">
       <div className="flex items-center gap-4">
         <span>
           Zoom: <strong>{Math.round(canvas.zoom * 100)}%</strong>

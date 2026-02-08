@@ -321,8 +321,8 @@ export function Inbox() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Inbox</h1>
-          <p className="text-[#0F0F0F]/60">
+          <h1 className="text-2xl font-bold text-foreground">Inbox</h1>
+          <p className="text-muted-foreground">
             {stats.unread > 0 ? `${stats.unread} unread messages` : 'All caught up!'}
           </p>
         </div>
@@ -340,7 +340,7 @@ export function Inbox() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-5 gap-4 mb-4">
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-3">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -348,14 +348,14 @@ export function Inbox() {
               </div>
               <div>
                 <p className="text-lg font-bold">{stats.total}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Total</p>
+                <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {Object.entries(CHANNELS).map(([key, channel]) => (
-          <Card key={key} className="border-[#0F0F0F]/10 rounded-xl">
+          <Card key={key} className="border-border/10 rounded-xl">
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
                 <div className={`w-8 h-8 rounded-lg ${channel.bgColor} flex items-center justify-center`}>
@@ -363,7 +363,7 @@ export function Inbox() {
                 </div>
                 <div>
                   <p className="text-lg font-bold">{stats.byChannel[key] || 0}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">{channel.name}</p>
+                  <p className="text-xs text-muted-foreground">{channel.name}</p>
                 </div>
               </div>
             </CardContent>
@@ -374,11 +374,11 @@ export function Inbox() {
       {/* Main Content */}
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Conversation List */}
-        <Card className="w-[350px] flex-shrink-0 border-[#0F0F0F]/10 rounded-xl overflow-hidden flex flex-col">
+        <Card className="w-[350px] flex-shrink-0 border-border/10 rounded-xl overflow-hidden flex flex-col">
           {/* Filters */}
-          <div className="p-3 border-b border-[#0F0F0F]/10 space-y-2">
+          <div className="p-3 border-b border-border/10 space-y-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => {
@@ -419,8 +419,8 @@ export function Inbox() {
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 ? (
               <div className="p-8 text-center">
-                <InboxIcon className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
-                <p className="text-[#0F0F0F]/60 text-sm">No conversations</p>
+                <InboxIcon className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">No conversations</p>
               </div>
             ) : (
               conversations.map((conv) => {
@@ -431,17 +431,17 @@ export function Inbox() {
                   <button
                     key={conv.id}
                     onClick={() => loadConversation(conv.id)}
-                    className={`w-full p-3 text-left border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50 transition-colors ${
+                    className={`w-full p-3 text-left border-b border-border/5 hover:bg-muted/50 transition-colors ${
                       isSelected ? 'bg-[#2969FF]/5 border-l-2 border-l-[#2969FF]' : ''
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-lg ${channel?.bgColor || 'bg-gray-100'} flex items-center justify-center flex-shrink-0`}>
-                        {channel?.icon && <channel.icon className={`w-4 h-4 ${channel?.color || 'text-gray-600'}`} />}
+                      <div className={`w-8 h-8 rounded-lg ${channel?.bgColor || 'bg-muted'} flex items-center justify-center flex-shrink-0`}>
+                        {channel?.icon && <channel.icon className={`w-4 h-4 ${channel?.color || 'text-muted-foreground'}`} />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className={`font-medium text-sm truncate ${conv.unread_count > 0 ? 'text-[#0F0F0F]' : 'text-[#0F0F0F]/80'}`}>
+                          <p className={`font-medium text-sm truncate ${conv.unread_count > 0 ? 'text-foreground' : 'text-foreground/80'}`}>
                             {conv.contact_name || conv.contact_phone || conv.contact_email || 'Unknown'}
                           </p>
                           {conv.unread_count > 0 && (
@@ -450,10 +450,10 @@ export function Inbox() {
                             </Badge>
                           )}
                         </div>
-                        <p className={`text-xs truncate mt-0.5 ${conv.unread_count > 0 ? 'text-[#0F0F0F]/70' : 'text-[#0F0F0F]/50'}`}>
+                        <p className={`text-xs truncate mt-0.5 ${conv.unread_count > 0 ? 'text-foreground/70' : 'text-muted-foreground'}`}>
                           {conv.last_message_preview || 'No messages'}
                         </p>
-                        <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {conv.last_message_at ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true }) : ''}
                         </p>
                       </div>
@@ -466,11 +466,11 @@ export function Inbox() {
         </Card>
 
         {/* Conversation View */}
-        <Card className="flex-1 border-[#0F0F0F]/10 rounded-xl overflow-hidden flex flex-col">
+        <Card className="flex-1 border-border/10 rounded-xl overflow-hidden flex flex-col">
           {selectedConversation ? (
             <>
               {/* Conversation Header */}
-              <div className="p-4 border-b border-[#0F0F0F]/10 flex items-center justify-between">
+              <div className="p-4 border-b border-border/10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Button 
                     variant="ghost" 
@@ -490,7 +490,7 @@ export function Inbox() {
                     <h3 className="font-semibold">
                       {selectedConversation.contact_name || selectedConversation.contact_phone || selectedConversation.contact_email}
                     </h3>
-                    <p className="text-sm text-[#0F0F0F]/60">
+                    <p className="text-sm text-muted-foreground">
                       {selectedConversation.contact_phone || selectedConversation.contact_email}
                       {selectedConversation.subject && ` • ${selectedConversation.subject}`}
                     </p>
@@ -541,7 +541,7 @@ export function Inbox() {
                     <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-[#0F0F0F]/40">
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
                     No messages yet
                   </div>
                 ) : (
@@ -554,16 +554,16 @@ export function Inbox() {
                         className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
                           msg.direction === 'outbound'
                             ? 'bg-[#2969FF] text-white rounded-br-md'
-                            : 'bg-[#F4F6FA] text-[#0F0F0F] rounded-bl-md'
+                            : 'bg-muted text-foreground rounded-bl-md'
                         }`}
                       >
                         {msg.subject && (
-                          <p className={`text-xs font-medium mb-1 ${msg.direction === 'outbound' ? 'text-white/80' : 'text-[#0F0F0F]/60'}`}>
+                          <p className={`text-xs font-medium mb-1 ${msg.direction === 'outbound' ? 'text-white/80' : 'text-muted-foreground'}`}>
                             {msg.subject}
                           </p>
                         )}
                         <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        <p className={`text-xs mt-1 ${msg.direction === 'outbound' ? 'text-white/60' : 'text-[#0F0F0F]/40'}`}>
+                        <p className={`text-xs mt-1 ${msg.direction === 'outbound' ? 'text-white/60' : 'text-muted-foreground'}`}>
                           {format(new Date(msg.created_at), 'MMM d, h:mm a')}
                           {msg.direction === 'outbound' && msg.external_status && (
                             <span className="ml-2">• {msg.external_status}</span>
@@ -578,7 +578,7 @@ export function Inbox() {
 
               {/* Reply Box */}
               {selectedConversation.status === 'open' && (
-                <div className="p-4 border-t border-[#0F0F0F]/10">
+                <div className="p-4 border-t border-border/10">
                   <div className="flex gap-2">
                     <Textarea
                       value={replyText}
@@ -600,16 +600,16 @@ export function Inbox() {
                       {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     </Button>
                   </div>
-                  <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Press Enter to send, Shift+Enter for new line
                   </p>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-[#0F0F0F]/40">
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
-                <InboxIcon className="w-16 h-16 mx-auto mb-4 text-[#0F0F0F]/20" />
+                <InboxIcon className="w-16 h-16 mx-auto mb-4 text-foreground/20" />
                 <p>Select a conversation to view messages</p>
               </div>
             </div>
@@ -744,7 +744,7 @@ function AutoResponseSettings({ organizerId }) {
           </Button>
 
           {responses.length === 0 ? (
-            <p className="text-center text-[#0F0F0F]/60 py-4">
+            <p className="text-center text-muted-foreground py-4">
               No auto-responses configured
             </p>
           ) : (
@@ -761,11 +761,11 @@ function AutoResponseSettings({ organizerId }) {
                         <Badge variant="outline">{resp.channel}</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Trigger: {resp.trigger_type.replace('_', ' ')}
                       {resp.trigger_keywords?.length > 0 && ` (${resp.trigger_keywords.join(', ')})`}
                     </p>
-                    <p className="text-sm text-[#0F0F0F]/40 mt-1 line-clamp-1">
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
                       {resp.response_message}
                     </p>
                   </div>

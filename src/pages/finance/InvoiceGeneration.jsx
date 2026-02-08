@@ -302,12 +302,12 @@ export function InvoiceGeneration() {
 
   const getStatusBadge = (status) => {
     const styles = {
-      draft: 'bg-gray-100 text-gray-800',
+      draft: 'bg-muted text-foreground',
       generated: 'bg-blue-100 text-blue-800',
       sent: 'bg-green-100 text-green-800',
       paid: 'bg-purple-100 text-purple-800'
     };
-    return <Badge className={styles[status] || 'bg-gray-100'}>{status}</Badge>;
+    return <Badge className={styles[status] || 'bg-muted'}>{status}</Badge>;
   };
 
   if (loading) {
@@ -322,8 +322,8 @@ export function InvoiceGeneration() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Invoice Generation</h1>
-          <p className="text-[#0F0F0F]/60">Generate and manage organizer earnings statements</p>
+          <h1 className="text-2xl font-bold text-foreground">Invoice Generation</h1>
+          <p className="text-muted-foreground">Generate and manage organizer earnings statements</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -351,28 +351,28 @@ export function InvoiceGeneration() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Invoices</p>
+                <p className="text-sm text-muted-foreground">Total Invoices</p>
                 <p className="text-2xl font-bold">{invoices.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-gray-600" />
+              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                <FileText className="w-6 h-6 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Draft</p>
+                <p className="text-sm text-muted-foreground">Draft</p>
                 <p className="text-2xl font-bold">
                   {invoices.filter(i => i.status === 'draft').length}
                 </p>
@@ -381,14 +381,14 @@ export function InvoiceGeneration() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <Send className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Sent</p>
+                <p className="text-sm text-muted-foreground">Sent</p>
                 <p className="text-2xl font-bold">
                   {invoices.filter(i => i.status === 'sent').length}
                 </p>
@@ -397,14 +397,14 @@ export function InvoiceGeneration() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Earnings</p>
+                <p className="text-sm text-muted-foreground">Total Earnings</p>
                 <p className="text-2xl font-bold">
                   {formatMultiCurrencyCompact(
                     invoices.reduce((acc, i) => {
@@ -421,7 +421,7 @@ export function InvoiceGeneration() {
       </div>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[150px] rounded-xl">
@@ -439,7 +439,7 @@ export function InvoiceGeneration() {
       </Card>
 
       {/* Invoices Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Invoices ({invoices.length})</CardTitle>
         </CardHeader>
@@ -514,7 +514,7 @@ export function InvoiceGeneration() {
               ))}
               {invoices.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No invoices generated yet
                   </TableCell>
                 </TableRow>
@@ -594,7 +594,7 @@ export function InvoiceGeneration() {
           {selectedInvoice && (
             <div
               dangerouslySetInnerHTML={{ __html: generateInvoiceHTML(selectedInvoice) }}
-              className="bg-white p-4 rounded-xl border max-h-[600px] overflow-y-auto"
+              className="bg-card p-4 rounded-xl border max-h-[600px] overflow-y-auto"
             />
           )}
         </DialogContent>

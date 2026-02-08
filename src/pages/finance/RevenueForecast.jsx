@@ -212,8 +212,8 @@ export function RevenueForecast() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Revenue Forecast</h1>
-          <p className="text-[#0F0F0F]/60">Project future revenue from upcoming events</p>
+          <h1 className="text-2xl font-bold text-foreground">Revenue Forecast</h1>
+          <p className="text-muted-foreground">Project future revenue from upcoming events</p>
         </div>
         <div className="flex gap-2">
           <Select value={period} onValueChange={setPeriod}>
@@ -248,14 +248,14 @@ export function RevenueForecast() {
 
       {/* Forecast Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Projected Revenue</p>
+                <p className="text-sm text-muted-foreground">Projected Revenue</p>
                 <p className="text-2xl font-bold">
                   {formatPrice(forecast.projectedRevenue, currency)}
                 </p>
@@ -264,14 +264,14 @@ export function RevenueForecast() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Projected Fees</p>
+                <p className="text-sm text-muted-foreground">Projected Fees</p>
                 <p className="text-2xl font-bold">
                   {formatPrice(forecast.projectedFees, currency)}
                 </p>
@@ -280,14 +280,14 @@ export function RevenueForecast() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Current Sales</p>
+                <p className="text-sm text-muted-foreground">Current Sales</p>
                 <p className="text-2xl font-bold">
                   {formatPrice(forecast.currentSales, currency)}
                 </p>
@@ -296,14 +296,14 @@ export function RevenueForecast() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Target className="w-6 h-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Progress to Target</p>
+                <p className="text-sm text-muted-foreground">Progress to Target</p>
                 <p className="text-2xl font-bold">
                   {forecast.percentToTarget.toFixed(1)}%
                 </p>
@@ -314,7 +314,7 @@ export function RevenueForecast() {
       </div>
 
       {/* Monthly Trend */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Historical Trend (Last 6 Months)</CardTitle>
         </CardHeader>
@@ -332,11 +332,11 @@ export function RevenueForecast() {
                       style={{ height: `${Math.max(heightPercent, 5)}%` }}
                     />
                   </div>
-                  <p className="text-xs text-[#0F0F0F]/60">{month.month}</p>
+                  <p className="text-xs text-muted-foreground">{month.month}</p>
                   <p className="text-sm font-medium">
                     {formatPrice(month.revenue, currency)}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/50">{month.orders} orders</p>
+                  <p className="text-xs text-muted-foreground">{month.orders} orders</p>
                 </div>
               );
             })}
@@ -345,7 +345,7 @@ export function RevenueForecast() {
       </Card>
 
       {/* Upcoming Events */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Upcoming Events ({upcomingEvents.length})</CardTitle>
         </CardHeader>
@@ -385,7 +385,7 @@ export function RevenueForecast() {
                     <Badge className={
                       event.sellThroughRate >= 50 ? 'bg-green-100 text-green-800' :
                       event.sellThroughRate >= 25 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                      'bg-muted text-foreground'
                     }>
                       {event.sellThroughRate.toFixed(1)}%
                     </Badge>
@@ -403,7 +403,7 @@ export function RevenueForecast() {
               ))}
               {upcomingEvents.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No upcoming events in selected period
                   </TableCell>
                 </TableRow>
@@ -415,38 +415,38 @@ export function RevenueForecast() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-5 h-5 text-[#0F0F0F]/60" />
+              <Calendar className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">Events</span>
             </div>
             <p className="text-3xl font-bold">{upcomingEvents.length}</p>
-            <p className="text-sm text-[#0F0F0F]/60">upcoming in {period}</p>
+            <p className="text-sm text-muted-foreground">upcoming in {period}</p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-3">
-              <Target className="w-5 h-5 text-[#0F0F0F]/60" />
+              <Target className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">Est. Orders</span>
             </div>
             <p className="text-3xl font-bold">{forecast.estimatedOrders.toLocaleString()}</p>
-            <p className="text-sm text-[#0F0F0F]/60">projected ticket sales</p>
+            <p className="text-sm text-muted-foreground">projected ticket sales</p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-3">
-              <DollarSign className="w-5 h-5 text-[#0F0F0F]/60" />
+              <DollarSign className="w-5 h-5 text-muted-foreground" />
               <span className="font-medium">Avg. Ticket</span>
             </div>
             <p className="text-3xl font-bold">
               {formatPrice(forecast.averageTicketPrice, currency)}
             </p>
-            <p className="text-sm text-[#0F0F0F]/60">average ticket price</p>
+            <p className="text-sm text-muted-foreground">average ticket price</p>
           </CardContent>
         </Card>
       </div>

@@ -279,7 +279,7 @@ export function FieldMappingEditor({
                   ? 'border-red-200 bg-red-50' 
                   : isMapped 
                     ? 'border-green-200 bg-green-50' 
-                    : 'border-gray-200'
+                    : 'border-border/20'
               }`}
             >
               <div className="flex items-center gap-4">
@@ -414,7 +414,7 @@ export function FieldMappingEditor({
 
       {/* Unmapped Source Fields */}
       {unmappedSourceFields.length > 0 && (
-        <Card className="bg-gray-50">
+        <Card className="bg-background">
           <CardHeader className="py-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Unmapped Source Fields ({unmappedSourceFields.length})

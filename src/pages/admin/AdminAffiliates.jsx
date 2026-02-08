@@ -196,8 +196,8 @@ export function AdminAffiliates() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Affiliate Management</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage platform affiliates and promoters</p>
+          <h2 className="text-2xl font-semibold text-foreground">Affiliate Management</h2>
+          <p className="text-muted-foreground mt-1">Manage platform affiliates and promoters</p>
         </div>
         <Button variant="outline" size="icon" onClick={loadAffiliates} className="rounded-xl">
           <RefreshCw className="w-4 h-4" />
@@ -206,11 +206,11 @@ export function AdminAffiliates() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Affiliates</p>
+                <p className="text-sm text-muted-foreground">Total Affiliates</p>
                 <p className="text-2xl font-semibold">{stats.total}</p>
                 <p className="text-xs text-green-600">{stats.active} active</p>
               </div>
@@ -218,34 +218,34 @@ export function AdminAffiliates() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Sales</p>
+                <p className="text-sm text-muted-foreground">Total Sales</p>
                 <p className="text-2xl font-semibold">{stats.totalSales.toLocaleString()}</p>
-                <p className="text-xs text-[#0F0F0F]/60">tickets</p>
+                <p className="text-xs text-muted-foreground">tickets</p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-200" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Revenue Generated</p>
+                <p className="text-sm text-muted-foreground">Revenue Generated</p>
                 <p className="text-xl font-semibold text-green-600">{formatCurrency(stats.totalRevenue)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-green-200" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Unpaid Commission</p>
+                <p className="text-sm text-muted-foreground">Unpaid Commission</p>
                 <p className="text-xl font-semibold text-orange-600">{formatCurrency(stats.unpaidCommission)}</p>
               </div>
               <Wallet className="w-8 h-8 text-orange-200" />
@@ -255,16 +255,16 @@ export function AdminAffiliates() {
       </div>
 
       {/* Search & Filter */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search affiliates..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white border-[#0F0F0F]/10 rounded-xl"
+                className="pl-10 bg-card border-border/10 rounded-xl"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -283,56 +283,56 @@ export function AdminAffiliates() {
       </Card>
 
       {/* Affiliates Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Affiliates ({filteredAffiliates.length})</CardTitle>
+          <CardTitle className="text-foreground">Affiliates ({filteredAffiliates.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#0F0F0F]/10">
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Affiliate</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Promo Code</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Event/Organizer</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Sales</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Revenue</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Commission</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                  <th className="text-right py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                <tr className="border-b border-border/10">
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Affiliate</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Promo Code</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Event/Organizer</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Sales</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Revenue</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Commission</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Status</th>
+                  <th className="text-right py-4 px-4 text-muted-foreground font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAffiliates.map((affiliate) => {
                   const unpaid = (parseFloat(affiliate.total_commission) || 0) - (parseFloat(affiliate.paid_commission) || 0);
                   return (
-                    <tr key={affiliate.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                    <tr key={affiliate.id} className="border-b border-border/5 hover:bg-muted/50">
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium">
                             {affiliate.name?.charAt(0) || 'A'}
                           </div>
                           <div>
-                            <p className="text-[#0F0F0F] font-medium">{affiliate.name}</p>
-                            <p className="text-sm text-[#0F0F0F]/60">{affiliate.email}</p>
+                            <p className="text-foreground font-medium">{affiliate.name}</p>
+                            <p className="text-sm text-muted-foreground">{affiliate.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <code className="px-2 py-1 bg-[#F4F6FA] rounded text-sm">{affiliate.promo_code}</code>
+                        <code className="px-2 py-1 bg-muted rounded text-sm">{affiliate.promo_code}</code>
                       </td>
                       <td className="py-4 px-4">
-                        <p className="text-[#0F0F0F]/80">{affiliate.events?.title || 'All Events'}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">{affiliate.organizers?.business_name || 'N/A'}</p>
+                        <p className="text-foreground/80">{affiliate.events?.title || 'All Events'}</p>
+                        <p className="text-sm text-muted-foreground">{affiliate.organizers?.business_name || 'N/A'}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <p className="text-[#0F0F0F]">{affiliate.total_sales || 0}</p>
+                        <p className="text-foreground">{affiliate.total_sales || 0}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <p className="text-[#0F0F0F] font-medium">{formatCurrency(affiliate.total_revenue)}</p>
+                        <p className="text-foreground font-medium">{formatCurrency(affiliate.total_revenue)}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <p className="text-[#0F0F0F]">{formatCurrency(affiliate.total_commission)}</p>
+                        <p className="text-foreground">{formatCurrency(affiliate.total_commission)}</p>
                         {unpaid > 0 && (
                           <p className="text-xs text-orange-600">{formatCurrency(unpaid)} unpaid</p>
                         )}
@@ -342,7 +342,7 @@ export function AdminAffiliates() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-xl">
-                              <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                              <MoreVertical className="w-5 h-5 text-muted-foreground" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl">
@@ -387,7 +387,7 @@ export function AdminAffiliates() {
                 })}
                 {filteredAffiliates.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-[#0F0F0F]/60">
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
                       No affiliates found
                     </td>
                   </tr>
@@ -411,58 +411,58 @@ export function AdminAffiliates() {
                   {selectedAffiliate.name?.charAt(0) || 'A'}
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-[#0F0F0F]">{selectedAffiliate.name}</h3>
-                  <p className="text-[#0F0F0F]/60">{selectedAffiliate.email}</p>
+                  <h3 className="text-xl font-semibold text-foreground">{selectedAffiliate.name}</h3>
+                  <p className="text-muted-foreground">{selectedAffiliate.email}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 p-4 bg-[#F4F6FA] rounded-xl">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-xl">
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Phone</p>
-                  <p className="text-[#0F0F0F]">{selectedAffiliate.phone || 'N/A'}</p>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="text-foreground">{selectedAffiliate.phone || 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Promo Code</p>
-                  <code className="px-2 py-1 bg-white rounded">{selectedAffiliate.promo_code}</code>
+                  <p className="text-sm text-muted-foreground">Promo Code</p>
+                  <code className="px-2 py-1 bg-card rounded">{selectedAffiliate.promo_code}</code>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Commission Rate</p>
-                  <p className="text-[#0F0F0F]">
+                  <p className="text-sm text-muted-foreground">Commission Rate</p>
+                  <p className="text-foreground">
                     {selectedAffiliate.commission_type === 'percentage' 
                       ? `${selectedAffiliate.commission_value}%` 
                       : formatCurrency(selectedAffiliate.commission_value)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Joined</p>
-                  <p className="text-[#0F0F0F]">{new Date(selectedAffiliate.created_at).toLocaleDateString()}</p>
+                  <p className="text-sm text-muted-foreground">Joined</p>
+                  <p className="text-foreground">{new Date(selectedAffiliate.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-4 gap-4">
                 <div className="p-4 bg-blue-50 rounded-xl text-center">
                   <p className="text-2xl font-semibold text-[#2969FF]">{selectedAffiliate.total_clicks || 0}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Clicks</p>
+                  <p className="text-sm text-muted-foreground">Clicks</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-xl text-center">
                   <p className="text-2xl font-semibold text-green-600">{selectedAffiliate.total_sales || 0}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Sales</p>
+                  <p className="text-sm text-muted-foreground">Sales</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
                   <p className="text-lg font-semibold text-purple-600">{formatCurrency(selectedAffiliate.total_revenue)}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Revenue</p>
+                  <p className="text-sm text-muted-foreground">Revenue</p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-xl text-center">
                   <p className="text-lg font-semibold text-orange-600">{formatCurrency(selectedAffiliate.total_commission)}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Commission</p>
+                  <p className="text-sm text-muted-foreground">Commission</p>
                 </div>
               </div>
 
               {selectedAffiliate.referral_link && (
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60 mb-1">Referral Link</p>
-                  <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
-                    <Link2 className="w-4 h-4 text-[#0F0F0F]/60" />
+                  <p className="text-sm text-muted-foreground mb-1">Referral Link</p>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
+                    <Link2 className="w-4 h-4 text-muted-foreground" />
                     <code className="text-sm flex-1 truncate">{selectedAffiliate.referral_link}</code>
                   </div>
                 </div>
@@ -483,7 +483,7 @@ export function AdminAffiliates() {
               {actionType === 'payout' && 'Process Payout'}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-[#0F0F0F]/60">
+          <p className="text-muted-foreground">
             {actionType === 'approve' &&
               `Approve ${selectedAffiliate?.name} as an affiliate? They will be able to start promoting events.`}
             {actionType === 'suspend' &&

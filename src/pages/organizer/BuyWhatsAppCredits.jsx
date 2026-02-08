@@ -117,7 +117,7 @@ export default function BuyWhatsAppCredits() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">WhatsApp Credits</h1>
-        <p className="text-gray-600">Purchase credits to send WhatsApp messages to attendees</p>
+        <p className="text-muted-foreground">Purchase credits to send WhatsApp messages to attendees</p>
       </div>
 
       {error && <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700"><AlertCircle className="w-5 h-5" />{error}</div>}
@@ -136,13 +136,13 @@ export default function BuyWhatsAppCredits() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border p-4">
+      <div className="bg-card rounded-xl border p-4">
         <h3 className="font-semibold mb-3">Message Rates</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-          <div className="p-3 bg-blue-50 rounded-lg"><p className="font-medium text-blue-700">Utility</p><p className="text-blue-600">$0.0156/msg</p><p className="text-xs text-gray-500">Tickets, reminders</p></div>
-          <div className="p-3 bg-purple-50 rounded-lg"><p className="font-medium text-purple-700">Marketing</p><p className="text-purple-600">$0.0683/msg</p><p className="text-xs text-gray-500">Promos, announcements</p></div>
-          <div className="p-3 bg-amber-50 rounded-lg"><p className="font-medium text-amber-700">Authentication</p><p className="text-amber-600">$0.0078/msg</p><p className="text-xs text-gray-500">OTP, verification</p></div>
-          <div className="p-3 bg-green-50 rounded-lg"><p className="font-medium text-green-700">Service</p><p className="text-green-600">FREE</p><p className="text-xs text-gray-500">Replies (24hr window)</p></div>
+          <div className="p-3 bg-blue-50 rounded-lg"><p className="font-medium text-blue-700">Utility</p><p className="text-blue-600">$0.0156/msg</p><p className="text-xs text-muted-foreground">Tickets, reminders</p></div>
+          <div className="p-3 bg-purple-50 rounded-lg"><p className="font-medium text-purple-700">Marketing</p><p className="text-purple-600">$0.0683/msg</p><p className="text-xs text-muted-foreground">Promos, announcements</p></div>
+          <div className="p-3 bg-amber-50 rounded-lg"><p className="font-medium text-amber-700">Authentication</p><p className="text-amber-600">$0.0078/msg</p><p className="text-xs text-muted-foreground">OTP, verification</p></div>
+          <div className="p-3 bg-green-50 rounded-lg"><p className="font-medium text-green-700">Service</p><p className="text-green-600">FREE</p><p className="text-xs text-muted-foreground">Replies (24hr window)</p></div>
         </div>
       </div>
 
@@ -150,16 +150,16 @@ export default function BuyWhatsAppCredits() {
         <h2 className="text-lg font-semibold mb-4">Buy Credit Packages</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {packages.length === 0 ? (
-            <div className="col-span-3 text-center p-8 bg-gray-50 rounded-xl text-gray-500">No packages available yet</div>
+            <div className="col-span-3 text-center p-8 bg-background rounded-xl text-muted-foreground">No packages available yet</div>
           ) : packages.map(pkg => (
-            <div key={pkg.id} className="bg-white rounded-xl border p-6 hover:shadow-lg transition-shadow">
+            <div key={pkg.id} className="bg-card rounded-xl border p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare className="w-5 h-5 text-green-600" />
                 <h3 className="font-semibold">{pkg.name}</h3>
               </div>
               <div className="text-3xl font-bold text-green-600 mb-1">${pkg.credits}</div>
-              <p className="text-gray-600 text-sm mb-2">≈ {calculateMessages(pkg.credits).toLocaleString()} utility messages</p>
-              <p className="text-gray-500 text-sm mb-4">{pkg.description}</p>
+              <p className="text-muted-foreground text-sm mb-2">≈ {calculateMessages(pkg.credits).toLocaleString()} utility messages</p>
+              <p className="text-muted-foreground text-sm mb-4">{pkg.description}</p>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold">₦{parseFloat(pkg.price).toLocaleString()}</span>
                 <button onClick={() => handlePurchase(pkg)} disabled={purchasing} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
@@ -173,14 +173,14 @@ export default function BuyWhatsAppCredits() {
       </div>
 
       {purchases.length > 0 && (
-        <div className="bg-white rounded-xl border">
-          <div className="p-4 border-b flex items-center gap-2"><History className="w-5 h-5 text-gray-600" /><h2 className="font-semibold">Purchase History</h2></div>
+        <div className="bg-card rounded-xl border">
+          <div className="p-4 border-b flex items-center gap-2"><History className="w-5 h-5 text-muted-foreground" /><h2 className="font-semibold">Purchase History</h2></div>
           <div className="divide-y max-h-64 overflow-y-auto">
             {purchases.map(purchase => (
               <div key={purchase.id} className="p-4 flex items-center justify-between">
                 <div>
                   <p className="font-medium">{purchase.whatsapp_credit_packages?.name || 'Credit Package'}</p>
-                  <p className="text-sm text-gray-600">{new Date(purchase.created_at).toLocaleDateString()}</p>
+                  <p className="text-sm text-muted-foreground">{new Date(purchase.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-medium">${purchase.credits} credits</p>

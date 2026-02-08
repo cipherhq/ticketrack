@@ -429,7 +429,7 @@ export function PromoterManagement() {
       case 'pending':
         return <Badge className="bg-yellow-100 text-yellow-700"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
       case 'inactive':
-        return <Badge className="bg-gray-100 text-gray-700"><XCircle className="w-3 h-3 mr-1" />Inactive</Badge>;
+        return <Badge className="bg-muted text-foreground/80"><XCircle className="w-3 h-3 mr-1" />Inactive</Badge>;
       default:
         return null;
     }
@@ -447,14 +447,14 @@ export function PromoterManagement() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             Event Promoters
             <HelpTip>Promoters earn commission by selling tickets with unique links. Set commission rates per event and track each promoter's sales. Great for influencers and partners!</HelpTip>
           </h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Invite affiliates and track their performance</p>
+          <p className="text-muted-foreground mt-1">Invite affiliates and track their performance</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl border-[#0F0F0F]/10">
+          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl border-border/10">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button onClick={() => setIsInviteOpen(true)} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
@@ -465,12 +465,12 @@ export function PromoterManagement() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Active Promoters</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.active}</p>
+                <p className="text-sm text-muted-foreground mb-1">Active Promoters</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.active}</p>
                 {stats.pending > 0 && <p className="text-xs text-yellow-600">{stats.pending} pending</p>}
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
@@ -479,12 +479,12 @@ export function PromoterManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Tickets Sold</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalSales}</p>
+                <p className="text-sm text-muted-foreground mb-1">Tickets Sold</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.totalSales}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <ShoppingCart className="w-5 h-5 text-green-600" />
@@ -492,12 +492,12 @@ export function PromoterManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Revenue Generated</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-sm text-muted-foreground mb-1">Revenue Generated</p>
+                <p className="text-2xl font-semibold text-foreground">{formatCurrency(stats.totalRevenue)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-purple-600" />
@@ -505,11 +505,11 @@ export function PromoterManagement() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Unpaid Commission</p>
+                <p className="text-sm text-muted-foreground mb-1">Unpaid Commission</p>
                 <p className="text-2xl font-semibold text-orange-600">{formatCurrency(stats.unpaidCommission)}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
@@ -520,15 +520,15 @@ export function PromoterManagement() {
         </Card>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-              <Input placeholder="Search by name, email, or code..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input placeholder="Search by name, email, or code..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-12 bg-muted border-0 rounded-xl" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="md:w-40 h-12 rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="md:w-40 h-12 rounded-xl border-border/10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -543,10 +543,10 @@ export function PromoterManagement() {
       </Card>
 
       {filteredPromoters.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-12 text-center">
-            <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60 mb-4">
+            <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground mb-4">
               {promoters.length === 0 ? 'No promoters yet' : 'No promoters match your filters'}
             </p>
             {promoters.length === 0 && (
@@ -563,7 +563,7 @@ export function PromoterManagement() {
             const unpaidBalance = (promoter.total_commission || 0) - (promoter.paid_commission || 0);
             
             return (
-              <Card key={promoter.id} className="border-[#0F0F0F]/10 rounded-2xl hover:shadow-md transition-shadow">
+              <Card key={promoter.id} className="border-border/10 rounded-2xl hover:shadow-md transition-shadow">
                 <CardContent className="p-4 md:p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     <div className="flex items-center gap-4 flex-1">
@@ -572,10 +572,10 @@ export function PromoterManagement() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-medium text-[#0F0F0F] truncate">{promoter.name}</h3>
+                          <h3 className="font-medium text-foreground truncate">{promoter.name}</h3>
                           {getStatusBadge(promoter.status)}
                         </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-[#0F0F0F]/60">
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1 truncate">
                             <Mail className="w-3 h-3 flex-shrink-0" />
                             {promoter.email}
@@ -591,17 +591,17 @@ export function PromoterManagement() {
                     </div>
 
                     <div className="grid grid-cols-4 gap-3 text-center">
-                      <div className="p-2 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Clicks</p>
-                        <p className="font-semibold text-[#0F0F0F]">{(promoter.total_clicks || 0).toLocaleString()}</p>
+                      <div className="p-2 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Clicks</p>
+                        <p className="font-semibold text-foreground">{(promoter.total_clicks || 0).toLocaleString()}</p>
                       </div>
-                      <div className="p-2 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Sales</p>
-                        <p className="font-semibold text-[#0F0F0F]">{promoter.total_sales || 0}</p>
+                      <div className="p-2 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Sales</p>
+                        <p className="font-semibold text-foreground">{promoter.total_sales || 0}</p>
                       </div>
-                      <div className="p-2 bg-[#F4F6FA] rounded-lg">
-                        <p className="text-xs text-[#0F0F0F]/60">Revenue</p>
-                        <p className="font-semibold text-[#0F0F0F]">{formatCurrency(promoter.total_revenue)}</p>
+                      <div className="p-2 bg-muted rounded-lg">
+                        <p className="text-xs text-muted-foreground">Revenue</p>
+                        <p className="font-semibold text-foreground">{formatCurrency(promoter.total_revenue)}</p>
                       </div>
                       <div className="p-2 bg-green-50 rounded-lg">
                         <p className="text-xs text-green-600">Earned</p>
@@ -616,7 +616,7 @@ export function PromoterManagement() {
                           Pay {formatCurrency(unpaidBalance)}
                         </Button>
                       )}
-                      <Button variant="outline" size="sm" onClick={() => copyToClipboard(promoter.referral_link)} className="rounded-xl border-[#0F0F0F]/10">
+                      <Button variant="outline" size="sm" onClick={() => copyToClipboard(promoter.referral_link)} className="rounded-xl border-border/10">
                         <Copy className="w-4 h-4 mr-1" />
                         Copy Link
                       </Button>
@@ -664,9 +664,9 @@ export function PromoterManagement() {
                     </div>
                   </div>
 
-                  <div className="mt-4 p-3 bg-[#F4F6FA] rounded-xl flex items-center gap-3">
-                    <Link2 className="w-4 h-4 text-[#0F0F0F]/40 flex-shrink-0" />
-                    <code className="text-sm text-[#0F0F0F]/60 flex-1 truncate">{promoter.referral_link}</code>
+                  <div className="mt-4 p-3 bg-muted rounded-xl flex items-center gap-3">
+                    <Link2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <code className="text-sm text-muted-foreground flex-1 truncate">{promoter.referral_link}</code>
                     <Badge className="bg-[#2969FF]/10 text-[#2969FF] flex-shrink-0">{promoter.referral_code}</Badge>
                   </div>
                 </CardContent>
@@ -694,7 +694,7 @@ export function PromoterManagement() {
             <div className="space-y-2">
               <Label>Email Address *</Label>
               <Input type="email" placeholder="promoter@example.com" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} className="rounded-xl h-12" />
-              <p className="text-xs text-[#0F0F0F]/40">The promoter will receive an email invitation to accept</p>
+              <p className="text-xs text-muted-foreground">The promoter will receive an email invitation to accept</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -754,17 +754,17 @@ export function PromoterManagement() {
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>
               )}
 
-              <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-2">
+              <div className="p-4 bg-muted rounded-xl space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#0F0F0F]/60">Total Earned</span>
+                  <span className="text-muted-foreground">Total Earned</span>
                   <span className="font-medium">{formatCurrency(selectedPromoter.total_commission)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#0F0F0F]/60">Already Paid</span>
+                  <span className="text-muted-foreground">Already Paid</span>
                   <span className="font-medium">{formatCurrency(selectedPromoter.paid_commission)}</span>
                 </div>
-                <div className="flex justify-between text-sm border-t border-[#0F0F0F]/10 pt-2">
-                  <span className="text-[#0F0F0F]/60">Unpaid Balance</span>
+                <div className="flex justify-between text-sm border-t border-border/10 pt-2">
+                  <span className="text-muted-foreground">Unpaid Balance</span>
                   <span className="font-semibold text-orange-600">
                     {formatCurrency((selectedPromoter.total_commission || 0) - (selectedPromoter.paid_commission || 0))}
                   </span>

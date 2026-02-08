@@ -256,27 +256,27 @@ export function AdminProcessPayout() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Payouts
         </Button>
-        <h2 className="text-2xl font-semibold text-[#0F0F0F]">Start Organizer Payouts</h2>
-        <p className="text-[#0F0F0F]/60 mt-1">Process payouts for organizers with completed events</p>
+        <h2 className="text-2xl font-semibold text-foreground">Start Organizer Payouts</h2>
+        <p className="text-muted-foreground mt-1">Process payouts for organizers with completed events</p>
       </div>
 
       {/* Stepper */}
       <div className="flex items-center justify-center gap-4 py-6">
-        <div className={`flex items-center gap-2 ${step >= 1 ? 'text-[#2969FF]' : 'text-[#0F0F0F]/40'}`}>
+        <div className={`flex items-center gap-2 ${step >= 1 ? 'text-[#2969FF]' : 'text-muted-foreground'}`}>
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 1 ? 'bg-[#2969FF] text-white' : 'bg-[#0F0F0F]/10'}`}>
             {step > 1 ? <CheckCircle className="w-5 h-5" /> : '1'}
           </div>
           <span className="font-medium">Select Organizer</span>
         </div>
         <div className="w-16 h-0.5 bg-[#0F0F0F]/10" />
-        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-[#2969FF]' : 'text-[#0F0F0F]/40'}`}>
+        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-[#2969FF]' : 'text-muted-foreground'}`}>
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 2 ? 'bg-[#2969FF] text-white' : 'bg-[#0F0F0F]/10'}`}>
             {step > 2 ? <CheckCircle className="w-5 h-5" /> : '2'}
           </div>
           <span className="font-medium">Review & Process</span>
         </div>
         <div className="w-16 h-0.5 bg-[#0F0F0F]/10" />
-        <div className={`flex items-center gap-2 ${step >= 3 ? 'text-[#2969FF]' : 'text-[#0F0F0F]/40'}`}>
+        <div className={`flex items-center gap-2 ${step >= 3 ? 'text-[#2969FF]' : 'text-muted-foreground'}`}>
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 3 ? 'bg-[#2969FF] text-white' : 'bg-[#0F0F0F]/10'}`}>
             3
           </div>
@@ -286,17 +286,17 @@ export function AdminProcessPayout() {
 
       {/* Step 1: Select Organizer */}
       {step === 1 && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Building className="w-5 h-5 text-[#0F0F0F]/60" />
-              <h3 className="text-lg font-medium text-[#0F0F0F]">Select Organizer for Payout</h3>
+              <Building className="w-5 h-5 text-muted-foreground" />
+              <h3 className="text-lg font-medium text-foreground">Select Organizer for Payout</h3>
             </div>
 
             <div className="mb-4">
-              <p className="text-sm text-[#0F0F0F]/60 mb-2">Search Organizers</p>
+              <p className="text-sm text-muted-foreground mb-2">Search Organizers</p>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   placeholder="Search by name or email..."
                   value={searchQuery}
@@ -308,7 +308,7 @@ export function AdminProcessPayout() {
 
             <div className="space-y-3">
               {filteredOrganizers.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No organizers with pending payouts</p>
+                <p className="text-center text-muted-foreground py-8">No organizers with pending payouts</p>
               ) : (
                 filteredOrganizers.map((org) => {
                   const currency = getDefaultCurrency(org.country_code);
@@ -322,14 +322,14 @@ export function AdminProcessPayout() {
                       className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${
                         selectedOrganizer?.id === org.id
                           ? 'border-[#2969FF] bg-[#2969FF]/5'
-                          : 'border-[#0F0F0F]/10 hover:border-[#2969FF]/50 hover:bg-[#F4F6FA]'
+                          : 'border-border/10 hover:border-[#2969FF]/50 hover:bg-muted'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-3 h-3 rounded-full ${selectedOrganizer?.id === org.id ? 'bg-[#2969FF]' : 'bg-[#0F0F0F]/20'}`} />
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">{org.business_name}</p>
-                          <p className="text-sm text-[#0F0F0F]/60">{org.email || org.business_email}</p>
+                          <p className="font-medium text-foreground">{org.business_name}</p>
+                          <p className="text-sm text-muted-foreground">{org.email || org.business_email}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs">{org.country_code || 'Nigeria'} ({currency})</Badge>
                             {org.pendingEventsCount > 0 && (
@@ -341,11 +341,11 @@ export function AdminProcessPayout() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-[#0F0F0F]/60">Available Balance</p>
-                        <p className="text-xl font-semibold text-[#0F0F0F]">{formatPrice(org.available_balance, currency)}</p>
+                        <p className="text-sm text-muted-foreground">Available Balance</p>
+                        <p className="text-xl font-semibold text-foreground">{formatPrice(org.available_balance, currency)}</p>
                         {org.pending_balance > 0 && (
                           <>
-                            <p className="text-xs text-[#0F0F0F]/60 mt-1">Pending Payout</p>
+                            <p className="text-xs text-muted-foreground mt-1">Pending Payout</p>
                             <p className="text-sm font-medium text-[#2969FF]">{formatPrice(org.pending_balance, currency)}</p>
                           </>
                         )}
@@ -362,9 +362,9 @@ export function AdminProcessPayout() {
       {/* Step 2: Review & Process */}
       {step === 2 && selectedOrganizer && (
         <div className="space-y-4">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-6">
-              <h3 className="text-lg font-medium text-[#0F0F0F] mb-4">Review Payout Details</h3>
+              <h3 className="text-lg font-medium text-foreground mb-4">Review Payout Details</h3>
 
               {loading ? (
                 <div className="flex items-center justify-center py-8">
@@ -373,51 +373,51 @@ export function AdminProcessPayout() {
               ) : (
                 <>
                   {/* Organizer Info */}
-                  <div className="p-4 bg-[#F4F6FA] rounded-xl mb-4">
+                  <div className="p-4 bg-muted rounded-xl mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-[#2969FF] flex items-center justify-center text-white text-xl font-medium">
                         {selectedOrganizer.business_name?.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-medium text-[#0F0F0F]">{selectedOrganizer.business_name}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">{selectedOrganizer.email || selectedOrganizer.business_email}</p>
+                        <p className="font-medium text-foreground">{selectedOrganizer.business_name}</p>
+                        <p className="text-sm text-muted-foreground">{selectedOrganizer.email || selectedOrganizer.business_email}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Payout Summary */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-1">
+                    <div className="p-4 bg-muted rounded-xl">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <DollarSign className="w-4 h-4" />
                         <span className="text-sm">Total Revenue</span>
                       </div>
-                      <p className="text-xl font-semibold text-[#0F0F0F]">
+                      <p className="text-xl font-semibold text-foreground">
                         {formatPrice(selectedOrganizer.available_balance)}
                       </p>
                     </div>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-1">
+                    <div className="p-4 bg-muted rounded-xl">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Calendar className="w-4 h-4" />
                         <span className="text-sm">Events to Pay</span>
                       </div>
-                      <p className="text-xl font-semibold text-[#0F0F0F]">{pendingEvents.length}</p>
+                      <p className="text-xl font-semibold text-foreground">{pendingEvents.length}</p>
                     </div>
                   </div>
 
                   {/* Fee Breakdown */}
-                  <div className="p-4 border border-[#0F0F0F]/10 rounded-xl mb-4">
+                  <div className="p-4 border border-border/10 rounded-xl mb-4">
                     <div className="flex justify-between mb-2">
-                      <span className="text-[#0F0F0F]/60">Gross Amount</span>
-                      <span className="text-[#0F0F0F]">{formatPrice(selectedOrganizer.available_balance)}</span>
+                      <span className="text-muted-foreground">Gross Amount</span>
+                      <span className="text-foreground">{formatPrice(selectedOrganizer.available_balance)}</span>
                     </div>
                     <div className="flex justify-between mb-2">
-                      <span className="text-[#0F0F0F]/60">Platform Fee (10%)</span>
+                      <span className="text-muted-foreground">Platform Fee (10%)</span>
                       <span className="text-red-600">-{formatPrice(selectedOrganizer.available_balance * 0.1)}</span>
                     </div>
-                    <div className="border-t border-[#0F0F0F]/10 pt-2 mt-2">
+                    <div className="border-t border-border/10 pt-2 mt-2">
                       <div className="flex justify-between">
-                        <span className="font-medium text-[#0F0F0F]">Net Payout</span>
+                        <span className="font-medium text-foreground">Net Payout</span>
                         <span className="text-xl font-semibold text-green-600">
                           {formatPrice(selectedOrganizer.available_balance * 0.9)}
                         </span>
@@ -432,8 +432,8 @@ export function AdminProcessPayout() {
                         <CreditCard className="w-4 h-4" />
                         <span className="font-medium">Bank Account</span>
                       </div>
-                      <p className="text-[#0F0F0F]">{bankAccount.bank_name}</p>
-                      <p className="text-[#0F0F0F]/60">{bankAccount.account_name} - {bankAccount.account_number}</p>
+                      <p className="text-foreground">{bankAccount.bank_name}</p>
+                      <p className="text-muted-foreground">{bankAccount.account_name} - {bankAccount.account_number}</p>
                     </div>
                   ) : (
                     <div className="p-4 bg-red-50 rounded-xl">
@@ -473,52 +473,52 @@ export function AdminProcessPayout() {
 
       {/* Step 3: Complete */}
       {step === 3 && payoutResult && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-2">Payout Processed Successfully!</h2>
-            <p className="text-[#0F0F0F]/60 mb-6">
+            <h2 className="text-2xl font-semibold text-foreground mb-2">Payout Processed Successfully!</h2>
+            <p className="text-muted-foreground mb-6">
               {formatPrice(payoutResult.netPayout)} has been paid to {payoutResult.organizer}
             </p>
 
             {/* Transaction Summary */}
-            <div className="p-6 bg-[#F4F6FA] rounded-xl text-left mb-6">
+            <div className="p-6 bg-muted rounded-xl text-left mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Building className="w-5 h-5 text-[#0F0F0F]/60" />
-                <span className="font-medium text-[#0F0F0F]">Transaction Summary</span>
+                <Building className="w-5 h-5 text-muted-foreground" />
+                <span className="font-medium text-foreground">Transaction Summary</span>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Organizer</p>
-                  <p className="text-[#0F0F0F] font-medium">{payoutResult.organizer}</p>
+                  <p className="text-sm text-muted-foreground">Organizer</p>
+                  <p className="text-foreground font-medium">{payoutResult.organizer}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Transaction Reference</p>
-                  <p className="text-[#0F0F0F] font-medium">{payoutResult.reference}</p>
+                  <p className="text-sm text-muted-foreground">Transaction Reference</p>
+                  <p className="text-foreground font-medium">{payoutResult.reference}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Bank Account</p>
-                  <p className="text-[#0F0F0F] font-medium">{payoutResult.bankName} - {payoutResult.accountNumber}</p>
+                  <p className="text-sm text-muted-foreground">Bank Account</p>
+                  <p className="text-foreground font-medium">{payoutResult.bankName} - {payoutResult.accountNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Events Paid</p>
-                  <p className="text-[#0F0F0F] font-medium">{payoutResult.eventsCount} events</p>
+                  <p className="text-sm text-muted-foreground">Events Paid</p>
+                  <p className="text-foreground font-medium">{payoutResult.eventsCount} events</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Total Revenue</p>
-                  <p className="text-[#0F0F0F] font-medium">{formatPrice(payoutResult.totalRevenue)}</p>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <p className="text-foreground font-medium">{formatPrice(payoutResult.totalRevenue)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Platform Fees</p>
+                  <p className="text-sm text-muted-foreground">Platform Fees</p>
                   <p className="text-red-600 font-medium">-{formatPrice(payoutResult.platformFee)}</p>
                 </div>
               </div>
 
-              <div className="border-t border-[#0F0F0F]/10 mt-4 pt-4">
-                <p className="text-sm text-[#0F0F0F]/60">Net Payout</p>
+              <div className="border-t border-border/10 mt-4 pt-4">
+                <p className="text-sm text-muted-foreground">Net Payout</p>
                 <p className="text-2xl font-semibold text-green-600">{formatPrice(payoutResult.netPayout)}</p>
               </div>
             </div>

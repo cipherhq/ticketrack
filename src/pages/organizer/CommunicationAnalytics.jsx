@@ -288,9 +288,9 @@ export function CommunicationAnalytics() {
     switch (status) {
       case 'sent': return 'bg-green-100 text-green-700';
       case 'scheduled': return 'bg-blue-100 text-blue-700';
-      case 'draft': return 'bg-gray-100 text-gray-700';
+      case 'draft': return 'bg-muted text-foreground/80';
       case 'sending': return 'bg-yellow-100 text-yellow-700';
-      default: return 'bg-gray-100 text-gray-700';
+      default: return 'bg-muted text-foreground/80';
     }
   };
 
@@ -311,8 +311,8 @@ export function CommunicationAnalytics() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Communication Analytics</h1>
-          <p className="text-[#0F0F0F]/60">Track your campaign performance</p>
+          <h1 className="text-2xl font-bold text-foreground">Communication Analytics</h1>
+          <p className="text-muted-foreground">Track your campaign performance</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={dateRange} onValueChange={setDateRange}>
@@ -335,7 +335,7 @@ export function CommunicationAnalytics() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -343,13 +343,13 @@ export function CommunicationAnalytics() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{overview.totalCampaigns}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Campaigns</p>
+                <p className="text-xs text-muted-foreground">Campaigns</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -357,13 +357,13 @@ export function CommunicationAnalytics() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{formatNumber(overview.totalSent)}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Sent</p>
+                <p className="text-xs text-muted-foreground">Sent</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -371,13 +371,13 @@ export function CommunicationAnalytics() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{formatNumber(overview.totalDelivered)}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Delivered</p>
+                <p className="text-xs text-muted-foreground">Delivered</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -385,13 +385,13 @@ export function CommunicationAnalytics() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{formatNumber(overview.totalOpened)}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Opened</p>
+                <p className="text-xs text-muted-foreground">Opened</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center">
@@ -399,13 +399,13 @@ export function CommunicationAnalytics() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{formatNumber(overview.totalClicked)}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Clicked</p>
+                <p className="text-xs text-muted-foreground">Clicked</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
@@ -413,7 +413,7 @@ export function CommunicationAnalytics() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{formatNumber(overview.totalFailed)}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Failed</p>
+                <p className="text-xs text-muted-foreground">Failed</p>
               </div>
             </div>
           </CardContent>
@@ -422,14 +422,14 @@ export function CommunicationAnalytics() {
 
       {/* Rates */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[#0F0F0F]/60">Delivery Rate</span>
+              <span className="text-muted-foreground">Delivery Rate</span>
               <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
             <p className="text-4xl font-bold text-green-600">{overview.avgDeliveryRate}%</p>
-            <div className="mt-2 h-2 bg-[#F4F6FA] rounded-full overflow-hidden">
+            <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-green-500 rounded-full"
                 style={{ width: `${overview.avgDeliveryRate}%` }}
@@ -438,14 +438,14 @@ export function CommunicationAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[#0F0F0F]/60">Open Rate</span>
+              <span className="text-muted-foreground">Open Rate</span>
               <Eye className="w-5 h-5 text-amber-500" />
             </div>
             <p className="text-4xl font-bold text-amber-600">{overview.avgOpenRate}%</p>
-            <div className="mt-2 h-2 bg-[#F4F6FA] rounded-full overflow-hidden">
+            <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-amber-500 rounded-full"
                 style={{ width: `${overview.avgOpenRate}%` }}
@@ -454,14 +454,14 @@ export function CommunicationAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[#0F0F0F]/60">Click Rate</span>
+              <span className="text-muted-foreground">Click Rate</span>
               <MousePointer className="w-5 h-5 text-cyan-500" />
             </div>
             <p className="text-4xl font-bold text-cyan-600">{overview.avgClickRate}%</p>
-            <div className="mt-2 h-2 bg-[#F4F6FA] rounded-full overflow-hidden">
+            <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-cyan-500 rounded-full"
                 style={{ width: `${Math.min(overview.avgClickRate * 2, 100)}%` }}
@@ -472,13 +472,13 @@ export function CommunicationAnalytics() {
       </div>
 
       {/* Channel Performance */}
-      <Card className="border-[#0F0F0F]/10 rounded-xl">
+      <Card className="border-border/10 rounded-xl">
         <CardHeader>
           <CardTitle>Performance by Channel</CardTitle>
         </CardHeader>
         <CardContent>
           {channelStats.length === 0 ? (
-            <div className="text-center py-8 text-[#0F0F0F]/40">
+            <div className="text-center py-8 text-muted-foreground">
               <BarChart3 className="w-12 h-12 mx-auto mb-2" />
               <p>No channel data yet</p>
             </div>
@@ -494,19 +494,19 @@ export function CommunicationAnalytics() {
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <p className="text-[#0F0F0F]/60">Sent</p>
+                        <p className="text-muted-foreground">Sent</p>
                         <p className="font-semibold">{formatNumber(stat.sent)}</p>
                       </div>
                       <div>
-                        <p className="text-[#0F0F0F]/60">Delivered</p>
+                        <p className="text-muted-foreground">Delivered</p>
                         <p className="font-semibold">{formatNumber(stat.delivered)}</p>
                       </div>
                       <div>
-                        <p className="text-[#0F0F0F]/60">Failed</p>
+                        <p className="text-muted-foreground">Failed</p>
                         <p className="font-semibold text-red-600">{formatNumber(stat.failed)}</p>
                       </div>
                       <div>
-                        <p className="text-[#0F0F0F]/60">Rate</p>
+                        <p className="text-muted-foreground">Rate</p>
                         <p className="font-semibold text-green-600">{stat.deliveryRate}%</p>
                       </div>
                     </div>
@@ -521,7 +521,7 @@ export function CommunicationAnalytics() {
       {/* Recent Campaigns & Top Performing */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Campaigns */}
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Campaigns</CardTitle>
             <Button variant="ghost" size="sm" onClick={() => navigate('/organizer/hub')}>
@@ -530,17 +530,17 @@ export function CommunicationAnalytics() {
           </CardHeader>
           <CardContent>
             {recentCampaigns.length === 0 ? (
-              <div className="text-center py-8 text-[#0F0F0F]/40">
+              <div className="text-center py-8 text-muted-foreground">
                 <Send className="w-8 h-8 mx-auto mb-2" />
                 <p>No campaigns yet</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {recentCampaigns.slice(0, 5).map((campaign) => (
-                  <div key={campaign.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-lg">
+                  <div key={campaign.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{campaign.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-[#0F0F0F]/60">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Badge className={getStatusColor(campaign.status)} variant="secondary">
                           {campaign.status}
                         </Badge>
@@ -549,7 +549,7 @@ export function CommunicationAnalytics() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">{formatNumber(campaign.sent_count || 0)}</p>
-                      <p className="text-xs text-[#0F0F0F]/40">sent</p>
+                      <p className="text-xs text-muted-foreground">sent</p>
                     </div>
                   </div>
                 ))}
@@ -559,13 +559,13 @@ export function CommunicationAnalytics() {
         </Card>
 
         {/* Top Performing */}
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardHeader>
             <CardTitle>Top Performing Campaigns</CardTitle>
           </CardHeader>
           <CardContent>
             {topPerforming.length === 0 ? (
-              <div className="text-center py-8 text-[#0F0F0F]/40">
+              <div className="text-center py-8 text-muted-foreground">
                 <TrendingUp className="w-8 h-8 mx-auto mb-2" />
                 <p>No data yet</p>
               </div>
@@ -576,12 +576,12 @@ export function CommunicationAnalytics() {
                     ? ((campaign.opened_count / campaign.sent_count) * 100).toFixed(1) 
                     : 0;
                   return (
-                    <div key={campaign.id} className="flex items-center gap-3 p-3 bg-[#F4F6FA] rounded-lg">
+                    <div key={campaign.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                         index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                        index === 1 ? 'bg-gray-200 text-gray-700' :
+                        index === 1 ? 'bg-muted text-foreground/80' :
                         index === 2 ? 'bg-orange-100 text-orange-700' :
-                        'bg-[#F4F6FA] text-[#0F0F0F]/40'
+                        'bg-muted text-muted-foreground'
                       }`}>
                         {index + 1}
                       </div>
@@ -596,7 +596,7 @@ export function CommunicationAnalytics() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-green-600">{openRate}%</p>
-                        <p className="text-xs text-[#0F0F0F]/40">open rate</p>
+                        <p className="text-xs text-muted-foreground">open rate</p>
                       </div>
                     </div>
                   );
@@ -609,7 +609,7 @@ export function CommunicationAnalytics() {
 
       {/* Daily Activity Chart (simplified - bar representation) */}
       {dailyStats.length > 0 && (
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardHeader>
             <CardTitle>Daily Activity</CardTitle>
           </CardHeader>
@@ -625,7 +625,7 @@ export function CommunicationAnalytics() {
                       style={{ height: `${height}%`, minHeight: day.sent > 0 ? '4px' : '0' }}
                       title={`${day.day}: ${day.sent} sent`}
                     />
-                    <span className="text-[10px] text-[#0F0F0F]/40 rotate-45 origin-left">
+                    <span className="text-[10px] text-muted-foreground rotate-45 origin-left">
                       {day.day.split(' ')[1]}
                     </span>
                   </div>
@@ -635,7 +635,7 @@ export function CommunicationAnalytics() {
             <div className="flex items-center justify-center gap-4 mt-4 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-[#2969FF]" />
-                <span className="text-[#0F0F0F]/60">Messages Sent</span>
+                <span className="text-muted-foreground">Messages Sent</span>
               </div>
             </div>
           </CardContent>
@@ -647,7 +647,7 @@ export function CommunicationAnalytics() {
         Object.keys(emailTrackingStats.clientBreakdown).length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Device Breakdown */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="w-5 h-5 text-amber-500" />
@@ -665,9 +665,9 @@ export function CommunicationAnalytics() {
                     <div key={device} className="space-y-1">
                       <div className="flex justify-between text-sm">
                         <span className="capitalize font-medium">{device}</span>
-                        <span className="text-[#0F0F0F]/60">{count} ({percentage}%)</span>
+                        <span className="text-muted-foreground">{count} ({percentage}%)</span>
                       </div>
-                      <div className="h-2 bg-[#F4F6FA] rounded-full overflow-hidden">
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${
                             device === 'mobile' ? 'bg-green-500' :
@@ -684,7 +684,7 @@ export function CommunicationAnalytics() {
           </Card>
 
           {/* Email Client Breakdown */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="w-5 h-5 text-blue-500" />
@@ -693,7 +693,7 @@ export function CommunicationAnalytics() {
             </CardHeader>
             <CardContent>
               {Object.keys(emailTrackingStats.clientBreakdown).length === 0 ? (
-                <div className="text-center py-4 text-[#0F0F0F]/40">
+                <div className="text-center py-4 text-muted-foreground">
                   <p>No client data yet</p>
                 </div>
               ) : (
@@ -714,10 +714,10 @@ export function CommunicationAnalytics() {
                       };
                       
                       return (
-                        <div key={client} className="flex items-center justify-between p-2 bg-[#F4F6FA] rounded-lg">
+                        <div key={client} className="flex items-center justify-between p-2 bg-muted rounded-lg">
                           <span className="font-medium">{clientLabels[client] || client}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-[#0F0F0F]/60">{count}</span>
+                            <span className="text-sm text-muted-foreground">{count}</span>
                             <Badge variant="secondary">{percentage}%</Badge>
                           </div>
                         </div>
@@ -733,7 +733,7 @@ export function CommunicationAnalytics() {
 
       {/* Recent Tracking Activity */}
       {(emailTrackingStats.recentOpens.length > 0 || emailTrackingStats.recentClicks.length > 0) && (
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-yellow-500" />
@@ -755,11 +755,11 @@ export function CommunicationAnalytics() {
 
               <TabsContent value="opens" className="mt-4">
                 {emailTrackingStats.recentOpens.length === 0 ? (
-                  <p className="text-center py-4 text-[#0F0F0F]/40">No recent opens</p>
+                  <p className="text-center py-4 text-muted-foreground">No recent opens</p>
                 ) : (
                   <div className="space-y-2">
                     {emailTrackingStats.recentOpens.map((event, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-lg">
+                      <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                             event.device_type === 'mobile' ? 'bg-green-100' :
@@ -772,12 +772,12 @@ export function CommunicationAnalytics() {
                           </div>
                           <div>
                             <p className="text-sm font-medium">{event.recipient_email || 'Unknown'}</p>
-                            <p className="text-xs text-[#0F0F0F]/40 capitalize">
+                            <p className="text-xs text-muted-foreground capitalize">
                               {event.device_type || 'Unknown device'} • {event.email_client || 'Unknown client'}
                             </p>
                           </div>
                         </div>
-                        <span className="text-xs text-[#0F0F0F]/40">
+                        <span className="text-xs text-muted-foreground">
                           {format(new Date(event.first_event_at), 'MMM d, h:mm a')}
                         </span>
                       </div>
@@ -788,23 +788,23 @@ export function CommunicationAnalytics() {
 
               <TabsContent value="clicks" className="mt-4">
                 {emailTrackingStats.recentClicks.length === 0 ? (
-                  <p className="text-center py-4 text-[#0F0F0F]/40">No recent clicks</p>
+                  <p className="text-center py-4 text-muted-foreground">No recent clicks</p>
                 ) : (
                   <div className="space-y-2">
                     {emailTrackingStats.recentClicks.map((event, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-lg">
+                      <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center">
                             <MousePointer className="w-4 h-4 text-cyan-600" />
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium">{event.recipient_email || 'Unknown'}</p>
-                            <p className="text-xs text-[#0F0F0F]/40 truncate max-w-[250px]">
+                            <p className="text-xs text-muted-foreground truncate max-w-[250px]">
                               {event.link_url || 'Link clicked'}
                             </p>
                           </div>
                         </div>
-                        <span className="text-xs text-[#0F0F0F]/40 whitespace-nowrap">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {format(new Date(event.first_event_at), 'MMM d, h:mm a')}
                         </span>
                       </div>

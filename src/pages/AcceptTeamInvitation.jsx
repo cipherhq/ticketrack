@@ -118,14 +118,14 @@ export function AcceptTeamInvitation() {
 
   if (authLoading || status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-muted p-4">
       <Card className="w-full max-w-md rounded-2xl">
         <CardHeader className="text-center">
           <div className="w-16 h-16 rounded-full bg-[#2969FF]/10 flex items-center justify-center mx-auto mb-4">
@@ -137,14 +137,14 @@ export function AcceptTeamInvitation() {
           {status === 'needs_login' && (
             <>
               <div className="text-center space-y-2">
-                <div className="flex items-center justify-center gap-2 text-[#0F0F0F]/60">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
                   <Building className="w-4 h-4" />
                   <span>{organizerName}</span>
                 </div>
-                <p className="text-[#0F0F0F]">
+                <p className="text-foreground">
                   You've been invited to join as <strong className="text-[#2969FF]">{invitationData?.role}</strong>
                 </p>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="text-sm text-muted-foreground">
                   Please log in or create an account to accept this invitation.
                 </p>
               </div>
@@ -169,22 +169,22 @@ export function AcceptTeamInvitation() {
           {status === 'accepting' && (
             <div className="text-center py-8">
               <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">Accepting invitation...</p>
+              <p className="text-muted-foreground">Accepting invitation...</p>
             </div>
           )}
 
           {status === 'success' && (
             <div className="text-center py-8">
               <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <p className="text-lg font-medium text-[#0F0F0F] mb-2">Welcome to the team!</p>
-              <p className="text-sm text-[#0F0F0F]/60">Redirecting to your dashboard...</p>
+              <p className="text-lg font-medium text-foreground mb-2">Welcome to the team!</p>
+              <p className="text-sm text-muted-foreground">Redirecting to your dashboard...</p>
             </div>
           )}
 
           {status === 'error' && (
             <div className="text-center py-8">
               <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <p className="text-lg font-medium text-[#0F0F0F] mb-2">Invitation Error</p>
+              <p className="text-lg font-medium text-foreground mb-2">Invitation Error</p>
               <p className="text-sm text-red-500 mb-4">{error}</p>
               <Button
                 onClick={() => navigate('/')}

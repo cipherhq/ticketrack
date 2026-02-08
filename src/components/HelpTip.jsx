@@ -36,7 +36,7 @@ export function HelpTip({
       <Tooltip>
         <TooltipTrigger asChild>
           <span className={`inline-flex cursor-help ${className}`}>
-            <Icon className="w-4 h-4 text-[#0F0F0F]/40 hover:text-[#2969FF] transition-colors" />
+            <Icon className="w-4 h-4 text-muted-foreground hover:text-[#2969FF] transition-colors" />
           </span>
         </TooltipTrigger>
         <TooltipContent side={side} className="max-w-xs text-sm">
@@ -59,7 +59,7 @@ export function FeatureCard({
   className = '' 
 }) {
   return (
-    <div className={`bg-white rounded-xl border border-[#0F0F0F]/10 p-4 ${className}`}>
+    <div className={`bg-card rounded-xl border border-border/10 p-4 ${className}`}>
       <div className="flex items-start gap-3">
         {Icon && (
           <div className="w-10 h-10 bg-[#2969FF]/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -68,11 +68,11 @@ export function FeatureCard({
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-[#0F0F0F]">{title}</h3>
+            <h3 className="font-semibold text-foreground">{title}</h3>
             {tip && <HelpTip>{tip}</HelpTip>}
           </div>
           {description && (
-            <p className="text-sm text-[#0F0F0F]/60 mt-1">{description}</p>
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
           )}
           {children}
         </div>
@@ -95,11 +95,11 @@ export function SectionHeader({
     <div className={`flex items-start justify-between mb-4 ${className}`}>
       <div>
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-[#0F0F0F]">{title}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           {tip && <HelpTip>{tip}</HelpTip>}
         </div>
         {description && (
-          <p className="text-sm text-[#0F0F0F]/60 mt-1">{description}</p>
+          <p className="text-sm text-muted-foreground mt-1">{description}</p>
         )}
       </div>
       {action && <div>{action}</div>}

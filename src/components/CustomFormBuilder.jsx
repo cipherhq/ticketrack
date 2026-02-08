@@ -92,7 +92,7 @@ export function CustomFormBuilder({ fields = [], onChange }) {
       <div className="flex items-center justify-between">
         <div>
           <Label className="text-base font-medium">Custom Form</Label>
-          <p className="text-sm text-[#0F0F0F]/60">
+          <p className="text-sm text-muted-foreground">
             Collect additional information from attendees at checkout
           </p>
         </div>
@@ -106,7 +106,7 @@ export function CustomFormBuilder({ fields = [], onChange }) {
             .map((field, index) => (
               <Card 
                 key={field.id} 
-                className={`border transition-all ${expandedField === field.id ? 'border-[#2969FF] shadow-md' : 'border-[#0F0F0F]/10'}`}
+                className={`border transition-all ${expandedField === field.id ? 'border-[#2969FF] shadow-md' : 'border-border/10'}`}
               >
                 <CardContent className="p-4">
                   {/* Collapsed View */}
@@ -120,7 +120,7 @@ export function CustomFormBuilder({ fields = [], onChange }) {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); moveField(index, 'up'); }}
                         disabled={index === 0}
-                        className="p-0.5 text-[#0F0F0F]/30 hover:text-[#0F0F0F]/60 disabled:opacity-30"
+                        className="p-0.5 text-foreground/30 hover:text-muted-foreground disabled:opacity-30"
                       >
                         <ChevronUp className="w-4 h-4" />
                       </button>
@@ -128,7 +128,7 @@ export function CustomFormBuilder({ fields = [], onChange }) {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); moveField(index, 'down'); }}
                         disabled={index === fields.length - 1}
-                        className="p-0.5 text-[#0F0F0F]/30 hover:text-[#0F0F0F]/60 disabled:opacity-30"
+                        className="p-0.5 text-foreground/30 hover:text-muted-foreground disabled:opacity-30"
                       >
                         <ChevronDown className="w-4 h-4" />
                       </button>
@@ -137,14 +137,14 @@ export function CustomFormBuilder({ fields = [], onChange }) {
                     {/* Field Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-[#0F0F0F] truncate">
+                        <span className="font-medium text-foreground truncate">
                           {field.field_label || 'Untitled Question'}
                         </span>
                         {field.is_required && (
                           <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Required</span>
                         )}
                       </div>
-                      <span className="text-sm text-[#0F0F0F]/50 capitalize">{field.field_type}</span>
+                      <span className="text-sm text-muted-foreground capitalize">{field.field_type}</span>
                     </div>
 
                     {/* Actions */}
@@ -159,7 +159,7 @@ export function CustomFormBuilder({ fields = [], onChange }) {
 
                   {/* Expanded View */}
                   {expandedField === field.id && (
-                    <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10 space-y-4">
+                    <div className="mt-4 pt-4 border-t border-border/10 space-y-4">
                       {/* Question Label */}
                       <div className="space-y-2">
                         <Label>Question <span className="text-red-500">*</span></Label>
@@ -185,16 +185,16 @@ export function CustomFormBuilder({ fields = [], onChange }) {
                                 className={`p-3 rounded-xl border text-left transition-all ${
                                   field.field_type === type.value
                                     ? 'border-[#2969FF] bg-[#2969FF]/5'
-                                    : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                                    : 'border-border/10 hover:border-border/20'
                                 }`}
                               >
                                 <div className="flex items-center gap-2">
-                                  <Icon className={`w-4 h-4 ${field.field_type === type.value ? 'text-[#2969FF]' : 'text-[#0F0F0F]/50'}`} />
-                                  <span className={`font-medium ${field.field_type === type.value ? 'text-[#2969FF]' : 'text-[#0F0F0F]'}`}>
+                                  <Icon className={`w-4 h-4 ${field.field_type === type.value ? 'text-[#2969FF]' : 'text-muted-foreground'}`} />
+                                  <span className={`font-medium ${field.field_type === type.value ? 'text-[#2969FF]' : 'text-foreground'}`}>
                                     {type.label}
                                   </span>
                                 </div>
-                                <p className="text-xs text-[#0F0F0F]/50 mt-1">{type.description}</p>
+                                <p className="text-xs text-muted-foreground mt-1">{type.description}</p>
                               </button>
                             );
                           })}
@@ -269,7 +269,7 @@ export function CustomFormBuilder({ fields = [], onChange }) {
 
       {/* Helper Text */}
       {fields.length === 0 && (
-        <p className="text-center text-sm text-[#0F0F0F]/50">
+        <p className="text-center text-sm text-muted-foreground">
           Add questions to collect extra information like meal preferences, t-shirt sizes, etc.
         </p>
       )}

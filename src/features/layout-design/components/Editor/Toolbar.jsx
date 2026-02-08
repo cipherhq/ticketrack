@@ -64,7 +64,7 @@ export function Toolbar({ canvasRef }) {
 
   return (
     <TooltipProvider>
-      <div className="h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-2">
+      <div className="h-14 bg-card border-b border-border/20 flex items-center px-4 gap-2">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -79,10 +79,10 @@ export function Toolbar({ canvasRef }) {
 
         {/* Layout Name */}
         <div className="flex items-center gap-2 min-w-[200px]">
-          <span className="font-medium text-gray-900 truncate">
+          <span className="font-medium text-foreground truncate">
             {layout?.name || 'Untitled Layout'}
           </span>
-          <span className="text-xs text-gray-500 flex items-center">
+          <span className="text-xs text-muted-foreground flex items-center">
             {isSaving ? (
               <>
                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />

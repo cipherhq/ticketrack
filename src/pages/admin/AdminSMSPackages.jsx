@@ -167,8 +167,8 @@ export function AdminSMSPackages() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Message Credit Packages</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Create packages for organizers to buy SMS, WhatsApp, and email credits</p>
+          <h2 className="text-2xl font-semibold text-foreground">Message Credit Packages</h2>
+          <p className="text-muted-foreground mt-1">Create packages for organizers to buy SMS, WhatsApp, and email credits</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={loadPackages} className="rounded-xl"><RefreshCw className="w-4 h-4" /></Button>
@@ -176,7 +176,7 @@ export function AdminSMSPackages() {
         </div>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50">
+      <Card className="border-border/10 rounded-2xl bg-blue-50">
         <CardContent className="p-4">
           <p className="text-blue-800 font-medium">Multi-Currency Pricing</p>
           <p className="text-sm text-blue-700 mt-1">Set prices for each region. Organizers only see their local currency.</p>
@@ -190,37 +190,37 @@ export function AdminSMSPackages() {
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader><CardTitle>All Packages</CardTitle></CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#0F0F0F]/10">
-                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Package</th>
-                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Credits</th>
-                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">NGN</th>
-                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">GHS</th>
-                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">USD</th>
-                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">GBP</th>
-                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">CAD</th>
-                  <th className="text-left py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Active</th>
-                  <th className="text-right py-3 px-2 text-[#0F0F0F]/60 font-medium text-sm">Actions</th>
+                <tr className="border-b border-border/10">
+                  <th className="text-left py-3 px-2 text-muted-foreground font-medium text-sm">Package</th>
+                  <th className="text-left py-3 px-2 text-muted-foreground font-medium text-sm">Credits</th>
+                  <th className="text-left py-3 px-2 text-muted-foreground font-medium text-sm">NGN</th>
+                  <th className="text-left py-3 px-2 text-muted-foreground font-medium text-sm">GHS</th>
+                  <th className="text-left py-3 px-2 text-muted-foreground font-medium text-sm">USD</th>
+                  <th className="text-left py-3 px-2 text-muted-foreground font-medium text-sm">GBP</th>
+                  <th className="text-left py-3 px-2 text-muted-foreground font-medium text-sm">CAD</th>
+                  <th className="text-left py-3 px-2 text-muted-foreground font-medium text-sm">Active</th>
+                  <th className="text-right py-3 px-2 text-muted-foreground font-medium text-sm">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {packages.map((pkg) => (
-                  <tr key={pkg.id} className="border-b border-[#0F0F0F]/5">
+                  <tr key={pkg.id} className="border-b border-border/5">
                     <td className="py-3 px-2">
                       <span className="font-medium">{pkg.name}</span>
                       {pkg.is_popular && <Badge className="ml-2 bg-[#2969FF] text-white text-xs"><Sparkles className="w-3 h-3 mr-1" />Popular</Badge>}
                     </td>
                     <td className="py-3 px-2">{pkg.credits}{pkg.bonus_credits > 0 && <span className="text-green-600 text-xs ml-1">+{pkg.bonus_credits}</span>}</td>
                     <td className="py-3 px-2 font-medium">₦{pkg.price_ngn?.toLocaleString()}</td>
-                    <td className="py-3 px-2">{pkg.price_ghs ? `GH₵${pkg.price_ghs}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
-                    <td className="py-3 px-2">{pkg.price_usd ? `$${pkg.price_usd}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
-                    <td className="py-3 px-2">{pkg.price_gbp ? `£${pkg.price_gbp}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
-                    <td className="py-3 px-2">{pkg.price_cad ? `C$${pkg.price_cad}` : <span className="text-[#0F0F0F]/30">—</span>}</td>
+                    <td className="py-3 px-2">{pkg.price_ghs ? `GH₵${pkg.price_ghs}` : <span className="text-foreground/30">—</span>}</td>
+                    <td className="py-3 px-2">{pkg.price_usd ? `$${pkg.price_usd}` : <span className="text-foreground/30">—</span>}</td>
+                    <td className="py-3 px-2">{pkg.price_gbp ? `£${pkg.price_gbp}` : <span className="text-foreground/30">—</span>}</td>
+                    <td className="py-3 px-2">{pkg.price_cad ? `C$${pkg.price_cad}` : <span className="text-foreground/30">—</span>}</td>
                     <td className="py-3 px-2"><Switch checked={pkg.is_active} onCheckedChange={() => toggleActive(pkg)} /></td>
                     <td className="py-3 px-2 text-right">
                       <Button variant="ghost" size="sm" onClick={() => openEditDialog(pkg)}><Edit className="w-4 h-4" /></Button>
@@ -245,13 +245,13 @@ export function AdminSMSPackages() {
               <div><Label>Bonus</Label><Input type="number" value={form.bonus_credits} onChange={(e) => setForm({ ...form, bonus_credits: e.target.value })} className="rounded-xl mt-1" /></div>
             </div>
             <div className="space-y-3">
-              <p className="text-sm font-medium text-[#0F0F0F]/60">Pricing by Region</p>
+              <p className="text-sm font-medium text-muted-foreground">Pricing by Region</p>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>NGN (₦) * <span className="text-xs text-[#0F0F0F]/40">Nigeria</span></Label><Input type="number" value={form.price_ngn} onChange={(e) => setForm({ ...form, price_ngn: e.target.value })} className="rounded-xl mt-1" /></div>
-                <div><Label>GHS (GH₵) <span className="text-xs text-[#0F0F0F]/40">Ghana</span></Label><Input type="number" step="0.01" value={form.price_ghs} onChange={(e) => setForm({ ...form, price_ghs: e.target.value })} className="rounded-xl mt-1" /></div>
-                <div><Label>USD ($) <span className="text-xs text-[#0F0F0F]/40">USA</span></Label><Input type="number" step="0.01" value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="rounded-xl mt-1" /></div>
-                <div><Label>GBP (£) <span className="text-xs text-[#0F0F0F]/40">UK</span></Label><Input type="number" step="0.01" value={form.price_gbp} onChange={(e) => setForm({ ...form, price_gbp: e.target.value })} className="rounded-xl mt-1" /></div>
-                <div><Label>CAD (C$) <span className="text-xs text-[#0F0F0F]/40">Canada</span></Label><Input type="number" step="0.01" value={form.price_cad} onChange={(e) => setForm({ ...form, price_cad: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>NGN (₦) * <span className="text-xs text-muted-foreground">Nigeria</span></Label><Input type="number" value={form.price_ngn} onChange={(e) => setForm({ ...form, price_ngn: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>GHS (GH₵) <span className="text-xs text-muted-foreground">Ghana</span></Label><Input type="number" step="0.01" value={form.price_ghs} onChange={(e) => setForm({ ...form, price_ghs: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>USD ($) <span className="text-xs text-muted-foreground">USA</span></Label><Input type="number" step="0.01" value={form.price_usd} onChange={(e) => setForm({ ...form, price_usd: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>GBP (£) <span className="text-xs text-muted-foreground">UK</span></Label><Input type="number" step="0.01" value={form.price_gbp} onChange={(e) => setForm({ ...form, price_gbp: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div><Label>CAD (C$) <span className="text-xs text-muted-foreground">Canada</span></Label><Input type="number" step="0.01" value={form.price_cad} onChange={(e) => setForm({ ...form, price_cad: e.target.value })} className="rounded-xl mt-1" /></div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -261,8 +261,8 @@ export function AdminSMSPackages() {
             <div className="flex items-center justify-between"><Label>Popular (highlighted)</Label><Switch checked={form.is_popular} onCheckedChange={(c) => setForm({ ...form, is_popular: c })} /></div>
             <div className="flex items-center justify-between"><Label>Active (visible to organizers)</Label><Switch checked={form.is_active} onCheckedChange={(c) => setForm({ ...form, is_active: c })} /></div>
             {form.credits && form.price_ngn && (
-              <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60">Profit per sale (cost ₦4/credit)</p>
+              <div className="p-3 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground">Profit per sale (cost ₦4/credit)</p>
                 <p className="font-medium">{formatCurrency(parseFloat(form.price_ngn) - (parseInt(form.credits) + parseInt(form.bonus_credits || 0)) * 4)}</p>
               </div>
             )}

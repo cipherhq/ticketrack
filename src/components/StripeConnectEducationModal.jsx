@@ -53,12 +53,12 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
         {/* Header with gradient */}
         <div className="bg-gradient-to-br from-[#635BFF] to-[#0A2540] p-6 text-white">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-card/20 rounded-xl flex items-center justify-center">
               <CreditCard className="w-6 h-6" />
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-full bg-card/10 hover:bg-card/20 flex items-center justify-center transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -77,28 +77,28 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
         <div className="p-6 space-y-6">
           {/* How it works */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#635BFF]" />
               How Stripe Connect Works
             </h3>
             
             {/* Flow diagram */}
-            <div className="bg-[#F4F6FA] rounded-xl p-4">
+            <div className="bg-muted rounded-xl p-4">
               <div className="flex items-center justify-between text-sm">
                 <div className="text-center flex-1">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
+                  <div className="w-10 h-10 bg-card rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
                     <CreditCard className="w-5 h-5 text-[#635BFF]" />
                   </div>
-                  <p className="font-medium text-[#0F0F0F]">Attendee Pays</p>
+                  <p className="font-medium text-foreground">Attendee Pays</p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-[#0F0F0F]/30 flex-shrink-0" />
+                <ArrowRight className="w-5 h-5 text-foreground/30 flex-shrink-0" />
                 <div className="text-center flex-1">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
+                  <div className="w-10 h-10 bg-card rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
                     <Shield className="w-5 h-5 text-[#635BFF]" />
                   </div>
-                  <p className="font-medium text-[#0F0F0F]">Stripe Processes</p>
+                  <p className="font-medium text-foreground">Stripe Processes</p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-[#0F0F0F]/30 flex-shrink-0" />
+                <ArrowRight className="w-5 h-5 text-foreground/30 flex-shrink-0" />
                 <div className="text-center flex-1">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
                     <DollarSign className="w-5 h-5 text-green-600" />
@@ -111,13 +111,13 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
 
           {/* Benefits */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-[#0F0F0F]">Why Use Stripe Connect?</h3>
+            <h3 className="font-semibold text-foreground">Why Use Stripe Connect?</h3>
             <ul className="space-y-2">
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Direct Deposits</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Direct Deposits</p>
+                  <p className="text-sm text-muted-foreground">
                     Money goes straight to your bank account - no waiting for manual payouts
                   </p>
                 </div>
@@ -125,8 +125,8 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Fast Payouts</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Fast Payouts</p>
+                  <p className="text-sm text-muted-foreground">
                     Receive funds within 2-3 business days after each sale
                   </p>
                 </div>
@@ -134,8 +134,8 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Transparent Fees</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Transparent Fees</p>
+                  <p className="text-sm text-muted-foreground">
                     Only a small platform fee is deducted - you keep the rest
                   </p>
                 </div>
@@ -143,8 +143,8 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Full Control</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Full Control</p>
+                  <p className="text-sm text-muted-foreground">
                     Manage your payments, refunds, and disputes directly
                   </p>
                 </div>
@@ -179,7 +179,7 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
           </div>
 
           {/* Setup time note */}
-          <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-4 h-4" />
             <span>Setup takes less than 5 minutes</span>
           </div>
@@ -204,7 +204,7 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
 
           <button
             onClick={handleDismiss}
-            className="w-full text-center text-sm text-[#0F0F0F]/40 hover:text-[#0F0F0F]/60"
+            className="w-full text-center text-sm text-muted-foreground hover:text-muted-foreground"
           >
             Don't show this again
           </button>

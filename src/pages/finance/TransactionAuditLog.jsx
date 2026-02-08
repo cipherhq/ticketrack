@@ -140,7 +140,7 @@ export function TransactionAuditLog() {
     if (type.includes('fee') || type.includes('commission')) return 'bg-blue-100 text-blue-800';
     if (type.includes('payout')) return 'bg-purple-100 text-purple-800';
     if (type.includes('refund') || type.includes('chargeback')) return 'bg-red-100 text-red-800';
-    return 'bg-gray-100 text-gray-800';
+    return 'bg-muted text-foreground';
   };
 
   const formatType = (type) => {
@@ -167,8 +167,8 @@ export function TransactionAuditLog() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Transaction Audit Log</h1>
-          <p className="text-[#0F0F0F]/60">Complete trail of all financial movements</p>
+          <h1 className="text-2xl font-bold text-foreground">Transaction Audit Log</h1>
+          <p className="text-muted-foreground">Complete trail of all financial movements</p>
         </div>
         <Button onClick={handleExport} variant="outline" className="rounded-xl">
           <Download className="w-4 h-4 mr-2" />
@@ -177,11 +177,11 @@ export function TransactionAuditLog() {
       </div>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search transactions..."
                 value={search}
@@ -201,14 +201,14 @@ export function TransactionAuditLog() {
               </SelectContent>
             </Select>
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#0F0F0F]/40" />
+              <Calendar className="w-4 h-4 text-muted-foreground" />
               <Input
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
                 className="w-[140px] rounded-xl"
               />
-              <span className="text-[#0F0F0F]/40">to</span>
+              <span className="text-muted-foreground">to</span>
               <Input
                 type="date"
                 value={dateRange.end}
@@ -224,7 +224,7 @@ export function TransactionAuditLog() {
       </Card>
 
       {/* Transactions Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Transactions ({totalCount.toLocaleString()})</CardTitle>
         </CardHeader>
@@ -246,7 +246,7 @@ export function TransactionAuditLog() {
                 <TableRow key={tx.id}>
                   <TableCell className="text-sm">
                     <div>{new Date(tx.created_at).toLocaleDateString()}</div>
-                    <div className="text-[#0F0F0F]/50 text-xs">
+                    <div className="text-muted-foreground text-xs">
                       {new Date(tx.created_at).toLocaleTimeString()}
                     </div>
                   </TableCell>
@@ -276,7 +276,7 @@ export function TransactionAuditLog() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-xs text-[#0F0F0F]/60">
+                    <span className="text-xs text-muted-foreground">
                       {tx.payment_provider || '-'}
                     </span>
                   </TableCell>
@@ -284,7 +284,7 @@ export function TransactionAuditLog() {
               ))}
               {filteredTransactions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No transactions found
                   </TableCell>
                 </TableRow>
@@ -295,7 +295,7 @@ export function TransactionAuditLog() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <span className="text-sm text-[#0F0F0F]/60">
+              <span className="text-sm text-muted-foreground">
                 Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount}
               </span>
               <div className="flex gap-2">

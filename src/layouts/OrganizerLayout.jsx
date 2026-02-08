@@ -134,7 +134,7 @@ export function OrganizerLayout({ children }) {
         <NotificationBadge
           count={counts[item.notificationKey]}
           size="sm"
-          className={isActive(item.path) ? 'bg-white text-primary' : ''}
+          className={isActive(item.path) ? 'bg-card text-primary' : ''}
         />
       )}
     </Link>

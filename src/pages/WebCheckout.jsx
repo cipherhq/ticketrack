@@ -1572,7 +1572,7 @@ const formatDate = (dateString) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Button variant="ghost" className="mb-6 text-[#0F0F0F]/60 hover:text-[#0F0F0F]" onClick={() => navigate(-1)}>
+      <Button variant="ghost" className="mb-6 text-muted-foreground hover:text-foreground" onClick={() => navigate(-1)}>
         <ArrowLeft className="w-4 h-4 mr-2" />Back
       </Button>
 
@@ -1588,8 +1588,8 @@ const formatDate = (dateString) => {
       </div>
 
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-[#0F0F0F] mb-2">Checkout</h1>
-        <p className="text-[#0F0F0F]/60">Complete your ticket purchase</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Checkout</h1>
+        <p className="text-muted-foreground">Complete your ticket purchase</p>
       </div>
 
       {error && (
@@ -1598,8 +1598,8 @@ const formatDate = (dateString) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
-            <CardHeader><CardTitle className="text-[#0F0F0F]">Contact Information</CardTitle></CardHeader>
+          <Card className="border-border/10 rounded-2xl">
+            <CardHeader><CardTitle className="text-foreground">Contact Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {/* Toggle: Buying for self or someone else */}
               <div className="flex gap-3">
@@ -1609,7 +1609,7 @@ const formatDate = (dateString) => {
                   className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
                     buyingForSelf 
                       ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]' 
-                      : 'border-[#0F0F0F]/10 text-[#0F0F0F]/60 hover:border-[#0F0F0F]/20'
+                      : 'border-border/10 text-muted-foreground hover:border-border/20'
                   }`}
                 >
                   <UserCheck className="w-5 h-5" />
@@ -1621,7 +1621,7 @@ const formatDate = (dateString) => {
                   className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
                     !buyingForSelf 
                       ? 'border-[#2969FF] bg-[#2969FF]/5 text-[#2969FF]' 
-                      : 'border-[#0F0F0F]/10 text-[#0F0F0F]/60 hover:border-[#0F0F0F]/20'
+                      : 'border-border/10 text-muted-foreground hover:border-border/20'
                   }`}
                 >
                   <User className="w-5 h-5" />
@@ -1631,29 +1631,29 @@ const formatDate = (dateString) => {
 
               {buyingForSelf ? (
                 /* Read-only profile display for fast checkout */
-                <div className="space-y-3 p-4 bg-[#F4F6FA] rounded-xl">
+                <div className="space-y-3 p-4 bg-muted rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-semibold">
                       {formData.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <div>
-                      <p className="font-semibold text-[#0F0F0F]">
+                      <p className="font-semibold text-foreground">
                         {formData.firstName && formData.lastName 
                           ? `${formData.firstName} ${formData.lastName}` 
                           : 'Complete your profile'}
                       </p>
-                      <p className="text-sm text-[#0F0F0F]/60">Ticket holder</p>
+                      <p className="text-sm text-muted-foreground">Ticket holder</p>
                     </div>
                   </div>
                   <Separator />
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 text-sm">
-                      <Mail className="w-4 h-4 text-[#0F0F0F]/40" />
-                      <span className="text-[#0F0F0F]">{formData.email || 'No email set'}</span>
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-foreground">{formData.email || 'No email set'}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
-                      <Phone className="w-4 h-4 text-[#0F0F0F]/40" />
-                      <span className="text-[#0F0F0F]">{formData.phone || 'No phone set'}</span>
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-foreground">{formData.phone || 'No phone set'}</span>
                     </div>
                   </div>
                   {(!formData.firstName || !formData.lastName || !formData.email) && (
@@ -1661,7 +1661,7 @@ const formatDate = (dateString) => {
                       ⚠️ Please complete your profile to continue checkout
                     </p>
                   )}
-                  <p className="text-xs text-[#0F0F0F]/50">Tickets will be sent to your email address</p>
+                  <p className="text-xs text-muted-foreground">Tickets will be sent to your email address</p>
                 </div>
               ) : (
                 /* Editable form for buying for someone else */
@@ -1677,7 +1677,7 @@ const formatDate = (dateString) => {
                         placeholder="John"
                         value={formData.firstName}
                         onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        className={`rounded-xl border-[#0F0F0F]/10 ${formErrors.firstName ? 'border-red-500' : ''}`}
+                        className={`rounded-xl border-border/10 ${formErrors.firstName ? 'border-red-500' : ''}`}
                         required
                       />
                       {formErrors.firstName && <p className="text-xs text-red-500">{formErrors.firstName}</p>}
@@ -1689,7 +1689,7 @@ const formatDate = (dateString) => {
                         placeholder="Doe"
                         value={formData.lastName}
                         onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        className={`rounded-xl border-[#0F0F0F]/10 ${formErrors.lastName ? 'border-red-500' : ''}`}
+                        className={`rounded-xl border-border/10 ${formErrors.lastName ? 'border-red-500' : ''}`}
                         required
                       />
                       {formErrors.lastName && <p className="text-xs text-red-500">{formErrors.lastName}</p>}
@@ -1703,11 +1703,11 @@ const formatDate = (dateString) => {
                       placeholder="their@email.com"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className={`rounded-xl border-[#0F0F0F]/10 ${formErrors.email ? 'border-red-500' : ''}`}
+                      className={`rounded-xl border-border/10 ${formErrors.email ? 'border-red-500' : ''}`}
                       required
                     />
                     {formErrors.email && <p className="text-xs text-red-500">{formErrors.email}</p>}
-                    <p className="text-sm text-[#0F0F0F]/60">Tickets will be sent to this email</p>
+                    <p className="text-sm text-muted-foreground">Tickets will be sent to this email</p>
                   </div>
 
                 </div>
@@ -1717,8 +1717,8 @@ const formatDate = (dateString) => {
 
           {/* Custom Form Fields */}
           {customFields.length > 0 && (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
-              <CardHeader><CardTitle className="text-[#0F0F0F]">Additional Information</CardTitle></CardHeader>
+            <Card className="border-border/10 rounded-2xl">
+              <CardHeader><CardTitle className="text-foreground">Additional Information</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {customFields.map((field) => (
                   <div key={field.id} className="space-y-2">
@@ -1730,7 +1730,7 @@ const formatDate = (dateString) => {
                         id={`custom-${field.id}`}
                         value={customFieldResponses[field.id] || ''}
                         onChange={(e) => setCustomFieldResponses(prev => ({ ...prev, [field.id]: e.target.value }))}
-                        className="rounded-xl border-[#0F0F0F]/10"
+                        className="rounded-xl border-border/10"
                         required={field.is_required}
                       />
                     )}
@@ -1739,7 +1739,7 @@ const formatDate = (dateString) => {
                         id={`custom-${field.id}`}
                         value={customFieldResponses[field.id] || ''}
                         onChange={(e) => setCustomFieldResponses(prev => ({ ...prev, [field.id]: e.target.value }))}
-                        className="w-full h-12 px-4 rounded-xl border border-[#0F0F0F]/10 bg-white"
+                        className="w-full h-12 px-4 rounded-xl border border-border/10 bg-card"
                         required={field.is_required}
                       >
                         <option value="">Select an option</option>
@@ -1754,27 +1754,27 @@ const formatDate = (dateString) => {
             </Card>
           )}
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
-            <CardHeader><CardTitle className="text-[#0F0F0F]">Payment Method</CardTitle></CardHeader>
+          <Card className="border-border/10 rounded-2xl">
+            <CardHeader><CardTitle className="text-foreground">Payment Method</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className={`grid gap-3 ${availablePaymentMethods.length === 1 ? 'grid-cols-1' : availablePaymentMethods.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                 {availablePaymentMethods.map(({ id, label }) => {
                   const Icon = id === 'card' ? CreditCard : id === 'bank' ? Building2 : id === 'ussd' ? Smartphone : CreditCard;
                   return (
-                    <button key={id} type="button" onClick={() => setPaymentMethod(id)} className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${paymentMethod === id ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'}`}>
-                      <Icon className={`w-6 h-6 ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`} />
-                      <span className={`text-sm ${paymentMethod === id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/60'}`}>{label}</span>
+                    <button key={id} type="button" onClick={() => setPaymentMethod(id)} className={`p-4 border rounded-xl flex flex-col items-center gap-2 transition-all ${paymentMethod === id ? 'border-[#2969FF] bg-[#2969FF]/5' : 'border-border/10 hover:border-border/20'}`}>
+                      <Icon className={`w-6 h-6 ${paymentMethod === id ? 'text-[#2969FF]' : 'text-muted-foreground'}`} />
+                      <span className={`text-sm ${paymentMethod === id ? 'text-[#2969FF]' : 'text-muted-foreground'}`}>{label}</span>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
+              <div className="p-4 bg-muted rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
                   <Lock className="w-4 h-4 text-[#2969FF]" />
-                  <p className="font-medium text-[#0F0F0F]">{getProviderInfo(event?.currency).description}</p>
+                  <p className="font-medium text-foreground">{getProviderInfo(event?.currency).description}</p>
                 </div>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="text-sm text-muted-foreground">
                   {paymentMethod === 'card' && (paymentProvider === 'stripe' ? 'Pay securely with Card, Apple Pay, or Google Pay.' : 'You will be redirected to enter your card details securely.')}
                   {paymentMethod === 'bank' && 'You will receive bank transfer details to complete payment.'}
                   {paymentMethod === 'ussd' && 'You will receive a USSD code to dial from your phone.'}
@@ -1785,17 +1785,17 @@ const formatDate = (dateString) => {
         </div>
 
         <div className="lg:col-span-1">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
-            <CardHeader><CardTitle className="text-[#0F0F0F]">Order Summary</CardTitle></CardHeader>
+          <Card className="border-border/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
+            <CardHeader><CardTitle className="text-foreground">Order Summary</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-4">
-                <div className="w-20 h-20 rounded-xl overflow-hidden bg-[#F4F6FA] flex-shrink-0">
+                <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0">
                   <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none' }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-[#0F0F0F] line-clamp-2">{event.title}</h3>
-                  <div className="flex items-center gap-1 text-xs text-[#0F0F0F]/60 mt-1"><Calendar className="w-3 h-3" /><span>{formatDate(event.start_date)}</span></div>
-                  <div className="flex items-center gap-1 text-xs text-[#0F0F0F]/60 mt-1"><MapPin className="w-3 h-3" /><span>{event.venue_name}</span></div>
+                  <h3 className="font-semibold text-foreground line-clamp-2">{event.title}</h3>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1"><Calendar className="w-3 h-3" /><span>{formatDate(event.start_date)}</span></div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1"><MapPin className="w-3 h-3" /><span>{event.venue_name}</span></div>
                 </div>
               </div>
 
@@ -1804,8 +1804,8 @@ const formatDate = (dateString) => {
               <div className="space-y-3">
                 {ticketSummary.map((ticket, index) => (
                   <div key={index} className="flex justify-between text-sm">
-                    <span className="text-[#0F0F0F]/70">{ticket.name} × {ticket.quantity}</span>
-                    <span className="text-[#0F0F0F]">{formatPrice(ticket.subtotal, event?.currency)}</span>
+                    <span className="text-foreground/70">{ticket.name} × {ticket.quantity}</span>
+                    <span className="text-foreground">{formatPrice(ticket.subtotal, event?.currency)}</span>
                   </div>
                 ))}
               </div>
@@ -1814,7 +1814,7 @@ const formatDate = (dateString) => {
 
               {/* Promo Code Input */}
               <div className="space-y-2">
-                <p className="text-sm font-medium text-[#0F0F0F]">Have a promo code?</p>
+                <p className="text-sm font-medium text-foreground">Have a promo code?</p>
                 {promoApplied ? (
                   <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
                     <div className="flex items-center gap-2">
@@ -1834,14 +1834,14 @@ const formatDate = (dateString) => {
                       placeholder="Enter code"
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                      className="rounded-xl border-[#0F0F0F]/10 font-mono uppercase flex-1"
+                      className="rounded-xl border-border/10 font-mono uppercase flex-1"
                       onKeyDown={(e) => e.key === 'Enter' && applyPromoCode()}
                     />
                     <Button 
                       variant="outline" 
                       onClick={applyPromoCode} 
                       disabled={applyingPromo || !promoCode.trim()}
-                      className="rounded-xl border-[#0F0F0F]/10"
+                      className="rounded-xl border-border/10"
                     >
                       {applyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
                     </Button>
@@ -1854,12 +1854,12 @@ const formatDate = (dateString) => {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#0F0F0F]/60">Subtotal ({totalTicketCount} {totalTicketCount === 1 ? 'ticket' : 'tickets'})</span>
-                  <span className="text-[#0F0F0F]">{formatPrice(totalAmount, event?.currency)}</span>
+                  <span className="text-muted-foreground">Subtotal ({totalTicketCount} {totalTicketCount === 1 ? 'ticket' : 'tickets'})</span>
+                  <span className="text-foreground">{formatPrice(totalAmount, event?.currency)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#0F0F0F]/60">Service Fee</span>
-                  <span className="text-[#0F0F0F]">{formatPrice(serviceFee, event?.currency)}</span>
+                  <span className="text-muted-foreground">Service Fee</span>
+                  <span className="text-foreground">{formatPrice(serviceFee, event?.currency)}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-sm">
@@ -1869,7 +1869,7 @@ const formatDate = (dateString) => {
                 )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
-                  <span className="text-[#0F0F0F]">Total</span>
+                  <span className="text-foreground">Total</span>
                   <span className="text-[#2969FF]">{formatPrice(finalTotal, event?.currency)}</span>
                 </div>
               </div>
@@ -1892,13 +1892,13 @@ const formatDate = (dateString) => {
                     type="checkbox"
                     checked={formData.communicationConsent}
                     onChange={(e) => setFormData(f => ({ ...f, communicationConsent: e.target.checked }))}
-                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#2969FF] focus:ring-[#2969FF]"
+                    className="mt-0.5 w-4 h-4 rounded border-border/30 text-[#2969FF] focus:ring-primary"
                   />
-                  <span className="text-xs text-[#0F0F0F]/60">
+                  <span className="text-xs text-muted-foreground">
                     I agree to receive event updates, reminders, and promotional messages from the organizer via email, SMS, and WhatsApp. You can unsubscribe anytime.
                   </span>
                 </label>
-                <p className="text-xs text-center text-[#0F0F0F]/40">
+                <p className="text-xs text-center text-muted-foreground">
                   By purchasing, you agree to our <a href="/terms" className="underline hover:text-[#2969FF]">Terms of Service</a> and <a href="/privacy" className="underline hover:text-[#2969FF]">Privacy Policy</a>
                 </p>
               </div>

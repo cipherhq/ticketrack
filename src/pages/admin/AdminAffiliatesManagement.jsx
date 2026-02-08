@@ -290,7 +290,7 @@ export function AdminAffiliatesManagement() {
       case 'pending':
         return <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-600">Unknown</Badge>;
+        return <Badge className="bg-muted text-muted-foreground">Unknown</Badge>;
     }
   };
 
@@ -341,8 +341,8 @@ export function AdminAffiliatesManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Affiliates</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Users earning by sharing event links platform-wide</p>
+          <h1 className="text-2xl font-bold text-foreground">Affiliates</h1>
+          <p className="text-muted-foreground mt-1">Users earning by sharing event links platform-wide</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={loadAffiliates} variant="outline" className="rounded-xl">
@@ -358,62 +358,62 @@ export function AdminAffiliatesManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Users className="w-5 h-5 text-[#2969FF]" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Affiliates</p>
+                <p className="text-sm text-muted-foreground">Total Affiliates</p>
                 <h3 className="text-2xl font-semibold">{stats.totalAffiliates}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Active Affiliates</p>
+                <p className="text-sm text-muted-foreground">Active Affiliates</p>
                 <h3 className="text-2xl font-semibold">{stats.activeAffiliates}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Commissions</p>
+                <p className="text-sm text-muted-foreground">Total Commissions</p>
                 <h3 className="text-2xl font-semibold">{formatPrice(stats.totalEarnings, stats.primaryCurrency || 'NGN')}</h3>
                 {stats.statsByCurrency && Object.keys(stats.statsByCurrency).length > 1 && (
-                  <p className="text-xs text-[#0F0F0F]/50">Multi-currency</p>
+                  <p className="text-xs text-muted-foreground">Multi-currency</p>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Banknote className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
+                <p className="text-sm text-muted-foreground">Pending Payouts</p>
                 <h3 className="text-2xl font-semibold">{formatPrice(stats.pendingPayouts, stats.primaryCurrency || 'NGN')}</h3>
                 {stats.statsByCurrency && Object.keys(stats.statsByCurrency).length > 1 && (
-                  <p className="text-xs text-[#0F0F0F]/50">Multi-currency</p>
+                  <p className="text-xs text-muted-foreground">Multi-currency</p>
                 )}
               </div>
             </div>
@@ -424,7 +424,7 @@ export function AdminAffiliatesManagement() {
       {/* Filters */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, or code..."
             value={searchTerm}
@@ -446,13 +446,13 @@ export function AdminAffiliatesManagement() {
       </div>
 
       {/* Affiliates List */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Affiliates ({filteredAffiliates.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {filteredAffiliates.length === 0 ? (
-            <div className="text-center py-8 text-[#0F0F0F]/50">
+            <div className="text-center py-8 text-muted-foreground">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>No affiliates found</p>
             </div>
@@ -460,32 +460,32 @@ export function AdminAffiliatesManagement() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#0F0F0F]/10">
-                    <th className="text-left py-3 px-4 font-medium text-[#0F0F0F]/60">User</th>
-                    <th className="text-left py-3 px-4 font-medium text-[#0F0F0F]/60">Code</th>
-                    <th className="text-center py-3 px-4 font-medium text-[#0F0F0F]/60">Referrals</th>
-                    <th className="text-right py-3 px-4 font-medium text-[#0F0F0F]/60">Earned</th>
-                    <th className="text-right py-3 px-4 font-medium text-[#0F0F0F]/60">Balance</th>
-                    <th className="text-center py-3 px-4 font-medium text-[#0F0F0F]/60">Status</th>
-                    <th className="text-right py-3 px-4 font-medium text-[#0F0F0F]/60">Actions</th>
+                  <tr className="border-b border-border/10">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">User</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Code</th>
+                    <th className="text-center py-3 px-4 font-medium text-muted-foreground">Referrals</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Earned</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Balance</th>
+                    <th className="text-center py-3 px-4 font-medium text-muted-foreground">Status</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredAffiliates.map((affiliate) => (
-                    <tr key={affiliate.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]">
+                    <tr key={affiliate.id} className="border-b border-border/5 hover:bg-muted">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium">
                             {affiliate.full_name?.charAt(0) || affiliate.email?.charAt(0) || 'A'}
                           </div>
                           <div>
-                            <p className="font-medium text-[#0F0F0F]">{affiliate.full_name || 'Unknown'}</p>
-                            <p className="text-sm text-[#0F0F0F]/60">{affiliate.email}</p>
+                            <p className="font-medium text-foreground">{affiliate.full_name || 'Unknown'}</p>
+                            <p className="text-sm text-muted-foreground">{affiliate.email}</p>
                           </div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <code className="px-2 py-1 bg-[#F4F6FA] rounded text-sm">{affiliate.referral_code}</code>
+                        <code className="px-2 py-1 bg-muted rounded text-sm">{affiliate.referral_code}</code>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className="font-medium">{affiliate.referral_count || 0}</span>
@@ -495,17 +495,17 @@ export function AdminAffiliatesManagement() {
                           {formatPrice(affiliate.total_referral_earnings || 0, affiliate.earnings?.primaryCurrency || 'NGN')}
                         </span>
                         {affiliate.earnings?.currencyBreakdown && Object.keys(affiliate.earnings.currencyBreakdown).length > 1 && (
-                          <div className="text-xs text-[#0F0F0F]/50 mt-1">
+                          <div className="text-xs text-muted-foreground mt-1">
                             Multi-currency
                           </div>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <span className={`font-medium ${affiliate.affiliate_balance > 0 ? 'text-orange-600' : 'text-[#0F0F0F]/40'}`}>
+                        <span className={`font-medium ${affiliate.affiliate_balance > 0 ? 'text-orange-600' : 'text-muted-foreground'}`}>
                           {formatPrice(affiliate.affiliate_balance || 0, affiliate.earnings?.primaryCurrency || 'NGN')}
                         </span>
                         {affiliate.earnings?.currencyBreakdown && Object.keys(affiliate.earnings.currencyBreakdown).length > 1 && (
-                          <div className="text-xs text-[#0F0F0F]/50 mt-1">
+                          <div className="text-xs text-muted-foreground mt-1">
                             Multi-currency
                           </div>
                         )}
@@ -517,7 +517,7 @@ export function AdminAffiliatesManagement() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-xl">
-                              <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                              <MoreVertical className="w-5 h-5 text-muted-foreground" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl">
@@ -601,33 +601,33 @@ export function AdminAffiliatesManagement() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">{selectedAffiliate.full_name || 'Unknown'}</h3>
-                  <p className="text-[#0F0F0F]/60">{selectedAffiliate.email}</p>
-                  <code className="text-sm bg-[#F4F6FA] px-2 py-0.5 rounded">{selectedAffiliate.referral_code}</code>
+                  <p className="text-muted-foreground">{selectedAffiliate.email}</p>
+                  <code className="text-sm bg-muted px-2 py-0.5 rounded">{selectedAffiliate.referral_code}</code>
                 </div>
               </div>
 
               <div className="grid grid-cols-4 gap-3">
                 <div className="p-3 bg-blue-50 rounded-xl text-center">
                   <p className="text-xl font-semibold text-blue-600">{selectedAffiliate.referral_count || 0}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Referrals</p>
+                  <p className="text-xs text-muted-foreground">Referrals</p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-xl text-center">
                   <p className="text-lg font-semibold text-green-600">
                     {formatPrice(selectedAffiliate.total_referral_earnings || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">Total Earned</p>
+                  <p className="text-xs text-muted-foreground">Total Earned</p>
                 </div>
                 <div className="p-3 bg-orange-50 rounded-xl text-center">
                   <p className="text-lg font-semibold text-orange-600">
                     {formatPrice(selectedAffiliate.affiliate_balance || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">Balance</p>
+                  <p className="text-xs text-muted-foreground">Balance</p>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-xl text-center">
                   <p className="text-lg font-semibold text-purple-600">
                     {formatPrice(selectedAffiliate.earnings?.paid || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">Paid Out</p>
+                  <p className="text-xs text-muted-foreground">Paid Out</p>
                 </div>
               </div>
 
@@ -637,13 +637,13 @@ export function AdminAffiliatesManagement() {
                   <h4 className="font-medium mb-2 text-sm">Currency Breakdown</h4>
                   <div className="space-y-2">
                     {Object.entries(selectedAffiliate.earnings.currencyBreakdown).map(([currency, amounts]) => (
-                      <div key={currency} className="flex items-center justify-between p-2 bg-[#F4F6FA] rounded-lg">
+                      <div key={currency} className="flex items-center justify-between p-2 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-xs">{currency}</Badge>
                         </div>
                         <div className="text-right text-xs">
                           <div className="font-medium">{formatPrice(amounts.total, currency)}</div>
-                          <div className="text-[#0F0F0F]/50">
+                          <div className="text-muted-foreground">
                             Pending: {formatPrice(amounts.pending + amounts.available, currency)}
                           </div>
                         </div>
@@ -656,14 +656,14 @@ export function AdminAffiliatesManagement() {
               <div>
                 <h4 className="font-medium mb-2">Recent Earnings</h4>
                 {earnings.length === 0 ? (
-                  <p className="text-sm text-[#0F0F0F]/50 text-center py-4">No earnings yet</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">No earnings yet</p>
                 ) : (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {earnings.map((e) => (
-                      <div key={e.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                      <div key={e.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                         <div>
                           <p className="font-medium text-sm">{e.event?.title || 'Unknown Event'}</p>
-                          <p className="text-xs text-[#0F0F0F]/60">{new Date(e.created_at).toLocaleDateString()}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString()}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-green-600">{formatPrice(e.commission_amount, e.currency || e.event?.currency || getDefaultCurrency(e.event?.country_code || e.event?.country))}</p>
@@ -672,7 +672,7 @@ export function AdminAffiliatesManagement() {
                             e.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                             e.status === 'paid' ? 'bg-blue-100 text-blue-700' :
                             e.status === 'reversed' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100'
+                            'bg-muted'
                           }`}>
                             {e.status}
                           </Badge>
@@ -712,12 +712,12 @@ export function AdminAffiliatesManagement() {
           
           <div className="space-y-4">
             {selectedAffiliate && (
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
+              <div className="p-4 bg-muted rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium">{selectedAffiliate.full_name || 'Unknown'}</span>
                   {getStatusBadge(selectedAffiliate.affiliate_status || 'active')}
                 </div>
-                <div className="text-sm text-[#0F0F0F]/60">
+                <div className="text-sm text-muted-foreground">
                   <div>Email: {selectedAffiliate.email}</div>
                   <div>Total Earnings: {formatPrice(selectedAffiliate.total_referral_earnings || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}</div>
                   <div>Balance: {formatPrice(selectedAffiliate.affiliate_balance || 0, selectedAffiliate.earnings?.primaryCurrency || 'NGN')}</div>

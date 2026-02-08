@@ -359,8 +359,8 @@ export function ContactImport() {
           Back
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Import Contacts</h1>
-          <p className="text-[#0F0F0F]/60">Upload a CSV file to import contacts</p>
+          <h1 className="text-2xl font-bold text-foreground">Import Contacts</h1>
+          <p className="text-muted-foreground">Upload a CSV file to import contacts</p>
         </div>
       </div>
 
@@ -371,24 +371,24 @@ export function ContactImport() {
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               step > index + 1 ? 'bg-green-500 text-white' :
               step === index + 1 ? 'bg-[#2969FF] text-white' :
-              'bg-[#F4F6FA] text-[#0F0F0F]/40'
+              'bg-muted text-muted-foreground'
             }`}>
               {step > index + 1 ? <CheckCircle className="w-4 h-4" /> : index + 1}
             </div>
-            <span className={`ml-2 text-sm ${step === index + 1 ? 'font-medium' : 'text-[#0F0F0F]/40'}`}>
+            <span className={`ml-2 text-sm ${step === index + 1 ? 'font-medium' : 'text-muted-foreground'}`}>
               {label}
             </span>
-            {index < 4 && <ChevronRight className="w-4 h-4 mx-4 text-[#0F0F0F]/20" />}
+            {index < 4 && <ChevronRight className="w-4 h-4 mx-4 text-foreground/20" />}
           </div>
         ))}
       </div>
 
       {/* Step 1: Upload */}
       {step === 1 && (
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-8">
             <div
-              className="border-2 border-dashed border-[#0F0F0F]/20 rounded-xl p-12 text-center hover:border-[#2969FF] transition-colors cursor-pointer"
+              className="border-2 border-dashed border-border/20 rounded-xl p-12 text-center hover:border-[#2969FF] transition-colors cursor-pointer"
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => document.getElementById('file-input').click()}
@@ -400,9 +400,9 @@ export function ContactImport() {
                 onChange={handleFileSelect}
                 className="hidden"
               />
-              <Upload className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+              <Upload className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
               <p className="text-lg font-medium mb-2">Drop your CSV file here</p>
-              <p className="text-[#0F0F0F]/60 mb-4">or click to browse</p>
+              <p className="text-muted-foreground mb-4">or click to browse</p>
               <Button variant="outline">
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 Select File
@@ -436,12 +436,12 @@ export function ContactImport() {
 
       {/* Step 2: Map Fields */}
       {step === 2 && (
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardHeader>
             <CardTitle>Map Your Columns</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-[#0F0F0F]/60 mb-4">
+            <p className="text-muted-foreground mb-4">
               Match your CSV columns to the contact fields. We've auto-detected some mappings.
             </p>
 
@@ -505,7 +505,7 @@ export function ContactImport() {
         <div className="space-y-4">
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -513,13 +513,13 @@ export function ContactImport() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{fileData.length}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Total Rows</p>
+                    <p className="text-xs text-muted-foreground">Total Rows</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -527,13 +527,13 @@ export function ContactImport() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-green-600">{validRows}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Valid Contacts</p>
+                    <p className="text-xs text-muted-foreground">Valid Contacts</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
@@ -541,7 +541,7 @@ export function ContactImport() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-red-600">{invalidRows.length}</p>
-                    <p className="text-xs text-[#0F0F0F]/60">Invalid Rows</p>
+                    <p className="text-xs text-muted-foreground">Invalid Rows</p>
                   </div>
                 </div>
               </CardContent>
@@ -549,19 +549,19 @@ export function ContactImport() {
           </div>
 
           {/* Preview Table */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle>Preview (First 10 contacts)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-[#F4F6FA]">
+                  <thead className="bg-muted">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-[#0F0F0F]/60">Email</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-[#0F0F0F]/60">Phone</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-[#0F0F0F]/60">Name</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-[#0F0F0F]/60">Tags</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Email</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Phone</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Name</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Tags</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#0F0F0F]/5">
@@ -586,7 +586,7 @@ export function ContactImport() {
           </Card>
 
           {/* Import Options */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle>Import Options</CardTitle>
             </CardHeader>
@@ -599,7 +599,7 @@ export function ContactImport() {
                 <Label>Skip duplicate contacts (by email)</Label>
               </div>
 
-              <div className="border-t border-[#0F0F0F]/10 pt-4">
+              <div className="border-t border-border/10 pt-4">
                 <p className="text-sm font-medium mb-3">Default Opt-in Settings</p>
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center gap-2">
@@ -667,20 +667,20 @@ export function ContactImport() {
 
       {/* Step 4: Importing */}
       {step === 4 && (
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-12 text-center">
             <Loader2 className="w-16 h-16 animate-spin text-[#2969FF] mx-auto mb-6" />
             <h2 className="text-xl font-semibold mb-2">Importing Contacts...</h2>
-            <p className="text-[#0F0F0F]/60 mb-6">Please don't close this page</p>
+            <p className="text-muted-foreground mb-6">Please don't close this page</p>
             <Progress value={importProgress} className="w-full max-w-md mx-auto" />
-            <p className="text-sm text-[#0F0F0F]/40 mt-2">{Math.round(importProgress)}% complete</p>
+            <p className="text-sm text-muted-foreground mt-2">{Math.round(importProgress)}% complete</p>
           </CardContent>
         </Card>
       )}
 
       {/* Step 5: Complete */}
       {step === 5 && importResults && (
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-12 text-center">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-8 h-8 text-green-600" />

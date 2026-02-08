@@ -186,7 +186,7 @@ export function AdminSendEmails() {
       case 'pending':
         return <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-700">{status}</Badge>;
+        return <Badge className="bg-muted text-foreground/80">{status}</Badge>;
     }
   };
 
@@ -199,13 +199,13 @@ export function AdminSendEmails() {
   if (sent) {
     return (
       <div className="max-w-2xl mx-auto">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-2">Email Sent Successfully!</h2>
-            <p className="text-[#0F0F0F]/60 mb-6">
+            <h2 className="text-2xl font-semibold text-foreground mb-2">Email Sent Successfully!</h2>
+            <p className="text-muted-foreground mb-6">
               Your email has been queued for delivery to {recipientCount} recipient(s).
             </p>
             <Button onClick={resetForm} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
@@ -221,8 +221,8 @@ export function AdminSendEmails() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Email Communications</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Send emails and view communication history</p>
+          <h2 className="text-2xl font-semibold text-foreground">Email Communications</h2>
+          <p className="text-muted-foreground mt-1">Send emails and view communication history</p>
         </div>
         <Button variant="outline" size="icon" onClick={loadEmailHistory} className="rounded-xl">
           <RefreshCw className="w-4 h-4" />
@@ -230,7 +230,7 @@ export function AdminSendEmails() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#F4F6FA] rounded-xl">
+        <TabsList className="bg-muted rounded-xl">
           <TabsTrigger value="compose" className="rounded-lg">
             <Send className="w-4 h-4 mr-2" />
             Compose
@@ -244,7 +244,7 @@ export function AdminSendEmails() {
         <TabsContent value="compose" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Mail className="w-5 h-5 text-[#2969FF]" />
@@ -286,9 +286,9 @@ export function AdminSendEmails() {
                   )}
 
                   {form.recipientType && (
-                    <div className="p-3 bg-[#F4F6FA] rounded-xl flex items-center gap-2">
+                    <div className="p-3 bg-muted rounded-xl flex items-center gap-2">
                       <Users className="w-4 h-4 text-[#2969FF]" />
-                      <span className="text-sm text-[#0F0F0F]/60">
+                      <span className="text-sm text-muted-foreground">
                         {loading ? 'Calculating...' : `${recipientCount} recipient(s) selected`}
                       </span>
                     </div>
@@ -327,7 +327,7 @@ export function AdminSendEmails() {
             </div>
 
             <div>
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle className="text-base">Quick Templates</CardTitle>
                 </CardHeader>
@@ -341,7 +341,7 @@ export function AdminSendEmails() {
                     >
                       <div>
                         <p className="font-medium">{template.name}</p>
-                        <p className="text-xs text-[#0F0F0F]/60 truncate">{template.subject}</p>
+                        <p className="text-xs text-muted-foreground truncate">{template.subject}</p>
                       </div>
                     </Button>
                   ))}
@@ -352,7 +352,7 @@ export function AdminSendEmails() {
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Email History</CardTitle>
             </CardHeader>
@@ -362,28 +362,28 @@ export function AdminSendEmails() {
                   <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
                 </div>
               ) : emailHistory.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No emails sent yet</p>
+                <p className="text-center text-muted-foreground py-8">No emails sent yet</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#0F0F0F]/10">
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Subject</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Recipients</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Type</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Date</th>
-                        <th className="text-right py-3 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                      <tr className="border-b border-border/10">
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Subject</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Recipients</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Type</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Status</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Date</th>
+                        <th className="text-right py-3 px-4 text-muted-foreground font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {emailHistory.map((email) => (
-                        <tr key={email.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                        <tr key={email.id} className="border-b border-border/5 hover:bg-muted/50">
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F] font-medium truncate max-w-[200px]">{email.subject}</p>
+                            <p className="text-foreground font-medium truncate max-w-[200px]">{email.subject}</p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]">{email.recipient_count}</p>
+                            <p className="text-foreground">{email.recipient_count}</p>
                           </td>
                           <td className="py-3 px-4">
                             <Badge variant="outline" className="capitalize">
@@ -392,7 +392,7 @@ export function AdminSendEmails() {
                           </td>
                           <td className="py-3 px-4">{getStatusBadge(email.status)}</td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]/60 text-sm">
+                            <p className="text-muted-foreground text-sm">
                               {new Date(email.created_at).toLocaleDateString()}
                             </p>
                           </td>
@@ -429,30 +429,30 @@ export function AdminSendEmails() {
           {selectedEmail && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Recipients</p>
-                  <p className="text-[#0F0F0F] font-medium">{selectedEmail.recipient_count}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Recipients</p>
+                  <p className="text-foreground font-medium">{selectedEmail.recipient_count}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Status</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Status</p>
                   {getStatusBadge(selectedEmail.status)}
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Sent By</p>
-                  <p className="text-[#0F0F0F]">{selectedEmail.sender_type}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Sent By</p>
+                  <p className="text-foreground">{selectedEmail.sender_type}</p>
                 </div>
-                <div className="p-3 bg-[#F4F6FA] rounded-xl">
-                  <p className="text-sm text-[#0F0F0F]/60">Date</p>
-                  <p className="text-[#0F0F0F]">{new Date(selectedEmail.created_at).toLocaleString()}</p>
+                <div className="p-3 bg-muted rounded-xl">
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="text-foreground">{new Date(selectedEmail.created_at).toLocaleString()}</p>
                 </div>
               </div>
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Subject</p>
-                <p className="text-[#0F0F0F] font-medium">{selectedEmail.subject}</p>
+              <div className="p-4 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground mb-1">Subject</p>
+                <p className="text-foreground font-medium">{selectedEmail.subject}</p>
               </div>
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Message</p>
-                <p className="text-[#0F0F0F] whitespace-pre-wrap">{selectedEmail.message}</p>
+              <div className="p-4 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground mb-1">Message</p>
+                <p className="text-foreground whitespace-pre-wrap">{selectedEmail.message}</p>
               </div>
             </div>
           )}

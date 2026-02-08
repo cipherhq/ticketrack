@@ -48,18 +48,18 @@ export function WebAbout() {
             <Ticket className="w-12 h-12 text-white" />
           </div>
         </div>
-        <h1 className="text-5xl font-bold text-[#0F0F0F] mb-4">About Ticketrack</h1>
-        <p className="text-xl text-[#0F0F0F]/60 max-w-3xl mx-auto">
+        <h1 className="text-5xl font-bold text-foreground mb-4">About Ticketrack</h1>
+        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
           The world's leading event ticketing platform, making it easy for organizers to create amazing events and for attendees to discover unforgettable experiences across the globe.
         </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
         {stats.map((stat, index) => (
-          <Card key={index} className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card key={index} className="border-border/10 rounded-2xl">
             <CardContent className="text-center p-8">
               <div className="text-4xl font-bold text-[#2969FF] mb-2">{stat.value}</div>
-              <div className="text-[#0F0F0F]/60">{stat.label}</div>
+              <div className="text-muted-foreground">{stat.label}</div>
             </CardContent>
           </Card>
         ))}
@@ -75,18 +75,18 @@ export function WebAbout() {
       </div>
 
       <div className="mb-16">
-        <h2 className="text-3xl font-bold text-[#0F0F0F] mb-8 text-center">Our Values</h2>
+        <h2 className="text-3xl font-bold text-foreground mb-8 text-center">Our Values</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {values.map((value, index) => {
             const Icon = value.icon
             return (
-              <Card key={index} className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card key={index} className="border-border/10 rounded-2xl">
                 <CardContent className="p-6">
                   <div className="w-12 h-12 bg-[#2969FF]/10 rounded-xl flex items-center justify-center mb-4">
                     <Icon className="w-6 h-6 text-[#2969FF]" />
                   </div>
-                  <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">{value.title}</h3>
-                  <p className="text-[#0F0F0F]/60">{value.description}</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">{value.title}</h3>
+                  <p className="text-muted-foreground">{value.description}</p>
                 </CardContent>
               </Card>
             )
@@ -95,23 +95,23 @@ export function WebAbout() {
       </div>
 
       <div className="max-w-4xl mx-auto mb-16">
-        <h2 className="text-3xl font-bold text-[#0F0F0F] mb-6 text-center">Our Story</h2>
-        <div className="space-y-4 text-[#0F0F0F]/70">
+        <h2 className="text-3xl font-bold text-foreground mb-6 text-center">Our Story</h2>
+        <div className="space-y-4 text-foreground/70">
           <p>Founded in 2020, Ticketrack was born from a simple observation: attending events was often complicated by fragmented ticketing systems, payment challenges, and lack of transparency.</p>
           <p>We set out to change that. By combining local payment solutions with international best practices, we created a platform that works for everyone - from small community gatherings to large-scale festivals.</p>
           <p>Today, Ticketrack powers thousands of events across countries around the world, helping organizers sell millions of tickets and creating memorable experiences for attendees.</p>
         </div>
       </div>
 
-      <div className="bg-[#F4F6FA] rounded-3xl p-12 text-center">
+      <div className="bg-muted rounded-3xl p-12 text-center">
         <Award className="w-16 h-16 text-[#2969FF] mx-auto mb-4" />
-        <h2 className="text-3xl font-bold text-[#0F0F0F] mb-4">Join the Ticketrack Community</h2>
-        <p className="text-[#0F0F0F]/60 mb-8 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-bold text-foreground mb-4">Join the Ticketrack Community</h2>
+        <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
           Whether you're looking to attend amazing events or create your own, we're here to help you every step of the way.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12 px-8">Browse Events</Button>
-          <Button onClick={() => navigate('/organizer')} variant="outline" className="border-[#0F0F0F]/10 rounded-xl h-12 px-8">Become an Organizer</Button>
+          <Button onClick={() => navigate('/organizer')} variant="outline" className="border-border/10 rounded-xl h-12 px-8">Become an Organizer</Button>
         </div>
       </div>
     </div>

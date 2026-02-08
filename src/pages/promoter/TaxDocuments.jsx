@@ -395,10 +395,10 @@ export function PromoterTaxDocuments() {
   if (promoterLoading) {
     return (
       <div className="p-6">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
             <Loader2 className="w-12 h-12 text-[#2969FF] mx-auto mb-4 animate-spin" />
-            <p className="text-[#0F0F0F]/60">Loading promoter data...</p>
+            <p className="text-muted-foreground">Loading promoter data...</p>
           </CardContent>
         </Card>
       </div>
@@ -408,10 +408,10 @@ export function PromoterTaxDocuments() {
   if (!promoter) {
     return (
       <div className="p-6">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">You need to be a promoter to access tax documents.</p>
+            <AlertCircle className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground">You need to be a promoter to access tax documents.</p>
           </CardContent>
         </Card>
       </div>
@@ -421,8 +421,8 @@ export function PromoterTaxDocuments() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#0F0F0F]">Tax Documents</h1>
-        <p className="text-[#0F0F0F]/60">Download your annual commission earnings statements</p>
+        <h1 className="text-2xl font-bold text-foreground">Tax Documents</h1>
+        <p className="text-muted-foreground">Download your annual commission earnings statements</p>
       </div>
 
       {/* Info Card */}
@@ -441,7 +441,7 @@ export function PromoterTaxDocuments() {
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#2969FF]" />
@@ -453,7 +453,7 @@ export function PromoterTaxDocuments() {
           {/* Year Selector */}
           <div className="flex items-center gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[#0F0F0F]">Tax Year</label>
+              <label className="text-sm font-medium text-foreground">Tax Year</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger className="w-40 rounded-xl">
                   <Calendar className="w-4 h-4 mr-2" />
@@ -480,42 +480,42 @@ export function PromoterTaxDocuments() {
             </div>
           ) : yearSummary && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-[#0F0F0F]">{selectedYear} Summary</h3>
+              <h3 className="font-semibold text-foreground">{selectedYear} Summary</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-4 bg-green-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-green-600">{formatPrice(yearSummary.totalCommission, yearSummary.currency)}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Total Commission</p>
+                  <p className="text-xs text-muted-foreground">Total Commission</p>
                 </div>
                 <div className="p-4 bg-blue-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-blue-600">{formatPrice(yearSummary.totalSales, yearSummary.currency)}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Sales Generated</p>
+                  <p className="text-xs text-muted-foreground">Sales Generated</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-purple-600">{yearSummary.ticketsSold}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Tickets Sold</p>
+                  <p className="text-xs text-muted-foreground">Tickets Sold</p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-xl text-center">
                   <p className="text-xl font-bold text-orange-600">{formatPrice(yearSummary.payouts, yearSummary.currency)}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Paid Out</p>
+                  <p className="text-xs text-muted-foreground">Paid Out</p>
                 </div>
               </div>
 
               {/* Sales Preview */}
               {salesData.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="text-sm font-medium text-[#0F0F0F]/60 mb-2">Sales ({salesData.length})</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Sales ({salesData.length})</h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {salesData.slice(0, 5).map((sale, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                      <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">{sale.event}</p>
-                          <p className="text-xs text-[#0F0F0F]/60">{new Date(sale.date).toLocaleDateString()} • {sale.ticketsSold} tickets</p>
+                          <p className="font-medium text-foreground">{sale.event}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(sale.date).toLocaleDateString()} • {sale.ticketsSold} tickets</p>
                         </div>
                         <p className="font-semibold text-green-600">{formatPrice(sale.commission, sale.currency)}</p>
                       </div>
                     ))}
                     {salesData.length > 5 && (
-                      <p className="text-sm text-center text-[#0F0F0F]/40">+ {salesData.length - 5} more sales</p>
+                      <p className="text-sm text-center text-muted-foreground">+ {salesData.length - 5} more sales</p>
                     )}
                   </div>
                 </div>
@@ -543,7 +543,7 @@ export function PromoterTaxDocuments() {
               onClick={generateCSV}
               disabled={!available || generatingCSV || !yearSummary}
               variant="outline"
-              className={`h-14 rounded-xl text-lg border-2 ${available ? 'border-green-600 text-green-600 hover:bg-green-50' : 'border-gray-300 text-gray-400 cursor-not-allowed'}`}
+              className={`h-14 rounded-xl text-lg border-2 ${available ? 'border-green-600 text-green-600 hover:bg-green-50' : 'border-border/30 text-muted-foreground cursor-not-allowed'}`}
             >
               {generatingCSV ? (
                 <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Generating...</>
@@ -556,13 +556,13 @@ export function PromoterTaxDocuments() {
           </div>
 
           {/* Tax Info */}
-          <div className="p-4 bg-[#F4F6FA] border border-[#0F0F0F]/10 rounded-xl">
+          <div className="p-4 bg-muted border border-border/10 rounded-xl">
             <div className="flex items-start gap-3">
               <Globe className="w-5 h-5 text-[#2969FF] mt-0.5" />
               <div>
-                <p className="font-medium text-[#0F0F0F]">{countryConfig.name} Tax Information</p>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{countryConfig.notes}</p>
-                <p className="text-sm text-[#0F0F0F]/40 mt-1">Tax ID Type: {countryConfig.taxId}</p>
+                <p className="font-medium text-foreground">{countryConfig.name} Tax Information</p>
+                <p className="text-sm text-muted-foreground mt-1">{countryConfig.notes}</p>
+                <p className="text-sm text-muted-foreground mt-1">Tax ID Type: {countryConfig.taxId}</p>
               </div>
             </div>
           </div>

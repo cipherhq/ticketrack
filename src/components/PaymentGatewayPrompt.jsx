@@ -126,12 +126,12 @@ export function PreCreateEventPrompt({
         {/* Header */}
         <div className={`bg-gradient-to-br ${colors.gradient} p-6 text-white`}>
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-card/20 rounded-xl flex items-center justify-center">
               <Wallet className="w-6 h-6" />
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-full bg-card/10 hover:bg-card/20 flex items-center justify-center transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -153,8 +153,8 @@ export function PreCreateEventPrompt({
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-[#0F0F0F]">Automatic Payouts</p>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="font-medium text-foreground">Automatic Payouts</p>
+                <p className="text-sm text-muted-foreground">
                   Receive funds within 2-7 business days - no manual requests needed
                 </p>
               </div>
@@ -162,8 +162,8 @@ export function PreCreateEventPrompt({
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-[#0F0F0F]">Transparent Fees</p>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="font-medium text-foreground">Transparent Fees</p>
+                <p className="text-sm text-muted-foreground">
                   Clear breakdown of all charges - know exactly what you'll receive
                 </p>
               </div>
@@ -171,8 +171,8 @@ export function PreCreateEventPrompt({
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-[#0F0F0F]">Professional Experience</p>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="font-medium text-foreground">Professional Experience</p>
+                <p className="text-sm text-muted-foreground">
                   Trusted payment processing for your attendees
                 </p>
               </div>
@@ -180,7 +180,7 @@ export function PreCreateEventPrompt({
           </div>
 
           {/* Setup time */}
-          <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 bg-[#F4F6FA] rounded-xl p-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted rounded-xl p-3">
             <Clock className="w-4 h-4" />
             <span>Setup takes less than 5 minutes</span>
           </div>
@@ -222,7 +222,7 @@ export function PreCreateEventPrompt({
             />
             <label
               htmlFor="dontShowAgain"
-              className="text-sm text-[#0F0F0F]/60 cursor-pointer"
+              className="text-sm text-muted-foreground cursor-pointer"
             >
               Don't show this again
             </label>
@@ -230,14 +230,14 @@ export function PreCreateEventPrompt({
 
           {/* Alternative gateway note */}
           {gatewayInfo.alt && (
-            <p className="text-center text-xs text-[#0F0F0F]/40">
+            <p className="text-center text-xs text-muted-foreground">
               You can also use {gatewayInfo.alt} in your Finance settings
             </p>
           )}
 
           {/* No country note */}
           {!countryCode && (
-            <p className="text-center text-xs text-[#0F0F0F]/40">
+            <p className="text-center text-xs text-muted-foreground">
               Set your country in Profile settings for region-specific payment options
             </p>
           )}
@@ -280,7 +280,7 @@ export function PostCreateEventPrompt({
       <DialogContent className="sm:max-w-md p-0 overflow-hidden">
         {/* Success Header */}
         <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 text-white text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-card/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8" />
           </div>
           <DialogHeader>
@@ -301,10 +301,10 @@ export function PostCreateEventPrompt({
                 <Wallet className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#0F0F0F] mb-1">
+                <h3 className="font-semibold text-foreground mb-1">
                   Connect {gatewayInfo.name}
                 </h3>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="text-sm text-muted-foreground">
                   Set up your payment gateway to receive automatic payouts when tickets sell.
                 </p>
               </div>
@@ -314,7 +314,7 @@ export function PostCreateEventPrompt({
           {/* Quick benefit */}
           <div className="flex items-center gap-3 text-sm">
             <Zap className={`w-5 h-5 ${colors.text}`} />
-            <span className="text-[#0F0F0F]/70">
+            <span className="text-foreground/70">
               Automatic payouts within 2-7 business days
             </span>
           </div>
@@ -356,7 +356,7 @@ export function PostCreateEventPrompt({
             />
             <label
               htmlFor="dontShowAgainPost"
-              className="text-sm text-[#0F0F0F]/60 cursor-pointer"
+              className="text-sm text-muted-foreground cursor-pointer"
             >
               Don't show this again after creating events
             </label>
@@ -384,7 +384,7 @@ export function PaymentGatewayBanner({
     <div className={`bg-gradient-to-r ${colors.gradient} rounded-xl p-4 mb-6`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 bg-card/20 rounded-lg flex items-center justify-center flex-shrink-0">
             <Wallet className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
@@ -399,21 +399,21 @@ export function PaymentGatewayBanner({
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             onClick={onSetup}
-            className="bg-white text-[#0F0F0F] hover:bg-white/90 text-sm px-4"
+            className="bg-card text-foreground hover:bg-card/90 text-sm px-4"
           >
             Connect Now
           </Button>
           <Button
             onClick={onRemindLater}
             variant="ghost"
-            className="text-white/80 hover:text-white hover:bg-white/10 text-sm px-3"
+            className="text-white/80 hover:text-white hover:bg-card/10 text-sm px-3"
             title="Remind me in 7 days"
           >
             <Bell className="w-4 h-4" />
           </Button>
           <button
             onClick={onDismiss}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full bg-card/10 hover:bg-card/20 flex items-center justify-center transition-colors"
             aria-label="Dismiss permanently"
             title="Don't show again"
           >

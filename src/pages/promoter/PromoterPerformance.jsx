@@ -61,31 +61,31 @@ export function PromoterPerformance() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div><h2 className="text-2xl text-[#0F0F0F] mb-2">Performance Analytics</h2><p className="text-[#0F0F0F]/60">Track your promotional performance</p></div>
+        <div><h2 className="text-2xl text-foreground mb-2">Performance Analytics</h2><p className="text-muted-foreground">Track your promotional performance</p></div>
         <Select value={selectedPeriod} onValueChange={setSelectedPeriod}><SelectTrigger className="w-48 rounded-xl"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="7days">Last 7 Days</SelectItem><SelectItem value="30days">Last 30 Days</SelectItem><SelectItem value="90days">Last 90 Days</SelectItem><SelectItem value="alltime">All Time</SelectItem></SelectContent></Select>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><MousePointerClick className="w-4 h-4 text-blue-600" /><span className="text-xs text-[#0F0F0F]/60">Total Clicks</span></div><p className="text-2xl text-[#0F0F0F]">{stats.clicks.toLocaleString()}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4 text-purple-600" /><span className="text-xs text-[#0F0F0F]/60">Unique Visitors</span></div><p className="text-2xl text-[#0F0F0F]">{stats.uniqueVisitors.toLocaleString()}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ShoppingCart className="w-4 h-4 text-green-600" /><span className="text-xs text-[#0F0F0F]/60">Tickets Sold</span></div><p className="text-2xl text-green-600">{stats.ticketsSold}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-indigo-600" /><span className="text-xs text-[#0F0F0F]/60">Revenue</span></div><p className="text-lg text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.revenueByCurrency)}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-[#2969FF]" /><span className="text-xs text-[#0F0F0F]/60">Commission</span></div><p className="text-lg text-[#2969FF]">{formatMultiCurrencyCompact(stats.commissionByCurrency)}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-orange-600" /><span className="text-xs text-[#0F0F0F]/60">Conversion</span></div><p className="text-2xl text-orange-600">{stats.conversionRate}%</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><MousePointerClick className="w-4 h-4 text-blue-600" /><span className="text-xs text-muted-foreground">Total Clicks</span></div><p className="text-2xl text-foreground">{stats.clicks.toLocaleString()}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4 text-purple-600" /><span className="text-xs text-muted-foreground">Unique Visitors</span></div><p className="text-2xl text-foreground">{stats.uniqueVisitors.toLocaleString()}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><ShoppingCart className="w-4 h-4 text-green-600" /><span className="text-xs text-muted-foreground">Tickets Sold</span></div><p className="text-2xl text-green-600">{stats.ticketsSold}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-indigo-600" /><span className="text-xs text-muted-foreground">Revenue</span></div><p className="text-lg text-foreground">{formatMultiCurrencyCompact(stats.revenueByCurrency)}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-[#2969FF]" /><span className="text-xs text-muted-foreground">Commission</span></div><p className="text-lg text-[#2969FF]">{formatMultiCurrencyCompact(stats.commissionByCurrency)}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-orange-600" /><span className="text-xs text-muted-foreground">Conversion</span></div><p className="text-2xl text-orange-600">{stats.conversionRate}%</p></CardContent></Card>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader><CardTitle>Performance by Event</CardTitle></CardHeader>
         <CardContent>
-          {eventPerformance.length === 0 ? <p className="text-center text-[#0F0F0F]/60 py-8">No event data available</p> : (
+          {eventPerformance.length === 0 ? <p className="text-center text-muted-foreground py-8">No event data available</p> : (
             <div className="space-y-4">
               {eventPerformance.map((event, i) => (
-                <div key={i} className="p-4 border border-[#0F0F0F]/10 rounded-xl">
-                  <div className="flex items-center gap-2 mb-4"><h3 className="text-lg text-[#0F0F0F]">{event.name}</h3><Badge className="bg-green-600">Active</Badge></div>
+                <div key={i} className="p-4 border border-border/10 rounded-xl">
+                  <div className="flex items-center gap-2 mb-4"><h3 className="text-lg text-foreground">{event.name}</h3><Badge className="bg-green-600">Active</Badge></div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="p-3 bg-green-50 rounded-lg"><p className="text-xs text-[#0F0F0F]/60 mb-1">Tickets Sold</p><p className="text-lg text-green-600">{event.ticketsSold}</p></div>
-                    <div className="p-3 bg-indigo-50 rounded-lg"><p className="text-xs text-[#0F0F0F]/60 mb-1">Revenue</p><p className="text-lg text-[#0F0F0F]">{formatPrice(event.revenue, event.currency)}</p></div>
-                    <div className="p-3 bg-[#2969FF]/10 rounded-lg"><p className="text-xs text-[#0F0F0F]/60 mb-1">Commission</p><p className="text-lg text-[#2969FF]">{formatPrice(event.commission, event.currency)}</p></div>
+                    <div className="p-3 bg-green-50 rounded-lg"><p className="text-xs text-muted-foreground mb-1">Tickets Sold</p><p className="text-lg text-green-600">{event.ticketsSold}</p></div>
+                    <div className="p-3 bg-indigo-50 rounded-lg"><p className="text-xs text-muted-foreground mb-1">Revenue</p><p className="text-lg text-foreground">{formatPrice(event.revenue, event.currency)}</p></div>
+                    <div className="p-3 bg-[#2969FF]/10 rounded-lg"><p className="text-xs text-muted-foreground mb-1">Commission</p><p className="text-lg text-[#2969FF]">{formatPrice(event.commission, event.currency)}</p></div>
                   </div>
                 </div>
               ))}

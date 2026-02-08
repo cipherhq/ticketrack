@@ -144,24 +144,24 @@ export function TeamDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <header className="bg-white border-b border-[#0F0F0F]/10 sticky top-0 z-10">
+      <header className="bg-card border-b border-border/10 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#2969FF] flex items-center justify-center text-white font-bold">
               T
             </div>
             <div>
-              <h1 className="font-semibold text-[#0F0F0F]">{organizer?.business_name}</h1>
-              <p className="text-xs text-[#0F0F0F]/60">
+              <h1 className="font-semibold text-foreground">{organizer?.business_name}</h1>
+              <p className="text-xs text-muted-foreground">
                 {membership?.name} • <span className="text-[#2969FF]">{ROLE_LABELS[membership?.role]}</span>
               </p>
             </div>
@@ -169,7 +169,7 @@ export function TeamDashboard() {
           <Button
             variant="ghost"
             onClick={handleLogout}
-            className="text-[#0F0F0F]/60"
+            className="text-muted-foreground"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Logout
@@ -180,13 +180,13 @@ export function TeamDashboard() {
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Welcome */}
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Welcome, {membership?.name}!</h2>
-          <p className="text-[#0F0F0F]/60">Here's what's happening with your events</p>
+          <h2 className="text-2xl font-semibold text-foreground">Welcome, {membership?.name}!</h2>
+          <p className="text-muted-foreground">Here's what's happening with your events</p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
@@ -194,12 +194,12 @@ export function TeamDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold">{stats.upcomingEvents}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Upcoming Events</p>
+                  <p className="text-xs text-muted-foreground">Upcoming Events</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
@@ -207,12 +207,12 @@ export function TeamDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold">{myTasks.length}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Pending Tasks</p>
+                  <p className="text-xs text-muted-foreground">Pending Tasks</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
@@ -220,12 +220,12 @@ export function TeamDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold">{stats.completedTasks}</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Completed</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -235,7 +235,7 @@ export function TeamDashboard() {
                   <p className="text-2xl font-semibold">
                     {stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/60">Progress</p>
+                  <p className="text-xs text-muted-foreground">Progress</p>
                 </div>
               </div>
             </CardContent>
@@ -288,7 +288,7 @@ export function TeamDashboard() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* My Tasks */}
           {hasPermission('tasks') && (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <CheckSquare className="w-5 h-5 text-[#2969FF]" />
@@ -297,28 +297,28 @@ export function TeamDashboard() {
               </CardHeader>
               <CardContent>
                 {myTasks.length === 0 ? (
-                  <p className="text-center text-[#0F0F0F]/60 py-8">No pending tasks</p>
+                  <p className="text-center text-muted-foreground py-8">No pending tasks</p>
                 ) : (
                   <div className="space-y-2">
                     {myTasks.slice(0, 5).map((task) => (
                       <div
                         key={task.id}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-[#F4F6FA] hover:bg-[#F4F6FA]/70 cursor-pointer"
+                        className="flex items-center gap-3 p-3 rounded-xl bg-muted hover:bg-muted/70 cursor-pointer"
                         onClick={() => toggleTask(task)}
                       >
                         {task.status === 'completed' ? (
                           <CheckCircle2 className="w-5 h-5 text-green-500" />
                         ) : (
-                          <Circle className="w-5 h-5 text-gray-400" />
+                          <Circle className="w-5 h-5 text-muted-foreground" />
                         )}
                         <div className="flex-1">
-                          <p className={`text-sm ${task.status === 'completed' ? 'line-through text-[#0F0F0F]/40' : ''}`}>
+                          <p className={`text-sm ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
                             {task.title}
                           </p>
-                          <p className="text-xs text-[#0F0F0F]/40">{task.event?.title}</p>
+                          <p className="text-xs text-muted-foreground">{task.event?.title}</p>
                         </div>
                         {task.due_date && (
-                          <span className="text-xs text-[#0F0F0F]/40">
+                          <span className="text-xs text-muted-foreground">
                             {format(new Date(task.due_date), 'MMM d')}
                           </span>
                         )}
@@ -341,7 +341,7 @@ export function TeamDashboard() {
           )}
 
           {/* Upcoming Events */}
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-[#2969FF]" />
@@ -350,17 +350,17 @@ export function TeamDashboard() {
             </CardHeader>
             <CardContent>
               {events.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No upcoming events</p>
+                <p className="text-center text-muted-foreground py-8">No upcoming events</p>
               ) : (
                 <div className="space-y-3">
                   {events.map((event) => (
                     <div
                       key={event.id}
-                      className="p-3 rounded-xl bg-[#F4F6FA] hover:bg-[#F4F6FA]/70 cursor-pointer"
+                      className="p-3 rounded-xl bg-muted hover:bg-muted/70 cursor-pointer"
                       onClick={() => hasPermission('checkin') && navigate(`/team/check-in/${event.id}`)}
                     >
-                      <h4 className="font-medium text-[#0F0F0F]">{event.title}</h4>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-[#0F0F0F]/60">
+                      <h4 className="font-medium text-foreground">{event.title}</h4>
+                      <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {format(new Date(event.start_date), 'MMM d, yyyy')}

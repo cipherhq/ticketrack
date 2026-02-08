@@ -258,9 +258,9 @@ export function PaymentBatching() {
       processing: 'bg-blue-100 text-blue-800',
       completed: 'bg-green-100 text-green-800',
       failed: 'bg-red-100 text-red-800',
-      cancelled: 'bg-gray-100 text-gray-800'
+      cancelled: 'bg-muted text-foreground'
     };
-    return <Badge className={styles[status] || 'bg-gray-100'}>{status}</Badge>;
+    return <Badge className={styles[status] || 'bg-muted'}>{status}</Badge>;
   };
 
   const getProviderColor = (provider) => {
@@ -269,7 +269,7 @@ export function PaymentBatching() {
       stripe: 'bg-purple-100 text-purple-800',
       flutterwave: 'bg-orange-100 text-orange-800'
     };
-    return colors[provider] || 'bg-gray-100 text-gray-800';
+    return colors[provider] || 'bg-muted text-foreground';
   };
 
   if (loading) {
@@ -284,8 +284,8 @@ export function PaymentBatching() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Payment Batching</h1>
-          <p className="text-[#0F0F0F]/60">Process multiple payouts efficiently in batches</p>
+          <h1 className="text-2xl font-bold text-foreground">Payment Batching</h1>
+          <p className="text-muted-foreground">Process multiple payouts efficiently in batches</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={loadBatches} className="rounded-xl">
@@ -303,56 +303,56 @@ export function PaymentBatching() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold">{stats.pendingBatches}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <Loader2 className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Processing</p>
+                <p className="text-sm text-muted-foreground">Processing</p>
                 <p className="text-2xl font-bold">{stats.processingBatches}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Completed</p>
+                <p className="text-sm text-muted-foreground">Completed</p>
                 <p className="text-2xl font-bold">{stats.completedBatches}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Amount</p>
+                <p className="text-sm text-muted-foreground">Pending Amount</p>
                 <p className="text-2xl font-bold">
                   {formatMultiCurrencyCompact(stats.pendingAmountByCurrency)}
                 </p>
@@ -363,7 +363,7 @@ export function PaymentBatching() {
       </div>
 
       {/* Batches Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Payout Batches ({batches.length})</CardTitle>
         </CardHeader>
@@ -448,7 +448,7 @@ export function PaymentBatching() {
               })}
               {batches.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No batches created yet
                   </TableCell>
                 </TableRow>
@@ -532,7 +532,7 @@ export function PaymentBatching() {
                         className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
                           selectedPayouts.includes(payout.id)
                             ? 'border-[#2969FF] bg-blue-50'
-                            : 'hover:bg-gray-50'
+                            : 'hover:bg-background'
                         }`}
                         onClick={() => togglePayoutSelection(payout.id)}
                       >
@@ -543,7 +543,7 @@ export function PaymentBatching() {
                           />
                           <div>
                             <p className="font-medium">{payout.organizers?.business_name}</p>
-                            <p className="text-sm text-[#0F0F0F]/60">
+                            <p className="text-sm text-muted-foreground">
                               Queued {new Date(payout.created_at).toLocaleDateString()}
                             </p>
                           </div>
@@ -555,7 +555,7 @@ export function PaymentBatching() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center py-8 text-[#0F0F0F]/60">
+                  <p className="text-center py-8 text-muted-foreground">
                     No eligible payouts for selected provider and currency
                   </p>
                 )}

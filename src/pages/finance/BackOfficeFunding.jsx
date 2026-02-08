@@ -402,8 +402,8 @@ export function BackOfficeFunding() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Back Office Funding</h1>
-          <p className="text-[#0F0F0F]/60">Advance payments to trusted organizers</p>
+          <h1 className="text-2xl font-bold text-foreground">Back Office Funding</h1>
+          <p className="text-muted-foreground">Advance payments to trusted organizers</p>
         </div>
         <Button onClick={() => setRefreshKey(prev => prev + 1)} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />Refresh
@@ -425,40 +425,40 @@ export function BackOfficeFunding() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
                 <Star className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Trusted Organizers</p>
-                <p className="font-bold text-[#0F0F0F]">{totalTrusted}</p>
+                <p className="text-sm text-muted-foreground">Trusted Organizers</p>
+                <p className="font-bold text-foreground">{totalTrusted}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Available Balance</p>
-                <p className="font-bold text-[#0F0F0F]">{formatMultiCurrencyCompact(availableBalanceByCurrency)}</p>
+                <p className="text-sm text-muted-foreground">Total Available Balance</p>
+                <p className="font-bold text-foreground">{formatMultiCurrencyCompact(availableBalanceByCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                 <Banknote className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Advances Paid</p>
+                <p className="text-sm text-muted-foreground">Total Advances Paid</p>
                 <p className="font-bold text-green-600">{formatMultiCurrencyCompact(advancesPaidByCurrency)}</p>
               </div>
             </div>
@@ -468,14 +468,14 @@ export function BackOfficeFunding() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#F4F6FA] rounded-xl p-1">
-          <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-white">
+        <TabsList className="bg-muted rounded-xl p-1">
+          <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-card">
             <Building2 className="w-4 h-4 mr-2" />All Organizers
           </TabsTrigger>
-          <TabsTrigger value="trusted" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="trusted" className="rounded-lg data-[state=active]:bg-card">
             <Star className="w-4 h-4 mr-2" />Trusted Only
           </TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-card">
             <History className="w-4 h-4 mr-2" />Advance History
           </TabsTrigger>
         </TabsList>
@@ -483,7 +483,7 @@ export function BackOfficeFunding() {
         {/* Search (for organizer tabs) */}
         {activeTab !== 'history' && (
           <div className="mt-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Search organizers..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" />
           </div>
         )}
@@ -493,10 +493,10 @@ export function BackOfficeFunding() {
           {loading ? (
             <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
           ) : filteredOrganizers.length === 0 ? (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-8 text-center">
-                <Building2 className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                <p className="text-[#0F0F0F]/60">No organizers with earnings found</p>
+                <Building2 className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                <p className="text-muted-foreground">No organizers with earnings found</p>
               </CardContent>
             </Card>
           ) : (
@@ -520,11 +520,11 @@ export function BackOfficeFunding() {
           {loading ? (
             <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
           ) : filteredOrganizers.length === 0 ? (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-8 text-center">
-                <Star className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                <p className="text-[#0F0F0F]/60">No trusted organizers yet</p>
-                <p className="text-sm text-[#0F0F0F]/40 mt-2">Go to "All Organizers" tab and mark organizers as trusted</p>
+                <Star className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                <p className="text-muted-foreground">No trusted organizers yet</p>
+                <p className="text-sm text-muted-foreground mt-2">Go to "All Organizers" tab and mark organizers as trusted</p>
               </CardContent>
             </Card>
           ) : (
@@ -548,14 +548,14 @@ export function BackOfficeFunding() {
           {loading ? (
             <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
           ) : advanceHistory.length === 0 ? (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-8 text-center">
-                <History className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                <p className="text-[#0F0F0F]/60">No advance payments yet</p>
+                <History className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                <p className="text-muted-foreground">No advance payments yet</p>
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-0">
                 <div className="divide-y divide-[#0F0F0F]/10">
                   {advanceHistory.map((advance) => (
@@ -565,15 +565,15 @@ export function BackOfficeFunding() {
                           <Banknote className="w-5 h-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">{advance.organizers?.business_name}</p>
-                          <p className="text-sm text-[#0F0F0F]/60">{advance.organizers?.email}</p>
-                          <p className="text-xs text-[#0F0F0F]/40">{new Date(advance.created_at).toLocaleString()}</p>
+                          <p className="font-medium text-foreground">{advance.organizers?.business_name}</p>
+                          <p className="text-sm text-muted-foreground">{advance.organizers?.email}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(advance.created_at).toLocaleString()}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="font-bold text-green-600">{formatPrice(advance.advance_amount, advance.currency)}</p>
-                          <p className="text-xs text-[#0F0F0F]/40">of {formatPrice(advance.available_balance, advance.currency)} available</p>
+                          <p className="text-xs text-muted-foreground">of {formatPrice(advance.available_balance, advance.currency)} available</p>
                         </div>
                         <Badge className={advance.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
                           {advance.status === 'paid' ? <CheckCircle className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
@@ -603,11 +603,11 @@ export function BackOfficeFunding() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="p-4 bg-[#F4F6FA] rounded-xl">
-              <p className="font-semibold text-[#0F0F0F]">{trustDialog.organizer?.business_name}</p>
-              <p className="text-sm text-[#0F0F0F]/60">{trustDialog.organizer?.email}</p>
+            <div className="p-4 bg-muted rounded-xl">
+              <p className="font-semibold text-foreground">{trustDialog.organizer?.business_name}</p>
+              <p className="text-sm text-muted-foreground">{trustDialog.organizer?.email}</p>
               <div className="mt-2 text-sm">
-                <p className="text-[#0F0F0F]/60">Available Balance: <span className="font-medium text-green-600">{formatPrice(trustDialog.organizer?.availableForAdvance || 0, trustDialog.organizer?.currency)}</span></p>
+                <p className="text-muted-foreground">Available Balance: <span className="font-medium text-green-600">{formatPrice(trustDialog.organizer?.availableForAdvance || 0, trustDialog.organizer?.currency)}</span></p>
               </div>
             </div>
             {trustDialog.action === 'trust' && (
@@ -639,38 +639,38 @@ export function BackOfficeFunding() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* Organizer Info */}
-            <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-3">
+            <div className="p-4 bg-muted rounded-xl space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-[#0F0F0F]">{advanceDialog.organizer?.business_name}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">{advanceDialog.organizer?.email}</p>
+                  <p className="font-semibold text-foreground">{advanceDialog.organizer?.business_name}</p>
+                  <p className="text-sm text-muted-foreground">{advanceDialog.organizer?.email}</p>
                 </div>
                 <Badge className="bg-yellow-100 text-yellow-800"><Star className="w-3 h-3 mr-1" />Trusted</Badge>
               </div>
               
-              <div className="grid grid-cols-3 gap-3 border-t border-[#0F0F0F]/10 pt-3">
+              <div className="grid grid-cols-3 gap-3 border-t border-border/10 pt-3">
                 <div className="text-center">
-                  <p className="text-xs text-[#0F0F0F]/60">Total Pending</p>
-                  <p className="font-medium text-[#0F0F0F]">{formatPrice(advanceDialog.organizer?.pendingEarnings, advanceDialog.organizer?.currency)}</p>
+                  <p className="text-xs text-muted-foreground">Total Pending</p>
+                  <p className="font-medium text-foreground">{formatPrice(advanceDialog.organizer?.pendingEarnings, advanceDialog.organizer?.currency)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-[#0F0F0F]/60">Already Advanced</p>
+                  <p className="text-xs text-muted-foreground">Already Advanced</p>
                   <p className="font-medium text-purple-600">{formatPrice(advanceDialog.organizer?.totalAdvancesPaid, advanceDialog.organizer?.currency)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-[#0F0F0F]/60">Available</p>
+                  <p className="text-xs text-muted-foreground">Available</p>
                   <p className="font-bold text-green-600">{formatPrice(advanceDialog.organizer?.availableForAdvance, advanceDialog.organizer?.currency)}</p>
                 </div>
               </div>
 
               {/* Bank Details */}
               {advanceDialog.organizer?.primaryBank && (
-                <div className="border-t border-[#0F0F0F]/10 pt-3">
-                  <p className="text-xs text-[#0F0F0F]/60 mb-2">💳 Bank Details</p>
-                  <div className="text-sm space-y-1 bg-white p-2 rounded-lg">
-                    <p><span className="text-[#0F0F0F]/60">Bank:</span> <span className="font-medium">{advanceDialog.organizer.primaryBank.bank_name}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono font-medium">{advanceDialog.organizer.primaryBank.account_number}</span></p>
-                    <p><span className="text-[#0F0F0F]/60">Name:</span> <span className="font-medium">{advanceDialog.organizer.primaryBank.account_name}</span></p>
+                <div className="border-t border-border/10 pt-3">
+                  <p className="text-xs text-muted-foreground mb-2">💳 Bank Details</p>
+                  <div className="text-sm space-y-1 bg-card p-2 rounded-lg">
+                    <p><span className="text-muted-foreground">Bank:</span> <span className="font-medium">{advanceDialog.organizer.primaryBank.bank_name}</span></p>
+                    <p><span className="text-muted-foreground">Account:</span> <span className="font-mono font-medium">{advanceDialog.organizer.primaryBank.account_number}</span></p>
+                    <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{advanceDialog.organizer.primaryBank.account_name}</span></p>
                   </div>
                 </div>
               )}
@@ -706,7 +706,7 @@ export function BackOfficeFunding() {
                 <div className="space-y-2">
                   <Label>Advance Amount *</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/60 font-medium">{getCurrencySymbol(advanceDialog.organizer?.currency)}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{getCurrencySymbol(advanceDialog.organizer?.currency)}</span>
                     <Input
                       type="number"
                       placeholder="Enter amount"
@@ -715,7 +715,7 @@ export function BackOfficeFunding() {
                       className="pl-8 rounded-xl text-lg font-semibold"
                     />
                   </div>
-                  <p className="text-xs text-[#0F0F0F]/60">
+                  <p className="text-xs text-muted-foreground">
                     Maximum: {formatPrice(advanceDialog.organizer?.availableForAdvance, advanceDialog.organizer?.currency)}
                   </p>
                 </div>
@@ -756,9 +756,9 @@ export function BackOfficeFunding() {
 // Organizer Card Component
 function OrganizerCard({ organizer, expanded, onToggleExpand, onAdvance, onTrustToggle }) {
   return (
-    <Card className={`border-[#0F0F0F]/10 rounded-2xl overflow-hidden ${organizer.is_trusted ? 'border-yellow-300 bg-yellow-50/30' : ''}`}>
+    <Card className={`border-border/10 rounded-2xl overflow-hidden ${organizer.is_trusted ? 'border-yellow-300 bg-yellow-50/30' : ''}`}>
       <div 
-        className="p-4 flex items-center justify-between hover:bg-[#F4F6FA]/50 transition-colors cursor-pointer"
+        className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer"
         onClick={onToggleExpand}
       >
         <div className="flex items-center gap-4">
@@ -767,59 +767,59 @@ function OrganizerCard({ organizer, expanded, onToggleExpand, onAdvance, onTrust
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-[#0F0F0F]">{organizer.business_name}</h3>
+              <h3 className="font-semibold text-foreground">{organizer.business_name}</h3>
               {organizer.is_trusted && (
                 <Badge className="bg-yellow-100 text-yellow-800 text-xs"><Star className="w-3 h-3 mr-1" />Trusted</Badge>
               )}
             </div>
-            <p className="text-sm text-[#0F0F0F]/60">{organizer.email}</p>
+            <p className="text-sm text-muted-foreground">{organizer.email}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="text-lg font-bold text-green-600">{formatPrice(organizer.availableForAdvance, organizer.currency)}</p>
-            <p className="text-xs text-[#0F0F0F]/60">Available for Advance</p>
+            <p className="text-xs text-muted-foreground">Available for Advance</p>
           </div>
-          {expanded ? <ChevronUp className="w-5 h-5 text-[#0F0F0F]/40" /> : <ChevronDown className="w-5 h-5 text-[#0F0F0F]/40" />}
+          {expanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
         </div>
       </div>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-[#0F0F0F]/10 space-y-4">
+        <div className="px-4 pb-4 border-t border-border/10 space-y-4">
           {/* Balance Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-            <div className="p-3 bg-[#F4F6FA] rounded-xl text-center">
-              <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(organizer.totalEarnings, organizer.currency)}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Total Earnings</p>
+            <div className="p-3 bg-muted rounded-xl text-center">
+              <p className="text-lg font-bold text-foreground">{formatPrice(organizer.totalEarnings, organizer.currency)}</p>
+              <p className="text-xs text-muted-foreground">Total Earnings</p>
             </div>
             <div className="p-3 bg-yellow-50 rounded-xl text-center">
               <p className="text-lg font-bold text-yellow-600">{formatPrice(organizer.pendingEarnings, organizer.currency)}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Pending</p>
+              <p className="text-xs text-muted-foreground">Pending</p>
             </div>
             <div className="p-3 bg-purple-50 rounded-xl text-center">
               <p className="text-lg font-bold text-purple-600">{formatPrice(organizer.totalAdvancesPaid, organizer.currency)}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Advances Paid</p>
+              <p className="text-xs text-muted-foreground">Advances Paid</p>
             </div>
             <div className="p-3 bg-green-50 rounded-xl text-center">
               <p className="text-lg font-bold text-green-600">{formatPrice(organizer.availableForAdvance, organizer.currency)}</p>
-              <p className="text-xs text-[#0F0F0F]/60">Available</p>
+              <p className="text-xs text-muted-foreground">Available</p>
             </div>
           </div>
 
           {/* Bank Account */}
           {organizer.primaryBank ? (
-            <div className="p-3 bg-[#F4F6FA] rounded-xl">
+            <div className="p-3 bg-muted rounded-xl">
               <div className="flex items-center gap-2 mb-2">
                 <CreditCard className="w-4 h-4 text-[#2969FF]" />
-                <p className="font-medium text-[#0F0F0F]">Bank Account</p>
+                <p className="font-medium text-foreground">Bank Account</p>
                 {organizer.primaryBank.is_verified && (
                   <Badge className="bg-green-100 text-green-800 text-xs"><CheckCircle className="w-3 h-3 mr-1" />Verified</Badge>
                 )}
               </div>
               <div className="text-sm grid grid-cols-1 md:grid-cols-3 gap-2">
-                <p><span className="text-[#0F0F0F]/60">Bank:</span> <span className="font-medium">{organizer.primaryBank.bank_name}</span></p>
-                <p><span className="text-[#0F0F0F]/60">Account:</span> <span className="font-mono">{organizer.primaryBank.account_number}</span></p>
-                <p><span className="text-[#0F0F0F]/60">Name:</span> <span className="font-medium">{organizer.primaryBank.account_name}</span></p>
+                <p><span className="text-muted-foreground">Bank:</span> <span className="font-medium">{organizer.primaryBank.bank_name}</span></p>
+                <p><span className="text-muted-foreground">Account:</span> <span className="font-mono">{organizer.primaryBank.account_number}</span></p>
+                <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{organizer.primaryBank.account_name}</span></p>
               </div>
             </div>
           ) : (
@@ -832,15 +832,15 @@ function OrganizerCard({ organizer, expanded, onToggleExpand, onAdvance, onTrust
           {/* Active Events */}
           {organizer.activeEvents.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-[#0F0F0F] mb-2 flex items-center gap-2">
+              <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />Active Events ({organizer.activeEvents.length})
               </p>
               <div className="space-y-2">
                 {organizer.activeEvents.map(event => (
                   <div key={event.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg text-sm">
                     <div>
-                      <span className="text-[#0F0F0F] font-medium">{event.title}</span>
-                      <span className="text-[#0F0F0F]/60 ml-2">ends {new Date(event.end_date).toLocaleDateString()}</span>
+                      <span className="text-foreground font-medium">{event.title}</span>
+                      <span className="text-muted-foreground ml-2">ends {new Date(event.end_date).toLocaleDateString()}</span>
                     </div>
                     <span className="font-semibold text-blue-600">{formatPrice(event.netEarnings, event.currency)}</span>
                   </div>
@@ -852,13 +852,13 @@ function OrganizerCard({ organizer, expanded, onToggleExpand, onAdvance, onTrust
           {/* Completed Unpaid Events */}
           {organizer.completedUnpaidEvents.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-[#0F0F0F] mb-2 flex items-center gap-2">
+              <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4" />Completed Events (Unpaid)
               </p>
               <div className="space-y-2">
                 {organizer.completedUnpaidEvents.map(event => (
                   <div key={event.id} className="flex items-center justify-between p-2 bg-yellow-50 rounded-lg text-sm">
-                    <span className="text-[#0F0F0F]">{event.title}</span>
+                    <span className="text-foreground">{event.title}</span>
                     <span className="font-semibold text-yellow-600">{formatPrice(event.netEarnings, event.currency)}</span>
                   </div>
                 ))}
@@ -869,13 +869,13 @@ function OrganizerCard({ organizer, expanded, onToggleExpand, onAdvance, onTrust
           {/* Previous Advances */}
           {organizer.advanceHistory.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-[#0F0F0F] mb-2 flex items-center gap-2">
+              <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <History className="w-4 h-4" />Previous Advances ({organizer.advanceHistory.length})
               </p>
               <div className="space-y-2">
                 {organizer.advanceHistory.map(advance => (
                   <div key={advance.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg text-sm">
-                    <span className="text-[#0F0F0F]/60">{new Date(advance.created_at).toLocaleDateString()}</span>
+                    <span className="text-muted-foreground">{new Date(advance.created_at).toLocaleDateString()}</span>
                     <span className="font-semibold text-green-600">{formatPrice(advance.advance_amount, advance.currency)}</span>
                   </div>
                 ))}
@@ -884,7 +884,7 @@ function OrganizerCard({ organizer, expanded, onToggleExpand, onAdvance, onTrust
           )}
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2 border-t border-[#0F0F0F]/10">
+          <div className="flex gap-3 pt-2 border-t border-border/10">
             <Button 
               variant="outline" 
               onClick={(e) => { e.stopPropagation(); onTrustToggle(); }}

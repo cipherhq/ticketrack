@@ -223,8 +223,8 @@ export function DripCampaigns() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Drip Campaigns</h1>
-          <p className="text-[#0F0F0F]/60">Automated multi-step message sequences</p>
+          <h1 className="text-2xl font-bold text-foreground">Drip Campaigns</h1>
+          <p className="text-muted-foreground">Automated multi-step message sequences</p>
         </div>
         <Button onClick={() => setShowCreate(true)} className="bg-[#2969FF] text-white">
           <Plus className="w-4 h-4 mr-2" />
@@ -234,7 +234,7 @@ export function DripCampaigns() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -242,13 +242,13 @@ export function DripCampaigns() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Campaigns</p>
+                <p className="text-xs text-muted-foreground">Campaigns</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -256,13 +256,13 @@ export function DripCampaigns() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.active}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Active</p>
+                <p className="text-xs text-muted-foreground">Active</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -270,13 +270,13 @@ export function DripCampaigns() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.totalEnrolled}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Enrolled</p>
+                <p className="text-xs text-muted-foreground">Enrolled</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -284,7 +284,7 @@ export function DripCampaigns() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.totalConverted}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Converted</p>
+                <p className="text-xs text-muted-foreground">Converted</p>
               </div>
             </div>
           </CardContent>
@@ -293,11 +293,11 @@ export function DripCampaigns() {
 
       {/* Campaigns List */}
       {campaigns.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-12 text-center">
-            <Workflow className="w-16 h-16 text-[#0F0F0F]/20 mx-auto mb-4" />
+            <Workflow className="w-16 h-16 text-foreground/20 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Drip Campaigns Yet</h3>
-            <p className="text-[#0F0F0F]/60 mb-6">
+            <p className="text-muted-foreground mb-6">
               Create automated sequences to nurture your contacts
             </p>
             <Button onClick={() => setShowCreate(true)} className="bg-[#2969FF] text-white">
@@ -360,7 +360,7 @@ export function DripCampaigns() {
 
 function CampaignCard({ campaign, onToggle, onEdit, onDelete, onDuplicate }) {
   const statusColors = {
-    draft: 'bg-gray-100 text-gray-700',
+    draft: 'bg-muted text-foreground/80',
     active: 'bg-green-100 text-green-700',
     paused: 'bg-yellow-100 text-yellow-700',
     completed: 'bg-blue-100 text-blue-700',
@@ -380,40 +380,40 @@ function CampaignCard({ campaign, onToggle, onEdit, onDelete, onDuplicate }) {
     : 0;
 
   return (
-    <Card className="border-[#0F0F0F]/10 rounded-xl hover:shadow-md transition-shadow">
+    <Card className="border-border/10 rounded-xl hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4 flex-1">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-              campaign.status === 'active' ? 'bg-green-100' : 'bg-[#F4F6FA]'
+              campaign.status === 'active' ? 'bg-green-100' : 'bg-muted'
             }`}>
               <Workflow className={`w-6 h-6 ${
-                campaign.status === 'active' ? 'text-green-600' : 'text-[#0F0F0F]/40'
+                campaign.status === 'active' ? 'text-green-600' : 'text-muted-foreground'
               }`} />
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-[#0F0F0F] truncate">{campaign.name}</h3>
+                <h3 className="font-semibold text-foreground truncate">{campaign.name}</h3>
                 <Badge className={statusColors[campaign.status]}>
                   {campaign.status}
                 </Badge>
               </div>
 
-              <p className="text-sm text-[#0F0F0F]/60 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 {campaign.description || 'No description'}
               </p>
 
               <div className="flex flex-wrap items-center gap-4 text-sm">
-                <div className="flex items-center gap-1 text-[#0F0F0F]/60">
+                <div className="flex items-center gap-1 text-muted-foreground">
                   <Zap className="w-4 h-4" />
                   <span>{triggerLabels[campaign.trigger_type] || campaign.trigger_type}</span>
                 </div>
-                <div className="flex items-center gap-1 text-[#0F0F0F]/60">
+                <div className="flex items-center gap-1 text-muted-foreground">
                   <GitBranch className="w-4 h-4" />
                   <span>{stepCount} steps</span>
                 </div>
-                <div className="flex items-center gap-1 text-[#0F0F0F]/60">
+                <div className="flex items-center gap-1 text-muted-foreground">
                   <Users className="w-4 h-4" />
                   <span>{campaign.total_enrolled || 0} enrolled</span>
                 </div>
@@ -545,7 +545,7 @@ function CreateDripDialog({ open, onClose, organizerId, onCreated }) {
 
           <div>
             <label className="text-sm font-medium">Trigger</label>
-            <p className="text-xs text-[#0F0F0F]/60 mb-2">When should contacts enter this campaign?</p>
+            <p className="text-xs text-muted-foreground mb-2">When should contacts enter this campaign?</p>
             <Select value={triggerType} onValueChange={setTriggerType}>
               <SelectTrigger className="mt-1">
                 <SelectValue />
@@ -682,13 +682,13 @@ function DripBuilder({ open, onClose, campaign, organizerId }) {
             {/* Steps Flow */}
             <div className="space-y-3">
               {/* Trigger */}
-              <div className="flex items-center gap-3 p-3 bg-[#F4F6FA] rounded-lg">
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                 <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white">
                   <Zap className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="font-medium">Trigger: {TRIGGER_TYPES.find(t => t.value === campaign.trigger_type)?.label}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Contact enters the sequence</p>
+                  <p className="text-sm text-muted-foreground">Contact enters the sequence</p>
                 </div>
               </div>
 
@@ -700,7 +700,7 @@ function DripBuilder({ open, onClose, campaign, organizerId }) {
                     <div className="w-10 flex justify-center">
                       <div className="w-0.5 h-8 bg-[#0F0F0F]/20" />
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-4 h-4" />
                       {step.delay_type === 'immediate' ? 'Immediately' : 
                        `Wait ${step.delay_value} ${step.delay_unit}`}
@@ -709,7 +709,7 @@ function DripBuilder({ open, onClose, campaign, organizerId }) {
 
                   {/* Step Card */}
                   <div className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                    editingStep?.id === step.id ? 'border-[#2969FF] bg-blue-50' : 'border-[#0F0F0F]/10 bg-white hover:border-[#0F0F0F]/20'
+                    editingStep?.id === step.id ? 'border-[#2969FF] bg-blue-50' : 'border-border/10 bg-card hover:border-border/20'
                   }`}>
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       step.action_type.includes('email') ? 'bg-blue-100 text-blue-600' :
@@ -744,7 +744,7 @@ function DripBuilder({ open, onClose, campaign, organizerId }) {
                           </Button>
                         </div>
                       </div>
-                      <p className="text-sm text-[#0F0F0F]/60">
+                      <p className="text-sm text-muted-foreground">
                         {ACTION_TYPES.find(a => a.value === step.action_type)?.label}
                         {step.action_config?.subject && `: ${step.action_config.subject}`}
                       </p>
@@ -816,7 +816,7 @@ function StepEditor({ step, onUpdate, onClose }) {
   };
 
   return (
-    <div className="mt-3 p-4 bg-[#F4F6FA] rounded-lg space-y-4">
+    <div className="mt-3 p-4 bg-muted rounded-lg space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium">Step Name</label>

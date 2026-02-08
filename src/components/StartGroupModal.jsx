@@ -141,21 +141,21 @@ export function StartGroupModal({ open, onOpenChange, event }) {
                       className={`p-3 rounded-xl border text-sm font-medium transition-colors ${
                         duration === opt.value
                           ? 'border-[#2969FF] bg-[#2969FF]/10 text-[#2969FF]'
-                          : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                          : 'border-border/10 hover:border-border/20'
                       }`}
                     >
                       {opt.label}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-[#0F0F0F]/50">
+                <p className="text-xs text-muted-foreground">
                   Friends can join and buy tickets within this time
                 </p>
               </div>
 
-              <div className="bg-[#F4F6FA] rounded-xl p-4">
-                <h4 className="font-medium text-[#0F0F0F] mb-2">How it works:</h4>
-                <ol className="text-sm text-[#0F0F0F]/70 space-y-1 list-decimal pl-4">
+              <div className="bg-muted rounded-xl p-4">
+                <h4 className="font-medium text-foreground mb-2">How it works:</h4>
+                <ol className="text-sm text-foreground/70 space-y-1 list-decimal pl-4">
                   <li>You create a group and get a shareable link</li>
                   <li>Share the link with your friends</li>
                   <li>Everyone joins and selects their tickets</li>
@@ -182,7 +182,7 @@ export function StartGroupModal({ open, onOpenChange, event }) {
         {step === 'creating' && (
           <div className="py-12 text-center">
             <Loader2 className="w-12 h-12 animate-spin text-[#2969FF] mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">Creating your group...</p>
+            <p className="text-muted-foreground">Creating your group...</p>
           </div>
         )}
 
@@ -198,11 +198,11 @@ export function StartGroupModal({ open, onOpenChange, event }) {
             <div className="py-6">
               {/* Group Code */}
               <div className="bg-gradient-to-r from-[#2969FF]/10 to-[#2969FF]/5 rounded-2xl p-6 text-center mb-6">
-                <p className="text-sm text-[#0F0F0F]/60 mb-2">Your Group Code</p>
+                <p className="text-sm text-muted-foreground mb-2">Your Group Code</p>
                 <p className="text-4xl font-mono font-bold text-[#2969FF] tracking-wider">
                   {createdSession.code}
                 </p>
-                <p className="text-sm text-[#0F0F0F]/50 mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   <Clock className="w-4 h-4 inline mr-1" />
                   Expires in {DURATION_OPTIONS.find(d => d.value === duration)?.label}
                 </p>
@@ -236,7 +236,7 @@ export function StartGroupModal({ open, onOpenChange, event }) {
                 </Button>
               </div>
 
-              <p className="text-sm text-[#0F0F0F]/60 text-center mb-6">
+              <p className="text-sm text-muted-foreground text-center mb-6">
                 Share this code or link with your friends so they can join!
               </p>
 

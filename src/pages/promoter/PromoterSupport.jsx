@@ -251,17 +251,17 @@ export default function PromoterSupport() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   {categories.find(c => c.value === selectedTicket.category)?.label || selectedTicket.category}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Created: {new Date(selectedTicket.created_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <div className="bg-background p-4 rounded-lg mb-6">
               <p className="whitespace-pre-wrap">{selectedTicket.description}</p>
             </div>
 
@@ -269,20 +269,20 @@ export default function PromoterSupport() {
             <div className="space-y-4 mb-6">
               <h3 className="font-semibold">Conversation</h3>
               {replies.length === 0 ? (
-                <p className="text-gray-500 text-sm">No replies yet. Our team will respond soon.</p>
+                <p className="text-muted-foreground text-sm">No replies yet. Our team will respond soon.</p>
               ) : (
                 replies.map(reply => (
                   <div
                     key={reply.id}
                     className={`p-4 rounded-lg ${
-                      reply.user_type === 'admin' ? 'bg-blue-50 ml-4' : 'bg-gray-50 mr-4'
+                      reply.user_type === 'admin' ? 'bg-blue-50 ml-4' : 'bg-background mr-4'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-medium text-sm">
                         {reply.user_type === 'admin' ? '🎧 Support Team' : '👤 You'}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(reply.created_at).toLocaleString()}
                       </span>
                     </div>
@@ -323,7 +323,7 @@ export default function PromoterSupport() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Support</h1>
-          <p className="text-gray-500">Get help from our team</p>
+          <p className="text-muted-foreground">Get help from our team</p>
         </div>
         <Button onClick={() => setView('new')} className="bg-[#2969FF]">
           <Plus className="w-4 h-4 mr-2" />New Ticket
@@ -333,9 +333,9 @@ export default function PromoterSupport() {
       {tickets.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+            <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">No support tickets yet</h3>
-            <p className="text-gray-500 mb-4">Need help? Create a support ticket and our team will assist you.</p>
+            <p className="text-muted-foreground mb-4">Need help? Create a support ticket and our team will assist you.</p>
             <Button onClick={() => setView('new')} className="bg-[#2969FF]">
               <Plus className="w-4 h-4 mr-2" />Create Ticket
             </Button>
@@ -356,8 +356,8 @@ export default function PromoterSupport() {
                       <h3 className="font-medium">{ticket.subject}</h3>
                       {getStatusBadge(ticket.status)}
                     </div>
-                    <p className="text-sm text-gray-500 line-clamp-1">{ticket.description}</p>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-sm text-muted-foreground line-clamp-1">{ticket.description}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
                       {categories.find(c => c.value === ticket.category)?.label} • {new Date(ticket.created_at).toLocaleDateString()}
                     </p>
                   </div>

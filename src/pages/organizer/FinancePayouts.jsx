@@ -423,17 +423,17 @@ Status,${payout.status}
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             Finance & Payouts
             <HelpTip>Payouts are processed automatically after each event. Funds are held in escrow until the event date, then paid out to your bank account within 3-5 business days.</HelpTip>
           </h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Track your earnings and payout schedule</p>
+          <p className="text-muted-foreground mt-1">Track your earnings and payout schedule</p>
         </div>
         <div className="flex gap-2">
           <Button 
             onClick={() => navigate('/organizer/bank-account')}
             variant="outline"
-            className="rounded-xl border-[#0F0F0F]/10"
+            className="rounded-xl border-border/10"
           >
             <CreditCard className="w-5 h-5 mr-2" />
             Manage Bank Accounts
@@ -450,16 +450,16 @@ Status,${payout.status}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50">
+        <Card className="border-border/10 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50">
           <CardContent className="p-6">
             <DollarSign className="w-8 h-8 text-indigo-500 mb-3" />
-            <p className="text-[#0F0F0F]/60 mb-2">Total Balance</p>
+            <p className="text-muted-foreground mb-2">Total Balance</p>
             <h2 className="text-2xl font-semibold text-indigo-600">{formatMultiCurrencyCompact(totalBalanceByCurrency)}</h2>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">Revenue minus completed payouts</p>
+            <p className="text-xs text-muted-foreground mt-1">Revenue minus completed payouts</p>
           </CardContent>
         </Card>
         <Card
-          className="border-[#0F0F0F]/10 rounded-2xl cursor-pointer hover:border-orange-200 transition-colors"
+          className="border-border/10 rounded-2xl cursor-pointer hover:border-orange-200 transition-colors"
           onClick={() => escrowEvents.length > 0 && setEscrowExpanded(!escrowExpanded)}
         >
           <CardContent className="p-6">
@@ -467,33 +467,33 @@ Status,${payout.status}
               <Clock className="w-8 h-8 text-orange-500" />
               {escrowEvents.length > 0 && (
                 escrowExpanded
-                  ? <ChevronUp className="w-5 h-5 text-[#0F0F0F]/40" />
-                  : <ChevronDown className="w-5 h-5 text-[#0F0F0F]/40" />
+                  ? <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                  : <ChevronDown className="w-5 h-5 text-muted-foreground" />
               )}
             </div>
-            <p className="text-[#0F0F0F]/60 mb-2">In Escrow</p>
-            <h2 className="text-2xl font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.inEscrowByCurrency)}</h2>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">
+            <p className="text-muted-foreground mb-2">In Escrow</p>
+            <h2 className="text-2xl font-semibold text-foreground">{formatMultiCurrencyCompact(stats.inEscrowByCurrency)}</h2>
+            <p className="text-xs text-muted-foreground mt-1">
               {escrowEvents.length > 0
                 ? `${escrowEvents.length} active event${escrowEvents.length !== 1 ? 's' : ''}`
                 : 'From upcoming events'}
             </p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <Calendar className="w-8 h-8 text-[#2969FF] mb-3" />
-            <p className="text-[#0F0F0F]/60 mb-2">Pending Payouts</p>
+            <p className="text-muted-foreground mb-2">Pending Payouts</p>
             <h2 className="text-2xl font-semibold text-[#2969FF]">{formatMultiCurrencyCompact(stats.upcomingPayoutsByCurrency)}</h2>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">Total from all events with orders</p>
+            <p className="text-xs text-muted-foreground mt-1">Total from all events with orders</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <CheckCircle className="w-8 h-8 text-green-500 mb-3" />
-            <p className="text-[#0F0F0F]/60 mb-2">Total Paid Out</p>
+            <p className="text-muted-foreground mb-2">Total Paid Out</p>
             <h2 className="text-2xl font-semibold text-green-600">{formatMultiCurrencyCompact(stats.totalPaidOutByCurrency)}</h2>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">Successfully transferred</p>
+            <p className="text-xs text-muted-foreground mt-1">Successfully transferred</p>
           </CardContent>
         </Card>
       </div>
@@ -502,7 +502,7 @@ Status,${payout.status}
       {escrowExpanded && escrowEvents.length > 0 && (
         <Card className="border-orange-200 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <Clock className="w-5 h-5 text-orange-500" />
               Escrow Breakdown by Event
             </CardTitle>
@@ -513,24 +513,24 @@ Status,${payout.status}
                 <div key={item.id} className="p-4 rounded-xl bg-orange-50/50">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="flex-1">
-                      <h4 className="font-medium text-[#0F0F0F] mb-1">{item.event}</h4>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                      <h4 className="font-medium text-foreground mb-1">{item.event}</h4>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                         <span>{item.orderCount} order{item.orderCount !== 1 ? 's' : ''}</span>
                         <span>Event ends: {formatDate(item.eventEndDate)}</span>
                         <span>Expected payout: {formatDate(item.payoutDate)}</span>
                       </div>
-                      <p className="text-xs text-[#0F0F0F]/40 mt-1">{item.delayLabel}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{item.delayLabel}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-orange-600 font-semibold text-lg">{formatPrice(item.netAmount, item.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/40">Net amount</p>
+                      <p className="text-xs text-muted-foreground">Net amount</p>
                     </div>
                   </div>
                 </div>
               ))}
               <div className="border-t pt-3 flex items-center justify-between px-4">
-                <span className="font-medium text-[#0F0F0F]/60">Total in Escrow</span>
-                <span className="font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(stats.inEscrowByCurrency)}</span>
+                <span className="font-medium text-muted-foreground">Total in Escrow</span>
+                <span className="font-semibold text-foreground">{formatMultiCurrencyCompact(stats.inEscrowByCurrency)}</span>
               </div>
             </div>
           </CardContent>
@@ -539,7 +539,7 @@ Status,${payout.status}
 
       {/* Fast Payout Card */}
       {fastPayoutEligibility?.eligible && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+        <Card className="border-border/10 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-start gap-4">
@@ -547,14 +547,14 @@ Status,${payout.status}
                   <Zap className="w-6 h-6 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#0F0F0F] mb-1 flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
                     Fast Payout Available
                     <Badge className="bg-amber-100 text-amber-700 text-xs">0.5% fee</Badge>
                   </h3>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="text-sm text-muted-foreground">
                     Get your earnings now instead of waiting. Up to {formatPrice(fastPayoutEligibility.max_payout, fastPayoutEligibility.currency)} available.
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {fastPayoutEligibility.sales_percentage?.toFixed(0)}% tickets sold • {fastPayoutEligibility.cap_percentage}% payout cap
                   </p>
                 </div>
@@ -576,19 +576,19 @@ Status,${payout.status}
 
       {/* Not Eligible Info */}
       {fastPayoutEligibility && !fastPayoutEligibility.eligible && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gray-50">
+        <Card className="border-border/10 rounded-2xl bg-background">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gray-200 flex items-center justify-center flex-shrink-0">
-                <Zap className="w-5 h-5 text-gray-400" />
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                <Zap className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
-                <h3 className="font-medium text-[#0F0F0F] mb-1">Fast Payout</h3>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <h3 className="font-medium text-foreground mb-1">Fast Payout</h3>
+                <p className="text-sm text-muted-foreground">
                   {fastPayoutEligibility.reason || 'Not currently available'}
                 </p>
                 {fastPayoutEligibility.sales_percentage !== undefined && (
-                  <p className="text-xs text-[#0F0F0F]/40 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Current sales: {fastPayoutEligibility.sales_percentage?.toFixed(0)}% • Required: {fastPayoutEligibility.required_percentage}%
                   </p>
                 )}
@@ -599,15 +599,15 @@ Status,${payout.status}
       )}
 
       {/* Payout Info Card */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50/50">
+      <Card className="border-border/10 rounded-2xl bg-blue-50/50">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-5 h-5 text-[#2969FF]" />
             </div>
             <div>
-              <h3 className="font-medium text-[#0F0F0F] mb-1">Automatic Payouts</h3>
-              <p className="text-sm text-[#0F0F0F]/60">
+              <h3 className="font-medium text-foreground mb-1">Automatic Payouts</h3>
+              <p className="text-sm text-muted-foreground">
                 Your earnings are automatically paid to your registered bank account after each event ends.
                 The hold period varies by event type (0-7 days) and event size, then funds are transferred within 3-5 business days.
                 A 5% platform fee is deducted from ticket sales.
@@ -619,9 +619,9 @@ Status,${payout.status}
 
       {/* Fast Payout History */}
       {fastPayoutHistory.length > 0 && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <Zap className="w-5 h-5 text-amber-500" />
               Fast Payout History
             </CardTitle>
@@ -631,13 +631,13 @@ Status,${payout.status}
               {fastPayoutHistory.slice(0, 5).map((payout) => {
                 const status = formatFastPayoutStatus(payout.status);
                 return (
-                  <div key={payout.id} className="p-4 rounded-xl bg-[#F4F6FA]">
+                  <div key={payout.id} className="p-4 rounded-xl bg-muted">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium text-[#0F0F0F] mb-1">
+                        <h4 className="font-medium text-foreground mb-1">
                           {payout.event?.title || 'Fast Payout'}
                         </h4>
-                        <p className="text-sm text-[#0F0F0F]/60">
+                        <p className="text-sm text-muted-foreground">
                           {formatDate(payout.requested_at)}
                         </p>
                       </div>
@@ -646,7 +646,7 @@ Status,${payout.status}
                           <p className="text-amber-600 font-medium">
                             {formatPrice(payout.net_amount, payout.currency)}
                           </p>
-                          <p className="text-xs text-[#0F0F0F]/40">
+                          <p className="text-xs text-muted-foreground">
                             Fee: {formatPrice(payout.fee_amount, payout.currency)}
                           </p>
                         </div>
@@ -665,30 +665,30 @@ Status,${payout.status}
 
       {/* Upcoming Payouts */}
       {upcomingPayouts.length > 0 && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-[#0F0F0F]">Upcoming Payouts</CardTitle>
+            <CardTitle className="text-foreground">Upcoming Payouts</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {upcomingPayouts.map((payout) => (
-                <div key={payout.id} className="p-4 rounded-xl bg-[#F4F6FA]">
+                <div key={payout.id} className="p-4 rounded-xl bg-muted">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">
-                      <h4 className="font-medium text-[#0F0F0F] mb-1">{payout.event}</h4>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                      <h4 className="font-medium text-foreground mb-1">{payout.event}</h4>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                         <span>{payout.orderCount} order{payout.orderCount !== 1 ? 's' : ''}</span>
                         <span>Event ended: {formatDate(payout.eventEndDate)}</span>
                         <span className="text-[#2969FF] font-medium">
                           Payout: {formatDateTime(payout.payoutDate)}
                         </span>
                       </div>
-                      <p className="text-xs text-[#0F0F0F]/40 mt-1">{payout.delayLabel}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{payout.delayLabel}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="text-[#2969FF] font-semibold text-lg">{formatPrice(payout.netAmount, payout.currency)}</p>
-                        <p className="text-xs text-[#0F0F0F]/40">Net amount</p>
+                        <p className="text-xs text-muted-foreground">Net amount</p>
                       </div>
                       <Badge className="bg-blue-100 text-blue-700">
                         {payout.status}
@@ -711,9 +711,9 @@ Status,${payout.status}
       )}
 
       {/* Payout History */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-[#0F0F0F]">Payout History</CardTitle>
+          <CardTitle className="text-foreground">Payout History</CardTitle>
           {payoutHistory.length > 0 && (
             <Button
               variant="outline"
@@ -729,25 +729,25 @@ Status,${payout.status}
         <CardContent>
           {payoutHistory.length === 0 ? (
             <div className="text-center py-12">
-              <Building2 className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No payout history yet</p>
-              <p className="text-sm text-[#0F0F0F]/40 mt-1">
+              <Building2 className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">No payout history yet</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 Your completed payouts will appear here
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               {payoutHistory.map((payout) => (
-                <div key={payout.id} className={`p-4 rounded-xl ${payout.is_advance ? 'bg-purple-50' : 'bg-[#F4F6FA]'}`}>
+                <div key={payout.id} className={`p-4 rounded-xl ${payout.is_advance ? 'bg-purple-50' : 'bg-muted'}`}>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-[#0F0F0F]">{payout.payout_number || 'Payout'}</h4>
+                        <h4 className="font-medium text-foreground">{payout.payout_number || 'Payout'}</h4>
                         {payout.is_advance && (
                           <Badge className="bg-purple-100 text-purple-700 text-xs">Advance</Badge>
                         )}
                       </div>
-                      <p className="text-sm text-[#0F0F0F]/60">{formatDate(payout.processed_at || payout.created_at)}</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(payout.processed_at || payout.created_at)}</p>
                       {payout.notes && (
                         <p className="text-xs text-[#2969FF] mt-1">{payout.notes.replace('Events: ', '').replace('Advance Payment: ', '').replace('Advance Payment', '')}</p>
                       )}
@@ -756,7 +756,7 @@ Status,${payout.status}
                       <div className="text-right">
                         <p className={`font-medium ${payout.is_advance ? 'text-purple-600' : 'text-green-600'}`}>{formatPrice(payout.net_amount || payout.amount, payout.currency)}</p>
                         {payout.net_amount && payout.amount && payout.net_amount !== payout.amount && !payout.is_advance && (
-                          <p className="text-xs text-[#0F0F0F]/40">Gross: {formatPrice(payout.amount, payout.currency)}</p>
+                          <p className="text-xs text-muted-foreground">Gross: {formatPrice(payout.amount, payout.currency)}</p>
                         )}
                       </div>
                       <Badge
@@ -769,7 +769,7 @@ Status,${payout.status}
                             ? 'bg-blue-100 text-blue-700'
                             : payout.status === 'failed'
                             ? 'bg-red-100 text-red-700'
-                            : 'bg-[#0F0F0F]/10 text-[#0F0F0F]/60'
+                            : 'bg-[#0F0F0F]/10 text-muted-foreground'
                         }`}
                       >
                         {payout.is_advance ? 'advance' : payout.status}
@@ -799,11 +799,11 @@ Status,${payout.status}
           <div className="space-y-4 py-4">
             {/* Available Amount */}
             <div className="bg-amber-50 rounded-xl p-4">
-              <div className="text-sm text-[#0F0F0F]/60 mb-1">Available for Fast Payout</div>
+              <div className="text-sm text-muted-foreground mb-1">Available for Fast Payout</div>
               <div className="text-2xl font-bold text-amber-600">
                 {formatPrice(fastPayoutEligibility?.max_payout || 0, fastPayoutEligibility?.currency)}
               </div>
-              <div className="text-xs text-[#0F0F0F]/40 mt-1">
+              <div className="text-xs text-muted-foreground mt-1">
                 {fastPayoutEligibility?.cap_percentage}% of available earnings
               </div>
             </div>
@@ -812,7 +812,7 @@ Status,${payout.status}
             <div className="space-y-2">
               <Label>Amount to withdraw</Label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {fastPayoutEligibility?.currency || 'NGN'}
                 </span>
                 <Input
@@ -837,11 +837,11 @@ Status,${payout.status}
             {fastPayoutFee.gross > 0 && (
               <div className="border rounded-xl p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#0F0F0F]/60">Amount</span>
+                  <span className="text-muted-foreground">Amount</span>
                   <span>{formatPrice(fastPayoutFee.gross, fastPayoutEligibility?.currency)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#0F0F0F]/60">Processing Fee (0.5%)</span>
+                  <span className="text-muted-foreground">Processing Fee (0.5%)</span>
                   <span className="text-red-500">-{formatPrice(fastPayoutFee.fee, fastPayoutEligibility?.currency)}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-semibold">
@@ -852,7 +852,7 @@ Status,${payout.status}
             )}
 
             {/* Info */}
-            <div className="flex items-start gap-2 text-xs text-[#0F0F0F]/50 bg-blue-50 p-3 rounded-lg">
+            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg">
               <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>
                 Funds will be sent to your registered bank account within minutes. 

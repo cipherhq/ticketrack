@@ -190,10 +190,10 @@ export function ObjectPalette() {
   };
 
   return (
-    <div className="w-56 bg-white border-r border-gray-200 overflow-y-auto">
-      <div className="p-3 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900 text-sm">Objects</h3>
-        <p className="text-xs text-gray-500 mt-1">Click to add to canvas</p>
+    <div className="w-56 bg-card border-r border-border/20 overflow-y-auto">
+      <div className="p-3 border-b border-border/20">
+        <h3 className="font-semibold text-foreground text-sm">Objects</h3>
+        <p className="text-xs text-muted-foreground mt-1">Click to add to canvas</p>
       </div>
 
       <div className="p-2">
@@ -201,7 +201,7 @@ export function ObjectPalette() {
           <div key={category.id} className="mb-2">
             {/* Category Header */}
             <button
-              className="w-full flex items-center justify-between p-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded"
+              className="w-full flex items-center justify-between p-2 text-sm font-medium text-foreground/80 hover:bg-background rounded"
               onClick={() => toggleCategory(category.id)}
             >
               <span>{category.label}</span>
@@ -218,7 +218,7 @@ export function ObjectPalette() {
                 {category.objects.map((obj, index) => (
                   <button
                     key={`${obj.type}-${index}`}
-                    className="w-full flex items-center gap-2 p-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 rounded transition-colors"
+                    className="w-full flex items-center gap-2 p-2 text-sm text-muted-foreground hover:bg-blue-50 hover:text-blue-700 rounded transition-colors"
                     onClick={() => handleAddObject(obj)}
                   >
                     <div

@@ -201,7 +201,7 @@ export function AdminKYC() {
 
   const getLevelBadge = (level) => {
     const colors = {
-      0: 'bg-gray-100 text-gray-700',
+      0: 'bg-muted text-foreground/80',
       1: 'bg-blue-100 text-blue-700',
       2: 'bg-purple-100 text-purple-700',
       3: 'bg-green-100 text-green-700',
@@ -228,8 +228,8 @@ export function AdminKYC() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">KYC Verification</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Review and approve organizer verification requests</p>
+          <h2 className="text-2xl font-semibold text-foreground">KYC Verification</h2>
+          <p className="text-muted-foreground mt-1">Review and approve organizer verification requests</p>
         </div>
         <Button variant="outline" size="icon" onClick={loadKYCs} className="rounded-xl">
           <RefreshCw className="w-4 h-4" />
@@ -238,27 +238,27 @@ export function AdminKYC() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+            <p className="text-sm text-muted-foreground">Pending</p>
             <p className="text-2xl font-semibold text-yellow-600">{stats.pending}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">In Review</p>
+            <p className="text-sm text-muted-foreground">In Review</p>
             <p className="text-2xl font-semibold text-blue-600">{stats.inReview}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">Verified</p>
+            <p className="text-sm text-muted-foreground">Verified</p>
             <p className="text-2xl font-semibold text-green-600">{stats.verified}</p>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
-            <p className="text-sm text-[#0F0F0F]/60">Rejected</p>
+            <p className="text-sm text-muted-foreground">Rejected</p>
             <p className="text-2xl font-semibold text-red-600">{stats.rejected}</p>
           </CardContent>
         </Card>
@@ -281,22 +281,22 @@ export function AdminKYC() {
       </div>
 
       {/* KYC List */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">KYC Applications ({kycList.length})</CardTitle>
+          <CardTitle className="text-foreground">KYC Applications ({kycList.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {kycList.length === 0 ? (
-            <p className="text-center text-[#0F0F0F]/60 py-8">No KYC applications found</p>
+            <p className="text-center text-muted-foreground py-8">No KYC applications found</p>
           ) : (
             <div className="space-y-4">
               {kycList.map((kyc) => (
-                <div key={kyc.id} className="p-4 rounded-xl bg-[#F4F6FA]">
+                <div key={kyc.id} className="p-4 rounded-xl bg-muted">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h4 className="text-[#0F0F0F] font-medium">{kyc.organizers?.business_name || 'Unknown'}</h4>
-                      <p className="text-sm text-[#0F0F0F]/60">{kyc.organizers?.email}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">
+                      <h4 className="text-foreground font-medium">{kyc.organizers?.business_name || 'Unknown'}</h4>
+                      <p className="text-sm text-muted-foreground">{kyc.organizers?.email}</p>
+                      <p className="text-sm text-muted-foreground">
                         Submitted: {new Date(kyc.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -349,24 +349,24 @@ export function AdminKYC() {
           {selectedKYC && (
             <div className="space-y-6 py-4">
               {/* Organizer Info */}
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <h4 className="font-medium text-[#0F0F0F] mb-2">Organizer Information</h4>
+              <div className="p-4 bg-muted rounded-xl">
+                <h4 className="font-medium text-foreground mb-2">Organizer Information</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-[#0F0F0F]/60">Business Name</p>
-                    <p className="text-[#0F0F0F]">{selectedKYC.organizers?.business_name}</p>
+                    <p className="text-muted-foreground">Business Name</p>
+                    <p className="text-foreground">{selectedKYC.organizers?.business_name}</p>
                   </div>
                   <div>
-                    <p className="text-[#0F0F0F]/60">Email</p>
-                    <p className="text-[#0F0F0F]">{selectedKYC.organizers?.email}</p>
+                    <p className="text-muted-foreground">Email</p>
+                    <p className="text-foreground">{selectedKYC.organizers?.email}</p>
                   </div>
                   <div>
-                    <p className="text-[#0F0F0F]/60">Phone</p>
-                    <p className="text-[#0F0F0F]">{selectedKYC.organizers?.phone || 'N/A'}</p>
+                    <p className="text-muted-foreground">Phone</p>
+                    <p className="text-foreground">{selectedKYC.organizers?.phone || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-[#0F0F0F]/60">Current Level</p>
-                    <p className="text-[#0F0F0F]">Level {selectedKYC.verification_level}</p>
+                    <p className="text-muted-foreground">Current Level</p>
+                    <p className="text-foreground">Level {selectedKYC.verification_level}</p>
                   </div>
                 </div>
               </div>
@@ -374,9 +374,9 @@ export function AdminKYC() {
               {/* Documents Grid */}
               <div className="grid grid-cols-2 gap-4">
                 {/* BVN */}
-                <div className="p-4 rounded-xl border border-[#0F0F0F]/10">
+                <div className="p-4 rounded-xl border border-border/10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-[#0F0F0F]">BVN Verification</span>
+                    <span className="font-medium text-foreground">BVN Verification</span>
                     {selectedKYC.bvn_verified ? (
                       <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : selectedKYC.bvn ? (
@@ -386,17 +386,17 @@ export function AdminKYC() {
                     )}
                   </div>
                   <div className="space-y-2 text-sm">
-                    <p><span className="text-[#0F0F0F]/60">BVN:</span> {selectedKYC.bvn ? '••••••' + selectedKYC.bvn.slice(-4) : 'Not provided'}</p>
-                    <p><span className="text-[#0F0F0F]/60">Name:</span> {selectedKYC.bvn_first_name} {selectedKYC.bvn_last_name}</p>
-                    <p><span className="text-[#0F0F0F]/60">DOB:</span> {selectedKYC.bvn_dob || 'N/A'}</p>
-                    <p><span className="text-[#0F0F0F]/60">Phone:</span> {selectedKYC.bvn_phone || 'N/A'}</p>
+                    <p><span className="text-muted-foreground">BVN:</span> {selectedKYC.bvn ? '••••••' + selectedKYC.bvn.slice(-4) : 'Not provided'}</p>
+                    <p><span className="text-muted-foreground">Name:</span> {selectedKYC.bvn_first_name} {selectedKYC.bvn_last_name}</p>
+                    <p><span className="text-muted-foreground">DOB:</span> {selectedKYC.bvn_dob || 'N/A'}</p>
+                    <p><span className="text-muted-foreground">Phone:</span> {selectedKYC.bvn_phone || 'N/A'}</p>
                   </div>
                 </div>
 
                 {/* Government ID */}
-                <div className="p-4 rounded-xl border border-[#0F0F0F]/10">
+                <div className="p-4 rounded-xl border border-border/10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-[#0F0F0F]">Government ID</span>
+                    <span className="font-medium text-foreground">Government ID</span>
                     {selectedKYC.id_verified ? (
                       <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : selectedKYC.id_document_url ? (
@@ -406,8 +406,8 @@ export function AdminKYC() {
                     )}
                   </div>
                   <div className="space-y-2 text-sm">
-                    <p><span className="text-[#0F0F0F]/60">Type:</span> {selectedKYC.id_type || 'N/A'}</p>
-                    <p><span className="text-[#0F0F0F]/60">Number:</span> {selectedKYC.id_number || 'N/A'}</p>
+                    <p><span className="text-muted-foreground">Type:</span> {selectedKYC.id_type || 'N/A'}</p>
+                    <p><span className="text-muted-foreground">Number:</span> {selectedKYC.id_number || 'N/A'}</p>
                   </div>
                   {selectedKYC.id_document_url && (
                     <Button
@@ -423,9 +423,9 @@ export function AdminKYC() {
                 </div>
 
                 {/* CAC Certificate */}
-                <div className="p-4 rounded-xl border border-[#0F0F0F]/10">
+                <div className="p-4 rounded-xl border border-border/10">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-[#0F0F0F]">CAC Certificate</span>
+                    <span className="font-medium text-foreground">CAC Certificate</span>
                     {selectedKYC.cac_verified ? (
                       <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : selectedKYC.cac_document_url ? (
@@ -435,7 +435,7 @@ export function AdminKYC() {
                     )}
                   </div>
                   <div className="space-y-2 text-sm">
-                    <p><span className="text-[#0F0F0F]/60">CAC Number:</span> {selectedKYC.cac_number || 'N/A'}</p>
+                    <p><span className="text-muted-foreground">CAC Number:</span> {selectedKYC.cac_number || 'N/A'}</p>
                   </div>
                   {selectedKYC.cac_document_url && (
                     <Button
@@ -451,8 +451,8 @@ export function AdminKYC() {
                 </div>
 
                 {/* Payout Limits Info */}
-                <div className="p-4 rounded-xl border border-[#0F0F0F]/10 bg-blue-50/50">
-                  <h4 className="font-medium text-[#0F0F0F] mb-3">Payout Limits</h4>
+                <div className="p-4 rounded-xl border border-border/10 bg-blue-50/50">
+                  <h4 className="font-medium text-foreground mb-3">Payout Limits</h4>
                   <div className="space-y-2 text-sm">
                     <p><span className="text-blue-600">Level 1:</span> ₦500,000/month</p>
                     <p><span className="text-purple-600">Level 2:</span> ₦5,000,000/month</p>

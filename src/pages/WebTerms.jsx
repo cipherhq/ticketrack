@@ -20,28 +20,28 @@ export function WebTerms() {
         <div className="flex justify-center mb-6">
           <div className="w-16 h-16 bg-[#2969FF]/10 rounded-2xl flex items-center justify-center"><FileText className="w-8 h-8 text-[#2969FF]" /></div>
         </div>
-        <h1 className="text-4xl font-bold text-[#0F0F0F] mb-4">Terms of Service</h1>
-        <p className="text-[#0F0F0F]/60">Last updated: December 1, 2024</p>
+        <h1 className="text-4xl font-bold text-foreground mb-4">Terms of Service</h1>
+        <p className="text-muted-foreground">Last updated: December 1, 2024</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8 mb-8">
-        <p className="text-[#0F0F0F]/70 leading-relaxed">
+      <div className="bg-card rounded-2xl border border-border/10 p-8 mb-8">
+        <p className="text-foreground/70 leading-relaxed">
           Welcome to Ticketrack. These Terms of Service govern your use of our platform and services. By using Ticketrack, you agree to these terms in full. Please read them carefully before using our services.
         </p>
       </div>
 
       <div className="space-y-6">
         {sections.map((section, index) => (
-          <div key={index} className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8">
-            <h2 className="text-xl font-semibold text-[#0F0F0F] mb-4">{section.title}</h2>
-            <p className="text-[#0F0F0F]/70 leading-relaxed">{section.content}</p>
+          <div key={index} className="bg-card rounded-2xl border border-border/10 p-8">
+            <h2 className="text-xl font-semibold text-foreground mb-4">{section.title}</h2>
+            <p className="text-foreground/70 leading-relaxed">{section.content}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-[#F4F6FA] rounded-2xl p-8 mt-8 text-center">
-        <h3 className="text-xl font-semibold text-[#0F0F0F] mb-4">Questions About Our Terms?</h3>
-        <p className="text-[#0F0F0F]/70 mb-4">If you have any questions about these Terms of Service, please contact our legal team:</p>
+      <div className="bg-muted rounded-2xl p-8 mt-8 text-center">
+        <h3 className="text-xl font-semibold text-foreground mb-4">Questions About Our Terms?</h3>
+        <p className="text-foreground/70 mb-4">If you have any questions about these Terms of Service, please contact our legal team:</p>
         <p className="text-[#2969FF]">legal@ticketrack.com</p>
       </div>
     </div>

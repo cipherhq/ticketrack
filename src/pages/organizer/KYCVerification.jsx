@@ -484,7 +484,7 @@ export function KYCVerification() {
       case 'rejected':
         return <Badge className="bg-red-100 text-red-700"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-700"><AlertCircle className="w-3 h-3 mr-1" />Pending</Badge>;
+        return <Badge className="bg-muted text-foreground/80"><AlertCircle className="w-3 h-3 mr-1" />Pending</Badge>;
     }
   };
 
@@ -510,8 +510,8 @@ export function KYCVerification() {
     return (
       <div className="space-y-6 max-w-3xl">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">KYC Verification</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Your identity has been verified</p>
+          <h2 className="text-2xl font-semibold text-foreground">KYC Verification</h2>
+          <p className="text-muted-foreground mt-1">Your identity has been verified</p>
         </div>
         
         <Card className="border-green-200 bg-green-50/50 rounded-2xl overflow-hidden">
@@ -522,8 +522,8 @@ export function KYCVerification() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-[#0F0F0F]">Verified via Stripe Connect</h3>
-                <p className="text-[#0F0F0F]/60">Your identity was verified when you connected your Stripe account.</p>
+                <h3 className="text-lg font-semibold text-foreground">Verified via Stripe Connect</h3>
+                <p className="text-muted-foreground">Your identity was verified when you connected your Stripe account.</p>
               </div>
             </div>
           </CardContent>
@@ -540,8 +540,8 @@ export function KYCVerification() {
     return (
       <div className="space-y-6 max-w-3xl">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Identity Verification</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Verify your identity to receive payouts</p>
+          <h2 className="text-2xl font-semibold text-foreground">Identity Verification</h2>
+          <p className="text-muted-foreground mt-1">Verify your identity to receive payouts</p>
         </div>
 
         {success && (
@@ -566,8 +566,8 @@ export function KYCVerification() {
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-[#0F0F0F]">Identity Verified</h3>
-                  <p className="text-[#0F0F0F]/60">You're all set to receive payouts.</p>
+                  <h3 className="text-lg font-semibold text-foreground">Identity Verified</h3>
+                  <p className="text-muted-foreground">You're all set to receive payouts.</p>
                 </div>
               </div>
             </CardContent>
@@ -581,8 +581,8 @@ export function KYCVerification() {
                   <Loader2 className="w-8 h-8 text-yellow-600 animate-spin" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-[#0F0F0F]">Verification in Progress</h3>
-                  <p className="text-[#0F0F0F]/60">We're reviewing your documents. This usually takes a few minutes.</p>
+                  <h3 className="text-lg font-semibold text-foreground">Verification in Progress</h3>
+                  <p className="text-muted-foreground">We're reviewing your documents. This usually takes a few minutes.</p>
                 </div>
               </div>
             </CardContent>
@@ -596,8 +596,8 @@ export function KYCVerification() {
                   <AlertCircle className="w-8 h-8 text-orange-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-[#0F0F0F]">Additional Information Needed</h3>
-                  <p className="text-[#0F0F0F]/60 mb-3">We need more information to complete your verification.</p>
+                  <h3 className="text-lg font-semibold text-foreground">Additional Information Needed</h3>
+                  <p className="text-muted-foreground mb-3">We need more information to complete your verification.</p>
                   <Button 
                     onClick={startStripeIdentityVerification}
                     disabled={stripeIdentityLoading}
@@ -611,33 +611,33 @@ export function KYCVerification() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-6 space-y-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-purple-100 flex items-center justify-center">
                   <Zap className="w-8 h-8 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-[#0F0F0F]">Verify Your Identity</h3>
-                  <p className="text-[#0F0F0F]/60">Quick and secure verification powered by Stripe</p>
+                  <h3 className="text-lg font-semibold text-foreground">Verify Your Identity</h3>
+                  <p className="text-muted-foreground">Quick and secure verification powered by Stripe</p>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-3 gap-4">
-                <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                <div className="p-4 bg-muted rounded-xl">
                   <CreditCard className="w-6 h-6 text-[#2969FF] mb-2" />
                   <p className="font-medium text-sm">Government ID</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Passport, Driver's License, or ID Card</p>
+                  <p className="text-xs text-muted-foreground">Passport, Driver's License, or ID Card</p>
                 </div>
-                <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                <div className="p-4 bg-muted rounded-xl">
                   <User className="w-6 h-6 text-[#2969FF] mb-2" />
                   <p className="font-medium text-sm">Selfie Verification</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Quick photo to match your ID</p>
+                  <p className="text-xs text-muted-foreground">Quick photo to match your ID</p>
                 </div>
-                <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                <div className="p-4 bg-muted rounded-xl">
                   <Shield className="w-6 h-6 text-[#2969FF] mb-2" />
                   <p className="font-medium text-sm">Instant Results</p>
-                  <p className="text-xs text-[#0F0F0F]/60">Usually verified in minutes</p>
+                  <p className="text-xs text-muted-foreground">Usually verified in minutes</p>
                 </div>
               </div>
 
@@ -660,7 +660,7 @@ export function KYCVerification() {
                 </Button>
               </div>
 
-              <p className="text-xs text-[#0F0F0F]/60 text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 Your information is securely processed by Stripe and never stored on our servers.
               </p>
             </CardContent>
@@ -701,7 +701,7 @@ export function KYCVerification() {
                 />
                 <div 
                   onClick={() => manualFileInputRef.current?.click()}
-                  className="mt-1 border-2 border-dashed border-[#0F0F0F]/20 rounded-xl p-6 text-center cursor-pointer hover:border-[#2969FF] transition-colors"
+                  className="mt-1 border-2 border-dashed border-border/20 rounded-xl p-6 text-center cursor-pointer hover:border-[#2969FF] transition-colors"
                 >
                   {manualIdFile ? (
                     <div className="flex items-center justify-center gap-2">
@@ -710,8 +710,8 @@ export function KYCVerification() {
                     </div>
                   ) : (
                     <>
-                      <Upload className="w-8 h-8 mx-auto text-[#0F0F0F]/40 mb-2" />
-                      <p className="text-sm text-[#0F0F0F]/60">Click to upload</p>
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Click to upload</p>
                     </>
                   )}
                 </div>
@@ -735,8 +735,8 @@ export function KYCVerification() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-semibold text-[#0F0F0F]">KYC Verification</h2>
-        <p className="text-[#0F0F0F]/60 mt-1">Complete verification to unlock higher payout limits</p>
+        <h2 className="text-2xl font-semibold text-foreground">KYC Verification</h2>
+        <p className="text-muted-foreground mt-1">Complete verification to unlock higher payout limits</p>
       </div>
 
       {success && (
@@ -753,23 +753,23 @@ export function KYCVerification() {
       )}
 
       {/* Current Status Card */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+      <Card className="border-border/10 rounded-2xl overflow-hidden">
         <div className={`h-2 ${currentLevel >= 3 ? 'bg-green-500' : currentLevel >= 2 ? 'bg-purple-500' : currentLevel >= 1 ? 'bg-blue-500' : 'bg-gray-300'}`} />
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
-                currentLevel >= 3 ? 'bg-green-100' : currentLevel >= 2 ? 'bg-purple-100' : currentLevel >= 1 ? 'bg-blue-100' : 'bg-gray-100'
+                currentLevel >= 3 ? 'bg-green-100' : currentLevel >= 2 ? 'bg-purple-100' : currentLevel >= 1 ? 'bg-blue-100' : 'bg-muted'
               }`}>
                 <Shield className={`w-8 h-8 ${
-                  currentLevel >= 3 ? 'text-green-600' : currentLevel >= 2 ? 'text-purple-600' : currentLevel >= 1 ? 'text-blue-600' : 'text-gray-400'
+                  currentLevel >= 3 ? 'text-green-600' : currentLevel >= 2 ? 'text-purple-600' : currentLevel >= 1 ? 'text-blue-600' : 'text-muted-foreground'
                 }`} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-[#0F0F0F]">
+                <h3 className="text-lg font-semibold text-foreground">
                   {currentLevel === 0 ? 'Not Verified' : `Level ${currentLevel}: ${verificationLevels[currentLevel - 1]?.name}`}
                 </h3>
-                <p className="text-[#0F0F0F]/60">
+                <p className="text-muted-foreground">
                   Monthly Payout Limit: <span className="font-medium">{formatCurrency(kyc?.monthly_payout_limit || 0)}</span>
                 </p>
               </div>
@@ -779,10 +779,10 @@ export function KYCVerification() {
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-[#0F0F0F]/60">Verification Progress</span>
+              <span className="text-muted-foreground">Verification Progress</span>
               <span className="font-medium">{currentLevel}/3 Levels</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className="w-full bg-muted rounded-full h-3">
               <div
                 className={`h-3 rounded-full transition-all ${
                   currentLevel >= 3 ? 'bg-green-500' : currentLevel >= 2 ? 'bg-purple-500' : 'bg-blue-500'
@@ -807,7 +807,7 @@ export function KYCVerification() {
               className={`border rounded-2xl transition-all ${
                 isCompleted ? 'border-green-200 bg-green-50/50' : 
                 isNext ? 'border-[#2969FF] bg-[#2969FF]/5' : 
-                'border-[#0F0F0F]/10 opacity-60'
+                'border-border/10 opacity-60'
               }`}
             >
               <CardContent className="p-4">
@@ -816,25 +816,25 @@ export function KYCVerification() {
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                       isCompleted ? 'bg-green-100' : 
                       isNext ? 'bg-blue-100' : 
-                      'bg-gray-100'
+                      'bg-muted'
                     }`}>
                       {isCompleted ? (
                         <CheckCircle className="w-6 h-6 text-green-600" />
                       ) : isLocked ? (
-                        <Lock className="w-6 h-6 text-gray-400" />
+                        <Lock className="w-6 h-6 text-muted-foreground" />
                       ) : (
                         <span className="text-lg font-bold text-blue-600">{level.level}</span>
                       )}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-[#0F0F0F]">Level {level.level}: {level.name}</h4>
+                        <h4 className="font-medium text-foreground">Level {level.level}: {level.name}</h4>
                         {isCompleted && (
                           <Badge className="bg-green-100 text-green-700 text-xs">Completed</Badge>
                         )}
                       </div>
-                      <p className="text-sm text-[#0F0F0F]/60">{level.description}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">Limit: <span className="font-medium">{level.limit}</span></p>
+                      <p className="text-sm text-muted-foreground">{level.description}</p>
+                      <p className="text-sm text-muted-foreground">Limit: <span className="font-medium">{level.limit}</span></p>
                     </div>
                   </div>
 
@@ -866,7 +866,7 @@ export function KYCVerification() {
                       <span
                         key={i}
                         className={`text-xs px-2 py-1 rounded-lg ${
-                          isReqCompleted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                          isReqCompleted ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         {isReqCompleted && <CheckCircle className="w-3 h-3 inline mr-1" />}
@@ -887,8 +887,8 @@ export function KYCVerification() {
           <div className="flex items-start gap-3">
             <Info className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
-              <h3 className="font-medium text-[#0F0F0F] mb-2">Why verify your identity?</h3>
-              <ul className="text-sm text-[#0F0F0F]/70 space-y-1">
+              <h3 className="font-medium text-foreground mb-2">Why verify your identity?</h3>
+              <ul className="text-sm text-foreground/70 space-y-1">
                 <li>• <strong>Security:</strong> Protect your account and earnings</li>
                 <li>• <strong>Higher Limits:</strong> Unlock higher monthly payout limits</li>
                 <li>• <strong>Trust:</strong> Build credibility with your attendees</li>
@@ -927,12 +927,12 @@ export function KYCVerification() {
                 <button
                   type="button"
                   onClick={() => setShowBvn(!showBvn)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]/60"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                 >
                   {showBvn ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              <p className="text-xs text-[#0F0F0F]/40">Your BVN is encrypted and secure</p>
+              <p className="text-xs text-muted-foreground">Your BVN is encrypted and secure</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -977,7 +977,7 @@ export function KYCVerification() {
               </div>
             </div>
 
-            <div className="p-3 bg-[#F4F6FA] rounded-xl text-sm text-[#0F0F0F]/60">
+            <div className="p-3 bg-muted rounded-xl text-sm text-muted-foreground">
               <p>🔒 Your data is verified securely via Paystack and is never stored in plain text.</p>
             </div>
 
@@ -1062,7 +1062,7 @@ export function KYCVerification() {
               />
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-[#0F0F0F]/20 rounded-xl p-6 text-center cursor-pointer hover:border-[#2969FF] transition-colors"
+                className="border-2 border-dashed border-border/20 rounded-xl p-6 text-center cursor-pointer hover:border-[#2969FF] transition-colors"
               >
                 {idFile ? (
                   <div className="flex items-center justify-center gap-2">
@@ -1071,8 +1071,8 @@ export function KYCVerification() {
                   </div>
                 ) : (
                   <>
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-[#0F0F0F]/40" />
-                    <p className="text-sm text-[#0F0F0F]/60">Click to upload (PNG, JPG, PDF - Max 5MB)</p>
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Click to upload (PNG, JPG, PDF - Max 5MB)</p>
                   </>
                 )}
               </div>
@@ -1140,7 +1140,7 @@ export function KYCVerification() {
               />
               <div
                 onClick={() => cacFileInputRef.current?.click()}
-                className="border-2 border-dashed border-[#0F0F0F]/20 rounded-xl p-6 text-center cursor-pointer hover:border-[#2969FF] transition-colors"
+                className="border-2 border-dashed border-border/20 rounded-xl p-6 text-center cursor-pointer hover:border-[#2969FF] transition-colors"
               >
                 {cacFile ? (
                   <div className="flex items-center justify-center gap-2">
@@ -1149,8 +1149,8 @@ export function KYCVerification() {
                   </div>
                 ) : (
                   <>
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-[#0F0F0F]/40" />
-                    <p className="text-sm text-[#0F0F0F]/60">Click to upload (PNG, JPG, PDF - Max 5MB)</p>
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Click to upload (PNG, JPG, PDF - Max 5MB)</p>
                   </>
                 )}
               </div>

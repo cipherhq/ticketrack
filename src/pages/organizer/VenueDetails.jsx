@@ -215,9 +215,9 @@ export function VenueDetails() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center py-12">
-          <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Venue Not Found</h2>
-          <p className="text-gray-600 mb-6">
+          <Building2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Venue Not Found</h2>
+          <p className="text-muted-foreground mb-6">
             The venue you're looking for doesn't exist or you don't have access to it.
           </p>
           <Button onClick={() => navigate('/organizer/venues')}>
@@ -242,7 +242,7 @@ export function VenueDetails() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-[#0F0F0F]">{venue.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground">{venue.name}</h1>
               <Badge variant="outline" className="capitalize">{venue.venue_type}</Badge>
               {venue.iot_enabled ? (
                 <Badge variant="default" className="bg-green-100 text-green-800">
@@ -253,7 +253,7 @@ export function VenueDetails() {
                 <Badge variant="secondary">Basic</Badge>
               )}
             </div>
-            <p className="text-[#0F0F0F]/60 mt-1 flex items-center gap-1">
+            <p className="text-muted-foreground mt-1 flex items-center gap-1">
               <MapPin className="w-4 h-4" />
               {venue.address}
             </p>
@@ -334,7 +334,7 @@ export function VenueDetails() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+            <div className="aspect-video bg-muted rounded-lg overflow-hidden">
               <iframe
                 width="100%"
                 height="100%"
@@ -370,9 +370,9 @@ export function VenueDetails() {
           {layouts.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <Layout className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Layouts Yet</h3>
-                <p className="text-gray-500 mb-4">
+                <Layout className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No Layouts Yet</h3>
+                <p className="text-muted-foreground mb-4">
                   Create your first layout to start designing seating arrangements.
                 </p>
                 <Button onClick={() => navigate(`/organizer/venues/${venueId}/layouts/create`)}>
@@ -443,9 +443,9 @@ export function VenueDetails() {
           {events.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Events Linked</h3>
-                <p className="text-gray-500">
+                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No Events Linked</h3>
+                <p className="text-muted-foreground">
                   No events are currently using this venue. Link a venue when creating an event.
                 </p>
               </CardContent>
@@ -457,7 +457,7 @@ export function VenueDetails() {
                   {events.map(event => (
                     <div
                       key={event.id}
-                      className="p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer"
+                      className="p-4 flex items-center justify-between hover:bg-background cursor-pointer"
                       onClick={() => navigate(`/organizer/events/${event.id}/edit`)}
                     >
                       <div>
@@ -494,9 +494,9 @@ export function VenueDetails() {
             {sensors.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
-                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Sensors Configured</h3>
-                  <p className="text-gray-500 mb-4">
+                  <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Sensors Configured</h3>
+                  <p className="text-muted-foreground mb-4">
                     IoT is enabled but no sensors have been registered yet.
                   </p>
                   <Button variant="outline" onClick={() => navigate('/organizer/venues/iot')}>
@@ -686,7 +686,7 @@ export function VenueDetails() {
                 id="editIotEnabled"
                 checked={editForm.iot_enabled}
                 onChange={(e) => setEditForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
-                className="h-4 w-4 rounded border-gray-300 text-[#2969FF] focus:ring-[#2969FF]"
+                className="h-4 w-4 rounded border-border/30 text-[#2969FF] focus:ring-primary"
               />
               <Label htmlFor="editIotEnabled" className="flex items-center gap-2 cursor-pointer">
                 <Wifi className="w-4 h-4 text-[#2969FF]" />

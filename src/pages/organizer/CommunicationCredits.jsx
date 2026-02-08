@@ -390,7 +390,7 @@ export function CommunicationCredits() {
       case 'bonus': return <Sparkles className="w-4 h-4 text-purple-600" />;
       case 'refund': return <RefreshCw className="w-4 h-4 text-blue-600" />;
       case 'expiry': return <Clock className="w-4 h-4 text-orange-600" />;
-      default: return <Coins className="w-4 h-4 text-gray-600" />;
+      default: return <Coins className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -416,8 +416,8 @@ export function CommunicationCredits() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Message Credits</h1>
-          <p className="text-[#0F0F0F]/60">Purchase credits to send SMS, WhatsApp, and email campaigns</p>
+          <h1 className="text-2xl font-bold text-foreground">Message Credits</h1>
+          <p className="text-muted-foreground">Purchase credits to send SMS, WhatsApp, and email campaigns</p>
         </div>
         <Button onClick={() => navigate('/organizer/hub')} variant="outline">
           <Send className="w-4 h-4 mr-2" />
@@ -427,14 +427,14 @@ export function CommunicationCredits() {
 
       {/* Balance Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-xl bg-gradient-to-br from-[#2969FF] to-[#1E4FCC] text-white col-span-1 md:col-span-2">
+        <Card className="border-border/10 rounded-xl bg-gradient-to-br from-[#2969FF] to-[#1E4FCC] text-white col-span-1 md:col-span-2">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-card/20 flex items-center justify-center">
                 <Coins className="w-6 h-6" />
               </div>
               {balance?.bonus_balance > 0 && (
-                <Badge className="bg-white/20 text-white">
+                <Badge className="bg-card/20 text-white">
                   <Sparkles className="w-3 h-3 mr-1" />
                   {formatCredits(balance.bonus_balance)} bonus
                 </Badge>
@@ -448,26 +448,26 @@ export function CommunicationCredits() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
             </div>
-            <p className="text-[#0F0F0F]/60 text-sm">Lifetime Purchased</p>
+            <p className="text-muted-foreground text-sm">Lifetime Purchased</p>
             <p className="text-2xl font-bold">{formatCredits(balance?.lifetime_purchased || 0)}</p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
                 <TrendingDown className="w-5 h-5 text-red-600" />
               </div>
             </div>
-            <p className="text-[#0F0F0F]/60 text-sm">Lifetime Used</p>
+            <p className="text-muted-foreground text-sm">Lifetime Used</p>
             <p className="text-2xl font-bold">{formatCredits(balance?.lifetime_used || 0)}</p>
           </CardContent>
         </Card>
@@ -504,11 +504,11 @@ export function CommunicationCredits() {
 
             if (availablePackages.length === 0) {
               return (
-                <Card className="border-[#0F0F0F]/10 rounded-xl">
+                <Card className="border-border/10 rounded-xl">
                   <CardContent className="p-12 text-center">
-                    <Package className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                    <p className="text-[#0F0F0F]/60">No packages available for your region yet.</p>
-                    <p className="text-sm text-[#0F0F0F]/40 mt-2">Please contact support for assistance.</p>
+                    <Package className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                    <p className="text-muted-foreground">No packages available for your region yet.</p>
+                    <p className="text-sm text-muted-foreground mt-2">Please contact support for assistance.</p>
                   </CardContent>
                 </Card>
               );
@@ -524,7 +524,7 @@ export function CommunicationCredits() {
                     <Card
                       key={pkg.id}
                       className={`border-2 rounded-xl transition-all cursor-pointer hover:shadow-lg ${
-                        pkg.is_popular ? 'border-[#2969FF] ring-2 ring-[#2969FF]/20' : 'border-[#0F0F0F]/10'
+                        pkg.is_popular ? 'border-[#2969FF] ring-2 ring-[#2969FF]/20' : 'border-border/10'
                       }`}
                       onClick={() => initiatePayment(pkg)}
                     >
@@ -536,13 +536,13 @@ export function CommunicationCredits() {
                         )}
 
                         <h3 className="text-lg font-bold mb-1">{pkg.name}</h3>
-                        <p className="text-sm text-[#0F0F0F]/60 mb-4">{pkg.description}</p>
+                        <p className="text-sm text-muted-foreground mb-4">{pkg.description}</p>
 
                         <div className="mb-4">
                           <p className="text-3xl font-bold text-[#2969FF]">
                             {formatCredits(pkg.credits + (pkg.bonus_credits || 0))}
                           </p>
-                          <p className="text-sm text-[#0F0F0F]/60">credits</p>
+                          <p className="text-sm text-muted-foreground">credits</p>
                         </div>
 
                         {pkg.bonus_credits > 0 && (
@@ -552,9 +552,9 @@ export function CommunicationCredits() {
                           </div>
                         )}
 
-                        <div className="border-t border-[#0F0F0F]/10 pt-4">
+                        <div className="border-t border-border/10 pt-4">
                           <p className="text-2xl font-bold">{formatCurrency(displayPrice, userCurrency)}</p>
-                          <p className="text-xs text-[#0F0F0F]/40">
+                          <p className="text-xs text-muted-foreground">
                             {formatCurrency(pricePerCredit, userCurrency)}/credit
                           </p>
                         </div>
@@ -570,13 +570,13 @@ export function CommunicationCredits() {
             );
           })()}
 
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Info className="w-5 h-5 text-[#0F0F0F]/40" />
+                <Info className="w-5 h-5 text-muted-foreground" />
                 <h3 className="font-medium">Credit Policy</h3>
               </div>
-              <ul className="text-sm text-[#0F0F0F]/60 space-y-2">
+              <ul className="text-sm text-muted-foreground space-y-2">
                 <li>• Standard credits expire 12 months after purchase</li>
                 <li>• Bonus credits expire 6 months after purchase</li>
                 <li>• Bonus credits are used first when sending messages</li>
@@ -593,7 +593,7 @@ export function CommunicationCredits() {
             {channelPricing.map((channel) => {
               const config = CHANNEL_CONFIG[channel.channel] || CHANNEL_CONFIG.email;
               return (
-                <Card key={channel.id} className="border-[#0F0F0F]/10 rounded-xl">
+                <Card key={channel.id} className="border-border/10 rounded-xl">
                   <CardContent className="p-5">
                     <div className="flex items-center gap-3 mb-4">
                       <div className={`w-12 h-12 rounded-xl ${config.bgColor} flex items-center justify-center`}>
@@ -601,7 +601,7 @@ export function CommunicationCredits() {
                       </div>
                       <div>
                         <h3 className="font-semibold">{channel.display_name}</h3>
-                        <p className="text-sm text-[#0F0F0F]/60">{channel.description}</p>
+                        <p className="text-sm text-muted-foreground">{channel.description}</p>
                       </div>
                     </div>
                     
@@ -611,11 +611,11 @@ export function CommunicationCredits() {
                           {channel.credits_per_message === 0 ? 'FREE' : channel.credits_per_message}
                         </p>
                         {channel.credits_per_message > 0 && (
-                          <p className="text-sm text-[#0F0F0F]/60">credits/message</p>
+                          <p className="text-sm text-muted-foreground">credits/message</p>
                         )}
                       </div>
                       {channel.credits_per_message > 0 && (
-                        <p className="text-sm text-[#0F0F0F]/40">
+                        <p className="text-sm text-muted-foreground">
                           ≈ {formatCurrency(channel.credits_per_message)}
                         </p>
                       )}
@@ -623,9 +623,9 @@ export function CommunicationCredits() {
 
                     {/* Estimate how many messages with current balance */}
                     {totalBalance > 0 && channel.credits_per_message > 0 && (
-                      <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10">
-                        <p className="text-sm text-[#0F0F0F]/60">
-                          You can send <span className="font-semibold text-[#0F0F0F]">
+                      <div className="mt-4 pt-4 border-t border-border/10">
+                        <p className="text-sm text-muted-foreground">
+                          You can send <span className="font-semibold text-foreground">
                             {formatCredits(Math.floor(totalBalance / channel.credits_per_message))}
                           </span> messages
                         </p>
@@ -638,7 +638,7 @@ export function CommunicationCredits() {
           </div>
 
           {/* Usage by Channel */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle className="text-lg">Your Usage by Channel</CardTitle>
             </CardHeader>
@@ -714,26 +714,26 @@ export function CommunicationCredits() {
             </Button>
           </div>
 
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardContent className="p-0">
               {filteredTransactions.length === 0 ? (
                 <div className="text-center py-12">
-                  <History className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                  <p className="text-[#0F0F0F]/60">No transactions yet</p>
+                  <History className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No transactions yet</p>
                 </div>
               ) : (
                 <div className="divide-y divide-[#0F0F0F]/5">
                   {filteredTransactions.map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-[#F4F6FA]/50">
+                    <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-muted/50">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-[#F4F6FA] flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                           {getTransactionIcon(tx.type)}
                         </div>
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">
+                          <p className="font-medium text-foreground">
                             {tx.description || tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}
                           </p>
-                          <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{format(new Date(tx.created_at), 'MMM d, yyyy h:mm a')}</span>
                             {tx.channel && (
                               <>
@@ -748,7 +748,7 @@ export function CommunicationCredits() {
                         <p className={`font-semibold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {tx.amount > 0 ? '+' : ''}{formatCredits(tx.amount)}
                         </p>
-                        <p className="text-xs text-[#0F0F0F]/40">
+                        <p className="text-xs text-muted-foreground">
                           Balance: {formatCredits(tx.balance_after)}
                         </p>
                       </div>
@@ -779,9 +779,9 @@ export function CommunicationCredits() {
 
             return (
               <div className="py-4 space-y-4">
-                <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                <div className="p-4 bg-muted rounded-xl">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[#0F0F0F]/60">Credits</span>
+                    <span className="text-muted-foreground">Credits</span>
                     <span className="font-semibold">{formatCredits(selectedPackage.credits)}</span>
                   </div>
                   {selectedPackage.bonus_credits > 0 && (
@@ -793,7 +793,7 @@ export function CommunicationCredits() {
                       <span className="font-semibold">+{formatCredits(selectedPackage.bonus_credits)}</span>
                     </div>
                   )}
-                  <div className="border-t border-[#0F0F0F]/10 pt-2 mt-2">
+                  <div className="border-t border-border/10 pt-2 mt-2">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold">Total Credits</span>
                       <span className="font-bold text-[#2969FF]">
@@ -805,14 +805,14 @@ export function CommunicationCredits() {
 
                 <div className="p-4 bg-[#2969FF]/5 rounded-xl border border-[#2969FF]/20">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[#0F0F0F]">Amount to Pay</span>
+                    <span className="font-semibold text-foreground">Amount to Pay</span>
                     <span className="text-2xl font-bold text-[#2969FF]">
                       {formatCurrency(displayAmount, userCurrency)}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs text-[#0F0F0F]/40 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   You'll be redirected to {providerNames[provider] || 'payment'} to complete payment
                 </p>
               </div>

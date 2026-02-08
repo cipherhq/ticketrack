@@ -601,24 +601,24 @@ export function AddBankAccount() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Bank Accounts</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage your bank accounts for payouts</p>
+          <h2 className="text-2xl font-semibold text-foreground">Bank Accounts</h2>
+          <p className="text-muted-foreground mt-1">Manage your bank accounts for payouts</p>
         </div>
       </div>
 
       {/* Country indicator */}
-      <div className="flex items-center gap-2 p-3 bg-[#F4F6FA] rounded-xl">
+      <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
         <Globe className="w-5 h-5 text-[#2969FF]" />
         <span className="text-2xl">{getCountryFlag()}</span>
-        <span className="text-[#0F0F0F]">Adding bank account for <strong>{getCountryName()}</strong></span>
+        <span className="text-foreground">Adding bank account for <strong>{getCountryName()}</strong></span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form */}
         <div className="lg:col-span-2">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
                 <Plus className="w-5 h-5" />
                 Add New Bank Account
               </CardTitle>
@@ -630,15 +630,15 @@ export function AddBankAccount() {
                 <div className="space-y-2">
                   <Label htmlFor="bankName">Bank Name</Label>
                   {loadingBanks ? (
-                    <div className="h-12 rounded-xl bg-[#F4F6FA] flex items-center justify-center">
-                      <Loader2 className="w-5 h-5 animate-spin text-[#0F0F0F]/40" />
+                    <div className="h-12 rounded-xl bg-muted flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                     </div>
                   ) : (
                     <Select 
                       value={isPaystackCountry ? formData.bankCode : formData.bankName} 
                       onValueChange={handleBankChange}
                     >
-                      <SelectTrigger className="rounded-xl border-[#0F0F0F]/10 h-12">
+                      <SelectTrigger className="rounded-xl border-border/10 h-12">
                         <SelectValue placeholder="Select your bank" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl max-h-64">
@@ -665,7 +665,7 @@ export function AddBankAccount() {
                       placeholder="Enter your bank's full name"
                       value={formData.customBankName || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, customBankName: e.target.value }))}
-                      className="rounded-xl border-[#0F0F0F]/10 h-12"
+                      className="rounded-xl border-border/10 h-12"
                     />
                   </div>
                 )}
@@ -680,9 +680,9 @@ export function AddBankAccount() {
                       value={formData.routingNumber}
                       onChange={handleRoutingNumberChange}
                       maxLength={9}
-                      className="rounded-xl border-[#0F0F0F]/10 h-12 font-mono"
+                      className="rounded-xl border-border/10 h-12 font-mono"
                     />
-                    <p className="text-sm text-[#0F0F0F]/60">
+                    <p className="text-sm text-muted-foreground">
                       {formData.routingNumber.length}/9 digits
                       {formData.routingNumber.length === 9 && (
                         validateUSRoutingNumber(formData.routingNumber) 
@@ -703,9 +703,9 @@ export function AddBankAccount() {
                       value={formData.sortCode}
                       onChange={handleSortCodeChange}
                       maxLength={8}
-                      className="rounded-xl border-[#0F0F0F]/10 h-12 font-mono"
+                      className="rounded-xl border-border/10 h-12 font-mono"
                     />
-                    <p className="text-sm text-[#0F0F0F]/60">6 digits in XX-XX-XX format</p>
+                    <p className="text-sm text-muted-foreground">6 digits in XX-XX-XX format</p>
                   </div>
                 )}
 
@@ -720,9 +720,9 @@ export function AddBankAccount() {
                         value={formData.transitNumber}
                         onChange={handleTransitNumberChange}
                         maxLength={5}
-                        className="rounded-xl border-[#0F0F0F]/10 h-12 font-mono"
+                        className="rounded-xl border-border/10 h-12 font-mono"
                       />
-                      <p className="text-sm text-[#0F0F0F]/60">{formData.transitNumber.length}/5 digits</p>
+                      <p className="text-sm text-muted-foreground">{formData.transitNumber.length}/5 digits</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="institutionNumber">Institution Number</Label>
@@ -732,10 +732,10 @@ export function AddBankAccount() {
                         value={formData.institutionNumber}
                         onChange={handleInstitutionNumberChange}
                         maxLength={3}
-                        className="rounded-xl border-[#0F0F0F]/10 h-12 font-mono"
+                        className="rounded-xl border-border/10 h-12 font-mono"
                         disabled={formData.bankName && formData.bankName !== 'Other'}
                       />
-                      <p className="text-sm text-[#0F0F0F]/60">{formData.institutionNumber.length}/3 digits</p>
+                      <p className="text-sm text-muted-foreground">{formData.institutionNumber.length}/3 digits</p>
                     </div>
                   </div>
                 )}
@@ -751,7 +751,7 @@ export function AddBankAccount() {
                         placeholder={isPaystackCountry ? 'Enter 10-digit account number' : 'Enter account number'}
                         value={formData.accountNumber}
                         onChange={handleAccountNumberChange}
-                        className="rounded-xl border-[#0F0F0F]/10 h-12 font-mono pr-10"
+                        className="rounded-xl border-border/10 h-12 font-mono pr-10"
                       />
                       <Button
                         type="button"
@@ -774,7 +774,7 @@ export function AddBankAccount() {
                       </Button>
                     )}
                   </div>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="text-sm text-muted-foreground">
                     {isPaystackCountry && `${formData.accountNumber.length}/10 digits`}
                     {isUSCountry && `${formData.accountNumber.length} digits (typically 10-17)`}
                     {isUKCountry && `${formData.accountNumber.length}/8 digits`}
@@ -792,7 +792,7 @@ export function AddBankAccount() {
                       placeholder="Re-enter account number"
                       value={formData.accountNumberConfirm}
                       onChange={handleAccountNumberConfirmChange}
-                      className="rounded-xl border-[#0F0F0F]/10 h-12 font-mono"
+                      className="rounded-xl border-border/10 h-12 font-mono"
                     />
                     {formData.accountNumber && formData.accountNumberConfirm && (
                       <p className={`text-sm ${formData.accountNumber === formData.accountNumberConfirm ? 'text-green-600' : 'text-red-600'}`}>
@@ -807,7 +807,7 @@ export function AddBankAccount() {
                   <div className="space-y-2">
                     <Label htmlFor="accountType">Account Type</Label>
                     <Select value={formData.accountType} onValueChange={(value) => setFormData(prev => ({ ...prev, accountType: value }))}>
-                      <SelectTrigger className="rounded-xl border-[#0F0F0F]/10 h-12">
+                      <SelectTrigger className="rounded-xl border-border/10 h-12">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -838,9 +838,9 @@ export function AddBankAccount() {
                       placeholder="Enter name exactly as it appears on your bank account"
                       value={formData.accountName}
                       onChange={(e) => setFormData(prev => ({ ...prev, accountName: e.target.value }))}
-                      className="rounded-xl border-[#0F0F0F]/10 h-12"
+                      className="rounded-xl border-border/10 h-12"
                     />
-                    <p className="text-sm text-[#0F0F0F]/60">Must match the name on your bank account for verification</p>
+                    <p className="text-sm text-muted-foreground">Must match the name on your bank account for verification</p>
                   </div>
                 )}
 
@@ -853,7 +853,7 @@ export function AddBankAccount() {
                       value={formData.accountName}
                       disabled
                       placeholder="Will be filled after verification"
-                      className="rounded-xl border-[#0F0F0F]/10 bg-[#F4F6FA] h-12"
+                      className="rounded-xl border-border/10 bg-muted h-12"
                     />
                   </div>
                 )}
@@ -898,9 +898,9 @@ export function AddBankAccount() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
                 <Building className="w-5 h-5" />
                 {isPaystackCountry ? 'Instant Verification' : 'Bank Details Guide'}
               </CardTitle>
@@ -909,70 +909,70 @@ export function AddBankAccount() {
               {isPaystackCountry ? (
                 <>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">Instant Verification</p>
-                    <p className="text-sm text-[#0F0F0F]/60">We verify your account details instantly using Paystack</p>
+                    <p className="font-medium text-foreground">Instant Verification</p>
+                    <p className="text-sm text-muted-foreground">We verify your account details instantly using Paystack</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">Secure Payments</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Your bank details are encrypted and stored securely</p>
+                    <p className="font-medium text-foreground">Secure Payments</p>
+                    <p className="text-sm text-muted-foreground">Your bank details are encrypted and stored securely</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">Fast Payouts</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Verified accounts receive payouts within 24-48 hours</p>
+                    <p className="font-medium text-foreground">Fast Payouts</p>
+                    <p className="text-sm text-muted-foreground">Verified accounts receive payouts within 24-48 hours</p>
                   </div>
                 </>
               ) : isUSCountry ? (
                 <>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">🏦 Routing Number</p>
-                    <p className="text-sm text-[#0F0F0F]/60">9-digit ABA number, found at the bottom left of your checks or in your bank app</p>
+                    <p className="font-medium text-foreground">🏦 Routing Number</p>
+                    <p className="text-sm text-muted-foreground">9-digit ABA number, found at the bottom left of your checks or in your bank app</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">🔢 Account Number</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Your unique account number (10-17 digits)</p>
+                    <p className="font-medium text-foreground">🔢 Account Number</p>
+                    <p className="text-sm text-muted-foreground">Your unique account number (10-17 digits)</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">📋 Account Type</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Most business payouts go to a Checking account</p>
+                    <p className="font-medium text-foreground">📋 Account Type</p>
+                    <p className="text-sm text-muted-foreground">Most business payouts go to a Checking account</p>
                   </div>
                 </>
               ) : isUKCountry ? (
                 <>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">🏦 Sort Code</p>
-                    <p className="text-sm text-[#0F0F0F]/60">6-digit code in XX-XX-XX format, identifies your bank branch</p>
+                    <p className="font-medium text-foreground">🏦 Sort Code</p>
+                    <p className="text-sm text-muted-foreground">6-digit code in XX-XX-XX format, identifies your bank branch</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">🔢 Account Number</p>
-                    <p className="text-sm text-[#0F0F0F]/60">8-digit UK bank account number</p>
+                    <p className="font-medium text-foreground">🔢 Account Number</p>
+                    <p className="text-sm text-muted-foreground">8-digit UK bank account number</p>
                   </div>
                 </>
               ) : isCACountry ? (
                 <>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">🏦 Institution Number</p>
-                    <p className="text-sm text-[#0F0F0F]/60">3-digit code that identifies your bank</p>
+                    <p className="font-medium text-foreground">🏦 Institution Number</p>
+                    <p className="text-sm text-muted-foreground">3-digit code that identifies your bank</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">📍 Transit Number</p>
-                    <p className="text-sm text-[#0F0F0F]/60">5-digit code that identifies your branch</p>
+                    <p className="font-medium text-foreground">📍 Transit Number</p>
+                    <p className="text-sm text-muted-foreground">5-digit code that identifies your branch</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-[#0F0F0F]">🔢 Account Number</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Your unique account number (7-12 digits)</p>
+                    <p className="font-medium text-foreground">🔢 Account Number</p>
+                    <p className="text-sm text-muted-foreground">Your unique account number (7-12 digits)</p>
                   </div>
                 </>
               ) : null}
             </CardContent>
           </Card>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl bg-[#2969FF]/5">
+          <Card className="border-border/10 rounded-2xl bg-[#2969FF]/5">
             <CardContent className="p-6">
               <div className="flex items-start gap-3">
                 <CreditCard className="w-5 h-5 text-[#2969FF] mt-0.5" />
                 <div className="space-y-2">
-                  <p className="font-medium text-[#0F0F0F]">Need Help?</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Having trouble adding your bank account? Contact our support team.</p>
+                  <p className="font-medium text-foreground">Need Help?</p>
+                  <p className="text-sm text-muted-foreground">Having trouble adding your bank account? Contact our support team.</p>
                   <Button variant="outline" onClick={() => navigate('/contact')} className="rounded-xl border-[#2969FF] text-[#2969FF] w-full mt-2">
                     Contact Support
                   </Button>
@@ -984,9 +984,9 @@ export function AddBankAccount() {
       </div>
 
       {/* Existing Bank Accounts */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Your Bank Accounts</CardTitle>
+          <CardTitle className="text-foreground">Your Bank Accounts</CardTitle>
         </CardHeader>
         <CardContent>
           {loadingAccounts ? (
@@ -995,9 +995,9 @@ export function AddBankAccount() {
             </div>
           ) : bankAccounts.length === 0 ? (
             <div className="text-center py-8">
-              <Building className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No bank accounts added yet</p>
-              <p className="text-sm text-[#0F0F0F]/40">Add your first bank account above</p>
+              <Building className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">No bank accounts added yet</p>
+              <p className="text-sm text-muted-foreground">Add your first bank account above</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1007,26 +1007,26 @@ export function AddBankAccount() {
                   className={`p-4 rounded-xl border ${
                     account.is_default
                       ? 'border-[#2969FF] bg-[#2969FF]/5'
-                      : 'border-[#0F0F0F]/10 bg-[#F4F6FA]'
+                      : 'border-border/10 bg-muted'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Building className="w-5 h-5 text-[#0F0F0F]/60" />
-                      <span className="font-medium text-[#0F0F0F]">{account.bank_name}</span>
+                      <Building className="w-5 h-5 text-muted-foreground" />
+                      <span className="font-medium text-foreground">{account.bank_name}</span>
                     </div>
                     {account.is_default && (
                       <Badge className="bg-[#2969FF] text-white">Default</Badge>
                     )}
                   </div>
-                  <p className="text-[#0F0F0F]/60 text-sm mb-1">{account.account_name}</p>
+                  <p className="text-muted-foreground text-sm mb-1">{account.account_name}</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-[#0F0F0F] font-mono text-sm">••••••{account.account_number?.slice(-4) || '••••'}</p>
+                    <p className="text-foreground font-mono text-sm">••••••{account.account_number?.slice(-4) || '••••'}</p>
                     <Badge variant="outline" className="text-xs">{account.currency}</Badge>
                   </div>
                   
 
-                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#0F0F0F]/10">
+                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/10">
                     {!account.is_default && (
                       <Button
                         variant="ghost"

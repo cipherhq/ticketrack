@@ -912,7 +912,7 @@ export function EventManagement() {
   const getStatusBadge = (event) => {
     const status = getEventStatus(event);
     switch (status) {
-      case 'draft': return <Badge className="bg-gray-100 text-gray-700">Draft</Badge>;
+      case 'draft': return <Badge className="bg-muted text-foreground/80">Draft</Badge>;
       case 'cancelled': return <Badge className="bg-red-100 text-red-700">Cancelled</Badge>;
       case 'completed': return <Badge className="bg-purple-100 text-purple-700">Completed</Badge>;
       case 'live': return <Badge className="bg-green-100 text-green-700 flex items-center gap-1"><Radio className="w-3 h-3 animate-pulse" />Live</Badge>;
@@ -930,32 +930,32 @@ export function EventManagement() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             Event Management
             <HelpTip>Create events, set ticket prices, and manage sales. Events can be one-time, recurring (weekly/monthly), or virtual online events.</HelpTip>
           </h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Create and manage your events</p>
+          <p className="text-muted-foreground mt-1">Create and manage your events</p>
         </div>
         <Button onClick={() => navigate('/organizer/create-event')} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl" title="Create a new event with tickets">
           <Plus className="w-5 h-5 mr-2" />Create Event
         </Button>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <div className="flex items-center space-x-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-              <Input placeholder="Search events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl bg-[#F4F6FA] border-0" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input placeholder="Search events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl bg-muted border-0" />
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {filteredEvents.length === 0 ? (
             <div className="text-center py-12">
-              <Calendar className="w-16 h-16 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-[#0F0F0F] mb-2">No events yet</h3>
-              <p className="text-[#0F0F0F]/60 mb-6">Create your first event to start selling tickets</p>
+              <Calendar className="w-16 h-16 text-foreground/20 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No events yet</h3>
+              <p className="text-muted-foreground mb-6">Create your first event to start selling tickets</p>
               <Button onClick={() => navigate('/organizer/create-event')} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
                 <Plus className="w-5 h-5 mr-2" />Create Your First Event
               </Button>
@@ -971,7 +971,7 @@ export function EventManagement() {
                   <div key={event.id} className={`p-4 rounded-xl transition-colors ${
                     event.isFree
                       ? 'bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100'
-                      : 'bg-[#F4F6FA] hover:bg-[#F4F6FA]/80'
+                      : 'bg-muted hover:bg-muted/80'
                   }`}>
                     <div className="flex items-start gap-3">
                       {/* Event Image - hidden on mobile */}
@@ -980,7 +980,7 @@ export function EventManagement() {
                       {/* Event Info - takes remaining space */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <h4 className="font-medium text-[#0F0F0F] truncate">{event.title}</h4>
+                            <h4 className="font-medium text-foreground truncate">{event.title}</h4>
                             {getStatusBadge(event)}
                             {event.isFree && <Badge className="bg-green-100 text-green-700">Free</Badge>}
                             {event.soldTickets > 0 && (
@@ -1010,13 +1010,13 @@ export function EventManagement() {
                               </Button>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#0F0F0F]/60">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(event.start_date)}</span>
                             {event.venue_name && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{event.venue_name}</span>}
                           </div>
                           <div className="flex items-center gap-4 mt-2 text-sm">
-                            <span className="text-[#0F0F0F]/60">
-                              <span className="font-medium text-[#0F0F0F]">{event.soldTickets}</span>/{event.totalTickets} {event.isFree ? 'RSVPs' : 'sold'}
+                            <span className="text-muted-foreground">
+                              <span className="font-medium text-foreground">{event.soldTickets}</span>/{event.totalTickets} {event.isFree ? 'RSVPs' : 'sold'}
                             </span>
                             {event.isFree ? (
                               event.donationAmount > 0 ? (
@@ -1025,7 +1025,7 @@ export function EventManagement() {
                                   {formatPrice(event.donationAmount, event.currency)} donations
                                 </span>
                               ) : (
-                                <span className="text-[#0F0F0F]/40">No donations yet</span>
+                                <span className="text-muted-foreground">No donations yet</span>
                               )
                             ) : (
                               <span className="text-[#2969FF] font-medium">{formatPrice(event.revenue, event.currency)}</span>
@@ -1035,7 +1035,7 @@ export function EventManagement() {
                       {event.is_recurring && expandedRecurringEvents[event.id] && (
                         <div className="mt-4 ml-8 space-y-2 border-l-2 border-purple-200 pl-4">
                           {loadingChildEvents[event.id] ? (
-                            <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 py-2">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
                               <Loader2 className="w-4 h-4 animate-spin" />Loading event dates...
                             </div>
                           ) : childEventsData[event.id]?.length > 0 ? (
@@ -1048,20 +1048,20 @@ export function EventManagement() {
                                   className={`p-3 rounded-lg ${
                                     childEvent.isFree 
                                       ? 'bg-green-50/50 hover:bg-green-100/50' 
-                                      : 'bg-white/50 hover:bg-white'
-                                  } border border-[#0F0F0F]/5`}
+                                      : 'bg-card/50 hover:bg-card'
+                                  } border border-border/5`}
                                 >
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <Calendar className="w-3.5 h-3.5 text-[#0F0F0F]/60" />
-                                        <span className="text-sm font-medium text-[#0F0F0F]">{formatDate(childEvent.start_date)}</span>
+                                        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                                        <span className="text-sm font-medium text-foreground">{formatDate(childEvent.start_date)}</span>
                                         {getStatusBadge(childEvent)}
                                         {childEvent.isFree && <Badge className="bg-green-100 text-green-700 text-xs">Free</Badge>}
                                       </div>
-                                      <div className="flex items-center gap-4 text-xs text-[#0F0F0F]/60 ml-6">
+                                      <div className="flex items-center gap-4 text-xs text-muted-foreground ml-6">
                                         <span>
-                                          <span className="font-medium text-[#0F0F0F]">{childEvent.soldTickets}</span>/{childEvent.totalTickets} {childEvent.isFree ? 'RSVPs' : 'sold'}
+                                          <span className="font-medium text-foreground">{childEvent.soldTickets}</span>/{childEvent.totalTickets} {childEvent.isFree ? 'RSVPs' : 'sold'}
                                         </span>
                                         {childEvent.isFree ? (
                                           childEvent.donationAmount > 0 ? (
@@ -1070,7 +1070,7 @@ export function EventManagement() {
                                               {formatPrice(childEvent.donationAmount, childEvent.currency)} donations
                                             </span>
                                           ) : (
-                                            <span className="text-[#0F0F0F]/40">No donations</span>
+                                            <span className="text-muted-foreground">No donations</span>
                                           )
                                         ) : (
                                           <span className="text-[#2969FF] font-medium flex items-center gap-1">
@@ -1095,7 +1095,7 @@ export function EventManagement() {
                               );
                             })
                           ) : (
-                            <div className="text-sm text-[#0F0F0F]/40 py-2">No event dates found</div>
+                            <div className="text-sm text-muted-foreground py-2">No event dates found</div>
                           )}
                         </div>
                       )}
@@ -1134,7 +1134,7 @@ export function EventManagement() {
                             {isDeletable ? (
                               <DropdownMenuItem onClick={() => deleteEvent(event.id)} className="text-red-600" disabled={deleting === event.id}><Trash2 className="w-4 h-4 mr-2" />{deleting === event.id ? 'Deleting...' : 'Delete Event'}</DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem disabled className="text-gray-400"><Lock className="w-4 h-4 mr-2" />Cannot Delete (Tickets Sold)</DropdownMenuItem>
+                              <DropdownMenuItem disabled className="text-muted-foreground"><Lock className="w-4 h-4 mr-2" />Cannot Delete (Tickets Sold)</DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1161,38 +1161,38 @@ export function EventManagement() {
 
       {issueTicketModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="bg-card rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border/10">
               <div>
-                <h3 className="text-lg font-semibold text-[#0F0F0F]">Issue Ticket</h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{issueTicketModal.event?.title}</p>
+                <h3 className="text-lg font-semibold text-foreground">Issue Ticket</h3>
+                <p className="text-sm text-muted-foreground mt-1">{issueTicketModal.event?.title}</p>
               </div>
-              <button onClick={closeIssueTicketModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><X className="w-5 h-5 text-[#0F0F0F]/60" /></button>
+              <button onClick={closeIssueTicketModal} className="p-2 hover:bg-muted rounded-lg transition-colors"><X className="w-5 h-5 text-muted-foreground" /></button>
             </div>
             {issueSuccess ? (
               <div className="p-6">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle className="w-8 h-8 text-green-600" /></div>
-                  <h4 className="text-lg font-semibold text-[#0F0F0F] mb-2">Ticket Issued Successfully!</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">Confirmation email sent to {issueSuccess.attendeeEmail}</p>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Ticket Issued Successfully!</h4>
+                  <p className="text-sm text-muted-foreground">Confirmation email sent to {issueSuccess.attendeeEmail}</p>
                 </div>
-                <div className="bg-[#F4F6FA] rounded-xl p-4 space-y-3">
-                  <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Attendee</span><span className="text-sm font-medium text-[#0F0F0F]">{issueSuccess.attendeeName}</span></div>
-                  <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Ticket Type</span><span className="text-sm font-medium text-[#0F0F0F]">{issueSuccess.ticketType}</span></div>
-                  <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Price</span>
+                <div className="bg-muted rounded-xl p-4 space-y-3">
+                  <div className="flex justify-between"><span className="text-sm text-muted-foreground">Attendee</span><span className="text-sm font-medium text-foreground">{issueSuccess.attendeeName}</span></div>
+                  <div className="flex justify-between"><span className="text-sm text-muted-foreground">Ticket Type</span><span className="text-sm font-medium text-foreground">{issueSuccess.ticketType}</span></div>
+                  <div className="flex justify-between"><span className="text-sm text-muted-foreground">Price</span>
                   {issueSuccess.isSelling ? (
-                    <span className="text-sm font-medium text-[#0F0F0F]">{formatPrice(issueSuccess.amount, issueTicketModal.event?.currency || 'USD')}</span>
+                    <span className="text-sm font-medium text-foreground">{formatPrice(issueSuccess.amount, issueTicketModal.event?.currency || 'USD')}</span>
                   ) : (
                     <Badge className="bg-green-100 text-green-700">Complimentary</Badge>
                   )}
                 </div>
                 {issueSuccess.isSelling && issueSuccess.paymentMethod && (
-                  <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Payment Method</span><span className="text-sm font-medium text-[#0F0F0F]">{issueSuccess.paymentMethod}</span></div>
+                  <div className="flex justify-between"><span className="text-sm text-muted-foreground">Payment Method</span><span className="text-sm font-medium text-foreground">{issueSuccess.paymentMethod}</span></div>
                 )}
                 {!issueSuccess.isSelling && issueSuccess.reason && (
-                  <div className="flex justify-between"><span className="text-sm text-[#0F0F0F]/60">Reason</span><span className="text-sm font-medium text-[#0F0F0F]">{issueSuccess.reason}</span></div>
+                  <div className="flex justify-between"><span className="text-sm text-muted-foreground">Reason</span><span className="text-sm font-medium text-foreground">{issueSuccess.reason}</span></div>
                 )}
-                  <div className="flex justify-between pt-2 border-t border-gray-200"><span className="text-sm text-[#0F0F0F]/60">Ticket Code</span><span className="text-sm font-mono font-medium text-[#2969FF]">{issueSuccess.ticketCode}</span></div>
+                  <div className="flex justify-between pt-2 border-t border-border/20"><span className="text-sm text-muted-foreground">Ticket Code</span><span className="text-sm font-mono font-medium text-[#2969FF]">{issueSuccess.ticketCode}</span></div>
                 </div>
                 <div className="flex gap-3 mt-6">
                   <Button onClick={() => { setIssueSuccess(null); setIssueForm({ firstName: '', lastName: '', attendee_email: '', attendee_phone: '', ticket_type_id: issueTicketModal.event?.ticket_types?.[0]?.id || '', issue_mode: 'complimentary', manual_issue_type: 'complimentary', payment_method: 'cash', payment_reference: '' }); }} variant="outline" className="flex-1 rounded-xl">Issue Another</Button>
@@ -1204,26 +1204,26 @@ export function EventManagement() {
                 {issueError && <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />{issueError}</div>}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-sm font-medium text-[#0F0F0F]">First Name <span className="text-red-500">*</span></Label>
-                    <Input id="firstName" type="text" placeholder="John" value={issueForm.firstName} onChange={(e) => setIssueForm(prev => ({ ...prev, firstName: e.target.value }))} className="h-12 rounded-xl bg-[#F4F6FA] border-0" required />
+                    <Label htmlFor="firstName" className="text-sm font-medium text-foreground">First Name <span className="text-red-500">*</span></Label>
+                    <Input id="firstName" type="text" placeholder="John" value={issueForm.firstName} onChange={(e) => setIssueForm(prev => ({ ...prev, firstName: e.target.value }))} className="h-12 rounded-xl bg-muted border-0" required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-sm font-medium text-[#0F0F0F]">Last Name <span className="text-red-500">*</span></Label>
-                    <Input id="lastName" type="text" placeholder="Doe" value={issueForm.lastName} onChange={(e) => setIssueForm(prev => ({ ...prev, lastName: e.target.value }))} className="h-12 rounded-xl bg-[#F4F6FA] border-0" required />
+                    <Label htmlFor="lastName" className="text-sm font-medium text-foreground">Last Name <span className="text-red-500">*</span></Label>
+                    <Input id="lastName" type="text" placeholder="Doe" value={issueForm.lastName} onChange={(e) => setIssueForm(prev => ({ ...prev, lastName: e.target.value }))} className="h-12 rounded-xl bg-muted border-0" required />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="attendee_email" className="text-sm font-medium text-[#0F0F0F]">Email <span className="text-red-500">*</span></Label>
-                  <Input id="attendee_email" type="email" placeholder="email@example.com" value={issueForm.attendee_email} onChange={(e) => setIssueForm(prev => ({ ...prev, attendee_email: e.target.value }))} className="h-12 rounded-xl bg-[#F4F6FA] border-0" required />
-                  <p className="text-xs text-[#0F0F0F]/50">Ticket will be sent to this email</p>
+                  <Label htmlFor="attendee_email" className="text-sm font-medium text-foreground">Email <span className="text-red-500">*</span></Label>
+                  <Input id="attendee_email" type="email" placeholder="email@example.com" value={issueForm.attendee_email} onChange={(e) => setIssueForm(prev => ({ ...prev, attendee_email: e.target.value }))} className="h-12 rounded-xl bg-muted border-0" required />
+                  <p className="text-xs text-muted-foreground">Ticket will be sent to this email</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="attendee_phone" className="text-sm font-medium text-[#0F0F0F]">Phone Number <span className="text-[#0F0F0F]/40">(optional)</span></Label>
-                  <Input id="attendee_phone" type="tel" placeholder="+234 800 000 0000" value={issueForm.attendee_phone} onChange={(e) => setIssueForm(prev => ({ ...prev, attendee_phone: e.target.value }))} className="h-12 rounded-xl bg-[#F4F6FA] border-0" />
+                  <Label htmlFor="attendee_phone" className="text-sm font-medium text-foreground">Phone Number <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input id="attendee_phone" type="tel" placeholder="+234 800 000 0000" value={issueForm.attendee_phone} onChange={(e) => setIssueForm(prev => ({ ...prev, attendee_phone: e.target.value }))} className="h-12 rounded-xl bg-muted border-0" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ticket_type" className="text-sm font-medium text-[#0F0F0F]">Ticket Type <span className="text-red-500">*</span></Label>
-                  <select id="ticket_type" value={issueForm.ticket_type_id} onChange={(e) => setIssueForm(prev => ({ ...prev, ticket_type_id: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0 text-[#0F0F0F] focus:ring-2 focus:ring-[#2969FF]" required>
+                  <Label htmlFor="ticket_type" className="text-sm font-medium text-foreground">Ticket Type <span className="text-red-500">*</span></Label>
+                  <select id="ticket_type" value={issueForm.ticket_type_id} onChange={(e) => setIssueForm(prev => ({ ...prev, ticket_type_id: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-muted border-0 text-foreground focus:ring-2 focus:ring-primary" required>
                     <option value="">Select ticket type</option>
                     {issueTicketModal.event?.ticket_types?.map((type) => {
                       const remaining = (type.quantity_available || 0) - (type.quantity_sold || 0);
@@ -1233,7 +1233,7 @@ export function EventManagement() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-[#0F0F0F]">Issue Mode <span className="text-red-500">*</span></Label>
+                  <Label className="text-sm font-medium text-foreground">Issue Mode <span className="text-red-500">*</span></Label>
                   <div className="flex gap-3">
                     <button
                       type="button"
@@ -1241,7 +1241,7 @@ export function EventManagement() {
                       className={`flex-1 h-12 px-4 rounded-xl font-medium transition-all ${
                         issueForm.issue_mode === 'complimentary'
                           ? 'bg-green-100 text-green-700 border-2 border-green-300'
-                          : 'bg-[#F4F6FA] text-[#0F0F0F]/60 border-2 border-transparent hover:bg-[#E8EAED]'
+                          : 'bg-muted text-muted-foreground border-2 border-transparent hover:bg-[#E8EAED]'
                       }`}
                     >
                       Complimentary
@@ -1252,7 +1252,7 @@ export function EventManagement() {
                       className={`flex-1 h-12 px-4 rounded-xl font-medium transition-all ${
                         issueForm.issue_mode === 'sell'
                           ? 'bg-[#2969FF]/10 text-[#2969FF] border-2 border-[#2969FF]'
-                          : 'bg-[#F4F6FA] text-[#0F0F0F]/60 border-2 border-transparent hover:bg-[#E8EAED]'
+                          : 'bg-muted text-muted-foreground border-2 border-transparent hover:bg-[#E8EAED]'
                       }`}
                     >
                       Sell Ticket
@@ -1261,8 +1261,8 @@ export function EventManagement() {
                 </div>
                 {issueForm.issue_mode === 'complimentary' && (
                 <div className="space-y-2">
-                  <Label htmlFor="issue_type" className="text-sm font-medium text-[#0F0F0F]">Reason for Issue <span className="text-red-500">*</span></Label>
-                  <select id="issue_type" value={issueForm.manual_issue_type} onChange={(e) => setIssueForm(prev => ({ ...prev, manual_issue_type: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0 text-[#0F0F0F] focus:ring-2 focus:ring-[#2969FF]" required>
+                  <Label htmlFor="issue_type" className="text-sm font-medium text-foreground">Reason for Issue <span className="text-red-500">*</span></Label>
+                  <select id="issue_type" value={issueForm.manual_issue_type} onChange={(e) => setIssueForm(prev => ({ ...prev, manual_issue_type: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-muted border-0 text-foreground focus:ring-2 focus:ring-primary" required>
                     {MANUAL_ISSUE_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
                   </select>
                 </div>
@@ -1270,14 +1270,14 @@ export function EventManagement() {
                 {issueForm.issue_mode === 'sell' && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="payment_method" className="text-sm font-medium text-[#0F0F0F]">Payment Method <span className="text-red-500">*</span></Label>
-                      <select id="payment_method" value={issueForm.payment_method} onChange={(e) => setIssueForm(prev => ({ ...prev, payment_method: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0 text-[#0F0F0F] focus:ring-2 focus:ring-[#2969FF]" required>
+                      <Label htmlFor="payment_method" className="text-sm font-medium text-foreground">Payment Method <span className="text-red-500">*</span></Label>
+                      <select id="payment_method" value={issueForm.payment_method} onChange={(e) => setIssueForm(prev => ({ ...prev, payment_method: e.target.value }))} className="w-full h-12 px-4 rounded-xl bg-muted border-0 text-foreground focus:ring-2 focus:ring-primary" required>
                         {PAYMENT_METHODS.map((method) => <option key={method.value} value={method.value}>{method.label}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="payment_reference" className="text-sm font-medium text-[#0F0F0F]">Payment Reference <span className="text-[#0F0F0F]/40">(optional)</span></Label>
-                      <Input id="payment_reference" type="text" placeholder="Transaction ID, receipt number, etc." value={issueForm.payment_reference} onChange={(e) => setIssueForm(prev => ({ ...prev, payment_reference: e.target.value }))} className="h-12 rounded-xl bg-[#F4F6FA] border-0" />
+                      <Label htmlFor="payment_reference" className="text-sm font-medium text-foreground">Payment Reference <span className="text-muted-foreground">(optional)</span></Label>
+                      <Input id="payment_reference" type="text" placeholder="Transaction ID, receipt number, etc." value={issueForm.payment_reference} onChange={(e) => setIssueForm(prev => ({ ...prev, payment_reference: e.target.value }))} className="h-12 rounded-xl bg-muted border-0" />
                     </div>
                     {(() => {
                       const selectedTicketType = issueTicketModal.event?.ticket_types?.find(t => t.id === issueForm.ticket_type_id);
@@ -1308,16 +1308,16 @@ export function EventManagement() {
       {/* Access Management Modal */}
       {accessModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="bg-card rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border/10">
               <div>
-                <h3 className="text-lg font-semibold text-[#0F0F0F]">
+                <h3 className="text-lg font-semibold text-foreground">
                   {accessModal.event?.visibility === 'invite_only' ? 'Manage Invite Codes' : 'Manage Event Password'}
                 </h3>
-                <p className="text-sm text-[#0F0F0F]/60 mt-1">{accessModal.event?.title}</p>
+                <p className="text-sm text-muted-foreground mt-1">{accessModal.event?.title}</p>
               </div>
-              <button onClick={closeAccessModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="w-5 h-5 text-[#0F0F0F]/60" />
+              <button onClick={closeAccessModal} className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
@@ -1325,20 +1325,20 @@ export function EventManagement() {
               {/* Password Protected Event */}
               {accessModal.event?.visibility === 'password' && (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-[#0F0F0F]/60 mb-4">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-4">
                     <Lock className="w-5 h-5" />
                     <span className="text-sm">Attendees must enter this password to access your event</span>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[#0F0F0F]">Event Password</Label>
+                    <Label className="text-sm font-medium text-foreground">Event Password</Label>
                     <div className="flex gap-2">
                       <Input
                         type="text"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Enter event password"
-                        className="flex-1 h-12 rounded-xl bg-[#F4F6FA] border-0 font-mono"
+                        className="flex-1 h-12 rounded-xl bg-muted border-0 font-mono"
                       />
                       <Button
                         type="button"
@@ -1386,7 +1386,7 @@ export function EventManagement() {
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
                         placeholder="Enter email address"
-                        className="flex-1 h-10 rounded-lg bg-white border border-blue-200"
+                        className="flex-1 h-10 rounded-lg bg-card border border-blue-200"
                       />
                       <Button
                         onClick={sendInviteEmail}
@@ -1401,14 +1401,14 @@ export function EventManagement() {
 
                   {/* Add New Code */}
                   <div className="space-y-3">
-                    <Label className="text-sm font-medium text-[#0F0F0F]">Create New Invite Code</Label>
+                    <Label className="text-sm font-medium text-foreground">Create New Invite Code</Label>
                     <div className="flex gap-2">
                       <Input
                         type="text"
                         value={newAccessCode.code}
                         onChange={(e) => setNewAccessCode(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
                         placeholder="Code (e.g., VIP2024)"
-                        className="flex-1 h-10 rounded-lg bg-[#F4F6FA] border-0 font-mono uppercase"
+                        className="flex-1 h-10 rounded-lg bg-muted border-0 font-mono uppercase"
                         maxLength={20}
                       />
                       <Button
@@ -1427,14 +1427,14 @@ export function EventManagement() {
                         value={newAccessCode.name}
                         onChange={(e) => setNewAccessCode(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="Label (optional)"
-                        className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                        className="h-10 rounded-lg bg-muted border-0"
                       />
                       <Input
                         type="number"
                         value={newAccessCode.maxUses}
                         onChange={(e) => setNewAccessCode(prev => ({ ...prev, maxUses: e.target.value }))}
                         placeholder="Max uses (unlimited)"
-                        className="h-10 rounded-lg bg-[#F4F6FA] border-0"
+                        className="h-10 rounded-lg bg-muted border-0"
                         min="1"
                       />
                     </div>
@@ -1449,7 +1449,7 @@ export function EventManagement() {
 
                   {/* Existing Codes */}
                   <div className="space-y-3">
-                    <Label className="text-sm font-medium text-[#0F0F0F]">
+                    <Label className="text-sm font-medium text-foreground">
                       Existing Codes ({accessCodes.length})
                     </Label>
 
@@ -1458,7 +1458,7 @@ export function EventManagement() {
                         <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
                       </div>
                     ) : accessCodes.length === 0 ? (
-                      <div className="text-center py-8 text-[#0F0F0F]/40">
+                      <div className="text-center py-8 text-muted-foreground">
                         <Ticket className="w-8 h-8 mx-auto mb-2 opacity-40" />
                         <p>No invite codes yet</p>
                       </div>
@@ -1468,21 +1468,21 @@ export function EventManagement() {
                           <div
                             key={code.id}
                             className={`p-3 rounded-lg border ${
-                              code.is_active ? 'bg-[#F4F6FA] border-transparent' : 'bg-gray-100 border-gray-200 opacity-60'
+                              code.is_active ? 'bg-muted border-transparent' : 'bg-muted border-border/20 opacity-60'
                             }`}
                           >
                             <div className="flex items-center justify-between">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono font-medium text-[#0F0F0F]">{code.code}</span>
+                                  <span className="font-mono font-medium text-foreground">{code.code}</span>
                                   {code.name && (
                                     <Badge className="bg-purple-100 text-purple-700 text-xs">{code.name}</Badge>
                                   )}
                                   {!code.is_active && (
-                                    <Badge className="bg-gray-200 text-gray-600 text-xs">Disabled</Badge>
+                                    <Badge className="bg-muted text-muted-foreground text-xs">Disabled</Badge>
                                   )}
                                 </div>
-                                <div className="text-xs text-[#0F0F0F]/50 mt-1">
+                                <div className="text-xs text-muted-foreground mt-1">
                                   Used: {code.current_uses || 0}
                                   {code.max_uses && ` / ${code.max_uses}`}
                                 </div>
@@ -1526,7 +1526,7 @@ export function EventManagement() {
               )}
             </div>
 
-            <div className="p-6 border-t border-gray-100">
+            <div className="p-6 border-t border-border/10">
               <Button
                 onClick={closeAccessModal}
                 variant="outline"

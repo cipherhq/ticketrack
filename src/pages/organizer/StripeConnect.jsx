@@ -24,7 +24,7 @@ import { supabase } from '@/lib/supabase';
 // Stripe Connect status badge component
 const StatusBadge = ({ status }) => {
   const statusConfig = {
-    not_started: { label: 'Not Connected', color: 'bg-gray-100 text-gray-700', icon: XCircle },
+    not_started: { label: 'Not Connected', color: 'bg-muted text-foreground/80', icon: XCircle },
     pending: { label: 'Setup Incomplete', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
     active: { label: 'Connected', color: 'bg-green-100 text-green-700', icon: CheckCircle },
     restricted: { label: 'Restricted', color: 'bg-red-100 text-red-700', icon: AlertCircle },
@@ -285,18 +285,18 @@ export function StripeConnect() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Stripe Connect</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Automatic payouts for your events</p>
+          <h1 className="text-2xl font-bold text-foreground">Stripe Connect</h1>
+          <p className="text-muted-foreground mt-1">Automatic payouts for your events</p>
         </div>
 
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-[#0F0F0F] mb-2">Not Available in Your Region</h3>
-              <p className="text-[#0F0F0F]/60 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Not Available in Your Region</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
                 Stripe Connect is currently available for organizers in the United States, United Kingdom, and Canada.
                 Your payouts will continue to be processed manually by our finance team.
               </p>
@@ -312,8 +312,8 @@ export function StripeConnect() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Stripe Connect</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Automatic payouts for your events</p>
+          <h1 className="text-2xl font-bold text-foreground">Stripe Connect</h1>
+          <p className="text-muted-foreground mt-1">Automatic payouts for your events</p>
         </div>
 
         <Card className="border-red-200 bg-red-50">
@@ -322,11 +322,11 @@ export function StripeConnect() {
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Lock className="w-8 h-8 text-red-500" />
               </div>
-              <h3 className="text-lg font-semibold text-[#0F0F0F] mb-2">Direct Payments Disabled</h3>
-              <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-4">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Direct Payments Disabled</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-4">
                 Direct payments have been disabled for your account. Your event earnings will be processed through our standard escrow payout system.
               </p>
-              <p className="text-sm text-[#0F0F0F]/50">
+              <p className="text-sm text-muted-foreground">
                 If you believe this is an error, please contact support.
               </p>
             </div>
@@ -341,18 +341,18 @@ export function StripeConnect() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Stripe Connect</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Automatic payouts for your events</p>
+          <h1 className="text-2xl font-bold text-foreground">Stripe Connect</h1>
+          <p className="text-muted-foreground mt-1">Automatic payouts for your events</p>
         </div>
 
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-[#0F0F0F] mb-2">Coming Soon</h3>
-              <p className="text-[#0F0F0F]/60 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
                 Stripe Connect is not currently available. Please check back later or contact support for more information.
               </p>
             </div>
@@ -372,8 +372,8 @@ export function StripeConnect() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Stripe Connect</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Automatic payouts for your events</p>
+          <h1 className="text-2xl font-bold text-foreground">Stripe Connect</h1>
+          <p className="text-muted-foreground mt-1">Automatic payouts for your events</p>
         </div>
 
         {/* Locked State Card */}
@@ -383,18 +383,18 @@ export function StripeConnect() {
               <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Lock className="w-10 h-10 text-amber-600" />
               </div>
-              <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Unlock Direct Payouts</h3>
-              <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Unlock Direct Payouts</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
                 Complete {requiredEvents} successful events to unlock Stripe Connect and receive automatic payouts directly to your bank account.
               </p>
 
               {/* Progress Bar */}
               <div className="max-w-xs mx-auto mb-4">
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-[#0F0F0F]/60">Progress</span>
-                  <span className="font-semibold text-[#0F0F0F]">{completedEvents}/{requiredEvents} events</span>
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-semibold text-foreground">{completedEvents}/{requiredEvents} events</span>
                 </div>
-                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, (completedEvents / requiredEvents) * 100)}%` }}
@@ -430,8 +430,8 @@ export function StripeConnect() {
                   <Shield className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Trust & Security</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Trust & Security</h4>
+                  <p className="text-sm text-muted-foreground">
                     Protects attendees and ensures quality events
                   </p>
                 </div>
@@ -442,8 +442,8 @@ export function StripeConnect() {
                   <Trophy className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Proven Track Record</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Proven Track Record</h4>
+                  <p className="text-sm text-muted-foreground">
                     Shows you're a reliable event organizer
                   </p>
                 </div>
@@ -454,8 +454,8 @@ export function StripeConnect() {
                   <TrendingUp className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Faster Payouts</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Faster Payouts</h4>
+                  <p className="text-sm text-muted-foreground">
                     Once unlocked, get paid automatically after events
                   </p>
                 </div>
@@ -466,8 +466,8 @@ export function StripeConnect() {
                   <Wallet className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Full Control</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Full Control</h4>
+                  <p className="text-sm text-muted-foreground">
                     Manage your own Stripe account & payouts
                   </p>
                 </div>
@@ -494,8 +494,8 @@ export function StripeConnect() {
                   <Zap className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Automatic Payouts</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Automatic Payouts</h4>
+                  <p className="text-sm text-muted-foreground">
                     Receive earnings automatically after each event
                   </p>
                 </div>
@@ -506,8 +506,8 @@ export function StripeConnect() {
                   <Shield className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Secure & Verified</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Secure & Verified</h4>
+                  <p className="text-sm text-muted-foreground">
                     Stripe handles identity verification
                   </p>
                 </div>
@@ -518,8 +518,8 @@ export function StripeConnect() {
                   <TrendingUp className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Track Earnings</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Track Earnings</h4>
+                  <p className="text-sm text-muted-foreground">
                     Access Stripe Dashboard for analytics
                   </p>
                 </div>
@@ -530,8 +530,8 @@ export function StripeConnect() {
                   <FileText className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Tax Documents</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Tax Documents</h4>
+                  <p className="text-sm text-muted-foreground">
                     Automatic 1099 forms for US organizers
                   </p>
                 </div>
@@ -548,8 +548,8 @@ export function StripeConnect() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Stripe Connect</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Automatic payouts for your events</p>
+          <h1 className="text-2xl font-bold text-foreground">Stripe Connect</h1>
+          <p className="text-muted-foreground mt-1">Automatic payouts for your events</p>
         </div>
         {connectStatus?.status && <StatusBadge status={connectStatus.status} />}
       </div>
@@ -595,26 +595,26 @@ export function StripeConnect() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60 mb-1">Available Balance</p>
-                  <p className="text-3xl font-bold text-[#0F0F0F]">
+                  <p className="text-sm text-muted-foreground mb-1">Available Balance</p>
+                  <p className="text-3xl font-bold text-foreground">
                     {balanceLoading ? (
-                      <span className="text-[#0F0F0F]/40">Loading...</span>
+                      <span className="text-muted-foreground">Loading...</span>
                     ) : (
                       formatCurrency(stripeBalance.available, stripeBalance.currency)
                     )}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/50 mt-1">Ready to pay out</p>
+                  <p className="text-xs text-muted-foreground mt-1">Ready to pay out</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60 mb-1">Pending Balance</p>
-                  <p className="text-3xl font-bold text-[#0F0F0F]">
+                  <p className="text-sm text-muted-foreground mb-1">Pending Balance</p>
+                  <p className="text-3xl font-bold text-foreground">
                     {balanceLoading ? (
-                      <span className="text-[#0F0F0F]/40">Loading...</span>
+                      <span className="text-muted-foreground">Loading...</span>
                     ) : (
                       formatCurrency(stripeBalance.pending, stripeBalance.currency)
                     )}
                   </p>
-                  <p className="text-xs text-[#0F0F0F]/50 mt-1">Processing (usually 2-7 days)</p>
+                  <p className="text-xs text-muted-foreground mt-1">Processing (usually 2-7 days)</p>
                 </div>
               </div>
             </CardContent>
@@ -629,8 +629,8 @@ export function StripeConnect() {
                     <DollarSign className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Total Payouts</p>
-                    <p className="text-xl font-bold text-[#0F0F0F]">${payoutStats.total.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">Total Payouts</p>
+                    <p className="text-xl font-bold text-foreground">${payoutStats.total.toFixed(2)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -643,8 +643,8 @@ export function StripeConnect() {
                     <Clock className="w-5 h-5 text-yellow-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Payouts Pending</p>
-                    <p className="text-xl font-bold text-[#0F0F0F]">${payoutStats.pending.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">Payouts Pending</p>
+                    <p className="text-xl font-bold text-foreground">${payoutStats.pending.toFixed(2)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -657,8 +657,8 @@ export function StripeConnect() {
                     <CheckCircle className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-[#0F0F0F]/60">Payouts Completed</p>
-                    <p className="text-xl font-bold text-[#0F0F0F]">${payoutStats.completed.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">Payouts Completed</p>
+                    <p className="text-xl font-bold text-foreground">${payoutStats.completed.toFixed(2)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -676,11 +676,11 @@ export function StripeConnect() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Account ID</p>
+                  <p className="text-sm text-muted-foreground">Account ID</p>
                   <p className="font-mono text-sm">{connectStatus.accountId}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Connected Since</p>
+                  <p className="text-sm text-muted-foreground">Connected Since</p>
                   <p className="text-sm">
                     {connectStatus.onboardedAt 
                       ? new Date(connectStatus.onboardedAt).toLocaleDateString()
@@ -688,13 +688,13 @@ export function StripeConnect() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Charges</p>
+                  <p className="text-sm text-muted-foreground">Charges</p>
                   <Badge className={connectStatus.chargesEnabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
                     {connectStatus.chargesEnabled ? 'Enabled' : 'Disabled'}
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Payouts</p>
+                  <p className="text-sm text-muted-foreground">Payouts</p>
                   <Badge className={connectStatus.payoutsEnabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
                     {connectStatus.payoutsEnabled ? 'Enabled' : 'Disabled'}
                   </Badge>
@@ -702,7 +702,7 @@ export function StripeConnect() {
               </div>
 
               <div className="pt-4 border-t">
-                <p className="text-sm text-[#0F0F0F]/60 mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   Ticket sales for your events will automatically be deposited to your connected Stripe account.
                   Payouts are released after each event ends.
                 </p>
@@ -728,8 +728,8 @@ export function StripeConnect() {
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Clock className="w-8 h-8 text-yellow-600" />
               </div>
-              <h3 className="text-lg font-semibold text-[#0F0F0F] mb-2">Setup Incomplete</h3>
-              <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-6">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Setup Incomplete</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
                 Your Stripe Connect setup is not complete. Please finish the setup process to start receiving automatic payouts.
               </p>
               <Button
@@ -757,8 +757,8 @@ export function StripeConnect() {
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
-              <h3 className="text-lg font-semibold text-[#0F0F0F] mb-2">Account Restricted</h3>
-              <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-6">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Account Restricted</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
                 Your Stripe account has restrictions. Please visit your Stripe Dashboard to resolve any outstanding requirements.
               </p>
               <Button
@@ -788,8 +788,8 @@ export function StripeConnect() {
                     <Zap className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-[#0F0F0F]">Automatic Payouts</h4>
-                    <p className="text-sm text-[#0F0F0F]/60">
+                    <h4 className="font-semibold text-foreground">Automatic Payouts</h4>
+                    <p className="text-sm text-muted-foreground">
                       Receive your earnings automatically after each event ends. No manual requests needed.
                     </p>
                   </div>
@@ -800,8 +800,8 @@ export function StripeConnect() {
                     <Shield className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-[#0F0F0F]">Secure & Verified</h4>
-                    <p className="text-sm text-[#0F0F0F]/60">
+                    <h4 className="font-semibold text-foreground">Secure & Verified</h4>
+                    <p className="text-sm text-muted-foreground">
                       Stripe handles identity verification and ensures secure transactions.
                     </p>
                   </div>
@@ -812,8 +812,8 @@ export function StripeConnect() {
                     <TrendingUp className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-[#0F0F0F]">Track Earnings</h4>
-                    <p className="text-sm text-[#0F0F0F]/60">
+                    <h4 className="font-semibold text-foreground">Track Earnings</h4>
+                    <p className="text-sm text-muted-foreground">
                       Access your Stripe Dashboard to view detailed transaction history and analytics.
                     </p>
                   </div>
@@ -824,8 +824,8 @@ export function StripeConnect() {
                     <FileText className="w-5 h-5 text-orange-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-[#0F0F0F]">Tax Documents</h4>
-                    <p className="text-sm text-[#0F0F0F]/60">
+                    <h4 className="font-semibold text-foreground">Tax Documents</h4>
+                    <p className="text-sm text-muted-foreground">
                       Stripe provides 1099 tax forms automatically for US organizers.
                     </p>
                   </div>
@@ -841,8 +841,8 @@ export function StripeConnect() {
                 <div className="w-16 h-16 bg-[#2969FF]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CreditCard className="w-8 h-8 text-[#2969FF]" />
                 </div>
-                <h3 className="text-lg font-semibold text-[#0F0F0F] mb-2">Get Started with Stripe Connect</h3>
-                <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-6">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Get Started with Stripe Connect</h3>
+                <p className="text-muted-foreground max-w-md mx-auto mb-6">
                   Connect your Stripe account to receive automatic payouts for your ticket sales.
                   Setup takes about 5 minutes.
                 </p>
@@ -876,7 +876,7 @@ export function StripeConnect() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="bg-gray-50 rounded-lg p-4 text-sm text-[#0F0F0F]/70 space-y-3">
+            <div className="bg-background rounded-lg p-4 text-sm text-foreground/70 space-y-3">
               <p><strong>By connecting your Stripe account, you agree to:</strong></p>
               
               <ul className="list-disc pl-5 space-y-2">

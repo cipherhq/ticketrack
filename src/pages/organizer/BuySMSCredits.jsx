@@ -223,12 +223,12 @@ export function BuySMSCredits() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold text-[#0F0F0F]">SMS Credits</h2>
-        <p className="text-[#0F0F0F]/60 mt-1">Purchase credits to send SMS to your attendees</p>
+        <h2 className="text-2xl font-semibold text-foreground">SMS Credits</h2>
+        <p className="text-muted-foreground mt-1">Purchase credits to send SMS to your attendees</p>
       </div>
 
       {/* Wallet Balance */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-r from-[#2969FF] to-[#1e4fd6]">
+      <Card className="border-border/10 rounded-2xl bg-gradient-to-r from-[#2969FF] to-[#1e4fd6]">
         <CardContent className="p-6">
           <div className="flex items-center justify-between text-white">
             <div>
@@ -236,7 +236,7 @@ export function BuySMSCredits() {
               <p className="text-4xl font-bold mt-1">{(wallet?.sms_balance || 0).toLocaleString()}</p>
               <p className="text-white/80 text-sm mt-1">credits available</p>
             </div>
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-card/20 rounded-2xl flex items-center justify-center">
               <Wallet className="w-8 h-8 text-white" />
             </div>
           </div>
@@ -258,7 +258,7 @@ export function BuySMSCredits() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#F4F6FA] rounded-xl">
+        <TabsList className="bg-muted rounded-xl">
           <TabsTrigger value="buy" className="rounded-lg">
             <CreditCard className="w-4 h-4 mr-2" />
             Buy Credits
@@ -275,7 +275,7 @@ export function BuySMSCredits() {
               <Card
                 key={pkg.id}
                 className={`border-2 rounded-2xl transition-all cursor-pointer hover:shadow-lg ${
-                  pkg.is_popular ? 'border-[#2969FF] bg-blue-50/50' : 'border-[#0F0F0F]/10'
+                  pkg.is_popular ? 'border-[#2969FF] bg-blue-50/50' : 'border-border/10'
                 } ${selectedPackage?.id === pkg.id ? 'ring-2 ring-[#2969FF]' : ''}`}
               >
                 {pkg.is_popular && (
@@ -286,10 +286,10 @@ export function BuySMSCredits() {
                 )}
                 <CardContent className={`p-6 ${pkg.is_popular ? '' : 'pt-6'}`}>
                   <div className="text-center">
-                    <h3 className="text-lg font-semibold text-[#0F0F0F]">{pkg.name}</h3>
+                    <h3 className="text-lg font-semibold text-foreground">{pkg.name}</h3>
                     <div className="mt-4">
-                      <span className="text-3xl font-bold text-[#0F0F0F]">{pkg.credits.toLocaleString()}</span>
-                      <span className="text-[#0F0F0F]/60 ml-1">SMS</span>
+                      <span className="text-3xl font-bold text-foreground">{pkg.credits.toLocaleString()}</span>
+                      <span className="text-muted-foreground ml-1">SMS</span>
                     </div>
                     {pkg.bonus_credits > 0 && (
                       <div className="mt-2 flex items-center justify-center gap-1 text-green-600">
@@ -300,7 +300,7 @@ export function BuySMSCredits() {
                     <div className="mt-4">
                       <span className="text-2xl font-bold text-[#2969FF]">{formatCurrency(pkg.price)}</span>
                     </div>
-                    <p className="text-sm text-[#0F0F0F]/60 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {formatCurrency(pkg.price / (pkg.credits + pkg.bonus_credits))} per SMS
                     </p>
                   </div>
@@ -326,29 +326,29 @@ export function BuySMSCredits() {
             ))}
           </div>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl mt-6">
+          <Card className="border-border/10 rounded-2xl mt-6">
             <CardContent className="p-6">
-              <h3 className="font-semibold text-[#0F0F0F] mb-4">How It Works</h3>
+              <h3 className="font-semibold text-foreground mb-4">How It Works</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-[#2969FF]/10 rounded-lg flex items-center justify-center text-[#2969FF] font-semibold">1</div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">Buy Credits</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Choose a package and pay securely via Paystack</p>
+                    <p className="font-medium text-foreground">Buy Credits</p>
+                    <p className="text-sm text-muted-foreground">Choose a package and pay securely via Paystack</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-[#2969FF]/10 rounded-lg flex items-center justify-center text-[#2969FF] font-semibold">2</div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">Send SMS</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Go to Communications and send SMS to attendees</p>
+                    <p className="font-medium text-foreground">Send SMS</p>
+                    <p className="text-sm text-muted-foreground">Go to Communications and send SMS to attendees</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-[#2969FF]/10 rounded-lg flex items-center justify-center text-[#2969FF] font-semibold">3</div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">Auto-Deduct</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Credits are automatically deducted per SMS sent</p>
+                    <p className="font-medium text-foreground">Auto-Deduct</p>
+                    <p className="text-sm text-muted-foreground">Credits are automatically deducted per SMS sent</p>
                   </div>
                 </div>
               </div>
@@ -357,19 +357,19 @@ export function BuySMSCredits() {
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Purchase History</CardTitle>
             </CardHeader>
             <CardContent>
               {purchases.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No purchases yet</p>
+                <p className="text-center text-muted-foreground py-8">No purchases yet</p>
               ) : (
                 <div className="space-y-3">
                   {purchases.map((purchase) => (
                     <div
                       key={purchase.id}
-                      className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl"
+                      className="flex items-center justify-between p-4 bg-muted rounded-xl"
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -382,16 +382,16 @@ export function BuySMSCredits() {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-[#0F0F0F]">
+                          <p className="font-medium text-foreground">
                             {purchase.sms_credit_packages?.name || 'SMS Credits'}
                           </p>
-                          <p className="text-sm text-[#0F0F0F]/60">
+                          <p className="text-sm text-muted-foreground">
                             {purchase.credits_purchased + purchase.bonus_credits} credits • {new Date(purchase.created_at).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-[#0F0F0F]">{formatCurrency(purchase.amount_paid)}</p>
+                        <p className="font-semibold text-foreground">{formatCurrency(purchase.amount_paid)}</p>
                         <Badge className={
                           purchase.payment_status === 'completed' ? 'bg-green-100 text-green-700' :
                           purchase.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :

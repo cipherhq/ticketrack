@@ -231,8 +231,8 @@ export function AdminRoles() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Roles & Permissions</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage admin users and their access levels</p>
+          <h2 className="text-2xl font-semibold text-foreground">Roles & Permissions</h2>
+          <p className="text-muted-foreground mt-1">Manage admin users and their access levels</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={loadAdmins} className="rounded-xl">
@@ -251,32 +251,32 @@ export function AdminRoles() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Admin Users */}
         <div className="lg:col-span-2">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-[#0F0F0F]">Admin Users ({admins.length})</CardTitle>
+              <CardTitle className="text-foreground">Admin Users ({admins.length})</CardTitle>
             </CardHeader>
             <CardContent>
               {admins.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No admin users</p>
+                <p className="text-center text-muted-foreground py-8">No admin users</p>
               ) : (
                 <div className="space-y-3">
                   {admins.map((adminUser) => (
                     <div
                       key={adminUser.id}
-                      className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl"
+                      className="flex items-center justify-between p-4 bg-muted rounded-xl"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium">
                           {adminUser.full_name?.charAt(0) || adminUser.email?.charAt(0) || 'A'}
                         </div>
                         <div>
-                          <p className="text-[#0F0F0F] font-medium">
+                          <p className="text-foreground font-medium">
                             {adminUser.full_name || 'Unnamed'}
                             {adminUser.id === admin.id && (
-                              <span className="text-xs text-[#0F0F0F]/60 ml-2">(You)</span>
+                              <span className="text-xs text-muted-foreground ml-2">(You)</span>
                             )}
                           </p>
-                          <p className="text-sm text-[#0F0F0F]/60">{adminUser.email}</p>
+                          <p className="text-sm text-muted-foreground">{adminUser.email}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -284,7 +284,7 @@ export function AdminRoles() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-xl">
-                              <MoreVertical className="w-5 h-5 text-[#0F0F0F]/60" />
+                              <MoreVertical className="w-5 h-5 text-muted-foreground" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl">
@@ -319,20 +319,20 @@ export function AdminRoles() {
 
         {/* Roles Info */}
         <div className="space-y-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-[#0F0F0F]">Available Roles</CardTitle>
+              <CardTitle className="text-foreground">Available Roles</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {defaultRoles.map((role) => (
-                <div key={role.name} className="p-3 bg-[#F4F6FA] rounded-xl">
+                <div key={role.name} className="p-3 bg-muted rounded-xl">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-[#0F0F0F]">{role.label}</span>
+                    <span className="font-medium text-foreground">{role.label}</span>
                     {role.isSystem && (
                       <Badge variant="outline" className="text-xs">System</Badge>
                     )}
                   </div>
-                  <p className="text-xs text-[#0F0F0F]/60">
+                  <p className="text-xs text-muted-foreground">
                     {role.permissions.length} permissions
                   </p>
                 </div>
@@ -340,13 +340,13 @@ export function AdminRoles() {
             </CardContent>
           </Card>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl bg-blue-50">
+          <Card className="border-border/10 rounded-2xl bg-blue-50">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div>
-                  <p className="text-[#0F0F0F] font-medium mb-1">Role Permissions</p>
-                  <p className="text-sm text-[#0F0F0F]/80">
+                  <p className="text-foreground font-medium mb-1">Role Permissions</p>
+                  <p className="text-sm text-foreground/80">
                     Super Admin has full access. Other roles have limited permissions based on their responsibilities.
                   </p>
                 </div>
@@ -366,7 +366,7 @@ export function AdminRoles() {
             <div className="space-y-2">
               <Label>User Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="email"
                   placeholder="user@example.com"
@@ -375,7 +375,7 @@ export function AdminRoles() {
                   className="pl-10 rounded-xl"
                 />
               </div>
-              <p className="text-xs text-[#0F0F0F]/60">
+              <p className="text-xs text-muted-foreground">
                 User must already have a Ticketrack account
               </p>
             </div>
@@ -399,8 +399,8 @@ export function AdminRoles() {
             </div>
 
             {/* Show permissions for selected role */}
-            <div className="p-4 bg-[#F4F6FA] rounded-xl">
-              <p className="text-sm font-medium text-[#0F0F0F] mb-2">Permissions</p>
+            <div className="p-4 bg-muted rounded-xl">
+              <p className="text-sm font-medium text-foreground mb-2">Permissions</p>
               <div className="flex flex-wrap gap-2">
                 {getRolePermissions(newAdmin.role).map((perm) => (
                   <Badge key={perm} variant="outline" className="text-xs">
@@ -437,13 +437,13 @@ export function AdminRoles() {
           </DialogHeader>
           {selectedAdmin && (
             <div className="space-y-4 py-4">
-              <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-muted rounded-xl">
                 <div className="w-12 h-12 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium">
                   {selectedAdmin.full_name?.charAt(0) || 'A'}
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F] font-medium">{selectedAdmin.full_name || 'Unnamed'}</p>
-                  <p className="text-sm text-[#0F0F0F]/60">{selectedAdmin.email}</p>
+                  <p className="text-foreground font-medium">{selectedAdmin.full_name || 'Unnamed'}</p>
+                  <p className="text-sm text-muted-foreground">{selectedAdmin.email}</p>
                 </div>
               </div>
 
@@ -468,8 +468,8 @@ export function AdminRoles() {
                 </Select>
               </div>
 
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                <p className="text-sm font-medium text-[#0F0F0F] mb-2">Permissions</p>
+              <div className="p-4 bg-muted rounded-xl">
+                <p className="text-sm font-medium text-foreground mb-2">Permissions</p>
                 <div className="flex flex-wrap gap-2">
                   {getRolePermissions(selectedAdmin.admin_role).map((perm) => (
                     <Badge key={perm} variant="outline" className="text-xs">

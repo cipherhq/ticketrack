@@ -286,8 +286,8 @@ export function PlatformPnL() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Platform P&L</h1>
-          <p className="text-[#0F0F0F]/60">Profit and loss overview</p>
+          <h1 className="text-2xl font-bold text-foreground">Platform P&L</h1>
+          <p className="text-muted-foreground">Profit and loss overview</p>
         </div>
         <div className="flex gap-2">
           <Select value={period} onValueChange={setPeriod}>
@@ -328,11 +328,11 @@ export function PlatformPnL() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Gross Revenue</p>
+                <p className="text-sm text-muted-foreground">Gross Revenue</p>
                 <p className="text-xl font-bold">{formatMultiCurrency('grossRevenue')}</p>
                 {comparison.grossChange !== 0 && (
                   <div className={`flex items-center text-sm mt-1 ${comparison.grossChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -348,11 +348,11 @@ export function PlatformPnL() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Platform Fees</p>
+                <p className="text-sm text-muted-foreground">Platform Fees</p>
                 <p className="text-xl font-bold text-green-600">{formatMultiCurrency('platformFees')}</p>
                 {comparison.feeChange !== 0 && (
                   <div className={`flex items-center text-sm mt-1 ${comparison.feeChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -368,11 +368,11 @@ export function PlatformPnL() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Net Profit</p>
+                <p className="text-sm text-muted-foreground">Net Profit</p>
                 <p className={`text-xl font-bold ${getTotalMetric('netProfit') >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatMultiCurrency('netProfit')}
                 </p>
@@ -388,11 +388,11 @@ export function PlatformPnL() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Avg Profit Margin</p>
+                <p className="text-sm text-muted-foreground">Avg Profit Margin</p>
                 <p className={`text-2xl font-bold ${getTotalMetric('platformFees') > 0 ? (getTotalMetric('netProfit') / getTotalMetric('platformFees') * 100 >= 0 ? 'text-green-600' : 'text-red-600') : ''}`}>
                   {getTotalMetric('platformFees') > 0
                     ? (getTotalMetric('netProfit') / getTotalMetric('platformFees') * 100).toFixed(1)
@@ -408,7 +408,7 @@ export function PlatformPnL() {
       </div>
 
       {/* P&L Statement */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Profit & Loss Statement</CardTitle>
         </CardHeader>
@@ -479,7 +479,7 @@ export function PlatformPnL() {
       </Card>
 
       {/* Daily Breakdown */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Daily Breakdown</CardTitle>
         </CardHeader>
@@ -511,7 +511,7 @@ export function PlatformPnL() {
                 ))}
                 {dailyData.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-[#0F0F0F]/60">
+                    <td colSpan={6} className="text-center py-8 text-muted-foreground">
                       No data for selected period
                     </td>
                   </tr>

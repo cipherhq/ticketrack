@@ -83,10 +83,10 @@ export function ConnectCheckoutSuccess() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-[#2969FF] mx-auto mb-4" />
-          <p className="text-[#0F0F0F]/60">Loading order details...</p>
+          <p className="text-muted-foreground">Loading order details...</p>
         </div>
       </div>
     );
@@ -95,14 +95,14 @@ export function ConnectCheckoutSuccess() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-[#0F0F0F] mb-2">
+            <h1 className="text-xl font-bold text-foreground mb-2">
               Something Went Wrong
             </h1>
-            <p className="text-[#0F0F0F]/60 mb-6">{error}</p>
+            <p className="text-muted-foreground mb-6">{error}</p>
             <Link to={accountId ? `/connect/store/${accountId}` : '/connect/demo'}>
               <Button variant="outline">
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -116,7 +116,7 @@ export function ConnectCheckoutSuccess() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-muted flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
         <CardContent className="pt-6">
           {/* Success Icon */}
@@ -124,10 +124,10 @@ export function ConnectCheckoutSuccess() {
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
-            <h1 className="text-2xl font-bold text-[#0F0F0F] mb-2">
+            <h1 className="text-2xl font-bold text-foreground mb-2">
               Payment Successful!
             </h1>
-            <p className="text-[#0F0F0F]/60">
+            <p className="text-muted-foreground">
               Thank you for your purchase.
             </p>
           </div>
@@ -136,9 +136,9 @@ export function ConnectCheckoutSuccess() {
           {session && (
             <div className="space-y-4 mb-6">
               {/* Amount */}
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-background rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-[#0F0F0F]/60">Amount Paid</span>
+                  <span className="text-sm text-muted-foreground">Amount Paid</span>
                   <span className="text-xl font-bold text-[#2969FF]">
                     {session.currency?.toUpperCase()} {(session.amount_total / 100).toFixed(2)}
                   </span>
@@ -146,7 +146,7 @@ export function ConnectCheckoutSuccess() {
 
                 {/* Customer Email */}
                 {session.customer_email && (
-                  <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="w-4 h-4" />
                     <span>Receipt sent to {session.customer_email}</span>
                   </div>
@@ -155,7 +155,7 @@ export function ConnectCheckoutSuccess() {
 
               {/* Payment Status */}
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#0F0F0F]/60">Payment Status</span>
+                <span className="text-muted-foreground">Payment Status</span>
                 <span className="inline-flex items-center gap-1 text-green-600 font-medium">
                   <CheckCircle className="w-4 h-4" />
                   {session.payment_status === 'paid' ? 'Paid' : session.payment_status}
@@ -164,8 +164,8 @@ export function ConnectCheckoutSuccess() {
 
               {/* Order ID */}
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#0F0F0F]/60">Order Reference</span>
-                <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                <span className="text-muted-foreground">Order Reference</span>
+                <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
                   {sessionId?.substring(0, 20)}...
                 </span>
               </div>
@@ -199,7 +199,7 @@ export function ConnectCheckoutSuccess() {
           </div>
 
           {/* Platform Note */}
-          <p className="text-xs text-center text-[#0F0F0F]/40 mt-6">
+          <p className="text-xs text-center text-muted-foreground mt-6">
             This purchase was processed securely through Stripe.
           </p>
         </CardContent>

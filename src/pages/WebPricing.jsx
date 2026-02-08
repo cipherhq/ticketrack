@@ -180,7 +180,7 @@ export function WebPricing() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-card flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
       </div>
     );
@@ -189,9 +189,9 @@ export function WebPricing() {
   // No pricing data available
   if (Object.keys(pricingData).length === 0) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-card flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Pricing information is currently unavailable.</p>
+          <p className="text-muted-foreground">Pricing information is currently unavailable.</p>
           <Link to="/" className="text-[#2969FF] hover:underline mt-4 inline-block">
             Return to Home
           </Link>
@@ -201,18 +201,18 @@ export function WebPricing() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#2969FF] via-[#1e4fd4] to-[#0a2d7a] text-white">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute top-20 left-10 w-72 h-72 bg-card rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-card rounded-full blur-3xl"></div>
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 py-20 sm:py-28">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
+            <div className="inline-flex items-center gap-2 bg-card/10 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
               <Sparkles className="w-4 h-4" />
               <span className="text-sm font-medium">Simple, transparent pricing</span>
             </div>
@@ -231,7 +231,7 @@ export function WebPricing() {
             <div className="relative inline-block mb-10">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all rounded-2xl px-6 py-4 border border-white/20"
+                className="flex items-center gap-3 bg-card/10 backdrop-blur-sm hover:bg-card/20 transition-all rounded-2xl px-6 py-4 border border-white/20"
               >
                 <MapPin className="w-5 h-5" />
                 <span className="text-2xl">{pricing.flag}</span>
@@ -240,7 +240,7 @@ export function WebPricing() {
               </button>
               
               {dropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl overflow-hidden z-50">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-2xl shadow-2xl overflow-hidden z-50">
                   {Object.entries(pricingData).map(([code, data]) => (
                     <button
                       key={code}
@@ -248,7 +248,7 @@ export function WebPricing() {
                         setSelectedCountry(code);
                         setDropdownOpen(false);
                       }}
-                      className={`w-full flex items-center gap-3 px-6 py-3 hover:bg-gray-50 transition-colors text-gray-900 ${
+                      className={`w-full flex items-center gap-3 px-6 py-3 hover:bg-background transition-colors text-foreground ${
                         selectedCountry === code ? 'bg-[#2969FF]/5' : ''
                       }`}
                     >
@@ -264,21 +264,21 @@ export function WebPricing() {
             </div>
 
             {/* Pricing Display */}
-            <div className="bg-white rounded-3xl p-8 sm:p-12 text-gray-900 max-w-lg mx-auto shadow-2xl">
+            <div className="bg-card rounded-3xl p-8 sm:p-12 text-foreground max-w-lg mx-auto shadow-2xl">
               <div className="text-center">
-                <p className="text-gray-500 mb-4">Service fee per paid ticket</p>
+                <p className="text-muted-foreground mb-4">Service fee per paid ticket</p>
                 <div className="flex items-baseline justify-center gap-2 mb-2">
                   <span className="text-5xl sm:text-6xl font-bold text-[#2969FF]">{pricing.percentage}</span>
                   {pricing.flatFeeValue > 0 && (
                     <>
-                      <span className="text-3xl sm:text-4xl font-bold text-gray-400">+</span>
+                      <span className="text-3xl sm:text-4xl font-bold text-muted-foreground">+</span>
                       <span className="text-5xl sm:text-6xl font-bold text-[#2969FF]">{pricing.currency}{pricing.flatFee}</span>
                     </>
                   )}
                 </div>
-                <p className="text-gray-500 mb-2">per ticket sold</p>
+                <p className="text-muted-foreground mb-2">per ticket sold</p>
                 {pricing.cap && (
-                  <p className="text-sm text-gray-400 mb-6">Capped at {pricing.currency}{pricing.cap} per order</p>
+                  <p className="text-sm text-muted-foreground mb-6">Capped at {pricing.currency}{pricing.cap} per order</p>
                 )}
                 {!pricing.cap && <div className="mb-6"></div>}
                 
@@ -287,8 +287,8 @@ export function WebPricing() {
                   <span className="font-semibold">{pricing.savings}</span>
                 </div>
                 
-                <div className="pt-6 border-t border-gray-100">
-                  <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
+                <div className="pt-6 border-t border-border/10">
+                  <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-500" />
                       <span>Free events = Free</span>
@@ -306,7 +306,7 @@ export function WebPricing() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
               <Link
                 to="/organizer/register"
-                className="inline-flex items-center gap-2 bg-white text-[#2969FF] font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl"
+                className="inline-flex items-center gap-2 bg-card text-[#2969FF] font-semibold px-8 py-4 rounded-xl hover:bg-muted transition-all shadow-lg hover:shadow-xl"
               >
                 Start for free
                 <ArrowRight className="w-5 h-5" />
@@ -330,24 +330,24 @@ export function WebPricing() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="text-4xl font-bold text-[#2969FF] mb-2">{platformStats.eventsHosted}</div>
-              <div className="text-gray-600">Events Created</div>
+              <div className="text-muted-foreground">Events Created</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-[#2969FF] mb-2">{platformStats.ticketsSold}</div>
-              <div className="text-gray-600">Tickets Sold</div>
+              <div className="text-muted-foreground">Tickets Sold</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-[#2969FF] mb-2">{Object.keys(pricingData).length || platformStats.countries}</div>
-              <div className="text-gray-600">Countries</div>
+              <div className="text-muted-foreground">Countries</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-[#2969FF] mb-2">{platformStats.organizers}</div>
-              <div className="text-gray-600">Organizers</div>
+              <div className="text-muted-foreground">Organizers</div>
             </div>
           </div>
         </div>
@@ -357,10 +357,10 @@ export function WebPricing() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Everything you need to succeed
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Powerful tools designed for event organizers worldwide, built by people who understand your market.
             </p>
           </div>
@@ -369,13 +369,13 @@ export function WebPricing() {
             {featureCards.map((card, index) => (
               <div 
                 key={index}
-                className="group bg-white rounded-2xl p-8 border border-gray-100 hover:border-[#2969FF]/20 hover:shadow-xl transition-all duration-300"
+                className="group bg-card rounded-2xl p-8 border border-border/10 hover:border-[#2969FF]/20 hover:shadow-xl transition-all duration-300"
               >
                 <div className={`w-14 h-14 ${card.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                   <card.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{card.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{card.description}</p>
+                <h3 className="text-xl font-bold text-foreground mb-3">{card.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{card.description}</p>
               </div>
             ))}
           </div>
@@ -383,38 +383,38 @@ export function WebPricing() {
       </section>
 
       {/* Comparison Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Why organizers choose Ticketrack
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               More features, lower fees, better support. See how we compare.
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden max-w-4xl mx-auto">
+          <div className="bg-card rounded-3xl shadow-xl overflow-hidden max-w-4xl mx-auto">
             {/* Table Header */}
-            <div className="grid grid-cols-3 bg-gray-50 border-b border-gray-100">
-              <div className="p-6 font-semibold text-gray-600">Feature</div>
+            <div className="grid grid-cols-3 bg-background border-b border-border/10">
+              <div className="p-6 font-semibold text-muted-foreground">Feature</div>
               <div className="p-6 text-center">
                 <Link to="/" className="inline-flex items-center justify-center bg-[#2969FF] text-white rounded-full px-4 py-1 hover:opacity-90 transition-opacity">
                   <Logo className="h-5" variant="light" />
                 </Link>
               </div>
-              <div className="p-6 text-center font-semibold text-gray-600">Others</div>
+              <div className="p-6 text-center font-semibold text-muted-foreground">Others</div>
             </div>
 
             {/* Table Body */}
             {featureComparison.map((row, index) => (
               <div 
                 key={index}
-                className={`grid grid-cols-3 border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
-                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                className={`grid grid-cols-3 border-b border-gray-50 hover:bg-background/50 transition-colors ${
+                  index % 2 === 0 ? 'bg-card' : 'bg-background/30'
                 }`}
               >
-                <div className="p-4 sm:p-6 text-gray-700 flex items-center">
+                <div className="p-4 sm:p-6 text-foreground/80 flex items-center">
                   {row.feature}
                 </div>
                 <div className="p-4 sm:p-6 flex items-center justify-center">
@@ -449,10 +449,10 @@ export function WebPricing() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Simple, transparent pricing
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               No surprises. No hidden fees. Just straightforward pricing across all regions.
             </p>
           </div>
@@ -464,18 +464,18 @@ export function WebPricing() {
                 className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg ${
                   selectedCountry === code 
                     ? 'border-[#2969FF] bg-[#2969FF]/5' 
-                    : 'border-gray-100 bg-white hover:border-gray-200'
+                    : 'border-border/10 bg-card hover:border-border/20'
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-3xl">{data.flag}</span>
-                  <span className="font-bold text-gray-900">{data.country}</span>
+                  <span className="font-bold text-foreground">{data.country}</span>
                 </div>
                 <div className="text-2xl font-bold text-[#2969FF] mb-2">
                   {data.percentage}
                   {data.flatFeeValue > 0 && ` + ${data.currency}${data.flatFee}`}
                 </div>
-                <p className="text-sm text-gray-500 mb-4">per paid ticket</p>
+                <p className="text-sm text-muted-foreground mb-4">per paid ticket</p>
                 <div className="inline-flex items-center gap-1 text-sm text-green-600 bg-green-50 rounded-full px-3 py-1">
                   <Zap className="w-3 h-3" />
                   {data.savings}
@@ -487,10 +487,10 @@ export function WebPricing() {
       </section>
 
       {/* What's Included Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               All this included. No extra cost.
             </h2>
           </div>
@@ -510,13 +510,13 @@ export function WebPricing() {
               { icon: Calendar, title: 'Recurring Events', desc: 'Set up event series easily' },
               { icon: MessageCircle, title: '24/7 Support', desc: 'We are here when you need us' },
             ].map((item, index) => (
-              <div key={index} className="flex items-start gap-4 bg-white rounded-xl p-5 border border-gray-100">
+              <div key={index} className="flex items-start gap-4 bg-card rounded-xl p-5 border border-border/10">
                 <div className="w-10 h-10 bg-[#2969FF]/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <item.icon className="w-5 h-5 text-[#2969FF]" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">{item.title}</h4>
-                  <p className="text-sm text-gray-500">{item.desc}</p>
+                  <h4 className="font-semibold text-foreground mb-1">{item.title}</h4>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -528,7 +528,7 @@ export function WebPricing() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Loved by event organizers
             </h2>
           </div>
@@ -554,16 +554,16 @@ export function WebPricing() {
                 location: "Johannesburg, SA"
               }
             ].map((testimonial, index) => (
-              <div key={index} className="bg-white rounded-2xl p-8 border border-gray-100 hover:shadow-lg transition-shadow">
+              <div key={index} className="bg-card rounded-2xl p-8 border border-border/10 hover:shadow-lg transition-shadow">
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
                   ))}
                 </div>
-                <p className="text-gray-600 mb-6 leading-relaxed">"{testimonial.quote}"</p>
+                <p className="text-muted-foreground mb-6 leading-relaxed">"{testimonial.quote}"</p>
                 <div>
-                  <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                  <p className="text-sm text-gray-500">{testimonial.role}</p>
+                  <p className="font-semibold text-foreground">{testimonial.name}</p>
+                  <p className="text-sm text-muted-foreground">{testimonial.role}</p>
                   <p className="text-sm text-[#2969FF]">{testimonial.location}</p>
                 </div>
               </div>
@@ -573,10 +573,10 @@ export function WebPricing() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-background">
         <div className="max-w-3xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Frequently asked questions
             </h2>
           </div>
@@ -610,13 +610,13 @@ export function WebPricing() {
             ].map((faq, index) => (
               <details 
                 key={index}
-                className="group bg-white rounded-2xl border border-gray-100 overflow-hidden"
+                className="group bg-card rounded-2xl border border-border/10 overflow-hidden"
               >
                 <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
-                  <span className="font-semibold text-gray-900">{faq.q}</span>
-                  <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
+                  <span className="font-semibold text-foreground">{faq.q}</span>
+                  <ChevronDown className="w-5 h-5 text-muted-foreground group-open:rotate-180 transition-transform" />
                 </summary>
-                <div className="px-6 pb-6 text-gray-600">
+                <div className="px-6 pb-6 text-muted-foreground">
                   {faq.a}
                 </div>
               </details>
@@ -637,7 +637,7 @@ export function WebPricing() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/organizer/register"
-              className="inline-flex items-center gap-2 bg-white text-[#2969FF] font-semibold px-8 py-4 rounded-xl hover:bg-gray-100 transition-all shadow-lg"
+              className="inline-flex items-center gap-2 bg-card text-[#2969FF] font-semibold px-8 py-4 rounded-xl hover:bg-muted transition-all shadow-lg"
             >
               Get started for free
               <ArrowRight className="w-5 h-5" />

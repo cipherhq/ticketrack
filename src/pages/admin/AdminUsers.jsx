@@ -271,7 +271,7 @@ export function AdminUsers() {
       case 'pending':
         return <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-700">{status}</Badge>;
+        return <Badge className="bg-muted text-foreground/80">{status}</Badge>;
     }
   };
 
@@ -282,7 +282,7 @@ export function AdminUsers() {
         organizer: 'bg-blue-100 text-blue-700',
         promoter: 'bg-cyan-100 text-cyan-700',
         affiliate: 'bg-pink-100 text-pink-700',
-        attendee: 'bg-gray-100 text-gray-700',
+        attendee: 'bg-muted text-foreground/80',
       };
       return (
         <Badge key={role} className={`${colors[role]} capitalize mr-1`}>
@@ -327,15 +327,15 @@ export function AdminUsers() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F0F0F]">User Management</h1>
-          <p className="text-[#0F0F0F]/60">Manage all users on the platform</p>
+          <h1 className="text-2xl font-semibold text-foreground">User Management</h1>
+          <p className="text-muted-foreground">Manage all users on the platform</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={loadUsers} className="rounded-xl border-[#0F0F0F]/10">
+          <Button variant="outline" onClick={loadUsers} className="rounded-xl border-border/10">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={exportUsers} className="rounded-xl border-[#0F0F0F]/10">
+          <Button variant="outline" onClick={exportUsers} className="rounded-xl border-border/10">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
@@ -344,55 +344,55 @@ export function AdminUsers() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Users</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.total.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Users</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.total.toLocaleString()}</p>
               </div>
               <Users className="w-8 h-8 text-[#2969FF]" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Active</p>
+                <p className="text-sm text-muted-foreground">Active</p>
                 <p className="text-2xl font-semibold text-green-600">{stats.active.toLocaleString()}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Suspended</p>
+                <p className="text-sm text-muted-foreground">Suspended</p>
                 <p className="text-2xl font-semibold text-orange-600">{stats.suspended}</p>
               </div>
               <Ban className="w-8 h-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Organizers</p>
+                <p className="text-sm text-muted-foreground">Organizers</p>
                 <p className="text-2xl font-semibold text-blue-600">{stats.organizers}</p>
               </div>
               <UserCheck className="w-8 h-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">New This Month</p>
+                <p className="text-sm text-muted-foreground">New This Month</p>
                 <p className="text-2xl font-semibold text-[#2969FF]">{stats.newThisMonth}</p>
               </div>
               <Calendar className="w-8 h-8 text-[#2969FF]" />
@@ -402,20 +402,20 @@ export function AdminUsers() {
       </div>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, email, or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 rounded-xl h-10 border-[#0F0F0F]/10"
+                className="pl-10 rounded-xl h-10 border-border/10"
               />
             </div>
             <Select value={userTypeFilter} onValueChange={setUserTypeFilter}>
-              <SelectTrigger className="w-[180px] rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="w-[180px] rounded-xl border-border/10">
                 <SelectValue placeholder="User Type" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -425,7 +425,7 @@ export function AdminUsers() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px] rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="w-[150px] rounded-xl border-border/10">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -439,36 +439,36 @@ export function AdminUsers() {
       </Card>
 
       {/* Users Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">
+          <CardTitle className="text-foreground">
             Users ({filteredUsers.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {paginatedItems.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No users found</p>
+              <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">No users found</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#0F0F0F]/10">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">User</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Contact</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Roles</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Status</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Joined</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Last Login</th>
-                      <th className="text-right py-3 px-4 text-sm font-medium text-[#0F0F0F]/60">Actions</th>
+                    <tr className="border-b border-border/10">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">User</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Contact</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Roles</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Joined</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Last Login</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedItems.map((user) => (
-                      <tr key={user.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                      <tr key={user.id} className="border-b border-border/5 hover:bg-muted/50">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium">
@@ -479,19 +479,19 @@ export function AdminUsers() {
                               )}
                             </div>
                             <div>
-                              <p className="font-medium text-[#0F0F0F]">{user.full_name || 'Unnamed'}</p>
-                              <p className="text-xs text-[#0F0F0F]/50">ID: {user.id.slice(0, 8)}...</p>
+                              <p className="font-medium text-foreground">{user.full_name || 'Unnamed'}</p>
+                              <p className="text-xs text-muted-foreground">ID: {user.id.slice(0, 8)}...</p>
                             </div>
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-sm">
-                            <p className="text-[#0F0F0F] flex items-center gap-1">
+                            <p className="text-foreground flex items-center gap-1">
                               <Mail className="w-3 h-3" />
                               {user.email}
                             </p>
                             {user.phone && (
-                              <p className="text-[#0F0F0F]/60 flex items-center gap-1">
+                              <p className="text-muted-foreground flex items-center gap-1">
                                 <Phone className="w-3 h-3" />
                                 {user.phone}
                               </p>
@@ -506,10 +506,10 @@ export function AdminUsers() {
                         <td className="py-3 px-4">
                           {getStatusBadge(user.status)}
                         </td>
-                        <td className="py-3 px-4 text-sm text-[#0F0F0F]/60">
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}
                         </td>
-                        <td className="py-3 px-4 text-sm text-[#0F0F0F]/60">
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
                           {user.last_sign_in_at 
                             ? new Date(user.last_sign_in_at).toLocaleDateString()
                             : 'Never'}
@@ -608,7 +608,7 @@ export function AdminUsers() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">{selectedUser.full_name || 'Unnamed'}</h3>
-                  <p className="text-[#0F0F0F]/60">{selectedUser.email}</p>
+                  <p className="text-muted-foreground">{selectedUser.email}</p>
                   <div className="flex gap-2 mt-2">
                     {getRoleBadges(selectedUser.roles)}
                     {getStatusBadge(selectedUser.status)}
@@ -617,20 +617,20 @@ export function AdminUsers() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-[#F4F6FA]">
-                  <p className="text-sm text-[#0F0F0F]/60">Phone</p>
+                <div className="p-4 rounded-xl bg-muted">
+                  <p className="text-sm text-muted-foreground">Phone</p>
                   <p className="font-medium">{selectedUser.phone || 'Not provided'}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-[#F4F6FA]">
-                  <p className="text-sm text-[#0F0F0F]/60">User ID</p>
+                <div className="p-4 rounded-xl bg-muted">
+                  <p className="text-sm text-muted-foreground">User ID</p>
                   <p className="font-medium font-mono text-sm">{selectedUser.id}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-[#F4F6FA]">
-                  <p className="text-sm text-[#0F0F0F]/60">Joined</p>
+                <div className="p-4 rounded-xl bg-muted">
+                  <p className="text-sm text-muted-foreground">Joined</p>
                   <p className="font-medium">{new Date(selectedUser.created_at).toLocaleString()}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-[#F4F6FA]">
-                  <p className="text-sm text-[#0F0F0F]/60">Last Login</p>
+                <div className="p-4 rounded-xl bg-muted">
+                  <p className="text-sm text-muted-foreground">Last Login</p>
                   <p className="font-medium">
                     {selectedUser.last_sign_in_at 
                       ? new Date(selectedUser.last_sign_in_at).toLocaleString() 

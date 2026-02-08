@@ -136,7 +136,7 @@ const SOUTH_AFRICAN_BANKS = [
 // Status badge component
 const StatusBadge = ({ status }) => {
   const statusConfig = {
-    not_started: { label: 'Not Connected', color: 'bg-gray-100 text-gray-700', icon: XCircle },
+    not_started: { label: 'Not Connected', color: 'bg-muted text-foreground/80', icon: XCircle },
     pending: { label: 'Setup Incomplete', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
     active: { label: 'Connected', color: 'bg-green-100 text-green-700', icon: CheckCircle },
     restricted: { label: 'Restricted', color: 'bg-red-100 text-red-700', icon: AlertCircle },
@@ -305,19 +305,19 @@ export function PaystackFlutterwaveConnect() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#0F0F0F]">Direct Payments</h1>
-            <p className="text-[#0F0F0F]/60">Receive payments directly to your bank account</p>
+            <h1 className="text-2xl font-bold text-foreground">Direct Payments</h1>
+            <p className="text-muted-foreground">Receive payments directly to your bank account</p>
           </div>
         </div>
 
         <Card className="border-red-200 bg-red-50 rounded-xl">
           <CardContent className="p-8 text-center">
             <Lock className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-[#0F0F0F] mb-2">Direct Payments Disabled</h2>
-            <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-4">
+            <h2 className="text-xl font-semibold text-foreground mb-2">Direct Payments Disabled</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-4">
               Direct payments have been disabled for your account. Your event earnings will be processed through our standard escrow payout system.
             </p>
-            <p className="text-sm text-[#0F0F0F]/50">
+            <p className="text-sm text-muted-foreground">
               If you believe this is an error, please contact support.
             </p>
           </CardContent>
@@ -331,16 +331,16 @@ export function PaystackFlutterwaveConnect() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#0F0F0F]">Direct Payments</h1>
-            <p className="text-[#0F0F0F]/60">Receive payments directly to your bank account</p>
+            <h1 className="text-2xl font-bold text-foreground">Direct Payments</h1>
+            <p className="text-muted-foreground">Receive payments directly to your bank account</p>
           </div>
         </div>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl">
+        <Card className="border-border/10 rounded-xl">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-[#0F0F0F] mb-2">Not Available in Your Region</h2>
-            <p className="text-[#0F0F0F]/60 max-w-md mx-auto">
+            <h2 className="text-xl font-semibold text-foreground mb-2">Not Available in Your Region</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
               Direct payments via Paystack/Flutterwave are currently only available for organizers in Nigeria, Ghana, Kenya, and South Africa.
               Your region uses our standard payout system.
             </p>
@@ -364,8 +364,8 @@ export function PaystackFlutterwaveConnect() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#0F0F0F]">{provider} Direct Payments</h1>
-            <p className="text-[#0F0F0F]/60">Receive payments directly to your bank account</p>
+            <h1 className="text-2xl font-bold text-foreground">{provider} Direct Payments</h1>
+            <p className="text-muted-foreground">Receive payments directly to your bank account</p>
           </div>
         </div>
 
@@ -376,18 +376,18 @@ export function PaystackFlutterwaveConnect() {
               <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Lock className="w-10 h-10 text-amber-600" />
               </div>
-              <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Unlock Direct Payouts</h3>
-              <p className="text-[#0F0F0F]/60 max-w-md mx-auto mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Unlock Direct Payouts</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
                 Complete {requiredEvents} successful events to unlock {provider} direct payments and receive money directly to your bank account.
               </p>
 
               {/* Progress Bar */}
               <div className="max-w-xs mx-auto mb-4">
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-[#0F0F0F]/60">Progress</span>
-                  <span className="font-semibold text-[#0F0F0F]">{completedEvents}/{requiredEvents} events</span>
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-semibold text-foreground">{completedEvents}/{requiredEvents} events</span>
                 </div>
-                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, (completedEvents / requiredEvents) * 100)}%` }}
@@ -423,8 +423,8 @@ export function PaystackFlutterwaveConnect() {
                   <Shield className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Trust & Security</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Trust & Security</h4>
+                  <p className="text-sm text-muted-foreground">
                     Protects attendees and ensures quality events
                   </p>
                 </div>
@@ -435,8 +435,8 @@ export function PaystackFlutterwaveConnect() {
                   <Trophy className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Proven Track Record</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Proven Track Record</h4>
+                  <p className="text-sm text-muted-foreground">
                     Shows you're a reliable event organizer
                   </p>
                 </div>
@@ -447,8 +447,8 @@ export function PaystackFlutterwaveConnect() {
                   <TrendingUp className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Faster Settlements</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Faster Settlements</h4>
+                  <p className="text-sm text-muted-foreground">
                     {isNigeria ? 'Next-day' : 'T+1 to T+2'} direct deposits once unlocked
                   </p>
                 </div>
@@ -459,8 +459,8 @@ export function PaystackFlutterwaveConnect() {
                   <Wallet className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#0F0F0F]">Full Transparency</h4>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <h4 className="font-semibold text-foreground">Full Transparency</h4>
+                  <p className="text-sm text-muted-foreground">
                     See exactly what you earn from each sale
                   </p>
                 </div>
@@ -485,8 +485,8 @@ export function PaystackFlutterwaveConnect() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Direct Bank Deposits</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Direct Bank Deposits</p>
+                  <p className="text-sm text-muted-foreground">
                     Money goes straight to your bank account
                   </p>
                 </div>
@@ -494,8 +494,8 @@ export function PaystackFlutterwaveConnect() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Faster Settlements</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Faster Settlements</p>
+                  <p className="text-sm text-muted-foreground">
                     {isNigeria ? 'Next-day' : 'T+1 to T+2'} settlement to your bank
                   </p>
                 </div>
@@ -503,8 +503,8 @@ export function PaystackFlutterwaveConnect() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Transparent Fees</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Transparent Fees</p>
+                  <p className="text-sm text-muted-foreground">
                     Know exactly what you earn from each sale
                   </p>
                 </div>
@@ -512,8 +512,8 @@ export function PaystackFlutterwaveConnect() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">No Manual Payouts</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">No Manual Payouts</p>
+                  <p className="text-sm text-muted-foreground">
                     No need to request payouts - it's automatic
                   </p>
                 </div>
@@ -530,11 +530,11 @@ export function PaystackFlutterwaveConnect() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F] flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             {provider} Direct Payments
             <StatusBadge status={currentStatus} />
           </h1>
-          <p className="text-[#0F0F0F]/60">
+          <p className="text-muted-foreground">
             Receive payments directly to your bank account with {provider}
           </p>
         </div>
@@ -584,7 +584,7 @@ export function PaystackFlutterwaveConnect() {
           </Card>
 
           {/* How It Works */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="w-5 h-5 text-[#00C3F7]" />
@@ -597,8 +597,8 @@ export function PaystackFlutterwaveConnect() {
                   <CreditCard className="w-4 h-4 text-[#00C3F7]" />
                 </div>
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Attendee Pays</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Payment processed securely via {provider}</p>
+                  <p className="font-medium text-foreground">Attendee Pays</p>
+                  <p className="text-sm text-muted-foreground">Payment processed securely via {provider}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -606,8 +606,8 @@ export function PaystackFlutterwaveConnect() {
                   <ArrowRight className="w-4 h-4 text-[#00C3F7]" />
                 </div>
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Automatic Split</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Platform fee deducted automatically</p>
+                  <p className="font-medium text-foreground">Automatic Split</p>
+                  <p className="text-sm text-muted-foreground">Platform fee deducted automatically</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -616,14 +616,14 @@ export function PaystackFlutterwaveConnect() {
                 </div>
                 <div>
                   <p className="font-medium text-green-600">You Get Paid!</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Money goes directly to your bank</p>
+                  <p className="text-sm text-muted-foreground">Money goes directly to your bank</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Fee Breakdown */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl md:col-span-2">
+          <Card className="border-border/10 rounded-xl md:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-green-600" />
@@ -637,11 +637,11 @@ export function PaystackFlutterwaveConnect() {
                     <span>Ticket Price</span>
                     <span className="font-medium">{currency}10,000</span>
                   </div>
-                  <div className="flex justify-between text-[#0F0F0F]/60">
+                  <div className="flex justify-between text-muted-foreground">
                     <span>Payment Processing (~1.5%)</span>
                     <span>-{currency}150</span>
                   </div>
-                  <div className="flex justify-between text-[#0F0F0F]/60">
+                  <div className="flex justify-between text-muted-foreground">
                     <span>Platform Fee (~5%)</span>
                     <span>-{currency}500</span>
                   </div>
@@ -658,7 +658,7 @@ export function PaystackFlutterwaveConnect() {
         /* Not Connected State */
         <div className="grid gap-6 md:grid-cols-2">
           {/* Benefits Card */}
-          <Card className="border-[#0F0F0F]/10 rounded-xl">
+          <Card className="border-border/10 rounded-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-[#00C3F7]" />
@@ -669,8 +669,8 @@ export function PaystackFlutterwaveConnect() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Direct Bank Deposits</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Direct Bank Deposits</p>
+                  <p className="text-sm text-muted-foreground">
                     Money goes straight to your bank account
                   </p>
                 </div>
@@ -678,8 +678,8 @@ export function PaystackFlutterwaveConnect() {
                 <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Faster Settlements</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Faster Settlements</p>
+                  <p className="text-sm text-muted-foreground">
                     {isNigeria ? 'Next-day' : 'T+1 to T+2'} settlement to your bank
                   </p>
                 </div>
@@ -687,8 +687,8 @@ export function PaystackFlutterwaveConnect() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Transparent Fees</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">Transparent Fees</p>
+                  <p className="text-sm text-muted-foreground">
                     Know exactly what you earn from each sale
                   </p>
                 </div>
@@ -696,8 +696,8 @@ export function PaystackFlutterwaveConnect() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">No Manual Payouts</p>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="font-medium text-foreground">No Manual Payouts</p>
+                  <p className="text-sm text-muted-foreground">
                     No need to request payouts - it's automatic
                   </p>
                 </div>
@@ -714,14 +714,14 @@ export function PaystackFlutterwaveConnect() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-[#0F0F0F]/60">
+              <p className="text-muted-foreground">
                 Connect your bank account to start receiving direct payments. 
                 Setup takes less than 2 minutes.
               </p>
               
-              <div className="bg-white border border-[#0F0F0F]/10 rounded-xl p-4">
-                <h4 className="font-medium text-[#0F0F0F] mb-2">You'll need:</h4>
-                <ul className="space-y-2 text-sm text-[#0F0F0F]/60">
+              <div className="bg-card border border-border/10 rounded-xl p-4">
+                <h4 className="font-medium text-foreground mb-2">You'll need:</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     Your bank account number

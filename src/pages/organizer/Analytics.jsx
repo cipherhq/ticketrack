@@ -409,15 +409,15 @@ export function Analytics() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             Analytics
             <HelpTip>See your sales trends, revenue breakdown, and top-performing events. Use these insights to optimize your pricing and marketing strategies.</HelpTip>
           </h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Track your event performance and revenue</p>
+          <p className="text-muted-foreground mt-1">Track your event performance and revenue</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-            <SelectTrigger className="w-48 rounded-xl border-[#0F0F0F]/10">
+            <SelectTrigger className="w-48 rounded-xl border-border/10">
               <SelectValue placeholder="All Events" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -428,7 +428,7 @@ export function Analytics() {
             </SelectContent>
           </Select>
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-36 rounded-xl border-[#0F0F0F]/10">
+            <SelectTrigger className="w-36 rounded-xl border-border/10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -441,14 +441,14 @@ export function Analytics() {
           <Button
             variant="outline"
             onClick={loadAnalytics}
-            className="rounded-xl border-[#0F0F0F]/10"
+            className="rounded-xl border-border/10"
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button
             variant="outline"
             onClick={exportReport}
-            className="rounded-xl border-[#0F0F0F]/10"
+            className="rounded-xl border-border/10"
           >
             <Download className="w-4 h-4 mr-2" />
             Export
@@ -460,93 +460,93 @@ export function Analytics() {
       {/* Revenue Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Object.entries(stats.grossRevenueByCurrency || {}).map(([currency, amount]) => (
-          <Card key={`gross-${currency}`} className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card key={`gross-${currency}`} className="border-border/10 rounded-2xl">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-[#0F0F0F]/60">{currency} Gross</span>
+                <span className="text-sm text-muted-foreground">{currency} Gross</span>
                 <DollarSign className="w-5 h-5 text-[#2969FF]" />
               </div>
-              <p className="text-2xl font-semibold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
-              <p className="text-xs text-[#0F0F0F]/40 mt-1">Net: {formatPrice(stats.netRevenueByCurrency?.[currency] || 0, currency)}</p>
+              <p className="text-2xl font-semibold text-foreground">{formatPrice(amount, currency)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Net: {formatPrice(stats.netRevenueByCurrency?.[currency] || 0, currency)}</p>
             </CardContent>
           </Card>
         ))}
         
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-[#0F0F0F]/60">Tickets Sold</span>
+              <span className="text-sm text-muted-foreground">Tickets Sold</span>
               <Ticket className="w-5 h-5 text-purple-600" />
             </div>
-            <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalTickets.toLocaleString()}</p>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">All currencies</p>
+            <p className="text-2xl font-semibold text-foreground">{stats.totalTickets.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">All currencies</p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-[#0F0F0F]/60">Attendees</span>
+              <span className="text-sm text-muted-foreground">Attendees</span>
               <Users className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalAttendees.toLocaleString()}</p>
-            <p className="text-xs text-[#0F0F0F]/40 mt-1">{stats.conversionRate.toFixed(1)}% check-in rate</p>
+            <p className="text-2xl font-semibold text-foreground">{stats.totalAttendees.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">{stats.conversionRate.toFixed(1)}% check-in rate</p>
           </CardContent>
         </Card>
       </div>
       {/* Additional Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                 <Percent className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-xs text-[#0F0F0F]/60">Platform Fees</p>
-                <p className="text-lg font-semibold text-[#0F0F0F]">{Object.entries(stats.platformFeesByCurrency || {}).map(([c, a]) => formatPrice(a, c)).join(" | ") || formatPrice(0, defaultCurrency)}</p>
+                <p className="text-xs text-muted-foreground">Platform Fees</p>
+                <p className="text-lg font-semibold text-foreground">{Object.entries(stats.platformFeesByCurrency || {}).map(([c, a]) => formatPrice(a, c)).join(" | ") || formatPrice(0, defaultCurrency)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <Users className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-xs text-[#0F0F0F]/60">Checked In</p>
-                <p className="text-lg font-semibold text-[#0F0F0F]">{stats.totalAttendees}</p>
+                <p className="text-xs text-muted-foreground">Checked In</p>
+                <p className="text-lg font-semibold text-foreground">{stats.totalAttendees}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
                 <Eye className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-xs text-[#0F0F0F]/60">Check-in Rate</p>
-                <p className="text-lg font-semibold text-[#0F0F0F]">{stats.conversionRate.toFixed(1)}%</p>
+                <p className="text-xs text-muted-foreground">Check-in Rate</p>
+                <p className="text-lg font-semibold text-foreground">{stats.conversionRate.toFixed(1)}%</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-xs text-[#0F0F0F]/60">Total Events</p>
-                <p className="text-lg font-semibold text-[#0F0F0F]">{events.length}</p>
+                <p className="text-xs text-muted-foreground">Total Events</p>
+                <p className="text-lg font-semibold text-foreground">{events.length}</p>
               </div>
             </div>
           </CardContent>
@@ -555,28 +555,28 @@ export function Analytics() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sales Per Day */}
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
               Sales Per Day (Last 7 Days)
             </CardTitle>
           </CardHeader>
           <CardContent>
             {salesByDay.length === 0 || salesByDay.every(d => d.sales === 0) ? (
-              <div className="h-64 flex items-center justify-center text-[#0F0F0F]/40">
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
                 No sales data for this period
               </div>
             ) : (
               <div className="h-64 flex items-end justify-between gap-2 px-4">
                 {salesByDay.map((day) => (
                   <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
-                    <div className="text-xs text-[#0F0F0F]/60 font-medium">{day.sales}</div>
+                    <div className="text-xs text-muted-foreground font-medium">{day.sales}</div>
                     <div 
                       className="w-full bg-[#2969FF] rounded-t-lg transition-all hover:bg-[#2969FF]/80"
                       style={{ height: `${Math.max((day.sales / maxSales) * 180, 4)}px` }}
                     />
-                    <span className="text-xs text-[#0F0F0F]/60">{day.label}</span>
+                    <span className="text-xs text-muted-foreground">{day.label}</span>
                   </div>
                 ))}
               </div>
@@ -585,13 +585,13 @@ export function Analytics() {
         </Card>
 
         {/* Sales by Ticket Type */}
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-[#0F0F0F]">Sales by Ticket Type</CardTitle>
+            <CardTitle className="text-foreground">Sales by Ticket Type</CardTitle>
           </CardHeader>
           <CardContent>
             {salesByTicketType.length === 0 ? (
-              <div className="h-64 flex items-center justify-center text-[#0F0F0F]/40">
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
                 No ticket type data available
               </div>
             ) : (
@@ -599,12 +599,12 @@ export function Analytics() {
                 {salesByTicketType.map((type) => (
                   <div key={type.name} className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-[#0F0F0F]">{type.name}</span>
-                      <span className="text-sm text-[#0F0F0F]/60">
+                      <span className="text-sm text-foreground">{type.name}</span>
+                      <span className="text-sm text-muted-foreground">
                         {type.sold} sold • {formatCurrencyCompact(type.revenue, defaultCurrency)}
                       </span>
                     </div>
-                    <div className="w-full bg-[#F4F6FA] rounded-full h-3">
+                    <div className="w-full bg-muted rounded-full h-3">
                       <div
                         className="h-3 rounded-full transition-all"
                         style={{ width: `${type.percent}%`, backgroundColor: type.color }}
@@ -619,19 +619,19 @@ export function Analytics() {
       </div>
 
       {/* Top Events */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Top Performing Events</CardTitle>
+          <CardTitle className="text-foreground">Top Performing Events</CardTitle>
         </CardHeader>
         <CardContent>
           {topEvents.length === 0 ? (
-            <div className="text-center py-8 text-[#0F0F0F]/40">
+            <div className="text-center py-8 text-muted-foreground">
               No events data available
             </div>
           ) : (
             <div className="space-y-3">
               {topEvents.map((event, index) => (
-                <div key={event.id} className="flex items-center justify-between p-4 rounded-xl bg-[#F4F6FA]">
+                <div key={event.id} className="flex items-center justify-between p-4 rounded-xl bg-muted">
                   <div className="flex items-center gap-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
                       index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-amber-600' : 'bg-[#0F0F0F]/20'
@@ -639,8 +639,8 @@ export function Analytics() {
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-medium text-[#0F0F0F]">{event.title}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{event.ticketsSold} tickets sold</p>
+                      <p className="font-medium text-foreground">{event.title}</p>
+                      <p className="text-sm text-muted-foreground">{event.ticketsSold} tickets sold</p>
                     </div>
                   </div>
                   <p className="text-lg font-semibold text-[#2969FF]">{formatPrice(event.revenue, event.currency)}</p>
@@ -652,41 +652,41 @@ export function Analytics() {
       </Card>
 
       {/* Monthly Revenue Breakdown */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Monthly Revenue Breakdown</CardTitle>
+          <CardTitle className="text-foreground">Monthly Revenue Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
           {monthlyRevenue.length === 0 || monthlyRevenue.every(m => m.gross === 0) ? (
-            <div className="text-center py-8 text-[#0F0F0F]/40">
+            <div className="text-center py-8 text-muted-foreground">
               No revenue data available
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#0F0F0F]/10">
-                    <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Month</th>
-                    <th className="text-right py-3 px-4 text-[#0F0F0F]/60 font-medium">Gross Revenue</th>
-                    <th className="text-right py-3 px-4 text-[#0F0F0F]/60 font-medium">Platform Fees</th>
-                    <th className="text-right py-3 px-4 text-[#0F0F0F]/60 font-medium">Net Revenue</th>
+                  <tr className="border-b border-border/10">
+                    <th className="text-left py-3 px-4 text-muted-foreground font-medium">Month</th>
+                    <th className="text-right py-3 px-4 text-muted-foreground font-medium">Gross Revenue</th>
+                    <th className="text-right py-3 px-4 text-muted-foreground font-medium">Platform Fees</th>
+                    <th className="text-right py-3 px-4 text-muted-foreground font-medium">Net Revenue</th>
                   </tr>
                 </thead>
                 <tbody>
                   {monthlyRevenue.map((row) => (
-                    <tr key={`${row.month}-${row.year}`} className="border-b border-[#0F0F0F]/5">
-                      <td className="py-3 px-4 text-[#0F0F0F]">{row.month} {row.year}</td>
-                      <td className="py-3 px-4 text-right text-[#0F0F0F]">{formatCurrencyCompact(row.gross, defaultCurrency)}</td>
-                      <td className="py-3 px-4 text-right text-[#0F0F0F]/60">{formatCurrencyCompact(row.platformFee, defaultCurrency)}</td>
+                    <tr key={`${row.month}-${row.year}`} className="border-b border-border/5">
+                      <td className="py-3 px-4 text-foreground">{row.month} {row.year}</td>
+                      <td className="py-3 px-4 text-right text-foreground">{formatCurrencyCompact(row.gross, defaultCurrency)}</td>
+                      <td className="py-3 px-4 text-right text-muted-foreground">{formatCurrencyCompact(row.platformFee, defaultCurrency)}</td>
                       <td className="py-3 px-4 text-right text-green-600 font-medium">{formatCurrencyCompact(row.net, defaultCurrency)}</td>
                     </tr>
                   ))}
-                  <tr className="bg-[#F4F6FA] font-medium">
-                    <td className="py-3 px-4 text-[#0F0F0F]">Total</td>
-                    <td className="py-3 px-4 text-right text-[#0F0F0F]">
+                  <tr className="bg-muted font-medium">
+                    <td className="py-3 px-4 text-foreground">Total</td>
+                    <td className="py-3 px-4 text-right text-foreground">
                       {formatCurrencyCompact(monthlyRevenue.reduce((s, r) => s + r.gross, 0), defaultCurrency)}
                     </td>
-                    <td className="py-3 px-4 text-right text-[#0F0F0F]/60">
+                    <td className="py-3 px-4 text-right text-muted-foreground">
                       {formatCurrencyCompact(monthlyRevenue.reduce((s, r) => s + r.platformFee, 0), defaultCurrency)}
                     </td>
                     <td className="py-3 px-4 text-right text-green-600">

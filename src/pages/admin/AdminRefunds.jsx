@@ -118,7 +118,7 @@ const processRefund = async () => {
     if (refund.status === 'approved') return <Badge className="bg-blue-100 text-blue-700">Approved - Pending Payment</Badge>;
     if (refund.status === 'rejected') return <Badge className="bg-red-100 text-red-700">Rejected</Badge>;
     if (refund.organizer_decision === 'pending') return <Badge className="bg-yellow-100 text-yellow-700">Awaiting Organizer</Badge>;
-    return <Badge className="bg-gray-100 text-gray-700">Pending</Badge>;
+    return <Badge className="bg-muted text-foreground/80">Pending</Badge>;
   };
 
   const getConnectBadge = (refund) => {
@@ -148,26 +148,26 @@ const processRefund = async () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F0F0F]">Refund Management</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Review and process refund requests</p>
+          <h1 className="text-2xl font-semibold text-foreground">Refund Management</h1>
+          <p className="text-muted-foreground mt-1">Review and process refund requests</p>
         </div>
         <Button variant="outline" onClick={loadRefunds} className="rounded-xl"><RefreshCw className="w-4 h-4 mr-2" /> Refresh</Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Pending</p><p className="text-2xl font-bold text-yellow-600">{stats.pending}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Ready to Process</p><p className="text-2xl font-bold text-blue-600">{stats.approved}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Processed</p><p className="text-2xl font-bold text-green-600">{stats.processed}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Rejected</p><p className="text-2xl font-bold text-red-600">{stats.rejected}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl border-purple-300"><CardContent className="p-4"><p className="text-sm text-purple-600">Escalated</p><p className="text-2xl font-bold text-purple-600">{stats.escalated}</p></CardContent></Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-[#0F0F0F]/60">Total Refunded</p><p className="text-2xl font-bold text-[#2969FF]">{Object.entries(stats.refundedByCurrency || {}).map(([curr, amt]) => formatPrice(amt, curr)).join(' + ') || '$0'}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Pending</p><p className="text-2xl font-bold text-yellow-600">{stats.pending}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Ready to Process</p><p className="text-2xl font-bold text-blue-600">{stats.approved}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Processed</p><p className="text-2xl font-bold text-green-600">{stats.processed}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Rejected</p><p className="text-2xl font-bold text-red-600">{stats.rejected}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl border-purple-300"><CardContent className="p-4"><p className="text-sm text-purple-600">Escalated</p><p className="text-2xl font-bold text-purple-600">{stats.escalated}</p></CardContent></Card>
+        <Card className="border-border/10 rounded-2xl"><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Refunded</p><p className="text-2xl font-bold text-[#2969FF]">{Object.entries(stats.refundedByCurrency || {}).map(([curr, amt]) => formatPrice(amt, curr)).join(' + ') || '$0'}</p></CardContent></Card>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search by name, email, event..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 rounded-xl" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -185,26 +185,26 @@ const processRefund = async () => {
       </div>
 
       {/* Refund List */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-0">
           {filteredRefunds.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <RefreshCw className="w-12 h-12 text-[#0F0F0F]/20 mb-4" />
-              <p className="text-[#0F0F0F]/60">No refund requests found</p>
+              <RefreshCw className="w-12 h-12 text-foreground/20 mb-4" />
+              <p className="text-muted-foreground">No refund requests found</p>
             </div>
           ) : (
             <div className="divide-y divide-[#0F0F0F]/10">
               {filteredRefunds.map(refund => (
-                <div key={refund.id} className="p-4 hover:bg-[#F4F6FA]/50 transition-colors">
+                <div key={refund.id} className="p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#F4F6FA] overflow-hidden flex-shrink-0">
-                      {refund.event?.image_url ? <img src={refund.event.image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><DollarSign className="w-5 h-5 text-[#0F0F0F]/20" /></div>}
+                    <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden flex-shrink-0">
+                      {refund.event?.image_url ? <img src={refund.event.image_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><DollarSign className="w-5 h-5 text-foreground/20" /></div>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-medium text-[#0F0F0F] truncate">{refund.event?.title}</h3>
-                          <p className="text-sm text-[#0F0F0F]/60">{refund.ticket?.attendee_name} • {refund.ticket?.attendee_email}</p>
+                          <h3 className="font-medium text-foreground truncate">{refund.event?.title}</h3>
+                          <p className="text-sm text-muted-foreground">{refund.ticket?.attendee_name} • {refund.ticket?.attendee_email}</p>
                         </div>
                         <div className="flex gap-2 flex-wrap">
                           {getConnectBadge(refund)}
@@ -212,12 +212,12 @@ const processRefund = async () => {
                         </div>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                        <span className="text-[#0F0F0F]/60">Order: <span className="font-mono">{refund.orders?.order_number || 'N/A'}</span></span>
-                        <span className="text-[#0F0F0F]/60">Amount: <span className="text-[#0F0F0F] font-medium">{formatPrice(refund.amount, refund.currency)}</span></span>
-                        <span className="text-[#0F0F0F]/60">Provider: <span className="capitalize">{refund.orders?.payment_provider || 'N/A'}</span></span>
-                        <span className="text-[#0F0F0F]/60">{formatDate(refund.created_at)}</span>
+                        <span className="text-muted-foreground">Order: <span className="font-mono">{refund.orders?.order_number || 'N/A'}</span></span>
+                        <span className="text-muted-foreground">Amount: <span className="text-foreground font-medium">{formatPrice(refund.amount, refund.currency)}</span></span>
+                        <span className="text-muted-foreground">Provider: <span className="capitalize">{refund.orders?.payment_provider || 'N/A'}</span></span>
+                        <span className="text-muted-foreground">{formatDate(refund.created_at)}</span>
                       </div>
-                      {refund.reason && <p className="mt-2 text-sm text-[#0F0F0F]/70 bg-[#F4F6FA] p-2 rounded-lg line-clamp-1"><strong>Reason:</strong> {refund.reason}</p>}
+                      {refund.reason && <p className="mt-2 text-sm text-foreground/70 bg-muted p-2 rounded-lg line-clamp-1"><strong>Reason:</strong> {refund.reason}</p>}
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setDetailModal({ open: true, refund })}><Eye className="w-4 h-4" /></Button>
@@ -249,11 +249,11 @@ const processRefund = async () => {
           <DialogHeader><DialogTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5 text-green-500" /> Process Refund</DialogTitle></DialogHeader>
           {processModal.refund && (
             <div className="space-y-4">
-              <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-2">
-                <div className="flex justify-between"><span className="text-[#0F0F0F]/60">Attendee</span><span className="font-medium">{processModal.refund.ticket?.attendee_name}</span></div>
-                <div className="flex justify-between"><span className="text-[#0F0F0F]/60">Event</span><span className="font-medium">{processModal.refund.event?.title}</span></div>
-                <div className="flex justify-between"><span className="text-[#0F0F0F]/60">Original Amount</span><span>{formatPrice(processModal.refund.original_amount, processModal.refund.currency)}</span></div>
-                <div className="flex justify-between"><span className="text-[#0F0F0F]/60">Processing Fee</span><span className="text-red-600">-{formatPrice(processModal.refund.refund_fee, processModal.refund.currency)}</span></div>
+              <div className="p-4 bg-muted rounded-xl space-y-2">
+                <div className="flex justify-between"><span className="text-muted-foreground">Attendee</span><span className="font-medium">{processModal.refund.ticket?.attendee_name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Event</span><span className="font-medium">{processModal.refund.event?.title}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Original Amount</span><span>{formatPrice(processModal.refund.original_amount, processModal.refund.currency)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Processing Fee</span><span className="text-red-600">-{formatPrice(processModal.refund.refund_fee, processModal.refund.currency)}</span></div>
                 <hr />
                 <div className="flex justify-between font-bold"><span>Refund Amount</span><span className="text-green-600">{formatPrice(processModal.refund.amount, processModal.refund.currency)}</span></div>
               </div>
@@ -261,7 +261,7 @@ const processRefund = async () => {
                 <p className="text-sm text-yellow-800"><strong>Payment Provider:</strong> {processModal.refund.orders?.payment_provider || 'Unknown'}</p>
                 <p className="text-sm text-yellow-800"><strong>Reference:</strong> {processModal.refund.orders?.payment_reference || 'N/A'}</p>
               </div>
-              <p className="text-sm text-[#0F0F0F]/60">This will initiate the refund via {processModal.refund.orders?.payment_provider || 'the payment provider'}. The attendee will receive the funds within 5-10 business days.</p>
+              <p className="text-sm text-muted-foreground">This will initiate the refund via {processModal.refund.orders?.payment_provider || 'the payment provider'}. The attendee will receive the funds within 5-10 business days.</p>
             </div>
           )}
           <DialogFooter>
@@ -280,21 +280,21 @@ const processRefund = async () => {
           {detailModal.refund && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><p className="text-[#0F0F0F]/60">Attendee</p><p className="font-medium">{detailModal.refund.ticket?.attendee_name}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Email</p><p className="font-medium">{detailModal.refund.ticket?.attendee_email}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Event</p><p className="font-medium">{detailModal.refund.event?.title}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Organizer</p><p className="font-medium">{detailModal.refund.organizer?.business_name || 'N/A'}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Original Amount</p><p className="font-medium">{formatPrice(detailModal.refund.original_amount, detailModal.refund.currency)}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Refund Fee</p><p className="font-medium text-red-600">-{formatPrice(detailModal.refund.refund_fee, detailModal.refund.currency)}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Refund Amount</p><p className="font-medium text-green-600">{formatPrice(detailModal.refund.amount, detailModal.refund.currency)}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Status</p>{getStatusBadge(detailModal.refund)}</div>
-                <div><p className="text-[#0F0F0F]/60">Requested</p><p className="font-medium">{formatDate(detailModal.refund.created_at)}</p></div>
-                <div><p className="text-[#0F0F0F]/60">Payment Provider</p><p className="font-medium capitalize">{detailModal.refund.orders?.payment_provider || 'N/A'}</p></div>
-                {detailModal.refund.orders?.is_stripe_connect && <div><p className="text-[#0F0F0F]/60">Type</p><Badge className="bg-purple-100 text-purple-700"><Zap className="w-3 h-3 inline mr-1" />Stripe Connect</Badge></div>}
-                {detailModal.refund.refund_reference && <div className="col-span-2"><p className="text-[#0F0F0F]/60">Refund Reference</p><p className="font-mono bg-green-50 p-2 rounded">{detailModal.refund.refund_reference}</p></div>}
+                <div><p className="text-muted-foreground">Attendee</p><p className="font-medium">{detailModal.refund.ticket?.attendee_name}</p></div>
+                <div><p className="text-muted-foreground">Email</p><p className="font-medium">{detailModal.refund.ticket?.attendee_email}</p></div>
+                <div><p className="text-muted-foreground">Event</p><p className="font-medium">{detailModal.refund.event?.title}</p></div>
+                <div><p className="text-muted-foreground">Organizer</p><p className="font-medium">{detailModal.refund.organizer?.business_name || 'N/A'}</p></div>
+                <div><p className="text-muted-foreground">Original Amount</p><p className="font-medium">{formatPrice(detailModal.refund.original_amount, detailModal.refund.currency)}</p></div>
+                <div><p className="text-muted-foreground">Refund Fee</p><p className="font-medium text-red-600">-{formatPrice(detailModal.refund.refund_fee, detailModal.refund.currency)}</p></div>
+                <div><p className="text-muted-foreground">Refund Amount</p><p className="font-medium text-green-600">{formatPrice(detailModal.refund.amount, detailModal.refund.currency)}</p></div>
+                <div><p className="text-muted-foreground">Status</p>{getStatusBadge(detailModal.refund)}</div>
+                <div><p className="text-muted-foreground">Requested</p><p className="font-medium">{formatDate(detailModal.refund.created_at)}</p></div>
+                <div><p className="text-muted-foreground">Payment Provider</p><p className="font-medium capitalize">{detailModal.refund.orders?.payment_provider || 'N/A'}</p></div>
+                {detailModal.refund.orders?.is_stripe_connect && <div><p className="text-muted-foreground">Type</p><Badge className="bg-purple-100 text-purple-700"><Zap className="w-3 h-3 inline mr-1" />Stripe Connect</Badge></div>}
+                {detailModal.refund.refund_reference && <div className="col-span-2"><p className="text-muted-foreground">Refund Reference</p><p className="font-mono bg-green-50 p-2 rounded">{detailModal.refund.refund_reference}</p></div>}
               </div>
-              {detailModal.refund.reason && <div><p className="text-[#0F0F0F]/60 text-sm">Reason</p><p className="bg-[#F4F6FA] p-3 rounded-xl text-sm">{detailModal.refund.reason}</p></div>}
-              {detailModal.refund.organizer_notes && <div><p className="text-[#0F0F0F]/60 text-sm">Organizer Notes</p><p className="bg-[#F4F6FA] p-3 rounded-xl text-sm">{detailModal.refund.organizer_notes}</p></div>}
+              {detailModal.refund.reason && <div><p className="text-muted-foreground text-sm">Reason</p><p className="bg-muted p-3 rounded-xl text-sm">{detailModal.refund.reason}</p></div>}
+              {detailModal.refund.organizer_notes && <div><p className="text-muted-foreground text-sm">Organizer Notes</p><p className="bg-muted p-3 rounded-xl text-sm">{detailModal.refund.organizer_notes}</p></div>}
               {detailModal.refund.escalated_to_admin && <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl"><p className="text-sm text-purple-800 font-medium">⚠️ Escalated to Admin</p>{detailModal.refund.escalation_reason && <p className="text-sm text-purple-700 mt-1">{detailModal.refund.escalation_reason}</p>}</div>}
             </div>
           )}

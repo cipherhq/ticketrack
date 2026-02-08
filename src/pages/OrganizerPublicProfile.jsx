@@ -288,10 +288,10 @@ export function OrganizerPublicProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-[#2969FF] mx-auto mb-4" />
-          <p className="text-[#0F0F0F]/60">Loading organizer profile...</p>
+          <p className="text-muted-foreground">Loading organizer profile...</p>
         </div>
       </div>
     )
@@ -299,12 +299,12 @@ export function OrganizerPublicProfile() {
 
   if (error || !organizer) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl max-w-md mx-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
+        <Card className="border-border/10 rounded-2xl max-w-md mx-4">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-[#0F0F0F] mb-2">Organizer Not Found</h2>
-            <p className="text-[#0F0F0F]/60 mb-6">{error || 'This organizer profile does not exist or has been removed.'}</p>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Organizer Not Found</h2>
+            <p className="text-muted-foreground mb-6">{error || 'This organizer profile does not exist or has been removed.'}</p>
             <Button onClick={() => navigate('/')} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">Go to Homepage</Button>
           </CardContent>
         </Card>
@@ -315,7 +315,7 @@ export function OrganizerPublicProfile() {
   const coverImage = organizer.cover_image_url || organizer.banner_url
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       <div className="relative h-64 md:h-80">
         {coverImage ? (
           <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
@@ -327,7 +327,7 @@ export function OrganizerPublicProfile() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative -mt-20 mb-8">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row gap-6">
                 <Avatar className="w-32 h-32 border-4 border-white shadow-lg -mt-16 md:-mt-20">
@@ -339,20 +339,20 @@ export function OrganizerPublicProfile() {
                   <div className="flex items-start justify-between flex-wrap gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h1 className="text-2xl font-bold text-[#0F0F0F]">{organizer.business_name}</h1>
+                        <h1 className="text-2xl font-bold text-foreground">{organizer.business_name}</h1>
                         {organizer.is_verified && <Badge className="bg-[#2969FF] text-white border-0 rounded-lg">Verified</Badge>}
                       </div>
-                      {organizer.description && <p className="text-[#0F0F0F]/60 mb-2 line-clamp-2">{organizer.description}</p>}
-                      <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60 flex-wrap">
+                      {organizer.description && <p className="text-muted-foreground mb-2 line-clamp-2">{organizer.description}</p>}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                         {organizer.location && <div className="flex items-center gap-1"><MapPin className="w-4 h-4" />{organizer.location}</div>}
                         {organizer.average_rating > 0 && <div className="flex items-center gap-1"><Star className="w-4 h-4 text-yellow-500" />{parseFloat(organizer.average_rating).toFixed(1)}</div>}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <Button variant="outline" size="icon" className="rounded-xl border-[#0F0F0F]/10" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
+                      <Button variant="outline" size="icon" className="rounded-xl border-border/10" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
                       {!isOwnProfile && (
-                        <Button onClick={handleFollow} disabled={followLoading} className={`rounded-xl ${isFollowing ? 'bg-[#0F0F0F]/10 text-[#0F0F0F] hover:bg-[#0F0F0F]/20' : 'bg-[#2969FF] hover:bg-[#2969FF]/90 text-white'}`}>
+                        <Button onClick={handleFollow} disabled={followLoading} className={`rounded-xl ${isFollowing ? 'bg-[#0F0F0F]/10 text-foreground hover:bg-[#0F0F0F]/20' : 'bg-[#2969FF] hover:bg-[#2969FF]/90 text-white'}`}>
                           {followLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isFollowing ? 'Following' : 'Follow'}
                         </Button>
                       )}
@@ -363,9 +363,9 @@ export function OrganizerPublicProfile() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mt-6">
-                    <div className="text-center p-4 bg-[#F4F6FA] rounded-xl"><div className="text-2xl font-bold text-[#0F0F0F]">{organizer.total_events || 0}</div><div className="text-sm text-[#0F0F0F]/60">Events</div></div>
-                    <div className="text-center p-4 bg-[#F4F6FA] rounded-xl"><div className="text-2xl font-bold text-[#0F0F0F]">{formatNumber(organizer.total_tickets_sold || 0)}</div><div className="text-sm text-[#0F0F0F]/60">Attendees</div></div>
-                    <div className="text-center p-4 bg-[#F4F6FA] rounded-xl"><div className="text-2xl font-bold text-[#0F0F0F]">{formatNumber(followersCount)}</div><div className="text-sm text-[#0F0F0F]/60">Followers</div></div>
+                    <div className="text-center p-4 bg-muted rounded-xl"><div className="text-2xl font-bold text-foreground">{organizer.total_events || 0}</div><div className="text-sm text-muted-foreground">Events</div></div>
+                    <div className="text-center p-4 bg-muted rounded-xl"><div className="text-2xl font-bold text-foreground">{formatNumber(organizer.total_tickets_sold || 0)}</div><div className="text-sm text-muted-foreground">Attendees</div></div>
+                    <div className="text-center p-4 bg-muted rounded-xl"><div className="text-2xl font-bold text-foreground">{formatNumber(followersCount)}</div><div className="text-sm text-muted-foreground">Followers</div></div>
                   </div>
                 </div>
               </div>
@@ -376,24 +376,24 @@ export function OrganizerPublicProfile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
           <aside className="lg:col-span-1 space-y-6">
             {organizer.description && (
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-6">
-                  <h2 className="font-semibold text-[#0F0F0F] mb-4">About</h2>
-                  <p className="text-[#0F0F0F]/70 text-sm leading-relaxed">{organizer.description}</p>
+                  <h2 className="font-semibold text-foreground mb-4">About</h2>
+                  <p className="text-foreground/70 text-sm leading-relaxed">{organizer.description}</p>
                 </CardContent>
               </Card>
             )}
 
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="p-6 space-y-4">
-                <h2 className="font-semibold text-[#0F0F0F] mb-4">Contact</h2>
+                <h2 className="font-semibold text-foreground mb-4">Contact</h2>
                 {(organizer.website_url || organizer.website) && (
                   <a href={organizer.website_url || organizer.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[#2969FF] hover:underline">
                     <ExternalLink className="w-5 h-5" /><span className="text-sm truncate">{(organizer.website_url || organizer.website).replace(/^https?:\/\//, '')}</span>
                   </a>
                 )}
                 {(organizer.business_email || organizer.email) && (
-                  <a href={'mailto:' + (organizer.business_email || organizer.email)} className="flex items-center gap-3 text-[#0F0F0F]/70 hover:text-[#2969FF]">
+                  <a href={'mailto:' + (organizer.business_email || organizer.email)} className="flex items-center gap-3 text-foreground/70 hover:text-[#2969FF]">
                     <Mail className="w-5 h-5" /><span className="text-sm truncate">{organizer.business_email || organizer.email}</span>
                   </a>
                 )}
@@ -401,14 +401,14 @@ export function OrganizerPublicProfile() {
             </Card>
 
             {(organizer.social_twitter || organizer.twitter || organizer.social_facebook || organizer.facebook || organizer.social_instagram || organizer.instagram || organizer.social_linkedin || organizer.linkedin) && (
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-6">
-                  <h2 className="font-semibold text-[#0F0F0F] mb-4">Social</h2>
+                  <h2 className="font-semibold text-foreground mb-4">Social</h2>
                   <div className="flex gap-3">
-                    {(organizer.social_twitter || organizer.twitter) && <a href={'https://twitter.com/' + (organizer.social_twitter || organizer.twitter)} target="_blank" rel="noopener noreferrer" className="p-2 bg-[#F4F6FA] rounded-lg hover:bg-[#2969FF]/10 transition-colors"><Twitter className="w-5 h-5 text-[#0F0F0F]/70" /></a>}
-                    {(organizer.social_facebook || organizer.facebook) && <a href={'https://facebook.com/' + (organizer.social_facebook || organizer.facebook)} target="_blank" rel="noopener noreferrer" className="p-2 bg-[#F4F6FA] rounded-lg hover:bg-[#2969FF]/10 transition-colors"><Facebook className="w-5 h-5 text-[#0F0F0F]/70" /></a>}
-                    {(organizer.social_instagram || organizer.instagram) && <a href={'https://instagram.com/' + (organizer.social_instagram || organizer.instagram)} target="_blank" rel="noopener noreferrer" className="p-2 bg-[#F4F6FA] rounded-lg hover:bg-[#2969FF]/10 transition-colors"><Instagram className="w-5 h-5 text-[#0F0F0F]/70" /></a>}
-                    {(organizer.social_linkedin || organizer.linkedin) && <a href={'https://linkedin.com/in/' + (organizer.social_linkedin || organizer.linkedin)} target="_blank" rel="noopener noreferrer" className="p-2 bg-[#F4F6FA] rounded-lg hover:bg-[#2969FF]/10 transition-colors"><Linkedin className="w-5 h-5 text-[#0F0F0F]/70" /></a>}
+                    {(organizer.social_twitter || organizer.twitter) && <a href={'https://twitter.com/' + (organizer.social_twitter || organizer.twitter)} target="_blank" rel="noopener noreferrer" className="p-2 bg-muted rounded-lg hover:bg-[#2969FF]/10 transition-colors"><Twitter className="w-5 h-5 text-foreground/70" /></a>}
+                    {(organizer.social_facebook || organizer.facebook) && <a href={'https://facebook.com/' + (organizer.social_facebook || organizer.facebook)} target="_blank" rel="noopener noreferrer" className="p-2 bg-muted rounded-lg hover:bg-[#2969FF]/10 transition-colors"><Facebook className="w-5 h-5 text-foreground/70" /></a>}
+                    {(organizer.social_instagram || organizer.instagram) && <a href={'https://instagram.com/' + (organizer.social_instagram || organizer.instagram)} target="_blank" rel="noopener noreferrer" className="p-2 bg-muted rounded-lg hover:bg-[#2969FF]/10 transition-colors"><Instagram className="w-5 h-5 text-foreground/70" /></a>}
+                    {(organizer.social_linkedin || organizer.linkedin) && <a href={'https://linkedin.com/in/' + (organizer.social_linkedin || organizer.linkedin)} target="_blank" rel="noopener noreferrer" className="p-2 bg-muted rounded-lg hover:bg-[#2969FF]/10 transition-colors"><Linkedin className="w-5 h-5 text-foreground/70" /></a>}
                   </div>
                 </CardContent>
               </Card>
@@ -417,30 +417,30 @@ export function OrganizerPublicProfile() {
 
           <main className="lg:col-span-2">
             <Tabs defaultValue="upcoming" className="space-y-6">
-              <TabsList className="bg-white border border-[#0F0F0F]/10 rounded-xl p-1">
+              <TabsList className="bg-card border border-border/10 rounded-xl p-1">
                 <TabsTrigger value="upcoming" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Upcoming ({upcomingEvents.length})</TabsTrigger>
                 <TabsTrigger value="past" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Past ({pastEvents.length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="upcoming" className="space-y-4">
                 {upcomingEvents.length === 0 ? (
-                  <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <Card className="border-border/10 rounded-2xl">
                     <CardContent className="p-8 text-center">
-                      <Calendar className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                      <p className="text-[#0F0F0F]/60">No upcoming events</p>
-                      <p className="text-sm text-[#0F0F0F]/40 mt-1">Follow this organizer to get notified of new events</p>
+                      <Calendar className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                      <p className="text-muted-foreground">No upcoming events</p>
+                      <p className="text-sm text-muted-foreground mt-1">Follow this organizer to get notified of new events</p>
                     </CardContent>
                   </Card>
                 ) : (
                   upcomingEvents.map(event => (
-                    <Card key={event.id} onClick={() => navigate('/e/' + (event.slug || event.id))} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                    <Card key={event.id} onClick={() => navigate('/e/' + (event.slug || event.id))} className="border-border/10 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
                       <CardContent className="p-0">
                         <div className="flex gap-4">
                           <div className="w-40 h-28 flex-shrink-0"><ImageWithFallback src={event.image_url} alt={event.title} className="w-full h-full object-cover" /></div>
                           <div className="flex-1 p-4">
-                            <h3 className="font-semibold text-[#0F0F0F] mb-2 line-clamp-1">{event.title}</h3>
-                            <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-1"><Calendar className="w-4 h-4" />{formatEventDate(event.start_date)}</div>
-                            {event.venue_name && <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-3"><MapPin className="w-4 h-4" />{event.venue_name}</div>}
+                            <h3 className="font-semibold text-foreground mb-2 line-clamp-1">{event.title}</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1"><Calendar className="w-4 h-4" />{formatEventDate(event.start_date)}</div>
+                            {event.venue_name && <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3"><MapPin className="w-4 h-4" />{event.venue_name}</div>}
                             <span className="font-semibold text-[#2969FF]">{event.minPrice === 0 ? 'Free' : 'From ' + formatPrice(event.minPrice, event.currency)}</span>
                           </div>
                         </div>
@@ -452,15 +452,15 @@ export function OrganizerPublicProfile() {
 
               <TabsContent value="past" className="space-y-4">
                 {pastEvents.length === 0 ? (
-                  <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <Card className="border-border/10 rounded-2xl">
                     <CardContent className="p-8 text-center">
-                      <Calendar className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                      <p className="text-[#0F0F0F]/60">No past events</p>
+                      <Calendar className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                      <p className="text-muted-foreground">No past events</p>
                     </CardContent>
                   </Card>
                 ) : (
                   pastEvents.map(event => (
-                    <Card key={event.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+                    <Card key={event.id} className="border-border/10 rounded-2xl overflow-hidden">
                       <CardContent className="p-0">
                         <div className="flex gap-4">
                           <div className="w-40 h-28 flex-shrink-0 relative">
@@ -468,10 +468,10 @@ export function OrganizerPublicProfile() {
                             <div className="absolute inset-0 bg-black/30" />
                           </div>
                           <div className="flex-1 p-4">
-                            <h3 className="font-semibold text-[#0F0F0F] mb-2 line-clamp-1">{event.title}</h3>
-                            <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-1"><Calendar className="w-4 h-4" />{formatEventDate(event.start_date)}</div>
-                            {event.venue_name && <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-1"><MapPin className="w-4 h-4" />{event.venue_name}</div>}
-                            {event.attendees > 0 && <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60"><Users className="w-4 h-4" />{event.attendees.toLocaleString()} attendees</div>}
+                            <h3 className="font-semibold text-foreground mb-2 line-clamp-1">{event.title}</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1"><Calendar className="w-4 h-4" />{formatEventDate(event.start_date)}</div>
+                            {event.venue_name && <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1"><MapPin className="w-4 h-4" />{event.venue_name}</div>}
+                            {event.attendees > 0 && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Users className="w-4 h-4" />{event.attendees.toLocaleString()} attendees</div>}
                           </div>
                         </div>
                       </CardContent>

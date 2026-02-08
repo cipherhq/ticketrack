@@ -406,7 +406,7 @@ export function WebPaymentSuccess() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#2969FF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#0F0F0F]/60">Loading your tickets...</p>
+          <p className="text-muted-foreground">Loading your tickets...</p>
         </div>
       </div>
     )
@@ -421,8 +421,8 @@ export function WebPaymentSuccess() {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">⚠️</span>
             </div>
-            <h2 className="text-xl font-bold text-[#0F0F0F] mb-2">Something went wrong</h2>
-            <p className="text-[#0F0F0F]/60 mb-4">{error}</p>
+            <h2 className="text-xl font-bold text-foreground mb-2">Something went wrong</h2>
+            <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={() => navigate('/tickets')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white">
               View My Tickets
             </Button>
@@ -564,15 +564,15 @@ export function WebPaymentSuccess() {
 
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA] py-12 px-4">
+    <div className="min-h-screen bg-muted py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Success Header */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-500" />
           </div>
-          <h1 className="text-3xl font-bold text-[#0F0F0F] mb-2">Payment Successful!</h1>
-          <p className="text-[#0F0F0F]/60">Your tickets have been confirmed and sent to your email</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Payment Successful!</h1>
+          <p className="text-muted-foreground">Your tickets have been confirmed and sent to your email</p>
         </div>
 
         {/* Order Details Card */}
@@ -582,7 +582,7 @@ export function WebPaymentSuccess() {
             <div className="bg-[#2969FF]/5 rounded-xl p-4 mb-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-[#0F0F0F]/60">Order Number</p>
+                  <p className="text-sm text-muted-foreground">Order Number</p>
                   <p className="font-mono font-bold text-[#2969FF]">
                     {order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}
                   </p>
@@ -593,7 +593,7 @@ export function WebPaymentSuccess() {
 
             {/* Event Details */}
             <div className="flex gap-4 mb-6">
-              <div className="w-24 h-24 rounded-xl overflow-hidden bg-[#F4F6FA] flex-shrink-0">
+              <div className="w-24 h-24 rounded-xl overflow-hidden bg-muted flex-shrink-0">
                 <img 
                   src={event.image_url} 
                   alt={event.title}
@@ -602,8 +602,8 @@ export function WebPaymentSuccess() {
                 />
               </div>
               <div className="flex-1">
-                <h2 className="font-bold text-lg text-[#0F0F0F] mb-2">{event.title}</h2>
-                <div className="space-y-1 text-sm text-[#0F0F0F]/60">
+                <h2 className="font-bold text-lg text-foreground mb-2">{event.title}</h2>
+                <div className="space-y-1 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     <span>{formatDate(event.start_date)}</span>
@@ -635,8 +635,8 @@ export function WebPaymentSuccess() {
                     <Monitor className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-[#0F0F0F]">Join Event Online</h4>
-                    <p className="text-sm text-[#0F0F0F]/60">
+                    <h4 className="font-semibold text-foreground">Join Event Online</h4>
+                    <p className="text-sm text-muted-foreground">
                       {event.streaming_platform ? event.streaming_platform.charAt(0).toUpperCase() + event.streaming_platform.slice(1).replace('_', ' ') : 'Streaming Link'}
                     </p>
                   </div>
@@ -651,7 +651,7 @@ export function WebPaymentSuccess() {
                   <ExternalLink className="w-4 h-4" />
                   Open Streaming Link
                 </a>
-                <p className="text-xs text-[#0F0F0F]/50 text-center mt-2">
+                <p className="text-xs text-muted-foreground text-center mt-2">
                   Save this link! You can also find it in "My Tickets"
                 </p>
               </div>
@@ -661,7 +661,7 @@ export function WebPaymentSuccess() {
 
             {/* Tickets with QR Codes */}
             <div className="mb-6">
-              <h3 className="font-semibold text-[#0F0F0F] mb-4 flex items-center gap-2">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-[#2969FF]" />
                 Your Tickets ({tickets?.length || 0})
               </h3>
@@ -673,24 +673,24 @@ export function WebPaymentSuccess() {
                   const qrValue = ticket.ticket_code
                   
                   return (
-                    <div key={index} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                    <div key={index} className="flex items-center justify-between p-4 bg-muted rounded-xl">
                       <div className="flex-1">
-                        <p className="font-medium text-[#0F0F0F]">Ticket #{index + 1}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">{ticket.attendee_name}</p>
-                        <p className="text-xs text-[#0F0F0F]/40 font-mono mt-1">{ticket.ticket_code}</p>
+                        <p className="font-medium text-foreground">Ticket #{index + 1}</p>
+                        <p className="text-sm text-muted-foreground">{ticket.attendee_name}</p>
+                        <p className="text-xs text-muted-foreground font-mono mt-1">{ticket.ticket_code}</p>
                         {/* Show donation amount for free events with donations */}
                         {event?.is_free && ticket.order?.is_donation && ticket.order?.total_amount > 0 && (
-                          <div className="mt-2 pt-2 border-t border-[#0F0F0F]/10">
-                            <p className="text-xs text-[#0F0F0F]/60">Your Donation</p>
+                          <div className="mt-2 pt-2 border-t border-border/10">
+                            <p className="text-xs text-muted-foreground">Your Donation</p>
                             <p className="text-green-600 font-semibold flex items-center gap-1 text-sm">
                               <span>💚</span>
                               {formatPrice(ticket.order.total_amount, ticket.order.currency || order.currency)}
-                              <span className="text-xs font-normal text-[#0F0F0F]/50 ml-1">Thank you!</span>
+                              <span className="text-xs font-normal text-muted-foreground ml-1">Thank you!</span>
                             </p>
                           </div>
                         )}
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-[#0F0F0F]/10">
+                      <div className="bg-card rounded-lg p-2 border border-border/10">
                         <QRCodeSVG 
                           id={`success-qr-${index}`}
                           value={qrValue}
@@ -709,22 +709,22 @@ export function WebPaymentSuccess() {
             {/* Payment Summary */}
             <div className="space-y-2 mb-6">
               <div className="flex justify-between text-sm">
-                <span className="text-[#0F0F0F]/60">Subtotal</span>
-                <span className="text-[#0F0F0F]">{formatPrice(order.subtotal, order.currency)}</span>
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-foreground">{formatPrice(order.subtotal, order.currency)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[#0F0F0F]/60">Service Fee</span>
-                <span className="text-[#0F0F0F]">{formatPrice(order.platform_fee, order.currency)}</span>
+                <span className="text-muted-foreground">Service Fee</span>
+                <span className="text-foreground">{formatPrice(order.platform_fee, order.currency)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold">
-                <span className="text-[#0F0F0F]">Total Paid</span>
+                <span className="text-foreground">Total Paid</span>
                 <span className="text-[#2969FF]">{formatPrice(order.total_amount, order.currency)}</span>
               </div>
               {reference && (
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#0F0F0F]/40">Reference</span>
-                  <span className="text-[#0F0F0F]/40 font-mono">{reference}</span>
+                  <span className="text-muted-foreground">Reference</span>
+                  <span className="text-muted-foreground font-mono">{reference}</span>
                 </div>
               )}
             </div>
@@ -733,7 +733,7 @@ export function WebPaymentSuccess() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 variant="outline" 
-                className="flex-1 rounded-xl border-[#0F0F0F]/10"
+                className="flex-1 rounded-xl border-border/10"
                 onClick={downloadAllTickets}
               >
                 <Download className="w-4 h-4 mr-2" />
@@ -741,7 +741,7 @@ export function WebPaymentSuccess() {
               </Button>
               <Button 
                 variant="outline" 
-                className="flex-1 rounded-xl border-[#0F0F0F]/10"
+                className="flex-1 rounded-xl border-border/10"
                 onClick={emailTickets}
               >
                 <Mail className="w-4 h-4 mr-2" />
@@ -750,12 +750,12 @@ export function WebPaymentSuccess() {
             </div>
             
             {/* Add to Calendar */}
-            <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10">
-              <p className="text-sm text-[#0F0F0F]/60 mb-3 text-center">Add to Calendar</p>
+            <div className="mt-4 pt-4 border-t border-border/10">
+              <p className="text-sm text-muted-foreground mb-3 text-center">Add to Calendar</p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   variant="outline" 
-                  className="flex-1 rounded-xl border-[#0F0F0F]/10 text-sm"
+                  className="flex-1 rounded-xl border-border/10 text-sm"
                   onClick={addToGoogleCalendar}
                 >
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -765,7 +765,7 @@ export function WebPaymentSuccess() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="flex-1 rounded-xl border-[#0F0F0F]/10 text-sm"
+                  className="flex-1 rounded-xl border-border/10 text-sm"
                   onClick={addToOutlookCalendar}
                 >
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -775,7 +775,7 @@ export function WebPaymentSuccess() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="flex-1 rounded-xl border-[#0F0F0F]/10 text-sm"
+                  className="flex-1 rounded-xl border-border/10 text-sm"
                   onClick={addToAppleCalendar}
                 >
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -788,8 +788,8 @@ export function WebPaymentSuccess() {
             
             {/* Add to Wallet */}
             {tickets && tickets.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-[#0F0F0F]/10">
-                <p className="text-sm text-[#0F0F0F]/60 mb-3 text-center flex items-center justify-center gap-2">
+              <div className="mt-4 pt-4 border-t border-border/10">
+                <p className="text-sm text-muted-foreground mb-3 text-center flex items-center justify-center gap-2">
                   <Wallet className="w-4 h-4" />
                   Save to Digital Wallet
                 </p>
@@ -806,15 +806,15 @@ export function WebPaymentSuccess() {
         {/* Next Steps */}
         <Card className="border-0 rounded-2xl shadow-lg mb-6">
           <CardContent className="p-6">
-            <h3 className="font-semibold text-[#0F0F0F] mb-4">What's Next?</h3>
+            <h3 className="font-semibold text-foreground mb-4">What's Next?</h3>
             <div className="space-y-4">
               <div className="flex gap-4">
                 <div className="w-8 h-8 bg-[#2969FF]/10 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-sm font-bold text-[#2969FF]">1</span>
                 </div>
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Check your email</p>
-                  <p className="text-sm text-[#0F0F0F]/60">We've sent your tickets to {order.buyer_email}</p>
+                  <p className="font-medium text-foreground">Check your email</p>
+                  <p className="text-sm text-muted-foreground">We've sent your tickets to {order.buyer_email}</p>
                 </div>
               </div>
               <div className="flex gap-4">
@@ -822,8 +822,8 @@ export function WebPaymentSuccess() {
                   <span className="text-sm font-bold text-[#2969FF]">2</span>
                 </div>
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Save your QR code</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Screenshot or download your ticket for easy access</p>
+                  <p className="font-medium text-foreground">Save your QR code</p>
+                  <p className="text-sm text-muted-foreground">Screenshot or download your ticket for easy access</p>
                 </div>
               </div>
               <div className="flex gap-4">
@@ -831,8 +831,8 @@ export function WebPaymentSuccess() {
                   <span className="text-sm font-bold text-[#2969FF]">3</span>
                 </div>
                 <div>
-                  <p className="font-medium text-[#0F0F0F]">Show QR at the venue</p>
-                  <p className="text-sm text-[#0F0F0F]/60">Present your QR code at the entrance for quick check-in</p>
+                  <p className="font-medium text-foreground">Show QR at the venue</p>
+                  <p className="text-sm text-muted-foreground">Present your QR code at the entrance for quick check-in</p>
                 </div>
               </div>
             </div>
@@ -850,7 +850,7 @@ export function WebPaymentSuccess() {
           </Button>
           <Button 
             variant="outline"
-            className="flex-1 rounded-xl py-6 border-[#0F0F0F]/10"
+            className="flex-1 rounded-xl py-6 border-border/10"
             onClick={() => navigate('/events')}
           >
             Browse More Events

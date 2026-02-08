@@ -288,7 +288,7 @@ export function WebEventBrowse() {
     <div className="space-y-6">
       {/* Categories */}
       <div>
-        <h3 className="font-medium text-[#0F0F0F] mb-4">Categories</h3>
+        <h3 className="font-medium text-foreground mb-4">Categories</h3>
         <div className="space-y-3">
           {categories.map(category => (
             <div key={category.id} className="flex items-center space-x-2">
@@ -307,8 +307,8 @@ export function WebEventBrowse() {
       </div>
 
       {/* Price Range */}
-      <div className="pt-6 border-t border-[#0F0F0F]/10">
-        <h3 className="font-medium text-[#0F0F0F] mb-4">Price Range</h3>
+      <div className="pt-6 border-t border-border/10">
+        <h3 className="font-medium text-foreground mb-4">Price Range</h3>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <input
@@ -316,16 +316,16 @@ export function WebEventBrowse() {
               placeholder="Min"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-[#0F0F0F]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+              className="w-full px-3 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               style={{ fontSize: '16px' }}
             />
-            <span className="text-[#0F0F0F]/40">-</span>
+            <span className="text-muted-foreground">-</span>
             <input
               type="number"
               placeholder="Max"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-[#0F0F0F]/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+              className="w-full px-3 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               style={{ fontSize: '16px' }}
             />
           </div>
@@ -344,7 +344,7 @@ export function WebEventBrowse() {
       </div>
 
       {/* Apply & Clear Buttons */}
-      <div className="pt-6 border-t border-[#0F0F0F]/10 space-y-3">
+      <div className="pt-6 border-t border-border/10 space-y-3">
         <Button 
           className="w-full rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90 text-white" 
           onClick={handleSearch}
@@ -363,29 +363,29 @@ export function WebEventBrowse() {
   )
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Search Header */}
       <div className="bg-[#2969FF] py-4 md:py-6">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="bg-white rounded-2xl p-2 md:p-2 flex flex-col md:flex-row gap-2 md:gap-2">
+          <div className="bg-card rounded-2xl p-2 md:p-2 flex flex-col md:flex-row gap-2 md:gap-2">
             {/* Location Input */}
             <div className="flex-1 relative">
-              <div className="flex items-center gap-2 px-4 py-3 border border-[#0F0F0F]/10 rounded-xl">
+              <div className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl">
                 <MapPin className="w-5 h-5 text-[#2969FF]" />
                 <div className="flex-1">
-                  <div className="text-xs text-[#0F0F0F]/60 uppercase font-medium">Location</div>
+                  <div className="text-xs text-muted-foreground uppercase font-medium">Location</div>
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="City or Venue"
-                    className="w-full outline-none text-[#0F0F0F] placeholder-[#0F0F0F]/40"
+                    className="w-full outline-none text-foreground placeholder-[#0F0F0F]/40"
                     style={{ fontSize: '16px' }}
                   />
                 </div>
                 {location && (
-                  <button onClick={() => setLocation('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F] min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation">
+                  <button onClick={() => setLocation('')} className="text-muted-foreground hover:text-foreground min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation">
                     <X className="w-4 h-4" />
                   </button>
                 )}
@@ -395,23 +395,23 @@ export function WebEventBrowse() {
             {/* Date Filter */}
             <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
               <div 
-                className="flex items-center gap-2 px-4 py-3 border border-[#0F0F0F]/10 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
+                className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
                 onClick={() => setShowDateDropdown(!showDateDropdown)}
               >
                 <Calendar className="w-5 h-5 text-[#2969FF]" />
                 <div className="flex-1">
-                  <div className="text-xs text-[#0F0F0F]/60 uppercase font-medium">Dates</div>
-                  <div className="text-sm text-[#0F0F0F]">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
+                  <div className="text-xs text-muted-foreground uppercase font-medium">Dates</div>
+                  <div className="text-sm text-foreground">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
                 </div>
-                <ChevronDown className="w-4 h-4 text-[#0F0F0F]/40" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </div>
               {showDateDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#0F0F0F]/10 rounded-xl shadow-lg z-20">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/10 rounded-xl shadow-lg z-20">
                   {dateOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 hover:bg-[#F4F6FA] text-sm min-h-[44px] touch-manipulation ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                      className={`w-full text-left px-4 py-3 hover:bg-muted text-sm min-h-[44px] touch-manipulation ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
                     >
                       {option.label}
                     </button>
@@ -422,10 +422,10 @@ export function WebEventBrowse() {
 
             {/* Search Input */}
             <div className="flex-[2] relative">
-              <div className="flex items-center gap-2 px-4 py-3 border border-[#0F0F0F]/10 rounded-xl">
+              <div className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl">
                 <Search className="w-5 h-5 text-[#2969FF]" />
                 <div className="flex-1">
-                  <div className="text-xs text-[#0F0F0F]/60 uppercase font-medium">Search</div>
+                  <div className="text-xs text-muted-foreground uppercase font-medium">Search</div>
                   <input
                     type="text"
                     value={searchTerm}
@@ -437,7 +437,7 @@ export function WebEventBrowse() {
                   />
                 </div>
                 {searchTerm && (
-                  <button onClick={() => setSearchTerm('')} className="text-[#0F0F0F]/40 hover:text-[#0F0F0F] min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation">
+                  <button onClick={() => setSearchTerm('')} className="text-muted-foreground hover:text-foreground min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation">
                     <X className="w-4 h-4" />
                   </button>
                 )}
@@ -459,10 +459,10 @@ export function WebEventBrowse() {
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-[#0F0F0F]">
+            <h1 className="text-2xl font-bold text-foreground">
               {searchTerm || location ? 'Search Results' : 'Browse Events'}
             </h1>
-            <p className="text-[#0F0F0F]/60">
+            <p className="text-muted-foreground">
               {loading ? 'Loading...' : `${events.length} events found`}
             </p>
           </div>
@@ -472,7 +472,7 @@ export function WebEventBrowse() {
             {/* Mobile Filter Button */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="md:hidden rounded-xl border-[#0F0F0F]/10 min-h-[44px] touch-manipulation">
+                <Button variant="outline" className="md:hidden rounded-xl border-border/10 min-h-[44px] touch-manipulation">
                   <SlidersHorizontal className="w-5 h-5 mr-2" />
                   Filters
                 </Button>
@@ -490,19 +490,19 @@ export function WebEventBrowse() {
             <div className="relative hidden md:block" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
-                className="flex items-center gap-2 px-4 py-2 border border-[#0F0F0F]/10 rounded-xl bg-white"
+                className="flex items-center gap-2 px-4 py-2 border border-border/10 rounded-xl bg-card"
               >
-                <SlidersHorizontal className="w-4 h-4 text-[#0F0F0F]/60" />
+                <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm">Sort: {sortOptions.find(s => s.value === sortBy)?.label}</span>
-                <ChevronDown className="w-4 h-4 text-[#0F0F0F]/40" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </button>
               {showSortDropdown && (
-                <div className="absolute top-full right-0 mt-1 bg-white border border-[#0F0F0F]/10 rounded-xl shadow-lg z-20 min-w-[200px]">
+                <div className="absolute top-full right-0 mt-1 bg-card border border-border/10 rounded-xl shadow-lg z-20 min-w-[200px]">
                   {sortOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => { setSortBy(option.value); setShowSortDropdown(false); handleSearch(); }}
-                      className={`w-full text-left px-4 py-3 hover:bg-[#F4F6FA] text-sm min-h-[44px] touch-manipulation ${sortBy === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                      className={`w-full text-left px-4 py-3 hover:bg-muted text-sm min-h-[44px] touch-manipulation ${sortBy === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
                     >
                       {option.label}
                     </button>
@@ -517,8 +517,8 @@ export function WebEventBrowse() {
         <div className="flex gap-8">
           {/* Desktop Sidebar Filters */}
           <div className="hidden md:block w-64 flex-shrink-0">
-            <div className="sticky top-24 bg-white rounded-2xl p-6 border border-[#0F0F0F]/10">
-              <h2 className="text-lg font-semibold text-[#0F0F0F] mb-4">Filters</h2>
+            <div className="sticky top-24 bg-card rounded-2xl p-6 border border-border/10">
+              <h2 className="text-lg font-semibold text-foreground mb-4">Filters</h2>
               <FilterPanel />
             </div>
           </div>
@@ -575,13 +575,13 @@ export function WebEventBrowse() {
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
-                <span className="ml-3 text-[#0F0F0F]/60">Loading events...</span>
+                <span className="ml-3 text-muted-foreground">Loading events...</span>
               </div>
             ) : events.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl">
+              <div className="text-center py-16 bg-card rounded-2xl">
                 <div className="text-6xl mb-4">🎫</div>
-                <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No events found</h3>
-                <p className="text-[#0F0F0F]/60 mb-6">Try adjusting your filters or search terms</p>
+                <h3 className="text-xl font-semibold text-foreground mb-2">No events found</h3>
+                <p className="text-muted-foreground mb-6">Try adjusting your filters or search terms</p>
                 <Button onClick={clearFilters} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl min-h-[44px] touch-manipulation">
                   Clear Filters
                 </Button>
@@ -591,10 +591,10 @@ export function WebEventBrowse() {
                 {events.map((event) => (
                   <Card 
                     key={event.id}
-                    className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-white group touch-manipulation active:scale-[0.98]"
+                    className="overflow-hidden cursor-pointer hover:shadow-xl transition-all border-0 rounded-2xl bg-card group touch-manipulation active:scale-[0.98]"
                     onClick={() => navigate(`/e/${event.slug || event.id}`)}
                   >
-                    <div className="relative h-48 bg-gray-100">
+                    <div className="relative h-48 bg-muted">
                       <img 
                         src={event.image_url} 
                         alt={event.title}
@@ -604,7 +604,7 @@ export function WebEventBrowse() {
                         decoding="async"
                       />
                       {event.category && (
-                        <Badge className="absolute top-4 left-4 bg-white text-[#0F0F0F] border-0 font-medium shadow-sm">
+                        <Badge className="absolute top-4 left-4 bg-card text-foreground border-0 font-medium shadow-sm">
                           {event.category}
                         </Badge>
                       )}
@@ -626,16 +626,16 @@ export function WebEventBrowse() {
                     </div>
                     
                     <CardContent className="p-5">
-                      <h3 className="font-semibold text-lg text-[#0F0F0F] mb-3 line-clamp-1">
+                      <h3 className="font-semibold text-lg text-foreground mb-3 line-clamp-1">
                         {event.title}
                       </h3>
                       
-                      <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60 mb-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                         <Calendar className="w-4 h-4" />
                         {formatDate(event.start_date)}
                       </div>
                       
-                      <div className="flex items-start gap-2 text-sm text-[#0F0F0F]/60 mb-4">
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground mb-4">
                         <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <span className="line-clamp-2">
@@ -649,7 +649,7 @@ export function WebEventBrowse() {
                         </div>
                       </div>
                       
-                      <div className="border-t border-[#0F0F0F]/10 pt-4 mt-2">
+                      <div className="border-t border-border/10 pt-4 mt-2">
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-[#2969FF] text-lg">
                             {event.is_free ? "Free" : formatPrice(event.min_price, event.currency)}

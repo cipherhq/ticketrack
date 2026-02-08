@@ -117,18 +117,18 @@ export function SplitPaymentModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-card rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-2xl">
+        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div>
-            <h2 className="text-xl font-bold text-[#0F0F0F]">
+            <h2 className="text-xl font-bold text-foreground">
               {created ? 'Share Payment Links' : 'Split Payment'}
             </h2>
-            <p className="text-sm text-[#0F0F0F]/60">
+            <p className="text-sm text-muted-foreground">
               {created ? 'Send these links to your friends' : 'Split the cost with your group'}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+          <button onClick={onClose} className="p-2 hover:bg-muted rounded-full">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -137,9 +137,9 @@ export function SplitPaymentModal({
           {!created ? (
             <>
               {/* Order Summary */}
-              <Card className="border-[#0F0F0F]/10">
+              <Card className="border-border/10">
                 <CardContent className="p-4">
-                  <h3 className="font-semibold text-[#0F0F0F] mb-3">Order Summary</h3>
+                  <h3 className="font-semibold text-foreground mb-3">Order Summary</h3>
                   <div className="space-y-2 text-sm">
                     {ticketSelection.map((ticket, i) => (
                       <div key={i} className="flex justify-between">
@@ -148,7 +148,7 @@ export function SplitPaymentModal({
                       </div>
                     ))}
                     {serviceFee > 0 && (
-                      <div className="flex justify-between text-[#0F0F0F]/60">
+                      <div className="flex justify-between text-muted-foreground">
                         <span>Service Fee</span>
                         <span>{formatPrice(serviceFee, currency)}</span>
                       </div>
@@ -172,7 +172,7 @@ export function SplitPaymentModal({
                     <div className="text-2xl font-bold text-blue-600">
                       {formatPrice(amountPerPerson, currency)}
                     </div>
-                    <div className="text-sm text-[#0F0F0F]/60">per person</div>
+                    <div className="text-sm text-muted-foreground">per person</div>
                   </div>
                 </div>
               </div>
@@ -234,7 +234,7 @@ export function SplitPaymentModal({
                 <select
                   value={deadlineHours}
                   onChange={(e) => setDeadlineHours(parseInt(e.target.value))}
-                  className="w-full h-12 px-4 rounded-xl bg-[#F4F6FA] border-0"
+                  className="w-full h-12 px-4 rounded-xl bg-muted border-0"
                 >
                   <option value={6}>6 hours</option>
                   <option value={12}>12 hours</option>
@@ -242,7 +242,7 @@ export function SplitPaymentModal({
                   <option value={48}>48 hours</option>
                   <option value={72}>72 hours (3 days)</option>
                 </select>
-                <p className="text-xs text-[#0F0F0F]/50">
+                <p className="text-xs text-muted-foreground">
                   Everyone must pay before the deadline or the split is cancelled
                 </p>
               </div>
@@ -280,8 +280,8 @@ export function SplitPaymentModal({
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Check className="w-8 h-8 text-green-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-[#0F0F0F]">Split Payment Created!</h3>
-                <p className="text-[#0F0F0F]/60 mt-1">
+                <h3 className="text-lg font-semibold text-foreground">Split Payment Created!</h3>
+                <p className="text-muted-foreground mt-1">
                   Share these links with your friends
                 </p>
               </div>
@@ -291,19 +291,19 @@ export function SplitPaymentModal({
                 <div className="text-3xl font-bold text-green-600">
                   {formatPrice(splitResult?.amount_per_share || amountPerPerson, currency)}
                 </div>
-                <div className="text-sm text-[#0F0F0F]/60">per person</div>
+                <div className="text-sm text-muted-foreground">per person</div>
               </div>
 
               {/* Payment Links */}
               <div className="space-y-3">
                 <Label>Payment Links</Label>
                 {members.filter(m => m.email).map((member, index) => (
-                  <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+                  <div key={index} className="flex items-center gap-2 p-3 bg-background rounded-xl">
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate">
                         {member.name || member.email.split('@')[0]}
                       </div>
-                      <div className="text-xs text-[#0F0F0F]/50 truncate">{member.email}</div>
+                      <div className="text-xs text-muted-foreground truncate">{member.email}</div>
                     </div>
                     <Button
                       variant="outline"

@@ -121,7 +121,7 @@ export function MyGroups() {
       return <Badge className="bg-green-100 text-green-700">Purchased</Badge>
     }
     if (session.status === 'expired' || new Date(session.expires_at) < new Date()) {
-      return <Badge className="bg-gray-100 text-gray-600">Expired</Badge>
+      return <Badge className="bg-muted text-muted-foreground">Expired</Badge>
     }
     if (member.status === 'ready') {
       return <Badge className="bg-blue-100 text-blue-700">Ready to Pay</Badge>
@@ -153,15 +153,15 @@ export function MyGroups() {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-[#0F0F0F] truncate">{session?.name || 'Group Session'}</h3>
+                  <h3 className="font-semibold text-foreground truncate">{session?.name || 'Group Session'}</h3>
                   {isHost && <Badge variant="outline" className="text-xs">Host</Badge>}
                 </div>
-                <p className="text-sm text-[#0F0F0F]/60 truncate">{event?.title}</p>
+                <p className="text-sm text-muted-foreground truncate">{event?.title}</p>
               </div>
               {getStatusBadge(membership, session)}
             </div>
 
-            <div className="flex items-center gap-4 mt-2 text-xs text-[#0F0F0F]/60">
+            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 {session?.member_count || 1} member{(session?.member_count || 1) !== 1 ? 's' : ''}
@@ -211,12 +211,12 @@ export function MyGroups() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <Card className="max-w-md w-full rounded-2xl">
           <CardContent className="p-8 text-center">
-            <Users className="w-12 h-12 text-[#0F0F0F]/30 mx-auto mb-4" />
+            <Users className="w-12 h-12 text-foreground/30 mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">Sign In Required</h2>
-            <p className="text-[#0F0F0F]/60 mb-4">Please sign in to view your group sessions</p>
+            <p className="text-muted-foreground mb-4">Please sign in to view your group sessions</p>
             <Button 
               onClick={() => navigate('/login?redirect=/my-groups')}
               className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl"
@@ -231,7 +231,7 @@ export function MyGroups() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
       </div>
     )
@@ -240,14 +240,14 @@ export function MyGroups() {
   const totalGroups = groups.active.length + groups.completed.length + groups.expired.length
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <div className="bg-white border-b border-[#0F0F0F]/10">
+      <div className="bg-card border-b border-border/10">
         <div className="max-w-3xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[#0F0F0F]">My Groups</h1>
-              <p className="text-[#0F0F0F]/60 text-sm mt-1">
+              <h1 className="text-2xl font-bold text-foreground">My Groups</h1>
+              <p className="text-muted-foreground text-sm mt-1">
                 Coordinate ticket purchases with friends
               </p>
             </div>
@@ -277,12 +277,12 @@ export function MyGroups() {
               {invitations.map(invite => (
                 <div 
                   key={invite.id}
-                  className="flex items-center justify-between p-3 bg-white rounded-xl"
+                  className="flex items-center justify-between p-3 bg-card rounded-xl"
                 >
                   <div>
                     <p className="font-medium">{invite.session?.name || 'Group Session'}</p>
-                    <p className="text-sm text-[#0F0F0F]/60">{invite.session?.event?.title}</p>
-                    <p className="text-xs text-[#0F0F0F]/40">
+                    <p className="text-sm text-muted-foreground">{invite.session?.event?.title}</p>
+                    <p className="text-xs text-muted-foreground">
                       Invited by {invite.inviter_name || 'a friend'}
                     </p>
                   </div>
@@ -311,14 +311,14 @@ export function MyGroups() {
 
         {/* Groups Tabs */}
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 bg-white rounded-xl p-1">
+          <TabsList className="w-full grid grid-cols-3 bg-card rounded-xl p-1">
             <TabsTrigger value="active" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">
               Active ({groups.active.length})
             </TabsTrigger>
             <TabsTrigger value="completed" className="rounded-lg data-[state=active]:bg-green-500 data-[state=active]:text-white">
               Completed ({groups.completed.length})
             </TabsTrigger>
-            <TabsTrigger value="expired" className="rounded-lg data-[state=active]:bg-gray-500 data-[state=active]:text-white">
+            <TabsTrigger value="expired" className="rounded-lg data-[state=active]:bg-background0 data-[state=active]:text-white">
               Expired ({groups.expired.length})
             </TabsTrigger>
           </TabsList>
@@ -327,9 +327,9 @@ export function MyGroups() {
             {groups.active.length === 0 ? (
               <Card className="rounded-2xl">
                 <CardContent className="p-8 text-center">
-                  <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+                  <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">No Active Groups</h3>
-                  <p className="text-sm text-[#0F0F0F]/60 mb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     Start a group from any event page to buy tickets with friends
                   </p>
                   <Button
@@ -349,9 +349,9 @@ export function MyGroups() {
             {groups.completed.length === 0 ? (
               <Card className="rounded-2xl">
                 <CardContent className="p-8 text-center">
-                  <CheckCircle className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+                  <CheckCircle className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">No Completed Groups</h3>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="text-sm text-muted-foreground">
                     Groups where you've purchased tickets will appear here
                   </p>
                 </CardContent>
@@ -365,9 +365,9 @@ export function MyGroups() {
             {groups.expired.length === 0 ? (
               <Card className="rounded-2xl">
                 <CardContent className="p-8 text-center">
-                  <Clock className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
+                  <Clock className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">No Expired Groups</h3>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="text-sm text-muted-foreground">
                     Groups that timed out without purchase will appear here
                   </p>
                 </CardContent>
@@ -390,28 +390,28 @@ export function MyGroups() {
                 <div className="w-6 h-6 rounded-full bg-[#2969FF] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
                 <div>
                   <p className="font-medium">Start a Group</p>
-                  <p className="text-[#0F0F0F]/60">From any event page, click "Buy with Friends" to create a group session</p>
+                  <p className="text-muted-foreground">From any event page, click "Buy with Friends" to create a group session</p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <div className="w-6 h-6 rounded-full bg-[#2969FF] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
                 <div>
                   <p className="font-medium">Invite Friends</p>
-                  <p className="text-[#0F0F0F]/60">Share the group link or send email/SMS invitations</p>
+                  <p className="text-muted-foreground">Share the group link or send email/SMS invitations</p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <div className="w-6 h-6 rounded-full bg-[#2969FF] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
                 <div>
                   <p className="font-medium">Everyone Selects Tickets</p>
-                  <p className="text-[#0F0F0F]/60">Each person picks and pays for their own tickets</p>
+                  <p className="text-muted-foreground">Each person picks and pays for their own tickets</p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">✓</div>
                 <div>
                   <p className="font-medium">Enjoy Together!</p>
-                  <p className="text-[#0F0F0F]/60">Everyone gets their tickets and you're ready for the event</p>
+                  <p className="text-muted-foreground">Everyone gets their tickets and you're ready for the event</p>
                 </div>
               </div>
             </div>

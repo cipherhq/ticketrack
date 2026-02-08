@@ -23,7 +23,7 @@ import {
 } from '@/services/groupBuy'
 
 const STATUS_CONFIG = {
-  invited: { label: 'Invited', color: 'bg-gray-100 text-gray-600', icon: '📨' },
+  invited: { label: 'Invited', color: 'bg-muted text-muted-foreground', icon: '📨' },
   joined: { label: 'In Lobby', color: 'bg-blue-100 text-blue-700', icon: '👋' },
   selecting: { label: 'Selecting', color: 'bg-yellow-100 text-yellow-700', icon: '🎫' },
   ready: { label: 'Ready', color: 'bg-purple-100 text-purple-700', icon: '✅' },
@@ -164,8 +164,8 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
       <Card className="border-red-200 rounded-2xl">
         <CardContent className="p-8 text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Group Not Found</h3>
-          <p className="text-[#0F0F0F]/60 mb-4">{error || 'This group session may have expired.'}</p>
+          <h3 className="text-xl font-semibold text-foreground mb-2">Group Not Found</h3>
+          <p className="text-muted-foreground mb-4">{error || 'This group session may have expired.'}</p>
           <Button onClick={onClose} className="rounded-xl">Go Back</Button>
         </CardContent>
       </Card>
@@ -193,26 +193,26 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
               )}
               <div>
                 <p className="text-sm text-[#2969FF] font-medium mb-1">GROUP SESSION</p>
-                <h2 className="text-xl font-bold text-[#0F0F0F]">{session.name}</h2>
-                <p className="text-[#0F0F0F]/60 text-sm">{session.event?.title}</p>
+                <h2 className="text-xl font-bold text-foreground">{session.name}</h2>
+                <p className="text-muted-foreground text-sm">{session.event?.title}</p>
               </div>
             </div>
             
             {/* Timer */}
             <div className={`text-center px-4 py-2 rounded-xl ${isExpired ? 'bg-red-100' : 'bg-[#0F0F0F]/5'}`}>
-              <Clock className={`w-5 h-5 mx-auto mb-1 ${isExpired ? 'text-red-500' : 'text-[#0F0F0F]/60'}`} />
-              <p className={`text-lg font-mono font-bold ${isExpired ? 'text-red-600' : 'text-[#0F0F0F]'}`}>
+              <Clock className={`w-5 h-5 mx-auto mb-1 ${isExpired ? 'text-red-500' : 'text-muted-foreground'}`} />
+              <p className={`text-lg font-mono font-bold ${isExpired ? 'text-red-600' : 'text-foreground'}`}>
                 {timeRemaining}
               </p>
-              <p className="text-xs text-[#0F0F0F]/50">remaining</p>
+              <p className="text-xs text-muted-foreground">remaining</p>
             </div>
           </div>
 
           {/* Share Section */}
           <div className="mt-4 flex items-center gap-3">
-            <div className="flex-1 bg-white border border-[#0F0F0F]/10 rounded-xl px-4 py-2 flex items-center justify-between">
+            <div className="flex-1 bg-card border border-border/10 rounded-xl px-4 py-2 flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#0F0F0F]/50">Group Code</p>
+                <p className="text-xs text-muted-foreground">Group Code</p>
                 <p className="text-lg font-mono font-bold text-[#2969FF]">{session.code}</p>
               </div>
               <Button
@@ -239,7 +239,7 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="w-5 h-5 text-[#2969FF]" />
               Group Members
-              <Badge className="bg-[#0F0F0F]/10 text-[#0F0F0F]">
+              <Badge className="bg-[#0F0F0F]/10 text-foreground">
                 {activeMembers.length}/{session.max_members}
               </Badge>
             </CardTitle>
@@ -258,7 +258,7 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
                 <div 
                   key={member.id}
                   className={`flex items-center justify-between p-3 rounded-xl ${
-                    isMe ? 'bg-[#2969FF]/5 border border-[#2969FF]/20' : 'bg-[#F4F6FA]'
+                    isMe ? 'bg-[#2969FF]/5 border border-[#2969FF]/20' : 'bg-muted'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -269,7 +269,7 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
                     </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-[#0F0F0F]">
+                        <p className="font-medium text-foreground">
                           {member.name}
                           {isMe && <span className="text-[#2969FF]"> (You)</span>}
                         </p>
@@ -278,7 +278,7 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
                         )}
                       </div>
                       {member.selected_tickets?.length > 0 && (
-                        <p className="text-xs text-[#0F0F0F]/60">
+                        <p className="text-xs text-muted-foreground">
                           {member.selected_tickets.reduce((sum, t) => sum + t.quantity, 0)} tickets selected
                         </p>
                       )}
@@ -297,7 +297,7 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
             {activeMembers.length < session.max_members && !isExpired && (
               <button
                 onClick={handleShare}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-[#0F0F0F]/10 text-[#0F0F0F]/50 hover:border-[#2969FF]/30 hover:text-[#2969FF] transition-colors"
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-border/10 text-muted-foreground hover:border-[#2969FF]/30 hover:text-[#2969FF] transition-colors"
               >
                 <UserPlus className="w-5 h-5" />
                 Invite more friends
@@ -381,17 +381,17 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-48 overflow-y-auto space-y-2 mb-3 p-2 bg-[#F4F6FA] rounded-xl">
+            <div className="h-48 overflow-y-auto space-y-2 mb-3 p-2 bg-muted rounded-xl">
               {messages.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/40 py-8">No messages yet</p>
+                <p className="text-center text-muted-foreground py-8">No messages yet</p>
               ) : (
                 messages.map((msg) => (
                   <div 
                     key={msg.id}
                     className={`text-sm ${
                       msg.message_type === 'system' 
-                        ? 'text-center text-[#0F0F0F]/50 italic' 
-                        : 'bg-white rounded-lg p-2'
+                        ? 'text-center text-muted-foreground italic' 
+                        : 'bg-card rounded-lg p-2'
                     }`}
                   >
                     {msg.message_type !== 'system' && (
@@ -423,7 +423,7 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
       {myMembership && !['completed', 'dropped'].includes(myMembership.status) && !myMembership.is_host && (
         <button
           onClick={handleLeaveGroup}
-          className="w-full text-center text-sm text-[#0F0F0F]/40 hover:text-red-500 transition-colors"
+          className="w-full text-center text-sm text-muted-foreground hover:text-red-500 transition-colors"
         >
           Leave group
         </button>

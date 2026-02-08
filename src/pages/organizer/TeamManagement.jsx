@@ -14,13 +14,13 @@ const ROLES = {
   owner: { label: 'Owner', color: 'bg-purple-100 text-purple-700', permissions: 'Full access to everything' },
   manager: { label: 'Manager', color: 'bg-blue-100 text-blue-700', permissions: 'Edit events, manage tasks & team' },
   coordinator: { label: 'Coordinator', color: 'bg-green-100 text-green-700', permissions: 'Check-in, view & complete tasks' },
-  staff: { label: 'Staff', color: 'bg-gray-100 text-gray-700', permissions: 'Check-in attendees only' },
+  staff: { label: 'Staff', color: 'bg-muted text-foreground/80', permissions: 'Check-in attendees only' },
 };
 
 const STATUS_ICONS = {
   active: <CheckCircle className="w-4 h-4 text-green-500" />,
   pending: <Clock className="w-4 h-4 text-yellow-500" />,
-  inactive: <XCircle className="w-4 h-4 text-gray-400" />,
+  inactive: <XCircle className="w-4 h-4 text-muted-foreground" />,
 };
 
 export function TeamManagement() {
@@ -176,8 +176,8 @@ export function TeamManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F0F0F]">Team Management</h1>
-          <p className="text-[#0F0F0F]/60">Invite and manage your event team</p>
+          <h1 className="text-2xl font-semibold text-foreground">Team Management</h1>
+          <p className="text-muted-foreground">Invite and manage your event team</p>
         </div>
         <Button
           onClick={() => setShowInvite(true)}
@@ -189,21 +189,21 @@ export function TeamManagement() {
       </div>
 
       {/* Role Legend */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="text-lg">Team Roles</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Object.entries(ROLES).map(([key, role]) => (
-              <div key={key} className="p-3 rounded-xl bg-[#F4F6FA]">
+              <div key={key} className="p-3 rounded-xl bg-muted">
                 <div className="flex items-center gap-2 mb-1">
-                  <Shield className="w-4 h-4 text-[#0F0F0F]/60" />
+                  <Shield className="w-4 h-4 text-muted-foreground" />
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${role.color}`}>
                     {role.label}
                   </span>
                 </div>
-                <p className="text-xs text-[#0F0F0F]/60">{role.permissions}</p>
+                <p className="text-xs text-muted-foreground">{role.permissions}</p>
               </div>
             ))}
           </div>
@@ -211,7 +211,7 @@ export function TeamManagement() {
       </Card>
 
       {/* Team Members List */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="w-5 h-5" />
@@ -221,8 +221,8 @@ export function TeamManagement() {
         <CardContent>
           {members.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
-              <p className="text-[#0F0F0F]/60 mb-4">No team members yet</p>
+              <Users className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">No team members yet</p>
               <Button
                 onClick={() => setShowInvite(true)}
                 className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
@@ -236,7 +236,7 @@ export function TeamManagement() {
               {members.map((member) => (
                 <div
                   key={member.id}
-                  className="p-4 rounded-xl bg-[#F4F6FA] flex items-center justify-between"
+                  className="p-4 rounded-xl bg-muted flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium">
@@ -244,10 +244,10 @@ export function TeamManagement() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-[#0F0F0F]">{member.name || member.email}</h4>
+                        <h4 className="font-medium text-foreground">{member.name || member.email}</h4>
                         {STATUS_ICONS[member.status]}
                       </div>
-                      <p className="text-sm text-[#0F0F0F]/60">{member.email}</p>
+                      <p className="text-sm text-muted-foreground">{member.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -255,7 +255,7 @@ export function TeamManagement() {
                       <select
                         value={member.role}
                         onChange={(e) => updateMemberRole(member.id, e.target.value)}
-                        className="px-3 py-1.5 rounded-lg border border-[#0F0F0F]/10 text-sm"
+                        className="px-3 py-1.5 rounded-lg border border-border/10 text-sm"
                       >
                         {Object.entries(ROLES).map(([key, role]) => (
                           <option key={key} value={key}>{role.label}</option>
@@ -301,7 +301,7 @@ export function TeamManagement() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#0F0F0F] mb-1">Email *</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Email *</label>
                 <Input
                   type="email"
                   placeholder="team@example.com"
@@ -312,7 +312,7 @@ export function TeamManagement() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-[#0F0F0F] mb-1">First Name</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">First Name</label>
                   <Input
                     placeholder="John"
                     value={inviteData.firstName}
@@ -321,7 +321,7 @@ export function TeamManagement() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#0F0F0F] mb-1">Last Name</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">Last Name</label>
                   <Input
                     placeholder="Doe"
                     value={inviteData.lastName}
@@ -331,11 +331,11 @@ export function TeamManagement() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#0F0F0F] mb-1">Role</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Role</label>
                 <select
                   value={inviteData.role}
                   onChange={(e) => setInviteData({ ...inviteData, role: e.target.value })}
-                  className="w-full px-4 py-2 rounded-xl border border-[#0F0F0F]/10"
+                  className="w-full px-4 py-2 rounded-xl border border-border/10"
                 >
                   {Object.entries(ROLES).filter(([key]) => key !== 'owner').map(([key, role]) => (
                     <option key={key} value={key}>{role.label} - {role.permissions}</option>

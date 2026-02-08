@@ -313,7 +313,7 @@ export function PromoCodes() {
       case 'active':
         return <Badge className="bg-green-100 text-green-700 hover:bg-green-100"><CheckCircle className="w-3 h-3 mr-1" />Active</Badge>;
       case 'expired':
-        return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100"><Clock className="w-3 h-3 mr-1" />Expired</Badge>;
+        return <Badge className="bg-muted text-foreground/80 hover:bg-muted"><Clock className="w-3 h-3 mr-1" />Expired</Badge>;
       case 'exhausted':
         return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100"><Users className="w-3 h-3 mr-1" />Exhausted</Badge>;
       case 'disabled':
@@ -339,14 +339,14 @@ export function PromoCodes() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F] flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             Promo Codes
             <HelpTip>Create discount codes to boost sales. Share codes on social media or with partners. You can set percentage or fixed discounts, usage limits, and expiration dates.</HelpTip>
           </h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Create and manage discount codes for your events</p>
+          <p className="text-muted-foreground mt-1">Create and manage discount codes for your events</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl border-[#0F0F0F]/10">
+          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl border-border/10">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
@@ -357,12 +357,12 @@ export function PromoCodes() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Codes</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.total}</p>
+                <p className="text-sm text-muted-foreground mb-1">Total Codes</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.total}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Tag className="w-5 h-5 text-[#2969FF]" />
@@ -370,11 +370,11 @@ export function PromoCodes() {
             </div>
           </div>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Active</p>
+                <p className="text-sm text-muted-foreground mb-1">Active</p>
                 <p className="text-2xl font-semibold text-green-600">{stats.active}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
@@ -383,12 +383,12 @@ export function PromoCodes() {
             </div>
           </div>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Total Uses</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.totalUses}</p>
+                <p className="text-sm text-muted-foreground mb-1">Total Uses</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.totalUses}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Users className="w-5 h-5 text-purple-600" />
@@ -396,30 +396,30 @@ export function PromoCodes() {
             </div>
           </div>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Expired</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{stats.expired}</p>
+                <p className="text-sm text-muted-foreground mb-1">Expired</p>
+                <p className="text-2xl font-semibold text-foreground">{stats.expired}</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-gray-500" />
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                <Clock className="w-5 h-5 text-muted-foreground" />
               </div>
             </div>
           </div>
         </Card>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <div className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
-              <Input placeholder="Search promo codes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-12 bg-[#F4F6FA] border-0 rounded-xl" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input placeholder="Search promo codes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-12 bg-muted border-0 rounded-xl" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="md:w-40 h-12 rounded-xl border-[#0F0F0F]/10">
+              <SelectTrigger className="md:w-40 h-12 rounded-xl border-border/10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -436,10 +436,10 @@ export function PromoCodes() {
       </Card>
 
       {filteredPromoCodes.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <div className="p-12 text-center">
-            <Tag className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60 mb-4">{promoCodes.length === 0 ? 'No promo codes yet' : 'No promo codes match your filters'}</p>
+            <Tag className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground mb-4">{promoCodes.length === 0 ? 'No promo codes yet' : 'No promo codes match your filters'}</p>
             {promoCodes.length === 0 && (
               <Button onClick={() => { resetForm(); setIsCreateDialogOpen(true); }} className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl">
                 <Plus className="w-4 h-4 mr-2" />
@@ -451,33 +451,33 @@ export function PromoCodes() {
       ) : (
         <div className="space-y-3">
           {filteredPromoCodes.map((promo) => (
-            <Card key={promo.id} className="border-[#0F0F0F]/10 rounded-2xl hover:shadow-md transition-shadow">
+            <Card key={promo.id} className="border-border/10 rounded-2xl hover:shadow-md transition-shadow">
               <div className="p-4 md:p-6">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="text-lg font-mono font-medium text-[#0F0F0F]">{promo.code}</h3>
+                      <h3 className="text-lg font-mono font-medium text-foreground">{promo.code}</h3>
                       {getStatusBadge(promo.status)}
                       {promo.events && <Badge variant="outline" className="rounded-lg">{promo.events.title}</Badge>}
                       {!promo.event_id && <Badge variant="outline" className="rounded-lg bg-[#2969FF]/5 text-[#2969FF] border-[#2969FF]/20">All Events</Badge>}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      <div className="flex items-center gap-2 text-[#0F0F0F]/60">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         {promo.discount_type === 'percentage' ? <Percent className="w-4 h-4" /> : <DollarSign className="w-4 h-4" />}
                         <span>{promo.discount_value}% off</span>
                       </div>
-                      <div className="flex items-center gap-2 text-[#0F0F0F]/60">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Users className="w-4 h-4" />
                         <span>{promo.times_used || 0}{promo.max_uses ? `/${promo.max_uses}` : ''} used</span>
                       </div>
                       {promo.expires_at && (
-                        <div className="flex items-center gap-2 text-[#0F0F0F]/60">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="w-4 h-4" />
                           <span>Until {new Date(promo.expires_at).toLocaleDateString()}</span>
                         </div>
                       )}
                       {promo.min_purchase_amount > 0 && (
-                        <div className="flex items-center gap-2 text-[#0F0F0F]/60">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <DollarSign className="w-4 h-4" />
                           
                         </div>
@@ -485,14 +485,14 @@ export function PromoCodes() {
                     </div>
                     {promo.max_uses && (
                       <div className="mt-3">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-muted rounded-full h-2">
                           <div className={`h-2 rounded-full transition-all ${(promo.times_used / promo.max_uses) >= 1 ? 'bg-orange-500' : 'bg-[#2969FF]'}`} style={{ width: `${Math.min((promo.times_used / promo.max_uses) * 100, 100)}%` }} />
                         </div>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(promo.code)} className="rounded-xl border-[#0F0F0F]/10">
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(promo.code)} className="rounded-xl border-border/10">
                       <Copy className="w-4 h-4 mr-2" />
                       Copy
                     </Button>
@@ -536,7 +536,7 @@ export function PromoCodes() {
               <div className="flex gap-2">
                 <Input id="code" placeholder="e.g., SUMMER2024" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })} className="rounded-xl uppercase font-mono" disabled={!!editingPromo} />
                 {!editingPromo && (
-                  <Button type="button" variant="outline" onClick={generateCode} className="rounded-xl border-[#0F0F0F]/10">
+                  <Button type="button" variant="outline" onClick={generateCode} className="rounded-xl border-border/10">
                     <Sparkles className="w-4 h-4 mr-2" />
                     Generate
                   </Button>
@@ -584,7 +584,7 @@ export function PromoCodes() {
                   min={editingPromo ? undefined : today}
                   className="rounded-xl h-12" 
                 />
-                <p className="text-xs text-[#0F0F0F]/40">Leave empty for immediate start</p>
+                <p className="text-xs text-muted-foreground">Leave empty for immediate start</p>
               </div>
               <div className="space-y-2">
                 <Label>Valid Until</Label>
@@ -595,7 +595,7 @@ export function PromoCodes() {
                   min={formData.startsAt || (editingPromo ? undefined : today)}
                   className="rounded-xl h-12" 
                 />
-                <p className="text-xs text-[#0F0F0F]/40">Leave empty for no expiry</p>
+                <p className="text-xs text-muted-foreground">Leave empty for no expiry</p>
               </div>
             </div>
             

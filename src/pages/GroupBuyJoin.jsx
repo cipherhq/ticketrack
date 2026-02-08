@@ -124,11 +124,11 @@ export function GroupBuyJoin() {
   // Loading state
   if (loading && step === 'loading') {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <Card className="max-w-md w-full rounded-2xl">
           <CardContent className="p-12 text-center">
             <Loader2 className="w-12 h-12 animate-spin text-[#2969FF] mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">Loading group...</p>
+            <p className="text-muted-foreground">Loading group...</p>
           </CardContent>
         </Card>
       </div>
@@ -138,7 +138,7 @@ export function GroupBuyJoin() {
   // Lobby view (after joining)
   if (step === 'lobby' && session) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] py-8 px-4">
+      <div className="min-h-screen bg-muted py-8 px-4">
         <div className="max-w-2xl mx-auto">
           <GroupBuyLobby 
             sessionId={session.id}
@@ -159,7 +159,7 @@ export function GroupBuyJoin() {
     // If user is already a member, show different UI
     if (existingMember) {
       return (
-        <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-muted flex items-center justify-center p-4">
           <Card className="max-w-md w-full rounded-2xl overflow-hidden">
             {session.event?.image_url && (
               <div className="h-40 bg-cover bg-center" style={{ backgroundImage: `url(${session.event.image_url})` }} />
@@ -173,16 +173,16 @@ export function GroupBuyJoin() {
                     <Users className="w-8 h-8 text-green-600" />
                   )}
                 </div>
-                <h1 className="text-2xl font-bold text-[#0F0F0F] mb-2">
+                <h1 className="text-2xl font-bold text-foreground mb-2">
                   {existingMember.is_host ? 'Your Group' : "You're in this Group"}
                 </h1>
-                <p className="text-[#0F0F0F]/60">{session.name || `${session.host_name}'s Group`}</p>
+                <p className="text-muted-foreground">{session.name || `${session.host_name}'s Group`}</p>
               </div>
 
-              <div className="bg-[#F4F6FA] rounded-xl p-4 mb-6">
-                <p className="text-sm text-[#0F0F0F]/60 mb-1">Event</p>
-                <p className="font-semibold text-[#0F0F0F]">{session.event?.title}</p>
-                <p className="text-sm text-[#0F0F0F]/60 mt-2">
+              <div className="bg-muted rounded-xl p-4 mb-6">
+                <p className="text-sm text-muted-foreground mb-1">Event</p>
+                <p className="font-semibold text-foreground">{session.event?.title}</p>
+                <p className="text-sm text-muted-foreground mt-2">
                   {session.member_count} member{session.member_count !== 1 ? 's' : ''} in this group
                 </p>
                 {existingMember.is_host && (
@@ -211,7 +211,7 @@ export function GroupBuyJoin() {
     }
 
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <Card className="max-w-md w-full rounded-2xl overflow-hidden">
           {session.event?.image_url && (
             <div className="h-40 bg-cover bg-center" style={{ backgroundImage: `url(${session.event.image_url})` }} />
@@ -221,14 +221,14 @@ export function GroupBuyJoin() {
               <div className="w-16 h-16 bg-[#2969FF]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-[#2969FF]" />
               </div>
-              <h1 className="text-2xl font-bold text-[#0F0F0F] mb-2">Join Group</h1>
-              <p className="text-[#0F0F0F]/60">{session.name || `${session.host_name}'s Group`}</p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Join Group</h1>
+              <p className="text-muted-foreground">{session.name || `${session.host_name}'s Group`}</p>
             </div>
 
-            <div className="bg-[#F4F6FA] rounded-xl p-4 mb-6">
-              <p className="text-sm text-[#0F0F0F]/60 mb-1">Event</p>
-              <p className="font-semibold text-[#0F0F0F]">{session.event?.title}</p>
-              <p className="text-sm text-[#0F0F0F]/60 mt-2">
+            <div className="bg-muted rounded-xl p-4 mb-6">
+              <p className="text-sm text-muted-foreground mb-1">Event</p>
+              <p className="font-semibold text-foreground">{session.event?.title}</p>
+              <p className="text-sm text-muted-foreground mt-2">
                 {session.member_count} member{session.member_count !== 1 ? 's' : ''} in this group
               </p>
             </div>
@@ -262,15 +262,15 @@ export function GroupBuyJoin() {
 
   // Enter code view
   return (
-    <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-muted flex items-center justify-center p-4">
       <Card className="max-w-md w-full rounded-2xl">
         <CardContent className="p-8">
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-[#2969FF]/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="w-10 h-10 text-[#2969FF]" />
             </div>
-            <h1 className="text-2xl font-bold text-[#0F0F0F] mb-2">Join a Group</h1>
-            <p className="text-[#0F0F0F]/60">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Join a Group</h1>
+            <p className="text-muted-foreground">
               Enter the group code shared by your friend to buy tickets together
             </p>
           </div>
@@ -306,8 +306,8 @@ export function GroupBuyJoin() {
             </Button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-[#0F0F0F]/10 text-center">
-            <p className="text-sm text-[#0F0F0F]/50 mb-3">Don't have a code?</p>
+          <div className="mt-8 pt-6 border-t border-border/10 text-center">
+            <p className="text-sm text-muted-foreground mb-3">Don't have a code?</p>
             <Button
               variant="outline"
               onClick={() => navigate('/events')}

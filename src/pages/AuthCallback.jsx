@@ -76,19 +76,19 @@ export function AuthCallback() {
   }, [navigate, location])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F4F6FA] px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-muted px-4 py-12">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <Logo className="h-12" />
         </div>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
             {status === 'loading' && (
               <>
                 <Loader2 className="w-12 h-12 animate-spin text-[#2969FF] mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Verifying Your Email</h2>
-                <p className="text-[#0F0F0F]/60">Please wait while we verify your email address...</p>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Verifying Your Email</h2>
+                <p className="text-muted-foreground">Please wait while we verify your email address...</p>
               </>
             )}
             {status === 'success' && (
@@ -96,9 +96,9 @@ export function AuthCallback() {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <CheckCircle2 className="w-10 h-10 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Email Verified!</h2>
-                <p className="text-[#0F0F0F] font-medium mb-4">{message}</p>
-                <p className="text-[#0F0F0F]/60 text-sm mb-6">Redirecting you to the home page...</p>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Email Verified!</h2>
+                <p className="text-foreground font-medium mb-4">{message}</p>
+                <p className="text-muted-foreground text-sm mb-6">Redirecting you to the home page...</p>
                 <div className="flex justify-center">
                   <Loader2 className="w-5 h-5 animate-spin text-[#2969FF]" />
                 </div>
@@ -109,8 +109,8 @@ export function AuthCallback() {
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <XCircle className="w-10 h-10 text-red-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Verification Failed</h2>
-                <p className="text-[#0F0F0F] font-medium mb-6">{message}</p>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Verification Failed</h2>
+                <p className="text-foreground font-medium mb-6">{message}</p>
                 <div className="space-y-3">
                   <Button
                     onClick={() => navigate('/login')}

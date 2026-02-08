@@ -221,7 +221,7 @@ export function PendingApprovals() {
       approved: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800'
     };
-    return <Badge className={styles[status] || 'bg-gray-100'}>{status}</Badge>;
+    return <Badge className={styles[status] || 'bg-muted'}>{status}</Badge>;
   };
 
   if (loading) {
@@ -235,62 +235,62 @@ export function PendingApprovals() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#0F0F0F]">Pending Approvals</h1>
-        <p className="text-[#0F0F0F]/60">Review and approve large payout requests</p>
+        <h1 className="text-2xl font-bold text-foreground">Pending Approvals</h1>
+        <p className="text-muted-foreground">Review and approve large payout requests</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold">{stats.pending}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Approved</p>
+                <p className="text-sm text-muted-foreground">Approved</p>
                 <p className="text-2xl font-bold">{stats.approved}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Rejected</p>
+                <p className="text-sm text-muted-foreground">Rejected</p>
                 <p className="text-2xl font-bold">{stats.rejected}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Amount</p>
+                <p className="text-sm text-muted-foreground">Pending Amount</p>
                 <p className="text-2xl font-bold">
                   {formatMultiCurrencyCompact(stats.pendingAmountByCurrency)}
                 </p>
@@ -314,7 +314,7 @@ export function PendingApprovals() {
       )}
 
       {/* Approval Requests Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Approval Requests</CardTitle>
         </CardHeader>
@@ -339,7 +339,7 @@ export function PendingApprovals() {
                       <p className="font-medium">
                         {request.payout_queue?.organizers?.business_name || 'Unknown'}
                       </p>
-                      <p className="text-sm text-[#0F0F0F]/60">
+                      <p className="text-sm text-muted-foreground">
                         {request.payout_queue?.organizers?.email}
                       </p>
                     </div>
@@ -360,17 +360,17 @@ export function PendingApprovals() {
                           className={`w-6 h-6 rounded-full flex items-center justify-center ${
                             i < request.current_approvals
                               ? 'bg-green-100'
-                              : 'bg-gray-100'
+                              : 'bg-muted'
                           }`}
                         >
                           {i < request.current_approvals ? (
                             <CheckCircle className="w-4 h-4 text-green-600" />
                           ) : (
-                            <User className="w-4 h-4 text-gray-400" />
+                            <User className="w-4 h-4 text-muted-foreground" />
                           )}
                         </div>
                       ))}
-                      <span className="ml-2 text-sm text-[#0F0F0F]/60">
+                      <span className="ml-2 text-sm text-muted-foreground">
                         {request.current_approvals}/{request.required_approvals}
                       </span>
                     </div>
@@ -395,7 +395,7 @@ export function PendingApprovals() {
               ))}
               {approvalRequests.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No approval requests
                   </TableCell>
                 </TableRow>
@@ -406,7 +406,7 @@ export function PendingApprovals() {
       </Card>
 
       {/* Thresholds */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Approval Thresholds</CardTitle>
         </CardHeader>
@@ -433,7 +433,7 @@ export function PendingApprovals() {
               ))}
               {thresholds.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4 text-[#0F0F0F]/60">
+                  <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
                     No thresholds configured
                   </TableCell>
                 </TableRow>
@@ -451,26 +451,26 @@ export function PendingApprovals() {
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
-              <Card className="border rounded-xl bg-gray-50">
+              <Card className="border rounded-xl bg-background">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-[#0F0F0F]/60">Organizer</span>
+                    <span className="text-muted-foreground">Organizer</span>
                     <span className="font-medium">
                       {selectedRequest.payout_queue?.organizers?.business_name}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#0F0F0F]/60">Amount</span>
+                    <span className="text-muted-foreground">Amount</span>
                     <span className="font-bold text-lg">
                       {formatPrice(selectedRequest.amount, selectedRequest.currency)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#0F0F0F]/60">Provider</span>
+                    <span className="text-muted-foreground">Provider</span>
                     <span>{selectedRequest.payout_queue?.payment_provider}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#0F0F0F]/60">Approvals</span>
+                    <span className="text-muted-foreground">Approvals</span>
                     <span>
                       {selectedRequest.current_approvals}/{selectedRequest.required_approvals}
                     </span>
@@ -486,7 +486,7 @@ export function PendingApprovals() {
                     {selectedRequest.payout_approvals.map((approval) => (
                       <div
                         key={approval.id}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm"
+                        className="flex items-center justify-between p-2 bg-background rounded-lg text-sm"
                       >
                         <Badge className={
                           approval.decision === 'approved'
@@ -495,7 +495,7 @@ export function PendingApprovals() {
                         }>
                           {approval.decision}
                         </Badge>
-                        <span className="text-[#0F0F0F]/60">
+                        <span className="text-muted-foreground">
                           {new Date(approval.created_at).toLocaleString()}
                         </span>
                       </div>

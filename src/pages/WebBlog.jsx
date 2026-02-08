@@ -165,12 +165,12 @@ export function WebBlog() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-[#2969FF] to-[#1e4fd6] text-white py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center">
+            <div className="w-20 h-20 bg-card/10 rounded-2xl flex items-center justify-center">
               <BookOpen className="w-10 h-10" />
             </div>
           </div>
@@ -186,12 +186,12 @@ export function WebBlog() {
         <div className="mb-12">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search articles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 rounded-xl border-[#0F0F0F]/10"
+                className="pl-12 h-12 rounded-xl border-border/10"
                 style={{ fontSize: '16px' }}
               />
             </div>
@@ -206,7 +206,7 @@ export function WebBlog() {
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                   selectedCategory === category
                     ? 'bg-[#2969FF] text-white'
-                    : 'bg-white text-[#0F0F0F] border border-[#0F0F0F]/10 hover:border-[#2969FF]/30'
+                    : 'bg-card text-foreground border border-border/10 hover:border-[#2969FF]/30'
                 }`}
               >
                 {category}
@@ -218,7 +218,7 @@ export function WebBlog() {
         {/* Featured Posts */}
         {!searchQuery && selectedCategory === 'All' && featuredPosts.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6 flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-[#2969FF]" />
               Featured Articles
             </h2>
@@ -226,7 +226,7 @@ export function WebBlog() {
               {featuredPosts.map((post) => (
                 <Card
                   key={post.id}
-                  className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                  className="border-border/10 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                   onClick={() => navigate(`/blog/${post.slug}`)}
                 >
                   <div className="relative h-48 overflow-hidden">
@@ -241,13 +241,13 @@ export function WebBlog() {
                       </span>
                     </div>
                     <div className="absolute top-4 right-4">
-                      <span className="bg-white/90 text-[#0F0F0F] text-xs font-medium px-3 py-1 rounded-full">
+                      <span className="bg-card/90 text-foreground text-xs font-medium px-3 py-1 rounded-full">
                         {post.category}
                       </span>
                     </div>
                   </div>
                   <CardContent className="p-6">
-                    <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60 mb-3">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         {formatDate(post.date)}
@@ -257,14 +257,14 @@ export function WebBlog() {
                         {post.readTime}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-[#0F0F0F] mb-3 group-hover:text-[#2969FF] transition-colors line-clamp-2">
+                    <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-[#2969FF] transition-colors line-clamp-2">
                       {post.title}
                     </h3>
-                    <p className="text-[#0F0F0F]/60 text-sm mb-4 line-clamp-2">
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                       {post.excerpt}
                     </p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-[#0F0F0F]/60">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <User className="w-4 h-4" />
                         {post.author}
                       </div>
@@ -286,15 +286,15 @@ export function WebBlog() {
 
         {/* All Posts */}
         <section>
-          <h2 className="text-2xl font-bold text-[#0F0F0F] mb-6">
+          <h2 className="text-2xl font-bold text-foreground mb-6">
             {searchQuery ? `Search Results (${filteredPosts.length})` : selectedCategory === 'All' ? 'All Articles' : `${selectedCategory} Articles`}
           </h2>
           
           {filteredPosts.length === 0 ? (
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardContent className="py-12 text-center">
-                <Search className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-                <p className="text-[#0F0F0F]/60">No articles found. Try adjusting your search or filters.</p>
+                <Search className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                <p className="text-muted-foreground">No articles found. Try adjusting your search or filters.</p>
               </CardContent>
             </Card>
           ) : (
@@ -302,7 +302,7 @@ export function WebBlog() {
               {regularPosts.map((post) => (
                 <Card
                   key={post.id}
-                  className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                  className="border-border/10 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                   onClick={() => navigate(`/blog/${post.slug}`)}
                 >
                   <div className="relative h-40 overflow-hidden">
@@ -312,13 +312,13 @@ export function WebBlog() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-3 right-3">
-                      <span className="bg-white/90 text-[#0F0F0F] text-xs font-medium px-3 py-1 rounded-full">
+                      <span className="bg-card/90 text-foreground text-xs font-medium px-3 py-1 rounded-full">
                         {post.category}
                       </span>
                     </div>
                   </div>
                   <CardContent className="p-5">
-                    <div className="flex items-center gap-3 text-xs text-[#0F0F0F]/60 mb-3">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {formatDate(post.date)}
@@ -328,15 +328,15 @@ export function WebBlog() {
                         {post.readTime}
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold text-[#0F0F0F] mb-2 group-hover:text-[#2969FF] transition-colors line-clamp-2">
+                    <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-[#2969FF] transition-colors line-clamp-2">
                       {post.title}
                     </h3>
-                    <p className="text-[#0F0F0F]/60 text-sm mb-4 line-clamp-2">
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                       {post.excerpt}
                     </p>
                     <div className="flex items-center gap-2 mb-4">
                       {post.tags.slice(0, 2).map((tag, idx) => (
-                        <span key={idx} className="text-xs bg-[#F4F6FA] text-[#0F0F0F]/60 px-2 py-1 rounded">
+                        <span key={idx} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
                           {tag}
                         </span>
                       ))}

@@ -136,8 +136,8 @@ export function AdminFlaggedReferrals() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Flagged Referrals</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Review suspicious affiliate referrals</p>
+          <h1 className="text-2xl font-bold text-foreground">Flagged Referrals</h1>
+          <p className="text-muted-foreground mt-1">Review suspicious affiliate referrals</p>
         </div>
         <Button onClick={loadFlagged} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -147,56 +147,56 @@ export function AdminFlaggedReferrals() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Flagged</p>
+                <p className="text-sm text-muted-foreground">Total Flagged</p>
                 <h3 className="text-xl font-semibold">{stats.total}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Eye className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Review</p>
+                <p className="text-sm text-muted-foreground">Pending Review</p>
                 <h3 className="text-xl font-semibold">{stats.pending}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Approved</p>
+                <p className="text-sm text-muted-foreground">Approved</p>
                 <h3 className="text-xl font-semibold">{stats.approved}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
                 <XCircle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Rejected</p>
+                <p className="text-sm text-muted-foreground">Rejected</p>
                 <h3 className="text-xl font-semibold">{stats.rejected}</h3>
               </div>
             </div>
@@ -205,13 +205,13 @@ export function AdminFlaggedReferrals() {
       </div>
 
       {/* Flagged List */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Pending Review</CardTitle>
         </CardHeader>
         <CardContent>
           {flagged.filter(r => r.status === 'pending').length === 0 ? (
-            <div className="text-center py-8 text-[#0F0F0F]/50">
+            <div className="text-center py-8 text-muted-foreground">
               <CheckCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>No flagged referrals to review</p>
             </div>
@@ -231,13 +231,13 @@ export function AdminFlaggedReferrals() {
                   <div className="grid md:grid-cols-3 gap-4 mb-4">
                     {/* Referrer Info */}
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-[#0F0F0F]/60">Referrer (Affiliate)</p>
-                      <div className="bg-white rounded-lg p-3 space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Referrer (Affiliate)</p>
+                      <div className="bg-card rounded-lg p-3 space-y-1">
                         <p className="font-medium">{referral.referrer?.full_name || 'Unknown'}</p>
-                        <p className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Mail className="w-3 h-3" /> {referral.referrer?.email}
                         </p>
-                        <p className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Phone className="w-3 h-3" /> {referral.referrer?.phone || 'N/A'}
                         </p>
                         <Badge variant="outline" className="text-xs">{referral.referrer?.referral_code}</Badge>
@@ -246,16 +246,16 @@ export function AdminFlaggedReferrals() {
 
                     {/* Buyer Info */}
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-[#0F0F0F]/60">Buyer</p>
-                      <div className="bg-white rounded-lg p-3 space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Buyer</p>
+                      <div className="bg-card rounded-lg p-3 space-y-1">
                         <p className="font-medium">{referral.buyer?.full_name || 'Unknown'}</p>
-                        <p className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Mail className="w-3 h-3" /> {referral.buyer?.email}
                         </p>
-                        <p className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Phone className="w-3 h-3" /> {referral.buyer?.phone || 'N/A'}
                         </p>
-                        <p className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Globe className="w-3 h-3" /> IP: {referral.ip_address || 'Unknown'}
                         </p>
                       </div>
@@ -263,17 +263,17 @@ export function AdminFlaggedReferrals() {
 
                     {/* Transaction Info */}
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-[#0F0F0F]/60">Transaction</p>
-                      <div className="bg-white rounded-lg p-3 space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Transaction</p>
+                      <div className="bg-card rounded-lg p-3 space-y-1">
                         <p className="font-medium">{referral.event?.title || 'Unknown Event'}</p>
-                        <p className="text-sm text-[#0F0F0F]/60">
+                        <p className="text-sm text-muted-foreground">
                           Order: {referral.order?.order_number || 'N/A'}
                         </p>
                         <p className="text-sm text-green-600 font-medium flex items-center gap-1">
                           <DollarSign className="w-3 h-3" />
                           Commission: {referral.currency} {parseFloat(referral.commission_amount).toLocaleString()}
                         </p>
-                        <p className="text-xs text-[#0F0F0F]/50 flex items-center gap-1">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(referral.created_at).toLocaleString()}
                         </p>
@@ -318,14 +318,14 @@ export function AdminFlaggedReferrals() {
 
       {/* History */}
       {flagged.filter(r => r.status !== 'pending').length > 0 && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
             <CardTitle>Review History</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {flagged.filter(r => r.status !== 'pending').map((referral) => (
-                <div key={referral.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                <div key={referral.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                   <div className="flex items-center gap-3">
                     {referral.status === 'reversed' ? (
                       <XCircle className="w-5 h-5 text-red-500" />
@@ -334,7 +334,7 @@ export function AdminFlaggedReferrals() {
                     )}
                     <div>
                       <p className="font-medium">{referral.referrer?.full_name}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{referral.event?.title}</p>
+                      <p className="text-sm text-muted-foreground">{referral.event?.title}</p>
                     </div>
                   </div>
                   <div className="text-right">

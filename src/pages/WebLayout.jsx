@@ -184,7 +184,7 @@ export function WebLayout() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="text-left hidden lg:block">
-                        <p className="text-sm text-[#0F0F0F]">
+                        <p className="text-sm text-foreground">
                           {currentUser.firstName} {currentUser.lastName}
                         </p>
                       </div>

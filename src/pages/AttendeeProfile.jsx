@@ -867,7 +867,7 @@ export function AttendeeProfile() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Sidebar */}
         <aside className="lg:col-span-1">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl sticky top-24">
+          <Card className="border-border/10 rounded-2xl sticky top-24">
             <CardContent className="p-6">
               <div className="text-center mb-6">
                 <div className="relative inline-block mb-4">
@@ -879,12 +879,12 @@ export function AttendeeProfile() {
                     <Camera className="w-4 h-4" />
                   </button>
                 </div>
-                <h2 className="text-xl font-bold text-[#0F0F0F]">
+                <h2 className="text-xl font-bold text-foreground">
                   {profile?.full_name || profile?.first_name || 'User'}
                 </h2>
-                <p className="text-[#0F0F0F]/60 text-sm">Member since {getMemberSince()}</p>
+                <p className="text-muted-foreground text-sm">Member since {getMemberSince()}</p>
                 {profile?.city && (
-                  <p className="text-[#0F0F0F]/50 text-sm flex items-center justify-center gap-1 mt-1">
+                  <p className="text-muted-foreground text-sm flex items-center justify-center gap-1 mt-1">
                     <MapPin className="w-3 h-3" />
                     {profile.city}{profile.country ? `, ${profile.country}` : ''}
                   </p>
@@ -892,20 +892,20 @@ export function AttendeeProfile() {
               </div>
 
               <div className="grid grid-cols-3 gap-2 mb-6">
-                <div className="text-center p-3 bg-[#F4F6FA] rounded-xl">
-                  <div className="text-xl font-bold text-[#0F0F0F]">{stats.eventsAttended}</div>
-                  <div className="text-xs text-[#0F0F0F]/60">Events</div>
+                <div className="text-center p-3 bg-muted rounded-xl">
+                  <div className="text-xl font-bold text-foreground">{stats.eventsAttended}</div>
+                  <div className="text-xs text-muted-foreground">Events</div>
                 </div>
-                <div className="text-center p-3 bg-[#F4F6FA] rounded-xl">
-                  <div className="text-xl font-bold text-[#0F0F0F]">{stats.ticketsPurchased}</div>
-                  <div className="text-xs text-[#0F0F0F]/60">Tickets</div>
+                <div className="text-center p-3 bg-muted rounded-xl">
+                  <div className="text-xl font-bold text-foreground">{stats.ticketsPurchased}</div>
+                  <div className="text-xs text-muted-foreground">Tickets</div>
                 </div>
                 <div 
-                  className="text-center p-3 bg-[#F4F6FA] rounded-xl cursor-pointer hover:bg-[#2969FF]/10 transition-colors"
+                  className="text-center p-3 bg-muted rounded-xl cursor-pointer hover:bg-[#2969FF]/10 transition-colors"
                   onClick={() => setActiveTab('following')}
                 >
-                  <div className="text-xl font-bold text-[#0F0F0F]">{stats.following}</div>
-                  <div className="text-xs text-[#0F0F0F]/60">Following</div>
+                  <div className="text-xl font-bold text-foreground">{stats.following}</div>
+                  <div className="text-xs text-muted-foreground">Following</div>
                 </div>
               </div>
 
@@ -928,7 +928,7 @@ export function AttendeeProfile() {
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                         activeTab === item.tab 
                           ? 'bg-[#2969FF]/10 text-[#2969FF]' 
-                          : 'text-[#0F0F0F]/70 hover:bg-[#F4F6FA]'
+                          : 'text-foreground/70 hover:bg-muted'
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -952,7 +952,7 @@ export function AttendeeProfile() {
         {/* Main Content */}
         <main className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-white border border-[#0F0F0F]/10 rounded-xl p-1 flex-wrap h-auto">
+            <TabsList className="bg-card border border-border/10 rounded-xl p-1 flex-wrap h-auto">
               <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Profile</TabsTrigger>
               <TabsTrigger value="tickets" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Tickets</TabsTrigger>
               <TabsTrigger value="orders" className="rounded-lg data-[state=active]:bg-[#2969FF] data-[state=active]:text-white">Orders</TabsTrigger>
@@ -969,9 +969,9 @@ export function AttendeeProfile() {
 
             {/* Profile Tab */}
             <TabsContent value="profile">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-[#0F0F0F]">Personal Information</CardTitle>
+                  <CardTitle className="text-foreground">Personal Information</CardTitle>
                   {!isEditing ? (
                     <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setIsEditing(true)}>
                       <Edit2 className="w-4 h-4 mr-2" />Edit
@@ -992,36 +992,36 @@ export function AttendeeProfile() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>First Name</Label>
-                          <Input value={editForm.first_name} onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" />
+                          <Input value={editForm.first_name} onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })} className="rounded-xl border-border/10" />
                         </div>
                         <div className="space-y-2">
                           <Label>Last Name</Label>
-                          <Input value={editForm.last_name} onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" />
+                          <Input value={editForm.last_name} onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })} className="rounded-xl border-border/10" />
                         </div>
                       </div>
 
                       {/* Email */}
                       <div className="space-y-2">
                         <Label>Email</Label>
-                        <Input value={editForm.email} disabled className="rounded-xl border-[#0F0F0F]/10 bg-[#F4F6FA]" />
-                        <p className="text-xs text-[#0F0F0F]/60">Email cannot be changed</p>
+                        <Input value={editForm.email} disabled className="rounded-xl border-border/10 bg-muted" />
+                        <p className="text-xs text-muted-foreground">Email cannot be changed</p>
                       </div>
 
                       {/* Phone */}
                       <div className="space-y-2">
                         <Label>Phone</Label>
-                        <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" />
+                        <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="rounded-xl border-border/10" />
                       </div>
 
                       {/* Location */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>City</Label>
-                          <Input value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" placeholder="e.g. Lagos" />
+                          <Input value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })} className="rounded-xl border-border/10" placeholder="e.g. Lagos" />
                         </div>
                         <div className="space-y-2">
                           <Label>Country</Label>
-                          <Input value={editForm.country} onChange={(e) => setEditForm({ ...editForm, country: e.target.value })} className="rounded-xl border-[#0F0F0F]/10" placeholder="e.g. Nigeria" />
+                          <Input value={editForm.country} onChange={(e) => setEditForm({ ...editForm, country: e.target.value })} className="rounded-xl border-border/10" placeholder="e.g. Nigeria" />
                         </div>
                       </div>
 
@@ -1030,7 +1030,7 @@ export function AttendeeProfile() {
                         <Label>Birthday (for birthday wishes 🎂)</Label>
                         <div className="grid grid-cols-2 gap-4">
                           <Select value={String(editForm.birth_month || '')} onValueChange={(val) => setEditForm({ ...editForm, birth_month: parseInt(val) })}>
-                            <SelectTrigger className="rounded-xl border-[#0F0F0F]/10">
+                            <SelectTrigger className="rounded-xl border-border/10">
                               <SelectValue placeholder="Month" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1040,7 +1040,7 @@ export function AttendeeProfile() {
                             </SelectContent>
                           </Select>
                           <Select value={String(editForm.birth_day || '')} onValueChange={(val) => setEditForm({ ...editForm, birth_day: parseInt(val) })}>
-                            <SelectTrigger className="rounded-xl border-[#0F0F0F]/10">
+                            <SelectTrigger className="rounded-xl border-border/10">
                               <SelectValue placeholder="Day" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1064,7 +1064,7 @@ export function AttendeeProfile() {
                               className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
                                 editForm.interests?.includes(interest.id)
                                   ? 'bg-[#2969FF] text-white'
-                                  : 'bg-[#F4F6FA] text-[#0F0F0F]/70 hover:bg-[#0F0F0F]/10'
+                                  : 'bg-muted text-foreground/70 hover:bg-[#0F0F0F]/10'
                               }`}
                             >
                               {interest.icon} {interest.label}
@@ -1076,25 +1076,25 @@ export function AttendeeProfile() {
                       {/* Billing Address */}
                       <div className="space-y-2">
                         <Label>Billing Address (optional)</Label>
-                        <div className="space-y-3 p-4 bg-[#F4F6FA] rounded-xl">
+                        <div className="space-y-3 p-4 bg-muted rounded-xl">
                           <Input 
                             placeholder="Street Address" 
                             value={editForm.billing_address?.street || ''} 
                             onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, street: e.target.value } })} 
-                            className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                            className="rounded-xl border-border/10 bg-card" 
                           />
                           <div className="grid grid-cols-2 gap-3">
                             <Input 
                               placeholder="City" 
                               value={editForm.billing_address?.city || ''} 
                               onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, city: e.target.value } })} 
-                              className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                              className="rounded-xl border-border/10 bg-card" 
                             />
                             <Input 
                               placeholder="State/Province" 
                               value={editForm.billing_address?.state || ''} 
                               onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, state: e.target.value } })} 
-                              className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                              className="rounded-xl border-border/10 bg-card" 
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
@@ -1102,13 +1102,13 @@ export function AttendeeProfile() {
                               placeholder="Postal Code" 
                               value={editForm.billing_address?.postal_code || ''} 
                               onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, postal_code: e.target.value } })} 
-                              className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                              className="rounded-xl border-border/10 bg-card" 
                             />
                             <Input 
                               placeholder="Country" 
                               value={editForm.billing_address?.country || ''} 
                               onChange={(e) => setEditForm({ ...editForm, billing_address: { ...editForm.billing_address, country: e.target.value } })} 
-                              className="rounded-xl border-[#0F0F0F]/10 bg-white" 
+                              className="rounded-xl border-border/10 bg-card" 
                             />
                           </div>
                         </div>
@@ -1116,45 +1116,45 @@ export function AttendeeProfile() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
-                        <Mail className="w-5 h-5 text-[#0F0F0F]/60" />
+                      <div className="flex items-center gap-4 p-4 bg-muted rounded-xl">
+                        <Mail className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <p className="text-xs text-[#0F0F0F]/60">Email</p>
-                          <p className="text-[#0F0F0F]">{profile?.email}</p>
+                          <p className="text-xs text-muted-foreground">Email</p>
+                          <p className="text-foreground">{profile?.email}</p>
                         </div>
                         {profile?.is_verified && <CheckCircle className="w-5 h-5 text-green-500 ml-auto" />}
                       </div>
-                      <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
-                        <Phone className="w-5 h-5 text-[#0F0F0F]/60" />
+                      <div className="flex items-center gap-4 p-4 bg-muted rounded-xl">
+                        <Phone className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <p className="text-xs text-[#0F0F0F]/60">Phone</p>
-                          <p className="text-[#0F0F0F]">{profile?.phone || 'Not set'}</p>
+                          <p className="text-xs text-muted-foreground">Phone</p>
+                          <p className="text-foreground">{profile?.phone || 'Not set'}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
-                        <MapPin className="w-5 h-5 text-[#0F0F0F]/60" />
+                      <div className="flex items-center gap-4 p-4 bg-muted rounded-xl">
+                        <MapPin className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <p className="text-xs text-[#0F0F0F]/60">Location</p>
-                          <p className="text-[#0F0F0F]">{profile?.city ? `${profile.city}${profile.country ? `, ${profile.country}` : ''}` : 'Not set'}</p>
+                          <p className="text-xs text-muted-foreground">Location</p>
+                          <p className="text-foreground">{profile?.city ? `${profile.city}${profile.country ? `, ${profile.country}` : ''}` : 'Not set'}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
-                        <Calendar className="w-5 h-5 text-[#0F0F0F]/60" />
+                      <div className="flex items-center gap-4 p-4 bg-muted rounded-xl">
+                        <Calendar className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <p className="text-xs text-[#0F0F0F]/60">Birthday</p>
-                          <p className="text-[#0F0F0F]">{getBirthdayDisplay()}</p>
+                          <p className="text-xs text-muted-foreground">Birthday</p>
+                          <p className="text-foreground">{getBirthdayDisplay()}</p>
                         </div>
                       </div>
                       
                       {/* Interests Display */}
                       {profile?.interests && profile.interests.length > 0 && (
-                        <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                          <p className="text-xs text-[#0F0F0F]/60 mb-2">Interests</p>
+                        <div className="p-4 bg-muted rounded-xl">
+                          <p className="text-xs text-muted-foreground mb-2">Interests</p>
                           <div className="flex flex-wrap gap-2">
                             {profile.interests.map(interestId => {
                               const interest = INTEREST_CATEGORIES.find(c => c.id === interestId)
                               return interest ? (
-                                <Badge key={interestId} variant="outline" className="bg-white">
+                                <Badge key={interestId} variant="outline" className="bg-card">
                                   {interest.icon} {interest.label}
                                 </Badge>
                               ) : null
@@ -1165,11 +1165,11 @@ export function AttendeeProfile() {
 
                       {/* Billing Address Display */}
                       {profile?.billing_address && Object.keys(profile.billing_address).some(k => profile.billing_address[k]) && (
-                        <div className="flex items-start gap-4 p-4 bg-[#F4F6FA] rounded-xl">
-                          <Building className="w-5 h-5 text-[#0F0F0F]/60 mt-0.5" />
+                        <div className="flex items-start gap-4 p-4 bg-muted rounded-xl">
+                          <Building className="w-5 h-5 text-muted-foreground mt-0.5" />
                           <div>
-                            <p className="text-xs text-[#0F0F0F]/60">Billing Address</p>
-                            <p className="text-[#0F0F0F]">
+                            <p className="text-xs text-muted-foreground">Billing Address</p>
+                            <p className="text-foreground">
                               {[
                                 profile.billing_address.street,
                                 profile.billing_address.city,
@@ -1182,11 +1182,11 @@ export function AttendeeProfile() {
                         </div>
                       )}
 
-                      <div className="flex items-center gap-4 p-4 bg-[#F4F6FA] rounded-xl">
-                        <Star className="w-5 h-5 text-[#0F0F0F]/60" />
+                      <div className="flex items-center gap-4 p-4 bg-muted rounded-xl">
+                        <Star className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <p className="text-xs text-[#0F0F0F]/60">Member Since</p>
-                          <p className="text-[#0F0F0F]">{getMemberSince()}</p>
+                          <p className="text-xs text-muted-foreground">Member Since</p>
+                          <p className="text-foreground">{getMemberSince()}</p>
                         </div>
                       </div>
                     </div>
@@ -1198,13 +1198,13 @@ export function AttendeeProfile() {
             {/* Tickets Tab */}
             <TabsContent value="tickets">
               {tickets.length === 0 ? (
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardContent className="flex flex-col items-center justify-center py-16">
-                    <div className="w-20 h-20 bg-[#F4F6FA] rounded-full flex items-center justify-center mb-4">
-                      <Ticket className="w-10 h-10 text-[#0F0F0F]/40" />
+                    <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Ticket className="w-10 h-10 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No tickets yet</h3>
-                    <p className="text-[#0F0F0F]/60 mb-6">Start exploring events and book your tickets</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No tickets yet</h3>
+                    <p className="text-muted-foreground mb-6">Start exploring events and book your tickets</p>
                     <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
                       Browse Events
                     </Button>
@@ -1215,9 +1215,9 @@ export function AttendeeProfile() {
                   {sortedTickets.slice(0, 10).map((ticket) => {
                     const isPast = isEventPast(ticket.event?.start_date)
                     return (
-                      <Card key={ticket.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+                      <Card key={ticket.id} className="border-border/10 rounded-2xl overflow-hidden">
                         <div className="flex">
-                          <div className="w-32 h-32 bg-[#F4F6FA] flex-shrink-0">
+                          <div className="w-32 h-32 bg-muted flex-shrink-0">
                             <img 
                               src={ticket.event?.image_url} 
                               alt={ticket.event?.title}
@@ -1228,11 +1228,11 @@ export function AttendeeProfile() {
                           <CardContent className="flex-1 p-4">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h3 className="font-semibold text-[#0F0F0F] mb-1">{ticket.event?.title}</h3>
-                                <p className="text-sm text-[#0F0F0F]/60 mb-2">
+                                <h3 className="font-semibold text-foreground mb-1">{ticket.event?.title}</h3>
+                                <p className="text-sm text-muted-foreground mb-2">
                                   {formatDate(ticket.event?.start_date)} • {ticket.event?.venue_name}
                                 </p>
-                                <Badge className={!isPast ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                                <Badge className={!isPast ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                                   {!isPast ? 'Active' : 'Past'}
                                 </Badge>
                               </div>
@@ -1262,13 +1262,13 @@ export function AttendeeProfile() {
             {/* Orders Tab */}
             <TabsContent value="orders">
               {orders.length === 0 ? (
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardContent className="flex flex-col items-center justify-center py-16">
-                    <div className="w-20 h-20 bg-[#F4F6FA] rounded-full flex items-center justify-center mb-4">
-                      <Receipt className="w-10 h-10 text-[#0F0F0F]/40" />
+                    <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Receipt className="w-10 h-10 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No orders yet</h3>
-                    <p className="text-[#0F0F0F]/60 mb-6">Your purchase history will appear here</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No orders yet</h3>
+                    <p className="text-muted-foreground mb-6">Your purchase history will appear here</p>
                     <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
                       Browse Events
                     </Button>
@@ -1277,11 +1277,11 @@ export function AttendeeProfile() {
               ) : (
                 <div className="space-y-4">
                   {orders.map((order) => (
-                    <Card key={order.id} className="border-[#0F0F0F]/10 rounded-2xl">
+                    <Card key={order.id} className="border-border/10 rounded-2xl">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start">
                           <div className="flex gap-4">
-                            <div className="w-16 h-16 bg-[#F4F6FA] rounded-xl overflow-hidden flex-shrink-0">
+                            <div className="w-16 h-16 bg-muted rounded-xl overflow-hidden flex-shrink-0">
                               {order.event?.image_url && (
                                 <img 
                                   src={order.event.image_url} 
@@ -1291,24 +1291,24 @@ export function AttendeeProfile() {
                               )}
                             </div>
                             <div>
-                              <h3 className="font-semibold text-[#0F0F0F]">{order.event?.title || 'Event'}</h3>
-                              <p className="text-sm text-[#0F0F0F]/60">
+                              <h3 className="font-semibold text-foreground">{order.event?.title || 'Event'}</h3>
+                              <p className="text-sm text-muted-foreground">
                                 Order #{order.reference_id?.slice(-8) || order.id.slice(-8)}
                               </p>
-                              <p className="text-xs text-[#0F0F0F]/50 mt-1">
+                              <p className="text-xs text-muted-foreground mt-1">
                                 {formatDate(order.created_at)}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-[#0F0F0F]">
+                            <p className="font-semibold text-foreground">
                               {getCurrencySymbol(order.currency)}{parseFloat(order.total_amount || 0).toLocaleString()}
                             </p>
                             <Badge className={
                               order.status === 'completed' ? 'bg-green-100 text-green-700' :
                               order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                               order.status === 'refunded' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-600'
+                              'bg-muted text-muted-foreground'
                             }>
                               {order.status}
                             </Badge>
@@ -1324,13 +1324,13 @@ export function AttendeeProfile() {
             {/* Saved Tab */}
             <TabsContent value="saved">
               {savedEvents.length === 0 ? (
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardContent className="flex flex-col items-center justify-center py-16">
-                    <div className="w-20 h-20 bg-[#F4F6FA] rounded-full flex items-center justify-center mb-4">
-                      <Heart className="w-10 h-10 text-[#0F0F0F]/40" />
+                    <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Heart className="w-10 h-10 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No saved events</h3>
-                    <p className="text-[#0F0F0F]/60 mb-6">Save events you're interested in</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No saved events</h3>
+                    <p className="text-muted-foreground mb-6">Save events you're interested in</p>
                     <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
                       Browse Events
                     </Button>
@@ -1343,9 +1343,9 @@ export function AttendeeProfile() {
                     if (!event) return null
                     const isPast = new Date(event.start_date) < new Date()
                     return (
-                      <Card key={saved.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+                      <Card key={saved.id} className="border-border/10 rounded-2xl overflow-hidden">
                         <div className="flex">
-                          <div className="w-32 h-32 bg-[#F4F6FA] flex-shrink-0 cursor-pointer" onClick={() => navigate(`/events/${event.slug || event.id}`)}>
+                          <div className="w-32 h-32 bg-muted flex-shrink-0 cursor-pointer" onClick={() => navigate(`/events/${event.slug || event.id}`)}>
                             <img 
                               src={event.image_url} 
                               alt={event.title}
@@ -1356,12 +1356,12 @@ export function AttendeeProfile() {
                           <CardContent className="flex-1 p-4">
                             <div className="flex justify-between items-start">
                               <div className="cursor-pointer" onClick={() => navigate(`/events/${event.slug || event.id}`)}>
-                                <h3 className="font-semibold text-[#0F0F0F] mb-1 hover:text-[#2969FF]">{event.title}</h3>
-                                <p className="text-sm text-[#0F0F0F]/60 mb-2">
+                                <h3 className="font-semibold text-foreground mb-1 hover:text-[#2969FF]">{event.title}</h3>
+                                <p className="text-sm text-muted-foreground mb-2">
                                   {formatDate(event.start_date)} • {[event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Location TBA'}
                                 </p>
                                 <div className="flex gap-2">
-                                  <Badge className={!isPast ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>
+                                  <Badge className={!isPast ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                                     {!isPast ? 'Upcoming' : 'Past'}
                                   </Badge>
                                   {event.is_free && (
@@ -1400,13 +1400,13 @@ export function AttendeeProfile() {
             {/* Following Tab */}
             <TabsContent value="following">
               {followedOrganizers.length === 0 ? (
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardContent className="flex flex-col items-center justify-center py-16">
-                    <div className="w-20 h-20 bg-[#F4F6FA] rounded-full flex items-center justify-center mb-4">
-                      <Users className="w-10 h-10 text-[#0F0F0F]/40" />
+                    <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Users className="w-10 h-10 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">Not following anyone</h3>
-                    <p className="text-[#0F0F0F]/60 mb-6">Follow organizers to get updates on their events</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Not following anyone</h3>
+                    <p className="text-muted-foreground mb-6">Follow organizers to get updates on their events</p>
                     <Button onClick={() => navigate('/events')} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
                       Discover Organizers
                     </Button>
@@ -1418,7 +1418,7 @@ export function AttendeeProfile() {
                     const organizer = follow.organizer
                     if (!organizer) return null
                     return (
-                      <Card key={follow.id} className="border-[#0F0F0F]/10 rounded-2xl">
+                      <Card key={follow.id} className="border-border/10 rounded-2xl">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div 
@@ -1433,14 +1433,14 @@ export function AttendeeProfile() {
                               </Avatar>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold text-[#0F0F0F] hover:text-[#2969FF]">
+                                  <h3 className="font-semibold text-foreground hover:text-[#2969FF]">
                                     {organizer.business_name}
                                   </h3>
                                   {organizer.is_verified && (
                                     <CheckCircle className="w-4 h-4 text-[#2969FF]" />
                                   )}
                                 </div>
-                                <p className="text-sm text-[#0F0F0F]/60">
+                                <p className="text-sm text-muted-foreground">
                                   Following since {formatDate(follow.created_at)}
                                 </p>
                               </div>
@@ -1465,19 +1465,19 @@ export function AttendeeProfile() {
             {/* Groups Tab */}
             <TabsContent value="groups">
               {loadingGroups ? (
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardContent className="flex items-center justify-center py-16">
                     <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
                   </CardContent>
                 </Card>
               ) : (groups.active.length + groups.completed.length + groups.expired.length) === 0 ? (
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardContent className="flex flex-col items-center justify-center py-16">
                     <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mb-4">
                       <Users className="w-10 h-10 text-purple-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-[#0F0F0F] mb-2">No groups yet</h3>
-                    <p className="text-[#0F0F0F]/60 mb-6 text-center max-w-md">
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No groups yet</h3>
+                    <p className="text-muted-foreground mb-6 text-center max-w-md">
                       Group Buy lets you coordinate ticket purchases with friends. Start a group from any event page!
                     </p>
                     <Button onClick={() => navigate('/events')} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl">
@@ -1496,7 +1496,7 @@ export function AttendeeProfile() {
                       </h3>
                       <div className="space-y-3">
                         {groups.active.map(m => (
-                          <Card key={m.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+                          <Card key={m.id} className="border-border/10 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
                             <div className="flex">
                               <div 
                                 className="w-24 h-24 sm:w-32 sm:h-32 bg-cover bg-center flex-shrink-0"
@@ -1506,14 +1506,14 @@ export function AttendeeProfile() {
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-semibold text-[#0F0F0F] truncate">{m.session?.name || 'Group Session'}</h4>
+                                      <h4 className="font-semibold text-foreground truncate">{m.session?.name || 'Group Session'}</h4>
                                       {m.is_host && <Badge variant="outline" className="text-xs">Host</Badge>}
                                     </div>
-                                    <p className="text-sm text-[#0F0F0F]/60 truncate">{m.session?.event?.title}</p>
+                                    <p className="text-sm text-muted-foreground truncate">{m.session?.event?.title}</p>
                                   </div>
                                   <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
                                 </div>
-                                <div className="flex items-center gap-4 mt-2 text-xs text-[#0F0F0F]/60">
+                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     <Users className="w-3 h-3" />
                                     {m.session?.member_count || 1} member{(m.session?.member_count || 1) !== 1 ? 's' : ''}
@@ -1557,7 +1557,7 @@ export function AttendeeProfile() {
                       </h3>
                       <div className="space-y-3">
                         {groups.completed.map(m => (
-                          <Card key={m.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+                          <Card key={m.id} className="border-border/10 rounded-2xl overflow-hidden">
                             <div className="flex">
                               <div 
                                 className="w-24 h-24 bg-cover bg-center flex-shrink-0 opacity-75"
@@ -1566,8 +1566,8 @@ export function AttendeeProfile() {
                               <CardContent className="flex-1 p-4">
                                 <div className="flex items-start justify-between gap-2">
                                   <div>
-                                    <h4 className="font-semibold text-[#0F0F0F] truncate">{m.session?.name || 'Group Session'}</h4>
-                                    <p className="text-sm text-[#0F0F0F]/60 truncate">{m.session?.event?.title}</p>
+                                    <h4 className="font-semibold text-foreground truncate">{m.session?.name || 'Group Session'}</h4>
+                                    <p className="text-sm text-muted-foreground truncate">{m.session?.event?.title}</p>
                                   </div>
                                   <Badge className="bg-green-100 text-green-700 border-0">Purchased</Badge>
                                 </div>
@@ -1582,12 +1582,12 @@ export function AttendeeProfile() {
                   {/* Expired Groups */}
                   {groups.expired.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 text-[#0F0F0F]/40">
+                      <h3 className="text-lg font-semibold mb-3 text-muted-foreground">
                         Expired ({groups.expired.length})
                       </h3>
                       <div className="space-y-3">
                         {groups.expired.map(m => (
-                          <Card key={m.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden opacity-60">
+                          <Card key={m.id} className="border-border/10 rounded-2xl overflow-hidden opacity-60">
                             <div className="flex">
                               <div 
                                 className="w-24 h-24 bg-cover bg-center flex-shrink-0 grayscale"
@@ -1596,10 +1596,10 @@ export function AttendeeProfile() {
                               <CardContent className="flex-1 p-4">
                                 <div className="flex items-start justify-between gap-2">
                                   <div>
-                                    <h4 className="font-semibold text-[#0F0F0F] truncate">{m.session?.name || 'Group Session'}</h4>
-                                    <p className="text-sm text-[#0F0F0F]/60 truncate">{m.session?.event?.title}</p>
+                                    <h4 className="font-semibold text-foreground truncate">{m.session?.name || 'Group Session'}</h4>
+                                    <p className="text-sm text-muted-foreground truncate">{m.session?.event?.title}</p>
                                   </div>
-                                  <Badge className="bg-gray-100 text-gray-600 border-0">Expired</Badge>
+                                  <Badge className="bg-muted text-muted-foreground border-0">Expired</Badge>
                                 </div>
                               </CardContent>
                             </div>
@@ -1621,21 +1621,21 @@ export function AttendeeProfile() {
                           <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
                           <div>
                             <p className="font-medium">Start a Group</p>
-                            <p className="text-[#0F0F0F]/60">Click "Buy with Friends" on any event</p>
+                            <p className="text-muted-foreground">Click "Buy with Friends" on any event</p>
                           </div>
                         </div>
                         <div className="flex gap-3">
                           <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
                           <div>
                             <p className="font-medium">Invite Friends</p>
-                            <p className="text-[#0F0F0F]/60">Share link via email, SMS, or WhatsApp</p>
+                            <p className="text-muted-foreground">Share link via email, SMS, or WhatsApp</p>
                           </div>
                         </div>
                         <div className="flex gap-3">
                           <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
                           <div>
                             <p className="font-medium">Everyone Pays for Their Own</p>
-                            <p className="text-[#0F0F0F]/60">No collecting money from friends!</p>
+                            <p className="text-muted-foreground">No collecting money from friends!</p>
                           </div>
                         </div>
                       </div>
@@ -1649,16 +1649,16 @@ export function AttendeeProfile() {
             <TabsContent value="settings">
               <div className="space-y-6">
                 {/* Saved Payment Methods */}
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <CreditCard className="w-5 h-5" />
                       Saved Payment Methods
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {paymentMethods.length === 0 ? (
-                      <div className="text-center py-6 text-[#0F0F0F]/50">
+                      <div className="text-center py-6 text-muted-foreground">
                         <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-30" />
                         <p>No saved payment methods</p>
                         <p className="text-sm">Cards will be saved when you make a purchase</p>
@@ -1666,14 +1666,14 @@ export function AttendeeProfile() {
                     ) : (
                       <div className="space-y-3">
                         {paymentMethods.map((method) => (
-                          <div key={method.id} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                          <div key={method.id} className="flex items-center justify-between p-4 bg-muted rounded-xl">
                             <div className="flex items-center gap-3">
                               <span className="text-2xl">{getCardIcon(method.brand)}</span>
                               <div>
-                                <p className="font-medium text-[#0F0F0F]">
+                                <p className="font-medium text-foreground">
                                   {method.brand} •••• {method.last_four}
                                 </p>
-                                <p className="text-sm text-[#0F0F0F]/60">
+                                <p className="text-sm text-muted-foreground">
                                   Expires {method.exp_month}/{method.exp_year}
                                 </p>
                               </div>
@@ -1710,16 +1710,16 @@ export function AttendeeProfile() {
                         ))}
                       </div>
                     )}
-                    <p className="text-xs text-[#0F0F0F]/50">
+                    <p className="text-xs text-muted-foreground">
                       🔒 Your card details are securely stored with our payment providers. We never see your full card number.
                     </p>
                   </CardContent>
                 </Card>
 
                 {/* Change Password Card */}
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Lock className="w-5 h-5" />
                       Change Password
                     </CardTitle>
@@ -1744,13 +1744,13 @@ export function AttendeeProfile() {
                           type={showPasswords.current ? "text" : "password"}
                           value={passwordForm.current}
                           onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
-                          className="rounded-xl border-[#0F0F0F]/10 pr-10"
+                          className="rounded-xl border-border/10 pr-10"
                           placeholder="Enter current password"
                         />
                         <button 
                           type="button"
                           onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -1764,13 +1764,13 @@ export function AttendeeProfile() {
                           type={showPasswords.new ? "text" : "password"}
                           value={passwordForm.new}
                           onChange={(e) => setPasswordForm({ ...passwordForm, new: e.target.value })}
-                          className="rounded-xl border-[#0F0F0F]/10 pr-10"
+                          className="rounded-xl border-border/10 pr-10"
                           placeholder="Enter new password"
                         />
                         <button 
                           type="button"
                           onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -1784,13 +1784,13 @@ export function AttendeeProfile() {
                           type={showPasswords.confirm ? "text" : "password"}
                           value={passwordForm.confirm}
                           onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                          className="rounded-xl border-[#0F0F0F]/10 pr-10"
+                          className="rounded-xl border-border/10 pr-10"
                           placeholder="Confirm new password"
                         />
                         <button 
                           type="button"
                           onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -1815,15 +1815,15 @@ export function AttendeeProfile() {
                 </Card>
 
                 {/* Communication Preferences Card */}
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Mail className="w-5 h-5 text-[#2969FF]" />
                       Communication Preferences
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-[#0F0F0F]/70">
+                    <p className="text-sm text-foreground/70">
                       Control how event organizers can contact you. Opt out of specific channels while still receiving important ticket confirmations.
                     </p>
 
@@ -1863,7 +1863,7 @@ export function AttendeeProfile() {
                         <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
                       </div>
                     ) : commPrefs.length === 0 ? (
-                      <div className="text-center py-6 text-[#0F0F0F]/50">
+                      <div className="text-center py-6 text-muted-foreground">
                         <Mail className="w-10 h-10 mx-auto mb-2 opacity-30" />
                         <p>No organizer communications yet</p>
                         <p className="text-sm">Your preferences will appear here after attending events</p>
@@ -1871,7 +1871,7 @@ export function AttendeeProfile() {
                     ) : (
                       <div className="space-y-3">
                         {commPrefs.map((contact) => (
-                          <div key={contact.id} className="p-4 bg-[#F4F6FA] rounded-xl">
+                          <div key={contact.id} className="p-4 bg-muted rounded-xl">
                             <div className="flex items-center gap-3 mb-3">
                               <Avatar className="w-10 h-10">
                                 <AvatarImage src={contact.organizer?.logo_url} />
@@ -1880,8 +1880,8 @@ export function AttendeeProfile() {
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-medium text-[#0F0F0F]">{contact.organizer?.business_name || 'Unknown Organizer'}</p>
-                                <p className="text-xs text-[#0F0F0F]/50">Communication channels</p>
+                                <p className="font-medium text-foreground">{contact.organizer?.business_name || 'Unknown Organizer'}</p>
+                                <p className="text-xs text-muted-foreground">Communication channels</p>
                               </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -1924,22 +1924,22 @@ export function AttendeeProfile() {
                       </div>
                     )}
 
-                    <p className="text-xs text-[#0F0F0F]/50">
+                    <p className="text-xs text-muted-foreground">
                       Note: You will still receive transactional messages like ticket confirmations and important event updates regardless of these settings.
                     </p>
                   </CardContent>
                 </Card>
 
                 {/* Telegram Link Card */}
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Send className="w-5 h-5 text-sky-500" />
                       Telegram Notifications
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-[#0F0F0F]/70">
+                    <p className="text-sm text-foreground/70">
                       Link your Telegram account to receive event reminders, ticket updates, and notifications directly in Telegram.
                     </p>
 
@@ -1977,15 +1977,15 @@ export function AttendeeProfile() {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 bg-[#F4F6FA] rounded-xl">
+                      <div className="p-4 bg-muted rounded-xl">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-sky-100 rounded-full flex items-center justify-center">
                               <Send className="w-5 h-5 text-sky-600" />
                             </div>
                             <div>
-                              <p className="font-medium text-[#0F0F0F]">Connect Telegram</p>
-                              <p className="text-sm text-[#0F0F0F]/60">Get instant notifications on your phone</p>
+                              <p className="font-medium text-foreground">Connect Telegram</p>
+                              <p className="text-sm text-muted-foreground">Get instant notifications on your phone</p>
                             </div>
                           </div>
                           <Button
@@ -2004,32 +2004,32 @@ export function AttendeeProfile() {
                       </div>
                     )}
 
-                    <p className="text-xs text-[#0F0F0F]/50">
+                    <p className="text-xs text-muted-foreground">
                       You'll be redirected to Telegram to complete the linking process. Make sure you have Telegram installed.
                     </p>
                   </CardContent>
                 </Card>
 
                 {/* GDPR Privacy Rights Card */}
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[#0F0F0F]">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Lock className="w-5 h-5 text-[#2969FF]" />
                       Privacy & Data Rights
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/70 mb-3">
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-foreground/70 mb-3">
                         Under GDPR and UK data protection laws, you have the right to access, export, and delete your personal data.
                       </p>
                     </div>
                     
                     {/* Marketing Preferences */}
-                    <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                    <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
                       <div>
-                        <p className="font-medium text-[#0F0F0F]">Platform Marketing</p>
-                        <p className="text-sm text-[#0F0F0F]/60">Receive Ticketrack recommendations and offers</p>
+                        <p className="font-medium text-foreground">Platform Marketing</p>
+                        <p className="text-sm text-muted-foreground">Receive Ticketrack recommendations and offers</p>
                       </div>
                       <button
                         onClick={async () => {
@@ -2044,7 +2044,7 @@ export function AttendeeProfile() {
                           profile?.marketing_consent ? 'bg-[#2969FF] justify-end' : 'bg-[#0F0F0F]/20 justify-start'
                         }`}
                       >
-                        <div className="w-4 h-4 bg-white rounded-full" />
+                        <div className="w-4 h-4 bg-card rounded-full" />
                       </button>
                     </div>
                     
@@ -2112,7 +2112,7 @@ export function AttendeeProfile() {
                       Export My Data (GDPR)
                     </Button>
                     
-                    <p className="text-xs text-[#0F0F0F]/50 text-center">
+                    <p className="text-xs text-muted-foreground text-center">
                       Your data will be downloaded as a JSON file containing your profile, tickets, orders, and saved events.
                     </p>
                   </CardContent>
@@ -2149,11 +2149,11 @@ export function AttendeeProfile() {
                 </Card>
 
                 {/* Sign Out */}
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardContent className="p-4">
                     <Button 
                       variant="outline" 
-                      className="w-full rounded-xl text-[#0F0F0F]/70 hover:bg-[#F4F6FA]" 
+                      className="w-full rounded-xl text-foreground/70 hover:bg-muted" 
                       onClick={handleSignOut}
                     >
                       <LogOut className="w-4 h-4 mr-2" />
@@ -2167,20 +2167,20 @@ export function AttendeeProfile() {
             {/* Earnings Tab */}
             <TabsContent value="earnings">
               {!earnings.affiliateStatus ? (
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardContent className="py-12 text-center">
                     <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
                       <Gift className="w-10 h-10 text-purple-600" />
                     </div>
-                    <h2 className="text-2xl font-bold text-[#0F0F0F] mb-3">Earn Money Sharing Events</h2>
-                    <p className="text-[#0F0F0F]/60 mb-6 max-w-md mx-auto">
+                    <h2 className="text-2xl font-bold text-foreground mb-3">Earn Money Sharing Events</h2>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                       Join our affiliate program and earn <span className="font-semibold text-green-600">40% commission</span> on platform fees when people buy tickets using your link.
                     </p>
                     <Button onClick={handleBecomeAffiliate} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-8 py-6 text-lg">
                       {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Gift className="w-5 h-5 mr-2" />}
                       Become an Affiliate
                     </Button>
-                    <p className="text-xs text-[#0F0F0F]/40 mt-4">Minimum withdrawal: ₦5,000 / $10 / £8</p>
+                    <p className="text-xs text-muted-foreground mt-4">Minimum withdrawal: ₦5,000 / $10 / £8</p>
                   </CardContent>
                 </Card>
               ) : earnings.affiliateStatus === 'suspended' ? (
@@ -2193,11 +2193,11 @@ export function AttendeeProfile() {
               ) : (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
+                  <Card className="border-border/10 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-[#0F0F0F]/60">Available Balance</p>
+                          <p className="text-sm text-muted-foreground">Available Balance</p>
                           <h3 className="text-2xl font-bold text-green-600">{getCurrencySymbol(profile?.country_code)}{earnings.balance.toLocaleString()}</h3>
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
@@ -2207,13 +2207,13 @@ export function AttendeeProfile() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <Card className="border-border/10 rounded-2xl">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-[#0F0F0F]/60">Pending</p>
-                          <h3 className="text-2xl font-bold text-[#0F0F0F]">{getCurrencySymbol(profile?.country_code)}{earnings.pending.toLocaleString()}</h3>
-                          <p className="text-xs text-[#0F0F0F]/50">Available after event</p>
+                          <p className="text-sm text-muted-foreground">Pending</p>
+                          <h3 className="text-2xl font-bold text-foreground">{getCurrencySymbol(profile?.country_code)}{earnings.pending.toLocaleString()}</h3>
+                          <p className="text-xs text-muted-foreground">Available after event</p>
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                           <TrendingUp className="w-6 h-6 text-yellow-600" />
@@ -2222,13 +2222,13 @@ export function AttendeeProfile() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                  <Card className="border-border/10 rounded-2xl">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-[#0F0F0F]/60">Total Earned</p>
-                          <h3 className="text-2xl font-bold text-[#0F0F0F]">{getCurrencySymbol(profile?.country_code)}{earnings.total.toLocaleString()}</h3>
-                          <p className="text-xs text-[#0F0F0F]/50">{earnings.referralCount} referrals</p>
+                          <p className="text-sm text-muted-foreground">Total Earned</p>
+                          <h3 className="text-2xl font-bold text-foreground">{getCurrencySymbol(profile?.country_code)}{earnings.total.toLocaleString()}</h3>
+                          <p className="text-xs text-muted-foreground">{earnings.referralCount} referrals</p>
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                           <Gift className="w-6 h-6 text-[#2969FF]" />
@@ -2238,7 +2238,7 @@ export function AttendeeProfile() {
                   </Card>
                 </div>
 
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Share2 className="w-5 h-5 text-[#2969FF]" />
@@ -2246,18 +2246,18 @@ export function AttendeeProfile() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-[#0F0F0F]/70">
+                    <p className="text-sm text-foreground/70">
                       Share your unique link and earn <span className="font-semibold text-green-600">40%</span> of our platform fee when someone buys a ticket!
                     </p>
                     
                     <div className="flex gap-2">
-                      <div className="flex-1 bg-[#F4F6FA] rounded-xl px-4 py-3 font-mono text-sm truncate">
+                      <div className="flex-1 bg-muted rounded-xl px-4 py-3 font-mono text-sm truncate">
                         {window.location.origin}?aff={earnings.referralCode}
                       </div>
                       <Button 
                         onClick={copyReferralLink}
                         variant="outline" 
-                        className="rounded-xl border-[#0F0F0F]/10"
+                        className="rounded-xl border-border/10"
                       >
                         {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                       </Button>
@@ -2281,7 +2281,7 @@ export function AttendeeProfile() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-[#0F0F0F]/10 rounded-2xl">
+                <Card className="border-border/10 rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
@@ -2300,7 +2300,7 @@ export function AttendeeProfile() {
                   </CardHeader>
                   <CardContent>
                     {earningsHistory.length === 0 ? (
-                      <div className="text-center py-8 text-[#0F0F0F]/50">
+                      <div className="text-center py-8 text-muted-foreground">
                         <Gift className="w-12 h-12 mx-auto mb-3 opacity-30" />
                         <p>No earnings yet</p>
                         <p className="text-sm">Share your referral link to start earning!</p>
@@ -2308,10 +2308,10 @@ export function AttendeeProfile() {
                     ) : (
                       <div className="space-y-3">
                         {earningsHistory.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                          <div key={item.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                             <div>
-                              <p className="font-medium text-[#0F0F0F]">{item.events?.title || 'Event'}</p>
-                              <p className="text-xs text-[#0F0F0F]/60">
+                              <p className="font-medium text-foreground">{item.events?.title || 'Event'}</p>
+                              <p className="text-xs text-muted-foreground">
                                 {new Date(item.created_at).toLocaleDateString()}
                               </p>
                             </div>
@@ -2323,7 +2323,7 @@ export function AttendeeProfile() {
                                 item.status === 'available' ? 'bg-green-100 text-green-700' :
                                 item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                                 item.status === 'paid' ? 'bg-blue-100 text-blue-700' :
-                                'bg-gray-100 text-gray-700'
+                                'bg-muted text-foreground/80'
                               }`}>
                                 {item.status}
                               </Badge>
@@ -2357,7 +2357,7 @@ export function AttendeeProfile() {
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
               <p>Tap the button below to open Telegram and complete the linking process.</p>
-              <p className="text-sm text-[#0F0F0F]/60">
+              <p className="text-sm text-muted-foreground">
                 Click "Start" in Telegram, then tap "Confirm Link" when prompted.
               </p>
             </AlertDialogDescription>
@@ -2389,14 +2389,14 @@ export function AttendeeProfile() {
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
               <p>This action is permanent and cannot be undone. All your data will be deleted:</p>
-              <ul className="list-disc list-inside text-sm space-y-1 text-[#0F0F0F]/70">
+              <ul className="list-disc list-inside text-sm space-y-1 text-foreground/70">
                 <li>Your profile information</li>
                 <li>All ticket history</li>
                 <li>Saved events</li>
                 <li>Affiliate earnings (unpaid balance will be forfeited)</li>
               </ul>
               <div className="pt-2">
-                <Label className="text-[#0F0F0F]">Type "delete" to confirm</Label>
+                <Label className="text-foreground">Type "delete" to confirm</Label>
                 <Input 
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}

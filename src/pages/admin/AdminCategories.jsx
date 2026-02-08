@@ -313,8 +313,8 @@ export function AdminCategories() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Event Categories</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Manage categories for event classification</p>
+          <h2 className="text-2xl font-semibold text-foreground">Event Categories</h2>
+          <p className="text-muted-foreground mt-1">Manage categories for event classification</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={loadCategories} className="rounded-xl">
@@ -329,22 +329,22 @@ export function AdminCategories() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Categories</p>
+                <p className="text-sm text-muted-foreground">Total Categories</p>
                 <p className="text-2xl font-semibold">{stats.total}</p>
               </div>
               <FolderOpen className="w-8 h-8 text-[#2969FF]/20" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Active</p>
+                <p className="text-sm text-muted-foreground">Active</p>
                 <p className="text-2xl font-semibold text-green-600">{stats.active}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -353,14 +353,14 @@ export function AdminCategories() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Inactive</p>
-                <p className="text-2xl font-semibold text-[#0F0F0F]/40">{stats.inactive}</p>
+                <p className="text-sm text-muted-foreground">Inactive</p>
+                <p className="text-2xl font-semibold text-muted-foreground">{stats.inactive}</p>
               </div>
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                 <div className="w-3 h-3 rounded-full bg-gray-400" />
               </div>
             </div>
@@ -369,54 +369,54 @@ export function AdminCategories() {
       </div>
 
       {/* Search */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               placeholder="Search categories by name or slug..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white border-[#0F0F0F]/10 rounded-xl"
+              className="pl-10 bg-card border-border/10 rounded-xl"
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Categories Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F]">Categories ({filteredCategories.length})</CardTitle>
+          <CardTitle className="text-foreground">Categories ({filteredCategories.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#0F0F0F]/10">
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Icon</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Name</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Slug</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Description</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
-                  <th className="text-left py-4 px-4 text-[#0F0F0F]/60 font-medium">Actions</th>
+                <tr className="border-b border-border/10">
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Icon</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Name</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Slug</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Description</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Status</th>
+                  <th className="text-left py-4 px-4 text-muted-foreground font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCategories.map((category) => (
-                  <tr key={category.id} className="border-b border-[#0F0F0F]/5 hover:bg-[#F4F6FA]/50">
+                  <tr key={category.id} className="border-b border-border/5 hover:bg-muted/50">
                     <td className="py-4 px-4">
                       <span className="text-2xl">{category.icon || '📅'}</span>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F] font-medium">{category.name}</p>
+                      <p className="text-foreground font-medium">{category.name}</p>
                     </td>
                     <td className="py-4 px-4">
-                      <code className="text-sm bg-[#F4F6FA] px-2 py-1 rounded text-[#0F0F0F]/70">
+                      <code className="text-sm bg-muted px-2 py-1 rounded text-foreground/70">
                         {category.slug}
                       </code>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-[#0F0F0F]/60 text-sm truncate max-w-xs">
+                      <p className="text-muted-foreground text-sm truncate max-w-xs">
                         {category.description || '—'}
                       </p>
                     </td>
@@ -428,7 +428,7 @@ export function AdminCategories() {
                         />
                         <Badge className={category.is_active 
                           ? 'bg-green-100 text-green-700' 
-                          : 'bg-gray-100 text-gray-700'
+                          : 'bg-muted text-foreground/80'
                         }>
                           {category.is_active ? 'Active' : 'Inactive'}
                         </Badge>
@@ -458,7 +458,7 @@ export function AdminCategories() {
                 ))}
                 {filteredCategories.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-[#0F0F0F]/60">
+                    <td colSpan={6} className="py-8 text-center text-muted-foreground">
                       {searchQuery ? 'No categories match your search' : 'No categories found'}
                     </td>
                   </tr>
@@ -496,7 +496,7 @@ export function AdminCategories() {
             {/* Icon Selector */}
             <div className="space-y-2">
               <Label>Icon</Label>
-              <div className="flex flex-wrap gap-2 p-3 bg-[#F4F6FA] rounded-xl max-h-32 overflow-y-auto">
+              <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-xl max-h-32 overflow-y-auto">
                 {EMOJI_OPTIONS.map((emoji) => (
                   <button
                     key={emoji}
@@ -505,7 +505,7 @@ export function AdminCategories() {
                     className={`w-10 h-10 text-xl rounded-lg flex items-center justify-center transition-colors ${
                       formData.icon === emoji 
                         ? 'bg-[#2969FF] ring-2 ring-[#2969FF]' 
-                        : 'bg-white hover:bg-gray-100'
+                        : 'bg-card hover:bg-muted'
                     }`}
                   >
                     {emoji}
@@ -536,7 +536,7 @@ export function AdminCategories() {
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                 className="rounded-xl font-mono text-sm"
               />
-              <p className="text-xs text-[#0F0F0F]/50">
+              <p className="text-xs text-muted-foreground">
                 URL-friendly identifier. Auto-generated from name.
               </p>
             </div>
@@ -555,10 +555,10 @@ export function AdminCategories() {
             </div>
 
             {/* Active Toggle */}
-            <div className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-xl">
               <div>
                 <Label>Active</Label>
-                <p className="text-xs text-[#0F0F0F]/50">
+                <p className="text-xs text-muted-foreground">
                   Inactive categories won't appear in event creation
                 </p>
               </div>
@@ -609,8 +609,8 @@ export function AdminCategories() {
           <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl">
             <span className="text-3xl">{deletingCategory?.icon}</span>
             <div>
-              <p className="font-medium text-[#0F0F0F]">{deletingCategory?.name}</p>
-              <p className="text-sm text-[#0F0F0F]/60">{deletingCategory?.slug}</p>
+              <p className="font-medium text-foreground">{deletingCategory?.name}</p>
+              <p className="text-sm text-muted-foreground">{deletingCategory?.slug}</p>
             </div>
           </div>
 

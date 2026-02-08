@@ -114,7 +114,7 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
       <Card>
         <CardContent className="p-8 text-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto" />
-          <p className="mt-2 text-[#0F0F0F]/60">Loading payment status...</p>
+          <p className="mt-2 text-muted-foreground">Loading payment status...</p>
         </CardContent>
       </Card>
     );
@@ -125,7 +125,7 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
       <Card>
         <CardContent className="p-8 text-center">
           <AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
-          <p className="mt-2 text-[#0F0F0F]/60">Could not load payment data</p>
+          <p className="mt-2 text-muted-foreground">Could not load payment data</p>
         </CardContent>
       </Card>
     );
@@ -138,7 +138,7 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
   const splitStatus = formatSplitStatus(split?.status);
 
   return (
-    <Card className="border-[#0F0F0F]/10">
+    <Card className="border-border/10">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -155,7 +155,7 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
         {/* Progress */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-[#0F0F0F]/60">{paidCount} of {totalCount} paid</span>
+            <span className="text-muted-foreground">{paidCount} of {totalCount} paid</span>
             <span className="font-medium">
               {formatPrice(splitData.total_paid || 0, split?.currency)} / {formatPrice(split?.grand_total, split?.currency)}
             </span>
@@ -183,18 +183,18 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
               <div 
                 key={share.id}
                 className={`flex items-center justify-between p-3 rounded-xl ${
-                  isPaid ? 'bg-green-50' : 'bg-gray-50'
+                  isPaid ? 'bg-green-50' : 'bg-background'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    isPaid ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                    isPaid ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'
                   }`}>
                     {isPaid ? <Check className="w-4 h-4" /> : share.name?.charAt(0).toUpperCase() || '?'}
                   </div>
                   <div>
                     <div className="font-medium text-sm">{share.name || share.email?.split('@')[0]}</div>
-                    <div className="text-xs text-[#0F0F0F]/50">{share.email}</div>
+                    <div className="text-xs text-muted-foreground">{share.email}</div>
                   </div>
                 </div>
                 

@@ -585,7 +585,7 @@ export function AdminFinance() {
       'CAD': 'bg-red-100 text-red-800',
       'GHS': 'bg-yellow-100 text-yellow-800',
     };
-    return colors[currency] || 'bg-gray-100 text-gray-800';
+    return colors[currency] || 'bg-muted text-foreground';
   };
 
   const filteredEvents = completedEvents.filter(event => {
@@ -626,7 +626,7 @@ export function AdminFinance() {
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search events or organizers..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -645,18 +645,18 @@ export function AdminFinance() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : filteredEvents.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <Calendar className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">No completed events with pending payouts</p>
+            <Calendar className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground">No completed events with pending payouts</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           {filteredEvents.map(event => (
-            <Card key={event.id} className="border-[#0F0F0F]/10 rounded-2xl overflow-hidden">
+            <Card key={event.id} className="border-border/10 rounded-2xl overflow-hidden">
               <div 
-                className="p-4 flex items-center justify-between hover:bg-[#F4F6FA]/50 transition-colors cursor-pointer"
+                className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => toggleEventExpanded(event.id)}
               >
                 <div className="flex items-center gap-4">
@@ -664,55 +664,55 @@ export function AdminFinance() {
                     <Calendar className="w-6 h-6 text-[#2969FF]" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-semibold text-[#0F0F0F]">{event.title}</h3>
-                    <p className="text-sm text-[#0F0F0F]/60">{event.organizers?.business_name} • {new Date(event.end_date).toLocaleDateString()}</p>
+                    <h3 className="font-semibold text-foreground">{event.title}</h3>
+                    <p className="text-sm text-muted-foreground">{event.organizers?.business_name} • {new Date(event.end_date).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <Badge className={getCurrencyColor(event.currency)}>{event.currency}</Badge>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(event.totalSales, event.currency)}</p>
-                    <p className="text-sm text-[#0F0F0F]/60">Total Sales</p>
+                    <p className="text-lg font-bold text-foreground">{formatPrice(event.totalSales, event.currency)}</p>
+                    <p className="text-sm text-muted-foreground">Total Sales</p>
                   </div>
                   {event.payout_status === 'paid' ? (
                     <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>
                   ) : (
                     <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>
                   )}
-                  {expandedEvents[event.id] ? <ChevronUp className="w-5 h-5 text-[#0F0F0F]/40" /> : <ChevronDown className="w-5 h-5 text-[#0F0F0F]/40" />}
+                  {expandedEvents[event.id] ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
                 </div>
               </div>
 
               {expandedEvents[event.id] && (
-                <div className="px-4 pb-4 border-t border-[#0F0F0F]/10">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-b border-[#0F0F0F]/10">
-                    <div className="text-center p-3 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(event.totalSales, event.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">Total Sales</p>
+                <div className="px-4 pb-4 border-t border-border/10">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-b border-border/10">
+                    <div className="text-center p-3 bg-muted rounded-xl">
+                      <p className="text-lg font-bold text-foreground">{formatPrice(event.totalSales, event.currency)}</p>
+                      <p className="text-xs text-muted-foreground">Total Sales</p>
                     </div>
                     <div className="text-center p-3 bg-blue-50 rounded-xl">
                       <p className="text-lg font-bold text-blue-600">{formatPrice(event.platformFees, event.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">Platform Fees</p>
+                      <p className="text-xs text-muted-foreground">Platform Fees</p>
                     </div>
                     <div className="text-center p-3 bg-purple-50 rounded-xl">
                       <p className="text-lg font-bold text-purple-600">{formatPrice(event.totalPromoterCommission, event.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">Promoter Commission</p>
+                      <p className="text-xs text-muted-foreground">Promoter Commission</p>
                     </div>
                     <div className="text-center p-3 bg-green-50 rounded-xl">
                       <p className="text-lg font-bold text-green-600">{formatPrice(event.organizerNet, event.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/60">Organizer Net</p>
+                      <p className="text-xs text-muted-foreground">Organizer Net</p>
                     </div>
                   </div>
 
-                  <div className="py-4 border-b border-[#0F0F0F]/10">
-                    <h4 className="font-medium text-[#0F0F0F] mb-3 flex items-center gap-2">
+                  <div className="py-4 border-b border-border/10">
+                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-blue-600" />Organizer
                     </h4>
-                    <div className="p-4 bg-[#F4F6FA] rounded-xl space-y-3">
+                    <div className="p-4 bg-muted rounded-xl space-y-3">
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="font-semibold text-[#0F0F0F] text-lg">{event.organizers?.business_name}</p>
-                          <p className="text-sm text-[#0F0F0F]/60">{event.organizers?.email}</p>
+                          <p className="font-semibold text-foreground text-lg">{event.organizers?.business_name}</p>
+                          <p className="text-sm text-muted-foreground">{event.organizers?.email}</p>
                           {/* Payment Gateway Badges */}
                           <div className="flex flex-wrap gap-1 mt-2">
                             {event.organizers?.stripe_connect_enabled && (
@@ -731,7 +731,7 @@ export function AdminFinance() {
                               </Badge>
                             )}
                             {!event.organizers?.stripe_connect_enabled && !event.organizers?.paystack_subaccount_enabled && !event.organizers?.flutterwave_subaccount_enabled && (
-                              <Badge className="text-xs bg-gray-100 text-gray-600">Manual Payout</Badge>
+                              <Badge className="text-xs bg-muted text-muted-foreground">Manual Payout</Badge>
                             )}
                           </div>
                         </div>
@@ -761,29 +761,29 @@ export function AdminFinance() {
 
                       {/* Bank Account Details */}
                       {event.primaryBankAccount ? (
-                        <div className="border-t border-[#0F0F0F]/10 pt-3">
-                          <p className="text-xs text-[#0F0F0F]/60 mb-2 font-medium">Bank Account Details</p>
-                          <div className="p-3 bg-white rounded-lg border border-[#0F0F0F]/10">
+                        <div className="border-t border-border/10 pt-3">
+                          <p className="text-xs text-muted-foreground mb-2 font-medium">Bank Account Details</p>
+                          <div className="p-3 bg-card rounded-lg border border-border/10">
                             <div className="flex items-center gap-2 mb-2">
-                              <p className="font-semibold text-[#0F0F0F]">{event.primaryBankAccount.bank_name}</p>
+                              <p className="font-semibold text-foreground">{event.primaryBankAccount.bank_name}</p>
                               {event.primaryBankAccount.is_default && (
                                 <Badge className="bg-[#2969FF] text-white text-xs">Primary</Badge>
                               )}
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-sm">
                               <div>
-                                <span className="text-[#0F0F0F]/60">Account Name: </span>
-                                <span className="font-medium text-[#0F0F0F]">{event.primaryBankAccount.account_name || 'N/A'}</span>
+                                <span className="text-muted-foreground">Account Name: </span>
+                                <span className="font-medium text-foreground">{event.primaryBankAccount.account_name || 'N/A'}</span>
                               </div>
                               <div>
-                                <span className="text-[#0F0F0F]/60">Account Number: </span>
-                                <span className="font-mono font-medium text-[#0F0F0F]">{event.primaryBankAccount.account_number || 'N/A'}</span>
+                                <span className="text-muted-foreground">Account Number: </span>
+                                <span className="font-mono font-medium text-foreground">{event.primaryBankAccount.account_number || 'N/A'}</span>
                               </div>
                             </div>
                           </div>
                         </div>
                       ) : (
-                        <div className="border-t border-[#0F0F0F]/10 pt-3">
+                        <div className="border-t border-border/10 pt-3">
                           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                             <p className="text-sm text-red-800 font-medium">No Bank Account</p>
                             <p className="text-xs text-red-600">Organizer has not added bank details yet.</p>
@@ -795,18 +795,18 @@ export function AdminFinance() {
 
                   {event.promoterEarnings.length > 0 && (
                     <div className="py-4">
-                      <h4 className="font-medium text-[#0F0F0F] mb-3 flex items-center gap-2">
+                      <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
                         <Users className="w-4 h-4 text-purple-600" />Promoters ({event.promoterEarnings.length})
                       </h4>
                       <div className="space-y-2">
                         {event.promoterEarnings.map((promo, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                          <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                             <div>
-                              <p className="font-medium text-[#0F0F0F]">{promo.promoter?.full_name}</p>
-                              <p className="text-sm text-[#0F0F0F]/60">{promo.promoter?.email}</p>
+                              <p className="font-medium text-foreground">{promo.promoter?.full_name}</p>
+                              <p className="text-sm text-muted-foreground">{promo.promoter?.email}</p>
                             </div>
                             <div className="flex items-center gap-3">
-                              <p className="font-bold text-[#0F0F0F]">{formatPrice(promo.totalCommission, event.currency)}</p>
+                              <p className="font-bold text-foreground">{formatPrice(promo.totalCommission, event.currency)}</p>
                               {promo.isPaid ? (
                                 <Badge className="bg-green-100 text-green-800">Paid</Badge>
                               ) : (
@@ -822,7 +822,7 @@ export function AdminFinance() {
                   )}
 
                   {event.payout_status !== 'paid' && (
-                    <div className="pt-4 border-t border-[#0F0F0F]/10">
+                    <div className="pt-4 border-t border-border/10">
                       <Button onClick={(e) => { e.stopPropagation(); payAllForEvent(event); }} disabled={processing} className="w-full bg-green-600 hover:bg-green-700 rounded-xl">
                         {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
                         Mark All as Paid
@@ -842,7 +842,7 @@ export function AdminFinance() {
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search affiliates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -861,16 +861,16 @@ export function AdminFinance() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : affiliatePayouts.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <Link2 className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">No affiliate payouts found</p>
+            <Link2 className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground">No affiliate payouts found</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {affiliatePayouts.map((affiliate, idx) => (
-            <Card key={idx} className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card key={idx} className="border-border/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4">
@@ -878,8 +878,8 @@ export function AdminFinance() {
                       <User className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-[#0F0F0F]">{affiliate.affiliate?.first_name} {affiliate.affiliate?.last_name}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{affiliate.affiliate?.email}</p>
+                      <p className="font-semibold text-foreground">{affiliate.affiliate?.first_name} {affiliate.affiliate?.last_name}</p>
+                      <p className="text-sm text-muted-foreground">{affiliate.affiliate?.email}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-xs text-[#2969FF]">Code: {affiliate.affiliate?.referral_code}</p>
                         <Badge className={getCurrencyColor(affiliate.currency)}>{affiliate.currency}</Badge>
@@ -888,15 +888,15 @@ export function AdminFinance() {
                   </div>
                   <div className="flex items-center gap-6 flex-wrap">
                     <div className="text-right">
-                      <p className="text-sm text-[#0F0F0F]/60">Total Earned</p>
-                      <p className="font-semibold text-[#0F0F0F]">{formatPrice(affiliate.totalEarned, affiliate.currency)}</p>
+                      <p className="text-sm text-muted-foreground">Total Earned</p>
+                      <p className="font-semibold text-foreground">{formatPrice(affiliate.totalEarned, affiliate.currency)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                      <p className="text-sm text-muted-foreground">Pending</p>
                       <p className="font-bold text-yellow-600">{formatPrice(affiliate.totalPending, affiliate.currency)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-[#0F0F0F]/60">Paid</p>
+                      <p className="text-sm text-muted-foreground">Paid</p>
                       <p className="font-semibold text-green-600">{formatPrice(affiliate.totalPaid, affiliate.currency)}</p>
                     </div>
                     {affiliate.totalPending > 0 && (
@@ -923,14 +923,14 @@ export function AdminFinance() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : payoutHistory.length === 0 ? (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <DollarSign className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-            <p className="text-[#0F0F0F]/60">No payout history yet</p>
+            <DollarSign className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground">No payout history yet</p>
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-0">
             <div className="divide-y divide-[#0F0F0F]/10">
               {payoutHistory.map((payout, idx) => (
@@ -938,15 +938,15 @@ export function AdminFinance() {
                   <div className="flex items-center gap-4">
                     {getTypeBadge(payout.type)}
                     <div>
-                      <p className="font-medium text-[#0F0F0F]">{payout.recipientName}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">{payout.recipientEmail}</p>
+                      <p className="font-medium text-foreground">{payout.recipientName}</p>
+                      <p className="text-sm text-muted-foreground">{payout.recipientEmail}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <Badge className={getCurrencyColor(payout.currency)}>{payout.currency || getDefaultCurrency(payout.country_code || payout.country)}</Badge>
                     <div className="text-right">
-                      <p className="font-bold text-[#0F0F0F]">{formatPrice(payout.amount || payout.net_amount, payout.currency)}</p>
-                      <p className="text-xs text-[#0F0F0F]/40">{payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}</p>
+                      <p className="font-bold text-foreground">{formatPrice(payout.amount || payout.net_amount, payout.currency)}</p>
+                      <p className="text-xs text-muted-foreground">{payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}</p>
                     </div>
                     <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Paid</Badge>
                   </div>
@@ -963,24 +963,24 @@ export function AdminFinance() {
     <div className="space-y-6">
       {/* Revenue Summary Cards - By Currency */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Platform Revenue</p>
+                <p className="text-sm text-muted-foreground">Total Platform Revenue</p>
               </div>
             </div>
             <div className="space-y-2">
               {Object.entries(platformStats.revenueByCurrency || {}).length === 0 ? (
-                <p className="text-[#0F0F0F]/40 text-sm">No revenue yet</p>
+                <p className="text-muted-foreground text-sm">No revenue yet</p>
               ) : (
                 Object.entries(platformStats.revenueByCurrency).map(([currency, amount]) => (
                   <div key={currency} className="flex items-center justify-between">
                     <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
-                    <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                    <p className="text-lg font-bold text-foreground">{formatPrice(amount, currency)}</p>
                   </div>
                 ))
               )}
@@ -988,24 +988,24 @@ export function AdminFinance() {
           </CardContent>
         </Card>
         
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Paid Out</p>
+                <p className="text-sm text-muted-foreground">Total Paid Out</p>
               </div>
             </div>
             <div className="space-y-2">
               {Object.entries(platformStats.paidOutByCurrency || {}).length === 0 ? (
-                <p className="text-[#0F0F0F]/40 text-sm">No payouts yet</p>
+                <p className="text-muted-foreground text-sm">No payouts yet</p>
               ) : (
                 Object.entries(platformStats.paidOutByCurrency).map(([currency, amount]) => (
                   <div key={currency} className="flex items-center justify-between">
                     <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
-                    <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                    <p className="text-lg font-bold text-foreground">{formatPrice(amount, currency)}</p>
                   </div>
                 ))
               )}
@@ -1013,24 +1013,24 @@ export function AdminFinance() {
           </CardContent>
         </Card>
         
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
+                <p className="text-sm text-muted-foreground">Pending Payouts</p>
               </div>
             </div>
             <div className="space-y-2">
               {Object.entries(platformStats.pendingByCurrency || {}).length === 0 ? (
-                <p className="text-[#0F0F0F]/40 text-sm">No pending payouts</p>
+                <p className="text-muted-foreground text-sm">No pending payouts</p>
               ) : (
                 Object.entries(platformStats.pendingByCurrency).map(([currency, amount]) => (
                   <div key={currency} className="flex items-center justify-between">
                     <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
-                    <p className="text-lg font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                    <p className="text-lg font-bold text-foreground">{formatPrice(amount, currency)}</p>
                   </div>
                 ))
               )}
@@ -1040,7 +1040,7 @@ export function AdminFinance() {
       </div>
 
       {/* Monthly Revenue Chart */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Monthly Revenue (Last 6 Months)</CardTitle>
           <CardDescription>Platform fees collected by month</CardDescription>
@@ -1052,17 +1052,17 @@ export function AdminFinance() {
               const height = (month.total / maxTotal) * 100;
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full bg-[#F4F6FA] rounded-t-lg relative" style={{ height: '180px' }}>
+                  <div className="w-full bg-muted rounded-t-lg relative" style={{ height: '180px' }}>
                     <div className="absolute bottom-0 w-full bg-gradient-to-t from-[#2969FF] to-[#2969FF]/70 rounded-t-lg transition-all" 
                          style={{ height: `${Math.max(height, 5)}%` }} />
                   </div>
-                  <p className="text-xs font-medium text-[#0F0F0F]">{month.month}</p>
+                  <p className="text-xs font-medium text-foreground">{month.month}</p>
                   <div className="text-center">
                     {Object.entries(month.byCurrency || {}).slice(0, 2).map(([curr, amt]) => (
-                      <p key={curr} className="text-xs text-[#0F0F0F]/60">{formatPrice(amt, curr)}</p>
+                      <p key={curr} className="text-xs text-muted-foreground">{formatPrice(amt, curr)}</p>
                     ))}
                     {Object.keys(month.byCurrency || {}).length > 2 && (
-                      <p className="text-xs text-[#0F0F0F]/40">+{Object.keys(month.byCurrency).length - 2} more</p>
+                      <p className="text-xs text-muted-foreground">+{Object.keys(month.byCurrency).length - 2} more</p>
                     )}
                   </div>
                 </div>
@@ -1079,20 +1079,20 @@ export function AdminFinance() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Globe className="w-5 h-5" />Revenue by Country</CardTitle>
             <CardDescription>Each country shown in its local currency</CardDescription>
           </CardHeader>
           <CardContent>
             {platformStats.revenueByCountry.length === 0 ? (
-              <p className="text-center text-[#0F0F0F]/60 py-8">No data available</p>
+              <p className="text-center text-muted-foreground py-8">No data available</p>
             ) : (
               <div className="space-y-3">
                 {platformStats.revenueByCountry.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl hover:bg-[#F4F6FA]/70 transition-colors">
+                  <div key={idx} className="flex items-center justify-between p-4 bg-muted rounded-xl hover:bg-muted/70 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center font-bold text-lg shadow-sm">
+                      <div className="w-12 h-12 rounded-xl bg-card flex items-center justify-center font-bold text-lg shadow-sm">
                         {item.country === 'NG' && '🇳🇬'}
                         {item.country === 'GB' && '🇬🇧'}
                         {item.country === 'US' && '🇺🇸'}
@@ -1101,11 +1101,11 @@ export function AdminFinance() {
                         {!['NG', 'GB', 'US', 'CA', 'GH'].includes(item.country) && '🌍'}
                       </div>
                       <div>
-                        <p className="font-semibold text-[#0F0F0F]">{item.countryName}</p>
+                        <p className="font-semibold text-foreground">{item.countryName}</p>
                         <Badge className={getCurrencyColor(item.currency)}>{item.currency}</Badge>
                       </div>
                     </div>
-                    <p className="text-xl font-bold text-[#0F0F0F]">{formatPrice(item.revenue, item.currency)}</p>
+                    <p className="text-xl font-bold text-foreground">{formatPrice(item.revenue, item.currency)}</p>
                   </div>
                 ))}
               </div>
@@ -1121,29 +1121,29 @@ export function AdminFinance() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>
       ) : (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><PieChart className="w-5 h-5" />Revenue by Category</CardTitle>
             <CardDescription>Breakdown by event category with currency details</CardDescription>
           </CardHeader>
           <CardContent>
             {platformStats.revenueByCategory.length === 0 ? (
-              <p className="text-center text-[#0F0F0F]/60 py-8">No data available</p>
+              <p className="text-center text-muted-foreground py-8">No data available</p>
             ) : (
               <div className="space-y-4">
                 {platformStats.revenueByCategory.map((item, idx) => (
-                  <div key={idx} className="p-4 bg-[#F4F6FA] rounded-xl">
+                  <div key={idx} className="p-4 bg-muted rounded-xl">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="font-semibold text-[#0F0F0F] text-lg">{item.category}</p>
-                      <p className="text-sm text-[#0F0F0F]/60">
+                      <p className="font-semibold text-foreground text-lg">{item.category}</p>
+                      <p className="text-sm text-muted-foreground">
                         {Object.keys(item.byCurrency).length} {Object.keys(item.byCurrency).length === 1 ? 'currency' : 'currencies'}
                       </p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                       {Object.entries(item.byCurrency).map(([currency, amount]) => (
-                        <div key={currency} className="bg-white rounded-lg p-2 text-center shadow-sm">
+                        <div key={currency} className="bg-card rounded-lg p-2 text-center shadow-sm">
                           <Badge className={`${getCurrencyColor(currency)} mb-1`}>{currency}</Badge>
-                          <p className="font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                          <p className="font-bold text-foreground">{formatPrice(amount, currency)}</p>
                         </div>
                       ))}
                     </div>
@@ -1168,7 +1168,7 @@ export function AdminFinance() {
         'GHS': 'bg-yellow-100 text-yellow-700',
         'EUR': 'bg-indigo-100 text-indigo-700',
       };
-      return colors[currency] || 'bg-gray-100 text-gray-700';
+      return colors[currency] || 'bg-muted text-foreground/80';
     };
 
     return (
@@ -1180,36 +1180,36 @@ export function AdminFinance() {
             {/* Stats Cards - Revenue by Currency */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Total Revenue */}
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
                       <DollarSign className="w-5 h-5 text-green-600" />
                     </div>
-                    <p className="text-sm text-[#0F0F0F]/60">Total Ad Revenue</p>
+                    <p className="text-sm text-muted-foreground">Total Ad Revenue</p>
                   </div>
                   <div className="space-y-1">
                     {Object.entries(adRevenue.revenueByCurrency || {}).map(([currency, amount]) => (
                       <div key={currency} className="flex items-center justify-between">
                         <Badge className={getCurrencyColor(currency)}>{currency}</Badge>
-                        <p className="font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                        <p className="font-bold text-foreground">{formatPrice(amount, currency)}</p>
                       </div>
                     ))}
                     {Object.keys(adRevenue.revenueByCurrency || {}).length === 0 && (
-                      <p className="text-[#0F0F0F]/40 text-sm">No revenue yet</p>
+                      <p className="text-muted-foreground text-sm">No revenue yet</p>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Paid Revenue */}
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
                       <CheckCircle className="w-5 h-5 text-green-600" />
                     </div>
-                    <p className="text-sm text-[#0F0F0F]/60">Paid</p>
+                    <p className="text-sm text-muted-foreground">Paid</p>
                   </div>
                   <div className="space-y-1">
                     {Object.entries(adRevenue.paidByCurrency || {}).map(([currency, amount]) => (
@@ -1219,20 +1219,20 @@ export function AdminFinance() {
                       </div>
                     ))}
                     {Object.keys(adRevenue.paidByCurrency || {}).length === 0 && (
-                      <p className="text-[#0F0F0F]/40 text-sm">No paid ads yet</p>
+                      <p className="text-muted-foreground text-sm">No paid ads yet</p>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Unpaid Revenue */}
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
                       <Clock className="w-5 h-5 text-yellow-600" />
                     </div>
-                    <p className="text-sm text-[#0F0F0F]/60">Unpaid</p>
+                    <p className="text-sm text-muted-foreground">Unpaid</p>
                   </div>
                   <div className="space-y-1">
                     {Object.entries(adRevenue.unpaidByCurrency || {}).map(([currency, amount]) => (
@@ -1242,7 +1242,7 @@ export function AdminFinance() {
                       </div>
                     ))}
                     {Object.keys(adRevenue.unpaidByCurrency || {}).length === 0 && (
-                      <p className="text-[#0F0F0F]/40 text-sm">All ads are paid!</p>
+                      <p className="text-muted-foreground text-sm">All ads are paid!</p>
                     )}
                   </div>
                 </CardContent>
@@ -1251,12 +1251,12 @@ export function AdminFinance() {
 
             {/* Performance Stats */}
             <div className="grid grid-cols-2 gap-4">
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-[#0F0F0F]/60">Total Impressions</p>
-                      <p className="text-2xl font-bold text-[#0F0F0F]">{(adRevenue.totalImpressions || 0).toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">Total Impressions</p>
+                      <p className="text-2xl font-bold text-foreground">{(adRevenue.totalImpressions || 0).toLocaleString()}</p>
                     </div>
                     <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
                       <Eye className="w-5 h-5 text-purple-600" />
@@ -1264,12 +1264,12 @@ export function AdminFinance() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-[#0F0F0F]/60">Total Clicks</p>
-                      <p className="text-2xl font-bold text-[#0F0F0F]">{(adRevenue.totalClicks || 0).toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">Total Clicks</p>
+                      <p className="text-2xl font-bold text-foreground">{(adRevenue.totalClicks || 0).toLocaleString()}</p>
                     </div>
                     <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
                       <MousePointer className="w-5 h-5 text-orange-600" />
@@ -1280,15 +1280,15 @@ export function AdminFinance() {
             </div>
 
             {/* Revenue by Position */}
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Megaphone className="w-5 h-5" />Revenue by Position</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {Object.entries(adRevenue.byPosition || {}).map(([position, byCurrency]) => (
-                    <div key={position} className="p-4 bg-[#F4F6FA] rounded-xl">
-                      <p className="text-sm text-[#0F0F0F]/60 capitalize mb-2">{position} Banner</p>
+                    <div key={position} className="p-4 bg-muted rounded-xl">
+                      <p className="text-sm text-muted-foreground capitalize mb-2">{position} Banner</p>
                       {Object.entries(byCurrency || {}).length > 0 ? (
                         Object.entries(byCurrency).map(([currency, amount]) => (
                           <div key={currency} className="flex items-center justify-between text-sm">
@@ -1297,7 +1297,7 @@ export function AdminFinance() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-[#0F0F0F]/40 text-sm">No revenue</p>
+                        <p className="text-muted-foreground text-sm">No revenue</p>
                       )}
                     </div>
                   ))}
@@ -1307,15 +1307,15 @@ export function AdminFinance() {
 
             {/* Revenue by Month */}
             {(adRevenue.byMonth || []).length > 0 && (
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><Calendar className="w-5 h-5" />Monthly Ad Revenue</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                     {adRevenue.byMonth.map((item, idx) => (
-                      <div key={idx} className="p-3 bg-[#F4F6FA] rounded-xl">
-                        <p className="text-xs text-[#0F0F0F]/60 mb-2">{item.month}</p>
+                      <div key={idx} className="p-3 bg-muted rounded-xl">
+                        <p className="text-xs text-muted-foreground mb-2">{item.month}</p>
                         {Object.entries(item.byCurrency || {}).map(([currency, amount]) => (
                           <div key={currency} className="flex items-center justify-between text-sm">
                             <Badge className={`${getCurrencyColor(currency)} text-xs`}>{currency}</Badge>
@@ -1331,21 +1331,21 @@ export function AdminFinance() {
 
             {/* Top Advertisers */}
             {(adRevenue.byAdvertiser || []).length > 0 && (
-              <Card className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card className="border-border/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" />Top Advertisers</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {adRevenue.byAdvertiser.slice(0, 10).map((advertiser, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-[#F4F6FA] rounded-xl">
+                      <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                         <div>
-                          <p className="font-semibold text-[#0F0F0F]">{advertiser.name}</p>
-                          <p className="text-xs text-[#0F0F0F]/60">{advertiser.ads} ads · {advertiser.clicks} clicks · {advertiser.impressions} views</p>
+                          <p className="font-semibold text-foreground">{advertiser.name}</p>
+                          <p className="text-xs text-muted-foreground">{advertiser.ads} ads · {advertiser.clicks} clicks · {advertiser.impressions} views</p>
                         </div>
                         <div className="text-right">
                           {Object.entries(advertiser.byCurrency || {}).map(([currency, amount]) => (
-                            <p key={currency} className="font-bold text-[#0F0F0F]">{formatPrice(amount, currency)}</p>
+                            <p key={currency} className="font-bold text-foreground">{formatPrice(amount, currency)}</p>
                           ))}
                         </div>
                       </div>
@@ -1356,18 +1356,18 @@ export function AdminFinance() {
             )}
 
             {/* Ad List */}
-            <Card className="border-[#0F0F0F]/10 rounded-2xl">
+            <Card className="border-border/10 rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Receipt className="w-5 h-5" />All Ads</CardTitle>
                 <CardDescription>Click "Mark Paid" when advertiser has paid</CardDescription>
               </CardHeader>
               <CardContent>
                 {(adRevenue.ads || []).length === 0 ? (
-                  <p className="text-center text-[#0F0F0F]/60 py-8">No ads found</p>
+                  <p className="text-center text-muted-foreground py-8">No ads found</p>
                 ) : (
                   <div className="space-y-3">
                     {adRevenue.ads.map((ad) => (
-                      <div key={ad.id} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                      <div key={ad.id} className="flex items-center justify-between p-4 bg-muted rounded-xl">
                         <div className="flex items-center gap-4">
                           {ad.image_url && (
                             <img 
@@ -1377,8 +1377,8 @@ export function AdminFinance() {
                             />
                           )}
                           <div>
-                            <p className="font-semibold text-[#0F0F0F]">{ad.advertiser_name || 'Unknown'}</p>
-                            <div className="flex items-center gap-2 text-xs text-[#0F0F0F]/60">
+                            <p className="font-semibold text-foreground">{ad.advertiser_name || 'Unknown'}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <span className="capitalize">{ad.position}</span>
                               <span>·</span>
                               <span>{new Date(ad.start_date).toLocaleDateString()} - {new Date(ad.end_date).toLocaleDateString()}</span>
@@ -1387,8 +1387,8 @@ export function AdminFinance() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <p className="font-bold text-[#0F0F0F]">{formatPrice(ad.price || 0, ad.currency || 'NGN')}</p>
-                            <p className="text-xs text-[#0F0F0F]/60">{ad.clicks || 0} clicks · {ad.impressions || 0} views</p>
+                            <p className="font-bold text-foreground">{formatPrice(ad.price || 0, ad.currency || 'NGN')}</p>
+                            <p className="text-xs text-muted-foreground">{ad.clicks || 0} clicks · {ad.impressions || 0} views</p>
                           </div>
                           {ad.payment_status === 'paid' ? (
                             <Badge className="bg-green-100 text-green-700">Paid</Badge>
@@ -1526,7 +1526,7 @@ export function AdminFinance() {
   const renderFinancialSummary = () => (
     <div className="space-y-6">
       {/* Date Range Selector */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-[#2969FF]" />
@@ -1617,7 +1617,7 @@ export function AdminFinance() {
       {reportData.summary.transactionCount > 0 && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
+            <Card className="border-border/10 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
@@ -1638,7 +1638,7 @@ export function AdminFinance() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
+            <Card className="border-border/10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
@@ -1658,7 +1658,7 @@ export function AdminFinance() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50">
+            <Card className="border-border/10 rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50">
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -1700,7 +1700,7 @@ export function AdminFinance() {
 
   const renderTaxReports = () => (
     <div className="space-y-6">
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Percent className="w-5 h-5 text-amber-600" />
@@ -1755,7 +1755,7 @@ export function AdminFinance() {
                 Download Tax Report (CSV)
               </Button>
 
-              <p className="text-xs text-[#0F0F0F]/50">
+              <p className="text-xs text-muted-foreground">
                 Note: This report includes all completed transactions. Consult with a tax professional for specific filing requirements in your jurisdiction.
               </p>
             </div>
@@ -1767,7 +1767,7 @@ export function AdminFinance() {
 
   const renderExportData = () => (
     <div className="space-y-6">
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="w-5 h-5 text-[#2969FF]" />
@@ -1777,7 +1777,7 @@ export function AdminFinance() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -1785,7 +1785,7 @@ export function AdminFinance() {
                   </div>
                   <div>
                     <h4 className="font-medium">All Transactions</h4>
-                    <p className="text-xs text-[#0F0F0F]/60">Complete order history</p>
+                    <p className="text-xs text-muted-foreground">Complete order history</p>
                   </div>
                 </div>
                 <Button 
@@ -1803,7 +1803,7 @@ export function AdminFinance() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -1811,7 +1811,7 @@ export function AdminFinance() {
                   </div>
                   <div>
                     <h4 className="font-medium">Financial Summary</h4>
-                    <p className="text-xs text-[#0F0F0F]/60">Revenue & fees overview</p>
+                    <p className="text-xs text-muted-foreground">Revenue & fees overview</p>
                   </div>
                 </div>
                 <Button 
@@ -1829,7 +1829,7 @@ export function AdminFinance() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -1837,7 +1837,7 @@ export function AdminFinance() {
                   </div>
                   <div>
                     <h4 className="font-medium">Organizers</h4>
-                    <p className="text-xs text-[#0F0F0F]/60">All registered organizers</p>
+                    <p className="text-xs text-muted-foreground">All registered organizers</p>
                   </div>
                 </div>
                 <Button 
@@ -1870,7 +1870,7 @@ export function AdminFinance() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#0F0F0F]/10 rounded-xl">
+            <Card className="border-border/10 rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -1878,7 +1878,7 @@ export function AdminFinance() {
                   </div>
                   <div>
                     <h4 className="font-medium">Events</h4>
-                    <p className="text-xs text-[#0F0F0F]/60">All events data</p>
+                    <p className="text-xs text-muted-foreground">All events data</p>
                   </div>
                 </div>
                 <Button 
@@ -1925,13 +1925,13 @@ export function AdminFinance() {
 
   const renderSettings = () => (
     <div className="space-y-4">
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Platform Fee Settings</CardTitle>
           <CardDescription>Configure platform fees by country</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-[#0F0F0F]/60">Fee settings are managed in Admin Settings → Countries</p>
+          <p className="text-sm text-muted-foreground">Fee settings are managed in Admin Settings → Countries</p>
           <Button variant="outline" className="mt-4 rounded-xl" onClick={() => window.location.href = '/admin/settings'}>
             <Settings className="w-4 h-4 mr-2" />Go to Settings
           </Button>
@@ -1961,9 +1961,9 @@ export function AdminFinance() {
   return (
     <div className="flex h-[calc(100vh-80px)]">
       {/* Sidebar */}
-      <div className="w-64 border-r border-[#0F0F0F]/10 bg-white overflow-y-auto">
-        <div className="p-4 border-b border-[#0F0F0F]/10">
-          <h2 className="text-lg font-bold text-[#0F0F0F] flex items-center gap-2">
+      <div className="w-64 border-r border-border/10 bg-card overflow-y-auto">
+        <div className="p-4 border-b border-border/10">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-[#2969FF]" />
             Finance
           </h2>
@@ -1973,13 +1973,13 @@ export function AdminFinance() {
             <div key={group.id} className="mb-1">
               <button
                 onClick={() => toggleGroup(group.id)}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-[#0F0F0F] hover:bg-[#F4F6FA] rounded-lg transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <group.icon className="w-4 h-4 text-[#0F0F0F]/60" />
+                  <group.icon className="w-4 h-4 text-muted-foreground" />
                   {group.label}
                 </div>
-                <ChevronRight className={`w-4 h-4 text-[#0F0F0F]/40 transition-transform ${expandedGroups[group.id] ? 'rotate-90' : ''}`} />
+                <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expandedGroups[group.id] ? 'rotate-90' : ''}`} />
               </button>
               
               {expandedGroups[group.id] && (
@@ -1991,7 +1991,7 @@ export function AdminFinance() {
                       className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
                         activeSection === item.id
                           ? 'bg-[#2969FF] text-white'
-                          : 'text-[#0F0F0F]/70 hover:bg-[#F4F6FA]'
+                          : 'text-foreground/70 hover:bg-muted'
                       }`}
                     >
                       <item.icon className="w-4 h-4" />
@@ -2010,8 +2010,8 @@ export function AdminFinance() {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-[#0F0F0F]">{getCurrentTitle()}</h1>
-              <p className="text-sm text-[#0F0F0F]/60">Manage your financial operations</p>
+              <h1 className="text-2xl font-bold text-foreground">{getCurrentTitle()}</h1>
+              <p className="text-sm text-muted-foreground">Manage your financial operations</p>
             </div>
             <Button onClick={loadData} variant="outline" className="rounded-xl">
               <RefreshCw className="w-4 h-4 mr-2" />Refresh
@@ -2030,19 +2030,19 @@ export function AdminFinance() {
             <DialogDescription>Record payment to {paymentDialog.type}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-[#F4F6FA] rounded-xl">
+            <div className="p-4 bg-muted rounded-xl">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-[#0F0F0F]/60">Recipient</p>
-                  <p className="font-medium text-[#0F0F0F]">
+                  <p className="text-muted-foreground">Recipient</p>
+                  <p className="font-medium text-foreground">
                     {paymentDialog.type === 'organizer' && paymentDialog.event?.organizers?.business_name}
                     {paymentDialog.type === 'promoter' && paymentDialog.recipient?.promoter?.full_name}
                     {paymentDialog.type === 'affiliate' && `${paymentDialog.recipient?.affiliate?.first_name} ${paymentDialog.recipient?.affiliate?.last_name}`}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[#0F0F0F]/60">Amount</p>
-                  <p className="font-bold text-[#0F0F0F]">
+                  <p className="text-muted-foreground">Amount</p>
+                  <p className="font-bold text-foreground">
                     {paymentDialog.type === 'organizer' && formatPrice(paymentDialog.event?.organizerNet, paymentDialog.event?.currency)}
                     {paymentDialog.type === 'promoter' && formatPrice(paymentDialog.recipient?.totalCommission, paymentDialog.event?.currency)}
                     {paymentDialog.type === 'affiliate' && formatPrice(paymentDialog.recipient?.totalPending, paymentDialog.recipient?.currency)}

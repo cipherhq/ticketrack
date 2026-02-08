@@ -268,7 +268,7 @@ export function AdminCommunications() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Admin Broadcasts</h1>
-            <p className="text-[#0F0F0F]/60">Send platform-wide announcements</p>
+            <p className="text-muted-foreground">Send platform-wide announcements</p>
           </div>
           <Button onClick={() => setView('create')} className="bg-[#2969FF] text-white rounded-xl">
             <Mail className="w-4 h-4 mr-2" />
@@ -278,36 +278,36 @@ export function AdminCommunications() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
                 <Mail className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-2xl font-semibold">{broadcasts.length}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Total Broadcasts</p>
+                <p className="text-xs text-muted-foreground">Total Broadcasts</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <Send className="w-5 h-5 text-green-600" />
               </div>
               <div>
                 <p className="text-2xl font-semibold">{broadcasts.reduce((sum, b) => sum + (b.total_sent || 0), 0)}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Emails Sent</p>
+                <p className="text-xs text-muted-foreground">Emails Sent</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Users className="w-5 h-5 text-purple-600" />
               </div>
               <div>
                 <p className="text-2xl font-semibold">{broadcasts.filter(b => b.status === 'sent').length}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Sent</p>
+                <p className="text-xs text-muted-foreground">Sent</p>
               </div>
             </CardContent>
           </Card>
@@ -319,10 +319,10 @@ export function AdminCommunications() {
             <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
           </div>
         ) : broadcasts.length === 0 ? (
-          <Card className="rounded-2xl border-[#0F0F0F]/10">
+          <Card className="rounded-2xl border-border/10">
             <CardContent className="py-12 text-center">
-              <Mail className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
-              <p className="text-[#0F0F0F]/60 mb-4">No broadcasts yet</p>
+              <Mail className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">No broadcasts yet</p>
               <Button onClick={() => setView('create')} className="bg-[#2969FF] text-white rounded-xl">
                 Send First Broadcast
               </Button>
@@ -331,7 +331,7 @@ export function AdminCommunications() {
         ) : (
           <div className="space-y-3">
             {broadcasts.map(broadcast => (
-              <Card key={broadcast.id} className="rounded-2xl border-[#0F0F0F]/10 hover:shadow-md transition-shadow">
+              <Card key={broadcast.id} className="rounded-2xl border-border/10 hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
@@ -339,13 +339,13 @@ export function AdminCommunications() {
                         <h3 className="font-medium truncate">{broadcast.subject}</h3>
                         <Badge variant="secondary" className={
                           broadcast.status === 'sent' ? 'bg-green-100 text-green-700' :
-                          'bg-gray-100 text-gray-700'
+                          'bg-muted text-foreground/80'
                         }>
                           {broadcast.status === 'sent' && <CheckCircle className="w-3 h-3 mr-1" />}
                           {broadcast.status}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-[#0F0F0F]/60">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Users className="w-3.5 h-3.5" />
                           {broadcast.total_sent || broadcast.total_recipients || 0} recipients
@@ -375,7 +375,7 @@ export function AdminCommunications() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">New Broadcast</h1>
-          <p className="text-[#0F0F0F]/60">Send a platform-wide announcement</p>
+          <p className="text-muted-foreground">Send a platform-wide announcement</p>
         </div>
         <Button variant="outline" onClick={() => { resetForm(); setView('list'); }} className="rounded-xl">
           Cancel
@@ -384,7 +384,7 @@ export function AdminCommunications() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Form */}
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-6 space-y-5">
             {/* Recipients */}
             <div>
@@ -397,14 +397,14 @@ export function AdminCommunications() {
                     className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
                       form.recipientType === type.id 
                         ? 'border-[#2969FF] bg-[#2969FF]/5' 
-                        : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                        : 'border-border/10 hover:border-border/20'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <type.icon className={`w-5 h-5 ${form.recipientType === type.id ? 'text-[#2969FF]' : 'text-[#0F0F0F]/40'}`} />
+                      <type.icon className={`w-5 h-5 ${form.recipientType === type.id ? 'text-[#2969FF]' : 'text-muted-foreground'}`} />
                       <div>
                         <p className="font-medium text-sm">{type.label}</p>
-                        <p className="text-xs text-[#0F0F0F]/60">{type.description}</p>
+                        <p className="text-xs text-muted-foreground">{type.description}</p>
                       </div>
                     </div>
                   </button>
@@ -456,7 +456,7 @@ export function AdminCommunications() {
             {/* Body */}
             <div>
               <Label>Message</Label>
-              <div className="mt-1 rounded-xl overflow-hidden border border-[#0F0F0F]/10">
+              <div className="mt-1 rounded-xl overflow-hidden border border-border/10">
                 <ReactQuill
                   theme="snow"
                   value={form.body}
@@ -480,19 +480,19 @@ export function AdminCommunications() {
         </Card>
 
         {/* Preview */}
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Eye className="w-4 h-4 text-[#0F0F0F]/60" />
+              <Eye className="w-4 h-4 text-muted-foreground" />
               <Label>Preview</Label>
             </div>
-            <div className="border border-[#0F0F0F]/10 rounded-xl overflow-hidden">
-              <div className="bg-[#F4F6FA] p-3 border-b border-[#0F0F0F]/10">
+            <div className="border border-border/10 rounded-xl overflow-hidden">
+              <div className="bg-muted p-3 border-b border-border/10">
                 <p className="text-sm"><strong>Subject:</strong> {form.subject || '(No subject)'}</p>
               </div>
               <div
                 className="p-4 prose prose-sm max-w-none min-h-[300px]"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(form.body || '<p class="text-gray-400">Your message will appear here...</p>', { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(form.body || '<p class="text-muted-foreground">Your message will appear here...</p>', { ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'blockquote', 'span'], ALLOWED_ATTR: ['href', 'target', 'rel', 'class'] }) }}
               />
             </div>
           </CardContent>

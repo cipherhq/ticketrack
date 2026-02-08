@@ -118,8 +118,8 @@ export function AdminSMSRevenue() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">SMS Revenue</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Track SMS credit sales and revenue</p>
+          <h2 className="text-2xl font-semibold text-foreground">SMS Revenue</h2>
+          <p className="text-muted-foreground mt-1">Track SMS credit sales and revenue</p>
         </div>
         <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl">
           <RefreshCw className="w-4 h-4" />
@@ -128,45 +128,45 @@ export function AdminSMSRevenue() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Revenue</p>
+                <p className="text-sm text-muted-foreground">Total Revenue</p>
                 <p className="text-2xl font-semibold text-green-600">{formatMultiCurrencyCompact(stats.revenueByCurrency)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-green-200" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Gross Profit</p>
+                <p className="text-sm text-muted-foreground">Gross Profit</p>
                 <p className="text-2xl font-semibold text-[#2969FF]">{formatPrice(grossProfit, 'NGN')}</p>
-                <p className="text-xs text-[#0F0F0F]/40">{profitMargin}% margin</p>
+                <p className="text-xs text-muted-foreground">{profitMargin}% margin</p>
               </div>
               <TrendingUp className="w-8 h-8 text-blue-200" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Credits Sold</p>
+                <p className="text-sm text-muted-foreground">Credits Sold</p>
                 <p className="text-2xl font-semibold">{stats.totalCreditsSold.toLocaleString()}</p>
               </div>
               <MessageSquare className="w-8 h-8 text-purple-200" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Credits Used</p>
+                <p className="text-sm text-muted-foreground">Credits Used</p>
                 <p className="text-2xl font-semibold">{stats.totalCreditsUsed.toLocaleString()}</p>
               </div>
               <CreditCard className="w-8 h-8 text-orange-200" />
@@ -176,7 +176,7 @@ export function AdminSMSRevenue() {
       </div>
 
       <Tabs defaultValue="purchases">
-        <TabsList className="bg-[#F4F6FA] rounded-xl">
+        <TabsList className="bg-muted rounded-xl">
           <TabsTrigger value="purchases" className="rounded-lg">
             Recent Purchases
           </TabsTrigger>
@@ -190,36 +190,36 @@ export function AdminSMSRevenue() {
 
         {/* Recent Purchases */}
         <TabsContent value="purchases" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Recent Purchases ({purchases.length})</CardTitle>
             </CardHeader>
             <CardContent>
               {purchases.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No purchases yet</p>
+                <p className="text-center text-muted-foreground py-8">No purchases yet</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[#0F0F0F]/10">
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Organizer</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Package</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Credits</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Amount</th>
-                        <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Date</th>
+                      <tr className="border-b border-border/10">
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Organizer</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Package</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Credits</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Amount</th>
+                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Date</th>
                       </tr>
                     </thead>
                     <tbody>
                       {purchases.slice(0, 20).map((purchase) => (
-                        <tr key={purchase.id} className="border-b border-[#0F0F0F]/5">
+                        <tr key={purchase.id} className="border-b border-border/5">
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F] font-medium">{purchase.organizers?.business_name || 'Unknown'}</p>
+                            <p className="text-foreground font-medium">{purchase.organizers?.business_name || 'Unknown'}</p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]">{purchase.sms_credit_packages?.name || 'N/A'}</p>
+                            <p className="text-foreground">{purchase.sms_credit_packages?.name || 'N/A'}</p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]">
+                            <p className="text-foreground">
                               {purchase.credits_purchased}
                               {purchase.bonus_credits > 0 && (
                                 <span className="text-green-600 text-sm ml-1">+{purchase.bonus_credits}</span>
@@ -227,10 +227,10 @@ export function AdminSMSRevenue() {
                             </p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F] font-medium">{formatPrice(purchase.amount_paid, purchase.currency || 'NGN')}</p>
+                            <p className="text-foreground font-medium">{formatPrice(purchase.amount_paid, purchase.currency || 'NGN')}</p>
                           </td>
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F]/60 text-sm">
+                            <p className="text-muted-foreground text-sm">
                               {new Date(purchase.created_at).toLocaleDateString()}
                             </p>
                           </td>
@@ -246,7 +246,7 @@ export function AdminSMSRevenue() {
 
         {/* Packages */}
         <TabsContent value="packages" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Credit Packages</CardTitle>
             </CardHeader>
@@ -254,14 +254,14 @@ export function AdminSMSRevenue() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#0F0F0F]/10">
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Name</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Credits</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Bonus</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Price</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Per SMS</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Your Profit</th>
-                      <th className="text-left py-3 px-4 text-[#0F0F0F]/60 font-medium">Status</th>
+                    <tr className="border-b border-border/10">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">Name</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">Credits</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">Bonus</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">Price</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">Per SMS</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">Your Profit</th>
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -270,9 +270,9 @@ export function AdminSMSRevenue() {
                       const costToYou = totalCredits * costPerSMS;
                       const profit = pkg.price - costToYou;
                       return (
-                        <tr key={pkg.id} className="border-b border-[#0F0F0F]/5">
+                        <tr key={pkg.id} className="border-b border-border/5">
                           <td className="py-3 px-4">
-                            <p className="text-[#0F0F0F] font-medium">
+                            <p className="text-foreground font-medium">
                               {pkg.name}
                               {pkg.is_popular && <Badge className="ml-2 bg-[#2969FF] text-white text-xs">Popular</Badge>}
                             </p>
@@ -286,7 +286,7 @@ export function AdminSMSRevenue() {
                             {pkg.is_active ? (
                               <Badge className="bg-green-100 text-green-700">Active</Badge>
                             ) : (
-                              <Badge className="bg-gray-100 text-gray-700">Inactive</Badge>
+                              <Badge className="bg-muted text-foreground/80">Inactive</Badge>
                             )}
                           </td>
                         </tr>
@@ -301,28 +301,28 @@ export function AdminSMSRevenue() {
 
         {/* Top Organizers */}
         <TabsContent value="top" className="mt-6">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Top Organizers by Credits</CardTitle>
             </CardHeader>
             <CardContent>
               {topOrganizers.length === 0 ? (
-                <p className="text-center text-[#0F0F0F]/60 py-8">No data yet</p>
+                <p className="text-center text-muted-foreground py-8">No data yet</p>
               ) : (
                 <div className="space-y-3">
                   {topOrganizers.map((org, idx) => (
-                    <div key={org.id} className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+                    <div key={org.id} className="flex items-center justify-between p-4 bg-muted rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
                           idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-orange-400' : 'bg-[#2969FF]'
                         }`}>
                           {idx + 1}
                         </div>
-                        <p className="font-medium text-[#0F0F0F]">{org.organizers?.business_name || 'Unknown'}</p>
+                        <p className="font-medium text-foreground">{org.organizers?.business_name || 'Unknown'}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-[#0F0F0F]">{org.total_purchased.toLocaleString()} credits</p>
-                        <p className="text-sm text-[#0F0F0F]/60">Balance: {org.balance}</p>
+                        <p className="font-semibold text-foreground">{org.total_purchased.toLocaleString()} credits</p>
+                        <p className="text-sm text-muted-foreground">Balance: {org.balance}</p>
                       </div>
                     </div>
                   ))}

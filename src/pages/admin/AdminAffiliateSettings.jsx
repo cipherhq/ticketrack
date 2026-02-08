@@ -205,8 +205,8 @@ export function AdminAffiliateSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Affiliate Program Settings</h1>
-          <p className="text-[#0F0F0F]/60 mt-1">Configure how users earn by sharing events</p>
+          <h1 className="text-2xl font-bold text-foreground">Affiliate Program Settings</h1>
+          <p className="text-muted-foreground mt-1">Configure how users earn by sharing events</p>
         </div>
         <Button onClick={handleSave} disabled={saving} className="rounded-xl bg-[#2969FF]">
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
@@ -216,28 +216,28 @@ export function AdminAffiliateSettings() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#2969FF]/10 flex items-center justify-center">
                 <Users className="w-5 h-5 text-[#2969FF]" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Active Affiliates</p>
+                <p className="text-sm text-muted-foreground">Active Affiliates</p>
                 <h3 className="text-2xl font-semibold">{stats.totalAffiliates}</h3>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Commissions</p>
+                <p className="text-sm text-muted-foreground">Total Commissions</p>
                 <h3 className="text-lg font-semibold">{formatMultiCurrency(stats.totalEarnings)}</h3>
                 {Object.keys(stats.totalEarnings || {}).filter(k => stats.totalEarnings[k] > 0).length > 2 && (
                   <Badge variant="outline" className="mt-1 text-xs">Multi-currency</Badge>
@@ -247,14 +247,14 @@ export function AdminAffiliateSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending Payouts</p>
+                <p className="text-sm text-muted-foreground">Pending Payouts</p>
                 <h3 className="text-lg font-semibold">{formatMultiCurrency(stats.pendingPayouts)}</h3>
                 {Object.keys(stats.pendingPayouts || {}).filter(k => stats.pendingPayouts[k] > 0).length > 2 && (
                   <Badge variant="outline" className="mt-1 text-xs">Multi-currency</Badge>
@@ -264,14 +264,14 @@ export function AdminAffiliateSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Paid</p>
+                <p className="text-sm text-muted-foreground">Total Paid</p>
                 <h3 className="text-lg font-semibold">{formatMultiCurrency(stats.totalPaid)}</h3>
                 {Object.keys(stats.totalPaid || {}).filter(k => stats.totalPaid[k] > 0).length > 2 && (
                   <Badge variant="outline" className="mt-1 text-xs">Multi-currency</Badge>
@@ -283,7 +283,7 @@ export function AdminAffiliateSettings() {
       </div>
 
       {/* Settings */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
@@ -293,10 +293,10 @@ export function AdminAffiliateSettings() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Enable/Disable */}
-          <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
             <div>
               <h4 className="font-medium">Enable Affiliate Program</h4>
-              <p className="text-sm text-[#0F0F0F]/60">Allow users to earn by sharing events</p>
+              <p className="text-sm text-muted-foreground">Allow users to earn by sharing events</p>
             </div>
             <Switch
               checked={settings.is_enabled}
@@ -319,7 +319,7 @@ export function AdminAffiliateSettings() {
                 onChange={(e) => setSettings({ ...settings, commission_percent: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                 className="rounded-xl"
               />
-              <p className="text-xs text-[#0F0F0F]/50">
+              <p className="text-xs text-muted-foreground">
                 Affiliates earn this % of the platform fees collected. E.g., if platform fee is ₦500 and commission is 1.5%, affiliate earns ₦7.50
               </p>
             </div>
@@ -337,7 +337,7 @@ export function AdminAffiliateSettings() {
                 onChange={(e) => setSettings({ ...settings, cookie_days: e.target.value === '' ? '' : parseInt(e.target.value) })}
                 className="rounded-xl"
               />
-              <p className="text-xs text-[#0F0F0F]/50">
+              <p className="text-xs text-muted-foreground">
                 How long after clicking the link the referral is credited
               </p>
             </div>
@@ -358,7 +358,7 @@ export function AdminAffiliateSettings() {
                 onChange={(e) => setSettings({ ...settings, payout_delay_days: e.target.value === '' ? '' : parseInt(e.target.value) })}
                 className="rounded-xl"
               />
-              <p className="text-xs text-[#0F0F0F]/50">
+              <p className="text-xs text-muted-foreground">
                 Days after event ends before commission becomes withdrawable
               </p>
             </div>
@@ -370,12 +370,12 @@ export function AdminAffiliateSettings() {
               <Globe className="w-4 h-4" />
               Minimum Payout Thresholds by Currency
             </Label>
-            <p className="text-xs text-[#0F0F0F]/50 mb-3">
+            <p className="text-xs text-muted-foreground mb-3">
               Set the minimum balance required before an affiliate can request a payout in each currency
             </p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                <Label className="text-sm text-muted-foreground flex items-center gap-1">
                   <span className="font-semibold">₦</span> NGN
                 </Label>
                 <Input
@@ -388,7 +388,7 @@ export function AdminAffiliateSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                <Label className="text-sm text-muted-foreground flex items-center gap-1">
                   <span className="font-semibold">$</span> USD
                 </Label>
                 <Input
@@ -401,7 +401,7 @@ export function AdminAffiliateSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                <Label className="text-sm text-muted-foreground flex items-center gap-1">
                   <span className="font-semibold">£</span> GBP
                 </Label>
                 <Input
@@ -414,7 +414,7 @@ export function AdminAffiliateSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                <Label className="text-sm text-muted-foreground flex items-center gap-1">
                   <span className="font-semibold">GH₵</span> GHS
                 </Label>
                 <Input
@@ -427,7 +427,7 @@ export function AdminAffiliateSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm text-[#0F0F0F]/60 flex items-center gap-1">
+                <Label className="text-sm text-muted-foreground flex items-center gap-1">
                   <span className="font-semibold">CA$</span> CAD
                 </Label>
                 <Input

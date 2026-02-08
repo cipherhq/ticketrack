@@ -110,12 +110,12 @@ export function WebCookies() {
             <Cookie className="w-8 h-8 text-[#2969FF]" />
           </div>
         </div>
-        <h1 className="text-4xl font-bold text-[#0F0F0F] mb-4">Cookie Policy</h1>
-        <p className="text-[#0F0F0F]/60">Last updated: January 20, 2026</p>
+        <h1 className="text-4xl font-bold text-foreground mb-4">Cookie Policy</h1>
+        <p className="text-muted-foreground">Last updated: January 20, 2026</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8 mb-8">
-        <p className="text-[#0F0F0F]/70 leading-relaxed">
+      <div className="bg-card rounded-2xl border border-border/10 p-8 mb-8">
+        <p className="text-foreground/70 leading-relaxed">
           This Cookie Policy explains how Ticketrack ("we", "us", or "our") uses cookies and similar technologies 
           when you visit our website. We are committed to being transparent about the technologies we use and 
           giving you control over your privacy in accordance with GDPR and UK GDPR.
@@ -128,8 +128,8 @@ export function WebCookies() {
           <div className="flex items-center gap-3">
             <Settings className="w-6 h-6 text-[#2969FF]" />
             <div>
-              <p className="font-medium text-[#0F0F0F]">Manage Your Cookie Preferences</p>
-              <p className="text-sm text-[#0F0F0F]/60">Change your cookie settings at any time</p>
+              <p className="font-medium text-foreground">Manage Your Cookie Preferences</p>
+              <p className="text-sm text-muted-foreground">Change your cookie settings at any time</p>
             </div>
           </div>
           <Button onClick={openCookieSettings} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl">
@@ -141,11 +141,11 @@ export function WebCookies() {
 
       <div className="space-y-8">
         {sections.map((section, index) => (
-          <div key={index} className="bg-white rounded-2xl border border-[#0F0F0F]/10 p-8">
-            <h2 className="text-2xl font-semibold text-[#0F0F0F] mb-4">{section.title}</h2>
+          <div key={index} className="bg-card rounded-2xl border border-border/10 p-8">
+            <h2 className="text-2xl font-semibold text-foreground mb-4">{section.title}</h2>
             <ul className="space-y-3">
               {section.content.map((item, itemIndex) => (
-                <li key={itemIndex} className="text-[#0F0F0F]/70 leading-relaxed flex items-start gap-3">
+                <li key={itemIndex} className="text-foreground/70 leading-relaxed flex items-start gap-3">
                   <span className="w-1.5 h-1.5 bg-[#2969FF] rounded-full mt-2 flex-shrink-0"></span>
                   <span>{item}</span>
                 </li>
@@ -160,8 +160,8 @@ export function WebCookies() {
         <div className="flex items-start gap-4">
           <Shield className="w-8 h-8 text-green-600 flex-shrink-0" />
           <div>
-            <h3 className="text-xl font-semibold text-[#0F0F0F] mb-3">Your Privacy Rights</h3>
-            <div className="text-[#0F0F0F]/70 space-y-2">
+            <h3 className="text-xl font-semibold text-foreground mb-3">Your Privacy Rights</h3>
+            <div className="text-foreground/70 space-y-2">
               <p>Under GDPR and UK GDPR, you have the right to:</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>Accept or reject non-essential cookies</li>
@@ -174,11 +174,11 @@ export function WebCookies() {
         </div>
       </div>
 
-      <div className="bg-[#F4F6FA] rounded-2xl p-8 mt-8 text-center">
-        <h3 className="text-xl font-semibold text-[#0F0F0F] mb-4">Questions About Cookies?</h3>
-        <p className="text-[#0F0F0F]/70 mb-4">If you have questions about our use of cookies, please contact us:</p>
+      <div className="bg-muted rounded-2xl p-8 mt-8 text-center">
+        <h3 className="text-xl font-semibold text-foreground mb-4">Questions About Cookies?</h3>
+        <p className="text-foreground/70 mb-4">If you have questions about our use of cookies, please contact us:</p>
         <p className="text-[#2969FF] font-medium">privacy@ticketrack.com</p>
-        <p className="text-[#0F0F0F]/70 mt-2">Ticketrack Ltd</p>
+        <p className="text-foreground/70 mt-2">Ticketrack Ltd</p>
       </div>
     </div>
   )

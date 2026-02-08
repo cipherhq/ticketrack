@@ -107,10 +107,10 @@ export function AdminWaitlist() {
       waiting: 'bg-blue-100 text-blue-700',
       notified: 'bg-yellow-100 text-yellow-700',
       purchased: 'bg-green-100 text-green-700',
-      expired: 'bg-gray-100 text-gray-600',
+      expired: 'bg-muted text-muted-foreground',
       cancelled: 'bg-red-100 text-red-600',
     };
-    return <Badge className={`${styles[status] || 'bg-gray-100'} rounded-lg`}>{status}</Badge>;
+    return <Badge className={`${styles[status] || 'bg-muted'} rounded-lg`}>{status}</Badge>;
   };
 
   const filteredWaitlist = waitlist.filter(entry => {
@@ -146,8 +146,8 @@ export function AdminWaitlist() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Waitlist Management</h1>
-          <p className="text-[#0F0F0F]/60">View and manage waitlists across all events</p>
+          <h1 className="text-2xl font-bold text-foreground">Waitlist Management</h1>
+          <p className="text-muted-foreground">View and manage waitlists across all events</p>
         </div>
         <Button onClick={loadData} variant="outline" className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -157,20 +157,20 @@ export function AdminWaitlist() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-xl">
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[#0F0F0F]">{stats.total}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Total Entries</p>
+                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">Total Entries</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-xl">
@@ -178,12 +178,12 @@ export function AdminWaitlist() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-blue-600">{stats.waiting}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Waiting</p>
+                <p className="text-xs text-muted-foreground">Waiting</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-yellow-100 rounded-xl">
@@ -191,12 +191,12 @@ export function AdminWaitlist() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-yellow-600">{stats.notified}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Notified</p>
+                <p className="text-xs text-muted-foreground">Notified</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-xl">
@@ -204,20 +204,20 @@ export function AdminWaitlist() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-600">{stats.purchased}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Purchased</p>
+                <p className="text-xs text-muted-foreground">Purchased</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-xl">
-                <XCircle className="w-5 h-5 text-gray-600" />
+              <div className="p-2 bg-muted rounded-xl">
+                <XCircle className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-600">{stats.expired}</p>
-                <p className="text-xs text-[#0F0F0F]/60">Expired</p>
+                <p className="text-2xl font-bold text-muted-foreground">{stats.expired}</p>
+                <p className="text-xs text-muted-foreground">Expired</p>
               </div>
             </div>
           </CardContent>
@@ -226,15 +226,15 @@ export function AdminWaitlist() {
 
       {/* Events with Active Waitlists */}
       {eventSummary.length > 0 && (
-        <Card className="rounded-2xl border-[#0F0F0F]/10">
+        <Card className="rounded-2xl border-border/10">
           <CardHeader>
             <CardTitle className="text-lg">Events with Active Waitlists</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {eventSummary.map(event => (
-                <div key={event.id} className="p-4 bg-[#F4F6FA] rounded-xl">
-                  <h4 className="font-semibold text-[#0F0F0F] mb-2">{event.title}</h4>
+                <div key={event.id} className="p-4 bg-muted rounded-xl">
+                  <h4 className="font-semibold text-foreground mb-2">{event.title}</h4>
                   <div className="flex items-center gap-4 text-sm mb-3">
                     <span className="text-blue-600">{event.waiting} waiting</span>
                     <span className="text-yellow-600">{event.notified} notified</span>
@@ -256,16 +256,16 @@ export function AdminWaitlist() {
       )}
 
       {/* Filters */}
-      <Card className="rounded-2xl border-[#0F0F0F]/10">
+      <Card className="rounded-2xl border-border/10">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0F0F0F]/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, email, or event..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 rounded-xl bg-[#F4F6FA] border-0"
+                className="pl-10 rounded-xl bg-muted border-0"
               />
             </div>
             <Select value={filterEvent} onValueChange={setFilterEvent}>
@@ -297,7 +297,7 @@ export function AdminWaitlist() {
       </Card>
 
       {/* Waitlist Table */}
-      <Card className="rounded-2xl border-[#0F0F0F]/10">
+      <Card className="rounded-2xl border-border/10">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -315,7 +315,7 @@ export function AdminWaitlist() {
             <TableBody>
               {filteredWaitlist.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No waitlist entries found
                   </TableCell>
                 </TableRow>
@@ -326,16 +326,16 @@ export function AdminWaitlist() {
                       <span className="font-bold text-[#2969FF]">#{entry.position}</span>
                     </TableCell>
                     <TableCell className="font-medium">{entry.name}</TableCell>
-                    <TableCell className="text-[#0F0F0F]/60">{entry.email}</TableCell>
+                    <TableCell className="text-muted-foreground">{entry.email}</TableCell>
                     <TableCell>
                       <span className="text-sm">{entry.event?.title}</span>
                     </TableCell>
                     <TableCell>{entry.quantity_wanted}</TableCell>
                     <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                    <TableCell className="text-sm text-[#0F0F0F]/60">
+                    <TableCell className="text-sm text-muted-foreground">
                       {new Date(entry.created_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-sm text-[#0F0F0F]/60">
+                    <TableCell className="text-sm text-muted-foreground">
                       {entry.expires_at 
                         ? new Date(entry.expires_at).toLocaleString() 
                         : '-'}

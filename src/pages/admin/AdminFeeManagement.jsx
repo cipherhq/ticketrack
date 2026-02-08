@@ -243,8 +243,8 @@ export function AdminFeeManagement() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Fee Management</h2>
-          <p className="text-[#0F0F0F]/60">Configure platform and payment processing fees</p>
+          <h2 className="text-2xl font-semibold text-foreground">Fee Management</h2>
+          <p className="text-muted-foreground">Configure platform and payment processing fees</p>
         </div>
         <Button variant="outline" onClick={loadData} className="rounded-xl">
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -252,7 +252,7 @@ export function AdminFeeManagement() {
         </Button>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
+      <Card className="border-border/10 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="w-5 h-5 text-[#2969FF]" />
@@ -281,7 +281,7 @@ export function AdminFeeManagement() {
                 min="1"
               />
             </div>
-            <div className="text-sm text-[#0F0F0F]/60 mt-6">
+            <div className="text-sm text-muted-foreground mt-6">
               Subtotal: ${(previewAmount * previewTickets).toFixed(2)}
             </div>
           </div>
@@ -289,19 +289,19 @@ export function AdminFeeManagement() {
       </Card>
 
       <Tabs defaultValue="global" className="space-y-6">
-        <TabsList className="bg-[#F4F6FA] rounded-xl p-1">
-          <TabsTrigger value="global" className="rounded-lg data-[state=active]:bg-white">
+        <TabsList className="bg-muted rounded-xl p-1">
+          <TabsTrigger value="global" className="rounded-lg data-[state=active]:bg-card">
             <Globe className="w-4 h-4 mr-2" />
             Global Fees by Country
           </TabsTrigger>
-          <TabsTrigger value="organizers" className="rounded-lg data-[state=active]:bg-white">
+          <TabsTrigger value="organizers" className="rounded-lg data-[state=active]:bg-card">
             <Building2 className="w-4 h-4 mr-2" />
             Custom Organizer Fees
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="global" className="space-y-4">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -326,7 +326,7 @@ export function AdminFeeManagement() {
                         <TableCell><Badge variant="outline">{country.default_currency}</Badge></TableCell>
                         <TableCell>{country.service_fee_percentage || 0}% + {symbol}{country.service_fee_fixed_per_ticket || 0}/ticket</TableCell>
                         <TableCell>{country.service_fee_cap ? `${symbol}${country.service_fee_cap}` : 'No cap'}</TableCell>
-                        <TableCell className="text-sm text-[#0F0F0F]/60">{["NG", "GH", "KE", "ZA"].includes(country.code) ? `${country.paystack_processing_fee_pct || 1.5}% + ${symbol}${country.paystack_processing_fee_fixed || 100} (Paystack)` : `${country.stripe_processing_fee_pct || 2.9}% + ${symbol}${country.stripe_processing_fee_fixed || 0.30} (Stripe)`}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{["NG", "GH", "KE", "ZA"].includes(country.code) ? `${country.paystack_processing_fee_pct || 1.5}% + ${symbol}${country.paystack_processing_fee_fixed || 100} (Paystack)` : `${country.stripe_processing_fee_pct || 2.9}% + ${symbol}${country.stripe_processing_fee_fixed || 0.30} (Stripe)`}</TableCell>
                         <TableCell><span className="text-sm font-medium text-green-600">{symbol}{preview.total}</span></TableCell>
                         <TableCell>
                           <Button variant="ghost" size="sm" onClick={() => openCountryModal(country)} className="rounded-lg">
@@ -343,7 +343,7 @@ export function AdminFeeManagement() {
         </TabsContent>
 
         <TabsContent value="organizers" className="space-y-4">
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <CardTitle>Custom Organizer Fees</CardTitle>
               <CardDescription>Override default fees for specific organizers (negotiated rates)</CardDescription>
@@ -369,21 +369,21 @@ export function AdminFeeManagement() {
                         {organizer.custom_fee_enabled ? (
                           <Badge className="bg-green-100 text-green-700">Enabled</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[#0F0F0F]/40">Default</Badge>
+                          <Badge variant="outline" className="text-muted-foreground">Default</Badge>
                         )}
                       </TableCell>
                       <TableCell>
                         {organizer.custom_fee_enabled && organizer.custom_service_fee_percentage != null ? (
                           <span>{organizer.custom_service_fee_percentage}%{organizer.custom_service_fee_fixed ? ` + ${organizer.custom_service_fee_fixed}/ticket` : ''}</span>
                         ) : (
-                          <span className="text-[#0F0F0F]/40">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
                         {organizer.custom_fee_enabled && organizer.custom_service_fee_cap ? (
                           <span>{organizer.custom_service_fee_cap}</span>
                         ) : (
-                          <span className="text-[#0F0F0F]/40">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -452,7 +452,7 @@ export function AdminFeeManagement() {
                   <DollarSign className="w-4 h-4 text-pink-600" />
                   Donation Fees (Free Events)
                 </h3>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="text-sm text-muted-foreground">
                   Fees charged on donations for free events. Platform fee is deducted before payout. 
                   <br />Processing fees can be passed to donor or absorbed by organizer.
                 </p>
@@ -463,21 +463,21 @@ export function AdminFeeManagement() {
                     <Input type="number" step="0.1" min="0" max="30" value={editingCountry.donation_fee_percentage}
                       onChange={(e) => setEditingCountry({...editingCountry, donation_fee_percentage: e.target.value})}
                       className="rounded-xl mt-1" />
-                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Ticketrack revenue from donations</p>
+                    <p className="text-xs text-muted-foreground mt-1">Ticketrack revenue from donations</p>
                   </div>
                   <div>
                     <Label>Processing Fee (%)</Label>
                     <Input type="number" step="0.1" min="0" max="10" value={editingCountry.donation_processing_fee_pct}
                       onChange={(e) => setEditingCountry({...editingCountry, donation_processing_fee_pct: e.target.value})}
                       className="rounded-xl mt-1" />
-                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Payment processor fee %</p>
+                    <p className="text-xs text-muted-foreground mt-1">Payment processor fee %</p>
                   </div>
                   <div>
                     <Label>Processing Fixed ({getCurrencySymbol(editingCountry.default_currency)})</Label>
                     <Input type="number" step="0.01" min="0" value={editingCountry.donation_processing_fee_fixed}
                       onChange={(e) => setEditingCountry({...editingCountry, donation_processing_fee_fixed: e.target.value})}
                       className="rounded-xl mt-1" />
-                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Fixed fee per donation</p>
+                    <p className="text-xs text-muted-foreground mt-1">Fixed fee per donation</p>
                   </div>
                 </div>
                 
@@ -497,7 +497,7 @@ export function AdminFeeManagement() {
                   <ArrowRightLeft className="w-4 h-4 text-blue-600" />
                   Ticket Transfer Fees
                 </h3>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="text-sm text-muted-foreground">
                   Fee charged when attendees transfer their tickets to other people. This helps prevent ticket scalping.
                 </p>
                 
@@ -507,7 +507,7 @@ export function AdminFeeManagement() {
                     <Input type="number" step="0.1" min="0" max="50" value={editingCountry.transfer_fee_percentage}
                       onChange={(e) => setEditingCountry({...editingCountry, transfer_fee_percentage: e.target.value})}
                       className="rounded-xl mt-1" />
-                    <p className="text-xs text-[#0F0F0F]/50 mt-1">Percentage of original ticket price</p>
+                    <p className="text-xs text-muted-foreground mt-1">Percentage of original ticket price</p>
                   </div>
                 </div>
               </div>
@@ -588,7 +588,7 @@ export function AdminFeeManagement() {
               </div>
               )}
 
-              <div className="p-4 bg-[#F4F6FA] rounded-xl">
+              <div className="p-4 bg-muted rounded-xl">
                 <p className="text-sm font-medium mb-2">Preview (for {getCurrencySymbol(editingCountry.default_currency)}{previewAmount} × {previewTickets} ticket{previewTickets > 1 ? 's' : ''}):</p>
                 {(() => {
                   const preview = calculatePreviewFee(editingCountry, editingCountry.code === 'NG' || editingCountry.code === 'GH' ? 'paystack' : 'stripe');
@@ -627,10 +627,10 @@ export function AdminFeeManagement() {
 
           {editingOrganizer && (
             <div className="space-y-6 py-4">
-              <div className="flex items-center justify-between p-4 bg-[#F4F6FA] rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
                 <div>
                   <Label>Enable Custom Fees</Label>
-                  <p className="text-sm text-[#0F0F0F]/60">Override default country fees</p>
+                  <p className="text-sm text-muted-foreground">Override default country fees</p>
                 </div>
                 <Switch checked={editingOrganizer.custom_fee_enabled}
                   onCheckedChange={(checked) => setEditingOrganizer({...editingOrganizer, custom_fee_enabled: checked})} />

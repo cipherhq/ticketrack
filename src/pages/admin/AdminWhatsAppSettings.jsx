@@ -150,24 +150,24 @@ export function AdminWhatsAppSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">WhatsApp Settings</h2>
-          <p className="text-[#0F0F0F]/60 mt-1">Configure platform-wide WhatsApp Business integration</p>
+          <h2 className="text-2xl font-semibold text-foreground">WhatsApp Settings</h2>
+          <p className="text-muted-foreground mt-1">Configure platform-wide WhatsApp Business integration</p>
         </div>
         <Button variant="outline" size="icon" onClick={loadConfig} className="rounded-xl">
           <RefreshCw className="w-4 h-4" />
         </Button>
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${config.is_verified ? 'bg-green-100' : 'bg-gray-100'}`}>
-                <MessageSquare className={`w-6 h-6 ${config.is_verified ? 'text-green-600' : 'text-gray-400'}`} />
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${config.is_verified ? 'bg-green-100' : 'bg-muted'}`}>
+                <MessageSquare className={`w-6 h-6 ${config.is_verified ? 'text-green-600' : 'text-muted-foreground'}`} />
               </div>
               <div>
-                <p className="font-medium text-[#0F0F0F]">Platform WhatsApp Integration</p>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="font-medium text-foreground">Platform WhatsApp Integration</p>
+                <p className="text-sm text-muted-foreground">
                   {config.provider === 'manual' ? 'Using manual wa.me links' : 'Connected via ' + (selectedProvider?.label || '')}
                 </p>
               </div>
@@ -177,13 +177,13 @@ export function AdminWhatsAppSettings() {
             ) : config.provider !== 'manual' ? (
               <Badge className="bg-yellow-100 text-yellow-700">Not Verified</Badge>
             ) : (
-              <Badge className="bg-gray-100 text-gray-700">Manual Mode</Badge>
+              <Badge className="bg-muted text-foreground/80">Manual Mode</Badge>
             )}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Select Provider</CardTitle>
           <CardDescription>Choose how the platform sends WhatsApp messages</CardDescription>
@@ -195,7 +195,7 @@ export function AdminWhatsAppSettings() {
                 key={provider.value}
                 onClick={() => setConfig({ ...config, provider: provider.value, is_verified: false })}
                 className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  config.provider === provider.value ? 'border-green-500 bg-green-50' : 'border-[#0F0F0F]/10 hover:border-[#0F0F0F]/20'
+                  config.provider === provider.value ? 'border-green-500 bg-green-50' : 'border-border/10 hover:border-border/20'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -205,11 +205,11 @@ export function AdminWhatsAppSettings() {
                     {config.provider === provider.value && <CheckCircle className="w-3 h-3 text-white" />}
                   </div>
                   <div>
-                    <p className="font-medium text-[#0F0F0F]">
+                    <p className="font-medium text-foreground">
                       {provider.label}
                       {provider.free && <Badge className="ml-2 bg-blue-100 text-blue-700 text-xs">Free</Badge>}
                     </p>
-                    <p className="text-sm text-[#0F0F0F]/60">{provider.description}</p>
+                    <p className="text-sm text-muted-foreground">{provider.description}</p>
                   </div>
                 </div>
               </div>
@@ -219,7 +219,7 @@ export function AdminWhatsAppSettings() {
       </Card>
 
       {config.provider !== 'manual' && (
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Key className="w-5 h-5" />
@@ -281,23 +281,23 @@ export function AdminWhatsAppSettings() {
         )}
       </div>
 
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Usage This Month</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 bg-[#F4F6FA] rounded-xl text-center">
-              <p className="text-2xl font-semibold text-[#0F0F0F]">0</p>
-              <p className="text-sm text-[#0F0F0F]/60">Messages Sent</p>
+            <div className="p-4 bg-muted rounded-xl text-center">
+              <p className="text-2xl font-semibold text-foreground">0</p>
+              <p className="text-sm text-muted-foreground">Messages Sent</p>
             </div>
-            <div className="p-4 bg-[#F4F6FA] rounded-xl text-center">
+            <div className="p-4 bg-muted rounded-xl text-center">
               <p className="text-2xl font-semibold text-green-600">0</p>
-              <p className="text-sm text-[#0F0F0F]/60">Delivered</p>
+              <p className="text-sm text-muted-foreground">Delivered</p>
             </div>
-            <div className="p-4 bg-[#F4F6FA] rounded-xl text-center">
+            <div className="p-4 bg-muted rounded-xl text-center">
               <p className="text-2xl font-semibold text-red-600">0</p>
-              <p className="text-sm text-[#0F0F0F]/60">Failed</p>
+              <p className="text-sm text-muted-foreground">Failed</p>
             </div>
           </div>
         </CardContent>

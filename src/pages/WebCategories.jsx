@@ -88,7 +88,7 @@ export function WebCategories() {
               <Link
                 key={category.id}
                 to={`/events?category=${category.slug}`}
-                className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+                className="group bg-card rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/10"
               >
                 {/* Icon */}
                 <div className="w-14 h-14 bg-gradient-to-br from-[#2969FF] to-[#1a4fd8] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -96,18 +96,18 @@ export function WebCategories() {
                 </div>
 
                 {/* Category Info */}
-                <h3 className="font-semibold text-[#0F0F0F] text-lg mb-1">
+                <h3 className="font-semibold text-foreground text-lg mb-1">
                   {category.name}
                 </h3>
                 {category.event_count > 0 && (
-                  <p className="text-[#0F0F0F]/60 text-sm">
+                  <p className="text-muted-foreground text-sm">
                     {category.event_count} event{category.event_count !== 1 ? 's' : ''}
                   </p>
                 )}
 
                 {/* Description if available */}
                 {category.description && (
-                  <p className="text-[#0F0F0F]/50 text-sm mt-2 line-clamp-2">
+                  <p className="text-muted-foreground text-sm mt-2 line-clamp-2">
                     {category.description}
                   </p>
                 )}
@@ -118,8 +118,8 @@ export function WebCategories() {
 
         {categories.length === 0 && (
           <div className="text-center py-12">
-            <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No categories available</p>
+            <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No categories available</p>
           </div>
         )}
       </div>

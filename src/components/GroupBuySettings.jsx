@@ -110,8 +110,8 @@ export function GroupBuySettings({ eventId, onSave }) {
     return (
       <Card className="rounded-2xl animate-pulse">
         <CardContent className="p-6">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-8 bg-gray-200 rounded w-full"></div>
+          <div className="h-4 bg-muted rounded w-1/3 mb-4"></div>
+          <div className="h-8 bg-muted rounded w-full"></div>
         </CardContent>
       </Card>
     )
@@ -128,16 +128,16 @@ export function GroupBuySettings({ eventId, onSave }) {
             </div>
             <Tooltip>
               <TooltipTrigger>
-                <Info className="w-4 h-4 text-[#0F0F0F]/40" />
+                <Info className="w-4 h-4 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs p-4">
                 <p className="font-semibold mb-2">What is Group Buy?</p>
-                <p className="text-sm text-[#0F0F0F]/70">
+                <p className="text-sm text-foreground/70">
                   Group Buy lets attendees coordinate ticket purchases with friends. 
                   One person starts a session, shares a link, and everyone picks & pays 
                   for their own tickets within a time window.
                 </p>
-                <p className="text-sm text-[#0F0F0F]/70 mt-2">
+                <p className="text-sm text-foreground/70 mt-2">
                   <strong>Benefits:</strong> Higher sales, reduced no-shows, 
                   organic social sharing, better attendee experience.
                 </p>
@@ -150,7 +150,7 @@ export function GroupBuySettings({ eventId, onSave }) {
           <div className="flex items-center justify-between">
             <div>
               <Label className="font-medium">Enable Group Buy</Label>
-              <p className="text-sm text-[#0F0F0F]/60">
+              <p className="text-sm text-muted-foreground">
                 Allow attendees to buy tickets together with friends
               </p>
             </div>
@@ -168,7 +168,7 @@ export function GroupBuySettings({ eventId, onSave }) {
                   <Label>Session Duration</Label>
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="w-4 h-4 text-[#0F0F0F]/40" />
+                      <HelpCircle className="w-4 h-4 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>How long groups have to complete their purchase</p>
@@ -223,7 +223,7 @@ export function GroupBuySettings({ eventId, onSave }) {
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="font-medium">Allow Mixed Tickets</Label>
-                  <p className="text-sm text-[#0F0F0F]/60">
+                  <p className="text-sm text-muted-foreground">
                     Group members can buy different ticket types
                   </p>
                 </div>

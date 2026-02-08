@@ -94,7 +94,7 @@ function ProductCard({ product, onBuy, loading }) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       {/* Product Image */}
-      <div className="aspect-square bg-gray-100 relative">
+      <div className="aspect-square bg-muted relative">
         {product.images?.[0] ? (
           <img
             src={product.images[0]}
@@ -103,18 +103,18 @@ function ProductCard({ product, onBuy, loading }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Store className="w-16 h-16 text-gray-300" />
+            <Store className="w-16 h-16 text-muted-foreground" />
           </div>
         )}
       </div>
 
       {/* Product Info */}
       <CardContent className="p-4">
-        <h3 className="font-semibold text-[#0F0F0F] mb-1 line-clamp-1">
+        <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
           {product.name}
         </h3>
         {product.description && (
-          <p className="text-sm text-[#0F0F0F]/60 mb-3 line-clamp-2">
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
             {product.description}
           </p>
         )}
@@ -240,34 +240,34 @@ export function ConnectStorefront() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F4F6FA] flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-[#2969FF] mx-auto mb-4" />
-          <p className="text-[#0F0F0F]/60">Loading store...</p>
+          <p className="text-muted-foreground">Loading store...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-card border-b border-border/20 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
                 to="/connect/demo"
-                className="text-[#0F0F0F]/60 hover:text-[#0F0F0F] transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-[#0F0F0F] flex items-center gap-2">
+                <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <Store className="w-5 h-5 text-[#2969FF]" />
                   {account?.displayName || 'Store'}
                 </h1>
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="text-sm text-muted-foreground">
                   {products.length} product{products.length !== 1 ? 's' : ''} available
                 </p>
               </div>
@@ -313,11 +313,11 @@ export function ConnectStorefront() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <Store className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-[#0F0F0F] mb-2">
+            <Store className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               No Products Yet
             </h2>
-            <p className="text-[#0F0F0F]/60 mb-6">
+            <p className="text-muted-foreground mb-6">
               This store hasn't added any products yet.
             </p>
             <Link to="/connect/demo">
@@ -330,7 +330,7 @@ export function ConnectStorefront() {
 
         {/* Platform Fee Notice */}
         {products.length > 0 && (
-          <div className="mt-12 text-center text-sm text-[#0F0F0F]/40">
+          <div className="mt-12 text-center text-sm text-muted-foreground">
             <p>
               Payments are processed securely through Stripe.
               <br />
@@ -341,9 +341,9 @@ export function ConnectStorefront() {
       </main>
 
       {/* Footer with Documentation Note */}
-      <footer className="border-t border-gray-200 bg-white mt-auto">
+      <footer className="border-t border-border/20 bg-card mt-auto">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <p className="text-xs text-[#0F0F0F]/40 text-center">
+          <p className="text-xs text-muted-foreground text-center">
             {/* IMPORTANT: This comment explains the URL structure */}
             Demo storefront using account ID in URL. In production, use a username or slug instead.
           </p>

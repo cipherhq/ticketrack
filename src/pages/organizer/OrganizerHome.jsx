@@ -410,14 +410,14 @@ export function OrganizerHome() {
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 p-6 text-white shadow-lg">
           <button
             onClick={dismissConnectBanner}
-            className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 p-1 rounded-full hover:bg-card/20 transition-colors"
             aria-label="Dismiss"
           >
             <X className="w-5 h-5" />
           </button>
           
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-card/20 flex items-center justify-center">
               <Zap className="w-8 h-8" />
             </div>
             
@@ -445,7 +445,7 @@ export function OrganizerHome() {
             
             <Link
               to="/organizer/stripe-connect"
-              className="flex-shrink-0 px-6 py-3 bg-white text-purple-700 font-semibold rounded-xl hover:bg-purple-50 transition-colors shadow-md"
+              className="flex-shrink-0 px-6 py-3 bg-card text-purple-700 font-semibold rounded-xl hover:bg-purple-50 transition-colors shadow-md"
             >
               Set Up Now
             </Link>
@@ -456,12 +456,12 @@ export function OrganizerHome() {
       {/* Revenue by Currency - Mobile optimized grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {Object.entries(stats.salesByCurrency || {}).map(([currency, amount]) => (
-          <Card key={currency} className="border-[#0F0F0F]/10 rounded-xl sm:rounded-2xl">
+          <Card key={currency} className="border-border/10 rounded-xl sm:rounded-2xl">
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[#0F0F0F]/60 text-xs sm:text-sm mb-1 sm:mb-2">{currency} Sales</p>
-                  <h2 className="text-lg sm:text-2xl font-semibold text-[#0F0F0F] mb-0.5 sm:mb-1 truncate">
+                  <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">{currency} Sales</p>
+                  <h2 className="text-lg sm:text-2xl font-semibold text-foreground mb-0.5 sm:mb-1 truncate">
                     {formatPrice(amount, currency)}
                   </h2>
                   <p className="text-xs sm:text-sm text-green-600 truncate">Net: {formatPrice(amount - (stats.feesByCurrency?.[currency] || 0), currency)}</p>
@@ -474,12 +474,12 @@ export function OrganizerHome() {
           </Card>
         ))}
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl sm:rounded-2xl">
+        <Card className="border-border/10 rounded-xl sm:rounded-2xl">
           <CardContent className="p-3 sm:p-6">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-[#0F0F0F]/60 text-xs sm:text-sm mb-1 sm:mb-2">Tickets Sold</p>
-                <h2 className="text-lg sm:text-2xl font-semibold text-[#0F0F0F] mb-0.5 sm:mb-1">
+                <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">Tickets Sold</p>
+                <h2 className="text-lg sm:text-2xl font-semibold text-foreground mb-0.5 sm:mb-1">
                   {stats.totalAttendees.toLocaleString()}
                 </h2>
                 <p className="text-xs sm:text-sm text-green-600">All events</p>
@@ -491,12 +491,12 @@ export function OrganizerHome() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-xl sm:rounded-2xl">
+        <Card className="border-border/10 rounded-xl sm:rounded-2xl">
           <CardContent className="p-3 sm:p-6">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-[#0F0F0F]/60 text-xs sm:text-sm mb-1 sm:mb-2">Total Events</p>
-                <h2 className="text-lg sm:text-2xl font-semibold text-[#0F0F0F] mb-0.5 sm:mb-1">
+                <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">Total Events</p>
+                <h2 className="text-lg sm:text-2xl font-semibold text-foreground mb-0.5 sm:mb-1">
                   {stats.totalEvents}
                 </h2>
                 <p className="text-xs sm:text-sm text-green-600">Created</p>
@@ -511,9 +511,9 @@ export function OrganizerHome() {
 
       {/* Free Events Stats */}
       {freeEventStats.freeEvents > 0 && (
-        <Card className="border-[#0F0F0F]/10 rounded-xl sm:rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50">
+        <Card className="border-border/10 rounded-xl sm:rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50">
           <CardHeader className="p-3 sm:p-6 pb-0 sm:pb-0">
-            <CardTitle className="text-[#0F0F0F] flex items-center gap-2 text-sm sm:text-base">
+            <CardTitle className="text-foreground flex items-center gap-2 text-sm sm:text-base">
               <Ticket className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
               Free Events Overview
               <HelpTip>Track RSVPs and donations for your free events. Free events are a great way to build your audience!</HelpTip>
@@ -521,31 +521,31 @@ export function OrganizerHome() {
           </CardHeader>
           <CardContent className="p-3 sm:p-6 pt-3 sm:pt-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-              <div className="p-2 sm:p-4 rounded-lg sm:rounded-xl bg-white/80 border border-green-100">
+              <div className="p-2 sm:p-4 rounded-lg sm:rounded-xl bg-card/80 border border-green-100">
                 <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
                   <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                  <span className="text-xs sm:text-sm text-[#0F0F0F]/60">Free Events</span>
+                  <span className="text-xs sm:text-sm text-muted-foreground">Free Events</span>
                 </div>
-                <p className="text-lg sm:text-2xl font-semibold text-[#0F0F0F]">{freeEventStats.freeEvents}</p>
+                <p className="text-lg sm:text-2xl font-semibold text-foreground">{freeEventStats.freeEvents}</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/80 border border-green-100">
+              <div className="p-4 rounded-xl bg-card/80 border border-green-100">
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-[#0F0F0F]/60">Total RSVPs</span>
+                  <span className="text-sm text-muted-foreground">Total RSVPs</span>
                 </div>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{freeEventStats.totalRSVPs.toLocaleString()}</p>
+                <p className="text-2xl font-semibold text-foreground">{freeEventStats.totalRSVPs.toLocaleString()}</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/80 border border-green-100">
+              <div className="p-4 rounded-xl bg-card/80 border border-green-100">
                 <div className="flex items-center gap-2 mb-2">
                   <Heart className="w-4 h-4 text-pink-600" />
-                  <span className="text-sm text-[#0F0F0F]/60">Donations</span>
+                  <span className="text-sm text-muted-foreground">Donations</span>
                 </div>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{freeEventStats.totalDonations}</p>
+                <p className="text-2xl font-semibold text-foreground">{freeEventStats.totalDonations}</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/80 border border-green-100">
+              <div className="p-4 rounded-xl bg-card/80 border border-green-100">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm text-[#0F0F0F]/60">Donation Amount</span>
+                  <span className="text-sm text-muted-foreground">Donation Amount</span>
                 </div>
                 <p className="text-xl font-semibold text-emerald-600">
                   {Object.keys(freeEventStats.donationsByCurrency).length > 0 
@@ -559,9 +559,9 @@ export function OrganizerHome() {
       )}
 
       {/* Quick Actions */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             Quick Actions
             <HelpTip>Common tasks to manage your events and sales</HelpTip>
           </CardTitle>
@@ -578,7 +578,7 @@ export function OrganizerHome() {
             <Button
               variant="outline"
               onClick={() => navigate('/organizer/attendees')}
-              className="w-full h-14 rounded-xl border-[#0F0F0F]/10"
+              className="w-full h-14 rounded-xl border-border/10"
             >
               <Eye className="w-5 h-5 mr-2" />
               View Attendees
@@ -586,7 +586,7 @@ export function OrganizerHome() {
             <Button
               variant="outline"
               onClick={() => navigate('/organizer/finance')}
-              className="w-full h-14 rounded-xl border-[#0F0F0F]/10"
+              className="w-full h-14 rounded-xl border-border/10"
             >
               <Download className="w-5 h-5 mr-2" />
               View Payouts
@@ -596,10 +596,10 @@ export function OrganizerHome() {
       </Card>
 
       {/* Upcoming Events */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-[#0F0F0F]">Upcoming Events</CardTitle>
+            <CardTitle className="text-foreground">Upcoming Events</CardTitle>
             <Link to="/organizer/events" className="text-[#2969FF] text-sm hover:underline">
               View All
             </Link>
@@ -608,8 +608,8 @@ export function OrganizerHome() {
         <CardContent>
           {upcomingEvents.length === 0 ? (
             <div className="text-center py-8">
-              <Calendar className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-3" />
-              <p className="text-[#0F0F0F]/60 mb-4">No upcoming events</p>
+              <Calendar className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">No upcoming events</p>
               <Button 
                 onClick={() => navigate('/organizer/events/create')}
                 className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
@@ -627,17 +627,17 @@ export function OrganizerHome() {
                   className={`p-4 rounded-xl flex items-center justify-between cursor-pointer transition-colors ${
                     event.isFree 
                       ? 'bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100' 
-                      : 'bg-[#F4F6FA] hover:bg-[#F4F6FA]/80'
+                      : 'bg-muted hover:bg-muted/80'
                   }`}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium text-[#0F0F0F]">{event.name}</h4>
+                      <h4 className="font-medium text-foreground">{event.name}</h4>
                       {event.isFree && (
                         <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Free</span>
                       )}
                     </div>
-                    <div className="flex items-center space-x-6 text-sm text-[#0F0F0F]/60">
+                    <div className="flex items-center space-x-6 text-sm text-muted-foreground">
                       <div className="flex items-center space-x-2">
                         <Calendar className="w-4 h-4" />
                         <span>{event.date}</span>
@@ -658,15 +658,15 @@ export function OrganizerHome() {
                             <Heart className="w-3 h-3" />
                             {formatPrice(event.revenue, event.currency)}
                           </p>
-                          <p className="text-xs text-[#0F0F0F]/50">in donations</p>
+                          <p className="text-xs text-muted-foreground">in donations</p>
                         </>
                       ) : (
-                        <p className="text-[#0F0F0F]/40 text-sm">No donations yet</p>
+                        <p className="text-muted-foreground text-sm">No donations yet</p>
                       )
                     ) : (
                       <>
                         <p className="text-[#2969FF] font-medium mb-1">{formatPrice(event.revenue, event.currency)}</p>
-                        <div className="w-24 h-2 bg-white rounded-full overflow-hidden">
+                        <div className="w-24 h-2 bg-card rounded-full overflow-hidden">
                           <div
                             className="h-full bg-[#2969FF]"
                             style={{
@@ -685,10 +685,10 @@ export function OrganizerHome() {
       </Card>
 
       {/* Event Promoters Section */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-[#0F0F0F] flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               Event Promoters & Affiliates
               <HelpTip>Invite promoters to sell tickets and earn commission. Great for expanding your reach!</HelpTip>
             </CardTitle>
@@ -704,28 +704,28 @@ export function OrganizerHome() {
               <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-[#0F0F0F]/60">Active Promoters</span>
+                  <span className="text-sm text-muted-foreground">Active Promoters</span>
                 </div>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{promoterStats.activePromoters}</p>
+                <p className="text-2xl font-semibold text-foreground">{promoterStats.activePromoters}</p>
               </div>
               <div className="p-4 rounded-xl bg-green-50 border border-green-100">
                 <div className="flex items-center gap-2 mb-2">
                   <ShoppingCart className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-[#0F0F0F]/60">Tickets Sold</span>
+                  <span className="text-sm text-muted-foreground">Tickets Sold</span>
                 </div>
-                <p className="text-2xl font-semibold text-[#0F0F0F]">{promoterStats.ticketsSold}</p>
+                <p className="text-2xl font-semibold text-foreground">{promoterStats.ticketsSold}</p>
               </div>
               <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm text-[#0F0F0F]/60">Revenue</span>
+                  <span className="text-sm text-muted-foreground">Revenue</span>
                 </div>
-                <p className="text-xl font-semibold text-[#0F0F0F]">{formatMultiCurrencyCompact(promoterStats.revenueByCurrency)}</p>
+                <p className="text-xl font-semibold text-foreground">{formatMultiCurrencyCompact(promoterStats.revenueByCurrency)}</p>
               </div>
               <div className="p-4 rounded-xl bg-orange-50 border border-orange-100">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm text-[#0F0F0F]/60">Unpaid</span>
+                  <span className="text-sm text-muted-foreground">Unpaid</span>
                 </div>
                 <p className="text-xl font-semibold text-orange-600">{formatMultiCurrencyCompact(promoterStats.unpaidByCurrency)}</p>
               </div>
@@ -734,22 +734,22 @@ export function OrganizerHome() {
             {/* Top Promoters */}
             {topPromoters.length > 0 ? (
               <div className="space-y-3">
-                <h4 className="text-sm text-[#0F0F0F]/60">Top Performing Promoters</h4>
+                <h4 className="text-sm text-muted-foreground">Top Performing Promoters</h4>
                 {topPromoters.map((promoter) => (
-                  <div key={promoter.id} className="p-4 rounded-xl bg-[#F4F6FA] flex items-center justify-between">
+                  <div key={promoter.id} className="p-4 rounded-xl bg-muted flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium">
                         {promoter.name?.[0]?.toUpperCase() || 'P'}
                       </div>
                       <div>
-                        <h5 className="font-medium text-[#0F0F0F]">{promoter.name}</h5>
-                        <p className="text-sm text-[#0F0F0F]/60">
+                        <h5 className="font-medium text-foreground">{promoter.name}</h5>
+                        <p className="text-sm text-muted-foreground">
                           {promoter.commission_value}% Commission • {promoter.promo_code}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[#0F0F0F] font-medium">{promoter.total_sales || 0} tickets</p>
+                      <p className="text-foreground font-medium">{promoter.total_sales || 0} tickets</p>
                       <p className="text-sm text-green-600">{formatMultiCurrencyCompact(promoter.earnedByCurrency || {})} earned</p>
                     </div>
                   </div>
@@ -757,8 +757,8 @@ export function OrganizerHome() {
               </div>
             ) : (
               <div className="text-center py-6">
-                <Users className="w-10 h-10 text-[#0F0F0F]/20 mx-auto mb-2" />
-                <p className="text-[#0F0F0F]/60 text-sm">No promoters yet</p>
+                <Users className="w-10 h-10 text-foreground/20 mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">No promoters yet</p>
               </div>
             )}
 

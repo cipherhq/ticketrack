@@ -337,8 +337,8 @@ export function AdminCountryFeatures() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F0F0F]">Country Feature Management</h2>
-          <p className="text-[#0F0F0F]/60">Control which features are available in each country</p>
+          <h2 className="text-2xl font-semibold text-foreground">Country Feature Management</h2>
+          <p className="text-muted-foreground">Control which features are available in each country</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -377,44 +377,44 @@ export function AdminCountryFeatures() {
 
       {/* Statistics */}
       <div className="grid md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Features</p>
+                <p className="text-sm text-muted-foreground">Total Features</p>
                 <p className="text-2xl font-semibold">{stats.totalFeatures}</p>
               </div>
               <Settings className="w-8 h-8 text-[#2969FF]" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Enabled</p>
+                <p className="text-sm text-muted-foreground">Enabled</p>
                 <p className="text-2xl font-semibold text-green-600">{stats.enabledFeatures}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Countries</p>
+                <p className="text-sm text-muted-foreground">Countries</p>
                 <p className="text-2xl font-semibold">{stats.countriesWithFeatures}</p>
               </div>
               <Globe className="w-8 h-8 text-[#2969FF]" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Categories</p>
+                <p className="text-sm text-muted-foreground">Categories</p>
                 <p className="text-2xl font-semibold">{stats.categoriesActive}</p>
               </div>
               <Filter className="w-8 h-8 text-[#2969FF]" />
@@ -446,13 +446,13 @@ export function AdminCountryFeatures() {
       )}
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-64">
               <Label>Search Features</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-[#0F0F0F]/40" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by feature name or description..."
                   value={searchTerm}
@@ -548,10 +548,10 @@ export function AdminCountryFeatures() {
       {/* Features by Country */}
       <div className="space-y-4">
         {loading ? (
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-8 text-center">
               <Loader2 className="w-12 h-12 text-[#2969FF] mx-auto mb-4 animate-spin" />
-              <p className="text-[#0F0F0F]/60">Loading country features...</p>
+              <p className="text-muted-foreground">Loading country features...</p>
             </CardContent>
           </Card>
         ) : countries.length === 0 || features.length === 0 ? (
@@ -568,10 +568,10 @@ export function AdminCountryFeatures() {
             </CardContent>
           </Card>
         ) : Object.keys(groupedFeatures).length === 0 ? (
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-8 text-center">
-              <Filter className="w-12 h-12 text-[#0F0F0F]/20 mx-auto mb-4" />
-              <p className="text-[#0F0F0F]/60">No features match your current filters</p>
+              <Filter className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+              <p className="text-muted-foreground">No features match your current filters</p>
             </CardContent>
           </Card>
         ) : (
@@ -581,7 +581,7 @@ export function AdminCountryFeatures() {
             const totalCount = countryFeatures.length;
 
             return (
-              <Card key={countryCode} className="border-[#0F0F0F]/10 rounded-2xl">
+              <Card key={countryCode} className="border-border/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -616,7 +616,7 @@ export function AdminCountryFeatures() {
                           className={`p-4 border rounded-xl transition-colors ${
                             isPending 
                               ? 'border-orange-300 bg-orange-50' 
-                              : 'border-[#0F0F0F]/10 bg-white hover:border-[#2969FF]/20'
+                              : 'border-border/10 bg-card hover:border-[#2969FF]/20'
                           }`}
                         >
                           <div className="flex items-start justify-between mb-2">
@@ -637,7 +637,7 @@ export function AdminCountryFeatures() {
                                   className="rounded"
                                 />
                               )}
-                              <Icon className="w-4 h-4 text-[#0F0F0F]/60" />
+                              <Icon className="w-4 h-4 text-muted-foreground" />
                               <span className="text-sm font-medium capitalize">
                                 {feature.feature_name.replace(/_/g, ' ')}
                               </span>
@@ -652,7 +652,7 @@ export function AdminCountryFeatures() {
                             />
                           </div>
                           {feature.description && (
-                            <p className="text-xs text-[#0F0F0F]/60 mb-2">
+                            <p className="text-xs text-muted-foreground mb-2">
                               {feature.description}
                             </p>
                           )}
@@ -690,7 +690,7 @@ export function AdminCountryFeatures() {
           </DialogHeader>
           <div className="space-y-3 overflow-y-auto max-h-[60vh]">
             {changeLog.length === 0 ? (
-              <p className="text-center text-[#0F0F0F]/60 py-8">No changes logged yet</p>
+              <p className="text-center text-muted-foreground py-8">No changes logged yet</p>
             ) : (
               changeLog.map((log) => (
                 <div key={log.id} className="p-3 border rounded-xl">
@@ -702,16 +702,16 @@ export function AdminCountryFeatures() {
                       <span className="font-medium">
                         {log.feature_name.replace(/_/g, ' ')}
                       </span>
-                      <span className="text-sm text-[#0F0F0F]/60">
+                      <span className="text-sm text-muted-foreground">
                         in {log.countries?.name}
                       </span>
                     </div>
-                    <span className="text-xs text-[#0F0F0F]/40">
+                    <span className="text-xs text-muted-foreground">
                       {new Date(log.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   {log.reason && (
-                    <p className="text-sm text-[#0F0F0F]/60">{log.reason}</p>
+                    <p className="text-sm text-muted-foreground">{log.reason}</p>
                   )}
                 </div>
               ))

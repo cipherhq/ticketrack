@@ -60,7 +60,7 @@ export function ImpersonationBanner() {
           onClick={handleExit}
           size="sm"
           variant="outline"
-          className="bg-white/10 border-white/30 text-white hover:bg-white/20 rounded-lg"
+          className="bg-card/10 border-white/30 text-white hover:bg-card/20 rounded-lg"
         >
           <X className="w-4 h-4 mr-1" />
           Exit Support Mode

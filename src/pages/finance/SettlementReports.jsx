@@ -174,7 +174,7 @@ export function SettlementReports() {
       paystack: 'bg-blue-100 text-blue-800',
       flutterwave: 'bg-orange-100 text-orange-800'
     };
-    return colors[provider] || 'bg-gray-100 text-gray-800';
+    return colors[provider] || 'bg-muted text-foreground';
   };
 
   if (loading) {
@@ -189,8 +189,8 @@ export function SettlementReports() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F0F0F]">Settlement Reports</h1>
-          <p className="text-[#0F0F0F]/60">Reconcile payments with provider settlements</p>
+          <h1 className="text-2xl font-bold text-foreground">Settlement Reports</h1>
+          <p className="text-muted-foreground">Reconcile payments with provider settlements</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -215,56 +215,56 @@ export function SettlementReports() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <ArrowUpDown className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Settlements</p>
+                <p className="text-sm text-muted-foreground">Total Settlements</p>
                 <p className="text-2xl font-bold">{stats.totalSettlements}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Reconciled</p>
+                <p className="text-sm text-muted-foreground">Reconciled</p>
                 <p className="text-2xl font-bold">{stats.reconciledCount}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold">{stats.unreconciledCount}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-[#0F0F0F]/60">Total Discrepancy</p>
+                <p className="text-sm text-muted-foreground">Total Discrepancy</p>
                 <p className="text-2xl font-bold text-red-600">
                   {formatMultiCurrencyCompact(stats.discrepancyByCurrency)}
                 </p>
@@ -275,7 +275,7 @@ export function SettlementReports() {
       </div>
 
       {/* Filters */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4">
             <Select value={providerFilter} onValueChange={setProviderFilter}>
@@ -301,14 +301,14 @@ export function SettlementReports() {
               </SelectContent>
             </Select>
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#0F0F0F]/40" />
+              <Calendar className="w-4 h-4 text-muted-foreground" />
               <Input
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
                 className="w-[140px] rounded-xl"
               />
-              <span className="text-[#0F0F0F]/40">to</span>
+              <span className="text-muted-foreground">to</span>
               <Input
                 type="date"
                 value={dateRange.end}
@@ -324,7 +324,7 @@ export function SettlementReports() {
       </Card>
 
       {/* Settlements Table */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Settlement Records ({settlements.length})</CardTitle>
         </CardHeader>
@@ -368,7 +368,7 @@ export function SettlementReports() {
                         {formatPrice(settlement.discrepancy, settlement.currency)}
                       </span>
                     ) : (
-                      <span className="text-[#0F0F0F]/40">-</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -399,7 +399,7 @@ export function SettlementReports() {
               ))}
               {settlements.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-[#0F0F0F]/60">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No settlement records found
                   </TableCell>
                 </TableRow>
@@ -410,7 +410,7 @@ export function SettlementReports() {
       </Card>
 
       {/* Provider Sync Status */}
-      <Card className="border-[#0F0F0F]/10 rounded-2xl">
+      <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle>Provider Sync Status</CardTitle>
         </CardHeader>
@@ -440,15 +440,15 @@ export function SettlementReports() {
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-[#0F0F0F]/60">Last Settlement:</span>
+                        <span className="text-muted-foreground">Last Settlement:</span>
                         <span>{lastSync ? new Date(lastSync).toLocaleDateString() : 'Never'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[#0F0F0F]/60">Total Records:</span>
+                        <span className="text-muted-foreground">Total Records:</span>
                         <span>{providerSettlements.length}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[#0F0F0F]/60">Pending:</span>
+                        <span className="text-muted-foreground">Pending:</span>
                         <span className={pendingCount > 0 ? 'text-yellow-600' : 'text-green-600'}>
                           {pendingCount}
                         </span>

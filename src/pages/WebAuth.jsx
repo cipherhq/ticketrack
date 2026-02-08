@@ -332,19 +332,19 @@ export function WebAuth() {
   // Country Selection Screen (Signup only)
   if (step === 'country-selection') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center mb-8">
             <Logo className="h-12" />
           </div>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
               <div className="w-16 h-16 bg-[#2969FF]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Globe className="w-8 h-8 text-[#2969FF]" />
               </div>
-              <CardTitle className="text-2xl text-[#0F0F0F] text-center">Where are you located?</CardTitle>
-              <p className="text-center text-[#0F0F0F]/60 mt-2">
+              <CardTitle className="text-2xl text-foreground text-center">Where are you located?</CardTitle>
+              <p className="text-center text-muted-foreground mt-2">
                 This sets your event currency and cannot be changed later
               </p>
             </CardHeader>
@@ -355,16 +355,16 @@ export function WebAuth() {
                     key={country.code}
                     type="button"
                     onClick={() => handleCountrySelect(country.code)}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-[#0F0F0F]/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all"
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-border/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all"
                   >
                     <span className="text-4xl">{country.flag}</span>
-                    <span className="text-sm font-medium text-[#0F0F0F]">{country.name}</span>
+                    <span className="text-sm font-medium text-foreground">{country.name}</span>
                   </button>
                 ))}
               </div>
 
               <div className="mt-6 text-center">
-                <p className="text-sm text-[#0F0F0F]/60">
+                <p className="text-sm text-muted-foreground">
                   Already have an account?{' '}
                   <button onClick={() => navigate('/login')} className="text-[#2969FF] hover:underline">
                     Sign In
@@ -374,7 +374,7 @@ export function WebAuth() {
             </CardContent>
           </Card>
 
-          <p className="text-xs text-[#0F0F0F]/40 text-center mt-6">
+          <p className="text-xs text-muted-foreground text-center mt-6">
             By continuing, you agree to our{' '}
             <a href="/terms" className="text-[#2969FF] hover:underline">Terms of Service</a>
             {' '}and{' '}
@@ -388,19 +388,19 @@ export function WebAuth() {
   // Email Not Verified Screen
   if (step === 'email-not-verified') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center mb-8">
             <Logo className="h-12" />
           </div>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-8 text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Mail className="w-8 h-8 text-yellow-600" />
               </div>
-              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Email Not Verified</h2>
-              <p className="text-[#0F0F0F]/60 mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Email Not Verified</h2>
+              <p className="text-muted-foreground mb-6">
                 Your email <strong>{unverifiedEmail}</strong> hasn't been verified yet.
               </p>
 
@@ -431,7 +431,7 @@ export function WebAuth() {
               <Button
                 variant="outline"
                 onClick={() => { setStep('credentials'); setUnverifiedEmail(''); setError(''); setSuccess('') }}
-                className="w-full rounded-xl border-[#0F0F0F]/10"
+                className="w-full rounded-xl border-border/10"
               >
                 Back to Login
               </Button>
@@ -445,20 +445,20 @@ export function WebAuth() {
   // Email Verified Success Screen
   if (step === 'email-verified-success') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center mb-8">
             <Logo className="h-12" />
           </div>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-8 text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle2 className="w-10 h-10 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Email Verified!</h2>
-              <p className="text-[#0F0F0F] font-medium mb-4">Your email has been verified successfully!</p>
-              <p className="text-[#0F0F0F]/60 text-sm mb-6">Redirecting you to your profile...</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Email Verified!</h2>
+              <p className="text-foreground font-medium mb-4">Your email has been verified successfully!</p>
+              <p className="text-muted-foreground text-sm mb-6">Redirecting you to your profile...</p>
               
               <div className="flex justify-center">
                 <Loader2 className="w-5 h-5 animate-spin text-[#2969FF]" />
@@ -473,19 +473,19 @@ export function WebAuth() {
   // Verify Email Screen
   if (step === 'verify-email') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center mb-8">
             <Logo className="h-12" />
           </div>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardContent className="p-8 text-center">
               <div className="w-16 h-16 bg-[#2969FF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Mail className="w-8 h-8 text-[#2969FF]" />
               </div>
-              <h2 className="text-2xl font-bold text-[#0F0F0F] mb-2">Check Your Email</h2>
-              <p className="text-[#0F0F0F]/60 mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Check Your Email</h2>
+              <p className="text-muted-foreground mb-6">
                 We've sent a verification link to <strong>{signupEmail || formData.email}</strong>.
               </p>
 
@@ -503,7 +503,7 @@ export function WebAuth() {
                 </div>
               )}
 
-              <p className="text-sm text-[#0F0F0F]/40 mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 Didn't receive the email? Check your spam folder or click below.
               </p>
 
@@ -511,7 +511,7 @@ export function WebAuth() {
                 onClick={handleResendVerification}
                 disabled={loading}
                 variant="outline"
-                className="w-full rounded-xl border-[#0F0F0F]/10 mb-4"
+                className="w-full rounded-xl border-border/10 mb-4"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                   <><RefreshCw className="w-5 h-5 mr-2" />Resend Verification Email</>
@@ -547,7 +547,7 @@ export function WebAuth() {
               <Button
                 variant="outline"
                 onClick={() => navigate('/login')}
-                className="w-full rounded-xl border-[#0F0F0F]/10"
+                className="w-full rounded-xl border-border/10"
               >
                 Back to Login
               </Button>
@@ -561,16 +561,16 @@ export function WebAuth() {
   // OTP Method Selection Screen (Signup only)
   if (step === 'otp-method-selection') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center mb-8">
             <Logo className="h-12" />
           </div>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#0F0F0F] text-center">Verify Your Account</CardTitle>
-              <p className="text-center text-[#0F0F0F]/60 mt-2">Choose how you'd like to verify your account</p>
+              <CardTitle className="text-2xl text-foreground text-center">Verify Your Account</CardTitle>
+              <p className="text-center text-muted-foreground mt-2">Choose how you'd like to verify your account</p>
               <p className="text-center text-xs text-[#2969FF] mt-2 font-medium">💡 Phone verification is faster and more reliable</p>
             </CardHeader>
             <CardContent>
@@ -598,26 +598,26 @@ export function WebAuth() {
                     <Phone className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-[#0F0F0F] flex items-center gap-2">
+                    <div className="font-semibold text-foreground flex items-center gap-2">
                       Verify via Phone
                       <span className="text-xs bg-[#2969FF] text-white px-2 py-0.5 rounded-full">Recommended</span>
                     </div>
-                    <div className="text-sm text-[#0F0F0F]/60">{signupPhone || 'Your phone number'}</div>
+                    <div className="text-sm text-muted-foreground">{signupPhone || 'Your phone number'}</div>
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleOtpMethodSelection('email')}
                   disabled={loading}
-                  className="w-full p-4 rounded-xl border-2 border-[#0F0F0F]/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all text-left flex items-center gap-3"
+                  className="w-full p-4 rounded-xl border-2 border-border/10 hover:border-[#2969FF] hover:bg-[#2969FF]/5 transition-all text-left flex items-center gap-3"
                 >
                   <div className="w-12 h-12 bg-[#2969FF]/10 rounded-full flex items-center justify-center flex-shrink-0">
                     <Mail className="w-6 h-6 text-[#2969FF]" />
                   </div>
                   <div>
-                    <div className="font-semibold text-[#0F0F0F]">Verify via Email</div>
-                    <div className="text-sm text-[#0F0F0F]/60">{signupEmail}</div>
-                    <div className="text-xs text-[#0F0F0F]/40 mt-1">May take longer or fail if email service is unavailable</div>
+                    <div className="font-semibold text-foreground">Verify via Email</div>
+                    <div className="text-sm text-muted-foreground">{signupEmail}</div>
+                    <div className="text-xs text-muted-foreground mt-1">May take longer or fail if email service is unavailable</div>
                   </div>
                 </button>
               </div>
@@ -641,22 +641,22 @@ export function WebAuth() {
       : (signupPhone || formData.phone || pendingUser?.user_metadata?.phone)
     
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center mb-8">
             <Logo className="h-12" />
           </div>
 
-          <Card className="border-[#0F0F0F]/10 rounded-2xl">
+          <Card className="border-border/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-2xl text-[#0F0F0F] text-center">
+              <CardTitle className="text-2xl text-foreground text-center">
                 {otpMethod === 'email' ? 'Verify Your Email' : 'Verify Your Phone'}
               </CardTitle>
-              <p className="text-center text-[#0F0F0F]/60 mt-2">
+              <p className="text-center text-muted-foreground mt-2">
                 Enter the 6-digit code sent to {otpMethod === 'email' ? 'your email' : 'your phone'}
               </p>
               {verificationTarget && (
-                <p className="text-center text-sm text-[#0F0F0F]/40 mt-1">
+                <p className="text-center text-sm text-muted-foreground mt-1">
                   {otpMethod === 'email' 
                     ? signupEmail || unverifiedEmail
                     : `+${verificationTarget.replace(/\D/g, '').slice(0, 3)}****${verificationTarget.replace(/\D/g, '').slice(-4)}`
@@ -689,7 +689,7 @@ export function WebAuth() {
                     placeholder="000000"
                     value={formData.otp}
                     onChange={handleInputChange}
-                    className="text-center text-2xl tracking-widest rounded-xl border-[#0F0F0F]/10"
+                    className="text-center text-2xl tracking-widest rounded-xl border-border/10"
                     maxLength={6}
                     required
                     autoFocus
@@ -740,7 +740,7 @@ export function WebAuth() {
                 </div>
 
                 <div className="text-center">
-                  <button type="button" onClick={() => { setStep('credentials'); setFormData(prev => ({ ...prev, otp: '' })) }} className="text-sm text-[#0F0F0F]/60 hover:underline">
+                  <button type="button" onClick={() => { setStep('credentials'); setFormData(prev => ({ ...prev, otp: '' })) }} className="text-sm text-muted-foreground hover:underline">
                     Back to Login
                   </button>
                 </div>
@@ -754,27 +754,27 @@ export function WebAuth() {
 
   // Main Login/Signup Form
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F4F6FA]">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <Logo className="h-12" />
         </div>
 
-        <Card className="border-[#0F0F0F]/10 rounded-2xl">
+        <Card className="border-border/10 rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl text-[#0F0F0F] text-center">
+            <CardTitle className="text-2xl text-foreground text-center">
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </CardTitle>
-            <p className="text-center text-[#0F0F0F]/60 mt-2">
+            <p className="text-center text-muted-foreground mt-2">
               {isLogin ? 'Sign in to access your tickets and more' : 'Sign up to start booking amazing events'}
             </p>
           </CardHeader>
           <CardContent>
             {/* Show selected country for signup */}
             {!isLogin && formData.countryCode && (
-              <div className="mb-4 p-3 bg-[#F4F6FA] rounded-xl flex items-center justify-between">
-                <span className="text-sm text-[#0F0F0F]">
-                  <span className="text-[#0F0F0F]/60">Country: </span>
+              <div className="mb-4 p-3 bg-muted rounded-xl flex items-center justify-between">
+                <span className="text-sm text-foreground">
+                  <span className="text-muted-foreground">Country: </span>
                   {getSelectedCountryName()}
                 </span>
                 <button
@@ -864,13 +864,13 @@ export function WebAuth() {
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
                         id="firstName"
                         placeholder="John"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                        className="pl-10 rounded-xl border-border/10"
                         required
                         autoComplete="off-given-name"
                       />
@@ -883,7 +883,7 @@ export function WebAuth() {
                       placeholder="Doe"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="rounded-xl border-[#0F0F0F]/10"
+                      className="rounded-xl border-border/10"
                       required
                       autoComplete="off-family-name"
                     />
@@ -894,14 +894,14 @@ export function WebAuth() {
 
               {/* Login Method Toggle - Only show for login */}
               {isLogin && showPhoneLogin && (
-                <div className="flex rounded-xl bg-[#F4F6FA] p-1 mb-2">
+                <div className="flex rounded-xl bg-muted p-1 mb-2">
                   <button
                     type="button"
                     onClick={() => setLoginMethod("email")}
                     className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                       loginMethod === "email"
-                        ? "bg-white text-[#0F0F0F] shadow-sm"
-                        : "text-[#0F0F0F]/60 hover:text-[#0F0F0F]"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     Email
@@ -911,8 +911,8 @@ export function WebAuth() {
                     onClick={() => setLoginMethod("phone")}
                     className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                       loginMethod === "phone"
-                        ? "bg-white text-[#0F0F0F] shadow-sm"
-                        : "text-[#0F0F0F]/60 hover:text-[#0F0F0F]"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     Phone
@@ -924,14 +924,14 @@ export function WebAuth() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                    className="pl-10 rounded-xl border-border/10"
                     required
                     autoComplete="off"
                     autoCorrect="off"
@@ -974,21 +974,21 @@ export function WebAuth() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pl-10 pr-10 rounded-xl border-[#0F0F0F]/10"
+                    className="pl-10 pr-10 rounded-xl border-border/10"
                     required
                     autoComplete="nope"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0F0F0F]/40 hover:text-[#0F0F0F]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -1020,14 +1020,14 @@ export function WebAuth() {
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0F0F0F]/40" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
                       type={showPassword ? "text" : "password"}
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
-                      className="pl-10 rounded-xl border-[#0F0F0F]/10"
+                      className="pl-10 rounded-xl border-border/10"
                       required
                       autoComplete="new-password-off"
                     />
@@ -1059,9 +1059,9 @@ export function WebAuth() {
                       type="checkbox"
                       checked={formData.termsAccepted}
                       onChange={(e) => setFormData(prev => ({ ...prev, termsAccepted: e.target.checked }))}
-                      className="mt-1 w-4 h-4 rounded border-[#0F0F0F]/20 text-[#2969FF] focus:ring-[#2969FF]"
+                      className="mt-1 w-4 h-4 rounded border-border/20 text-[#2969FF] focus:ring-primary"
                     />
-                    <span className="text-sm text-[#0F0F0F]/70">
+                    <span className="text-sm text-foreground/70">
                       I agree to the{' '}
                       <a href="/terms" target="_blank" className="text-[#2969FF] hover:underline">Terms of Service</a>
                       {' '}and{' '}
@@ -1076,11 +1076,11 @@ export function WebAuth() {
                       type="checkbox"
                       checked={formData.marketingConsent}
                       onChange={(e) => setFormData(prev => ({ ...prev, marketingConsent: e.target.checked }))}
-                      className="mt-1 w-4 h-4 rounded border-[#0F0F0F]/20 text-[#2969FF] focus:ring-[#2969FF]"
+                      className="mt-1 w-4 h-4 rounded border-border/20 text-[#2969FF] focus:ring-primary"
                     />
-                    <span className="text-sm text-[#0F0F0F]/70">
+                    <span className="text-sm text-foreground/70">
                       I'd like to receive event recommendations, special offers, and updates via email. 
-                      <span className="text-[#0F0F0F]/50 block text-xs mt-0.5">You can unsubscribe at any time.</span>
+                      <span className="text-muted-foreground block text-xs mt-0.5">You can unsubscribe at any time.</span>
                     </span>
                   </label>
                 </div>
@@ -1096,7 +1096,7 @@ export function WebAuth() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-[#0F0F0F]/60">
+              <p className="text-sm text-muted-foreground">
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
                 <button onClick={() => navigate(isLogin ? "/signup" : "/login")} className="text-[#2969FF] hover:underline">
                   {isLogin ? "Sign Up" : "Sign In"}
@@ -1106,7 +1106,7 @@ export function WebAuth() {
           </CardContent>
         </Card>
 
-        <p className="text-xs text-[#0F0F0F]/40 text-center mt-6">
+        <p className="text-xs text-muted-foreground text-center mt-6">
           By continuing, you agree to our{' '}
           <a href="/terms" className="text-[#2969FF] hover:underline">Terms of Service</a>
           {' '}and{' '}
