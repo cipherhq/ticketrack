@@ -253,35 +253,35 @@ export function WebSearch() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen bg-gray-50">
       {/* Search Header */}
       <div className="bg-[#2969FF] py-8">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="bg-card rounded-2xl p-2 flex flex-col md:flex-row gap-2">
+          <div className="bg-white rounded-2xl p-2 flex flex-col md:flex-row gap-2">
             {/* Location Filter */}
             <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
               <div 
-                className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
+                className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
                 onClick={() => setShowLocationDropdown(!showLocationDropdown)}
               >
                 <MapPin className="w-5 h-5 text-[#2969FF]" />
                 <div className="flex-1">
-                  <div className="text-xs text-muted-foreground uppercase font-medium">Location</div>
-                  <div className="text-sm text-foreground">{location || 'All Locations'}</div>
+                  <div className="text-xs text-gray-600 uppercase font-medium">Location</div>
+                  <div className="text-sm text-gray-900">{location || 'All Locations'}</div>
                 </div>
                 {location ? (
-                  <button onClick={(e) => { e.stopPropagation(); clearLocation(); }} className="text-muted-foreground hover:text-foreground">
+                  <button onClick={(e) => { e.stopPropagation(); clearLocation(); }} className="text-gray-600 hover:text-gray-900">
                     <X className="w-4 h-4" />
                   </button>
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  <ChevronDown className="w-4 h-4 text-gray-600" />
                 )}
               </div>
               {showLocationDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/10 rounded-xl shadow-lg z-20 max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 max-h-60 overflow-y-auto">
                   <button
                     onClick={() => { setLocation(''); setShowLocationDropdown(false); }}
-                    className={`w-full text-left px-4 py-3 hover:bg-muted ${!location ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 ${!location ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
                   >
                     All Locations
                   </button>
@@ -289,7 +289,7 @@ export function WebSearch() {
                     <button
                       key={city}
                       onClick={() => { setLocation(city); setShowLocationDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 hover:bg-muted ${location === city ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 ${location === city ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
                     >
                       {city}
                     </button>
@@ -301,23 +301,23 @@ export function WebSearch() {
             {/* Date Filter */}
             <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
               <div 
-                className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
+                className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
                 onClick={() => setShowDateDropdown(!showDateDropdown)}
               >
                 <Calendar className="w-5 h-5 text-[#2969FF]" />
                 <div className="flex-1">
-                  <div className="text-xs text-muted-foreground uppercase font-medium">Dates</div>
-                  <div className="text-sm text-foreground">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
+                  <div className="text-xs text-gray-600 uppercase font-medium">Dates</div>
+                  <div className="text-sm text-gray-900">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
                 </div>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                <ChevronDown className="w-4 h-4 text-gray-600" />
               </div>
               {showDateDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/10 rounded-xl shadow-lg z-20">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
                   {dateOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 hover:bg-muted ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
                     >
                       {option.label}
                     </button>
@@ -328,7 +328,7 @@ export function WebSearch() {
 
             {/* Search Input */}
             <div className="flex-[2] relative">
-              <div className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl">
+              <div className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl">
                 <Search className="w-5 h-5 text-[#2969FF]" />
                 <input
                   type="text"
@@ -340,7 +340,7 @@ export function WebSearch() {
                   style={{ fontSize: '16px' }}
                 />
                 {query && (
-                  <button onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground">
+                  <button onClick={() => setQuery('')} className="text-gray-600 hover:text-gray-900">
                     <X className="w-4 h-4" />
                   </button>
                 )}
@@ -366,7 +366,7 @@ export function WebSearch() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-5 h-5 text-[#2969FF]" />
-                <h2 className="font-semibold text-foreground">Trending Searches</h2>
+                <h2 className="font-semibold text-gray-900">Trending Searches</h2>
               </div>
               <div className="flex flex-wrap gap-2">
                 {trendingSearches.map((term, index) => (
@@ -374,7 +374,7 @@ export function WebSearch() {
                     key={index}
                     variant="outline"
                     onClick={() => handleQuickSearch(term)}
-                    className="cursor-pointer hover:bg-[#2969FF]/10 hover:border-[#2969FF] transition-colors px-4 py-2 rounded-xl border-border/10 text-foreground"
+                    className="cursor-pointer hover:bg-[#2969FF]/10 hover:border-[#2969FF] transition-colors px-4 py-2 rounded-xl border-gray-200 text-gray-900"
                   >
                     {term}
                   </Badge>
@@ -386,8 +386,8 @@ export function WebSearch() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <History className="w-5 h-5 text-muted-foreground" />
-                    <h2 className="font-semibold text-foreground">Recent Searches</h2>
+                    <History className="w-5 h-5 text-gray-600" />
+                    <h2 className="font-semibold text-gray-900">Recent Searches</h2>
                   </div>
                   <button onClick={clearRecent} className="text-sm text-[#2969FF] hover:underline">Clear all</button>
                 </div>
@@ -396,10 +396,10 @@ export function WebSearch() {
                     <button
                       key={index}
                       onClick={() => handleQuickSearch(term)}
-                      className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-card transition-colors text-left"
+                      className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-white transition-colors text-left"
                     >
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-foreground/80">{term}</span>
+                      <Clock className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-900/80">{term}</span>
                     </button>
                   ))}
                 </div>
@@ -412,26 +412,26 @@ export function WebSearch() {
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-lg font-semibold text-foreground">{searchResults.length} Results</p>
+                <p className="text-lg font-semibold text-gray-900">{searchResults.length} Results</p>
               </div>
               
               {/* Sort Dropdown */}
               <div className="relative" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() => setShowSortDropdown(!showSortDropdown)}
-                  className="flex items-center gap-2 px-4 py-2 border border-border/10 rounded-xl bg-card"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl bg-white"
                 >
-                  <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+                  <SlidersHorizontal className="w-4 h-4 text-gray-600" />
                   <span className="text-sm">{sortOptions.find(s => s.value === sortBy)?.label}</span>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  <ChevronDown className="w-4 h-4 text-gray-600" />
                 </button>
                 {showSortDropdown && (
-                  <div className="absolute top-full right-0 mt-1 bg-card border border-border/10 rounded-xl shadow-lg z-20 min-w-[180px]">
+                  <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 min-w-[180px]">
                     {sortOptions.map((option) => (
                       <button
                         key={option.value}
                         onClick={() => { setSortBy(option.value); setShowSortDropdown(false); handleSearch(); }}
-                        className={`w-full text-left px-4 py-3 hover:bg-muted text-sm ${sortBy === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 text-sm ${sortBy === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
                       >
                         {option.label}
                       </button>
@@ -445,16 +445,16 @@ export function WebSearch() {
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
-                <span className="ml-3 text-muted-foreground">Searching...</span>
+                <span className="ml-3 text-gray-600">Searching...</span>
               </div>
             ) : searchResults.length === 0 ? (
               /* No Results */
-              <Card className="border-border/10 rounded-2xl">
+              <Card className="border-gray-200 rounded-2xl">
                 <CardContent className="py-16 text-center">
-                  <Search className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">No events found</p>
-                  <p className="text-sm text-muted-foreground mb-6">Try adjusting your filters or search term</p>
-                  <Button onClick={() => navigate('/events')} variant="outline" className="rounded-xl border-border/10">
+                  <Search className="w-12 h-12 text-gray-900/20 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">No events found</p>
+                  <p className="text-sm text-gray-600 mb-6">Try adjusting your filters or search term</p>
+                  <Button onClick={() => navigate('/events')} variant="outline" className="rounded-xl border-gray-200">
                     Browse All Events
                   </Button>
                 </CardContent>
@@ -466,7 +466,7 @@ export function WebSearch() {
                   <Card
                     key={event.id}
                     onClick={() => navigate(`/e/${event.slug || event.id}`)}
-                    className="border-border/10 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-card"
+                    className="border-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow bg-white"
                   >
                     <CardContent className="p-0">
                       <div className="flex flex-col sm:flex-row gap-4">
@@ -477,8 +477,8 @@ export function WebSearch() {
                           {event.category && (
                             <Badge className="bg-[#2969FF]/10 text-[#2969FF] border-0 rounded-lg mb-2">{event.category}</Badge>
                           )}
-                          <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-1">{event.title}</h3>
-                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">{event.title}</h3>
+                          <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
                             <div className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
                               {formatEventDate(event.start_date)}
