@@ -723,6 +723,27 @@ export function WebTickets() {
                 <p className="text-xs text-muted-foreground">Attendee</p>
                 <p className="text-foreground">{ticket.attendee_name}</p>
               </div>
+              {ticket.attendee_email && user?.email && ticket.attendee_email.toLowerCase() !== user.email.toLowerCase() && (
+                <div className="col-span-2 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1.5">Bought for someone else</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-sm">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Name: </span>
+                      <span className="text-foreground">{ticket.attendee_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Email: </span>
+                      <span className="text-foreground">{ticket.attendee_email}</span>
+                    </div>
+                    {ticket.attendee_phone && (
+                      <div>
+                        <span className="text-xs text-muted-foreground">Phone: </span>
+                        <span className="text-foreground">{ticket.attendee_phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="text-xs text-muted-foreground">Transaction ID</p>
                 <p className="text-foreground font-mono text-xs">

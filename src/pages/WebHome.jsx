@@ -64,11 +64,18 @@ const EventCard = ({ event, showDistance = false }) => {
       className="group bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col min-w-[280px] max-w-[280px]"
     >
       <div className="relative h-[160px] overflow-hidden">
-        <img 
-          src={event.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'} 
+        <img
+          src={event.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'}
           alt={event.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${event.isSoldOut ? 'grayscale opacity-70' : ''}`}
         />
+        {event.isSoldOut && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+            <span className="bg-red-600 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg">
+              Sold Out
+            </span>
+          </div>
+        )}
         {event.category && (
           <span className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-medium px-2.5 py-1 rounded-full shadow-sm">
             {event.category}
@@ -84,12 +91,12 @@ const EventCard = ({ event, showDistance = false }) => {
             {event.distance} km
           </span>
         )}
-        {event.is_promoted && (
+        {event.is_promoted && !event.isSoldOut && (
           <span className="absolute bottom-3 left-3 bg-gray-900/80 text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1">
             <TrendingUp size={12} /> PROMOTED
           </span>
         )}
-        {event.isLowStock && !event.is_promoted && (
+        {event.isLowStock && !event.is_promoted && !event.isSoldOut && (
           <span className="absolute bottom-3 left-3 bg-amber-500 text-white text-xs font-medium px-2 py-1 rounded-full">
             🔥 Few left
           </span>
@@ -110,12 +117,18 @@ const EventCard = ({ event, showDistance = false }) => {
           </span>
         </div>
         <div className="mt-auto flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">From</span>
-          <span className="font-bold text-blue-600">
-            {event.is_free || event.min_price === 0 || event.min_price === null 
-              ? 'Free' 
-              : formatPrice(event.min_price, event.currency || 'USD')}
-          </span>
+          {event.isSoldOut ? (
+            <span className="font-bold text-red-500">Sold Out</span>
+          ) : (
+            <>
+              <span className="text-sm text-muted-foreground">From</span>
+              <span className="font-bold text-blue-600">
+                {event.is_free || event.min_price === 0 || event.min_price === null
+                  ? 'Free'
+                  : formatPrice(event.min_price, event.currency || 'USD')}
+              </span>
+            </>
+          )}
         </div>
       </div>
     </Link>
@@ -157,11 +170,18 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
             className="group bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col"
           >
             <div className="relative h-[160px] overflow-hidden">
-              <img 
-                src={event.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'} 
+              <img
+                src={event.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'}
                 alt={event.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${event.isSoldOut ? 'grayscale opacity-70' : ''}`}
               />
+              {event.isSoldOut && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <span className="bg-red-600 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg">
+                    Sold Out
+                  </span>
+                </div>
+              )}
               {event.category && (
                 <span className="absolute top-3 left-3 bg-card/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
                   {event.category}
@@ -172,7 +192,7 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
                   {event.distance} km
                 </span>
               )}
-              {event.isLowStock && (
+              {event.isLowStock && !event.isSoldOut && (
                 <span className="absolute bottom-3 left-3 bg-amber-500 text-white text-xs font-medium px-2 py-1 rounded-full">
                   🔥 Few left
                 </span>
@@ -193,12 +213,18 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
                 </span>
               </div>
               <div className="mt-auto flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">From</span>
-                <span className="font-bold text-blue-600">
-                  {event.is_free || event.min_price === 0 || event.min_price === null 
-                    ? 'Free' 
-                    : formatPrice(event.min_price, event.currency || 'USD')}
-                </span>
+                {event.isSoldOut ? (
+                  <span className="font-bold text-red-500">Sold Out</span>
+                ) : (
+                  <>
+                    <span className="text-sm text-muted-foreground">From</span>
+                    <span className="font-bold text-blue-600">
+                      {event.is_free || event.min_price === 0 || event.min_price === null
+                        ? 'Free'
+                        : formatPrice(event.min_price, event.currency || 'USD')}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </Link>
@@ -353,8 +379,9 @@ export function WebHome() {
         });
         const percentRemaining = totalCapacity > 0 ? (totalRemaining / totalCapacity) * 100 : 100;
         const isLowStock = totalCapacity > 0 && (totalRemaining <= 10 || percentRemaining <= 20);
-        
-        return { ...event, min_price: minPrice, isLowStock, totalRemaining };
+        const isSoldOut = totalCapacity > 0 && totalRemaining <= 0;
+
+        return { ...event, min_price: minPrice, isLowStock, isSoldOut, totalRemaining };
       }) || [];
 
       if (eventsWithPrices.length > 0) {

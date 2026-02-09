@@ -129,7 +129,7 @@ export function WebEventBrowse() {
       
       let query = supabase
         .from('events')
-        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, is_virtual, is_recurring, parent_event_id, venue_lat, venue_lng, country_code, ticket_types (price)')
+        .select('id, title, slug, description, image_url, venue_name, city, start_date, category, currency, is_free, tickets_sold, is_virtual, is_recurring, parent_event_id, venue_lat, venue_lng, country_code, ticket_types (price, quantity_available, quantity_sold)')
         .eq('status', 'published')
         .or('visibility.eq.public,visibility.is.null')
         .is('parent_event_id', null) // Only show parent events in browse (child events accessible via parent page)
@@ -170,13 +170,21 @@ export function WebEventBrowse() {
 
       if (error) throw error
 
-      // Calculate min price for each event
-      let results = (data || []).map(event => ({
-        ...event,
-        min_price: event.ticket_types?.length > 0
+      // Calculate min price and sold out status for each event
+      let results = (data || []).map(event => {
+        const min_price = event.ticket_types?.length > 0
           ? Math.min(...event.ticket_types.map(t => parseFloat(t.price) || 0))
           : 0
-      }))
+        let totalRemaining = 0
+        let totalCapacity = 0
+        event.ticket_types?.forEach(t => {
+          const remaining = (t.quantity_available || 0) - (t.quantity_sold || 0)
+          totalRemaining += remaining
+          totalCapacity += (t.quantity_available || 0)
+        })
+        const isSoldOut = totalCapacity > 0 && totalRemaining <= 0
+        return { ...event, min_price, isSoldOut }
+      })
 
       // Sort by distance first if user location is available and sortBy is 'distance' or default
       const locationToUse = useLocation || userLocation
@@ -367,20 +375,20 @@ export function WebEventBrowse() {
       {/* Search Header */}
       <div className="bg-[#2969FF] py-4 md:py-6">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="bg-card rounded-2xl p-2 md:p-2 flex flex-col md:flex-row gap-2 md:gap-2">
+          <div className="bg-background rounded-2xl p-2 md:p-3 flex flex-col md:flex-row gap-2 md:gap-2 shadow-lg border border-border/20">
             {/* Location Input */}
             <div className="flex-1 relative">
-              <div className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl">
-                <MapPin className="w-5 h-5 text-[#2969FF]" />
+              <div className="flex items-center gap-2 px-4 py-3 bg-muted/50 border border-border/30 rounded-xl hover:border-[#2969FF]/40 transition-colors">
+                <MapPin className="w-5 h-5 text-[#2969FF] flex-shrink-0" />
                 <div className="flex-1">
-                  <div className="text-xs text-muted-foreground uppercase font-medium">Location</div>
+                  <div className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Location</div>
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="City or Venue"
-                    className="w-full outline-none text-foreground placeholder-[#0F0F0F]/40"
+                    className="w-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-sm"
                     style={{ fontSize: '16px' }}
                   />
                 </div>
@@ -394,24 +402,24 @@ export function WebEventBrowse() {
 
             {/* Date Filter */}
             <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
-              <div 
-                className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
+              <div
+                className="flex items-center gap-2 px-4 py-3 bg-muted/50 border border-border/30 rounded-xl cursor-pointer hover:border-[#2969FF]/40 transition-colors"
                 onClick={() => setShowDateDropdown(!showDateDropdown)}
               >
-                <Calendar className="w-5 h-5 text-[#2969FF]" />
+                <Calendar className="w-5 h-5 text-[#2969FF] flex-shrink-0" />
                 <div className="flex-1">
-                  <div className="text-xs text-muted-foreground uppercase font-medium">Dates</div>
+                  <div className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Dates</div>
                   <div className="text-sm text-foreground">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
                 </div>
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </div>
               {showDateDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/10 rounded-xl shadow-lg z-20">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border/30 rounded-xl shadow-xl z-20">
                   {dateOptions.map((option) => (
                     <button
                       key={option.value}
                       onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 hover:bg-muted text-sm min-h-[44px] touch-manipulation ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                      className={`w-full text-left px-4 py-3 hover:bg-muted text-sm min-h-[44px] touch-manipulation first:rounded-t-xl last:rounded-b-xl ${dateFilter === option.value ? 'bg-[#2969FF]/10 text-[#2969FF] font-medium' : ''}`}
                     >
                       {option.label}
                     </button>
@@ -422,17 +430,17 @@ export function WebEventBrowse() {
 
             {/* Search Input */}
             <div className="flex-[2] relative">
-              <div className="flex items-center gap-2 px-4 py-3 border border-border/10 rounded-xl">
-                <Search className="w-5 h-5 text-[#2969FF]" />
+              <div className="flex items-center gap-2 px-4 py-3 bg-muted/50 border border-border/30 rounded-xl hover:border-[#2969FF]/40 transition-colors">
+                <Search className="w-5 h-5 text-[#2969FF] flex-shrink-0" />
                 <div className="flex-1">
-                  <div className="text-xs text-muted-foreground uppercase font-medium">Search</div>
+                  <div className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Search</div>
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder="Artist, Event or Venue"
-                    className="w-full outline-none"
+                    className="w-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground/60 text-sm"
                     style={{ fontSize: '16px' }}
                   />
                 </div>
@@ -445,10 +453,11 @@ export function WebEventBrowse() {
             </div>
 
             {/* Search Button */}
-            <Button 
+            <Button
               onClick={handleSearch}
-              className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-8 py-6 min-h-[44px] touch-manipulation w-full md:w-auto"
+              className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl px-8 py-6 min-h-[44px] touch-manipulation w-full md:w-auto font-semibold shadow-md"
             >
+              <Search className="w-4 h-4 mr-2 md:hidden lg:block" />
               Search
             </Button>
           </div>
@@ -595,26 +604,33 @@ export function WebEventBrowse() {
                     onClick={() => navigate(`/e/${event.slug || event.id}`)}
                   >
                     <div className="relative h-48 bg-muted">
-                      <img 
-                        src={event.image_url} 
+                      <img
+                        src={event.image_url}
                         alt={event.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${event.isSoldOut ? 'grayscale opacity-70' : ''}`}
                         onError={(e) => { e.target.style.display = 'none' }}
                         loading="lazy"
                         decoding="async"
                       />
+                      {event.isSoldOut && (
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <span className="bg-red-600 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-lg">
+                            Sold Out
+                          </span>
+                        </div>
+                      )}
                       {event.category && (
                         <Badge className="absolute top-4 left-4 bg-card text-foreground border-0 font-medium shadow-sm">
                           {event.category}
                         </Badge>
                       )}
-                      {event.is_free && (
+                      {event.is_free && !event.isSoldOut && (
                         <Badge className="absolute top-4 right-4 bg-green-500 text-white border-0">
                           Free
                         </Badge>
                       )}
                       {event.is_recurring && (
-                        <Badge className={`absolute ${event.is_free ? 'top-12' : 'top-4'} right-4 bg-purple-500 text-white border-0 flex items-center gap-1`}>
+                        <Badge className={`absolute ${event.is_free && !event.isSoldOut ? 'top-12' : 'top-4'} right-4 bg-purple-500 text-white border-0 flex items-center gap-1`}>
                           <Calendar className="w-3 h-3" /> Series
                         </Badge>
                       )}
@@ -624,17 +640,17 @@ export function WebEventBrowse() {
                         </Badge>
                       )}
                     </div>
-                    
+
                     <CardContent className="p-5">
                       <h3 className="font-semibold text-lg text-foreground mb-3 line-clamp-1">
                         {event.title}
                       </h3>
-                      
+
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                         <Calendar className="w-4 h-4" />
                         {formatDate(event.start_date)}
                       </div>
-                      
+
                       <div className="flex items-start gap-2 text-sm text-muted-foreground mb-4">
                         <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
@@ -648,21 +664,25 @@ export function WebEventBrowse() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="border-t border-border/10 pt-4 mt-2">
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-[#2969FF] text-lg">
-                            {event.is_free ? "Free" : formatPrice(event.min_price, event.currency)}
-                          </span>
-                          <Button 
+                          {event.isSoldOut ? (
+                            <span className="font-bold text-red-500 text-lg">Sold Out</span>
+                          ) : (
+                            <span className="font-bold text-[#2969FF] text-lg">
+                              {event.is_free ? "Free" : formatPrice(event.min_price, event.currency)}
+                            </span>
+                          )}
+                          <Button
                             size="sm"
-                            className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-full px-5"
+                            className={`rounded-full px-5 ${event.isSoldOut ? 'bg-gray-400 hover:bg-gray-500' : 'bg-[#2969FF] hover:bg-[#1a4fd8]'} text-white`}
                             onClick={(e) => {
                               e.stopPropagation()
                               navigate(`/e/${event.slug || event.id}`)
                             }}
                           >
-                            Get Tickets
+                            {event.isSoldOut ? 'View Event' : 'Get Tickets'}
                           </Button>
                         </div>
                       </div>
