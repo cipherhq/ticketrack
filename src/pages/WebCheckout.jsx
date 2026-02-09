@@ -616,14 +616,9 @@ export function WebCheckout() {
     const TIMER_KEY = `checkout_timer_${event?.id}`
     const TIMER_DURATION = 300 // 5 minutes in seconds
     
-    // Get or set start time
-    let startTime = localStorage.getItem(TIMER_KEY)
-    if (!startTime) {
-      startTime = Date.now()
-      localStorage.setItem(TIMER_KEY, startTime)
-    } else {
-      startTime = parseInt(startTime)
-    }
+    // Always reset timer on mount so stale sessions don't instantly expire
+    let startTime = Date.now()
+    localStorage.setItem(TIMER_KEY, startTime)
     
     const updateTimer = () => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
