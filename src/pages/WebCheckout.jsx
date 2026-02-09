@@ -647,17 +647,19 @@ export function WebCheckout() {
 
   const ticketCount = Object.values(selectedTickets).reduce((sum, qty) => sum + (qty || 0), 0)
   const feeProvider = ["NGN", "GHS"].includes(event?.currency) ? "paystack" : "stripe"
-  const { displayFee: calculatedFee, serviceFee: platformFee, processingFee } = calculateFees(totalAmount, ticketCount, fees, feeProvider)
-  
+  const discountAmount = promoApplied?.discountAmount || 0
+  // Calculate fees on the discounted subtotal so fees are consistent across all payment providers
+  const discountedSubtotal = Math.max(0, totalAmount - discountAmount)
+  const { displayFee: calculatedFee, serviceFee: platformFee, processingFee } = calculateFees(discountedSubtotal, ticketCount, fees, feeProvider)
+
   // Check if organizer is absorbing the fee
   const organizerAbsorbsFee = event?.fee_handling === 'absorb'
   // If organizer absorbs, attendee sees no fee; otherwise show calculated fee
   const serviceFee = organizerAbsorbsFee ? 0 : calculatedFee
   // Store the actual fee for payout calculations (always calculated, even if not shown to attendee)
   const actualPlatformFee = calculatedFee
-  
-  const discountAmount = promoApplied?.discountAmount || 0
-  const finalTotal = totalAmount + serviceFee - discountAmount
+
+  const finalTotal = discountedSubtotal + serviceFee
 
   const ticketSummary = Object.entries(selectedTickets)
     .filter(([_, qty]) => qty > 0)
