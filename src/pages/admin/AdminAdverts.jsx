@@ -707,8 +707,8 @@ export default function AdminAdverts() {
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border/10 rounded-2xl w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <h3 className="text-lg font-semibold text-foreground mb-4">Reject Advertisement</h3>
             <p className="text-sm text-muted-foreground mb-3">
               Please provide a reason for rejecting this ad. The advertiser will be notified by email.
@@ -762,8 +762,8 @@ export default function AdminAdverts() {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-border/10">
               <h2 className="text-lg font-semibold text-foreground">
                 {editingAd ? 'Edit Advertisement' : 'New Advertisement'}
