@@ -13,32 +13,25 @@ import { formatPrice, currencies } from '@/config/currencies';
 const getCurrencySymbol = (code) => currencies[code]?.symbol || code;
 
 const AD_POSITIONS = [
-  { 
-    value: 'top', 
-    label: 'Top Banner', 
+  {
+    value: 'top',
+    label: 'Top Banner',
     size: '1200 x 300 px',
     description: 'Horizontal banner below hero section',
     icon: '▬'
   },
-  { 
-    value: 'bottom', 
-    label: 'Bottom Banner', 
+  {
+    value: 'bottom',
+    label: 'Bottom Banner',
     size: '1200 x 300 px',
     description: 'Horizontal banner above download section',
     icon: '▬'
   },
-  { 
-    value: 'left', 
-    label: 'Left Sidebar', 
-    size: '300 x 600 px',
-    description: 'Fixed half-page ad on left side',
-    icon: '▮'
-  },
-  { 
-    value: 'right', 
-    label: 'Right Sidebar', 
-    size: '300 x 600 px',
-    description: 'Fixed half-page ad on right side',
+  {
+    value: 'right',
+    label: 'Right Sidebar',
+    size: '300 x 250 px',
+    description: 'Sidebar ad on event detail pages',
     icon: '▮'
   },
 ];
@@ -47,11 +40,11 @@ const getAdStatus = (ad) => {
   const now = new Date();
   const start = new Date(ad.start_date);
   const end = new Date(ad.end_date);
-  
+
   if (!ad.is_active) return { label: 'Inactive', color: 'bg-muted text-muted-foreground' };
-  if (now < start) return { label: 'Scheduled', color: 'bg-blue-100 text-blue-600' };
-  if (now > end) return { label: 'Expired', color: 'bg-red-100 text-red-600' };
-  return { label: 'Active', color: 'bg-green-100 text-green-600' };
+  if (now < start) return { label: 'Scheduled', color: 'bg-blue-500/10 text-blue-500' };
+  if (now > end) return { label: 'Expired', color: 'bg-red-500/10 text-red-500' };
+  return { label: 'Active', color: 'bg-green-500/10 text-green-500' };
 };
 
 export default function AdminAdverts() {
@@ -102,7 +95,7 @@ export default function AdminAdverts() {
 
     if (!error && data) {
       setAds(data);
-      
+
       // Calculate stats
       const now = new Date();
       const activeAds = data.filter(ad => {
@@ -110,14 +103,14 @@ export default function AdminAdverts() {
         const end = new Date(ad.end_date);
         return ad.is_active && now >= start && now <= end;
       });
-      
+
       // Calculate revenue stats
       const totalRevenue = data.reduce((sum, ad) => sum + (parseFloat(ad.price) || 0), 0);
       const paidRevenue = data
         .filter(ad => ad.payment_status === 'paid')
         .reduce((sum, ad) => sum + (parseFloat(ad.price) || 0), 0);
       const unpaidRevenue = totalRevenue - paidRevenue;
-      
+
       // Find primary currency (most common)
       const currencyCounts = {};
       data.forEach(ad => {
@@ -147,7 +140,7 @@ export default function AdminAdverts() {
     // Validate file type
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
-    
+
     if (!isImage && !isVideo) {
       alert('Please upload an image or video file');
       return;
@@ -356,7 +349,7 @@ export default function AdminAdverts() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2969FF]"></div>
       </div>
     );
   }
@@ -371,7 +364,7 @@ export default function AdminAdverts() {
         </div>
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 bg-[#2969FF] text-white px-4 py-2 rounded-xl hover:bg-[#2969FF]/90 transition-colors"
         >
           <Plus size={20} />
           Add New Ad
@@ -380,96 +373,96 @@ export default function AdminAdverts() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-        <div className="bg-card p-4 rounded-xl shadow-sm">
+        <div className="bg-card border border-border/10 p-4 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Monitor className="text-blue-600" size={20} />
+            <div className="p-2 bg-blue-500/10 rounded-lg">
+              <Monitor className="text-blue-500" size={20} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Ads</p>
-              <p className="text-xl font-bold">{stats.totalAds}</p>
+              <p className="text-xl font-bold text-foreground">{stats.totalAds}</p>
             </div>
           </div>
         </div>
-        <div className="bg-card p-4 rounded-xl shadow-sm">
+        <div className="bg-card border border-border/10 p-4 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Eye className="text-green-600" size={20} />
+            <div className="p-2 bg-green-500/10 rounded-lg">
+              <Eye className="text-green-500" size={20} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Active Now</p>
-              <p className="text-xl font-bold">{stats.activeAds}</p>
+              <p className="text-xl font-bold text-foreground">{stats.activeAds}</p>
             </div>
           </div>
         </div>
-        <div className="bg-card p-4 rounded-xl shadow-sm">
+        <div className="bg-card border border-border/10 p-4 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <DollarSign className="text-emerald-600" size={20} />
+            <div className="p-2 bg-emerald-500/10 rounded-lg">
+              <DollarSign className="text-emerald-500" size={20} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Revenue</p>
-              <p className="text-xl font-bold">{formatPrice(stats.totalRevenue, stats.primaryCurrency)}</p>
+              <p className="text-xl font-bold text-foreground">{formatPrice(stats.totalRevenue, stats.primaryCurrency)}</p>
             </div>
           </div>
         </div>
-        <div className="bg-card p-4 rounded-xl shadow-sm">
+        <div className="bg-card border border-border/10 p-4 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="text-green-600" size={20} />
+            <div className="p-2 bg-green-500/10 rounded-lg">
+              <CheckCircle className="text-green-500" size={20} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Paid</p>
-              <p className="text-xl font-bold text-green-600">{formatPrice(stats.paidRevenue, stats.primaryCurrency)}</p>
+              <p className="text-xl font-bold text-green-500">{formatPrice(stats.paidRevenue, stats.primaryCurrency)}</p>
             </div>
           </div>
         </div>
-        <div className="bg-card p-4 rounded-xl shadow-sm">
+        <div className="bg-card border border-border/10 p-4 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="text-yellow-600" size={20} />
+            <div className="p-2 bg-yellow-500/10 rounded-lg">
+              <Clock className="text-yellow-500" size={20} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Unpaid</p>
-              <p className="text-xl font-bold text-yellow-600">{formatPrice(stats.unpaidRevenue, stats.primaryCurrency)}</p>
+              <p className="text-xl font-bold text-yellow-500">{formatPrice(stats.unpaidRevenue, stats.primaryCurrency)}</p>
             </div>
           </div>
         </div>
-        <div className="bg-card p-4 rounded-xl shadow-sm">
+        <div className="bg-card border border-border/10 p-4 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <TrendingUp className="text-purple-600" size={20} />
+            <div className="p-2 bg-purple-500/10 rounded-lg">
+              <TrendingUp className="text-purple-500" size={20} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Impressions</p>
-              <p className="text-xl font-bold">{stats.totalImpressions.toLocaleString()}</p>
+              <p className="text-xl font-bold text-foreground">{stats.totalImpressions.toLocaleString()}</p>
             </div>
           </div>
         </div>
-        <div className="bg-card p-4 rounded-xl shadow-sm">
+        <div className="bg-card border border-border/10 p-4 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <MousePointer className="text-orange-600" size={20} />
+            <div className="p-2 bg-orange-500/10 rounded-lg">
+              <MousePointer className="text-orange-500" size={20} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Clicks</p>
-              <p className="text-xl font-bold">{stats.totalClicks.toLocaleString()}</p>
+              <p className="text-xl font-bold text-foreground">{stats.totalClicks.toLocaleString()}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Ad Size Reference */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <h3 className="font-semibold text-blue-900 mb-3">Ad Specifications</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="bg-muted/50 border border-border/10 rounded-xl p-4 mb-6">
+        <h3 className="font-semibold text-foreground mb-3">Ad Specifications</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {AD_POSITIONS.map(pos => (
-            <div key={pos.value} className="bg-card rounded-lg p-3">
+            <div key={pos.value} className="bg-card border border-border/10 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{pos.icon}</span>
-                <span className="font-medium text-sm">{pos.label}</span>
+                <span className="font-medium text-sm text-foreground">{pos.label}</span>
               </div>
-              <p className="text-blue-600 font-mono text-sm">{pos.size}</p>
+              <p className="text-[#2969FF] font-mono text-sm">{pos.size}</p>
               <p className="text-xs text-muted-foreground mt-1">{pos.description}</p>
             </div>
           ))}
@@ -487,9 +480,9 @@ export default function AdminAdverts() {
           <button
             key={tab.value}
             onClick={() => setApprovalFilter(tab.value)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               approvalFilter === tab.value
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#2969FF] text-white'
                 : 'bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -499,9 +492,9 @@ export default function AdminAdverts() {
       </div>
 
       {/* Ads Table */}
-      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-card border border-border/10 rounded-xl overflow-hidden">
         <table className="w-full">
-          <thead className="bg-background">
+          <thead className="bg-muted/50">
             <tr>
               <th className="text-left p-4 font-medium text-muted-foreground">Preview</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Advertiser</th>
@@ -530,9 +523,9 @@ export default function AdminAdverts() {
                 const posInfo = getPositionInfo(ad.position);
                 const approvalStatus = ad.approval_status || 'approved';
                 return (
-                  <tr key={ad.id} className="border-t hover:bg-background">
+                  <tr key={ad.id} className="border-t border-border/10 hover:bg-muted/30">
                     <td className="p-4">
-                      <div className="w-20 h-16 bg-muted rounded overflow-hidden">
+                      <div className="w-20 h-16 bg-muted rounded-lg overflow-hidden">
                         {ad.media_type === 'video' ? (
                           <video src={ad.image_url} className="w-full h-full object-cover" muted />
                         ) : (
@@ -542,7 +535,7 @@ export default function AdminAdverts() {
                     </td>
                     <td className="p-4">
                       <div>
-                        <p className="font-medium">{ad.advertiser_name || 'Unknown'}</p>
+                        <p className="font-medium text-foreground">{ad.advertiser_name || 'Unknown'}</p>
                         {ad.advertiser_email && (
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <Mail size={10} /> {ad.advertiser_email}
@@ -558,7 +551,7 @@ export default function AdminAdverts() {
                             href={ad.link_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-blue-600 flex items-center gap-1 hover:underline"
+                            className="text-xs text-[#2969FF] flex items-center gap-1 hover:underline"
                           >
                             <ExternalLink size={12} />
                             Visit Link
@@ -573,34 +566,34 @@ export default function AdminAdverts() {
                     </td>
                     <td className="p-4">
                       <div>
-                        <p className="font-medium">{posInfo.label}</p>
+                        <p className="font-medium text-foreground">{posInfo.label}</p>
                         <p className="text-xs text-muted-foreground">{posInfo.size}</p>
                       </div>
                     </td>
                     <td className="p-4">
-                      <p className="font-medium">{formatPrice(ad.price || 0, ad.currency || 'NGN')}</p>
+                      <p className="font-medium text-foreground">{formatPrice(ad.price || 0, ad.currency || 'NGN')}</p>
                     </td>
                     <td className="p-4">
                       <div className="text-sm">
                         {ad.duration_days && (
                           <p className="text-muted-foreground">{ad.duration_days} days</p>
                         )}
-                        <p>{new Date(ad.start_date).toLocaleDateString()}</p>
+                        <p className="text-foreground">{new Date(ad.start_date).toLocaleDateString()}</p>
                         <p className="text-muted-foreground">to {new Date(ad.end_date).toLocaleDateString()}</p>
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="text-sm">
-                        <p><span className="text-muted-foreground">Impressions:</span> {(ad.impressions || 0).toLocaleString()}</p>
-                        <p><span className="text-muted-foreground">Clicks:</span> {(ad.clicks || 0).toLocaleString()}</p>
-                        <p><span className="text-muted-foreground">CTR:</span> {calculateCTR(ad.clicks, ad.impressions)}%</p>
+                        <p><span className="text-muted-foreground">Impressions:</span> <span className="text-foreground">{(ad.impressions || 0).toLocaleString()}</span></p>
+                        <p><span className="text-muted-foreground">Clicks:</span> <span className="text-foreground">{(ad.clicks || 0).toLocaleString()}</span></p>
+                        <p><span className="text-muted-foreground">CTR:</span> <span className="text-foreground">{calculateCTR(ad.clicks, ad.impressions)}%</span></p>
                       </div>
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         ad.payment_status === 'paid'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-green-500/10 text-green-500'
+                          : 'bg-yellow-500/10 text-yellow-500'
                       }`}>
                         {ad.payment_status === 'paid' ? 'Paid' : 'Pending'}
                       </span>
@@ -608,10 +601,10 @@ export default function AdminAdverts() {
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         approvalStatus === 'approved'
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-green-500/10 text-green-500'
                           : approvalStatus === 'rejected'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-red-500/10 text-red-500'
+                          : 'bg-yellow-500/10 text-yellow-500'
                       }`}>
                         {approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1)}
                       </span>
@@ -632,14 +625,14 @@ export default function AdminAdverts() {
                           <>
                             <button
                               onClick={() => handleApprove(ad)}
-                              className="p-2 rounded-lg bg-green-100 text-green-600 hover:opacity-80"
+                              className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors"
                               title="Approve"
                             >
                               <CheckCircle size={16} />
                             </button>
                             <button
                               onClick={() => setShowRejectModal(ad.id)}
-                              className="p-2 rounded-lg bg-red-100 text-red-600 hover:opacity-80"
+                              className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
                               title="Reject"
                             >
                               <XCircle size={16} />
@@ -648,21 +641,21 @@ export default function AdminAdverts() {
                         )}
                         <button
                           onClick={() => toggleActive(ad)}
-                          className={`p-2 rounded-lg ${ad.is_active ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'} hover:opacity-80`}
+                          className={`p-2 rounded-lg transition-colors ${ad.is_active ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                           title={ad.is_active ? 'Deactivate' : 'Activate'}
                         >
                           {ad.is_active ? <Eye size={16} /> : <EyeOff size={16} />}
                         </button>
                         <button
                           onClick={() => handleEdit(ad)}
-                          className="p-2 rounded-lg bg-blue-100 text-blue-600 hover:opacity-80"
+                          className="p-2 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors"
                           title="Edit"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(ad.id)}
-                          className="p-2 rounded-lg bg-red-100 text-red-600 hover:opacity-80"
+                          className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
                           title="Delete"
                         >
                           <Trash2 size={16} />
@@ -680,28 +673,28 @@ export default function AdminAdverts() {
       {/* Reject Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Reject Advertisement</h3>
+          <div className="bg-card border border-border/10 rounded-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Reject Advertisement</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Please provide a reason for rejecting this ad. The advertiser will be notified.
             </p>
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
+              className="w-full px-3 py-2 bg-background border border-border/20 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500 mb-4 resize-none"
               rows={3}
               placeholder="Reason for rejection..."
             />
             <div className="flex gap-3">
               <button
                 onClick={() => { setShowRejectModal(null); setRejectionReason(''); }}
-                className="flex-1 px-4 py-2 border rounded-lg hover:bg-background"
+                className="flex-1 px-4 py-2 border border-border/20 rounded-xl text-foreground hover:bg-muted transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleReject(showRejectModal)}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
               >
                 Reject Ad
               </button>
@@ -713,12 +706,12 @@ export default function AdminAdverts() {
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold">
+          <div className="bg-card border border-border/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-border/10">
+              <h2 className="text-lg font-semibold text-foreground">
                 {editingAd ? 'Edit Advertisement' : 'New Advertisement'}
               </h2>
-              <button onClick={() => { setShowModal(false); resetForm(); }} className="p-2 hover:bg-muted rounded-lg">
+              <button onClick={() => { setShowModal(false); resetForm(); }} className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -726,24 +719,24 @@ export default function AdminAdverts() {
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {/* Position Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Ad Position *</label>
-                <div className="grid grid-cols-2 gap-3">
+                <label className="block text-sm font-medium text-foreground mb-2">Ad Position *</label>
+                <div className="grid grid-cols-3 gap-3">
                   {AD_POSITIONS.map(pos => (
                     <button
                       key={pos.value}
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, position: pos.value }))}
-                      className={`p-3 rounded-lg border-2 text-left transition-all ${
-                        formData.position === pos.value 
-                          ? 'border-blue-600 bg-blue-50' 
-                          : 'border-border/20 hover:border-border/30'
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        formData.position === pos.value
+                          ? 'border-[#2969FF] bg-[#2969FF]/10'
+                          : 'border-border/20 hover:border-border/40'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-xl">{pos.icon}</span>
                         <div>
-                          <p className="font-medium text-sm">{pos.label}</p>
-                          <p className="text-xs text-blue-600">{pos.size}</p>
+                          <p className="font-medium text-sm text-foreground">{pos.label}</p>
+                          <p className="text-xs text-[#2969FF]">{pos.size}</p>
                         </div>
                       </div>
                     </button>
@@ -753,26 +746,26 @@ export default function AdminAdverts() {
 
               {/* Advertiser Name */}
               <div>
-                <label className="block text-sm font-medium mb-2">Advertiser Name</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Advertiser Name</label>
                 <input
                   type="text"
                   value={formData.advertiser_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, advertiser_name: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-background border border-border/20 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
                   placeholder="e.g., Coca-Cola, MTN, etc."
                 />
               </div>
 
               {/* File Upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">Ad Creative *</label>
-                <div className="border-2 border-dashed border-border/30 rounded-lg p-4">
+                <label className="block text-sm font-medium text-foreground mb-2">Ad Creative *</label>
+                <div className="border-2 border-dashed border-border/30 rounded-xl p-4">
                   {previewUrl ? (
                     <div className="relative">
                       {formData.media_type === 'video' ? (
-                        <video src={previewUrl} className="max-h-48 mx-auto rounded" controls />
+                        <video src={previewUrl} className="max-h-48 mx-auto rounded-lg" controls />
                       ) : (
-                        <img src={previewUrl} alt="Preview" className="max-h-48 mx-auto rounded" />
+                        <img src={previewUrl} alt="Preview" className="max-h-48 mx-auto rounded-lg" />
                       )}
                       <button
                         type="button"
@@ -787,8 +780,8 @@ export default function AdminAdverts() {
                       <Upload className="text-muted-foreground mb-2" size={32} />
                       <span className="text-sm text-muted-foreground">Click to upload image or video</span>
                       <span className="text-xs text-muted-foreground mt-1">
-                        {formData.position === 'left' || formData.position === 'right' 
-                          ? 'Recommended: 300 x 600 px' 
+                        {formData.position === 'right'
+                          ? 'Recommended: 300 x 250 px'
                           : 'Recommended: 1200 x 300 px'}
                       </span>
                       <input
@@ -802,7 +795,7 @@ export default function AdminAdverts() {
                   )}
                   {uploading && (
                     <div className="text-center py-2">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#2969FF] mx-auto"></div>
                       <p className="text-sm text-muted-foreground mt-2">Uploading...</p>
                     </div>
                   )}
@@ -811,12 +804,12 @@ export default function AdminAdverts() {
 
               {/* Link URL */}
               <div>
-                <label className="block text-sm font-medium mb-2">Click-through URL</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Click-through URL</label>
                 <input
                   type="url"
                   value={formData.link_url}
                   onChange={(e) => setFormData(prev => ({ ...prev, link_url: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-background border border-border/20 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
                   placeholder="https://example.com"
                 />
               </div>
@@ -824,45 +817,45 @@ export default function AdminAdverts() {
               {/* Price and Currency */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Price</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Price</label>
                   <input
                     type="number"
                     value={formData.price}
                     onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-background border border-border/20 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
                     placeholder="0"
                     min="0"
                     step="0.01"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Currency</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Currency</label>
                   <select
                     value={formData.currency}
                     onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-background border border-border/20 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
                   >
-                    <option value="NGN">NGN (₦)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="CAD">CAD (C$)</option>
-                    <option value="GHS">GHS (₵)</option>
-                    <option value="EUR">EUR (€)</option>
+                    <option value="NGN">NGN ({getCurrencySymbol('NGN')})</option>
+                    <option value="GBP">GBP ({getCurrencySymbol('GBP')})</option>
+                    <option value="USD">USD ({getCurrencySymbol('USD')})</option>
+                    <option value="CAD">CAD ({getCurrencySymbol('CAD')})</option>
+                    <option value="GHS">GHS ({getCurrencySymbol('GHS')})</option>
+                    <option value="EUR">EUR ({getCurrencySymbol('EUR')})</option>
                   </select>
                 </div>
               </div>
 
               {/* Payment Status */}
               <div>
-                <label className="block text-sm font-medium mb-2">Payment Status</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Payment Status</label>
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, payment_status: 'pending' }))}
-                    className={`flex-1 px-4 py-2 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
-                      formData.payment_status === 'pending' 
-                        ? 'border-yellow-500 bg-yellow-50 text-yellow-700' 
-                        : 'border-border/20 hover:border-border/30'
+                    className={`flex-1 px-4 py-2 rounded-xl border-2 flex items-center justify-center gap-2 transition-all ${
+                      formData.payment_status === 'pending'
+                        ? 'border-yellow-500 bg-yellow-500/10 text-yellow-500'
+                        : 'border-border/20 text-muted-foreground hover:border-border/40'
                     }`}
                   >
                     <Clock size={16} />
@@ -871,10 +864,10 @@ export default function AdminAdverts() {
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, payment_status: 'paid' }))}
-                    className={`flex-1 px-4 py-2 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
-                      formData.payment_status === 'paid' 
-                        ? 'border-green-500 bg-green-50 text-green-700' 
-                        : 'border-border/20 hover:border-border/30'
+                    className={`flex-1 px-4 py-2 rounded-xl border-2 flex items-center justify-center gap-2 transition-all ${
+                      formData.payment_status === 'paid'
+                        ? 'border-green-500 bg-green-500/10 text-green-500'
+                        : 'border-border/20 text-muted-foreground hover:border-border/40'
                     }`}
                   >
                     <CheckCircle size={16} />
@@ -886,22 +879,22 @@ export default function AdminAdverts() {
               {/* Date Range */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Start Date *</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Start Date *</label>
                   <input
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-background border border-border/20 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">End Date *</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">End Date *</label>
                   <input
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-background border border-border/20 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
                     required
                   />
                 </div>
@@ -914,9 +907,9 @@ export default function AdminAdverts() {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-[#2969FF] rounded focus:ring-[#2969FF]"
                 />
-                <label htmlFor="is_active" className="text-sm font-medium">
+                <label htmlFor="is_active" className="text-sm font-medium text-foreground">
                   Active (ad will be displayed if within date range)
                 </label>
               </div>
@@ -926,14 +919,14 @@ export default function AdminAdverts() {
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); resetForm(); }}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-background"
+                  className="flex-1 px-4 py-2 border border-border/20 rounded-xl text-foreground hover:bg-muted transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !formData.image_url}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-[#2969FF] text-white rounded-xl hover:bg-[#2969FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {editingAd ? 'Update Ad' : 'Create Ad'}
                 </button>
