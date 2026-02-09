@@ -245,6 +245,13 @@ export function WebLayout() {
                       My Groups
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      onClick={() => navigate('/my-ads')}
+                      className="cursor-pointer rounded-lg"
+                    >
+                      <Megaphone className="w-4 h-4 mr-2" />
+                      My Ads
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       onClick={() => navigate('/profile', { state: { tab: 'saved' } })}
                       className="cursor-pointer rounded-lg"
                     >

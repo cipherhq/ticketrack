@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   DollarSign, Clock, CheckCircle, Plus, CreditCard, Building2,
   Download, Calendar, Loader2, FileText, HelpCircle, Zap, AlertCircle, Info,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, ShieldCheck, ShieldAlert, ShieldX
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -447,6 +447,91 @@ Status,${payout.status}
           </Button>
         </div>
       </div>
+
+      {/* KYC Status */}
+      {(() => {
+        const kycStatus = organizer?.kyc_status;
+        const kycVerified = organizer?.kyc_verified;
+        const isVerified = kycVerified || kycStatus === 'verified';
+        const isInReview = kycStatus === 'in_review';
+        const isRejected = kycStatus === 'rejected';
+        const notStarted = !kycStatus || kycStatus === 'pending' || kycStatus === 'not_started';
+
+        if (isVerified) {
+          return (
+            <Card className="border-green-200 rounded-2xl bg-green-50/50 dark:bg-green-950/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-green-700 dark:text-green-400">KYC Verified</span>
+                  <span className="text-xs text-green-600/70 dark:text-green-500 ml-2">Your identity has been verified. Payouts are enabled.</span>
+                </div>
+                <Badge className="bg-green-100 text-green-700 border-0">Verified</Badge>
+              </CardContent>
+            </Card>
+          );
+        }
+
+        if (isInReview) {
+          return (
+            <Card className="border-yellow-200 rounded-2xl bg-yellow-50/50 dark:bg-yellow-950/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <ShieldAlert className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">KYC Under Review</span>
+                  <span className="text-xs text-yellow-600/70 dark:text-yellow-500 ml-2">Your documents are being reviewed. This usually takes 1-2 business days.</span>
+                </div>
+                <Badge className="bg-yellow-100 text-yellow-700 border-0">In Review</Badge>
+              </CardContent>
+            </Card>
+          );
+        }
+
+        if (isRejected) {
+          return (
+            <Card className="border-red-200 rounded-2xl bg-red-50/50 dark:bg-red-950/20">
+              <CardContent className="p-4 flex items-center gap-3">
+                <ShieldX className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-700 dark:text-red-400">KYC Verification Rejected</p>
+                  <p className="text-xs text-red-600/70 dark:text-red-500 mt-0.5">Your verification was not approved. Please resubmit with correct documents to enable payouts.</p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/organizer/kyc')}
+                  className="bg-red-600 hover:bg-red-700 text-white rounded-xl whitespace-nowrap"
+                >
+                  Resubmit KYC
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        }
+
+        // Not started
+        return (
+          <Card className="border-amber-300 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2">
+            <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+                <ShieldAlert className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Complete Your KYC Verification</p>
+                <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+                  Identity verification is required before payouts can be processed. Complete your KYC to start receiving your earnings.
+                </p>
+              </div>
+              <Button
+                onClick={() => navigate('/organizer/kyc')}
+                className="bg-amber-500 hover:bg-amber-600 text-white rounded-xl whitespace-nowrap"
+              >
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Verify Now
+              </Button>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

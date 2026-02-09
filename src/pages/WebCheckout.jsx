@@ -1003,6 +1003,34 @@ export function WebCheckout() {
     }
   }
 
+  // Check per-user ticket limit for this event
+  const checkUserTicketLimit = async () => {
+    if (!user || !event) return
+    const maxPerOrder = event.max_tickets_per_order || 10
+    const totalRequested = ticketSummary.reduce((sum, t) => sum + t.quantity, 0)
+
+    const { count, error } = await supabase
+      .from('tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('event_id', event.id)
+      .in('status', ['active', 'pending'])
+
+    if (error) {
+      console.warn('Error checking ticket limit:', error)
+      return // Don't block on error, let normal flow continue
+    }
+
+    const existingCount = count || 0
+    const remaining = maxPerOrder - existingCount
+    if (totalRequested > remaining) {
+      const msg = existingCount > 0
+        ? `You already have ${existingCount} ticket${existingCount !== 1 ? 's' : ''} for this event. You can only purchase ${remaining} more (max ${maxPerOrder} per person).`
+        : `You can only purchase up to ${maxPerOrder} tickets per person for this event.`
+      throw new Error(msg)
+    }
+  }
+
   // Handle Paystack payment
   const handlePaystackPayment = async () => {
     if (!validateForm()) {
@@ -1029,6 +1057,9 @@ export function WebCheckout() {
     setError(null)
 
     try {
+      // Check per-user ticket limit
+      await checkUserTicketLimit()
+
       // For recurring events, ensure child event exists and map ticket types FIRST
       // This ensures availability is checked against the child event's inventory, not parent's
       const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
@@ -1169,6 +1200,9 @@ export function WebCheckout() {
     setError(null);
 
     try {
+      // Check per-user ticket limit
+      await checkUserTicketLimit();
+
       // For recurring events, ensure child event exists and map ticket types FIRST
       const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
 
@@ -1249,6 +1283,9 @@ export function WebCheckout() {
     setError(null);
 
     try {
+      // Check per-user ticket limit
+      await checkUserTicketLimit();
+
       // For recurring events, ensure child event exists and map ticket types FIRST
       const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
 
@@ -1327,6 +1364,9 @@ export function WebCheckout() {
     setError(null);
 
     try {
+      // Check per-user ticket limit
+      await checkUserTicketLimit();
+
       // For recurring events, ensure child event exists and map ticket types FIRST
       const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
 

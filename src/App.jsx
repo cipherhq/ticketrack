@@ -29,24 +29,43 @@ import { ConfirmProvider } from './hooks/useConfirm';
 // Retry wrapper for lazy imports - handles chunk loading failures after deployments
 // If chunk fails to load (e.g., after deployment with new hashes), reload the page
 function lazyWithRetry(importFn, moduleName) {
-  return lazy(() => 
-    importFn().catch((error) => {
-      // Check if it's a chunk loading error
-      const isChunkError = error.message?.includes('Failed to fetch dynamically imported module') ||
-                           error.message?.includes('Loading chunk') ||
-                           error.message?.includes('Loading CSS chunk');
-      
-      if (isChunkError) {
-        console.warn(`Chunk loading failed for ${moduleName}, reloading page...`);
-        // Only reload once to avoid infinite loops
-        const hasReloaded = sessionStorage.getItem('chunk_reload_' + moduleName);
-        if (!hasReloaded) {
-          sessionStorage.setItem('chunk_reload_' + moduleName, 'true');
-          window.location.reload();
+  return lazy(() =>
+    importFn()
+      .then((module) => {
+        // Successful load - clear any previous reload flag for this module
+        sessionStorage.removeItem('chunk_reload_' + moduleName);
+        return module;
+      })
+      .catch((error) => {
+        // Check if it's a chunk loading error
+        const isChunkError = error.message?.includes('Failed to fetch dynamically imported module') ||
+                             error.message?.includes('Loading chunk') ||
+                             error.message?.includes('Loading CSS chunk') ||
+                             error.message?.includes('MIME type');
+
+        if (isChunkError) {
+          console.warn(`Chunk loading failed for ${moduleName}, attempting recovery...`);
+          const hasReloaded = sessionStorage.getItem('chunk_reload_' + moduleName);
+          if (!hasReloaded) {
+            sessionStorage.setItem('chunk_reload_' + moduleName, Date.now().toString());
+            // Unregister service worker to bust stale cache, then reload
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then((registrations) => {
+                registrations.forEach((r) => r.unregister());
+              }).finally(() => {
+                window.location.reload();
+              });
+            } else {
+              window.location.reload();
+            }
+            // Return a promise that never resolves so React doesn't render an error
+            return new Promise(() => {});
+          }
+          // Already tried reloading - clear flag so next deploy can retry
+          sessionStorage.removeItem('chunk_reload_' + moduleName);
         }
-      }
-      throw error;
-    })
+        throw error;
+      })
   );
 }
 
@@ -95,6 +114,7 @@ const WebResources = lazyWithRetry(() => import('./pages/WebResources').then(m =
 const WebBlog = lazyWithRetry(() => import('./pages/WebBlog').then(m => ({ default: m.WebBlog })), 'WebBlog');
 const WebCategories = lazyWithRetry(() => import('./pages/WebCategories').then(m => ({ default: m.WebCategories })), 'WebCategories');
 const WebAdvertise = lazyWithRetry(() => import('./pages/WebAdvertise').then(m => ({ default: m.WebAdvertise })), 'WebAdvertise');
+const WebMyAds = lazyWithRetry(() => import('./pages/WebMyAds').then(m => ({ default: m.WebMyAds })), 'WebMyAds');
 const WebBlogPost = lazyWithRetry(() => import('./pages/WebBlogPost').then(m => ({ default: m.WebBlogPost })), 'WebBlogPost');
 const AttendeeProfile = lazyWithRetry(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })), 'AttendeeProfile');
 const OrganizerPublicProfile = lazyWithRetry(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })), 'OrganizerPublicProfile');
@@ -366,6 +386,11 @@ function App() {
                 <Route path="/advertise" element={
                   <Suspense fallback={<PageLoader />}>
                     <WebAdvertise />
+                  </Suspense>
+                } />
+                <Route path="/my-ads" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebMyAds />
                   </Suspense>
                 } />
                 <Route path="/blog" element={

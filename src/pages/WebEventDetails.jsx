@@ -81,6 +81,7 @@ export function WebEventDetails() {
   const [showGroupModal, setShowGroupModal] = useState(false) // Group Buy modal
   const [speakers, setSpeakers] = useState([]) // Event speakers/artists
   const [failedSpeakerImages, setFailedSpeakerImages] = useState({}) // Track failed image loads
+  const [userTicketCount, setUserTicketCount] = useState(0) // Tickets user already owns for this event
 
   // Function to load tickets for a specific event (for recurring events)
   // resetSelection: only reset selected tickets when user explicitly switches dates
@@ -163,6 +164,27 @@ export function WebEventDetails() {
       loadEvent()
     }
   }, [id])
+
+  // Check how many tickets this user already owns for this event
+  useEffect(() => {
+    async function fetchUserTicketCount() {
+      if (!user || !event) return
+      try {
+        const { count, error } = await supabase
+          .from('tickets')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('event_id', event.id)
+          .in('status', ['active', 'pending'])
+        if (!error && count !== null) {
+          setUserTicketCount(count)
+        }
+      } catch (err) {
+        console.warn('Error checking user ticket count:', err)
+      }
+    }
+    fetchUserTicketCount()
+  }, [user, event])
 
   // Check if user has saved this event
   useEffect(() => {
@@ -502,13 +524,18 @@ export function WebEventDetails() {
   }, [searchParams])
 
 
+  const maxPerOrder = event?.max_tickets_per_order || 10
+  const userRemainingAllowance = Math.max(0, maxPerOrder - userTicketCount)
+
   const updateTicketQuantity = (tierId, delta) => {
     setSelectedTickets(prev => {
       const current = prev[tierId] || 0
       const tier = ticketTypes.find(t => t.id === tierId)
-      const maxAvailable = tier?.quantity_available || 100
-      const maxPerOrder = event?.max_tickets_per_order || 10;
-      const newQuantity = Math.max(0, Math.min(maxAvailable, Math.min(maxPerOrder, current + delta)))
+      const maxAvailable = (tier?.quantity_available || 100) - (tier?.quantity_sold || 0)
+      // Total selected across all ticket types in this order
+      const otherSelected = Object.entries(prev).reduce((sum, [id, qty]) => id !== tierId ? sum + qty : sum, 0)
+      const maxForThisType = Math.max(0, userRemainingAllowance - otherSelected)
+      const newQuantity = Math.max(0, Math.min(maxAvailable, Math.min(maxForThisType, current + delta)))
       return { ...prev, [tierId]: newQuantity }
     })
   }
@@ -835,6 +862,23 @@ export function WebEventDetails() {
                     {isFreeEvent ? 'Register' : 'Select Tickets'}
                   </h2>
 
+                  {user && userTicketCount > 0 && (
+                    <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-sm">
+                      <p className="text-amber-800 dark:text-amber-300 font-medium">
+                        You already have {userTicketCount} ticket{userTicketCount !== 1 ? 's' : ''} for this event.
+                      </p>
+                      {userRemainingAllowance > 0 ? (
+                        <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
+                          You can purchase up to {userRemainingAllowance} more (max {maxPerOrder} per person).
+                        </p>
+                      ) : (
+                        <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
+                          You've reached the maximum of {maxPerOrder} tickets per person for this event.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {isFreeEvent ? (
                     <div className="space-y-3">
                       <div className="text-center py-3">
@@ -973,11 +1017,12 @@ export function WebEventDetails() {
                 {/* Buy with Friends Button - Mobile */}
                 <Button
                   variant="outline"
-                  className="w-full rounded-xl py-5 border-[#2969FF]/30 text-[#2969FF] hover:bg-[#2969FF]/5"
-                  onClick={() => setShowGroupModal(true)}
+                  className={`w-full rounded-xl py-5 ${isAllSoldOut ? 'border-gray-300 text-gray-400 cursor-not-allowed' : 'border-[#2969FF]/30 text-[#2969FF] hover:bg-[#2969FF]/5'}`}
+                  onClick={() => !isAllSoldOut && setShowGroupModal(true)}
+                  disabled={isAllSoldOut}
                 >
                   <UsersRound className="w-5 h-5 mr-2" />
-                  Buy with Friends
+                  {isAllSoldOut ? 'Group Buy Unavailable' : 'Buy with Friends'}
                 </Button>
               </CardContent>
             </Card>
@@ -1767,7 +1812,24 @@ export function WebEventDetails() {
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   {isFreeEvent ? 'Register' : 'Select Tickets'}
                 </h2>
-                
+
+                {user && userTicketCount > 0 && (
+                  <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-sm">
+                    <p className="text-amber-800 dark:text-amber-300 font-medium">
+                      You already have {userTicketCount} ticket{userTicketCount !== 1 ? 's' : ''} for this event.
+                    </p>
+                    {userRemainingAllowance > 0 ? (
+                      <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
+                        You can purchase up to {userRemainingAllowance} more (max {maxPerOrder} per person).
+                      </p>
+                    ) : (
+                      <p className="text-amber-600 dark:text-amber-400 text-xs mt-1">
+                        You've reached the maximum of {maxPerOrder} tickets per person for this event.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {isFreeEvent ? (
                   <div className="space-y-4">
                     {/* Free Event Badge */}
@@ -1940,13 +2002,14 @@ export function WebEventDetails() {
               )}
               
               {/* Buy with Friends Button */}
-              <Button 
+              <Button
                 variant="outline"
-                className="w-full rounded-xl py-5 border-[#2969FF]/30 text-[#2969FF] hover:bg-[#2969FF]/5"
-                onClick={() => setShowGroupModal(true)}
+                className={`w-full rounded-xl py-5 ${isAllSoldOut ? 'border-gray-300 text-gray-400 cursor-not-allowed' : 'border-[#2969FF]/30 text-[#2969FF] hover:bg-[#2969FF]/5'}`}
+                onClick={() => !isAllSoldOut && setShowGroupModal(true)}
+                disabled={isAllSoldOut}
               >
                 <UsersRound className="w-5 h-5 mr-2" />
-                Buy with Friends
+                {isAllSoldOut ? 'Group Buy Unavailable' : 'Buy with Friends'}
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">

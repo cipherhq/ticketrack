@@ -5,7 +5,15 @@ import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import './index.css'
 
-if ('serviceWorker' in navigator) registerSW({ immediate: true })
+if ('serviceWorker' in navigator) {
+  const updateSW = registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      // New version available - update immediately so users don't get stale chunks
+      updateSW(true)
+    },
+  })
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

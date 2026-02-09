@@ -1357,7 +1357,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         donation_amounts: formData.donationAmounts,
         allow_custom_donation: formData.allowCustomDonation,
         donation_fee_handling: formData.donationFeeHandling,
-        total_capacity: parseInt(formData.venueCapacity) || totalCapacity,
+        total_capacity: Math.max(parseInt(formData.venueCapacity) || 0, totalCapacity),
         max_tickets_per_order: parseInt(formData.maxTicketsPerOrder) || 10,
         image_url: imageUrl,
         promo_video_url: formData.promoVideoUrl,
@@ -1415,10 +1415,20 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           });
         }
 
-        // Update existing ticket types
+        // Fetch current quantity_sold values before updating (defensive: preserve sales data)
+        const existingDbIds = validTickets.filter(t => t.dbId).map(t => t.dbId);
+        let soldMap = {};
+        if (existingDbIds.length > 0) {
+          const { data: currentTypes } = await supabase
+            .from('ticket_types')
+            .select('id, quantity_sold')
+            .in('id', existingDbIds);
+          (currentTypes || []).forEach(t => { soldMap[t.id] = t.quantity_sold || 0; });
+        }
+
+        // Update existing ticket types (only update editable fields, never touch quantity_sold)
         for (const ticket of validTickets) {
           if (ticket.dbId) {
-            // Update existing ticket type
             await supabase
               .from('ticket_types')
               .update({
@@ -1446,6 +1456,33 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                 is_active: true,
               });
           }
+        }
+
+        // Verify quantity_sold wasn't corrupted by a database trigger and restore if needed
+        if (existingDbIds.length > 0) {
+          const { data: afterTypes } = await supabase
+            .from('ticket_types')
+            .select('id, quantity_sold')
+            .in('id', existingDbIds);
+          for (const t of (afterTypes || [])) {
+            if (t.quantity_sold !== soldMap[t.id]) {
+              await supabase
+                .from('ticket_types')
+                .update({ quantity_sold: soldMap[t.id] })
+                .eq('id', t.id);
+            }
+          }
+        }
+
+        // Recalculate and update total_capacity on the event based on actual ticket quantities
+        const newTotalCapacity = totalCapacity; // sum of all ticket quantities
+        const venueCapacity = parseInt(formData.venueCapacity) || 0;
+        const effectiveCapacity = Math.max(venueCapacity, newTotalCapacity);
+        if (effectiveCapacity !== savedEvent.total_capacity) {
+          await supabase
+            .from('events')
+            .update({ total_capacity: effectiveCapacity })
+            .eq('id', id);
         }
 
         // Update custom form fields
