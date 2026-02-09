@@ -605,9 +605,9 @@ export function useOrganizerNotifications(organizerId) {
           }
 
           const { count, error } = await query
-          
-          if (error && eventIds.length > 0) {
-            // Fallback: try via events
+
+          if (error && eventIds.length > 0 && !error.message?.includes('does not exist') && error.code !== '42P01') {
+            // Fallback: try via events (only if table exists but organizer_id column is missing)
             const result = await supabase
               .from('support_tickets')
               .select('*', { count: 'exact', head: true })
