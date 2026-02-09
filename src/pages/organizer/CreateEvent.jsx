@@ -1911,8 +1911,8 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">Create Event — Full Details</h2>
-              <p className="text-gray-600">Fill in all event information to get started</p>
+              <h2 className="text-2xl font-semibold text-gray-900">{isEditMode ? 'Update Event' : 'Create Event — Full Details'}</h2>
+              <p className="text-gray-600">{isEditMode ? 'Make changes to your event details' : 'Fill in all event information to get started'}</p>
             </div>
             <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-xl">
               <X className="w-6 h-6 text-gray-600" />
@@ -3747,9 +3747,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl px-8 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{isEditMode ? 'Updating...' : 'Creating...'}</>
               ) : (
-                formData.publishOption === 'schedule' ? 'Schedule Event' : formData.publishOption === 'draft' ? 'Save Draft' : 'Create Event'
+                isEditMode ? 'Update Event' : (formData.publishOption === 'schedule' ? 'Schedule Event' : formData.publishOption === 'draft' ? 'Save Draft' : 'Create Event')
               )}
             </Button>
           ) : (
