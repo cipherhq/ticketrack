@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice } from '@/config/currencies';
+import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { getCountryFromIP } from '@/utils/location';
 import {
   Megaphone, Upload, CheckCircle, Eye, MousePointer, Globe,
   ChevronDown, ChevronUp, X, Loader2, ImageIcon, Video,
@@ -77,6 +78,13 @@ export function WebAdvertise() {
 
   useEffect(() => {
     fetchPackages();
+    // Auto-detect currency from user's country
+    getCountryFromIP().then(countryCode => {
+      const detected = getDefaultCurrency(countryCode);
+      if (['NGN', 'USD', 'GBP', 'GHS', 'CAD'].includes(detected)) {
+        setCurrency(detected);
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -233,19 +241,20 @@ export function WebAdvertise() {
             ad_id: adRecord.id,
             package_id: selectedPackage.id,
           },
-          callback: async (response) => {
+          callback: function(response) {
             // Update ad record with payment reference
-            await supabase
+            supabase
               .from('platform_adverts')
               .update({
                 payment_status: 'paid',
                 payment_reference: response.reference,
               })
-              .eq('id', adRecord.id);
-
-            setSubmitted(true);
+              .eq('id', adRecord.id)
+              .then(function() {
+                setSubmitted(true);
+              });
           },
-          onClose: () => {
+          onClose: function() {
             setSubmitting(false);
           },
         });
