@@ -9,6 +9,7 @@ import {
   ArrowRight, Zap, BarChart3, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CountryPickerDialog } from '@/components/CountryPickerDialog';
 
 const COUNTRY_OPTIONS = [
   { code: 'NG', label: 'Nigeria' },
@@ -74,44 +75,44 @@ export function WebAdvertise() {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   useEffect(() => {
     fetchPackages();
   }, []);
 
-  // Auto-detect currency from user's profile country_code (fallback: parse phone prefix)
+  // Check if user has country_code set, prompt if not
   useEffect(() => {
-    const detectCurrency = async () => {
+    const checkCountry = async () => {
       if (!user) return;
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('country_code, phone')
+          .select('country_code')
           .eq('id', user.id)
           .single();
-        let countryCode = profile?.country_code;
-        // Fallback: infer country from phone number prefix
-        if (!countryCode && profile?.phone) {
-          const phone = profile.phone.replace(/\s/g, '');
-          if (phone.startsWith('+1')) countryCode = 'US';
-          else if (phone.startsWith('+234')) countryCode = 'NG';
-          else if (phone.startsWith('+233')) countryCode = 'GH';
-          else if (phone.startsWith('+44')) countryCode = 'GB';
-          else if (phone.startsWith('+254')) countryCode = 'KE';
-          else if (phone.startsWith('+27')) countryCode = 'ZA';
-        }
-        if (countryCode) {
-          const detected = await getCurrencyFromCountryCode(supabase, countryCode);
+        if (profile?.country_code) {
+          const detected = await getCurrencyFromCountryCode(supabase, profile.country_code);
           if (detected && ['NGN', 'USD', 'GBP', 'GHS', 'CAD'].includes(detected)) {
             setCurrency(detected);
           }
+        } else {
+          setShowCountryPicker(true);
         }
       } catch {
-        // Fall back to default NGN
+        // Fall back to default
       }
     };
-    detectCurrency();
+    checkCountry();
   }, [user?.id]);
+
+  const handleCountrySelected = async (countryCode) => {
+    setShowCountryPicker(false);
+    const detected = await getCurrencyFromCountryCode(supabase, countryCode);
+    if (detected && ['NGN', 'USD', 'GBP', 'GHS', 'CAD'].includes(detected)) {
+      setCurrency(detected);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -395,6 +396,13 @@ export function WebAdvertise() {
 
   return (
     <div className="min-h-screen bg-background">
+      {user && (
+        <CountryPickerDialog
+          open={showCountryPicker}
+          onComplete={handleCountrySelected}
+          userId={user.id}
+        />
+      )}
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#0a1628] via-[#0f2847] to-[#1a3a5c] text-white py-20 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
