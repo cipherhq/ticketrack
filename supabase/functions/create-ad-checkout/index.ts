@@ -69,8 +69,16 @@ serve(async (req) => {
     const reference = `AD-${adId.substring(0, 8)}-${Date.now()}`;
 
     if (provider === 'stripe') {
-      const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-      if (!STRIPE_SECRET_KEY) {
+      // Get Stripe key from payment_gateway_config (same pattern as create-stripe-checkout)
+      const { data: gatewayConfig } = await supabase
+        .from('payment_gateway_config')
+        .select('*')
+        .eq('provider', 'stripe')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+
+      if (!gatewayConfig?.secret_key_encrypted) {
         return new Response(
           JSON.stringify({ success: false, error: 'Stripe not configured' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -78,7 +86,7 @@ serve(async (req) => {
       }
 
       const Stripe = (await import('https://esm.sh/stripe@14.5.0?target=deno')).default;
-      const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
+      const stripe = new Stripe(gatewayConfig.secret_key_encrypted, { apiVersion: '2023-10-16' });
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -118,11 +126,20 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } else {
-      // Paystack
-      const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY');
-      if (!PAYSTACK_SECRET_KEY) {
+      // Paystack - get key from payment_gateway_config
+      const currencyToCountry: Record<string, string> = { NGN: 'NG', GHS: 'GH', KES: 'KE', ZAR: 'ZA' };
+      const countryCode = currencyToCountry[pkg.currency] || 'NG';
+      const { data: gatewayConfig } = await supabase
+        .from('payment_gateway_config')
+        .select('secret_key_encrypted')
+        .eq('provider', 'paystack')
+        .eq('country_code', countryCode)
+        .eq('is_active', true)
+        .single();
+
+      if (!gatewayConfig?.secret_key_encrypted) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Paystack not configured' }),
+          JSON.stringify({ success: false, error: 'Paystack not configured for ' + countryCode }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -130,7 +147,7 @@ serve(async (req) => {
       const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
+          'Authorization': `Bearer ${gatewayConfig.secret_key_encrypted}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
