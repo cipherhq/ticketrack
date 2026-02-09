@@ -655,22 +655,20 @@ export default function AdminAdverts() {
                       </span>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {approvalStatus === 'pending' && (
                           <>
                             <button
                               onClick={() => handleApprove(ad)}
-                              className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors"
-                              title="Approve"
+                              className="px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-xs font-medium flex items-center gap-1"
                             >
-                              <CheckCircle size={16} />
+                              <CheckCircle size={14} /> Approve
                             </button>
                             <button
                               onClick={() => setShowRejectModal(ad.id)}
-                              className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
-                              title="Reject"
+                              className="px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-medium flex items-center gap-1"
                             >
-                              <XCircle size={16} />
+                              <XCircle size={14} /> Reject
                             </button>
                           </>
                         )}

@@ -149,6 +149,13 @@ CREATE POLICY "Authenticated can view active approved ads"
   TO authenticated
   USING (is_active = true AND approval_status = 'approved');
 
+-- Users can update their own ads (payment status from Paystack/Stripe callback)
+CREATE POLICY "Users can update their own ads"
+  ON platform_adverts FOR UPDATE
+  TO authenticated
+  USING (submitted_by = auth.uid())
+  WITH CHECK (submitted_by = auth.uid());
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_platform_adverts_active_approved
   ON platform_adverts (is_active, approval_status, start_date, end_date)
