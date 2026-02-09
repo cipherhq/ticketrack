@@ -79,18 +79,29 @@ export function WebAdvertise() {
     fetchPackages();
   }, []);
 
-  // Auto-detect currency from user's profile country_code
+  // Auto-detect currency from user's profile country_code (fallback: parse phone prefix)
   useEffect(() => {
     const detectCurrency = async () => {
       if (!user) return;
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('country_code')
+          .select('country_code, phone')
           .eq('id', user.id)
           .single();
-        if (profile?.country_code) {
-          const detected = await getCurrencyFromCountryCode(supabase, profile.country_code);
+        let countryCode = profile?.country_code;
+        // Fallback: infer country from phone number prefix
+        if (!countryCode && profile?.phone) {
+          const phone = profile.phone.replace(/\s/g, '');
+          if (phone.startsWith('+1')) countryCode = 'US';
+          else if (phone.startsWith('+234')) countryCode = 'NG';
+          else if (phone.startsWith('+233')) countryCode = 'GH';
+          else if (phone.startsWith('+44')) countryCode = 'GB';
+          else if (phone.startsWith('+254')) countryCode = 'KE';
+          else if (phone.startsWith('+27')) countryCode = 'ZA';
+        }
+        if (countryCode) {
+          const detected = await getCurrencyFromCountryCode(supabase, countryCode);
           if (detected && ['NGN', 'USD', 'GBP', 'GHS', 'CAD'].includes(detected)) {
             setCurrency(detected);
           }
