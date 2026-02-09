@@ -12,6 +12,8 @@ import {
   Wine, Laugh, Leaf, HeartHandshake, Gamepad2, GraduationCap, Briefcase, Baby
 } from 'lucide-react';
 import { ForYouFeed } from '@/components/ForYouFeed';
+import { useAds } from '@/hooks/useAds';
+import { AdBanner } from '@/components/AdBanner';
 
 // Category styling with icons - all blue shades
 const categoryStyles = {
@@ -44,104 +46,6 @@ const dateOptions = [
   { value: 'week', label: 'This Week' },
   { value: 'month', label: 'This Month' },
 ];
-
-// Ad Component for Side Ads (300x600)
-const SideAd = ({ ad }) => {
-  const handleClick = async () => {
-    if (ad?.id) {
-      await supabase.rpc('increment_ad_clicks', { ad_id: ad.id });
-      if (ad.link_url) {
-        window.open(ad.link_url, '_blank', 'noopener,noreferrer');
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (ad?.id) {
-      supabase.rpc('increment_ad_impressions', { ad_id: ad.id });
-    }
-  }, [ad?.id]);
-
-  if (!ad) return null;
-
-  return (
-    <div className="relative">
-      <div className="absolute -top-6 right-0 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-        Ad
-      </div>
-      <div 
-        onClick={handleClick}
-        className="w-[300px] h-[600px] bg-muted rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-xl transition-shadow"
-      >
-        {ad.media_type === 'video' ? (
-          <video 
-            src={ad.image_url} 
-            className="w-full h-full object-cover"
-            autoPlay 
-            muted 
-            loop 
-            playsInline
-          />
-        ) : (
-          <img 
-            src={ad.image_url} 
-            alt={ad.advertiser_name || 'Advertisement'} 
-            className="w-full h-full object-cover"
-          />
-        )}
-      </div>
-    </div>
-  );
-};
-
-// Ad Component for Banner Ads (Top/Bottom - 1200x300)
-const BannerAd = ({ ad }) => {
-  const handleClick = async () => {
-    if (ad?.id) {
-      await supabase.rpc('increment_ad_clicks', { ad_id: ad.id });
-      if (ad.link_url) {
-        window.open(ad.link_url, '_blank', 'noopener,noreferrer');
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (ad?.id) {
-      supabase.rpc('increment_ad_impressions', { ad_id: ad.id });
-    }
-  }, [ad?.id]);
-
-  if (!ad) return null;
-
-  return (
-    <div className="relative max-w-[1200px] mx-auto my-8">
-      <div className="absolute -top-5 right-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-        Ad
-      </div>
-      <div 
-        onClick={handleClick}
-        className="w-full h-[200px] md:h-[300px] bg-muted rounded-xl overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-shadow"
-      >
-        {ad.media_type === 'video' ? (
-          <video 
-            src={ad.image_url} 
-            className="w-full h-full object-cover"
-            autoPlay 
-            muted 
-            loop 
-            playsInline
-          />
-        ) : (
-          <img 
-            src={ad.image_url} 
-            alt={ad.advertiser_name || 'Advertisement'} 
-            className="w-full h-full object-cover"
-          />
-        )}
-      </div>
-    </div>
-  );
-};
 
 // Event Card Component
 const EventCard = ({ event, showDistance = false }) => {
@@ -362,13 +266,14 @@ const CategoryCard = ({ category }) => {
 export function WebHome() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+  const { ads } = useAds();
+
   // Search state
   const [location, setLocation] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
-  
+
   const [events, setEvents] = useState({
     trending: [],
     popular: [],
@@ -382,12 +287,6 @@ export function WebHome() {
     eventsHosted: '100+',
     ticketsSold: '1K+',
     organizers: '50+'
-  });
-  const [ads, setAds] = useState({
-    top: null,
-    bottom: null,
-    left: null,
-    right: null
   });
   const [loading, setLoading] = useState(true);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
@@ -405,28 +304,6 @@ export function WebHome() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
-
-  const fetchAds = async () => {
-    const now = new Date().toISOString();
-    
-    const { data, error } = await supabase
-      .from('platform_adverts')
-      .select('*')
-      .eq('is_active', true)
-      .lte('start_date', now)
-      .gte('end_date', now)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      const adsByPosition = {
-        top: data.find(ad => ad.position === 'top') || null,
-        bottom: data.find(ad => ad.position === 'bottom') || null,
-        left: data.find(ad => ad.position === 'left') || null,
-        right: data.find(ad => ad.position === 'right') || null
-      };
-      setAds(adsByPosition);
-    }
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -503,8 +380,6 @@ export function WebHome() {
         });
       }
 
-      await fetchAds();
-      
       // Fetch platform stats
       try {
         const stats = await getPlatformStats();
@@ -668,7 +543,7 @@ export function WebHome() {
 
       {/* Top Banner Ad - Full width, above the 3-column layout */}
       <div className="max-w-[1200px] mx-auto px-4">
-        {ads.top && <BannerAd ad={ads.top} />}
+        <AdBanner position="top" ad={ads.top} />
       </div>
 
       {/* Main Content Area with Side Ads - Starts at Popular Categories */}
@@ -808,14 +683,14 @@ export function WebHome() {
           </section>
 
           {/* Bottom Banner Ad */}
-          {ads.bottom && <BannerAd ad={ads.bottom} />}
+          <AdBanner position="bottom" ad={ads.bottom} />
 
         </main>
 
         {/* Right Side Ad */}
         {false && ads.right && (
           <div className="flex-shrink-0 mt-8">
-            <SideAd ad={ads.right} />
+            <AdBanner position="right" ad={ads.right} />
           </div>
         )}
       </div>

@@ -468,6 +468,7 @@ export function WebLayout() {
               <button onClick={() => navigate('/help')} className="hover:text-white">Help</button>
               <button onClick={() => navigate('/pricing')} className="hover:text-white">Pricing</button>
               <button onClick={() => navigate('/blog')} className="hover:text-white">Blog</button>
+              <button onClick={() => navigate('/advertise')} className="hover:text-white">Advertise</button>
             </div>
 
             {/* Legal Links */}
@@ -578,6 +579,11 @@ export function WebLayout() {
                   <li>
                     <button onClick={() => navigate('/blog')} className="hover:text-white transition-colors">
                       Blog
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/advertise')} className="hover:text-white transition-colors">
+                      Advertise
                     </button>
                   </li>
                 </ul>

@@ -175,6 +175,12 @@ async function handleChargeSuccess(supabase: any, data: any) {
     return;
   }
 
+  // Check if this is an ad purchase
+  if (metadata?.type === 'ad_purchase') {
+    await handleAdPurchase(supabase, data);
+    return;
+  }
+
   // Check if this is a split payment
   if (metadata?.type === "split_payment") {
     await handleSplitPaymentSuccess(supabase, reference, metadata);
@@ -413,6 +419,46 @@ async function handleCreditPurchase(supabase: any, data: any) {
   });
 
   safeLog.info(`Credit purchase completed: ${credits} + ${bonus_credits || 0} credits for ${organizer_id}`);
+}
+
+async function handleAdPurchase(supabase: any, data: any) {
+  const { reference, metadata } = data;
+  const adId = metadata?.ad_id;
+
+  if (!adId) {
+    safeLog.warn("Ad purchase metadata missing ad_id:", reference);
+    return;
+  }
+
+  safeLog.info(`Processing ad purchase for ad: ${adId}`);
+
+  const { error } = await supabase
+    .from("platform_adverts")
+    .update({
+      payment_status: "paid",
+      payment_reference: reference,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", adId);
+
+  if (error) {
+    safeLog.error("Failed to update ad payment status:", error);
+    return;
+  }
+
+  // Log audit
+  await supabase.from("admin_audit_logs").insert({
+    action: "ad_payment_received",
+    entity_type: "platform_advert",
+    entity_id: adId,
+    details: {
+      reference,
+      ad_id: adId,
+      package_id: metadata?.package_id,
+    },
+  });
+
+  safeLog.info(`Ad purchase completed for ad ${adId}`);
 }
 
 async function handleSplitPaymentSuccess(supabase: any, reference: string, metadata: any) {

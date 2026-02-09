@@ -94,6 +94,7 @@ const WebCareers = lazyWithRetry(() => import('./pages/WebCareers').then(m => ({
 const WebResources = lazyWithRetry(() => import('./pages/WebResources').then(m => ({ default: m.WebResources })), 'WebResources');
 const WebBlog = lazyWithRetry(() => import('./pages/WebBlog').then(m => ({ default: m.WebBlog })), 'WebBlog');
 const WebCategories = lazyWithRetry(() => import('./pages/WebCategories').then(m => ({ default: m.WebCategories })), 'WebCategories');
+const WebAdvertise = lazyWithRetry(() => import('./pages/WebAdvertise').then(m => ({ default: m.WebAdvertise })), 'WebAdvertise');
 const WebBlogPost = lazyWithRetry(() => import('./pages/WebBlogPost').then(m => ({ default: m.WebBlogPost })), 'WebBlogPost');
 const AttendeeProfile = lazyWithRetry(() => import('./pages/AttendeeProfile').then(m => ({ default: m.AttendeeProfile })), 'AttendeeProfile');
 const OrganizerPublicProfile = lazyWithRetry(() => import('./pages/OrganizerPublicProfile').then(m => ({ default: m.OrganizerPublicProfile })), 'OrganizerPublicProfile');
@@ -360,6 +361,11 @@ function App() {
                 <Route path="/resources" element={
                   <Suspense fallback={<PageLoader />}>
                     <WebResources />
+                  </Suspense>
+                } />
+                <Route path="/advertise" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <WebAdvertise />
                   </Suspense>
                 } />
                 <Route path="/blog" element={

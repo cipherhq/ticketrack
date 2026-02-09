@@ -232,8 +232,40 @@ serve(async (req) => {
       const orderId = session.metadata?.order_id;
       const paymentType = session.metadata?.type;
 
-      // Handle split payment
-      if (paymentType === "split_payment") {
+      // Handle ad purchase
+      if (paymentType === "ad_purchase") {
+        const adId = session.metadata?.ad_id;
+        if (adId) {
+          const { error } = await supabase
+            .from("platform_adverts")
+            .update({
+              payment_status: "paid",
+              payment_reference: session.payment_intent || session.id,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", adId);
+
+          if (error) {
+            console.error("Failed to update ad payment status:", error);
+          }
+
+          // Log audit
+          await supabase.from("admin_audit_logs").insert({
+            action: "ad_payment_received",
+            entity_type: "platform_advert",
+            entity_id: adId,
+            details: {
+              reference: session.payment_intent || session.id,
+              ad_id: adId,
+              package_id: session.metadata?.package_id,
+              provider: "stripe",
+            },
+          });
+
+          safeLog.info(`Ad purchase completed via Stripe for ad ${adId}`);
+        }
+      } else if (paymentType === "split_payment") {
+        // Handle split payment
         const shareId = session.metadata?.share_id;
         const splitPaymentId = session.metadata?.split_payment_id;
 

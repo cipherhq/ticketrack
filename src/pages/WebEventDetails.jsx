@@ -16,6 +16,8 @@ import { getEvent } from '@/services/events'
 import { supabase } from '@/lib/supabase'
 import { EventAccessGate } from '@/components/EventAccessGate'
 import { toast } from 'sonner'
+import { useAds } from '@/hooks/useAds'
+import { AdBanner } from '@/components/AdBanner'
 
 export function WebEventDetails() {
   const navigate = useNavigate()
@@ -23,7 +25,8 @@ export function WebEventDetails() {
   const { id } = useParams()
   const location = useLocation()
   const [searchParams] = useSearchParams()
-  
+  const { ads } = useAds()
+
   const [event, setEvent] = useState(null)
   const [ticketTypes, setTicketTypes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1951,6 +1954,11 @@ export function WebEventDetails() {
               </p>
             </CardContent>
           </Card>
+
+          {/* Sidebar Ad */}
+          <div className="hidden lg:block mt-6">
+            <AdBanner position="right" ad={ads.right} />
+          </div>
         </div>
       </div>
 
@@ -1960,6 +1968,11 @@ export function WebEventDetails() {
         onOpenChange={setShowGroupModal} 
         event={event}
       />
+
+      {/* Bottom Banner Ad */}
+      <div className="max-w-6xl mx-auto px-4">
+        <AdBanner position="bottom" ad={ads.bottom} />
+      </div>
 
       {/* Recommended Events */}
       {recommendedEvents.length > 0 && (

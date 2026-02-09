@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { 
-  Plus, Edit2, Trash2, Eye, EyeOff, Upload, X, 
+import {
+  Plus, Edit2, Trash2, Eye, EyeOff, Upload, X,
   Image as ImageIcon, Video, ExternalLink, BarChart3,
   Monitor, Smartphone, Calendar, DollarSign, MousePointer,
-  TrendingUp, CheckCircle, Clock
+  TrendingUp, CheckCircle, Clock, XCircle, AlertCircle,
+  Globe, Mail, Phone, User
 } from 'lucide-react';
 import { formatPrice, currencies } from '@/config/currencies';
 
@@ -60,6 +61,9 @@ export default function AdminAdverts() {
   const [editingAd, setEditingAd] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
+  const [approvalFilter, setApprovalFilter] = useState('all');
+  const [showRejectModal, setShowRejectModal] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [stats, setStats] = useState({
     totalAds: 0,
     activeAds: 0,
@@ -289,6 +293,57 @@ export default function AdminAdverts() {
     }
   };
 
+  const handleApprove = async (ad) => {
+    const now = new Date();
+    const endDate = new Date(now.getTime() + (ad.duration_days || 30) * 86400000);
+
+    const { error } = await supabase
+      .from('platform_adverts')
+      .update({
+        approval_status: 'approved',
+        is_active: true,
+        start_date: now.toISOString(),
+        end_date: endDate.toISOString(),
+        updated_at: now.toISOString(),
+      })
+      .eq('id', ad.id);
+
+    if (!error) {
+      fetchAds();
+    } else {
+      alert('Error approving ad: ' + error.message);
+    }
+  };
+
+  const handleReject = async (adId) => {
+    if (!rejectionReason.trim()) {
+      alert('Please provide a reason for rejection');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('platform_adverts')
+      .update({
+        approval_status: 'rejected',
+        rejection_reason: rejectionReason,
+        is_active: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', adId);
+
+    if (!error) {
+      setShowRejectModal(null);
+      setRejectionReason('');
+      fetchAds();
+    } else {
+      alert('Error rejecting ad: ' + error.message);
+    }
+  };
+
+  const filteredAds = approvalFilter === 'all'
+    ? ads
+    : ads.filter(ad => (ad.approval_status || 'approved') === approvalFilter);
+
   const getPositionInfo = (position) => {
     return AD_POSITIONS.find(p => p.value === position) || AD_POSITIONS[0];
   };
@@ -421,6 +476,28 @@ export default function AdminAdverts() {
         </div>
       </div>
 
+      {/* Approval Filter Tabs */}
+      <div className="flex gap-2 mb-4">
+        {[
+          { value: 'all', label: 'All', count: ads.length },
+          { value: 'pending', label: 'Pending', count: ads.filter(a => (a.approval_status || 'approved') === 'pending').length },
+          { value: 'approved', label: 'Approved', count: ads.filter(a => (a.approval_status || 'approved') === 'approved').length },
+          { value: 'rejected', label: 'Rejected', count: ads.filter(a => a.approval_status === 'rejected').length },
+        ].map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => setApprovalFilter(tab.value)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              approvalFilter === tab.value
+                ? 'bg-blue-600 text-white'
+                : 'bg-muted text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tab.label} ({tab.count})
+          </button>
+        ))}
+      </div>
+
       {/* Ads Table */}
       <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         <table className="w-full">
@@ -433,21 +510,25 @@ export default function AdminAdverts() {
               <th className="text-left p-4 font-medium text-muted-foreground">Duration</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Performance</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Payment</th>
+              <th className="text-left p-4 font-medium text-muted-foreground">Approval</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
               <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {ads.length === 0 ? (
+            {filteredAds.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-muted-foreground">
-                  No advertisements yet. Click "Add New Ad" to create one.
+                <td colSpan={10} className="p-8 text-center text-muted-foreground">
+                  {approvalFilter === 'all'
+                    ? 'No advertisements yet. Click "Add New Ad" to create one.'
+                    : `No ${approvalFilter} advertisements.`}
                 </td>
               </tr>
             ) : (
-              ads.map(ad => {
+              filteredAds.map(ad => {
                 const status = getAdStatus(ad);
                 const posInfo = getPositionInfo(ad.position);
+                const approvalStatus = ad.approval_status || 'approved';
                 return (
                   <tr key={ad.id} className="border-t hover:bg-background">
                     <td className="p-4">
@@ -462,16 +543,31 @@ export default function AdminAdverts() {
                     <td className="p-4">
                       <div>
                         <p className="font-medium">{ad.advertiser_name || 'Unknown'}</p>
+                        {ad.advertiser_email && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Mail size={10} /> {ad.advertiser_email}
+                          </p>
+                        )}
+                        {ad.advertiser_phone && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Phone size={10} /> {ad.advertiser_phone}
+                          </p>
+                        )}
                         {ad.link_url && (
-                          <a 
-                            href={ad.link_url} 
-                            target="_blank" 
+                          <a
+                            href={ad.link_url}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-600 flex items-center gap-1 hover:underline"
                           >
                             <ExternalLink size={12} />
                             Visit Link
                           </a>
+                        )}
+                        {ad.target_countries && ad.target_countries.length > 0 && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                            <Globe size={10} /> {ad.target_countries.join(', ')}
+                          </p>
                         )}
                       </div>
                     </td>
@@ -486,6 +582,9 @@ export default function AdminAdverts() {
                     </td>
                     <td className="p-4">
                       <div className="text-sm">
+                        {ad.duration_days && (
+                          <p className="text-muted-foreground">{ad.duration_days} days</p>
+                        )}
                         <p>{new Date(ad.start_date).toLocaleDateString()}</p>
                         <p className="text-muted-foreground">to {new Date(ad.end_date).toLocaleDateString()}</p>
                       </div>
@@ -499,12 +598,28 @@ export default function AdminAdverts() {
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        ad.payment_status === 'paid' 
-                          ? 'bg-green-100 text-green-700' 
+                        ad.payment_status === 'paid'
+                          ? 'bg-green-100 text-green-700'
                           : 'bg-yellow-100 text-yellow-700'
                       }`}>
                         {ad.payment_status === 'paid' ? 'Paid' : 'Pending'}
                       </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        approvalStatus === 'approved'
+                          ? 'bg-green-100 text-green-700'
+                          : approvalStatus === 'rejected'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1)}
+                      </span>
+                      {approvalStatus === 'rejected' && ad.rejection_reason && (
+                        <p className="text-xs text-red-500 mt-1 max-w-[120px] truncate" title={ad.rejection_reason}>
+                          {ad.rejection_reason}
+                        </p>
+                      )}
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
@@ -512,7 +627,25 @@ export default function AdminAdverts() {
                       </span>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {approvalStatus === 'pending' && ad.payment_status === 'paid' && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(ad)}
+                              className="p-2 rounded-lg bg-green-100 text-green-600 hover:opacity-80"
+                              title="Approve"
+                            >
+                              <CheckCircle size={16} />
+                            </button>
+                            <button
+                              onClick={() => setShowRejectModal(ad.id)}
+                              className="p-2 rounded-lg bg-red-100 text-red-600 hover:opacity-80"
+                              title="Reject"
+                            >
+                              <XCircle size={16} />
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={() => toggleActive(ad)}
                           className={`p-2 rounded-lg ${ad.is_active ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'} hover:opacity-80`}
@@ -543,6 +676,39 @@ export default function AdminAdverts() {
           </tbody>
         </table>
       </div>
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">Reject Advertisement</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Please provide a reason for rejecting this ad. The advertiser will be notified.
+            </p>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
+              rows={3}
+              placeholder="Reason for rejection..."
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowRejectModal(null); setRejectionReason(''); }}
+                className="flex-1 px-4 py-2 border rounded-lg hover:bg-background"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleReject(showRejectModal)}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Reject Ad
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       {showModal && (
