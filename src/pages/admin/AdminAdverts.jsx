@@ -302,6 +302,23 @@ export default function AdminAdverts() {
       .eq('id', ad.id);
 
     if (!error) {
+      // Send approval notification email
+      if (ad.advertiser_email) {
+        const posInfo = getPositionInfo(ad.position);
+        supabase.functions.invoke('send-email', {
+          body: {
+            type: 'ad_approved',
+            to: ad.advertiser_email,
+            data: {
+              advertiserName: ad.advertiser_name || 'Advertiser',
+              position: posInfo.label,
+              durationDays: ad.duration_days || 30,
+              startDate: now.toISOString(),
+              endDate: endDate.toISOString(),
+            },
+          },
+        }).catch(() => {}); // Non-blocking
+      }
       fetchAds();
     } else {
       alert('Error approving ad: ' + error.message);
@@ -314,6 +331,9 @@ export default function AdminAdverts() {
       return;
     }
 
+    // Find the ad to get email and details
+    const ad = ads.find(a => a.id === adId);
+
     const { error } = await supabase
       .from('platform_adverts')
       .update({
@@ -325,6 +345,21 @@ export default function AdminAdverts() {
       .eq('id', adId);
 
     if (!error) {
+      // Send rejection notification email
+      if (ad?.advertiser_email) {
+        const posInfo = getPositionInfo(ad.position);
+        supabase.functions.invoke('send-email', {
+          body: {
+            type: 'ad_rejected',
+            to: ad.advertiser_email,
+            data: {
+              advertiserName: ad.advertiser_name || 'Advertiser',
+              position: posInfo.label,
+              rejectionReason: rejectionReason,
+            },
+          },
+        }).catch(() => {}); // Non-blocking
+      }
       setShowRejectModal(null);
       setRejectionReason('');
       fetchAds();
@@ -675,15 +710,37 @@ export default function AdminAdverts() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-border/10 rounded-2xl w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4">Reject Advertisement</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Please provide a reason for rejecting this ad. The advertiser will be notified.
+            <p className="text-sm text-muted-foreground mb-3">
+              Please provide a reason for rejecting this ad. The advertiser will be notified by email.
             </p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {[
+                'Image size does not match required dimensions',
+                'Image quality too low or blurry',
+                'Content violates our ad policy',
+                'Inappropriate or misleading content',
+                'Destination link is broken or unsafe',
+              ].map(reason => (
+                <button
+                  key={reason}
+                  type="button"
+                  onClick={() => setRejectionReason(reason)}
+                  className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
+                    rejectionReason === reason
+                      ? 'bg-red-500/10 border-red-500/30 text-red-500'
+                      : 'border-border/20 text-muted-foreground hover:text-foreground hover:border-border/40'
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               className="w-full px-3 py-2 bg-background border border-border/20 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500 mb-4 resize-none"
               rows={3}
-              placeholder="Reason for rejection..."
+              placeholder="Select a reason above or type a custom reason..."
             />
             <div className="flex gap-3">
               <button

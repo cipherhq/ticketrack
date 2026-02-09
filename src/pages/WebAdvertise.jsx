@@ -34,6 +34,24 @@ const POSITION_DIMENSIONS = {
   right: '300 x 250 px',
 };
 
+const POSITION_SIZES = {
+  top: { width: 1200, height: 300 },
+  bottom: { width: 1200, height: 300 },
+  right: { width: 300, height: 250 },
+};
+
+// Normalize a URL: auto-prepend https:// if missing
+const normalizeUrl = (url) => {
+  if (!url) return '';
+  let trimmed = url.trim();
+  if (!trimmed) return '';
+  // If it starts with a protocol, return as-is
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  // Strip leading // if any
+  trimmed = trimmed.replace(/^\/\//, '');
+  return 'https://' + trimmed;
+};
+
 const FAQ_ITEMS = [
   {
     q: 'How long does approval take?',
@@ -88,6 +106,7 @@ export function WebAdvertise() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [dimensionWarning, setDimensionWarning] = useState('');
 
   // Renewal/resubmit state from navigation
   const [rejectionReason, setRejectionReason] = useState('');
@@ -197,6 +216,27 @@ export function WebAdvertise() {
     return acc;
   }, {});
 
+  const checkImageDimensions = (file, position) => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) { resolve(null); return; }
+      const img = new Image();
+      img.onload = () => {
+        const expected = POSITION_SIZES[position];
+        if (!expected) { resolve(null); return; }
+        const wOk = img.width === expected.width;
+        const hOk = img.height === expected.height;
+        if (!wOk || !hOk) {
+          resolve(`Your image is ${img.width}x${img.height}px. Recommended size is ${expected.width}x${expected.height}px. It may look stretched or cropped.`);
+        } else {
+          resolve(null);
+        }
+        URL.revokeObjectURL(img.src);
+      };
+      img.onerror = () => resolve(null);
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -213,6 +253,14 @@ export function WebAdvertise() {
     if (file.size > maxSize) {
       alert(`File too large. Max size: ${isVideo ? '50MB' : '10MB'}`);
       return;
+    }
+
+    // Check image dimensions before uploading
+    if (isImage && selectedPackage?.position) {
+      const warning = await checkImageDimensions(file, selectedPackage.position);
+      setDimensionWarning(warning || '');
+    } else {
+      setDimensionWarning('');
     }
 
     setUploading(true);
@@ -336,7 +384,7 @@ export function WebAdvertise() {
             advertiser_name: advertiserName,
             image_url: creativeUrl,
             media_type: mediaType,
-            link_url: linkUrl,
+            link_url: normalizeUrl(linkUrl),
             price: selectedPackage.price,
             currency: selectedPackage.currency,
             payment_status: 'pending',
@@ -413,7 +461,7 @@ export function WebAdvertise() {
             advertiser_name: advertiserName,
             image_url: creativeUrl,
             media_type: mediaType,
-            link_url: linkUrl,
+            link_url: normalizeUrl(linkUrl),
             price: selectedPackage.price,
             currency: selectedPackage.currency,
             payment_status: 'pending',
@@ -675,7 +723,7 @@ export function WebAdvertise() {
             </div>
             <button
               type="button"
-              onClick={() => { setCreativeUrl(''); setStepErrors(prev => ({ ...prev, 1: null })); }}
+              onClick={() => { setCreativeUrl(''); setDimensionWarning(''); setStepErrors(prev => ({ ...prev, 1: null })); }}
               className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600"
             >
               <X size={16} />
@@ -707,6 +755,13 @@ export function WebAdvertise() {
           </div>
         )}
       </div>
+
+      {dimensionWarning && (
+        <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-xl p-3 mt-4 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-yellow-700 dark:text-yellow-400">{dimensionWarning}</p>
+        </div>
+      )}
 
       {stepErrors[1] && (
         <p className="text-red-500 text-sm mt-4 flex items-center gap-1">
@@ -757,14 +812,16 @@ export function WebAdvertise() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Destination Link URL</label>
+          <label className="block text-sm font-medium mb-1.5">Destination Link</label>
           <input
-            type="url"
+            type="text"
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
+            onBlur={(e) => { if (e.target.value.trim()) setLinkUrl(normalizeUrl(e.target.value)); }}
             className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
-            placeholder="https://yourwebsite.com"
+            placeholder="www.yourwebsite.com"
           />
+          <p className="text-xs text-muted-foreground mt-1">Where people go when they click your ad. Just paste your link - we'll handle the rest.</p>
         </div>
 
         <div>
@@ -853,7 +910,7 @@ export function WebAdvertise() {
             <p><span className="text-muted-foreground">Name:</span> {advertiserName}</p>
             <p><span className="text-muted-foreground">Email:</span> {advertiserEmail}</p>
             {advertiserPhone && <p><span className="text-muted-foreground">Phone:</span> {advertiserPhone}</p>}
-            {linkUrl && <p><span className="text-muted-foreground">Link:</span> {linkUrl}</p>}
+            {linkUrl && <p><span className="text-muted-foreground">Link:</span> {normalizeUrl(linkUrl)}</p>}
             <p>
               <span className="text-muted-foreground">Countries:</span>{' '}
               {targetCountries.length > 0
