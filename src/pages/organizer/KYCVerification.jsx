@@ -137,13 +137,13 @@ export function KYCVerification() {
   // Country-based verification method detection
   const getVerificationMethod = () => {
     const country = organizer?.country_code;
-    if (['NG', 'GH'].includes(country)) return 'paystack';
+    if (country === 'NG') return 'paystack';
     if (['US', 'GB', 'CA'].includes(country)) return 'stripe_identity';
     return 'manual';
   };
 
   const isStripeIdentityCountry = ['US', 'GB', 'CA'].includes(organizer?.country_code);
-  const isPaystackCountry = ['NG', 'GH'].includes(organizer?.country_code);
+  const isNigeria = organizer?.country_code === 'NG';
   
   // Check if already verified via Stripe Connect (auto KYC)
   const isConnectVerified = organizer?.stripe_connect_status === 'active';
@@ -731,7 +731,171 @@ export function KYCVerification() {
     );
   }
 
-  // Original Paystack/Nigeria flow continues below...
+  // Manual document verification for Ghana and other countries
+  if (!isNigeria && !isStripeIdentityCountry) {
+    const countryName = organizer?.country_code === 'GH' ? 'Ghana' :
+                        organizer?.country_code === 'KE' ? 'Kenya' :
+                        organizer?.country_code === 'ZA' ? 'South Africa' : 'your country';
+    const isGhana = organizer?.country_code === 'GH';
+    const manualIdTypes = isGhana
+      ? [
+          { value: 'ghana_card', label: 'Ghana Card' },
+          { value: 'passport', label: 'International Passport' },
+          { value: 'drivers_license', label: "Driver's License" },
+          { value: 'voters_card', label: "Voter's ID" },
+        ]
+      : idTypes;
+
+    const manualVerified = organizer?.kyc_verified || organizer?.kyc_status === 'verified';
+    const manualInReview = organizer?.kyc_status === 'in_review';
+
+    return (
+      <div className="space-y-6 max-w-3xl">
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground">Identity Verification</h2>
+          <p className="text-muted-foreground mt-1">Verify your identity to receive payouts in {countryName}</p>
+        </div>
+
+        {success && (
+          <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5" />
+            {success}
+          </div>
+        )}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            {error}
+          </div>
+        )}
+
+        {manualVerified ? (
+          <Card className="border-green-200 bg-green-50/50 rounded-2xl overflow-hidden">
+            <div className="h-2 bg-green-500" />
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Identity Verified</h3>
+                  <p className="text-muted-foreground">You're all set to receive payouts.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : manualInReview ? (
+          <Card className="border-yellow-200 bg-yellow-50/50 rounded-2xl overflow-hidden">
+            <div className="h-2 bg-yellow-500" />
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-yellow-100 flex items-center justify-center">
+                  <Clock className="w-8 h-8 text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Verification In Review</h3>
+                  <p className="text-muted-foreground">Our team is reviewing your documents. This usually takes 24-48 hours.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-border/10 rounded-2xl">
+            <CardContent className="p-6 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-purple-100 flex items-center justify-center">
+                  <Shield className="w-8 h-8 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Verify Your Identity</h3>
+                  <p className="text-muted-foreground">Upload a valid government-issued ID to get verified</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label>ID Type *</Label>
+                  <Select value={manualIdType} onValueChange={setManualIdType}>
+                    <SelectTrigger className="h-12 rounded-xl mt-1">
+                      <SelectValue placeholder="Select ID type" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {manualIdTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Upload Document *</Label>
+                  <input
+                    ref={manualFileInputRef}
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => setManualIdFile(e.target.files?.[0] || null)}
+                  />
+                  <div
+                    onClick={() => manualFileInputRef.current?.click()}
+                    className="mt-1 border-2 border-dashed border-border/20 rounded-xl p-8 text-center cursor-pointer hover:border-[#2969FF] transition-colors"
+                  >
+                    {manualIdFile ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <FileText className="w-5 h-5 text-green-600" />
+                        <span className="text-sm font-medium">{manualIdFile.name}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">Click to upload (PNG, JPG, PDF - Max 5MB)</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleManualUpload}
+                  disabled={uploading || !manualIdFile || !manualIdType}
+                  className="w-full h-12 bg-[#2969FF] hover:bg-[#1e4fd6] text-white rounded-xl"
+                >
+                  {uploading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                  ) : (
+                    <><Upload className="w-4 h-4 mr-2" />Submit for Review</>
+                  )}
+                </Button>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Your documents are stored securely and reviewed by our team within 24-48 hours.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="border-blue-200 bg-blue-50 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-foreground mb-2">Why verify your identity?</h3>
+                <ul className="text-sm text-foreground/70 space-y-1">
+                  <li>• <strong>Security:</strong> Protect your account and earnings</li>
+                  <li>• <strong>Payouts:</strong> Required to receive event proceeds</li>
+                  <li>• <strong>Trust:</strong> Build credibility with your attendees</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Nigeria BVN verification flow
   return (
     <div className="space-y-6 max-w-3xl">
       <div>

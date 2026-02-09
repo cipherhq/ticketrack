@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Search, QrCode, UserCheck, Calendar, Users, CheckCircle, 
+import {
+  Search, QrCode, UserCheck, Calendar, Users, CheckCircle,
   Loader2, X, Undo2, History, Smartphone, RefreshCw,
-  AlertCircle, Clock, ChevronDown, Volume2, VolumeX, HelpCircle
+  AlertCircle, Clock, ChevronDown, Volume2, VolumeX, HelpCircle,
+  Download, WifiOff
 } from 'lucide-react';
 import jsQR from 'jsqr';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -28,6 +29,8 @@ import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { HelpTip, OnboardingBanner } from '@/components/HelpTip';
 import { toast } from 'sonner';
+import { useOfflineCheckIn } from '../../hooks/useOfflineCheckIn';
+import { OfflineStatusBar } from '../../components/OfflineStatusBar';
 
 // Generate unique device ID for multi-session tracking
 const getDeviceId = () => {
@@ -42,7 +45,7 @@ const getDeviceId = () => {
 export function CheckInByEvents() {
   const { organizer } = useOrganizer();
   const deviceId = useRef(getDeviceId());
-  
+
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState('');
@@ -64,6 +67,9 @@ export function CheckInByEvents() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   
+  // Offline support
+  const offline = useOfflineCheckIn(selectedEvent, organizer?.id);
+
   // QR Scanner
   const [scanning, setScanning] = useState(false);
   const [scannerProcessing, setScannerProcessing] = useState(false); // Full-screen processing overlay
@@ -90,17 +96,17 @@ export function CheckInByEvents() {
     }
   }, [selectedEvent]);
 
-  // Auto-refresh every 10 seconds
+  // Auto-refresh every 10 seconds (skip when offline)
   useEffect(() => {
-    if (!autoRefresh || !selectedEvent) return;
-    
+    if (!autoRefresh || !selectedEvent || offline.isOffline) return;
+
     const interval = setInterval(() => {
       loadAttendees();
       loadAuditLog();
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, selectedEvent]);
+  }, [autoRefresh, selectedEvent, offline.isOffline]);
 
   // Cleanup camera and animation frame on unmount
   useEffect(() => {
@@ -144,6 +150,21 @@ export function CheckInByEvents() {
 
   const loadAttendees = async () => {
     if (!selectedEvent) return;
+
+    // Use offline cache when offline and event is cached
+    if (offline.isOffline && offline.isEventCached) {
+      try {
+        const offlineAttendees = await offline.getOfflineAttendees();
+        setAttendees(offlineAttendees);
+
+        const total = offlineAttendees.reduce((sum, a) => sum + a.quantity, 0);
+        const checkedIn = offlineAttendees.filter(a => a.checkedIn).reduce((sum, a) => sum + a.quantity, 0);
+        setEventStats({ total, checkedIn, pending: total - checkedIn });
+      } catch (err) {
+        console.error('Error loading offline attendees:', err);
+      }
+      return;
+    }
 
     try {
       const { data: tickets, error } = await supabase
@@ -238,7 +259,7 @@ export function CheckInByEvents() {
   const performCheckIn = async (ticketCodeOrId, isUndo = false, fromScanner = false) => {
     setProcessing(true);
     setCheckInResult(null);
-    
+
     // Show full-screen processing overlay for scanner
     if (fromScanner) {
       setScannerProcessing(true);
@@ -246,7 +267,7 @@ export function CheckInByEvents() {
 
     // Clean up the input
     const cleanCode = ticketCodeOrId?.trim()?.toUpperCase();
-    
+
     if (!cleanCode) {
       playSound('error');
       vibrateDevice('error');
@@ -278,6 +299,51 @@ export function CheckInByEvents() {
       processingTimeoutRef.current = setTimeout(() => setLastScannedCode(''), 3000);
     }
 
+    // OFFLINE BRANCH: delegate to offline check-in when offline and event is cached
+    if (offline.isOffline && offline.isEventCached) {
+      try {
+        const result = await offline.performOfflineCheckIn(cleanCode, isUndo);
+
+        if (result.success) {
+          playSound(isUndo ? 'undo' : 'success');
+          vibrateDevice('success');
+        } else if (result.alreadyCheckedIn) {
+          playSound('warning');
+          vibrateDevice('warning');
+        } else {
+          playSound('error');
+          vibrateDevice('error');
+        }
+
+        setCheckInResult(result);
+
+        // Refresh from local cache
+        await loadAttendees();
+        setTicketCode('');
+
+        if (fromScanner && scanDialogOpen) {
+          setTimeout(() => {
+            setScannerProcessing(false);
+            setCheckInResult(null);
+            startQRScanner();
+          }, 1500);
+        } else {
+          setScannerProcessing(false);
+        }
+      } catch (err) {
+        playSound('error');
+        vibrateDevice('error');
+        setCheckInResult({
+          success: false,
+          message: 'Offline check-in failed: ' + (err.message || 'Unknown error'),
+        });
+        setScannerProcessing(false);
+      } finally {
+        setProcessing(false);
+      }
+      return;
+    }
+
     console.log('Attempting check-in for:', cleanCode);
 
     try {
@@ -285,7 +351,7 @@ export function CheckInByEvents() {
       // Check if it looks like a UUID (36 chars with dashes)
       // Ticket codes are now 8 characters, UUIDs are 36 chars with dashes
       const isUUID = cleanCode.length === 36 && cleanCode.split('-').length === 5;
-      
+
       let query = supabase
         .from('tickets')
         .select('id, attendee_name, attendee_email, ticket_code, is_checked_in, event_id, payment_status');
@@ -347,7 +413,7 @@ export function CheckInByEvents() {
           .select('title')
           .eq('id', ticket.event_id)
           .single();
-        
+
         playSound('error');
         vibrateDevice('error');
         setCheckInResult({
@@ -405,7 +471,7 @@ export function CheckInByEvents() {
 
       // Get current user ID for tracking
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       // Perform check-in/out
       const { error: updateError } = await supabase
         .from('tickets')
@@ -425,7 +491,7 @@ export function CheckInByEvents() {
       vibrateDevice('success');
       setCheckInResult({
         success: true,
-        message: isUndo ? 'Check-in reversed successfully!' : `✓ ${ticket.attendee_name} checked in!`,
+        message: isUndo ? 'Check-in reversed successfully!' : `${ticket.attendee_name} checked in!`,
         attendeeName: ticket.attendee_name,
         ticketCode: ticket.ticket_code,
       });
@@ -452,14 +518,14 @@ export function CheckInByEvents() {
       console.error('Check-in error:', error);
       playSound('error');
       vibrateDevice('error');
-      
+
       let errorMessage = 'An error occurred. Please try again.';
       if (error.message?.includes('permission') || error.code === '42501') {
         errorMessage = 'Permission denied. Please contact support.';
       } else if (error.message?.includes('network') || error.code === 'NETWORK_ERROR') {
         errorMessage = 'Network error. Please check your connection.';
       }
-      
+
       setCheckInResult({
         success: false,
         message: errorMessage,
@@ -708,6 +774,17 @@ export function CheckInByEvents() {
 
   return (
     <div className="space-y-6">
+      {/* Offline Status Bar */}
+      <OfflineStatusBar
+        isOffline={offline.isOffline}
+        isEventCached={offline.isEventCached}
+        lastCachedAt={offline.lastCachedAt}
+        pendingCount={offline.pendingCount}
+        isSyncing={offline.isSyncing}
+        syncResult={offline.syncResult}
+        onSyncNow={offline.syncNow}
+      />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -735,9 +812,33 @@ export function CheckInByEvents() {
             onClick={() => { loadAttendees(); loadAuditLog(); }}
             className="rounded-xl"
             title="Refresh"
+            disabled={offline.isOffline}
           >
             <RefreshCw className="w-5 h-5" />
           </Button>
+          {selectedEvent && (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const result = await offline.cacheCurrentEvent();
+                if (result?.success) {
+                  toast.success(`Downloaded ${result.ticketCount} tickets for offline use`);
+                } else {
+                  toast.error('Failed to download: ' + (result?.error || 'Unknown error'));
+                }
+              }}
+              disabled={offline.isCaching || offline.isOffline}
+              className="rounded-xl border-border/10"
+              title="Download event data for offline check-in"
+            >
+              {offline.isCaching ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              {offline.isEventCached ? 'Update Offline' : 'Download for Offline'}
+            </Button>
+          )}
           <Button
             onClick={() => setScanDialogOpen(true)}
             className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
