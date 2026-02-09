@@ -543,7 +543,7 @@ export function WebHome() {
 
       {/* Top Banner Ad - Full width, above the 3-column layout */}
       <div className="max-w-[1200px] mx-auto px-4">
-        <AdBanner position="top" ad={ads.top} />
+        <AdBanner position="top" ads={ads.top} />
       </div>
 
       {/* Main Content Area with Side Ads - Starts at Popular Categories */}
@@ -683,14 +683,14 @@ export function WebHome() {
           </section>
 
           {/* Bottom Banner Ad */}
-          <AdBanner position="bottom" ad={ads.bottom} />
+          <AdBanner position="bottom" ads={ads.bottom} />
 
         </main>
 
         {/* Right Side Ad */}
-        {false && ads.right && (
+        {false && ads.right.length > 0 && (
           <div className="flex-shrink-0 mt-8">
-            <AdBanner position="right" ad={ads.right} />
+            <AdBanner position="right" ads={ads.right} />
           </div>
         )}
       </div>

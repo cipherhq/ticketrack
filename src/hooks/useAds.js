@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { getCountryFromIP } from '@/utils/location';
 
 export function useAds() {
-  const [ads, setAds] = useState({ top: null, bottom: null, right: null });
+  const [ads, setAds] = useState({ top: [], bottom: [], right: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,16 +35,16 @@ export function useAds() {
 
         // Filter ads by target countries
         const filtered = data.filter(ad => {
-          if (!ad.target_countries || ad.target_countries.length === 0) return true; // Global
-          if (!viewerCountry) return true; // Can't detect, show all
+          if (!ad.target_countries || ad.target_countries.length === 0) return true;
+          if (!viewerCountry) return true;
           return ad.target_countries.includes(viewerCountry);
         });
 
         if (!cancelled) {
           setAds({
-            top: filtered.find(ad => ad.position === 'top') || null,
-            bottom: filtered.find(ad => ad.position === 'bottom') || null,
-            right: filtered.find(ad => ad.position === 'right') || null,
+            top: filtered.filter(ad => ad.position === 'top'),
+            bottom: filtered.filter(ad => ad.position === 'bottom'),
+            right: filtered.filter(ad => ad.position === 'right'),
           });
         }
       } finally {

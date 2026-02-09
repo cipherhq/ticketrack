@@ -1,20 +1,41 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export function AdBanner({ position, ad }) {
-  const impressionTracked = useRef(false);
+const ROTATION_INTERVAL = 8000; // 8 seconds per ad
+
+export function AdBanner({ position, ads = [] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [fading, setFading] = useState(false);
+  const trackedImpressions = useRef(new Set());
   const containerRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const currentAd = ads[currentIndex] || null;
+
+  // Round-robin rotation
+  useEffect(() => {
+    if (ads.length <= 1) return;
+
+    timerRef.current = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setCurrentIndex(prev => (prev + 1) % ads.length);
+        setFading(false);
+      }, 300); // fade-out duration
+    }, ROTATION_INTERVAL);
+
+    return () => clearInterval(timerRef.current);
+  }, [ads.length]);
 
   // Track impression when ad becomes visible
   useEffect(() => {
-    if (!ad?.id || impressionTracked.current) return;
+    if (!currentAd?.id || trackedImpressions.current.has(currentAd.id)) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !impressionTracked.current) {
-          impressionTracked.current = true;
-          supabase.rpc('increment_ad_impressions', { ad_id: ad.id });
-          observer.disconnect();
+        if (entry.isIntersecting && !trackedImpressions.current.has(currentAd.id)) {
+          trackedImpressions.current.add(currentAd.id);
+          supabase.rpc('increment_ad_impressions', { ad_id: currentAd.id });
         }
       },
       { threshold: 0.5 }
@@ -25,17 +46,17 @@ export function AdBanner({ position, ad }) {
     }
 
     return () => observer.disconnect();
-  }, [ad?.id]);
+  }, [currentAd?.id]);
 
   const handleClick = useCallback(async () => {
-    if (!ad?.id) return;
-    await supabase.rpc('increment_ad_clicks', { ad_id: ad.id });
-    if (ad.link_url) {
-      window.open(ad.link_url, '_blank', 'noopener,noreferrer');
+    if (!currentAd?.id) return;
+    await supabase.rpc('increment_ad_clicks', { ad_id: currentAd.id });
+    if (currentAd.link_url) {
+      window.open(currentAd.link_url, '_blank', 'noopener,noreferrer');
     }
-  }, [ad?.id, ad?.link_url]);
+  }, [currentAd?.id, currentAd?.link_url]);
 
-  if (!ad) return null;
+  if (!ads.length) return null;
 
   const isSidebar = position === 'right';
 
@@ -59,23 +80,41 @@ export function AdBanner({ position, ad }) {
             : 'w-full h-[200px] md:h-[300px]'
         }`}
       >
-        {ad.media_type === 'video' ? (
-          <video
-            src={ad.image_url}
-            className="w-full h-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
-        ) : (
-          <img
-            src={ad.image_url}
-            alt={ad.advertiser_name || 'Advertisement'}
-            className="w-full h-full object-cover"
-          />
-        )}
+        <div
+          className={`w-full h-full transition-opacity duration-300 ${fading ? 'opacity-0' : 'opacity-100'}`}
+        >
+          {currentAd.media_type === 'video' ? (
+            <video
+              src={currentAd.image_url}
+              className="w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              src={currentAd.image_url}
+              alt={currentAd.advertiser_name || 'Advertisement'}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
       </div>
+      {/* Dots indicator for multiple ads */}
+      {ads.length > 1 && (
+        <div className="flex justify-center gap-1.5 mt-2">
+          {ads.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setCurrentIndex(i); clearInterval(timerRef.current); }}
+              className={`w-2 h-2 rounded-full transition-all ${
+                i === currentIndex ? 'bg-foreground/60 w-4' : 'bg-foreground/20'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

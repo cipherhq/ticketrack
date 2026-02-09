@@ -1957,7 +1957,7 @@ export function WebEventDetails() {
 
           {/* Sidebar Ad */}
           <div className="hidden lg:block mt-6">
-            <AdBanner position="right" ad={ads.right} />
+            <AdBanner position="right" ads={ads.right} />
           </div>
         </div>
       </div>
@@ -1971,7 +1971,7 @@ export function WebEventDetails() {
 
       {/* Bottom Banner Ad */}
       <div className="max-w-6xl mx-auto px-4">
-        <AdBanner position="bottom" ad={ads.bottom} />
+        <AdBanner position="bottom" ads={ads.bottom} />
       </div>
 
       {/* Recommended Events */}
