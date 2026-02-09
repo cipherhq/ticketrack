@@ -656,7 +656,7 @@ export default function AdminAdverts() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-1 flex-wrap">
-                        {approvalStatus === 'pending' && ad.payment_status === 'paid' && (
+                        {approvalStatus === 'pending' && (
                           <>
                             <button
                               onClick={() => handleApprove(ad)}
