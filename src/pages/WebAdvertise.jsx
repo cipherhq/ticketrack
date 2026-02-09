@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { formatPrice, getDefaultCurrency } from '@/config/currencies';
-import { getCountryFromIP } from '@/utils/location';
+import { formatPrice, getDefaultCurrency, getCurrencyFromCountryCode } from '@/config/currencies';
 import {
   Megaphone, Upload, CheckCircle, Eye, MousePointer, Globe,
   ChevronDown, ChevronUp, X, Loader2, ImageIcon, Video,
@@ -78,14 +77,30 @@ export function WebAdvertise() {
 
   useEffect(() => {
     fetchPackages();
-    // Auto-detect currency from user's country
-    getCountryFromIP().then(countryCode => {
-      const detected = getDefaultCurrency(countryCode);
-      if (['NGN', 'USD', 'GBP', 'GHS', 'CAD'].includes(detected)) {
-        setCurrency(detected);
-      }
-    }).catch(() => {});
   }, []);
+
+  // Auto-detect currency from user's profile country_code
+  useEffect(() => {
+    const detectCurrency = async () => {
+      if (!user) return;
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('country_code')
+          .eq('id', user.id)
+          .single();
+        if (profile?.country_code) {
+          const detected = await getCurrencyFromCountryCode(supabase, profile.country_code);
+          if (detected && ['NGN', 'USD', 'GBP', 'GHS', 'CAD'].includes(detected)) {
+            setCurrency(detected);
+          }
+        }
+      } catch {
+        // Fall back to default NGN
+      }
+    };
+    detectCurrency();
+  }, [user?.id]);
 
   useEffect(() => {
     if (user) {
