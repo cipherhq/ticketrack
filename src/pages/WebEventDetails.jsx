@@ -1717,7 +1717,7 @@ export function WebEventDetails() {
 
         {/* Ticket Sidebar - Hidden on mobile, shown on desktop */}
         <div className="hidden lg:block lg:col-span-1">
-          <Card className="border-border/10 rounded-2xl sticky top-16 md:top-20 lg:top-24">
+          <Card className="border-border/10 rounded-2xl sticky top-16 md:top-20 lg:top-24 z-10">
             <CardContent className="p-6 space-y-6">
               {/* Recurring Event Date Selector */}
               {event?.is_recurring && (childEvents.length > 0 || event) && (

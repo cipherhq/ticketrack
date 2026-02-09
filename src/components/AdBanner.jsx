@@ -65,11 +65,11 @@ export function AdBanner({ position, ads = [] }) {
       ref={containerRef}
       className={
         isSidebar
-          ? 'relative w-full'
-          : 'relative max-w-[1200px] mx-auto my-8'
+          ? 'relative w-full pt-6'
+          : 'relative max-w-[1200px] mx-auto my-8 pt-6'
       }
     >
-      <div className="absolute -top-5 right-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded z-10">
+      <div className="absolute top-0 right-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded z-10">
         Ad
       </div>
       <div
