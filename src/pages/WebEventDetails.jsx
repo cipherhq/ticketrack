@@ -764,29 +764,29 @@ export function WebEventDetails() {
                   <Clock className="w-5 h-5 flex-shrink-0" />
                   <span>{formatTime(event.start_date)} - {formatTime(event.end_date)}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {event.is_virtual ? (
-                    <>
-                      <Monitor className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                      <span className="text-purple-600 font-medium">Virtual Event (Online)</span>
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                      <div className="flex flex-col">
-                        {event.venue_name && (
-                          <span className="font-medium text-foreground">{event.venue_name}</span>
-                        )}
-                        {event.venue_address && (
-                          <span className="text-foreground/80 text-sm">{event.venue_address}</span>
-                        )}
-                        <span className="text-muted-foreground text-sm">
-                          {[event.city, event.state, event.country].filter(Boolean).join(', ') || (!event.venue_name && !event.venue_address && 'Location TBA')}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
+              </div>
+              <div className="flex items-start gap-2 text-muted-foreground mt-2">
+                {event.is_virtual ? (
+                  <>
+                    <Monitor className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                    <span className="text-purple-600 font-medium">Virtual Event (Online)</span>
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <div className="flex flex-col">
+                      {event.venue_name && (
+                        <span className="font-medium text-foreground">{event.venue_name}</span>
+                      )}
+                      {event.venue_address && (
+                        <span className="text-foreground/80 text-sm">{event.venue_address}</span>
+                      )}
+                      <span className="text-muted-foreground text-sm">
+                        {[event.city, event.state, event.country].filter(Boolean).join(', ') || (!event.venue_name && !event.venue_address && 'Location TBA')}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
