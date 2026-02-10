@@ -178,7 +178,15 @@ export function FinancePayouts() {
       // Build set of event IDs that already have completed payouts
       const paidEventIds = new Set();
       payouts?.filter(p => p.status === 'completed')?.forEach(p => {
-        if (p.event_id) paidEventIds.add(p.event_id);
+        // Check event_ids array (batch payouts from AdminProcessPayout)
+        if (Array.isArray(p.event_ids)) {
+          p.event_ids.forEach(id => paidEventIds.add(id));
+        }
+        // Parse event ID from notes field (single event payouts: "Event: Title (uuid).")
+        if (p.notes) {
+          const match = p.notes.match(/\(([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\)/i);
+          if (match) paidEventIds.add(match[1]);
+        }
       });
 
       // Calculate stats and categorize by currency
