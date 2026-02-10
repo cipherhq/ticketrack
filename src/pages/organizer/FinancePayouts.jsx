@@ -175,6 +175,12 @@ export function FinancePayouts() {
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false });
 
+      // Build set of event IDs that already have completed payouts
+      const paidEventIds = new Set();
+      payouts?.filter(p => p.status === 'completed')?.forEach(p => {
+        if (p.event_id) paidEventIds.add(p.event_id);
+      });
+
       // Calculate stats and categorize by currency
       // Group orders by their actual event (child event if recurring, parent otherwise)
       const upcomingPayoutsByCurrency = {};
@@ -268,9 +274,11 @@ export function FinancePayouts() {
           eventDisplayName = `${event.title} - ${eventDate}`;
         }
 
-        // Determine status based on event end date and payout date
+        // Determine status based on payout completion, event end date, and payout date
         let status;
-        if (eventEndDate > now) {
+        if (paidEventIds.has(event.id)) {
+          status = 'Paid'; // Already paid out
+        } else if (eventEndDate > now) {
           status = 'Scheduled'; // Event hasn't ended yet
         } else if (payoutDate > now) {
           status = 'Processing'; // Event ended, within hold period
@@ -278,8 +286,10 @@ export function FinancePayouts() {
           status = 'Ready'; // Past payout date, ready for payout
         }
 
-        // All events with orders go into upcoming payouts list for visibility
-        upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
+        // Only add to upcoming totals if not yet paid
+        if (status !== 'Paid') {
+          upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
+        }
         upcoming.push({
           id: event.id,
           currency,
@@ -775,7 +785,12 @@ Status,${payout.status}
                         <p className="text-[#2969FF] font-semibold text-lg">{formatPrice(payout.netAmount, payout.currency)}</p>
                         <p className="text-xs text-muted-foreground">Net amount</p>
                       </div>
-                      <Badge className="bg-blue-100 text-blue-700">
+                      <Badge className={
+                        payout.status === 'Paid' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        payout.status === 'Ready' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                        payout.status === 'Processing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                        'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+                      }>
                         {payout.status}
                       </Badge>
                       <Button

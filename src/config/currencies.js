@@ -134,9 +134,13 @@ export const formatMultiCurrencyCompact = (amountsByCurrency) => {
     if (!currency) return '—';
     
     if (amount >= 1000000) {
-      return `${currency.symbol}${(amount / 1000000).toFixed(1)}M`;
+      const val = (amount / 1000000).toFixed(1);
+      return `${currency.symbol}${val.endsWith('.0') ? val.slice(0, -2) : val}M`;
+    } else if (amount >= 10000) {
+      const val = (amount / 1000).toFixed(1);
+      return `${currency.symbol}${val.endsWith('.0') ? val.slice(0, -2) : val}K`;
     } else if (amount >= 1000) {
-      return `${currency.symbol}${(amount / 1000).toFixed(0)}K`;
+      return `${currency.symbol}${amount.toLocaleString()}`;
     }
     return `${currency.symbol}${amount.toLocaleString()}`;
   };
