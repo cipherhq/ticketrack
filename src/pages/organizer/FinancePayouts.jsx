@@ -55,6 +55,7 @@ export function FinancePayouts() {
   const [escrowEvents, setEscrowEvents] = useState([]);
   const [escrowExpanded, setEscrowExpanded] = useState(false);
   const [totalBalanceByCurrency, setTotalBalanceByCurrency] = useState({});
+  const [selectedPayout, setSelectedPayout] = useState(null);
 
   useEffect(() => {
     if (organizer?.id) {
@@ -294,10 +295,10 @@ export function FinancePayouts() {
           status = 'Ready'; // Past payout date, ready for payout
         }
 
-        // Only add to upcoming totals if not yet paid
-        if (status !== 'Paid') {
-          upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
-        }
+        // Skip paid events from upcoming list entirely
+        if (status === 'Paid') return;
+
+        upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
         upcoming.push({
           id: event.id,
           currency,
@@ -846,7 +847,11 @@ Status,${payout.status}
           ) : (
             <div className="space-y-3">
               {payoutHistory.map((payout) => (
-                <div key={payout.id} className={`p-4 rounded-xl ${payout.is_advance ? 'bg-purple-50' : 'bg-muted'}`}>
+                <div
+                  key={payout.id}
+                  onClick={() => setSelectedPayout(payout)}
+                  className={`p-4 rounded-xl cursor-pointer transition-colors hover:ring-1 hover:ring-[#2969FF]/30 ${payout.is_advance ? 'bg-purple-50 dark:bg-purple-950/20' : 'bg-muted'}`}
+                >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -890,6 +895,91 @@ Status,${payout.status}
           )}
         </CardContent>
       </Card>
+
+      {/* Payout Detail Dialog */}
+      <Dialog open={!!selectedPayout} onOpenChange={(open) => !open && setSelectedPayout(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Payout Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPayout && (
+            <div className="space-y-4">
+              {/* Reference & Status */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-mono text-muted-foreground">{selectedPayout.payout_number || 'N/A'}</span>
+                <Badge className={`${
+                  selectedPayout.is_advance ? 'bg-purple-100 text-purple-700' :
+                  selectedPayout.status === 'completed' ? 'bg-green-100 text-green-700' :
+                  selectedPayout.status === 'processing' ? 'bg-blue-100 text-blue-700' :
+                  selectedPayout.status === 'failed' ? 'bg-red-100 text-red-700' :
+                  'bg-gray-100 text-gray-700'
+                }`}>
+                  {selectedPayout.is_advance ? 'advance' : selectedPayout.status}
+                </Badge>
+              </div>
+
+              {/* Amount Breakdown */}
+              <div className="bg-muted rounded-xl p-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Gross Amount</span>
+                  <span className="font-medium text-foreground">{formatPrice(selectedPayout.amount, selectedPayout.currency)}</span>
+                </div>
+                {selectedPayout.platform_fee_deducted > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Platform Fee</span>
+                    <span className="text-red-500">-{formatPrice(selectedPayout.platform_fee_deducted, selectedPayout.currency)}</span>
+                  </div>
+                )}
+                {selectedPayout.fee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Processing Fee</span>
+                    <span className="text-red-500">-{formatPrice(selectedPayout.fee, selectedPayout.currency)}</span>
+                  </div>
+                )}
+                <div className="border-t border-border/10 pt-2 flex justify-between font-semibold">
+                  <span className="text-foreground">Net Amount</span>
+                  <span className="text-green-600">{formatPrice(selectedPayout.net_amount || selectedPayout.amount, selectedPayout.currency)}</span>
+                </div>
+              </div>
+
+              {/* Details */}
+              <div className="space-y-3">
+                {selectedPayout.notes && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Event</p>
+                    <p className="text-sm text-foreground">{selectedPayout.notes.replace(/^Events?: /, '').replace(/^Advance Payment:? ?/, '')}</p>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Date Processed</p>
+                    <p className="text-sm text-foreground">{formatDate(selectedPayout.processed_at || selectedPayout.created_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Currency</p>
+                    <p className="text-sm text-foreground">{selectedPayout.currency}</p>
+                  </div>
+                </div>
+                {selectedPayout.transaction_reference && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Transaction Reference</p>
+                    <p className="text-sm font-mono text-foreground">{selectedPayout.transaction_reference}</p>
+                  </div>
+                )}
+                {selectedPayout.failure_reason && (
+                  <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                    <p className="text-xs text-red-500 mb-1">Failure Reason</p>
+                    <p className="text-sm text-red-700 dark:text-red-300">{selectedPayout.failure_reason}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Fast Payout Dialog */}
       <Dialog open={fastPayoutDialog} onOpenChange={setFastPayoutDialog}>
