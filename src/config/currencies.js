@@ -73,11 +73,13 @@ export const formatPrice = (amount, currencyCode) => {
   if (amount === 0) return 'Free';
   if (!amount && amount !== 0) return `${currency.symbol}0`;
   
+  // Show cents when they exist (e.g. $49.95), hide for round numbers (e.g. $50)
+  const hasDecimals = amount % 1 !== 0;
   return new Intl.NumberFormat(currency.locale, {
     style: 'currency',
     currency: currency.code,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
