@@ -820,11 +820,11 @@ export function AddBankAccount() {
 
                 {/* Verified Status (Paystack) */}
                 {isPaystackCountry && isVerified && (
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+                  <div className="p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
                     <div>
-                      <p className="font-medium text-green-800">Account Verified</p>
-                      <p className="text-sm text-green-700 mt-1">{formData.accountName}</p>
+                      <p className="font-medium text-green-800 dark:text-green-300">Account Verified</p>
+                      <p className="text-sm text-green-700 dark:text-green-400 mt-1">{formData.accountName}</p>
                     </div>
                   </div>
                 )}
@@ -860,19 +860,19 @@ export function AddBankAccount() {
 
                 {/* Error Message */}
                 {error && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                  <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
-                    <p className="text-red-800">{error}</p>
+                    <p className="text-red-800 dark:text-red-300">{error}</p>
                   </div>
                 )}
 
                 {/* Info for international accounts */}
                 {!isPaystackCountry && (
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl flex items-start gap-3">
                     <Info className="w-5 h-5 text-blue-500 mt-0.5" />
                     <div>
-                      <p className="font-medium text-blue-800">Important</p>
-                      <p className="text-sm text-blue-700 mt-1">
+                      <p className="font-medium text-blue-800 dark:text-blue-300">Important</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
                         Please double-check your bank details. Incorrect information may result in failed or delayed payouts.
                       </p>
                     </div>
