@@ -172,7 +172,7 @@ export function FinancePayouts() {
       // Fetch completed payouts
       const { data: payouts, error: payoutsError } = await supabase
         .from('payouts')
-        .select('*')
+        .select('*, bank_accounts(bank_name, account_name, account_number_encrypted)')
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false });
 
@@ -963,6 +963,15 @@ Status,${payout.status}
                     <p className="text-sm text-foreground">{selectedPayout.currency}</p>
                   </div>
                 </div>
+                {selectedPayout.bank_accounts && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Paid To</p>
+                    <p className="text-sm text-foreground">{selectedPayout.bank_accounts.bank_name} — {selectedPayout.bank_accounts.account_name}</p>
+                    {selectedPayout.bank_accounts.account_number_encrypted && (
+                      <p className="text-xs font-mono text-muted-foreground">••••••{selectedPayout.bank_accounts.account_number_encrypted.slice(-4)}</p>
+                    )}
+                  </div>
+                )}
                 {selectedPayout.transaction_reference && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Transaction Reference</p>
