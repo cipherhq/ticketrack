@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, Building, CreditCard, AlertCircle, CheckCircle, 
-  Loader2, Trash2, Star, Plus, Globe, Info, Eye, EyeOff 
+  ArrowLeft, Building, CreditCard, AlertCircle, CheckCircle,
+  Loader2, Trash2, Star, Plus, Globe, Info, Eye, EyeOff, Pencil, X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -196,7 +196,8 @@ export function AddBankAccount() {
   const [isVerified, setIsVerified] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
-  const [showAccountNumber, setShowAccountNumber] = useState(false);
+  const [showAccountNumber, setShowAccountNumber] = useState(true);
+  const [editingAccountId, setEditingAccountId] = useState(null);
 
   const isPaystackCountry = ['NG', 'GH'].includes(countryCode);
   const isUSCountry = countryCode === 'US';
@@ -488,24 +489,36 @@ export function AddBankAccount() {
         accountData.institution_number = formData.institutionNumber;
       }
 
-      const { data, error: insertError } = await supabase
-        .from('bank_accounts')
-        .insert(accountData)
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      // If this is the first account, set as default
-      const existingAccounts = bankAccounts.filter(a => a.country_code === countryCode);
-      if (existingAccounts.length === 0 && data) {
-        await supabase
+      if (editingAccountId) {
+        // Update existing account
+        const { error: updateError } = await supabase
           .from('bank_accounts')
-          .update({ is_default: true })
-          .eq('id', data.id);
+          .update(accountData)
+          .eq('id', editingAccountId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert new account
+        const { data, error: insertError } = await supabase
+          .from('bank_accounts')
+          .insert(accountData)
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+
+        // If this is the first account, set as default
+        const existingAccounts = bankAccounts.filter(a => a.country_code === countryCode);
+        if (existingAccounts.length === 0 && data) {
+          await supabase
+            .from('bank_accounts')
+            .update({ is_default: true })
+            .eq('id', data.id);
+        }
       }
 
       // Reset form
+      setEditingAccountId(null);
       setFormData({
         accountName: '',
         accountNumber: '',
@@ -521,8 +534,8 @@ export function AddBankAccount() {
       });
       setIsVerified(false);
       await loadBankAccounts();
-      
-      alert('Bank account added successfully!');
+
+      alert(editingAccountId ? 'Bank account updated successfully!' : 'Bank account added successfully!');
     } catch (error) {
       console.error('Error saving bank account:', error);
       setError(error.message || 'Failed to save bank account. Please try again.');
@@ -586,6 +599,50 @@ export function AddBankAccount() {
     }
   };
 
+  const editAccount = (account) => {
+    const isOtherBank = !isPaystackCountry &&
+      !(isUSCountry ? usBanks : isUKCountry ? ukBanks : isCACountry ? canadianBanks : [])
+        .some(b => b.name === account.bank_name);
+
+    setFormData({
+      accountName: account.account_name || '',
+      accountNumber: account.account_number || '',
+      accountNumberConfirm: account.account_number || '',
+      bankCode: account.bank_code || '',
+      bankName: isPaystackCountry ? (account.bank_name || '') : (isOtherBank ? 'Other' : (account.bank_name || '')),
+      customBankName: isOtherBank ? account.bank_name : '',
+      routingNumber: account.routing_number || '',
+      accountType: account.account_type || 'checking',
+      sortCode: account.sort_code ? formatSortCode(account.sort_code) : '',
+      transitNumber: account.transit_number || '',
+      institutionNumber: account.institution_number || '',
+    });
+    setEditingAccountId(account.id);
+    setIsVerified(isPaystackCountry);
+    setError('');
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingAccountId(null);
+    setFormData({
+      accountName: '',
+      accountNumber: '',
+      accountNumberConfirm: '',
+      bankCode: '',
+      bankName: '',
+      customBankName: '',
+      routingNumber: '',
+      accountType: 'checking',
+      sortCode: '',
+      transitNumber: '',
+      institutionNumber: '',
+    });
+    setIsVerified(false);
+    setError('');
+  };
+
   const maskAccountNumber = (num) => {
     if (!num || num.length < 4) return '••••';
     return '••••' + num.slice(-4);
@@ -610,7 +667,7 @@ export function AddBankAccount() {
       <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
         <Globe className="w-5 h-5 text-[#2969FF]" />
         <span className="text-2xl">{getCountryFlag()}</span>
-        <span className="text-foreground">Adding bank account for <strong>{getCountryName()}</strong></span>
+        <span className="text-foreground">{editingAccountId ? 'Editing' : 'Adding'} bank account for <strong>{getCountryName()}</strong></span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -618,10 +675,18 @@ export function AddBankAccount() {
         <div className="lg:col-span-2">
           <Card className="border-border/10 rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                Add New Bank Account
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  {editingAccountId ? <Pencil className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                  {editingAccountId ? 'Edit Bank Account' : 'Add New Bank Account'}
+                </CardTitle>
+                {editingAccountId && (
+                  <Button variant="ghost" size="sm" onClick={cancelEdit} className="text-muted-foreground rounded-lg">
+                    <X className="w-4 h-4 mr-1" />
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -886,7 +951,9 @@ export function AddBankAccount() {
                   className="w-full bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-12"
                 >
                   {isSaving ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{editingAccountId ? 'Updating...' : 'Saving...'}</>
+                  ) : editingAccountId ? (
+                    <><Pencil className="w-4 h-4 mr-2" />Update Bank Account</>
                   ) : (
                     <><Plus className="w-4 h-4 mr-2" />Add Bank Account</>
                   )}
@@ -1038,6 +1105,15 @@ export function AddBankAccount() {
                         Set Default
                       </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => editAccount(account)}
+                      className="text-foreground rounded-lg text-xs"
+                    >
+                      <Pencil className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
