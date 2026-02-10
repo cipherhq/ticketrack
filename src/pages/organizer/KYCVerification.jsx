@@ -120,10 +120,9 @@ export function KYCVerification() {
         .from('kyc_verifications')
         .select('*')
         .eq('organizer_id', organizer.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116' && error.code !== 'PGRST204' && error.code !== '42P01') {
-        // PGRST116 = no rows, PGRST204/42P01 = table not found - all expected when KYC not started
+      if (error) {
         console.warn('KYC load notice:', error.message);
       }
 
