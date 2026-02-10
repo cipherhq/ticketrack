@@ -82,7 +82,12 @@ export function OrganizerHome() {
         .in('key', ['stripe_connect_enabled', 'stripe_connect_countries']);
 
       const enabled = settings?.find(s => s.key === 'stripe_connect_enabled')?.value === 'true';
-      const countries = JSON.parse(settings?.find(s => s.key === 'stripe_connect_countries')?.value || '[]');
+      let countries = [];
+      try {
+        countries = JSON.parse(settings?.find(s => s.key === 'stripe_connect_countries')?.value || '[]');
+      } catch {
+        countries = [];
+      }
       
       if (!enabled || countries.length === 0) return;
       
@@ -410,14 +415,14 @@ export function OrganizerHome() {
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 p-6 text-white shadow-lg">
           <button
             onClick={dismissConnectBanner}
-            className="absolute top-4 right-4 p-1 rounded-full hover:bg-card/20 transition-colors"
+            className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/20 transition-colors"
             aria-label="Dismiss"
           >
             <X className="w-5 h-5" />
           </button>
           
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-card/20 flex items-center justify-center">
+            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
               <Zap className="w-8 h-8" />
             </div>
             

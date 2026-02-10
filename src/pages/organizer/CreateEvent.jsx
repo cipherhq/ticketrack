@@ -331,9 +331,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             .from("events")
             .select("*, ticket_types(*)")
             .eq("id", id)
-            .single();
+            .maybeSingle();
 
           if (error) throw error;
+          if (!event) throw new Error('Event not found');
           if (event) {
             setFormData({
               title: event.title || "",
@@ -635,7 +636,6 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     
     if (activeTab === "venue") {
       // Venue name is optional
-      console.log('[CreateEvent] Validating venue tab, venueAddress:', formData.venueAddress);
       if (!formData.venueAddress?.trim()) errors.push("Venue address is required");
     }
     
@@ -1015,7 +1015,6 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
 
   // Handle place selection from Google Maps autocomplete
   const handlePlaceSelect = (place) => {
-    console.log('[CreateEvent] handlePlaceSelect called with:', place);
     setFormData(prev => {
       const newData = {
         ...prev,
@@ -1028,7 +1027,6 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         venueLat: place.lat || null,
         venueLng: place.lng || null,
       };
-      console.log('[CreateEvent] Setting venueAddress to:', newData.venueAddress);
       return newData;
     });
   };
@@ -1685,7 +1683,6 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             }
           }
           
-          console.log(`Created ${childDates.length} recurring child events`);
         }
 
       }
@@ -1877,7 +1874,6 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
               }
             }
           });
-          console.log('Event published notification sent');
         } catch (emailErr) {
           console.error('Failed to send event published email:', emailErr);
           // Don't fail event creation if email fails

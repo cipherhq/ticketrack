@@ -60,17 +60,17 @@ export function AdminDashboard() {
       const todayISO = today.toISOString();
 
       // Get total counts by type
-      const { data: viewData } = await supabase
+      const { count: totalViews } = await supabase
         .from('user_event_interactions')
         .select('id', { count: 'exact', head: true })
         .eq('interaction_type', 'view');
 
-      const { data: likeData } = await supabase
+      const { count: totalLikes } = await supabase
         .from('user_event_interactions')
         .select('id', { count: 'exact', head: true })
         .eq('interaction_type', 'like');
 
-      const { data: shareData } = await supabase
+      const { count: totalShares } = await supabase
         .from('user_event_interactions')
         .select('id', { count: 'exact', head: true })
         .eq('interaction_type', 'share');
@@ -94,9 +94,9 @@ export function AdminDashboard() {
         .select('id', { count: 'exact', head: true });
 
       setEngagementStats({
-        totalViews: viewData || 0,
+        totalViews: totalViews || 0,
         totalLikes: totalSaved || 0,
-        totalShares: shareData || 0,
+        totalShares: totalShares || 0,
         viewsToday: viewsToday || 0,
         likesToday: likesToday || 0,
       });

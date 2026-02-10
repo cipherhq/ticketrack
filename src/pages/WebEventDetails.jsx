@@ -937,16 +937,17 @@ export function WebEventDetails() {
                             </div>
                             {!isSoldOut && (
                               <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500">Quantity</span>
+                                <span className="text-xs text-muted-foreground">Quantity</span>
                                 <div className="flex items-center gap-3">
                                   <button
                                     onClick={() => updateTicketQuantity(tier.id, -1)}
                                     disabled={!selectedTickets[tier.id]}
-                                    className="w-9 h-9 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xl font-bold select-none"
+                                    className="w-9 h-9 rounded-lg border border-border bg-background flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted active:bg-muted/80 text-foreground text-xl font-bold select-none"
+                                    aria-label="Decrease quantity"
                                   >
                                     −
                                   </button>
-                                  <span className="w-8 text-center font-semibold text-gray-900 text-lg">
+                                  <span className="w-8 text-center font-semibold text-foreground text-lg">
                                     {selectedTickets[tier.id] || 0}
                                   </span>
                                   <button
@@ -955,7 +956,8 @@ export function WebEventDetails() {
                                       (selectedTickets[tier.id] || 0) >= remaining ||
                                       (selectedTickets[tier.id] || 0) >= 10
                                     }
-                                    className="w-9 h-9 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xl font-bold select-none"
+                                    className="w-9 h-9 rounded-lg border border-border bg-background flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted active:bg-muted/80 text-foreground text-xl font-bold select-none"
+                                    aria-label="Increase quantity"
                                   >
                                     +
                                   </button>

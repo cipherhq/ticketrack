@@ -1,4 +1,5 @@
 import { formatPrice } from '@/config/currencies'
+import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, Calendar, MapPin, SlidersHorizontal, ChevronDown, X, Loader2, Monitor } from 'lucide-react'
@@ -235,7 +236,7 @@ export function WebEventBrowse() {
       console.error('Error details:', error.message, error.stack)
       setEvents([])
       // Show error to user
-      alert('Failed to load events. Please check your connection and try again.')
+      toast.error('Failed to load events. Please check your connection and try again.')
     } finally {
       setLoading(false)
     }
@@ -324,8 +325,7 @@ export function WebEventBrowse() {
               placeholder="Min"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              style={{ fontSize: '16px' }}
+              className="w-full px-3 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base"
             />
             <span className="text-muted-foreground">-</span>
             <input
@@ -333,8 +333,7 @@ export function WebEventBrowse() {
               placeholder="Max"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              style={{ fontSize: '16px' }}
+              className="w-full px-3 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base"
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -608,7 +607,7 @@ export function WebEventBrowse() {
                         src={event.image_url}
                         alt={event.title}
                         className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${event.isSoldOut ? 'grayscale opacity-70' : ''}`}
-                        onError={(e) => { e.target.style.display = 'none' }}
+                        onError={(e) => { e.target.src = ''; e.target.style.display = 'none'; e.target.parentElement.classList.add('flex', 'items-center', 'justify-center'); e.target.insertAdjacentHTML('afterend', '<div class="text-muted-foreground text-sm">No Image</div>'); }}
                         loading="lazy"
                         decoding="async"
                       />
@@ -620,7 +619,7 @@ export function WebEventBrowse() {
                         </div>
                       )}
                       {event.category && (
-                        <Badge className="absolute top-4 left-4 bg-card text-foreground border-0 font-medium shadow-sm">
+                        <Badge className="absolute top-4 left-4 bg-black/60 text-white border-0 font-medium backdrop-blur-sm">
                           {event.category}
                         </Badge>
                       )}

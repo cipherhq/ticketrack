@@ -107,7 +107,7 @@ export function EventPayouts() {
         const organizerNet = totalSales - platformFees - totalPromoterCommission;
 
         // Get all bank accounts, sorted by is_default
-        const bankAccounts = event.organizers?.bank_accounts?.sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0)) || [];
+        const bankAccounts = event.organizers?.bank_accounts?.sort((a, b) => (a.is_default ? -1 : 0) - (b.is_default ? -1 : 0)) || [];
         const primaryBankAccount = bankAccounts.find(b => b.is_default) || bankAccounts[0];
 
         return {
@@ -169,7 +169,7 @@ export function EventPayouts() {
         const { data: existingPayout } = await supabase
           .from('payouts')
           .select('id, payout_number')
-          .eq('notes', `Event: ${event.title} (${event.id})%`)
+          .like('notes', `%${event.id}%`)
           .eq('status', 'completed')
           .limit(1);
 

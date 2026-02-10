@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -297,7 +298,7 @@ export function OrganizerOrders() {
         .eq('order_id', refundOrder.id)
         .limit(1);
 
-      if (ticketError || !orderTickets || orderTickets.length === 0) {
+      if (ticketError || !orderTickets?.length) {
         throw new Error('No tickets found for this order');
       }
 
@@ -312,7 +313,7 @@ export function OrganizerOrders() {
         .single();
 
       if (existingRequest) {
-        alert('A refund request already exists for this order. Status: ' + existingRequest.status);
+        toast.error('A refund request already exists for this order. Status: ' + existingRequest.status);
         setRefundDialog(false);
         return;
       }
@@ -350,13 +351,13 @@ export function OrganizerOrders() {
         })
         .eq('id', refundOrder.id);
 
-      alert('Refund request submitted successfully!\n\nTicketrack Finance has received your request and will process it within 3-5 business days.\n\nYou and the attendee will receive an email once the refund is completed.');
+      toast.success('Refund request submitted! Ticketrack Finance will process it within 3-5 business days.');
       
       setRefundDialog(false);
       loadOrders();
     } catch (error) {
       console.error('Refund request error:', error);
-      alert('Failed to submit refund request: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to submit refund request: ' + (error.message || 'Unknown error'));
     } finally {
       setRefunding(false);
     }
@@ -716,9 +717,9 @@ export function OrganizerOrders() {
                 />
               </div>
             )}
-            <div className="p-3 bg-blue-50 rounded-xl flex gap-2">
-              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
-              <p className="text-sm text-blue-800">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl flex gap-2">
+              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <p className="text-sm text-blue-800 dark:text-blue-300">
                 Ticketrack Finance will process the actual refund. You and the attendee will be notified via email once completed.
               </p>
             </div>

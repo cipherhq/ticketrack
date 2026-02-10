@@ -11,6 +11,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { formatPrice, getDefaultCurrency, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+import { toast } from 'sonner';
 
 // Helper to format currency object as multi-currency string
 const formatCurrencyBreakdown = (currencyObj) => {
@@ -139,6 +140,7 @@ export function FinanceDashboard() {
       });
     } catch (error) {
       console.error('Error loading dashboard:', error);
+      toast.error('Failed to load dashboard data. Please refresh.');
     } finally {
       setLoading(false);
     }

@@ -714,7 +714,7 @@ Status,${payout.status}
               <p className="text-sm text-muted-foreground">
                 Your earnings are automatically paid to your registered bank account after each event ends.
                 The hold period varies by event type (0-7 days) and event size, then funds are transferred within 3-5 business days.
-                A 5% platform fee is deducted from ticket sales.
+                A platform fee is deducted from ticket sales as per your country's fee structure.
               </p>
             </div>
           </div>

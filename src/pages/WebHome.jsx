@@ -465,24 +465,24 @@ export function WebHome() {
             </p>
             
             {/* New Search Bar */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 flex flex-col lg:flex-row gap-2 max-w-4xl mb-12 shadow-xl">
+            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl p-3 flex flex-col lg:flex-row gap-2 max-w-4xl mb-12 shadow-xl">
               {/* Location Input */}
               <div className="flex-1 relative">
-                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <MapPin className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Location</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Location</div>
                     <input
                       type="text"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="City or Venue"
-                      className="w-full outline-none text-sm text-gray-900 placeholder-gray-400 bg-transparent"
+                      className="w-full outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 bg-transparent"
                     />
                   </div>
                   {location && (
-                    <button onClick={() => setLocation('')} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={() => setLocation('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Clear location">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -492,23 +492,23 @@ export function WebHome() {
               {/* Date Filter */}
               <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
                 <div
-                  className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   onClick={() => setShowDateDropdown(!showDateDropdown)}
                 >
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Dates</div>
-                    <div className="text-sm text-gray-900">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Dates</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </div>
                 {showDateDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-20">
                     {dateOptions.map((option) => (
                       <button
                         key={option.value}
                         onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
-                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 text-sm first:rounded-t-xl last:rounded-b-xl ${dateFilter === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-900'}`}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm first:rounded-t-xl last:rounded-b-xl ${dateFilter === option.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'text-gray-900 dark:text-gray-100'}`}
                       >
                         {option.label}
                       </button>
@@ -519,21 +519,21 @@ export function WebHome() {
 
               {/* Search Input */}
               <div className="flex-[2] relative">
-                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <Search className="w-5 h-5 text-blue-600" />
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Search</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Search</div>
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       placeholder="Artist, Event or Venue"
-                      className="w-full outline-none text-sm text-gray-900 placeholder-gray-400 bg-transparent"
+                      className="w-full outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 bg-transparent"
                     />
                   </div>
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Clear search">
                       <X className="w-4 h-4" />
                     </button>
                   )}

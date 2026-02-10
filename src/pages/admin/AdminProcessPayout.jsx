@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { sendPayoutProcessedEmail, sendAdminPayoutCompletedEmail } from '@/lib/emailService';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { getFeesByCurrency } from '@/config/fees';
 
 export function AdminProcessPayout() {
   const navigate = useNavigate();
@@ -130,12 +131,12 @@ export function AdminProcessPayout() {
 
     try {
       const amount = parseFloat(selectedOrganizer.available_balance) || 0;
-      const platformFee = amount * 0.1; // 10% platform fee
+      const currency = getDefaultCurrency(selectedOrganizer.country_code);
+      const fees = await getFeesByCurrency(currency);
+      const feeRate = fees?.serviceFeePercent || 0.05;
+      const platformFee = Math.round(amount * feeRate * 100) / 100;
       const netAmount = amount - platformFee;
       const reference = `PAY-${Date.now().toString(36).toUpperCase()}`;
-
-      // Create payout record
-      const currency = getDefaultCurrency(selectedOrganizer.country_code);
       const eventTitles = pendingEvents.map(e => e.title).join(', ');
       const eventIds = pendingEvents.map(e => e.id);
       const { data: payout, error: payoutError } = await supabase

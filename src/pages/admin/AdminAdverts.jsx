@@ -8,6 +8,7 @@ import {
   Globe, Mail, Phone, User
 } from 'lucide-react';
 import { formatPrice, currencies } from '@/config/currencies';
+import { toast } from 'sonner';
 
 // Helper to get currency symbol
 const getCurrencySymbol = (code) => currencies[code]?.symbol || code;
@@ -317,11 +318,14 @@ export default function AdminAdverts() {
               endDate: endDate.toISOString(),
             },
           },
-        }).catch(() => {}); // Non-blocking
+        }).catch((err) => {
+          console.error('Failed to send approval email:', err);
+          toast.error('Ad approved, but notification email failed to send.');
+        });
       }
       fetchAds();
     } else {
-      alert('Error approving ad: ' + error.message);
+      toast.error('Error approving ad: ' + error.message);
     }
   };
 
@@ -358,13 +362,16 @@ export default function AdminAdverts() {
               rejectionReason: rejectionReason,
             },
           },
-        }).catch(() => {}); // Non-blocking
+        }).catch((err) => {
+          console.error('Failed to send rejection email:', err);
+          toast.error('Ad rejected, but notification email failed to send.');
+        });
       }
       setShowRejectModal(null);
       setRejectionReason('');
       fetchAds();
     } else {
-      alert('Error rejecting ad: ' + error.message);
+      toast.error('Error rejecting ad: ' + error.message);
     }
   };
 

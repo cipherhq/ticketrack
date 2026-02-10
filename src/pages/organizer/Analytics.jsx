@@ -383,17 +383,8 @@ export function Analytics() {
     link.click();
   };
 
-  // Format currency with appropriate symbol based on the currency code
-  const formatCurrencyCompact = (amount, currency = defaultCurrency) => {
-    const symbol = { USD: '$', GBP: '£', EUR: '€', NGN: '₦', GHS: '₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' }[currency] || currency + ' ';
-    if (amount >= 1000000) {
-      return `${symbol}${(amount / 1000000).toFixed(1)}M`;
-    }
-    if (amount >= 1000) {
-      return `${symbol}${(amount / 1000).toFixed(0)}K`;
-    }
-    return `${symbol}${amount.toLocaleString()}`;
-  };
+  // Use shared formatPrice for consistent currency display
+  const formatCurrencyCompact = (amount, currency = defaultCurrency) => formatPrice(amount, currency);
 
   const maxSales = Math.max(...salesByDay.map(d => d.sales), 1);
 
