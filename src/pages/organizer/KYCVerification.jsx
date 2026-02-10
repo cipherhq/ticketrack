@@ -100,7 +100,8 @@ export function KYCVerification() {
   
   // Stripe Identity (for US/UK/CA)
   const [stripeIdentityLoading, setStripeIdentityLoading] = useState(false);
-  
+  const [checkingIdentity, setCheckingIdentity] = useState(false);
+
   // Manual upload fallback
   const [isManualUploadOpen, setIsManualUploadOpen] = useState(false);
   const [manualIdFile, setManualIdFile] = useState(null);
@@ -112,6 +113,46 @@ export function KYCVerification() {
       loadKycData();
     }
   }, [organizer?.id]);
+
+  // Auto-check Stripe Identity status when returning from Stripe or when session exists
+  useEffect(() => {
+    if (!organizer?.id) return;
+    const isStripeCountry = ['US', 'GB', 'CA'].includes(organizer?.country_code);
+    const hasSession = organizer?.stripe_identity_session_id;
+    const notYetVerified = !organizer?.kyc_verified && organizer?.stripe_identity_status !== 'verified';
+
+    if (isStripeCountry && hasSession && notYetVerified) {
+      checkStripeIdentityStatus();
+    }
+  }, [organizer?.id, organizer?.stripe_identity_session_id]);
+
+  const checkStripeIdentityStatus = async () => {
+    setCheckingIdentity(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('check-stripe-identity-status', {
+        body: { organizer_id: organizer.id },
+      });
+
+      if (error) {
+        console.warn('Identity status check:', error.message);
+        return;
+      }
+
+      if (result?.status === 'verified') {
+        setSuccess('Identity verified successfully! You can now receive payouts.');
+        // Reload page to reflect updated organizer data
+        window.location.reload();
+      } else if (result?.status === 'processing') {
+        setSuccess('Your verification is being processed. This page will update automatically.');
+        // Poll again in 10 seconds
+        setTimeout(() => checkStripeIdentityStatus(), 10000);
+      }
+    } catch (err) {
+      console.warn('Identity check error:', err);
+    } finally {
+      setCheckingIdentity(false);
+    }
+  };
 
   const loadKycData = async () => {
     setLoading(true);
@@ -606,6 +647,21 @@ export function KYCVerification() {
                     {stripeIdentityLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
                     Continue Verification
                   </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : checkingIdentity ? (
+          <Card className="border-blue-200 bg-blue-50/50 rounded-2xl overflow-hidden">
+            <div className="h-2 bg-blue-500 animate-pulse" />
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Checking Verification Status...</h3>
+                  <p className="text-muted-foreground">We're confirming your identity verification with Stripe. This will only take a moment.</p>
                 </div>
               </div>
             </CardContent>
