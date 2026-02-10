@@ -103,7 +103,8 @@ ON CONFLICT (id) DO NOTHING;
 ALTER TABLE kyc_verifications ENABLE ROW LEVEL SECURITY;
 
 -- Organizers can view their own KYC
-CREATE POLICY IF NOT EXISTS "Organizers can view own KYC"
+DROP POLICY IF EXISTS "Organizers can view own KYC" ON kyc_verifications;
+CREATE POLICY "Organizers can view own KYC"
   ON kyc_verifications FOR SELECT
   USING (
     organizer_id IN (
@@ -112,7 +113,8 @@ CREATE POLICY IF NOT EXISTS "Organizers can view own KYC"
   );
 
 -- Organizers can insert their own KYC
-CREATE POLICY IF NOT EXISTS "Organizers can insert own KYC"
+DROP POLICY IF EXISTS "Organizers can insert own KYC" ON kyc_verifications;
+CREATE POLICY "Organizers can insert own KYC"
   ON kyc_verifications FOR INSERT
   WITH CHECK (
     organizer_id IN (
@@ -121,7 +123,8 @@ CREATE POLICY IF NOT EXISTS "Organizers can insert own KYC"
   );
 
 -- Organizers can update their own KYC
-CREATE POLICY IF NOT EXISTS "Organizers can update own KYC"
+DROP POLICY IF EXISTS "Organizers can update own KYC" ON kyc_verifications;
+CREATE POLICY "Organizers can update own KYC"
   ON kyc_verifications FOR UPDATE
   USING (
     organizer_id IN (
@@ -135,7 +138,8 @@ CREATE POLICY IF NOT EXISTS "Organizers can update own KYC"
 ALTER TABLE kyc_documents ENABLE ROW LEVEL SECURITY;
 
 -- Organizers can view their own documents
-CREATE POLICY IF NOT EXISTS "Organizers can view own KYC documents"
+DROP POLICY IF EXISTS "Organizers can view own KYC documents" ON kyc_documents;
+CREATE POLICY "Organizers can view own KYC documents"
   ON kyc_documents FOR SELECT
   USING (
     organizer_id IN (
@@ -144,7 +148,8 @@ CREATE POLICY IF NOT EXISTS "Organizers can view own KYC documents"
   );
 
 -- Organizers can insert their own documents
-CREATE POLICY IF NOT EXISTS "Organizers can insert own KYC documents"
+DROP POLICY IF EXISTS "Organizers can insert own KYC documents" ON kyc_documents;
+CREATE POLICY "Organizers can insert own KYC documents"
   ON kyc_documents FOR INSERT
   WITH CHECK (
     organizer_id IN (
@@ -157,7 +162,8 @@ CREATE POLICY IF NOT EXISTS "Organizers can insert own KYC documents"
 -- =============================================
 
 -- Authenticated users can upload to their own folder
-CREATE POLICY IF NOT EXISTS "Users can upload KYC documents"
+DROP POLICY IF EXISTS "Users can upload KYC documents" ON storage.objects;
+CREATE POLICY "Users can upload KYC documents"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'kyc-documents'
@@ -166,7 +172,8 @@ CREATE POLICY IF NOT EXISTS "Users can upload KYC documents"
   );
 
 -- Users can view their own KYC documents
-CREATE POLICY IF NOT EXISTS "Users can view own KYC documents"
+DROP POLICY IF EXISTS "Users can view own KYC documents" ON storage.objects;
+CREATE POLICY "Users can view own KYC documents"
   ON storage.objects FOR SELECT
   USING (
     bucket_id = 'kyc-documents'
