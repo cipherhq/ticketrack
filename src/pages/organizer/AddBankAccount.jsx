@@ -167,8 +167,8 @@ const validateCAInstitutionNumber = (institution) => {
 export function AddBankAccount() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
-  const countryCode = organizer?.country_code || 'NG';
-  
+
+  const [countryCode, setCountryCode] = useState(organizer?.country_code || 'NG');
   const [banks, setBanks] = useState([]);
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [bankAccounts, setBankAccounts] = useState([]);
@@ -204,12 +204,39 @@ export function AddBankAccount() {
   const isUKCountry = countryCode === 'GB';
   const isCACountry = countryCode === 'CA';
 
+  // Set country from organizer on first load
+  useEffect(() => {
+    if (organizer?.country_code) {
+      setCountryCode(organizer.country_code);
+    }
+  }, [organizer?.country_code]);
+
   useEffect(() => {
     fetchBanks();
     if (organizer?.id) {
       loadBankAccounts();
     }
   }, [organizer?.id, countryCode]);
+
+  const handleCountryChange = (value) => {
+    setCountryCode(value);
+    setEditingAccountId(null);
+    setFormData({
+      accountName: '',
+      accountNumber: '',
+      accountNumberConfirm: '',
+      bankCode: '',
+      bankName: '',
+      customBankName: '',
+      routingNumber: '',
+      accountType: 'checking',
+      sortCode: '',
+      transitNumber: '',
+      institutionNumber: '',
+    });
+    setIsVerified(false);
+    setError('');
+  };
 
   const fetchBanks = async () => {
     setLoadingBanks(true);
@@ -663,11 +690,22 @@ export function AddBankAccount() {
         </div>
       </div>
 
-      {/* Country indicator */}
-      <div className="flex items-center gap-2 p-3 bg-muted rounded-xl">
+      {/* Country selector */}
+      <div className="flex items-center gap-3 p-3 bg-muted rounded-xl">
         <Globe className="w-5 h-5 text-[#2969FF]" />
-        <span className="text-2xl">{getCountryFlag()}</span>
-        <span className="text-foreground">{editingAccountId ? 'Editing' : 'Adding'} bank account for <strong>{getCountryName()}</strong></span>
+        <span className="text-foreground">Country:</span>
+        <Select value={countryCode} onValueChange={handleCountryChange} disabled={!!editingAccountId}>
+          <SelectTrigger className="w-auto min-w-[200px] rounded-xl border-border/10 h-10 bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="NG">Nigeria</SelectItem>
+            <SelectItem value="GH">Ghana</SelectItem>
+            <SelectItem value="US">United States</SelectItem>
+            <SelectItem value="GB">United Kingdom</SelectItem>
+            <SelectItem value="CA">Canada</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
