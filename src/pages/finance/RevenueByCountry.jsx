@@ -6,6 +6,17 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 
+const countryNames = {
+  NG: { name: 'Nigeria', flag: '🇳🇬' },
+  GH: { name: 'Ghana', flag: '🇬🇭' },
+  US: { name: 'United States', flag: '🇺🇸' },
+  GB: { name: 'United Kingdom', flag: '🇬🇧' },
+  CA: { name: 'Canada', flag: '🇨🇦' },
+  KE: { name: 'Kenya', flag: '🇰🇪' },
+  ZA: { name: 'South Africa', flag: '🇿🇦' },
+  AU: { name: 'Australia', flag: '🇦🇺' },
+};
+
 export function RevenueByCountry() {
   const { logFinanceAction } = useFinance();
   const [loading, setLoading] = useState(true);
@@ -19,12 +30,12 @@ export function RevenueByCountry() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: orders } = await supabase.from('orders').select('platform_fee, currency, events(country_code)').eq('status', 'completed');
+      const { data: orders } = await supabase.from('orders').select('platform_fee, currency, events(organizers(country_code))').eq('status', 'completed');
 
-      // Group by country, then by currency within each country
+      // Group by organizer's country, then by currency within each country
       const countryMap = {};
       orders?.forEach(o => {
-        const country = o.events?.country_code || 'Unknown';
+        const country = o.events?.organizers?.country_code || 'Unknown';
         const currency = o.currency || 'USD';
         if (!countryMap[country]) {
           countryMap[country] = { revenueByCurrency: {}, total: 0 };
@@ -74,14 +85,18 @@ export function RevenueByCountry() {
               <div className="space-y-3">
                 {revenueByCountry.map((item, idx) => {
                   const percentage = totalRevenue > 0 ? (item.total / totalRevenue) * 100 : 0;
+                  const countryInfo = countryNames[item.country];
                   return (
                     <div key={idx} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-[#2969FF]/10 flex items-center justify-center font-semibold text-[#2969FF]">
-                            {item.country?.slice(0, 2) || '??'}
+                          <div className="w-10 h-10 rounded-lg bg-[#2969FF]/10 flex items-center justify-center text-xl">
+                            {countryInfo?.flag || item.country?.slice(0, 2) || '??'}
                           </div>
-                          <p className="font-medium text-foreground">{item.country || 'Unknown'}</p>
+                          <div>
+                            <p className="font-medium text-foreground">{countryInfo?.name || item.country || 'Unknown'}</p>
+                            <p className="text-xs text-muted-foreground">{item.country}</p>
+                          </div>
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-foreground">{formatMultiCurrencyCompact(item.revenueByCurrency)}</p>
