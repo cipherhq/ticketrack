@@ -51,6 +51,7 @@ export function WebEventBrowse() {
   const [events, setEvents] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
   const [userCountryCode, setUserCountryCode] = useState(null)
   const [locationPermission, setLocationPermission] = useState(null) // 'granted', 'denied', 'prompt'
@@ -121,7 +122,8 @@ export function WebEventBrowse() {
 
   const loadEvents = async (useLocation = null, countryCode = null) => {
     setLoading(true)
-    
+    setLoadError(false)
+
     try {
       const { start, end } = getDateRange()
       
@@ -233,9 +235,8 @@ export function WebEventBrowse() {
       console.log(`Loaded ${results.length} events`)
     } catch (error) {
       console.error('Error loading events:', error)
-      console.error('Error details:', error.message, error.stack)
       setEvents([])
-      // Show error to user
+      setLoadError(true)
       toast.error('Failed to load events. Please check your connection and try again.')
     } finally {
       setLoading(false)
@@ -323,6 +324,7 @@ export function WebEventBrowse() {
             <input
               type="number"
               placeholder="Min"
+              min="0"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
               className="w-full px-3 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base"
@@ -331,6 +333,7 @@ export function WebEventBrowse() {
             <input
               type="number"
               placeholder="Max"
+              min="0"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
               className="w-full px-3 py-2 border border-border/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base"
@@ -584,6 +587,15 @@ export function WebEventBrowse() {
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
                 <span className="ml-3 text-muted-foreground">Loading events...</span>
+              </div>
+            ) : loadError ? (
+              <div className="text-center py-16 bg-card rounded-2xl">
+                <div className="text-6xl mb-4">⚠️</div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">Failed to load events</h3>
+                <p className="text-muted-foreground mb-6">Please check your connection and try again.</p>
+                <Button onClick={() => loadEvents(userLocation)} className="bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl min-h-[44px] touch-manipulation">
+                  Retry
+                </Button>
               </div>
             ) : events.length === 0 ? (
               <div className="text-center py-16 bg-card rounded-2xl">

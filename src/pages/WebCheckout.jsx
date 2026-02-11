@@ -650,7 +650,10 @@ export function WebCheckout() {
   const discountAmount = promoApplied?.discountAmount || 0
   // Calculate fees on the discounted subtotal so fees are consistent across all payment providers
   const discountedSubtotal = Math.max(0, totalAmount - discountAmount)
-  const { displayFee: calculatedFee, serviceFee: platformFee, processingFee } = calculateFees(discountedSubtotal, ticketCount, fees, feeProvider)
+  // If subtotal is 0 (100% discount), don't charge any fees (including fixed per-ticket fees)
+  const { displayFee: calculatedFee, serviceFee: platformFee, processingFee } = discountedSubtotal === 0
+    ? { displayFee: 0, serviceFee: 0, processingFee: 0 }
+    : calculateFees(discountedSubtotal, ticketCount, fees, feeProvider)
 
   // Check if organizer is absorbing the fee
   const organizerAbsorbsFee = event?.fee_handling === 'absorb'
@@ -1481,6 +1484,9 @@ export function WebCheckout() {
 
   // Handle payment based on provider
   const handlePayment = () => {
+    // Prevent double-clicks - check loading state immediately
+    if (loading) return;
+
     if (paymentProvider === 'stripe') {
       handleStripePayment();
     } else if (paymentProvider === 'paypal') {
@@ -1614,12 +1620,12 @@ const formatDate = (dateString) => {
       </Button>
 
       {/* Countdown Timer */}
-      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+      <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-amber-600" />
-          <span className="text-amber-800 font-medium">Complete checkout in:</span>
+          <span className="text-amber-800 dark:text-amber-400 font-medium">Complete checkout in:</span>
         </div>
-        <span className={`text-xl font-bold ${timeLeft <= 60 ? "text-red-600" : "text-amber-800"}`}>
+        <span className={`text-xl font-bold ${timeLeft <= 60 ? "text-red-600 dark:text-red-400" : "text-amber-800 dark:text-amber-400"}`}>
           {String(Math.floor(timeLeft / 60)).padStart(2, "0")}:{String(timeLeft % 60).padStart(2, "0")}
         </span>
       </div>
@@ -1630,7 +1636,7 @@ const formatDate = (dateString) => {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">{error}</div>
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-700 dark:text-red-400">{error}</div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -1853,15 +1859,15 @@ const formatDate = (dateString) => {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground">Have a promo code?</p>
                 {promoApplied ? (
-                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+                  <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
                     <div className="flex items-center gap-2">
                       <Tag className="w-4 h-4 text-green-600" />
-                      <span className="font-mono font-medium text-green-700">{promoApplied.code}</span>
-                      <span className="text-sm text-green-600">
+                      <span className="font-mono font-medium text-green-700 dark:text-green-400">{promoApplied.code}</span>
+                      <span className="text-sm text-green-600 dark:text-green-400">
                         ({promoApplied.discount_type === 'percentage' ? promoApplied.discount_value + '% off' : formatPrice(promoApplied.discount_value, event?.currency) + ' off'})
                       </span>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={removePromoCode} className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2">
+                    <Button variant="ghost" size="sm" onClick={removePromoCode} className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 h-8 px-2">
                       <X className="w-4 h-4" />
                     </Button>
                   </div>

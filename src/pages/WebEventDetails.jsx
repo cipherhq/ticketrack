@@ -531,7 +531,7 @@ export function WebEventDetails() {
     setSelectedTickets(prev => {
       const current = prev[tierId] || 0
       const tier = ticketTypes.find(t => t.id === tierId)
-      const maxAvailable = (tier?.quantity_available || 100) - (tier?.quantity_sold || 0)
+      const maxAvailable = (tier?.quantity_available || tier?.quantity_total || 0) - (tier?.quantity_sold || 0)
       // Total selected across all ticket types in this order
       const otherSelected = Object.entries(prev).reduce((sum, [id, qty]) => id !== tierId ? sum + qty : sum, 0)
       const maxForThisType = Math.max(0, userRemainingAllowance - otherSelected)
@@ -917,7 +917,7 @@ export function WebEventDetails() {
                                   Sold Out
                                 </Badge>
                               ) : (() => {
-                                const total = tier.quantity_available || tier.quantity_total || 100;
+                                const total = tier.quantity_available || tier.quantity_total || 0;
                                 const percentRemaining = (remaining / total) * 100;
                                 const isLowStock = remaining <= 10 || percentRemaining <= 20;
 
@@ -1895,7 +1895,7 @@ export function WebEventDetails() {
                                 Sold Out
                               </Badge>
                             ) : (() => {
-                              const total = tier.quantity_available || tier.quantity_total || 100;
+                              const total = tier.quantity_available || tier.quantity_total || 0;
                               const percentRemaining = (remaining / total) * 100;
                               const isLowStock = remaining <= 10 || percentRemaining <= 20;
                               
