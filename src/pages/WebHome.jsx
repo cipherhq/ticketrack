@@ -77,7 +77,7 @@ const EventCard = ({ event, showDistance = false }) => {
           </div>
         )}
         {event.category && (
-          <span className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-medium px-2.5 py-1 rounded-full shadow-sm">
+          <span className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
             {event.category}
           </span>
         )}
@@ -183,7 +183,7 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
                 </div>
               )}
               {event.category && (
-                <span className="absolute top-3 left-3 bg-card/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
+                <span className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-full">
                   {event.category}
                 </span>
               )}
