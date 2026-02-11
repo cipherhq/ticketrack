@@ -710,22 +710,22 @@ export function WebEventDetails() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       {/* Back Button */}
-      <Button 
-        variant="ghost" 
-        className="mb-6 text-muted-foreground hover:text-foreground"
+      <Button
+        variant="ghost"
+        className="mb-3 text-muted-foreground hover:text-foreground"
         onClick={() => navigate(-1)}
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back
       </Button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
           {/* Event Image */}
-          <div className="aspect-video rounded-2xl overflow-hidden bg-muted">
+          <div className="aspect-[2/1] lg:aspect-[21/9] rounded-2xl overflow-hidden bg-muted">
             <img 
               src={event.image_url} 
               alt={event.title}
@@ -1765,7 +1765,7 @@ export function WebEventDetails() {
         {/* Ticket Sidebar - Hidden on mobile, shown on desktop */}
         <div className="hidden lg:block lg:col-span-1">
           <Card className="border-border/10 rounded-2xl sticky top-16 md:top-20 lg:top-24 z-10">
-            <CardContent className="p-6 space-y-6">
+            <CardContent className="p-5 space-y-4">
               {/* Recurring Event Date Selector */}
               {event?.is_recurring && (childEvents.length > 0 || event) && (
                 <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-xl">
@@ -1811,7 +1811,7 @@ export function WebEventDetails() {
               )}
               
               <div>
-                <h2 className="text-2xl font-bold text-foreground mb-4">
+                <h2 className="text-xl font-bold text-foreground mb-3">
                   {isFreeEvent ? 'Register' : 'Select Tickets'}
                 </h2>
 
@@ -2021,7 +2021,7 @@ export function WebEventDetails() {
           </Card>
 
           {/* Sidebar Ad */}
-          <div className="hidden lg:block mt-6">
+          <div className="hidden lg:block mt-4">
             <AdBanner position="right" ads={ads.right} />
           </div>
         </div>
@@ -2041,7 +2041,7 @@ export function WebEventDetails() {
 
       {/* Recommended Events */}
       {recommendedEvents.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="max-w-6xl mx-auto px-4 py-8">
           <h2 className="text-2xl font-bold text-foreground mb-6">You Might Also Like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {recommendedEvents.map(recEvent => (
