@@ -261,11 +261,12 @@ export function OrganizerRefunds() {
   };
 
   const isPending = (refund) => {
-    return !refund.stripe_refund_id && 
-           !refund.refund_reference && 
-           refund.status !== 'completed' && 
+    return !refund.stripe_refund_id &&
+           !refund.refund_reference &&
+           refund.status !== 'completed' &&
            refund.status !== 'rejected' &&
-           refund.organizer_decision !== 'rejected';
+           refund.organizer_decision !== 'rejected' &&
+           refund.organizer_decision !== 'approved';
   };
 
   const filteredRefunds = refunds.filter(r => {
