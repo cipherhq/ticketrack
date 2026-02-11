@@ -146,8 +146,8 @@ const EventSection = ({ title, subtitle, icon: Icon, events, showDistance = fals
   const hasMore = events.length > initialCount;
 
   return (
-    <section className="py-8">
-      <div className="flex items-center justify-between mb-6">
+    <section className="py-5">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           {Icon && <Icon className="text-blue-600" size={24} />}
           <div>
@@ -432,7 +432,7 @@ export function WebHome() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative min-h-[600px] md:min-h-[700px] overflow-hidden">
+      <section className="relative min-h-[480px] md:min-h-[540px] overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
           <img 
@@ -444,28 +444,28 @@ export function WebHome() {
         </div>
         
         {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-4 py-24 md:py-32 lg:py-40">
+        <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-20 lg:py-24">
           <div className="max-w-3xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-medium mb-4">
               <span className="text-lg">✨</span>
               Your Gateway to Amazing Events
             </div>
             
             {/* Headline */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
               Your Next<br />
               <span className="text-blue-500">Unforgettable</span><br />
               Experience Awaits
             </h1>
             
             {/* Subtitle */}
-            <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-xl">
+            <p className="text-base md:text-lg text-gray-300 mb-6 max-w-xl">
               From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening worldwide.
             </p>
             
             {/* New Search Bar */}
-            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl p-3 flex flex-col lg:flex-row gap-2 max-w-4xl mb-12 shadow-xl">
+            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl p-3 flex flex-col lg:flex-row gap-2 max-w-4xl mb-8 shadow-xl">
               {/* Location Input */}
               <div className="flex-1 relative">
                 <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -550,7 +550,7 @@ export function WebHome() {
             </div>
             
             {/* Stats */}
-            <div className="flex flex-wrap gap-8 md:gap-12">
+            <div className="flex flex-wrap gap-6 md:gap-10">
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.eventsHosted}</div>
                 <div className="text-gray-400 text-sm">Events Hosted</div>
@@ -580,8 +580,8 @@ export function WebHome() {
         <main className="max-w-[1200px] w-full px-4">
 
           {/* Popular Categories */}
-          <section className="py-8">
-            <div className="flex items-center justify-between mb-6">
+          <section className="py-5">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-foreground">Popular categories</h2>
               <Link to="/categories" className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
                 View All <ChevronRight size={16} />
@@ -601,7 +601,7 @@ export function WebHome() {
 
           {/* For You - Personalized Recommendations */}
           {user && (
-            <section className="py-8">
+            <section className="py-5">
               <ForYouFeed limit={8} showHeader={true} />
             </section>
           )}
@@ -657,8 +657,8 @@ export function WebHome() {
           />
 
           {/* Stats Section */}
-          <section className="py-12 my-8 bg-card rounded-2xl shadow-sm">
-            <div className="grid grid-cols-3 gap-8 text-center">
+          <section className="py-8 my-4 bg-card rounded-2xl shadow-sm">
+            <div className="grid grid-cols-3 gap-6 text-center">
               <div>
                 <div className="text-3xl md:text-4xl font-bold text-blue-600">{platformStats.eventsHosted}</div>
                 <div className="text-muted-foreground mt-1">Events</div>
@@ -675,31 +675,31 @@ export function WebHome() {
           </section>
 
           {/* Why Choose Us */}
-          <section className="py-12">
-            <h2 className="text-2xl font-bold text-foreground text-center mb-10">Why Choose Ticketrack</h2>
-            <div className="grid md:grid-cols-4 gap-6">
-              <div className="bg-card p-6 rounded-xl shadow-sm text-center">
+          <section className="py-8">
+            <h2 className="text-2xl font-bold text-foreground text-center mb-6">Why Choose Ticketrack</h2>
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="bg-card p-5 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Shield className="text-blue-600" size={24} />
                 </div>
                 <h3 className="font-semibold mb-2">Secure Payments</h3>
                 <p className="text-sm text-muted-foreground">Your transactions are protected with bank-level security</p>
               </div>
-              <div className="bg-card p-6 rounded-xl shadow-sm text-center">
+              <div className="bg-card p-5 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Ticket className="text-blue-600" size={24} />
                 </div>
                 <h3 className="font-semibold mb-2">Instant Delivery</h3>
                 <p className="text-sm text-muted-foreground">Get your tickets delivered to your email instantly</p>
               </div>
-              <div className="bg-card p-6 rounded-xl shadow-sm text-center">
+              <div className="bg-card p-5 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CreditCard className="text-blue-600" size={24} />
                 </div>
                 <h3 className="font-semibold mb-2">Easy Refunds</h3>
                 <p className="text-sm text-muted-foreground">Hassle-free refund process for eligible events</p>
               </div>
-              <div className="bg-card p-6 rounded-xl shadow-sm text-center">
+              <div className="bg-card p-5 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Headphones className="text-blue-600" size={24} />
                 </div>
@@ -723,9 +723,9 @@ export function WebHome() {
       </div>
 
       {/* Mobile App Coming Soon Section */}
-      <section className="bg-[#F0EBFF] py-16 mt-12">
+      <section className="bg-[#F0EBFF] py-10 mt-6">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 bg-[#2969FF]/10 text-[#2969FF] px-4 py-2 rounded-full text-sm font-medium mb-4">
                 <span className="relative flex h-2 w-2">
@@ -857,10 +857,10 @@ export function WebHome() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-blue-600 text-white py-16">
+      <section className="bg-blue-600 text-white py-10">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Host Your Own Event?</h2>
-          <p className="text-blue-100 mb-8">
+          <h2 className="text-3xl font-bold mb-3">Ready to Host Your Own Event?</h2>
+          <p className="text-blue-100 mb-6">
             Join thousands of event organizers who trust Ticketrack to sell their tickets
           </p>
           <button 
