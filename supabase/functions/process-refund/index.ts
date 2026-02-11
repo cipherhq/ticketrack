@@ -196,10 +196,13 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: {
-            value: refundAmountDecimal,
-            currency_code: currency.toUpperCase() === "NGN" ? "USD" : currency.toUpperCase(), // PayPal doesn't support NGN
-          },
+          // PayPal doesn't support NGN - omit amount to refund full capture amount in original currency
+          ...(currency.toUpperCase() === "NGN" ? {} : {
+            amount: {
+              value: refundAmountDecimal,
+              currency_code: currency.toUpperCase(),
+            },
+          }),
           note_to_payer: "Refund from Ticketrack",
         }),
       });

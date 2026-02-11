@@ -163,17 +163,27 @@ export function PlatformPnL() {
       // Process chargebacks
       chargebacks?.forEach(c => {
         const curr = c.currency || 'USD';
-        if (currencyMetrics[curr]) {
-          currencyMetrics[curr].chargebacks += parseFloat(c.disputed_amount || 0) + parseFloat(c.fee_amount || 0);
+        if (!currencyMetrics[curr]) {
+          currencyMetrics[curr] = {
+            grossRevenue: 0, platformFees: 0, processingCosts: 0,
+            chargebacks: 0, promoterCommissions: 0, operatingExpenses: 0,
+            netRevenue: 0, netProfit: 0, profitMargin: 0
+          };
         }
+        currencyMetrics[curr].chargebacks += parseFloat(c.disputed_amount || 0) + parseFloat(c.fee_amount || 0);
       });
 
       // Process commissions
       commissions?.forEach(c => {
         const curr = c.currency || 'USD';
-        if (currencyMetrics[curr]) {
-          currencyMetrics[curr].promoterCommissions += parseFloat(c.commission_amount || 0);
+        if (!currencyMetrics[curr]) {
+          currencyMetrics[curr] = {
+            grossRevenue: 0, platformFees: 0, processingCosts: 0,
+            chargebacks: 0, promoterCommissions: 0, operatingExpenses: 0,
+            netRevenue: 0, netProfit: 0, profitMargin: 0
+          };
         }
+        currencyMetrics[curr].promoterCommissions += parseFloat(c.commission_amount || 0);
       });
 
       // Process expenses

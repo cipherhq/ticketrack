@@ -90,8 +90,7 @@ export function WebMyAds() {
 
   const getAdStatus = (ad) => {
     if (ad.approval_status === 'rejected') return 'rejected';
-    if (!ad.is_active && ad.approval_status === 'pending') return 'pending';
-    if (!ad.is_active && ad.approval_status !== 'rejected') return 'pending';
+    if (!ad.is_active || !ad.approval_status || ad.approval_status === 'pending') return 'pending';
     const start = new Date(ad.start_date);
     const end = new Date(ad.end_date);
     if (now < start) return 'pending';

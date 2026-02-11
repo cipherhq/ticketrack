@@ -487,7 +487,7 @@ export function WebPaymentSuccess() {
       `Time: ${formatTime(event.start_date)}\n` +
       `Venue: ${event.is_virtual ? 'Online Event' : [event.venue_name, event.venue_address, event.city].filter(Boolean).join(', ') || 'Venue TBA'}\n\n` +
       `Number of tickets: ${tickets?.length || 0}\n` +
-      `Order Number: ${order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}\n\n` +
+      `Order Number: ${order.order_number || `ORD-${(order.id || '').slice(0, 8).toUpperCase()}`}\n\n` +
       `Please show your QR code at the venue entrance.\n\n` +
       `View your tickets: ${window.location.origin}/tickets`
     )
@@ -584,7 +584,7 @@ export function WebPaymentSuccess() {
                 <div>
                   <p className="text-sm text-muted-foreground">Order Number</p>
                   <p className="font-mono font-bold text-[#2969FF]">
-                    {order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}
+                    {order.order_number || `ORD-${(order.id || '').slice(0, 8).toUpperCase()}`}
                   </p>
                 </div>
                 <Badge className="bg-green-100 text-green-700 border-0">Confirmed</Badge>

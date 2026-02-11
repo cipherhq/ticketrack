@@ -357,7 +357,7 @@ export function PromoterManagement() {
       return;
     }
 
-    if (amount > unpaid) {
+    if (amount > unpaid + 0.01) {
       setError('Amount exceeds unpaid balance');
       return;
     }

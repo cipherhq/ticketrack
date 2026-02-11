@@ -102,7 +102,7 @@ export async function getSavedEvents(limit = 50) {
     .map(item => ({
       ...item.event,
       saved_at: item.created_at,
-      min_price: Math.min(...(item.event.ticket_types || []).map(t => t.price).filter(p => p > 0)) || 0
+      min_price: ((prices) => prices.length ? Math.min(...prices) : 0)((item.event.ticket_types || []).map(t => t.price).filter(p => p > 0))
     }));
 }
 
@@ -148,7 +148,7 @@ export async function getTrendingEvents(limit = 20, offset = 0) {
 
   return (data || []).map(event => ({
     ...event,
-    min_price: Math.min(...(event.ticket_types || []).map(t => t.price).filter(p => p > 0)) || 0,
+    min_price: ((prices) => prices.length ? Math.min(...prices) : 0)((event.ticket_types || []).map(t => t.price).filter(p => p > 0)),
     recommendation_score: 0.5,
     recommendation_reasons: ['Upcoming event', 'Don\'t miss out!']
   }));
@@ -175,7 +175,7 @@ export async function getEventsByCategory(category, limit = 20) {
 
   return (data || []).map(event => ({
     ...event,
-    min_price: Math.min(...(event.ticket_types || []).map(t => t.price).filter(p => p > 0)) || 0
+    min_price: ((prices) => prices.length ? Math.min(...prices) : 0)((event.ticket_types || []).map(t => t.price).filter(p => p > 0))
   }));
 }
 

@@ -330,6 +330,21 @@ serve(async (req) => {
           safeLog.info(`Split payment share ${shareId} completed via Stripe`);
         }
       } else if (orderId) {
+        // Check if order is already completed (idempotency)
+        const { data: existingOrder } = await supabase
+          .from("orders")
+          .select("status")
+          .eq("id", orderId)
+          .single();
+
+        if (existingOrder?.status === "completed") {
+          safeLog.info(`Order ${orderId} already completed, skipping duplicate webhook`);
+          return new Response(JSON.stringify({ received: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+
         // Update order status
         await supabase
           .from("orders")

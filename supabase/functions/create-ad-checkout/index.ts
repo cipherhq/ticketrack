@@ -52,16 +52,24 @@ serve(async (req) => {
       );
     }
 
-    // Verify ad record exists
+    // Verify ad record exists and belongs to the requesting user
     const { data: ad, error: adError } = await supabase
       .from('platform_adverts')
-      .select('id')
+      .select('id, advertiser_email')
       .eq('id', adId)
       .single();
 
     if (adError || !ad) {
       return new Response(
         JSON.stringify({ success: false, error: 'Ad record not found' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the email matches the ad's advertiser
+    if (ad.advertiser_email && ad.advertiser_email.toLowerCase() !== email.toLowerCase()) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized: email does not match ad owner' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

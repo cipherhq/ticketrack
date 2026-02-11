@@ -287,7 +287,7 @@ export function WebFreeRSVP() {
   const acceptsDonations = event?.accepts_donations && event?.donation_amounts?.length > 0
   const donationOptions = event?.donation_amounts || []
   const allowCustomDonation = event?.allow_custom_donation !== false
-  const actualDonation = customDonation ? parseInt(customDonation) || 0 : donationAmount
+  const actualDonation = customDonation ? parseFloat(customDonation) || 0 : donationAmount
   
   // Donation fee handling - check if donor pays the fee or organizer absorbs it
   const donorPaysFee = event?.donation_fee_handling === 'pass_to_attendee'

@@ -119,11 +119,11 @@ export function WebSearch() {
       case 'week':
         const endOfWeek = new Date(startOfDay)
         endOfWeek.setDate(endOfWeek.getDate() + 7)
-        return { start: now.toISOString(), end: endOfWeek.toISOString() }
+        return { start: startOfDay.toISOString(), end: endOfWeek.toISOString() }
       case 'month':
         const endOfMonth = new Date(startOfDay)
         endOfMonth.setMonth(endOfMonth.getMonth() + 1)
-        return { start: now.toISOString(), end: endOfMonth.toISOString() }
+        return { start: startOfDay.toISOString(), end: endOfMonth.toISOString() }
       default:
         return { start: now.toISOString(), end: null }
     }

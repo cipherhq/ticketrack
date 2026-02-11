@@ -315,12 +315,16 @@ export const calculateFees = (ticketSubtotal, ticketCount, fees, paymentProvider
   // 4. Add per-order processing fixed fee
   processingFee += fees.processingFeeFixedPerOrder;
   
+  const roundedServiceFee = Math.round(serviceFee * 100) / 100;
+  const roundedProcessingFee = Math.round(processingFee * 100) / 100;
+  const totalFee = roundedServiceFee + roundedProcessingFee;
+
   return {
-    serviceFee: Math.round(serviceFee * 100) / 100,
-    processingFee: Math.round(processingFee * 100) / 100,
-    totalFee: Math.round((serviceFee + processingFee) * 100) / 100,
+    serviceFee: roundedServiceFee,
+    processingFee: roundedProcessingFee,
+    totalFee,
     // For display to buyer (combined as "Service Fee")
-    displayFee: Math.round((serviceFee + processingFee) * 100) / 100
+    displayFee: totalFee
   };
 };
 

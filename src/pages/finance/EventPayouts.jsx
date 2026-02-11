@@ -167,13 +167,44 @@ export function EventPayouts() {
       const { type, recipient, event } = paymentDialog;
 
       if (type === 'organizer') {
-        // Check if this event has already been paid (prevent duplicate payouts)
-        const { data: existingPayout } = await supabase
+        // Double-check event payout status from database first (most reliable check)
+        const { data: currentEvent } = await supabase
+          .from('events')
+          .select('payout_status')
+          .eq('id', event.id)
+          .single();
+
+        if (currentEvent?.payout_status === 'paid') {
+          alert('This event has already been paid out. Refreshing data.');
+          setProcessing(false);
+          loadEventPayouts();
+          return;
+        }
+
+        // Also check payouts table for any existing payout referencing this event
+        const { data: existingPayout, error: checkError } = await supabase
           .from('payouts')
           .select('id, payout_number')
           .contains('event_ids', [event.id])
           .in('status', ['completed', 'processing'])
           .limit(1);
+
+        if (checkError) {
+          // If contains query fails, fall back to notes-based check
+          const { data: fallbackCheck } = await supabase
+            .from('payouts')
+            .select('id, payout_number')
+            .ilike('notes', `%${event.title}%`)
+            .in('status', ['completed', 'processing'])
+            .limit(1);
+
+          if (fallbackCheck && fallbackCheck.length > 0) {
+            alert(`This event may have already been paid out (${fallbackCheck[0].payout_number}). Please verify.`);
+            setProcessing(false);
+            loadEventPayouts();
+            return;
+          }
+        }
 
         if (existingPayout && existingPayout.length > 0) {
           alert(`This event has already been paid out (${existingPayout[0].payout_number}). Refresh the page to see updated status.`);
@@ -181,13 +212,6 @@ export function EventPayouts() {
           loadEventPayouts();
           return;
         }
-
-        // Double-check event payout status from database
-        const { data: currentEvent } = await supabase
-          .from('events')
-          .select('payout_status')
-          .eq('id', event.id)
-          .single();
 
         if (currentEvent?.payout_status === 'paid') {
           alert('This event has already been marked as paid. Refresh the page to see updated status.');

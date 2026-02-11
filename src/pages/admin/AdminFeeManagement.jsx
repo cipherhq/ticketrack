@@ -191,12 +191,14 @@ export function AdminFeeManagement() {
   };
 
   const calculatePreviewFee = (country, provider = 'stripe') => {
-    const subtotal = previewAmount * previewTickets;
+    const amount = parseFloat(previewAmount) || 0;
+    const tickets = parseInt(previewTickets) || 0;
+    const subtotal = amount * tickets;
     const servicePct = parseFloat(country.service_fee_percentage || 5) / 100;
     const serviceFixed = parseFloat(country.service_fee_fixed_per_ticket || 0);
     const cap = country.service_fee_cap ? parseFloat(country.service_fee_cap) : null;
     
-    let serviceFee = (subtotal * servicePct) + (serviceFixed * previewTickets);
+    let serviceFee = (subtotal * servicePct) + (serviceFixed * tickets);
     if (cap && serviceFee > cap) serviceFee = cap;
     
     const totalBeforeProcessing = subtotal + serviceFee;

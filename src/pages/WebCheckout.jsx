@@ -914,8 +914,8 @@ export function WebCheckout() {
         }
       }
 
-      // Credit affiliate for referral sale - use order's event_id
-      await creditAffiliate(orderId, orderData?.event_id || event?.id, serviceFee, event.currency, user?.id, formData.email, formData.phone)
+      // Credit affiliate for referral sale - use actual platform fee (not display fee which may be 0 if organizer absorbs)
+      await creditAffiliate(orderId, orderData?.event_id || event?.id, actualPlatformFee, event.currency, user?.id, formData.email, formData.phone)
 
       // Generate PDF tickets and send confirmation email
       try {

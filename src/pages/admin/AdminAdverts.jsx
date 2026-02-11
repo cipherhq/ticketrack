@@ -377,7 +377,7 @@ export default function AdminAdverts() {
 
   const filteredAds = approvalFilter === 'all'
     ? ads
-    : ads.filter(ad => (ad.approval_status || 'approved') === approvalFilter);
+    : ads.filter(ad => (ad.approval_status || 'pending') === approvalFilter);
 
   const getPositionInfo = (position) => {
     return AD_POSITIONS.find(p => p.value === position) || AD_POSITIONS[0];
@@ -515,8 +515,8 @@ export default function AdminAdverts() {
       <div className="flex gap-2 mb-4">
         {[
           { value: 'all', label: 'All', count: ads.length },
-          { value: 'pending', label: 'Pending', count: ads.filter(a => (a.approval_status || 'approved') === 'pending').length },
-          { value: 'approved', label: 'Approved', count: ads.filter(a => (a.approval_status || 'approved') === 'approved').length },
+          { value: 'pending', label: 'Pending', count: ads.filter(a => (a.approval_status || 'pending') === 'pending').length },
+          { value: 'approved', label: 'Approved', count: ads.filter(a => (a.approval_status || 'pending') === 'approved').length },
           { value: 'rejected', label: 'Rejected', count: ads.filter(a => a.approval_status === 'rejected').length },
         ].map(tab => (
           <button
@@ -563,7 +563,7 @@ export default function AdminAdverts() {
               filteredAds.map(ad => {
                 const status = getAdStatus(ad);
                 const posInfo = getPositionInfo(ad.position);
-                const approvalStatus = ad.approval_status || 'approved';
+                const approvalStatus = ad.approval_status || 'pending';
                 return (
                   <tr key={ad.id} className="border-t border-border/10 hover:bg-muted/30">
                     <td className="p-4">

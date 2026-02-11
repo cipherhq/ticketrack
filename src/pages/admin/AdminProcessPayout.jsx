@@ -164,19 +164,19 @@ export function AdminProcessPayout() {
       const reference = `PAY-${Date.now().toString(36).toUpperCase()}`;
       const eventTitles = pendingEvents.map(e => e.title).join(', ');
       const eventIds = pendingEvents.map(e => e.id);
+      // Insert payout with 'processing' status first
       const { data: payout, error: payoutError } = await supabase
         .from('payouts')
         .insert({
           organizer_id: selectedOrganizer.id,
           bank_account_id: bankAccount.id,
           payout_number: reference,
-          amount: netAmount,
+          amount: amount,
           platform_fee_deducted: platformFee,
           net_amount: netAmount,
           currency: currency,
-          status: 'completed',
+          status: 'processing',
           transaction_reference: reference,
-          processed_at: new Date().toISOString(),
           event_ids: eventIds,
           notes: eventTitles ? `Events: ${eventTitles}` : null,
         })
@@ -194,7 +194,11 @@ export function AdminProcessPayout() {
         })
         .eq('id', selectedOrganizer.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        // Rollback: mark payout as failed
+        await supabase.from('payouts').update({ status: 'failed' }).eq('id', payout.id);
+        throw updateError;
+      }
 
       // Mark events as paid
       if (pendingEvents.length > 0) {
@@ -204,6 +208,12 @@ export function AdminProcessPayout() {
           .eq('organizer_id', selectedOrganizer.id)
           .eq('payout_status', 'pending');
       }
+
+      // Mark payout as completed
+      await supabase
+        .from('payouts')
+        .update({ status: 'completed', processed_at: new Date().toISOString() })
+        .eq('id', payout.id);
 
       await logAdminAction('payout_processed', 'payout', payout.id, {
         organizer: selectedOrganizer.business_name,
