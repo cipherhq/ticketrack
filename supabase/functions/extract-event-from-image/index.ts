@@ -1,6 +1,6 @@
 // Extract event details from flyer image using Claude Vision API
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,20 +15,34 @@ serve(async (req) => {
   try {
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!anthropicKey) {
+      console.error('ANTHROPIC_API_KEY not set');
       return new Response(
         JSON.stringify({ success: false, error: 'AI service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { imageBase64, mediaType } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      console.error('Failed to parse request body:', e);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid request body' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { imageBase64, mediaType } = body;
 
     if (!imageBase64) {
       return new Response(
         JSON.stringify({ success: false, error: 'No image provided' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Processing image extraction, base64 length:', imageBase64.length);
 
     const validMediaTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     const finalMediaType = validMediaTypes.includes(mediaType) ? mediaType : 'image/jpeg';
@@ -101,17 +115,75 @@ IMPORTANT:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Claude API error:', errorText);
+      console.error('Claude API error status:', response.status, 'body:', errorText);
+
+      // If model not found, try fallback model
+      if (response.status === 400 || response.status === 404) {
+        console.log('Trying fallback model claude-3-5-sonnet-20241022');
+        const fallbackResponse = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': anthropicKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 2000,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'image',
+                    source: {
+                      type: 'base64',
+                      media_type: finalMediaType,
+                      data: imageBase64,
+                    },
+                  },
+                  {
+                    type: 'text',
+                    text: `Analyze this event flyer/poster image and extract all event details. Return ONLY a JSON object with: title, description (30+ chars), eventType (Concert/Party/Club/Wedding/Comedy/Conference/Church Event/Festival/Sports/Theater/Exhibition/Workshop/Other), category, startDate (YYYY-MM-DD), startTime (HH:MM 24h), endDate, endTime, venueName, venueAddress, city, country, tickets (array of {name, price, description}), currency, isAdultOnly, dressCode. Use null for unknown fields. Return ONLY valid JSON.`,
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+
+        if (!fallbackResponse.ok) {
+          const fbError = await fallbackResponse.text();
+          console.error('Fallback model error:', fbError);
+          return new Response(
+            JSON.stringify({ success: false, error: 'AI extraction failed. Please try again.' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const fbResult = await fallbackResponse.json();
+        const fbText = fbResult.content?.find((c: any) => c.type === 'text')?.text || '';
+        const fbJson = fbText.match(/\{[\s\S]*\}/);
+        if (fbJson) {
+          return new Response(
+            JSON.stringify({ success: true, data: JSON.parse(fbJson[0]) }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
       return new Response(
         JSON.stringify({ success: false, error: 'AI extraction failed. Please try again.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const result = await response.json();
     const textContent = result.content?.find((c: any) => c.type === 'text')?.text || '';
 
-    // Parse the JSON from Claude's response (handle potential markdown wrapping)
+    console.log('Claude response received, length:', textContent.length);
+
+    // Parse the JSON from Claude's response
     let extracted;
     try {
       const jsonMatch = textContent.match(/\{[\s\S]*\}/);
@@ -121,7 +193,7 @@ IMPORTANT:
         throw new Error('No JSON found in response');
       }
     } catch (parseErr) {
-      console.error('Failed to parse Claude response:', textContent);
+      console.error('Failed to parse Claude response:', textContent.substring(0, 500));
       return new Response(
         JSON.stringify({ success: false, error: 'Could not parse extracted data. Please try a clearer image.' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -134,10 +206,10 @@ IMPORTANT:
     );
 
   } catch (err) {
-    console.error('Extract event error:', err);
+    console.error('Extract event error:', err?.message || err);
     return new Response(
-      JSON.stringify({ success: false, error: 'An unexpected error occurred' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: 'An unexpected error occurred. Please try again.' }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
