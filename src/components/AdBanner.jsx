@@ -65,19 +65,19 @@ export function AdBanner({ position, ads = [] }) {
       ref={containerRef}
       className={
         isSidebar
-          ? 'relative w-full pt-6'
-          : 'relative max-w-[1200px] mx-auto my-8 pt-6'
+          ? 'relative w-full pt-4'
+          : 'relative max-w-[1200px] mx-auto my-4 pt-4'
       }
     >
-      <div className="absolute top-0 right-2 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded z-10">
+      <div className="absolute top-0 right-2 text-[10px] text-muted-foreground/60 px-1.5 py-0.5 z-10">
         Ad
       </div>
       <div
         onClick={handleClick}
-        className={`bg-muted rounded-xl overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-shadow ${
+        className={`bg-muted rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow ${
           isSidebar
-            ? 'w-full h-[250px]'
-            : 'w-full h-[200px] md:h-[300px]'
+            ? 'w-full h-[160px]'
+            : 'w-full h-[120px] md:h-[180px]'
         }`}
       >
         <div
