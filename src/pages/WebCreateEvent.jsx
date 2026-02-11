@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   X, Calendar, Clock, MapPin, Ticket, Image as ImageIcon,
   Plus, Trash2, Upload, Loader2, DollarSign, Info, ExternalLink,
-  Users, Pencil, ArrowLeft, CheckCircle, XCircle,
+  Users, Pencil, ArrowLeft, CheckCircle, XCircle, Sparkles, ImagePlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '../components/ui/card';
@@ -204,6 +204,102 @@ export function WebCreateEvent() {
   // Images State (for gallery)
   const [eventImages, setEventImages] = useState([]);
   const [sponsorLogos, setSponsorLogos] = useState([]);
+
+  // AI Extraction State
+  const [aiExtracting, setAiExtracting] = useState(false);
+  const [aiExtracted, setAiExtracted] = useState(false);
+  const aiFileInputRef = useRef(null);
+
+  const handleAIExtract = async (file) => {
+    if (!file) return;
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+
+    setAiExtracting(true);
+    setAiExtracted(false);
+    try {
+      // Convert to base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Also set as banner preview
+      setBannerPreview(URL.createObjectURL(file));
+      setBannerImage(file);
+
+      const { data, error } = await supabase.functions.invoke('extract-event-from-image', {
+        body: { imageBase64: base64, mediaType: file.type },
+      });
+
+      if (error || !data?.success) {
+        toast.error(data?.error || 'Failed to extract event details. Try a clearer image.');
+        return;
+      }
+
+      const ext = data.data;
+
+      // Populate form fields with extracted data
+      setFormData(prev => ({
+        ...prev,
+        ...(ext.title && { title: ext.title }),
+        ...(ext.eventType && { eventType: ext.eventType }),
+        ...(ext.description && { description: ext.description }),
+        ...(ext.category && { category: ext.category }),
+        ...(ext.startDate && { startDate: ext.startDate }),
+        ...(ext.startTime && { startTime: ext.startTime }),
+        ...(ext.endDate && { endDate: ext.endDate }),
+        ...(ext.endTime && { endTime: ext.endTime }),
+        ...(ext.venueName && { venueName: ext.venueName }),
+        ...(ext.venueAddress && { venueAddress: ext.venueAddress }),
+        ...(ext.city && { city: ext.city }),
+        ...(ext.country && { country: ext.country }),
+        ...(ext.currency && { currency: ext.currency }),
+        ...(ext.isAdultOnly !== undefined && ext.isAdultOnly !== null && { isAdultOnly: ext.isAdultOnly }),
+        ...(ext.dressCode && { dressCode: ext.dressCode }),
+      }));
+
+      // Populate tickets if extracted
+      if (ext.tickets?.length > 0) {
+        const extractedTickets = ext.tickets
+          .filter(t => t.name)
+          .map((t, i) => ({
+            id: Date.now() + i,
+            name: t.name || '',
+            price: t.price ? String(t.price) : '',
+            quantity: '',
+            description: t.description || '',
+            isRefundable: false,
+          }));
+        if (extractedTickets.length > 0) {
+          setTickets(extractedTickets);
+          if (extractedTickets.some(t => parseFloat(t.price) > 0)) {
+            setFormData(prev => ({ ...prev, isFreeEvent: false }));
+          }
+        }
+      }
+
+      setAiExtracted(true);
+      const fieldsFound = [
+        ext.title && 'title',
+        ext.startDate && 'date',
+        ext.venueName && 'venue',
+        ext.tickets?.length && 'tickets',
+      ].filter(Boolean);
+      toast.success(`Extracted ${fieldsFound.length} fields: ${fieldsFound.join(', ')}. Review and adjust as needed.`);
+
+    } catch (err) {
+      console.error('AI extraction error:', err);
+      toast.error('Failed to process image. Please try again.');
+    } finally {
+      setAiExtracting(false);
+    }
+  };
 
   const tabs = [
     { id: 'details', label: 'Event Details', icon: Calendar },
@@ -761,6 +857,60 @@ export function WebCreateEvent() {
             {/* Event Details Tab */}
             {activeTab === 'details' && (
               <div className="space-y-6">
+                {/* AI Extract from Flyer */}
+                {!aiExtracted && (
+                  <div className="relative border-2 border-dashed border-[#2969FF]/30 rounded-xl p-6 text-center bg-[#2969FF]/5 hover:bg-[#2969FF]/10 transition-colors">
+                    <input
+                      ref={aiFileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleAIExtract(file);
+                        e.target.value = '';
+                      }}
+                    />
+                    {aiExtracting ? (
+                      <div className="flex flex-col items-center gap-3 py-2">
+                        <Loader2 className="w-8 h-8 text-[#2969FF] animate-spin" />
+                        <div>
+                          <p className="font-semibold text-foreground">Analyzing your flyer...</p>
+                          <p className="text-sm text-muted-foreground mt-1">AI is extracting event details from your image</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => aiFileInputRef.current?.click()}
+                        className="w-full flex flex-col items-center gap-3 py-2"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#2969FF]/10 flex items-center justify-center">
+                          <Sparkles className="w-6 h-6 text-[#2969FF]" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">Upload Event Flyer to Auto-Fill</p>
+                          <p className="text-sm text-muted-foreground mt-1">AI will extract title, date, venue, tickets and more from your flyer image</p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {aiExtracted && (
+                  <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                    <CheckCircle className="w-4 h-4 shrink-0" />
+                    <span>Event details extracted from flyer. Review and adjust the fields below.</span>
+                    <button
+                      type="button"
+                      onClick={() => { setAiExtracted(false); }}
+                      className="ml-auto text-green-600 hover:text-green-800 underline text-xs"
+                    >
+                      Extract again
+                    </button>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label>Event Title <span className="text-red-500">*</span></Label>
                   <Input
