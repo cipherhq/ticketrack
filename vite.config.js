@@ -17,6 +17,18 @@ export default defineConfig({
           /^\/api/,
           /supabase/,
         ],
+        runtimeCaching: [
+          {
+            // Skip caching for Supabase API calls
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            // Skip caching for any external API calls
+            urlPattern: /^https:\/\/(api\.|.*\.googleapis\.com|.*\.paystack\.co|.*\.stripe\.com)/i,
+            handler: 'NetworkOnly',
+          },
+        ],
       },
     }),
   ],
