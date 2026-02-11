@@ -244,25 +244,40 @@ export function WebCreateEvent() {
 
       const ext = data.data;
 
+      // Default end date to start date if not extracted
+      const endDate = ext.endDate || ext.startDate || '';
+
+      // Build address from available parts if venueAddress not extracted
+      const venueAddress = ext.venueAddress || [ext.venueName, ext.city, ext.country].filter(Boolean).join(', ') || '';
+
+      // Generate custom_url from title
+      const extractedSlug = ext.title ? generateSlug(ext.title) : '';
+
       // Populate form fields with extracted data
       setFormData(prev => ({
         ...prev,
         ...(ext.title && { title: ext.title }),
+        ...(extractedSlug && { custom_url: extractedSlug }),
         ...(ext.eventType && { eventType: ext.eventType }),
         ...(ext.description && { description: ext.description }),
         ...(ext.category && { category: ext.category }),
         ...(ext.startDate && { startDate: ext.startDate }),
         ...(ext.startTime && { startTime: ext.startTime }),
-        ...(ext.endDate && { endDate: ext.endDate }),
+        ...(endDate && { endDate }),
         ...(ext.endTime && { endTime: ext.endTime }),
         ...(ext.venueName && { venueName: ext.venueName }),
-        ...(ext.venueAddress && { venueAddress: ext.venueAddress }),
+        ...(venueAddress && { venueAddress }),
         ...(ext.city && { city: ext.city }),
         ...(ext.country && { country: ext.country }),
         ...(ext.currency && { currency: ext.currency }),
         ...(ext.isAdultOnly !== undefined && ext.isAdultOnly !== null && { isAdultOnly: ext.isAdultOnly }),
         ...(ext.dressCode && { dressCode: ext.dressCode }),
       }));
+
+      // Check URL availability for generated slug
+      if (extractedSlug) {
+        checkUrlAvailability(extractedSlug);
+      }
 
       // Populate tickets if extracted
       if (ext.tickets?.length > 0) {

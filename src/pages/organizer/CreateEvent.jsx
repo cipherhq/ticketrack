@@ -231,24 +231,40 @@ export function CreateEvent() {
       }
 
       const ext = data.data;
+
+      // Default end date to start date if not extracted
+      const endDate = ext.endDate || ext.startDate || '';
+
+      // Build address from available parts if venueAddress not extracted
+      const venueAddress = ext.venueAddress || [ext.venueName, ext.city, ext.country].filter(Boolean).join(', ') || '';
+
+      // Generate slug from title
+      const extractedSlug = ext.title ? generateSlug(ext.title) : '';
+
       setFormData(prev => ({
         ...prev,
         ...(ext.title && { title: ext.title }),
+        ...(extractedSlug && { slug: extractedSlug }),
         ...(ext.eventType && { eventType: ext.eventType }),
         ...(ext.description && { description: ext.description }),
         ...(ext.category && { category: ext.category }),
         ...(ext.startDate && { startDate: ext.startDate }),
         ...(ext.startTime && { startTime: ext.startTime }),
-        ...(ext.endDate && { endDate: ext.endDate }),
+        ...(endDate && { endDate }),
         ...(ext.endTime && { endTime: ext.endTime }),
         ...(ext.venueName && { venueName: ext.venueName }),
-        ...(ext.venueAddress && { venueAddress: ext.venueAddress }),
+        ...(venueAddress && { venueAddress }),
         ...(ext.city && { city: ext.city }),
         ...(ext.country && { country: ext.country }),
         ...(ext.currency && { currency: ext.currency }),
         ...(ext.isAdultOnly !== undefined && ext.isAdultOnly !== null && { isAdultOnly: ext.isAdultOnly }),
         ...(ext.dressCode && { dressCode: ext.dressCode }),
       }));
+
+      // Check URL availability for generated slug
+      if (extractedSlug) {
+        checkUrlAvailability(extractedSlug);
+      }
 
       if (ext.tickets?.length > 0) {
         const extractedTickets = ext.tickets.filter(t => t.name).map((t, i) => ({
@@ -846,34 +862,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     return errors;
   };
 
-  // Handle tab click with validation
+  // Handle tab click — allow free navigation in any direction
+  // Only the "Next" button validates required fields
   const handleTabClick = (targetTabId) => {
-    const targetIndex = tabs.findIndex(t => t.id === targetTabId);
-    
-    // Allow going backwards without validation
-    if (targetIndex <= currentTabIndex) {
-      setActiveTab(targetTabId);
-      setError("");
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-    
-    // Validate all tabs between current and target
-    const allErrors = [];
-    for (let i = currentTabIndex; i < targetIndex; i++) {
-      const tabErrors = validateTab(tabs[i].id);
-      if (tabErrors.length > 0) {
-        allErrors.push(`${tabs[i].label}: ${tabErrors.join(", ")}`);
-      }
-    }
-    
-    if (allErrors.length > 0) {
-      showError(allErrors[0]); // Show first error
-      // Stay on current tab or go to first tab with errors
-      return;
-    }
-    
-    // All validations passed, go to target tab
     setError("");
     setActiveTab(targetTabId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
