@@ -1764,8 +1764,8 @@ export function WebEventDetails() {
 
         {/* Ticket Sidebar - Hidden on mobile, shown on desktop */}
         <div className="hidden lg:block lg:col-span-1">
-          <Card className="border-border/10 rounded-2xl sticky top-16 md:top-20 lg:top-24 z-10">
-            <CardContent className="p-5 space-y-4">
+          <Card className="border-border/10 rounded-xl sticky top-16 md:top-20 lg:top-24 z-10">
+            <CardContent className="p-4 space-y-3">
               {/* Recurring Event Date Selector */}
               {event?.is_recurring && (childEvents.length > 0 || event) && (
                 <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-xl">
@@ -1811,12 +1811,12 @@ export function WebEventDetails() {
               )}
               
               <div>
-                <h2 className="text-xl font-bold text-foreground mb-3">
+                <h2 className="text-base font-semibold text-foreground mb-2">
                   {isFreeEvent ? 'Register' : 'Select Tickets'}
                 </h2>
 
                 {user && userTicketCount > 0 && (
-                  <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-sm">
+                  <div className="mb-3 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-xs">
                     <p className="text-amber-800 dark:text-amber-300 font-medium">
                       You already have {userTicketCount} ticket{userTicketCount !== 1 ? 's' : ''} for this event.
                     </p>
@@ -1867,26 +1867,26 @@ export function WebEventDetails() {
 
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-2.5">
                     {ticketTypes.map(tier => {
                       const remaining = tier.quantity_available - (tier.quantity_sold || 0);
                       const isSoldOut = remaining <= 0;
-                      
+
                       return (
-                        <div 
-                          key={tier.id} 
-                          className={`p-4 border rounded-xl space-y-3 ${
-                            isSoldOut 
-                              ? 'border-red-200 bg-red-50/50 opacity-75' 
+                        <div
+                          key={tier.id}
+                          className={`p-3 border rounded-lg space-y-2 ${
+                            isSoldOut
+                              ? 'border-red-200 bg-red-50/50 opacity-75'
                               : 'border-border/10'
                           }`}
                         >
                           <div className="flex items-start justify-between">
                             <div>
-                              <h3 className={`font-semibold ${isSoldOut ? 'text-muted-foreground' : 'text-foreground'}`}>
+                              <h3 className={`font-semibold text-sm ${isSoldOut ? 'text-muted-foreground' : 'text-foreground'}`}>
                                 {tier.name}
                               </h3>
-                              <p className={`text-2xl font-bold mt-1 ${isSoldOut ? 'text-muted-foreground' : 'text-[#2969FF]'}`}>
+                              <p className={`text-lg font-bold ${isSoldOut ? 'text-muted-foreground' : 'text-[#2969FF]'}`}>
                                 {formatPrice(tier.price, event?.currency)}
                               </p>
                             </div>
@@ -1915,16 +1915,16 @@ export function WebEventDetails() {
                           </div>
                           {!isSoldOut && (
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-muted-foreground">Quantity</span>
-                              <div className="flex items-center gap-3">
+                              <span className="text-xs text-muted-foreground">Quantity</span>
+                              <div className="flex items-center gap-2.5">
                                 <button
                                   onClick={() => updateTicketQuantity(tier.id, -1)}
                                   disabled={!selectedTickets[tier.id]}
-                                  className="w-10 h-10 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xl font-bold select-none"
+                                  className="w-8 h-8 rounded-md border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-lg font-bold select-none"
                                 >
                                   −
                                 </button>
-                                <span className="w-8 text-center font-semibold text-gray-900 text-lg">
+                                <span className="w-6 text-center font-semibold text-gray-900 text-base">
                                   {selectedTickets[tier.id] || 0}
                                 </span>
                                 <button
@@ -1933,7 +1933,7 @@ export function WebEventDetails() {
                                     (selectedTickets[tier.id] || 0) >= remaining ||
                                     (selectedTickets[tier.id] || 0) >= 10
                                   }
-                                  className="w-10 h-10 rounded-lg border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xl font-bold select-none"
+                                  className="w-8 h-8 rounded-md border border-gray-300 bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-lg font-bold select-none"
                                 >
                                   +
                                 </button>
@@ -1952,17 +1952,17 @@ export function WebEventDetails() {
                 <>
                   <Separator />
                   
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-muted-foreground">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Tickets ({totalTickets})</span>
                       <span>{formatPrice(totalAmount, event?.currency)}</span>
                     </div>
-                    <div className="flex justify-between text-muted-foreground">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Service Fee</span>
                       <span>{formatPrice(serviceFee, event?.currency)}</span>
                     </div>
                     <Separator />
-                    <div className="flex justify-between font-bold text-lg text-foreground">
+                    <div className="flex justify-between font-bold text-foreground">
                       <span>Total</span>
                       <span>{formatPrice(totalWithFees, event?.currency)}</span>
                     </div>
@@ -1972,24 +1972,24 @@ export function WebEventDetails() {
 
               {/* Action Button */}
               {isAllSoldOut && !isFreeEvent ? (
-                <Button 
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-6 text-lg"
+                <Button
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-lg py-4"
                   onClick={() => setWaitlistOpen(true)}
                 >
-                  <Clock className="w-5 h-5 mr-2" />
+                  <Clock className="w-4 h-4 mr-2" />
                   {isOnWaitlist ? `On Waitlist (#${waitlistPosition})` : 'Join Waitlist'}
                 </Button>
               ) : isFreeEvent ? (
-                <Button 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-6 text-lg"
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white rounded-lg py-4"
                   onClick={handleCheckout}
                 >
-                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <CheckCircle className="w-4 h-4 mr-2" />
                   RSVP - Free
                 </Button>
               ) : (
-                <Button 
-                  className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-xl py-6 text-lg"
+                <Button
+                  className="w-full bg-[#2969FF] hover:bg-[#1a4fd8] text-white rounded-lg py-4"
                   onClick={handleCheckout}
                   disabled={totalTickets === 0}
                 >
@@ -2006,11 +2006,11 @@ export function WebEventDetails() {
               {/* Buy with Friends Button */}
               <Button
                 variant="outline"
-                className={`w-full rounded-xl py-5 ${isAllSoldOut ? 'border-gray-300 text-gray-400 cursor-not-allowed' : 'border-[#2969FF]/30 text-[#2969FF] hover:bg-[#2969FF]/5'}`}
+                className={`w-full rounded-lg py-3 ${isAllSoldOut ? 'border-gray-300 text-gray-400 cursor-not-allowed' : 'border-[#2969FF]/30 text-[#2969FF] hover:bg-[#2969FF]/5'}`}
                 onClick={() => !isAllSoldOut && setShowGroupModal(true)}
                 disabled={isAllSoldOut}
               >
-                <UsersRound className="w-5 h-5 mr-2" />
+                <UsersRound className="w-4 h-4 mr-2" />
                 {isAllSoldOut ? 'Group Buy Unavailable' : 'Buy with Friends'}
               </Button>
 
