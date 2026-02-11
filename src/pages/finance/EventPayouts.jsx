@@ -89,7 +89,9 @@ export function EventPayouts() {
         const promoterSales = event.promoter_sales || [];
 
         const completedOrders = (event.orders || []).filter(o => o.status === 'completed');
+        const refundedOrders = (event.orders || []).filter(o => o.status === 'refunded');
         const totalSales = completedOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+        const totalRefunds = refundedOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
         const platformFees = completedOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0);
 
         const promoterEarnings = {};
@@ -104,14 +106,14 @@ export function EventPayouts() {
         });
 
         const totalPromoterCommission = Object.values(promoterEarnings).reduce((sum, p) => sum + p.totalCommission, 0);
-        const organizerNet = totalSales - platformFees - totalPromoterCommission;
+        const organizerNet = totalSales - platformFees - totalPromoterCommission - totalRefunds;
 
         // Get all bank accounts, sorted by is_default
         const bankAccounts = event.organizers?.bank_accounts?.sort((a, b) => (a.is_default ? -1 : 0) - (b.is_default ? -1 : 0)) || [];
         const primaryBankAccount = bankAccounts.find(b => b.is_default) || bankAccounts[0];
 
         return {
-          ...event, totalSales, platformFees, organizerNet,
+          ...event, totalSales, totalRefunds, platformFees, organizerNet,
           promoterEarnings: Object.values(promoterEarnings), totalPromoterCommission,
           bankAccounts,
           primaryBankAccount
@@ -169,8 +171,8 @@ export function EventPayouts() {
         const { data: existingPayout } = await supabase
           .from('payouts')
           .select('id, payout_number')
-          .like('notes', `%${event.id}%`)
-          .eq('status', 'completed')
+          .contains('event_ids', [event.id])
+          .in('status', ['completed', 'processing'])
           .limit(1);
 
         if (existingPayout && existingPayout.length > 0) {
@@ -234,13 +236,14 @@ export function EventPayouts() {
           organizer_id: event.organizers?.id,
           bank_account_id: bankAccountId,
           payout_number: payoutNumber,
-          amount: event.totalSales,
+          amount: event.organizerNet,
           platform_fee_deducted: event.platformFees,
           net_amount: event.organizerNet,
           currency: event.currency || 'NGN',
           status: 'processing',
           transaction_reference: transactionRef || null,
           processed_at: new Date().toISOString(),
+          event_ids: [event.id],
           notes: `Event: ${event.title} (${event.id}). ${paymentNotes || ''}`
         }).select('id').single();
         if (payoutError) {
@@ -349,13 +352,14 @@ export function EventPayouts() {
           organizer_id: event.organizers?.id,
           bank_account_id: bankAccountId,
           payout_number: payoutNumber,
-          amount: event.totalSales,
+          amount: event.organizerNet,
           platform_fee_deducted: event.platformFees,
           net_amount: event.organizerNet,
           currency: event.currency || 'NGN',
           status: 'processing',
           transaction_reference: payoutNumber,
           processed_at: new Date().toISOString(),
+          event_ids: [event.id],
           notes: `Event: ${event.title} (${event.id})`
         }).select('id').single();
         if (payoutError) {
@@ -497,7 +501,7 @@ export function EventPayouts() {
               {expandedEvents[event.id] && (
                 <div className="px-4 pb-4 border-t border-border/10">
                   {/* Summary */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-b border-border/10">
+                  <div className={`grid grid-cols-2 ${event.totalRefunds > 0 ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-4 py-4 border-b border-border/10`}>
                     <div className="text-center p-3 bg-muted rounded-xl">
                       <p className="text-lg font-bold text-foreground">{formatPrice(event.totalSales, event.currency)}</p>
                       <p className="text-xs text-muted-foreground">Total Sales</p>
@@ -506,6 +510,12 @@ export function EventPayouts() {
                       <p className="text-lg font-bold text-blue-600">{formatPrice(event.platformFees, event.currency)}</p>
                       <p className="text-xs text-muted-foreground">Platform Fees</p>
                     </div>
+                    {event.totalRefunds > 0 && (
+                      <div className="text-center p-3 bg-red-50 rounded-xl">
+                        <p className="text-lg font-bold text-red-600">-{formatPrice(event.totalRefunds, event.currency)}</p>
+                        <p className="text-xs text-muted-foreground">Refunds</p>
+                      </div>
+                    )}
                     <div className="text-center p-3 bg-purple-50 rounded-xl">
                       <p className="text-lg font-bold text-purple-600">{formatPrice(event.totalPromoterCommission, event.currency)}</p>
                       <p className="text-xs text-muted-foreground">Promoter Commission</p>

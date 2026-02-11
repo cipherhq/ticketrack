@@ -352,8 +352,9 @@ export const calculateDonationFee = (donationAmount, fees, donorPaysFee = false)
     : Math.round((donationAmount - totalFee) * 100) / 100;
   
   // What the donor actually pays
-  const donorPays = donorPaysFee 
-    ? Math.round((donationAmount + totalFee) * 100) / 100
+  // When donor pays fee: add only processing fee on top (platform fee already deducted from organizer's share)
+  const donorPays = donorPaysFee
+    ? Math.round((donationAmount + processingFee) * 100) / 100
     : donationAmount;
   
   return {

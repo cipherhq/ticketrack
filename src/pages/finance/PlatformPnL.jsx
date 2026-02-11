@@ -192,7 +192,7 @@ export function PlatformPnL() {
       // Calculate derived metrics per currency
       Object.keys(currencyMetrics).forEach(curr => {
         const m = currencyMetrics[curr];
-        m.netRevenue = m.platformFees - m.processingCosts - m.promoterCommissions;
+        m.netRevenue = m.platformFees - m.processingCosts;
         m.netProfit = m.netRevenue - m.operatingExpenses - m.chargebacks;
         m.profitMargin = m.platformFees > 0 ? (m.netProfit / m.platformFees) * 100 : 0;
       });
@@ -437,15 +437,22 @@ export function PlatformPnL() {
                   <span className="pl-4">Payment Processing Fees</span>
                   <span className="font-medium">-{formatMultiCurrency('processingCosts')}</span>
                 </div>
-                <div className="flex justify-between text-red-600">
-                  <span className="pl-4">Promoter Commissions</span>
-                  <span className="font-medium">-{formatMultiCurrency('promoterCommissions')}</span>
-                </div>
                 <div className="flex justify-between font-semibold border-t pt-2">
                   <span>Net Revenue</span>
                   <span className={getTotalMetric('netRevenue') >= 0 ? 'text-green-600' : 'text-red-600'}>
                     {formatMultiCurrency('netRevenue')}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Organizer Costs (paid from organizer share, not platform revenue) */}
+            <div className="border-b pb-4">
+              <h3 className="font-semibold text-lg mb-3">Organizer Payouts</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-muted-foreground">
+                  <span className="pl-4">Promoter Commissions (from organizer share)</span>
+                  <span className="font-medium">{formatMultiCurrency('promoterCommissions')}</span>
                 </div>
               </div>
             </div>

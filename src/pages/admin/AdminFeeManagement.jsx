@@ -420,25 +420,25 @@ export function AdminFeeManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Percentage (%)</Label>
-                    <Input type="number" step="0.1" value={editingCountry.service_fee_percentage}
+                    <Input type="number" step="0.1" min="0" max="50" value={editingCountry.service_fee_percentage}
                       onChange={(e) => setEditingCountry({...editingCountry, service_fee_percentage: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
                   <div>
                     <Label>Fixed per Ticket ({getCurrencySymbol(editingCountry.default_currency)})</Label>
-                    <Input type="number" step="0.01" value={editingCountry.service_fee_fixed_per_ticket}
+                    <Input type="number" step="0.01" min="0" value={editingCountry.service_fee_fixed_per_ticket}
                       onChange={(e) => setEditingCountry({...editingCountry, service_fee_fixed_per_ticket: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
                   <div>
                     <Label>Fee Cap ({getCurrencySymbol(editingCountry.default_currency)}) - Leave blank for no cap</Label>
-                    <Input type="number" step="0.01" value={editingCountry.service_fee_cap}
+                    <Input type="number" step="0.01" min="0" value={editingCountry.service_fee_cap}
                       onChange={(e) => setEditingCountry({...editingCountry, service_fee_cap: e.target.value})}
                       placeholder="No cap" className="rounded-xl mt-1" />
                   </div>
                   <div>
                     <Label>Fixed per Order ({getCurrencySymbol(editingCountry.default_currency)})</Label>
-                    <Input type="number" step="0.01" value={editingCountry.processing_fee_fixed_per_order}
+                    <Input type="number" step="0.01" min="0" value={editingCountry.processing_fee_fixed_per_order}
                       onChange={(e) => setEditingCountry({...editingCountry, processing_fee_fixed_per_order: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
@@ -524,13 +524,13 @@ export function AdminFeeManagement() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Percentage (%)</Label>
-                    <Input type="number" step="0.1" value={editingCountry.stripe_processing_fee_pct}
+                    <Input type="number" step="0.1" min="0" max="15" value={editingCountry.stripe_processing_fee_pct}
                       onChange={(e) => setEditingCountry({...editingCountry, stripe_processing_fee_pct: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
                   <div>
                     <Label>Fixed ({getCurrencySymbol(editingCountry.default_currency)})</Label>
-                    <Input type="number" step="0.01" value={editingCountry.stripe_processing_fee_fixed}
+                    <Input type="number" step="0.01" min="0" value={editingCountry.stripe_processing_fee_fixed}
                       onChange={(e) => setEditingCountry({...editingCountry, stripe_processing_fee_fixed: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
@@ -546,17 +546,17 @@ export function AdminFeeManagement() {
                   <Percent className="w-4 h-4 text-teal-600" />
                   Paystack Processing Fees (Pass-through)
                 </h3>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Percentage (%)</Label>
-                    <Input type="number" step="0.1" value={editingCountry.paystack_processing_fee_pct}
+                    <Input type="number" step="0.1" min="0" max="15" value={editingCountry.paystack_processing_fee_pct}
                       onChange={(e) => setEditingCountry({...editingCountry, paystack_processing_fee_pct: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
                   <div>
                     <Label>Fixed ({getCurrencySymbol(editingCountry.default_currency)})</Label>
-                    <Input type="number" step="0.01" value={editingCountry.paystack_processing_fee_fixed}
+                    <Input type="number" step="0.01" min="0" value={editingCountry.paystack_processing_fee_fixed}
                       onChange={(e) => setEditingCountry({...editingCountry, paystack_processing_fee_fixed: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
@@ -570,17 +570,17 @@ export function AdminFeeManagement() {
                   <Percent className="w-4 h-4 text-orange-600" />
                   Flutterwave Processing Fees (Backup)
                 </h3>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Percentage (%)</Label>
-                    <Input type="number" step="0.1" value={editingCountry.flutterwave_processing_fee_pct}
+                    <Input type="number" step="0.1" min="0" max="15" value={editingCountry.flutterwave_processing_fee_pct}
                       onChange={(e) => setEditingCountry({...editingCountry, flutterwave_processing_fee_pct: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
                   <div>
                     <Label>Fixed ({getCurrencySymbol(editingCountry.default_currency)})</Label>
-                    <Input type="number" step="0.01" value={editingCountry.flutterwave_processing_fee_fixed}
+                    <Input type="number" step="0.01" min="0" value={editingCountry.flutterwave_processing_fee_fixed}
                       onChange={(e) => setEditingCountry({...editingCountry, flutterwave_processing_fee_fixed: e.target.value})}
                       className="rounded-xl mt-1" />
                   </div>
@@ -644,19 +644,19 @@ export function AdminFeeManagement() {
                   </div>
                   <div>
                     <Label>Service Fee Percentage (%)</Label>
-                    <Input type="number" step="0.1" value={editingOrganizer.custom_service_fee_percentage}
+                    <Input type="number" step="0.1" min="0" max="50" value={editingOrganizer.custom_service_fee_percentage}
                       onChange={(e) => setEditingOrganizer({...editingOrganizer, custom_service_fee_percentage: e.target.value})}
                       placeholder="Use country default" className="rounded-xl mt-1" />
                   </div>
                   <div>
                     <Label>Fixed Fee per Ticket</Label>
-                    <Input type="number" step="0.01" value={editingOrganizer.custom_service_fee_fixed}
+                    <Input type="number" step="0.01" min="0" value={editingOrganizer.custom_service_fee_fixed}
                       onChange={(e) => setEditingOrganizer({...editingOrganizer, custom_service_fee_fixed: e.target.value})}
                       placeholder="Use country default" className="rounded-xl mt-1" />
                   </div>
                   <div>
                     <Label>Fee Cap (max fee per order)</Label>
-                    <Input type="number" step="0.01" value={editingOrganizer.custom_service_fee_cap}
+                    <Input type="number" step="0.01" min="0" value={editingOrganizer.custom_service_fee_cap}
                       onChange={(e) => setEditingOrganizer({...editingOrganizer, custom_service_fee_cap: e.target.value})}
                       placeholder="Use country default" className="rounded-xl mt-1" />
                   </div>

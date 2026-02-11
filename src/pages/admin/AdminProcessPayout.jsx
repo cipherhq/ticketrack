@@ -34,6 +34,7 @@ export function AdminProcessPayout() {
   const [pendingEvents, setPendingEvents] = useState([]);
   const [bankAccount, setBankAccount] = useState(null);
   const [payoutResult, setPayoutResult] = useState(null);
+  const [selectedFees, setSelectedFees] = useState(null);
 
   useEffect(() => {
     loadOrganizers();
@@ -91,24 +92,27 @@ export function AdminProcessPayout() {
     setLoading(true);
 
     try {
-      // Load pending events for this organizer
-      const { data: events } = await supabase
-        .from('events')
-        .select('id, title, start_date, ticket_price')
-        .eq('organizer_id', organizer.id)
-        .eq('payout_status', 'pending');
+      const currency = getDefaultCurrency(organizer.country_code);
 
-      setPendingEvents(events || []);
+      // Load pending events, bank account, and fees in parallel
+      const [eventsRes, accountsRes, fees] = await Promise.all([
+        supabase
+          .from('events')
+          .select('id, title, start_date, ticket_price')
+          .eq('organizer_id', organizer.id)
+          .eq('payout_status', 'pending'),
+        supabase
+          .from('bank_accounts')
+          .select('*')
+          .eq('organizer_id', organizer.id)
+          .eq('is_primary', true)
+          .limit(1),
+        getFeesByCurrency(currency),
+      ]);
 
-      // Load bank account
-      const { data: accounts } = await supabase
-        .from('bank_accounts')
-        .select('*')
-        .eq('organizer_id', organizer.id)
-        .eq('is_primary', true)
-        .limit(1);
-
-      setBankAccount(accounts?.[0] || null);
+      setPendingEvents(eventsRes.data || []);
+      setBankAccount(accountsRes.data?.[0] || null);
+      setSelectedFees(fees);
     } catch (error) {
       console.error('Error loading organizer details:', error);
     } finally {
@@ -131,8 +135,29 @@ export function AdminProcessPayout() {
 
     try {
       const amount = parseFloat(selectedOrganizer.available_balance) || 0;
+
+      if (amount <= 0) {
+        alert('Cannot process payout: organizer has no available balance.');
+        setProcessing(false);
+        return;
+      }
+
+      // Idempotency check: prevent double-payout within the last hour
+      const { data: recentPayout } = await supabase
+        .from('payouts')
+        .select('id, payout_number')
+        .eq('organizer_id', selectedOrganizer.id)
+        .in('status', ['completed', 'processing'])
+        .gte('processed_at', new Date(Date.now() - 3600000).toISOString())
+        .limit(1);
+
+      if (recentPayout && recentPayout.length > 0) {
+        alert(`A payout was already processed for this organizer recently (${recentPayout[0].payout_number}). Please wait and refresh before retrying.`);
+        setProcessing(false);
+        return;
+      }
       const currency = getDefaultCurrency(selectedOrganizer.country_code);
-      const fees = await getFeesByCurrency(currency);
+      const fees = selectedFees || await getFeesByCurrency(currency);
       const feeRate = fees?.serviceFeePercent || 0.05;
       const platformFee = Math.round(amount * feeRate * 100) / 100;
       const netAmount = amount - platformFee;
@@ -145,7 +170,7 @@ export function AdminProcessPayout() {
           organizer_id: selectedOrganizer.id,
           bank_account_id: bankAccount.id,
           payout_number: reference,
-          amount: amount,
+          amount: netAmount,
           platform_fee_deducted: platformFee,
           net_amount: netAmount,
           currency: currency,
@@ -394,7 +419,7 @@ export function AdminProcessPayout() {
                         <span className="text-sm">Total Revenue</span>
                       </div>
                       <p className="text-xl font-semibold text-foreground">
-                        {formatPrice(selectedOrganizer.available_balance)}
+                        {formatPrice(selectedOrganizer.available_balance, getDefaultCurrency(selectedOrganizer.country_code))}
                       </p>
                     </div>
                     <div className="p-4 bg-muted rounded-xl">
@@ -407,24 +432,34 @@ export function AdminProcessPayout() {
                   </div>
 
                   {/* Fee Breakdown */}
-                  <div className="p-4 border border-border/10 rounded-xl mb-4">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-muted-foreground">Gross Amount</span>
-                      <span className="text-foreground">{formatPrice(selectedOrganizer.available_balance)}</span>
-                    </div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-muted-foreground">Platform Fee (10%)</span>
-                      <span className="text-red-600">-{formatPrice(selectedOrganizer.available_balance * 0.1)}</span>
-                    </div>
-                    <div className="border-t border-border/10 pt-2 mt-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-foreground">Net Payout</span>
-                        <span className="text-xl font-semibold text-green-600">
-                          {formatPrice(selectedOrganizer.available_balance * 0.9)}
-                        </span>
+                  {(() => {
+                    const feeRate = selectedFees?.serviceFeePercent || 0.05;
+                    const feePercent = Math.round(feeRate * 1000) / 10;
+                    const gross = parseFloat(selectedOrganizer.available_balance) || 0;
+                    const fee = Math.round(gross * feeRate * 100) / 100;
+                    const net = gross - fee;
+                    const currency = getDefaultCurrency(selectedOrganizer.country_code);
+                    return (
+                      <div className="p-4 border border-border/10 rounded-xl mb-4">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-muted-foreground">Gross Amount</span>
+                          <span className="text-foreground">{formatPrice(gross, currency)}</span>
+                        </div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-muted-foreground">Platform Fee ({feePercent}%)</span>
+                          <span className="text-red-600">-{formatPrice(fee, currency)}</span>
+                        </div>
+                        <div className="border-t border-border/10 pt-2 mt-2">
+                          <div className="flex justify-between">
+                            <span className="font-medium text-foreground">Net Payout</span>
+                            <span className="text-xl font-semibold text-green-600">
+                              {formatPrice(net, currency)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* Bank Account */}
                   {bankAccount ? (
