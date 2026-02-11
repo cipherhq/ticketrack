@@ -76,7 +76,7 @@ export function AdBanner({ position, ads = [] }) {
         onClick={handleClick}
         className={`bg-muted rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow ${
           isSidebar
-            ? 'w-full h-[160px]'
+            ? 'w-full h-[220px]'
             : 'w-full h-[120px] md:h-[180px]'
         }`}
       >
