@@ -146,7 +146,7 @@ export function OrganizerOrders() {
         promo_code_id
       `)
       .in('event_id', eventIds)
-      .not('status', 'in', '("cancelled","failed")')
+      .not('status', 'in', '(cancelled,failed)')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -310,7 +310,7 @@ export function OrganizerOrders() {
         .select('id, status')
         .eq('order_id', refundOrder.id)
         .not('status', 'eq', 'rejected')
-        .single();
+        .maybeSingle();
 
       if (existingRequest) {
         toast.error('A refund request already exists for this order. Status: ' + existingRequest.status);

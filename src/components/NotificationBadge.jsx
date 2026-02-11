@@ -187,9 +187,9 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
         })
       } catch (e) { /* table may not exist */ }
 
-      // Fetch support tickets
+      // Fetch support tickets (table may not exist yet)
       try {
-        const { data: tickets } = await supabase
+        const { data: tickets, error: supportErr } = await supabase
           .from('support_tickets')
           .select('id, subject, created_at')
           .eq('organizer_id', organizerId)
@@ -197,18 +197,20 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
           .order('created_at', { ascending: false })
           .limit(5)
 
-        tickets?.forEach(ticket => {
-          items.push({
-            id: `support-${ticket.id}`,
-            type: 'support',
-            icon: HelpCircle,
-            title: 'Support Ticket',
-            message: ticket.subject || 'New support request',
-            time: ticket.created_at,
-            path: '/organizer/support',
-            notificationKey: 'support'
+        if (!supportErr && tickets) {
+          tickets.forEach(ticket => {
+            items.push({
+              id: `support-${ticket.id}`,
+              type: 'support',
+              icon: HelpCircle,
+              title: 'Support Ticket',
+              message: ticket.subject || 'New support request',
+              time: ticket.created_at,
+              path: '/organizer/support',
+              notificationKey: 'support'
+            })
           })
-        })
+        }
       } catch (e) { /* table may not exist */ }
 
       // Sort by time

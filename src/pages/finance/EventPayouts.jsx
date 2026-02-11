@@ -89,7 +89,7 @@ export function EventPayouts() {
         const promoterSales = event.promoter_sales || [];
 
         const completedOrders = (event.orders || []).filter(o => o.status === 'completed');
-        const refundedOrders = (event.orders || []).filter(o => o.status === 'refunded');
+        const refundedOrders = (event.orders || []).filter(o => o.status === 'refunded' || o.status === 'refund_pending');
         const totalSales = completedOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
         const totalRefunds = refundedOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
         const platformFees = completedOrders.reduce((sum, o) => sum + parseFloat(o.platform_fee || 0), 0);

@@ -85,8 +85,17 @@ export function OrganizerRefunds() {
       setRefunds(enrichedRefunds);
 
       // Calculate stats
-      const pending = enrichedRefunds?.filter(r => r.status === 'pending' || (r.organizer_decision === 'pending' && !r.refund_reference && !r.stripe_refund_id)).length || 0;
-      const approved = enrichedRefunds?.filter(r => r.refund_reference || r.stripe_refund_id || r.status === 'completed').length || 0;
+      const pending = enrichedRefunds?.filter(r =>
+        r.organizer_decision !== 'approved' &&
+        r.organizer_decision !== 'rejected' &&
+        r.status !== 'completed' &&
+        r.status !== 'rejected' &&
+        !r.refund_reference &&
+        !r.stripe_refund_id
+      ).length || 0;
+      const approved = enrichedRefunds?.filter(r =>
+        r.organizer_decision === 'approved' || r.refund_reference || r.stripe_refund_id || r.status === 'completed'
+      ).length || 0;
       const rejected = enrichedRefunds?.filter(r => r.status === 'rejected' || r.organizer_decision === 'rejected').length || 0;
       setStats({ pending, approved, rejected, total: enrichedRefunds?.length || 0 });
     } catch (error) {
