@@ -432,136 +432,140 @@ export function WebHome() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative min-h-[480px] md:min-h-[540px] overflow-hidden">
+      <section className="relative overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1920&q=80" 
+          <img
+            src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1920&q=80"
             alt="Concert crowd"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/95 via-[#0f2847]/85 to-[#1a3a5c]/70" />
         </div>
-        
-        {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-20 lg:py-24">
-          <div className="max-w-3xl">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-full text-sm font-medium mb-4">
-              <span className="text-lg">✨</span>
-              Your Gateway to Amazing Events
-            </div>
-            
-            {/* Headline */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-              Your Next<br />
-              <span className="text-blue-500">Unforgettable</span><br />
-              Experience Awaits
-            </h1>
-            
-            {/* Subtitle */}
-            <p className="text-base md:text-lg text-gray-300 mb-6 max-w-xl">
-              From electrifying concerts to inspiring conferences. Discover and book tickets for the best events happening worldwide.
-            </p>
-            
-            {/* New Search Bar */}
-            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl p-3 flex flex-col lg:flex-row gap-2 max-w-4xl mb-8 shadow-xl">
-              {/* Location Input */}
-              <div className="flex-1 relative">
-                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Location</div>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      placeholder="City or Venue"
-                      className="w-full outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 bg-transparent"
-                    />
-                  </div>
-                  {location && (
-                    <button onClick={() => setLocation('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Clear location">
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+
+        {/* Content - Two column on desktop */}
+        <div className="relative max-w-7xl mx-auto px-4 py-10 md:py-14 lg:py-16">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-12">
+            {/* Left: Text */}
+            <div className="flex-1 min-w-0">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 px-3 py-1.5 rounded-full text-sm font-medium mb-3">
+                <span className="text-base">✨</span>
+                Your Gateway to Amazing Events
               </div>
 
-              {/* Date Filter */}
-              <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
-                <div
-                  className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  onClick={() => setShowDateDropdown(!showDateDropdown)}
-                >
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Dates</div>
-                    <div className="text-sm text-gray-900 dark:text-gray-100">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+              {/* Headline */}
+              <h1 className="text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-white mb-3 leading-tight">
+                Your Next <span className="text-blue-500">Unforgettable</span> Experience Awaits
+              </h1>
+
+              {/* Subtitle */}
+              <p className="text-sm md:text-base text-gray-300 mb-4 max-w-lg">
+                From electrifying concerts to inspiring conferences. Discover and book tickets for the best events worldwide.
+              </p>
+
+              {/* Stats - inline with text */}
+              <div className="flex flex-wrap gap-6">
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">{platformStats.eventsHosted}</div>
+                  <div className="text-gray-400 text-xs">Events Hosted</div>
                 </div>
-                {showDateDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-20">
-                    {dateOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
-                        className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm first:rounded-t-xl last:rounded-b-xl ${dateFilter === option.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'text-gray-900 dark:text-gray-100'}`}
-                      >
-                        {option.label}
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">{platformStats.ticketsSold}</div>
+                  <div className="text-gray-400 text-xs">Tickets Sold</div>
+                </div>
+                <div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">{platformStats.organizers}</div>
+                  <div className="text-gray-400 text-xs">Organizers</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Search Bar - stacked vertically on desktop */}
+            <div className="mt-6 lg:mt-0 lg:w-[380px] lg:flex-shrink-0">
+              <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-2xl p-3 flex flex-col gap-2 shadow-xl">
+                {/* Search Input */}
+                <div className="relative">
+                  <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <Search className="w-5 h-5 text-blue-600" />
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Search</div>
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        placeholder="Artist, Event or Venue"
+                        className="w-full outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 bg-transparent"
+                      />
+                    </div>
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Clear search">
+                        <X className="w-4 h-4" />
                       </button>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Search Input */}
-              <div className="flex-[2] relative">
-                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <Search className="w-5 h-5 text-blue-600" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Search</div>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      placeholder="Artist, Event or Venue"
-                      className="w-full outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 bg-transparent"
-                    />
+                {/* Location Input */}
+                <div className="relative">
+                  <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Location</div>
+                      <input
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        placeholder="City or Venue"
+                        className="w-full outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 bg-transparent"
+                      />
+                    </div>
+                    {location && (
+                      <button onClick={() => setLocation('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Clear location">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Clear search">
-                      <X className="w-4 h-4" />
-                    </button>
+                </div>
+
+                {/* Date Filter */}
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => setShowDateDropdown(!showDateDropdown)}
+                  >
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Dates</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{dateOptions.find(d => d.value === dateFilter)?.label}</div>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </div>
+                  {showDateDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-20">
+                      {dateOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => { setDateFilter(option.value); setShowDateDropdown(false); }}
+                          className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm first:rounded-t-xl last:rounded-b-xl ${dateFilter === option.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'text-gray-900 dark:text-gray-100'}`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* Search Button */}
-              <button
-                onClick={handleSearch}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.02]"
-              >
-                Search
-              </button>
-            </div>
-            
-            {/* Stats */}
-            <div className="flex flex-wrap gap-6 md:gap-10">
-              <div>
-                <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.eventsHosted}</div>
-                <div className="text-gray-400 text-sm">Events Hosted</div>
-              </div>
-              <div>
-                <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.ticketsSold}</div>
-                <div className="text-gray-400 text-sm">Tickets Sold</div>
-              </div>
-              <div>
-                <div className="text-3xl md:text-4xl font-bold text-white">{platformStats.organizers}</div>
-                <div className="text-gray-400 text-sm">Organizers</div>
+                {/* Search Button */}
+                <button
+                  onClick={handleSearch}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                >
+                  <Search className="w-4 h-4" />
+                  Search Events
+                </button>
               </div>
             </div>
           </div>
