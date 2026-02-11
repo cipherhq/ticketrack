@@ -639,7 +639,7 @@ export function OrganizerHome() {
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-medium text-foreground">{event.name}</h4>
                       {event.isFree && (
-                        <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Free</span>
+                        <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Free Event</span>
                       )}
                     </div>
                     <div className="flex items-center space-x-6 text-sm text-muted-foreground">
@@ -666,7 +666,17 @@ export function OrganizerHome() {
                           <p className="text-xs text-muted-foreground">in donations</p>
                         </>
                       ) : (
-                        <p className="text-muted-foreground text-sm">No donations yet</p>
+                        <>
+                          <p className="text-muted-foreground text-sm mb-1">Pending RSVPs</p>
+                          <div className="w-24 h-2 bg-card rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500"
+                              style={{
+                                width: `${Math.min((event.ticketsSold / event.totalTickets) * 100, 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </>
                       )
                     ) : (
                       <>

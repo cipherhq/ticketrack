@@ -1,7 +1,7 @@
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, CheckCircle, AlertCircle, Heart, Users, ChevronDown, ChevronRight, DollarSign, HelpCircle, Mail, Send, Key, Shield } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, MoreVertical, Calendar, Loader2, MapPin, Copy, Radio, Lock, RefreshCw, BarChart3, ArrowRightLeft, Ticket, X, XCircle, CheckCircle, AlertCircle, Heart, Users, ChevronDown, ChevronRight, DollarSign, HelpCircle, Mail, Send, Key, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -89,6 +89,12 @@ export function EventManagement() {
   const [newPassword, setNewPassword] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [sendingInvite, setSendingInvite] = useState(false);
+
+  // Cancel event modal state
+  const [cancelModal, setCancelModal] = useState({ open: false, event: null });
+  const [cancelReason, setCancelReason] = useState('');
+  const [customCancelReason, setCustomCancelReason] = useState('');
+  const [cancelingEvent, setCancelingEvent] = useState(false);
 
   useEffect(() => {
     if (organizer?.id) {
@@ -708,6 +714,83 @@ export function EventManagement() {
     }
   };
 
+  // Cancel Event Functions
+  const openCancelModal = (event) => {
+    setCancelModal({ open: true, event });
+    setCancelReason('');
+    setCustomCancelReason('');
+  };
+
+  const closeCancelModal = () => {
+    setCancelModal({ open: false, event: null });
+    setCancelReason('');
+    setCustomCancelReason('');
+  };
+
+  const handleCancelEvent = async () => {
+    const event = cancelModal.event;
+    if (!event) return;
+    const reason = cancelReason === 'other' ? customCancelReason : cancelReason;
+    if (!reason) return;
+
+    setCancelingEvent(true);
+    try {
+      await supabase.from('events').update({
+        status: 'cancelled',
+        cancellation_reason: reason,
+      }).eq('id', event.id);
+
+      // If recurring, cancel all child events too
+      if (event.is_recurring) {
+        await supabase.from('events').update({
+          status: 'cancelled',
+          cancellation_reason: reason,
+        }).eq('parent_event_id', event.id);
+      }
+
+      // Trigger auto-refunds
+      try {
+        await supabase.functions.invoke('auto-refund-on-cancellation', {
+          body: {
+            eventId: event.id,
+            reason: reason,
+            organizerId: organizer.id,
+          },
+        });
+      } catch (refundError) {
+        console.error('Error processing auto-refunds:', refundError);
+      }
+
+      // Refund child events if recurring
+      if (event.is_recurring) {
+        const { data: childEvents } = await supabase
+          .from('events')
+          .select('id')
+          .eq('parent_event_id', event.id);
+        if (childEvents?.length > 0) {
+          for (const child of childEvents) {
+            try {
+              await supabase.functions.invoke('auto-refund-on-cancellation', {
+                body: { eventId: child.id, reason, organizerId: organizer.id },
+              });
+            } catch (e) {
+              console.error('Error refunding child event:', e);
+            }
+          }
+        }
+      }
+
+      closeCancelModal();
+      loadEvents();
+      alert('Event cancelled successfully. Attendees will be notified and refunds will be processed automatically.');
+    } catch (err) {
+      console.error('Error cancelling event:', err);
+      alert('Failed to cancel event: ' + (err.message || 'Unknown error'));
+    } finally {
+      setCancelingEvent(false);
+    }
+  };
+
   // Access Management Functions
   const openAccessModal = async (event) => {
     setAccessModal({ open: true, event });
@@ -982,7 +1065,7 @@ export function EventManagement() {
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h4 className="font-medium text-foreground truncate">{event.title}</h4>
                             {getStatusBadge(event)}
-                            {event.isFree && <Badge className="bg-green-100 text-green-700">Free</Badge>}
+                            {event.isFree && <Badge className="bg-green-100 text-green-700">Free Event</Badge>}
                             {event.soldTickets > 0 && (
                               <Badge className={`flex items-center gap-1 ${event.isFree ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
                                 {event.isFree ? <Users className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
@@ -1025,7 +1108,7 @@ export function EventManagement() {
                                   {formatPrice(event.donationAmount, event.currency)} donations
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground">No donations yet</span>
+                                <span className="text-muted-foreground">Pending RSVPs</span>
                               )
                             ) : (
                               <span className="text-[#2969FF] font-medium">{formatPrice(event.revenue, event.currency)}</span>
@@ -1131,6 +1214,9 @@ export function EventManagement() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => toggleTransfers(event.id, event.allow_transfers)}><ArrowRightLeft className="w-4 h-4 mr-2" />{event.allow_transfers ? 'Disable Transfers' : 'Enable Transfers'}</DropdownMenuItem>
                             <DropdownMenuSeparator />
+                            {eventStatus !== 'completed' && eventStatus !== 'cancelled' && (
+                              <DropdownMenuItem onClick={() => openCancelModal(event)} className="text-red-600"><XCircle className="w-4 h-4 mr-2" />Cancel Event</DropdownMenuItem>
+                            )}
                             {isDeletable ? (
                               <DropdownMenuItem onClick={() => deleteEvent(event.id)} className="text-red-600" disabled={deleting === event.id}><Trash2 className="w-4 h-4 mr-2" />{deleting === event.id ? 'Deleting...' : 'Delete Event'}</DropdownMenuItem>
                             ) : (
@@ -1533,6 +1619,104 @@ export function EventManagement() {
                 className="w-full h-12 rounded-xl"
               >
                 Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Event Modal */}
+      {cancelModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-border/10">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Cancel Event</h3>
+                <p className="text-sm text-muted-foreground mt-1">{cancelModal.event?.title}</p>
+              </div>
+              <button onClick={closeCancelModal} className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {cancelModal.event?.soldTickets > 0 && (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>This event has {cancelModal.event.soldTickets} ticket(s) sold. All attendees will be automatically refunded and notified via email.</span>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label className="font-medium">Reason for cancellation <span className="text-red-500">*</span></Label>
+                <div className="space-y-2">
+                  {[
+                    'Low ticket sales',
+                    'Venue unavailable',
+                    'Scheduling conflict',
+                    'Weather conditions',
+                    'Artist/performer cancellation',
+                    'Personal reasons',
+                  ].map((reason) => (
+                    <label
+                      key={reason}
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        cancelReason === reason ? 'border-red-400 bg-red-50' : 'border-border hover:border-border/80'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="cancelReason"
+                        value={reason}
+                        checked={cancelReason === reason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        className="accent-red-500"
+                      />
+                      <span className="text-sm">{reason}</span>
+                    </label>
+                  ))}
+                  <label
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      cancelReason === 'other' ? 'border-red-400 bg-red-50' : 'border-border hover:border-border/80'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="cancelReason"
+                      value="other"
+                      checked={cancelReason === 'other'}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      className="accent-red-500"
+                    />
+                    <span className="text-sm">Other</span>
+                  </label>
+                  {cancelReason === 'other' && (
+                    <Input
+                      placeholder="Please specify the reason..."
+                      value={customCancelReason}
+                      onChange={(e) => setCustomCancelReason(e.target.value)}
+                      className="h-12 rounded-xl mt-2"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-border/10 flex gap-3">
+              <Button
+                variant="outline"
+                onClick={closeCancelModal}
+                className="flex-1 h-12 rounded-xl"
+              >
+                Keep Event
+              </Button>
+              <Button
+                onClick={handleCancelEvent}
+                disabled={cancelingEvent || !cancelReason || (cancelReason === 'other' && !customCancelReason.trim())}
+                className="flex-1 h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+              >
+                {cancelingEvent ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Cancelling...</>
+                ) : (
+                  'Cancel Event'
+                )}
               </Button>
             </div>
           </div>
