@@ -102,6 +102,7 @@ serve(async (req) => {
 
 IMPORTANT:
 - Only extract information actually visible in the image
+- For "eventType" and "category": ALWAYS infer these from the event title, visuals, and context even if not explicitly written on the flyer. Every event has a type and category — use your best judgment.
 - For dates, use the correct year (assume 2025/2026 if year is not shown)
 - For times, convert to 24h format (e.g., "8 PM" → "20:00")
 - For prices, extract just the number without currency symbols
