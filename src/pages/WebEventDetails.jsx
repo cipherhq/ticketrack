@@ -1711,9 +1711,13 @@ export function WebEventDetails() {
                     {event.venue_address && (
                       <p className="text-sm text-foreground">{event.venue_address}</p>
                     )}
-                    <p className="text-sm text-muted-foreground">
-                      {[event.city, event.state, event.country].filter(Boolean).join(', ') || 'Address TBA'}
-                    </p>
+                    {[event.city, event.state, event.country].filter(Boolean).length > 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        {[event.city, event.state, event.country].filter(Boolean).join(', ')}
+                      </p>
+                    ) : !event.venue_address ? (
+                      <p className="text-sm text-muted-foreground">Address TBA</p>
+                    ) : null}
                   </div>
                   <a 
                     href={event.google_map_link || `https://maps.google.com/maps?q=${encodeURIComponent([event.venue_address, event.city, event.state, event.country].filter(Boolean).join(', '))}`}
@@ -2067,7 +2071,7 @@ export function WebEventDetails() {
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{recEvent.city || recEvent.venue_name || 'TBA'}</span>
+                      <span className="truncate">{recEvent.city || recEvent.venue_name || recEvent.venue_address || 'TBA'}</span>
                     </div>
                   </div>
                 </CardContent>
