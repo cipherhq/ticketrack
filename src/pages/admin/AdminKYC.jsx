@@ -114,6 +114,20 @@ export function AdminKYC() {
 
       if (error) throw error;
 
+      // Also update organizers table so organizer shows as verified
+      const { error: orgError } = await supabase
+        .from('organizers')
+        .update({
+          kyc_status: 'verified',
+          kyc_verified: true,
+          kyc_level: level,
+          kyc_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', selectedKYC.organizer_id);
+
+      if (orgError) throw orgError;
+
       // Log admin action
       await logAdminAction('kyc_approved', 'kyc_verification', selectedKYC.id, { level });
 
@@ -146,6 +160,18 @@ export function AdminKYC() {
         .eq('id', selectedKYC.id);
 
       if (error) throw error;
+
+      // Also update organizers table
+      const { error: orgError } = await supabase
+        .from('organizers')
+        .update({
+          kyc_status: 'rejected',
+          kyc_verified: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', selectedKYC.organizer_id);
+
+      if (orgError) throw orgError;
 
       // Log admin action
       await logAdminAction('kyc_rejected', 'kyc_verification', selectedKYC.id, { reason: rejectionReason });

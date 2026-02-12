@@ -140,8 +140,7 @@ export function KYCVerification() {
 
       if (result?.status === 'verified') {
         setSuccess('Identity verified successfully! You can now receive payouts.');
-        // Reload page to reflect updated organizer data
-        window.location.reload();
+        await loadKycData();
       } else if (result?.status === 'processing') {
         setSuccess('Your verification is being processed. This page will update automatically.');
         // Poll again in 10 seconds
@@ -274,9 +273,8 @@ export function KYCVerification() {
       setIsManualUploadOpen(false);
       setManualIdFile(null);
       setManualIdType('');
-      
-      // Reload to show updated status
-      window.location.reload();
+
+      await loadKycData();
     } catch (error) {
       console.error('Manual upload error:', error);
       setError('Failed to upload document. Please try again.');
