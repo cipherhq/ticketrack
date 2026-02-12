@@ -89,6 +89,7 @@ export function AdminOrganizers() {
   const [countryFilter, setCountryFilter] = useState('all');
   const [selectedOrganizer, setSelectedOrganizer] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [detailsDefaultTab, setDetailsDefaultTab] = useState('info');
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [actionType, setActionType] = useState(null);
   const [processing, setProcessing] = useState(false);
@@ -242,8 +243,9 @@ export function AdminOrganizers() {
     return COUNTRY_CURRENCY_MAP[countryCode]?.currency || 'USD';
   };
 
-  const openDetailsDialog = async (organizer) => {
+  const openDetailsDialog = async (organizer, tab = 'info') => {
     setSelectedOrganizer(organizer);
+    setDetailsDefaultTab(tab);
     setCustomFeeData({
       enabled: organizer.custom_fee_enabled || false,
       percentage: organizer.custom_service_fee_percentage || "",
@@ -886,14 +888,35 @@ export function AdminOrganizers() {
                             <MoreVertical className="w-5 h-5 text-muted-foreground" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem onClick={() => openDetailsDialog(org)}>
+                        <DropdownMenuContent align="end" className="rounded-xl w-52">
+                          <DropdownMenuItem onClick={() => openDetailsDialog(org, 'info')}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleLoginAs(org)} className="text-[#2969FF]">
                             <LogIn className="w-4 h-4 mr-2" />
                             Login as Organizer
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => openDetailsDialog(org, 'account')}>
+                            <Settings2 className="w-4 h-4 mr-2" />
+                            Manage Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDetailsDialog(org, 'pricing')}>
+                            <Percent className="w-4 h-4 mr-2" />
+                            Manage Fees
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDetailsDialog(org, 'features')}>
+                            <ToggleRight className="w-4 h-4 mr-2" />
+                            Manage Features
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDetailsDialog(org, 'events')}>
+                            <Ticket className="w-4 h-4 mr-2" />
+                            View Events
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openDetailsDialog(org, 'tier')}>
+                            <Trophy className="w-4 h-4 mr-2" />
+                            Tier & Payouts
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {(org.kyc_status === 'pending' || org.kyc_status === 'in_review') && (
@@ -1007,7 +1030,7 @@ export function AdminOrganizers() {
                   <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
                 </div>
               ) : (
-                <Tabs defaultValue="info" className="w-full">
+                <Tabs value={detailsDefaultTab} onValueChange={setDetailsDefaultTab} className="w-full">
                   <TabsList className="bg-muted rounded-xl flex-wrap">
                     <TabsTrigger value="info" className="rounded-lg">Contact Info</TabsTrigger>
                     <TabsTrigger value="account" className="rounded-lg">Account</TabsTrigger>
