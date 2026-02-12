@@ -1,7 +1,8 @@
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send, Copy, Wallet, Users } from 'lucide-react'
+import { Ticket, Download, Share2, Mail, Calendar, MapPin, Loader2, ArrowLeft, CheckCircle, RotateCcw, AlertCircle, X, Clock, XCircle, Monitor, ExternalLink, Send, Copy, Wallet, Users, ShieldAlert } from 'lucide-react'
+import { getPaymentProvider } from '@/config/payments'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -59,6 +60,7 @@ export function WebTickets() {
   const { user } = useAuth()
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
+  const stripeTransferHandled = useRef(false)
   const [refundModal, setRefundModal] = useState({ open: false, ticket: null })
   const [refundReason, setRefundReason] = useState('')
   const [refundLoading, setRefundLoading] = useState(false)
@@ -84,6 +86,20 @@ export function WebTickets() {
     loadTickets()
     loadRefundStatus()
     loadTransferredOut()
+
+    // Handle Stripe transfer return
+    const params = new URLSearchParams(window.location.search)
+    const transferStatus = params.get('transfer')
+    const transferRef = params.get('ref')
+    if (transferStatus === 'success' && transferRef && !stripeTransferHandled.current) {
+      stripeTransferHandled.current = true
+      handleStripeTransferReturn(transferRef)
+      // Clean URL params
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (transferStatus === 'cancelled') {
+      toast.error('Transfer payment was cancelled')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
   }, [user, navigate])
 
   const loadTickets = async () => {
@@ -244,34 +260,40 @@ export function WebTickets() {
   const openTransferModal = async (ticket) => {
     setTransferError('')
     setTransferEmail('')
-    
+
+    // Prevent transferring checked-in tickets
+    if (ticket.is_checked_in) {
+      toast.error('This ticket has already been checked in and cannot be transferred')
+      return
+    }
+
     // Check if event allows transfers
     const { data: event } = await supabase
       .from('events')
-      .select('allow_transfers, currency')
+      .select('allow_transfers, max_transfers, transfer_fee, currency, country_code')
       .eq('id', ticket.event_id)
       .single()
-    
+
     if (!event?.allow_transfers) {
       toast.error('Ticket transfers are disabled for this event')
       return
     }
-    
-    if (ticket.transfer_count >= (event.max_transfers || 2)) {
+
+    if (ticket.transfer_count >= (event.max_transfers || 1)) {
       toast.error('Maximum transfer limit reached for this ticket')
       return
     }
-    
-    // Get transfer fee from fee configuration
-    const currency = event?.currency || getDefaultCurrency(event?.country_code || event?.country)
+
+    // Calculate transfer fee from country-level fee configuration
+    const currency = event?.currency || getDefaultCurrency(event?.country_code)
     const { calculateTransferFee, getFeesByCurrency } = await import('@/config/fees')
     const fees = await getFeesByCurrency(currency)
     const ticketPrice = ticket.total_price || 0
     const feeCalculation = calculateTransferFee(ticketPrice, fees)
-    
+
     setTransferFee(feeCalculation.transferFee)
     setTransferCurrency(currency)
-    
+
     setTransferModal({ open: true, ticket })
   }
   
@@ -280,69 +302,99 @@ export function WebTickets() {
       setTransferError('Please enter recipient email')
       return
     }
-    
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(transferEmail)) {
       setTransferError('Please enter a valid email address')
       return
     }
-    
+
+    // Prevent self-transfer
+    if (transferEmail.trim().toLowerCase() === user.email?.toLowerCase()) {
+      setTransferError('You cannot transfer a ticket to yourself')
+      return
+    }
+
     setTransferLoading(true)
     setTransferError('')
-    
+
     try {
       // Check if payment is required
       if (transferFee > 0) {
-        // Initiate Paystack payment
         const reference = 'TRF-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase()
-        
-        // Get Paystack public key
-        const { data: config } = await supabase
-          .from('payment_gateway_config')
-          .select('public_key')
-          .eq('provider', 'paystack')
-          .eq('is_active', true)
-          .limit(1)
-          .single()
-        
-        if (!config?.public_key) {
-          setTransferError('Payment not configured. Contact support.')
-          setTransferLoading(false)
-          return
-        }
-        
-        // Load Paystack if not loaded
-        if (!window.PaystackPop) {
-          const script = document.createElement('script')
-          script.src = 'https://js.paystack.co/v1/inline.js'
-          script.async = true
-          await new Promise((resolve, reject) => {
-            script.onload = resolve
-            script.onerror = reject
-            document.body.appendChild(script)
+        const provider = getPaymentProvider(transferCurrency)
+
+        if (provider === 'stripe') {
+          // Use Stripe checkout via edge function
+          const { data, error } = await supabase.functions.invoke('create-transfer-checkout', {
+            body: {
+              ticketId: transferModal.ticket.id,
+              recipientEmail: transferEmail.trim().toLowerCase(),
+              transferFee,
+              currency: transferCurrency,
+              reference,
+              successUrl: `${window.location.origin}/tickets?transfer=success&ref=${reference}`,
+              cancelUrl: `${window.location.origin}/tickets?transfer=cancelled`,
+            }
           })
-        }
-        
-        // Initialize Paystack popup
-        const handler = window.PaystackPop.setup({
-          key: config.public_key,
-          email: user.email,
-          amount: Math.round(transferFee * 100), // Paystack uses kobo
-          currency: transferCurrency,
-          ref: reference,
-          metadata: {
-            type: 'ticket_transfer',
-            ticket_id: transferModal.ticket.id,
-            recipient_email: transferEmail.trim().toLowerCase()
-          },
-          callback: async (response) => {
-            // Payment successful - complete transfer
-            await completeTransfer(response.reference)
-          },
-          onClose: () => {
+
+          if (error || !data?.url) {
+            setTransferError('Failed to initiate payment. Please try again.')
             setTransferLoading(false)
+            return
           }
-        })
-        handler.openIframe()
+
+          // Redirect to Stripe checkout
+          window.location.href = data.url
+        } else {
+          // Use Paystack inline
+          const { data: config } = await supabase
+            .from('payment_gateway_config')
+            .select('public_key')
+            .eq('provider', 'paystack')
+            .eq('is_active', true)
+            .limit(1)
+            .single()
+
+          if (!config?.public_key) {
+            setTransferError('Payment not configured. Contact support.')
+            setTransferLoading(false)
+            return
+          }
+
+          // Load Paystack if not loaded
+          if (!window.PaystackPop) {
+            const script = document.createElement('script')
+            script.src = 'https://js.paystack.co/v1/inline.js'
+            script.async = true
+            await new Promise((resolve, reject) => {
+              script.onload = resolve
+              script.onerror = reject
+              document.body.appendChild(script)
+            })
+          }
+
+          // Initialize Paystack popup
+          const handler = window.PaystackPop.setup({
+            key: config.public_key,
+            email: user.email,
+            amount: Math.round(transferFee * 100),
+            currency: transferCurrency,
+            ref: reference,
+            metadata: {
+              type: 'ticket_transfer',
+              ticket_id: transferModal.ticket.id,
+              recipient_email: transferEmail.trim().toLowerCase()
+            },
+            callback: async (response) => {
+              // Payment successful - verify server-side then complete transfer
+              await completeTransfer(response.reference)
+            },
+            onClose: () => {
+              setTransferLoading(false)
+            }
+          })
+          handler.openIframe()
+        }
       } else {
         // Free transfer - proceed directly
         await completeTransfer(null)
@@ -425,6 +477,29 @@ export function WebTickets() {
       setTransferError('Failed to complete transfer. Please try again.')
     } finally {
       setTransferLoading(false)
+    }
+  }
+
+  // Handle return from Stripe transfer checkout
+  const handleStripeTransferReturn = async (reference) => {
+    try {
+      // Look up the pending transfer from Stripe metadata via the checkout session
+      const { data, error } = await supabase.functions.invoke('complete-stripe-transfer', {
+        body: { reference }
+      })
+
+      if (error) throw error
+
+      if (data?.success) {
+        toast.success(`Ticket transferred to ${data.recipient_name} (${data.recipient_email})`)
+        loadTickets()
+        loadTransferredOut()
+      } else {
+        toast.error(data?.message || 'Transfer failed after payment. Please contact support.')
+      }
+    } catch (err) {
+      console.error('Stripe transfer completion error:', err)
+      toast.error('Failed to complete transfer. Please contact support with reference: ' + reference)
     }
   }
 
@@ -869,8 +944,8 @@ export function WebTickets() {
               
               {/* Smart Wallet Button - Shows Apple/Google based on device */}
               <WalletButtons ticket={ticket} event={ticket.event} size="sm" singleButton={true} />
-              {/* Only show transfer button if event allows transfers and ticket hasn't been transferred */}
-              {ticket.event?.allow_transfers && ticket.transfer_count === 0 && (
+              {/* Only show transfer button if event allows transfers, ticket hasn't been transferred, and not checked in */}
+              {ticket.event?.allow_transfers && ticket.transfer_count === 0 && !ticket.is_checked_in && (
               <Button
                 size="sm"
                 variant="outline"
