@@ -70,7 +70,6 @@ export const formatPrice = (amount, currencyCode) => {
     return '—';
   }
   
-  if (amount === 0) return 'Free';
   if (!amount && amount !== 0) return `${currency.symbol}0`;
   
   // Show cents when they exist (e.g. $49.95), hide for round numbers (e.g. $50)

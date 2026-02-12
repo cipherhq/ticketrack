@@ -98,7 +98,8 @@ export function AdminOrganizers() {
   const [customFeeData, setCustomFeeData] = useState({
     enabled: false,
     percentage: "",
-    fixed: ""
+    fixed: "",
+    cap: ""
   });
   const [savingFees, setSavingFees] = useState(false);
   const [payoutOverrideReason, setPayoutOverrideReason] = useState('');
@@ -218,7 +219,8 @@ export function AdminOrganizers() {
     setCustomFeeData({
       enabled: organizer.custom_fee_enabled || false,
       percentage: organizer.custom_service_fee_percentage || "",
-      fixed: organizer.custom_service_fee_fixed || ""
+      fixed: organizer.custom_service_fee_fixed || "",
+      cap: organizer.custom_service_fee_cap || ""
     });
     setActionType(action);
     setActionDialogOpen(true);
@@ -245,7 +247,8 @@ export function AdminOrganizers() {
     setCustomFeeData({
       enabled: organizer.custom_fee_enabled || false,
       percentage: organizer.custom_service_fee_percentage || "",
-      fixed: organizer.custom_service_fee_fixed || ""
+      fixed: organizer.custom_service_fee_fixed || "",
+      cap: organizer.custom_service_fee_cap || ""
     });
     // Initialize account data
     setAccountData({
@@ -285,6 +288,7 @@ export function AdminOrganizers() {
           custom_fee_enabled: customFeeData.enabled,
           custom_service_fee_percentage: customFeeData.percentage ? parseFloat(customFeeData.percentage) : null,
           custom_service_fee_fixed: customFeeData.fixed ? parseFloat(customFeeData.fixed) : null,
+          custom_service_fee_cap: customFeeData.cap ? parseFloat(customFeeData.cap) : null,
           custom_fee_set_by: admin?.id,
           custom_fee_set_at: new Date().toISOString()
         })
@@ -299,7 +303,8 @@ export function AdminOrganizers() {
         {
           name: selectedOrganizer.business_name,
           percentage: customFeeData.percentage,
-          fixed: customFeeData.fixed
+          fixed: customFeeData.fixed,
+          cap: customFeeData.cap
         }
       );
 
@@ -307,7 +312,8 @@ export function AdminOrganizers() {
         ...prev,
         custom_fee_enabled: customFeeData.enabled,
         custom_service_fee_percentage: customFeeData.percentage ? parseFloat(customFeeData.percentage) : null,
-        custom_service_fee_fixed: customFeeData.fixed ? parseFloat(customFeeData.fixed) : null
+        custom_service_fee_fixed: customFeeData.fixed ? parseFloat(customFeeData.fixed) : null,
+        custom_service_fee_cap: customFeeData.cap ? parseFloat(customFeeData.cap) : null
       }));
 
       loadOrganizers();
@@ -1689,45 +1695,71 @@ export function AdminOrganizers() {
                         />
                       </div>
 
-                      {customFeeData.enabled && (
-                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-border/10">
-                          <div>
-                            <label className="text-sm text-muted-foreground mb-2 block">Percentage Fee (%)</label>
-                            <Input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              max="100"
-                              placeholder="e.g., 3.5"
-                              value={customFeeData.percentage}
-                              onChange={(e) => setCustomFeeData(prev => ({ ...prev, percentage: e.target.value }))}
-                              className="rounded-xl"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm text-muted-foreground mb-2 block">Fixed Fee (₦)</label>
-                            <Input
-                              type="number"
-                              step="1"
-                              min="0"
-                              placeholder="e.g., 100"
-                              value={customFeeData.fixed}
-                              onChange={(e) => setCustomFeeData(prev => ({ ...prev, fixed: e.target.value }))}
-                              className="rounded-xl"
-                            />
-                          </div>
-                        </div>
-                      )}
+                      {customFeeData.enabled && (() => {
+                        const sym = COUNTRY_CURRENCY_MAP[selectedOrganizer?.country_code]?.symbol || '₦';
+                        return (
+                          <>
+                            <div className="grid grid-cols-3 gap-4 pt-3 border-t border-border/10">
+                              <div>
+                                <label className="text-sm text-muted-foreground mb-2 block">Percentage Fee (%)</label>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  min="0"
+                                  max="100"
+                                  placeholder="e.g., 3.5"
+                                  value={customFeeData.percentage}
+                                  onChange={(e) => setCustomFeeData(prev => ({ ...prev, percentage: e.target.value }))}
+                                  className="rounded-xl"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm text-muted-foreground mb-2 block">Fixed Fee ({sym})</label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="0"
+                                  placeholder="e.g., 100"
+                                  value={customFeeData.fixed}
+                                  onChange={(e) => setCustomFeeData(prev => ({ ...prev, fixed: e.target.value }))}
+                                  className="rounded-xl"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm text-muted-foreground mb-2 block">Fee Cap ({sym})</label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="0"
+                                  placeholder="Max fee"
+                                  value={customFeeData.cap}
+                                  onChange={(e) => setCustomFeeData(prev => ({ ...prev, cap: e.target.value }))}
+                                  className="rounded-xl"
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">Leave empty for no cap</p>
+                              </div>
+                            </div>
 
-                      {customFeeData.enabled && (
-                        <div className="p-3 bg-blue-50 rounded-xl text-sm">
-                          <p className="text-blue-800 font-medium">Fee Calculation Example</p>
-                          <p className="text-blue-600">
-                            For a ₦10,000 ticket: {customFeeData.percentage || 0}% + ₦{customFeeData.fixed || 0} =
-                            ₦{((parseFloat(customFeeData.percentage) || 0) / 100 * 10000 + (parseFloat(customFeeData.fixed) || 0)).toLocaleString()}
-                          </p>
-                        </div>
-                      )}
+                            <div className="p-3 bg-blue-50 rounded-xl text-sm">
+                              <p className="text-blue-800 font-medium">Fee Calculation Example</p>
+                              <p className="text-blue-600">
+                                {(() => {
+                                  const pct = parseFloat(customFeeData.percentage) || 0;
+                                  const fixed = parseFloat(customFeeData.fixed) || 0;
+                                  const cap = parseFloat(customFeeData.cap) || 0;
+                                  let fee = (pct / 100 * 10000) + fixed;
+                                  const uncapped = fee;
+                                  if (cap > 0 && fee > cap) fee = cap;
+                                  return <>
+                                    For a {sym}10,000 ticket: {pct}% + {sym}{fixed} = {sym}{uncapped.toLocaleString()}
+                                    {cap > 0 && uncapped > cap && <> (capped to {sym}{cap.toLocaleString()})</>}
+                                  </>;
+                                })()}
+                              </p>
+                            </div>
+                          </>
+                        );
+                      })()}
 
                       <Button
                         onClick={saveCustomFees}
