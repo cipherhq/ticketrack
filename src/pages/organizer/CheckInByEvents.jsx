@@ -280,15 +280,17 @@ export function CheckInByEvents() {
       return;
     }
 
-    // Prevent duplicate scans within 3 seconds
+    // Prevent duplicate scans within 3 seconds - show already checked in
     if (fromScanner && cleanCode === lastScannedCode) {
-      console.log('Duplicate scan ignored:', cleanCode);
+      playSound('warning');
+      vibrateDevice('warning');
+      setCheckInResult({
+        success: false,
+        message: 'This ticket has already been checked in.',
+        alreadyCheckedIn: true,
+      });
       setProcessing(false);
       setScannerProcessing(false);
-      // Resume scanning after short delay
-      setTimeout(() => {
-        if (scanDialogOpen) startQRScanner();
-      }, 500);
       return;
     }
 
@@ -354,7 +356,7 @@ export function CheckInByEvents() {
 
       let query = supabase
         .from('tickets')
-        .select('id, attendee_name, attendee_email, ticket_code, is_checked_in, event_id, payment_status');
+        .select('id, attendee_name, attendee_email, ticket_code, is_checked_in, checked_in_at, event_id, payment_status');
 
       if (isUUID) {
         // It's a UUID - search by ID
@@ -445,13 +447,18 @@ export function CheckInByEvents() {
         return;
       }
 
-      // Check current status
+      // Check current status - prevent duplicate check-in
       if (!isUndo && ticket.is_checked_in) {
+        const checkedInTime = ticket.checked_in_at
+          ? new Date(ticket.checked_in_at).toLocaleString('en-NG', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+          : '';
         playSound('warning');
         vibrateDevice('warning');
         setCheckInResult({
           success: false,
-          message: 'This ticket has already been checked in.',
+          message: checkedInTime
+            ? `This ticket was already checked in at ${checkedInTime}.`
+            : 'This ticket has already been checked in.',
           attendeeName: ticket.attendee_name,
           alreadyCheckedIn: true,
         });

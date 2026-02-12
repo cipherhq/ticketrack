@@ -167,11 +167,16 @@ export function useOfflineCheckIn(selectedEventId, organizerId) {
         };
       }
 
-      // Check current state
+      // Check current state - prevent duplicate check-in
       if (!isUndo && ticket.is_checked_in) {
+        const checkedInTime = ticket.checked_in_at
+          ? new Date(ticket.checked_in_at).toLocaleString('en-NG', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+          : '';
         return {
           success: false,
-          message: 'This ticket has already been checked in.',
+          message: checkedInTime
+            ? `This ticket was already checked in at ${checkedInTime}.`
+            : 'This ticket has already been checked in.',
           attendeeName: ticket.attendee_name,
           alreadyCheckedIn: true,
         };
