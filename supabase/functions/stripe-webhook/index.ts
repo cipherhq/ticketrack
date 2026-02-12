@@ -277,12 +277,44 @@ serve(async (req) => {
             .eq("id", shareId)
             .single();
 
-          // Record the share payment
-          const { data: shareResult, error: shareError } = await supabase.rpc("record_share_payment", {
-            p_share_id: shareId,
-            p_payment_reference: session.payment_intent || session.id,
-            p_payment_method: "stripe"
-          });
+          // Look up split_type to determine if this is a pool payment
+          const { data: splitTypeData } = await supabase
+            .from("group_split_payments")
+            .select("split_type")
+            .eq("id", splitPaymentId)
+            .single();
+
+          let shareResult: any = null;
+          let shareError: any = null;
+
+          if (splitTypeData?.split_type === 'pool') {
+            // Pool: record contribution with actual amount from Stripe session
+            const contributionAmount = session.metadata?.pool_amount
+              ? parseFloat(session.metadata.pool_amount)
+              : (session.amount_total ? session.amount_total / 100 : 0);
+
+            if (contributionAmount > 0) {
+              const result = await supabase.rpc("record_pool_contribution", {
+                p_share_id: shareId,
+                p_amount: contributionAmount,
+                p_payment_reference: session.payment_intent || session.id,
+                p_payment_method: "stripe",
+              });
+              shareResult = result.data;
+              shareError = result.error;
+            } else {
+              console.error("Pool contribution: no valid amount found");
+            }
+          } else {
+            // Equal split: existing record_share_payment call
+            const result = await supabase.rpc("record_share_payment", {
+              p_share_id: shareId,
+              p_payment_reference: session.payment_intent || session.id,
+              p_payment_method: "stripe"
+            });
+            shareResult = result.data;
+            shareError = result.error;
+          }
 
           if (shareError) {
             console.error("Error recording split payment:", shareError);
@@ -299,13 +331,13 @@ serve(async (req) => {
                 .eq("payment_status", "unpaid")
                 .neq("id", shareId);
 
-              const { data: splitPaymentData } = await supabase
+              const { data: splitPaymentNotifyData } = await supabase
                 .from("group_split_payments")
                 .select("event:events(title)")
                 .eq("id", paidShare.split_payment_id)
                 .single();
 
-              const eventTitle = splitPaymentData?.event?.title || "the event";
+              const eventTitle = splitPaymentNotifyData?.event?.title || "the event";
               const payerName = paidShare?.name || "A group member";
 
               for (const share of otherShares || []) {

@@ -22,6 +22,7 @@ export function SplitPaymentModal({
   const [members, setMembers] = useState([
     { email: '', name: '', isNew: true }
   ]);
+  const [splitType, setSplitType] = useState('equal');
   const [deadlineHours, setDeadlineHours] = useState(24);
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState(false);
@@ -90,7 +91,7 @@ export function SplitPaymentModal({
           name: m.name.trim() || m.email.split('@')[0],
           user_id: m.user_id || null
         })),
-        splitType: 'equal',
+        splitType,
         deadlineHours
       });
 
@@ -161,20 +162,66 @@ export function SplitPaymentModal({
                 </CardContent>
               </Card>
 
+              {/* Split Type Toggle */}
+              <div className="space-y-2">
+                <Label>Split Type</Label>
+                <div className="flex rounded-xl overflow-hidden border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setSplitType('equal')}
+                    className={`flex-1 py-2.5 px-4 text-sm font-medium transition-colors ${
+                      splitType === 'equal'
+                        ? 'bg-[#2969FF] text-white'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    Equal Split
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSplitType('pool')}
+                    className={`flex-1 py-2.5 px-4 text-sm font-medium transition-colors ${
+                      splitType === 'pool'
+                        ? 'bg-[#2969FF] text-white'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    Pool (Flexible)
+                  </button>
+                </div>
+              </div>
+
               {/* Split Preview */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium">{memberCount} people</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatPrice(amountPerPerson, currency)}
+                {splitType === 'equal' ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      <span className="font-medium">{memberCount} people</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">per person</div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {formatPrice(amountPerPerson, currency)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">per person</div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center space-y-1">
+                    <div className="flex items-center justify-center gap-2">
+                      <DollarSign className="w-5 h-5 text-blue-600" />
+                      <span className="text-2xl font-bold text-blue-600">
+                        {formatPrice(grandTotal, currency)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      Target total &middot; {memberCount} contributors
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Each person pays what they can until the target is met
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Members */}
@@ -252,11 +299,19 @@ export function SplitPaymentModal({
                 <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-amber-800">
                   <p className="font-medium">How it works:</p>
-                  <ul className="mt-1 space-y-1 list-disc list-inside text-amber-700">
-                    <li>Each person gets a unique payment link</li>
-                    <li>Tickets are only issued when everyone pays</li>
-                    <li>If someone doesn't pay, all payments are refunded</li>
-                  </ul>
+                  {splitType === 'equal' ? (
+                    <ul className="mt-1 space-y-1 list-disc list-inside text-amber-700">
+                      <li>Each person gets a unique payment link</li>
+                      <li>Tickets are only issued when everyone pays</li>
+                      <li>If someone doesn't pay, all payments are refunded</li>
+                    </ul>
+                  ) : (
+                    <ul className="mt-1 space-y-1 list-disc list-inside text-amber-700">
+                      <li>Each person gets a payment link and can contribute any amount</li>
+                      <li>Tickets are issued when the pool reaches the target</li>
+                      <li>If the target isn't met by the deadline, all contributions are refunded</li>
+                    </ul>
+                  )}
                 </div>
               </div>
 
@@ -286,12 +341,23 @@ export function SplitPaymentModal({
                 </p>
               </div>
 
-              {/* Amount Per Person */}
+              {/* Amount Per Person / Pool Target */}
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-green-600">
-                  {formatPrice(splitResult?.amount_per_share || amountPerPerson, currency)}
-                </div>
-                <div className="text-sm text-muted-foreground">per person</div>
+                {splitType === 'pool' ? (
+                  <>
+                    <div className="text-3xl font-bold text-green-600">
+                      {formatPrice(grandTotal, currency)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">pool target</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-green-600">
+                      {formatPrice(splitResult?.amount_per_share || amountPerPerson, currency)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">per person</div>
+                  </>
+                )}
               </div>
 
               {/* Payment Links */}

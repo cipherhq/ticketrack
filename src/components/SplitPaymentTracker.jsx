@@ -134,7 +134,12 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
   const split = splitData.split_payment;
   const paidCount = splitData.paid_count || 0;
   const totalCount = shares.length;
-  const progress = totalCount > 0 ? (paidCount / totalCount) * 100 : 0;
+  const isPool = split?.split_type === 'pool';
+  const poolCollected = parseFloat(split?.amount_collected || 0);
+  const poolTotal = parseFloat(split?.grand_total || 0);
+  const progress = isPool
+    ? (poolTotal > 0 ? (poolCollected / poolTotal) * 100 : 0)
+    : (totalCount > 0 ? (paidCount / totalCount) * 100 : 0);
   const splitStatus = formatSplitStatus(split?.status);
 
   return (
@@ -155,10 +160,23 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
         {/* Progress */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{paidCount} of {totalCount} paid</span>
-            <span className="font-medium">
-              {formatPrice(splitData.total_paid || 0, split?.currency)} / {formatPrice(split?.grand_total, split?.currency)}
-            </span>
+            {isPool ? (
+              <>
+                <span className="text-muted-foreground">
+                  {formatPrice(poolCollected, split?.currency)} of {formatPrice(poolTotal, split?.currency)} collected ({Math.round(progress)}%)
+                </span>
+                <span className="font-medium">
+                  {formatPrice(Math.max(0, poolTotal - poolCollected), split?.currency)} remaining
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-muted-foreground">{paidCount} of {totalCount} paid</span>
+                <span className="font-medium">
+                  {formatPrice(splitData.total_paid || 0, split?.currency)} / {formatPrice(split?.grand_total, split?.currency)}
+                </span>
+              </>
+            )}
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -201,13 +219,16 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
                 <div className="flex items-center gap-2">
                   <div className="text-right mr-2">
                     <div className="font-medium text-sm">
-                      {formatPrice(share.share_amount, split?.currency)}
+                      {isPool && !isPaid
+                        ? <span className="text-muted-foreground">--</span>
+                        : formatPrice(share.share_amount, split?.currency)
+                      }
                     </div>
                     <div className={`text-xs text-${status.color}-600`}>
                       {status.label}
                     </div>
                   </div>
-                  
+
                   {!isPaid && split?.status !== 'completed' && split?.status !== 'expired' && (
                     <div className="flex gap-1">
                       <Button
@@ -235,7 +256,7 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
                       </Button>
                     </div>
                   )}
-                  
+
                   {isPaid && (
                     <Check className="w-5 h-5 text-green-500" />
                   )}

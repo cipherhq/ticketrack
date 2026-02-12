@@ -479,12 +479,50 @@ async function handleSplitPaymentSuccess(supabase: any, reference: string, metad
     .eq("id", shareId)
     .single();
 
-  // Record the share payment
-  const { data: shareResult, error: shareError } = await supabase.rpc("record_share_payment", {
-    p_share_id: shareId,
-    p_payment_reference: reference,
-    p_payment_method: "paystack"
-  });
+  // Look up split_type to determine if this is a pool payment
+  const { data: splitPaymentData } = await supabase
+    .from("group_split_payments")
+    .select("split_type")
+    .eq("id", splitPaymentId)
+    .single();
+
+  let shareResult: any;
+  let shareError: any;
+
+  if (splitPaymentData?.split_type === 'pool') {
+    // Pool: record contribution with actual paid amount
+    const contributionAmount = metadata.pool_amount
+      ? parseFloat(metadata.pool_amount)
+      : (metadata.custom_fields?.[0]?.value ? parseFloat(metadata.custom_fields[0].value) : null);
+
+    // Fallback: use the transaction amount from Paystack (already in the webhook data)
+    // The caller passes the amount in kobo, we need to get it from the parent function
+    // For pool payments, we rely on the metadata.pool_amount set by the frontend
+    const amount = contributionAmount || parseFloat(metadata.pool_amount || 0);
+
+    if (!amount || amount <= 0) {
+      logError("pool_contribution_no_amount", new Error("No contribution amount"), { shareId, reference, metadata });
+      return;
+    }
+
+    const result = await supabase.rpc("record_pool_contribution", {
+      p_share_id: shareId,
+      p_amount: amount,
+      p_payment_reference: reference,
+      p_payment_method: "paystack",
+    });
+    shareResult = result.data;
+    shareError = result.error;
+  } else {
+    // Equal split: existing record_share_payment call
+    const result = await supabase.rpc("record_share_payment", {
+      p_share_id: shareId,
+      p_payment_reference: reference,
+      p_payment_method: "paystack"
+    });
+    shareResult = result.data;
+    shareError = result.error;
+  }
 
   if (shareError) {
     logError("split_payment_record", shareError, { shareId, reference });

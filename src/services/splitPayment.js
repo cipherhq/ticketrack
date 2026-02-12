@@ -89,6 +89,21 @@ export async function getMyPendingSplits() {
   return data?.filter(s => s.split_payment?.status !== 'expired' && s.split_payment?.status !== 'cancelled') || [];
 }
 
+// Record a pool contribution (variable amount)
+export async function recordPoolContribution(shareId, amount, paymentReference, paymentMethod) {
+  const { data, error } = await supabase.rpc('record_pool_contribution', {
+    p_share_id: shareId,
+    p_amount: amount,
+    p_payment_reference: paymentReference,
+    p_payment_method: paymentMethod
+  });
+
+  if (error) throw error;
+  if (!data?.success) throw new Error(data?.error || 'Failed to record contribution');
+
+  return data;
+}
+
 // Record a successful payment
 export async function recordSharePayment(shareId, paymentReference, paymentMethod) {
   const { data, error } = await supabase.rpc('record_share_payment', {
@@ -179,6 +194,11 @@ export function subscribeToSplitPayment(splitPaymentId, callbacks) {
 
 // Calculate split amounts
 export function calculateSplitAmounts(totalAmount, memberCount, splitType = 'equal') {
+  if (splitType === 'pool') {
+    // Pool: no fixed amounts, each person contributes freely
+    return Array(memberCount).fill(0);
+  }
+
   if (splitType === 'equal') {
     // Use floor instead of ceil to prevent negative last-person amounts
     // Round down to nearest cent, last person pays the remainder (slightly more)
