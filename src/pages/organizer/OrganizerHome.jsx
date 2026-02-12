@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, Users, Calendar, TrendingUp, Plus, Eye, Download, Link2, ShoppingCart, Loader2, Zap, X, Heart, Ticket, HelpCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { DollarSign, Users, Calendar, TrendingUp, Plus, Download, ShoppingCart, Loader2, Zap, X, Heart, Ticket, ArrowRight, ChevronRight, BarChart3 } from 'lucide-react';
+import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
@@ -408,152 +408,186 @@ export function OrganizerHome() {
     );
   }
 
+  // Total revenue across all currencies
+  const totalRevenuePrimary = Object.entries(stats.salesByCurrency || {});
+  const primaryCurrency = totalRevenuePrimary[0]?.[0] || defaultCurrency;
+  const primaryAmount = totalRevenuePrimary[0]?.[1] || 0;
+  const primaryNet = primaryAmount - (stats.feesByCurrency?.[primaryCurrency] || 0);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            Welcome back{organizer?.organization_name ? `, ${organizer.organization_name}` : ''}
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">Here's how your events are performing</p>
+        </div>
+        <Button
+          onClick={() => navigate('/organizer/events/create')}
+          className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl h-10 px-5 self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create Event
+        </Button>
+      </div>
+
       {/* Stripe Connect Promotion Banner */}
       {showConnectBanner && (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 p-6 text-white shadow-lg">
+        <div className="relative rounded-2xl border border-purple-200 bg-purple-50 p-5">
           <button
             onClick={dismissConnectBanner}
-            className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/20 transition-colors"
+            className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-purple-100 transition-colors text-purple-400 hover:text-purple-600"
             aria-label="Dismiss"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
-          
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-              <Zap className="w-8 h-8" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+              <Zap className="w-5 h-5 text-purple-600" />
             </div>
-            
-            <div className="flex-1">
-              <h3 className="text-xl font-bold mb-1">Get Paid Faster with Stripe Connect</h3>
-              <p className="text-white/90 text-sm mb-3">
-                Connect your Stripe account to receive ticket sales directly. Payouts are automatic, 
-                and you can process refunds instantly from your dashboard.
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-foreground text-sm">Get Paid Faster with Stripe Connect</h3>
+              <p className="text-muted-foreground text-sm mt-0.5">
+                Receive ticket sales directly, with automatic payouts and instant refund processing.
               </p>
-              <div className="flex flex-wrap gap-4 text-sm text-white/80">
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-                  Direct payouts to your bank
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-                  2-3 day transfers after events
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-                  Instant refund processing
-                </span>
-              </div>
             </div>
-            
             <Link
               to="/organizer/stripe-connect"
-              className="flex-shrink-0 px-6 py-3 bg-card text-purple-700 font-semibold rounded-xl hover:bg-purple-50 transition-colors shadow-md"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 transition-colors flex-shrink-0"
             >
               Set Up Now
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       )}
 
-      {/* Revenue by Currency - Mobile optimized grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        {Object.entries(stats.salesByCurrency || {}).map(([currency, amount]) => (
-          <Card key={currency} className="border-border/10 rounded-xl sm:rounded-2xl">
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">{currency} Sales</p>
-                  <h2 className="text-lg sm:text-2xl font-semibold text-foreground mb-0.5 sm:mb-1 truncate">
-                    {formatPrice(amount, currency)}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-green-600 truncate">Net: {formatPrice(amount - (stats.feesByCurrency?.[currency] || 0), currency)}</p>
-                </div>
-                <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-[#2969FF]/10 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-4 h-4 sm:w-6 sm:h-6 text-[#2969FF]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        <Card className="border-border/10 rounded-xl sm:rounded-2xl">
-          <CardContent className="p-3 sm:p-6">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">Tickets Sold</p>
-                <h2 className="text-lg sm:text-2xl font-semibold text-foreground mb-0.5 sm:mb-1">
-                  {stats.totalAttendees.toLocaleString()}
-                </h2>
-                <p className="text-xs sm:text-sm text-green-600">All events</p>
-              </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <Users className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="rounded-2xl border-gray-200 shadow-none">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Revenue</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-[#2969FF]" />
               </div>
             </div>
+            <p className="text-2xl font-bold text-foreground tracking-tight">
+              {formatPrice(primaryAmount, primaryCurrency)}
+            </p>
+            {totalRevenuePrimary.length > 1 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {totalRevenuePrimary.slice(1).map(([currency, amount]) => (
+                  <span key={currency} className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded-md">
+                    {formatPrice(amount, currency)}
+                  </span>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="border-border/10 rounded-xl sm:rounded-2xl">
-          <CardContent className="p-3 sm:p-6">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <p className="text-muted-foreground text-xs sm:text-sm mb-1 sm:mb-2">Total Events</p>
-                <h2 className="text-lg sm:text-2xl font-semibold text-foreground mb-0.5 sm:mb-1">
-                  {stats.totalEvents}
-                </h2>
-                <p className="text-xs sm:text-sm text-green-600">Created</p>
-              </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-orange-600" />
+        <Card className="rounded-2xl border-gray-200 shadow-none">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Net Earnings</span>
+              <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-green-600" />
               </div>
             </div>
+            <p className="text-2xl font-bold text-foreground tracking-tight">
+              {formatPrice(primaryNet, primaryCurrency)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">After platform fees</p>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-gray-200 shadow-none">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tickets Sold</span>
+              <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                <Ticket className="w-4 h-4 text-purple-600" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-foreground tracking-tight">
+              {stats.totalAttendees.toLocaleString()}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Across all events</p>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-gray-200 shadow-none">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Events</span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-amber-600" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-foreground tracking-tight">
+              {stats.totalEvents}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Total created</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Quick Links */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => navigate('/organizer/attendees')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-gray-200 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+        >
+          <Users className="w-4 h-4 text-muted-foreground" />
+          Attendees
+        </button>
+        <button
+          onClick={() => navigate('/organizer/finance')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-gray-200 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+        >
+          <Download className="w-4 h-4 text-muted-foreground" />
+          Payouts
+        </button>
+        <button
+          onClick={() => navigate('/organizer/events')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-gray-200 text-sm font-medium text-foreground hover:bg-gray-50 transition-colors"
+        >
+          <BarChart3 className="w-4 h-4 text-muted-foreground" />
+          Analytics
+        </button>
+      </div>
+
       {/* Free Events Stats */}
       {freeEventStats.freeEvents > 0 && (
-        <Card className="border-border/10 rounded-xl sm:rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50">
-          <CardHeader className="p-3 sm:p-6 pb-0 sm:pb-0">
-            <CardTitle className="text-foreground flex items-center gap-2 text-sm sm:text-base">
-              <Ticket className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-              Free Events Overview
-              <HelpTip>Track RSVPs and donations for your free events. Free events are a great way to build your audience!</HelpTip>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-3 sm:pt-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-              <div className="p-2 sm:p-4 rounded-lg sm:rounded-xl bg-card/80 border border-green-100">
-                <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
-                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                  <span className="text-xs sm:text-sm text-muted-foreground">Free Events</span>
-                </div>
-                <p className="text-lg sm:text-2xl font-semibold text-foreground">{freeEventStats.freeEvents}</p>
+        <Card className="rounded-2xl border-gray-200 shadow-none">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <Heart className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="p-4 rounded-xl bg-card/80 border border-green-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-muted-foreground">Total RSVPs</span>
-                </div>
-                <p className="text-2xl font-semibold text-foreground">{freeEventStats.totalRSVPs.toLocaleString()}</p>
+              <h3 className="font-semibold text-foreground text-sm">Free Events</h3>
+              <HelpTip>Track RSVPs and donations for your free events.</HelpTip>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Events</p>
+                <p className="text-lg font-bold text-foreground">{freeEventStats.freeEvents}</p>
               </div>
-              <div className="p-4 rounded-xl bg-card/80 border border-green-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <Heart className="w-4 h-4 text-pink-600" />
-                  <span className="text-sm text-muted-foreground">Donations</span>
-                </div>
-                <p className="text-2xl font-semibold text-foreground">{freeEventStats.totalDonations}</p>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">RSVPs</p>
+                <p className="text-lg font-bold text-foreground">{freeEventStats.totalRSVPs.toLocaleString()}</p>
               </div>
-              <div className="p-4 rounded-xl bg-card/80 border border-green-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm text-muted-foreground">Donation Amount</span>
-                </div>
-                <p className="text-xl font-semibold text-emerald-600">
-                  {Object.keys(freeEventStats.donationsByCurrency).length > 0 
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Donations</p>
+                <p className="text-lg font-bold text-foreground">{freeEventStats.totalDonations}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Donation Amount</p>
+                <p className="text-lg font-bold text-emerald-600">
+                  {Object.keys(freeEventStats.donationsByCurrency).length > 0
                     ? formatMultiCurrencyCompact(freeEventStats.donationsByCurrency)
                     : formatPrice(0, defaultCurrency)}
                 </p>
@@ -563,231 +597,175 @@ export function OrganizerHome() {
         </Card>
       )}
 
-      {/* Quick Actions */}
-      <Card className="border-border/10 rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            Quick Actions
-            <HelpTip>Common tasks to manage your events and sales</HelpTip>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Button 
-              onClick={() => navigate('/organizer/events/create')}
-              className="w-full h-14 rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90 text-white"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Event
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/organizer/attendees')}
-              className="w-full h-14 rounded-xl border-border/10"
-            >
-              <Eye className="w-5 h-5 mr-2" />
-              View Attendees
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/organizer/finance')}
-              className="w-full h-14 rounded-xl border-border/10"
-            >
-              <Download className="w-5 h-5 mr-2" />
-              View Payouts
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Upcoming Events */}
-      <Card className="border-border/10 rounded-2xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-foreground">Upcoming Events</CardTitle>
-            <Link to="/organizer/events" className="text-[#2969FF] text-sm hover:underline">
-              View All
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {upcomingEvents.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
-              <p className="text-muted-foreground mb-4">No upcoming events</p>
-              <Button 
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-foreground">Upcoming Events</h2>
+          <Link to="/organizer/events" className="text-[#2969FF] text-sm font-medium hover:underline flex items-center gap-1">
+            View all <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+        {upcomingEvents.length === 0 ? (
+          <Card className="rounded-2xl border-dashed border-gray-300 shadow-none">
+            <CardContent className="p-10 text-center">
+              <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-muted-foreground text-sm mb-4">No upcoming events yet</p>
+              <Button
                 onClick={() => navigate('/organizer/events/create')}
                 className="bg-[#2969FF] hover:bg-[#2969FF]/90 text-white rounded-xl"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Your First Event
               </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {upcomingEvents.map((event) => (
-                <div
-                  key={event.id}
-                  onClick={() => navigate(`/organizer/events/${event.id}/edit`)}
-                  className={`p-4 rounded-xl flex items-center justify-between cursor-pointer transition-colors ${
-                    event.isFree 
-                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100' 
-                      : 'bg-muted hover:bg-muted/80'
-                  }`}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium text-foreground">{event.name}</h4>
-                      {event.isFree && (
-                        <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Free Event</span>
-                      )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="rounded-2xl border-gray-200 shadow-none overflow-hidden">
+            <div className="divide-y divide-gray-100">
+              {upcomingEvents.map((event) => {
+                const soldPercent = Math.min((event.ticketsSold / event.totalTickets) * 100, 100);
+                return (
+                  <div
+                    key={event.id}
+                    onClick={() => navigate(`/organizer/events/${event.id}/edit`)}
+                    className="group flex items-center gap-4 p-4 hover:bg-gray-50/50 cursor-pointer transition-colors"
+                  >
+                    {/* Date badge */}
+                    <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0 ${
+                      event.isFree ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-[#2969FF]'
+                    }`}>
+                      <span className="text-[10px] font-semibold leading-none uppercase">{event.date.split(' ')[0]}</span>
+                      <span className="text-base font-bold leading-snug">{event.date.split(' ')[1]?.replace(',', '')}</span>
                     </div>
-                    <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{event.date}</span>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-foreground text-sm truncate">{event.name}</h4>
+                        {event.isFree && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-600 rounded flex-shrink-0">Free</span>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Users className="w-4 h-4" />
-                        <span>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Users className="w-3 h-3" />
                           {event.ticketsSold}/{event.totalTickets} {event.isFree ? 'RSVPs' : 'sold'}
                         </span>
+                        {/* Inline progress bar */}
+                        <div className="flex-1 max-w-[120px] h-1 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${event.isFree ? 'bg-emerald-400' : 'bg-[#2969FF]'}`}
+                            style={{ width: `${soldPercent}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">{Math.round(soldPercent)}%</span>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    {event.isFree ? (
-                      event.revenue > 0 ? (
-                        <>
-                          <p className="text-emerald-600 font-medium mb-1 flex items-center justify-end gap-1">
+
+                    <div className="text-right flex-shrink-0">
+                      {event.isFree ? (
+                        event.revenue > 0 ? (
+                          <p className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
                             <Heart className="w-3 h-3" />
                             {formatPrice(event.revenue, event.currency)}
                           </p>
-                          <p className="text-xs text-muted-foreground">in donations</p>
-                        </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">--</span>
+                        )
                       ) : (
-                        <>
-                          <p className="text-muted-foreground text-sm mb-1">Pending RSVPs</p>
-                          <div className="w-24 h-2 bg-card rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-emerald-500"
-                              style={{
-                                width: `${Math.min((event.ticketsSold / event.totalTickets) * 100, 100)}%`,
-                              }}
-                            />
-                          </div>
-                        </>
-                      )
-                    ) : (
-                      <>
-                        <p className="text-[#2969FF] font-medium mb-1">{formatPrice(event.revenue, event.currency)}</p>
-                        <div className="w-24 h-2 bg-card rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[#2969FF]"
-                            style={{
-                              width: `${Math.min((event.ticketsSold / event.totalTickets) * 100, 100)}%`,
-                            }}
-                          />
-                        </div>
-                      </>
-                    )}
+                        <p className="text-foreground font-semibold text-sm">{formatPrice(event.revenue, event.currency)}</p>
+                      )}
+                    </div>
+
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#2969FF] transition-colors flex-shrink-0" />
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </Card>
+        )}
+      </div>
 
-      {/* Event Promoters Section */}
-      <Card className="border-border/10 rounded-2xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-foreground flex items-center gap-2">
-              Event Promoters & Affiliates
-              <HelpTip>Invite promoters to sell tickets and earn commission. Great for expanding your reach!</HelpTip>
-            </CardTitle>
-            <Link to="/organizer/promoters" className="text-[#2969FF] text-sm hover:underline">
-              Manage All
-            </Link>
+      {/* Promoters & Affiliates Section */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-foreground">Promoters & Affiliates</h2>
+            <HelpTip>Invite promoters to sell tickets and earn commission.</HelpTip>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Promoter Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-muted-foreground">Active Promoters</span>
-                </div>
-                <p className="text-2xl font-semibold text-foreground">{promoterStats.activePromoters}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-green-50 border border-green-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <ShoppingCart className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-muted-foreground">Tickets Sold</span>
-                </div>
-                <p className="text-2xl font-semibold text-foreground">{promoterStats.ticketsSold}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm text-muted-foreground">Revenue</span>
-                </div>
-                <p className="text-xl font-semibold text-foreground">{formatMultiCurrencyCompact(promoterStats.revenueByCurrency)}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-orange-50 border border-orange-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm text-muted-foreground">Unpaid</span>
-                </div>
-                <p className="text-xl font-semibold text-orange-600">{formatMultiCurrencyCompact(promoterStats.unpaidByCurrency)}</p>
-              </div>
-            </div>
+          <Link to="/organizer/promoters" className="text-[#2969FF] text-sm font-medium hover:underline flex items-center gap-1">
+            Manage <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
 
-            {/* Top Promoters */}
-            {topPromoters.length > 0 ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <Card className="rounded-2xl border-gray-200 shadow-none">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground mb-1">Active Promoters</p>
+              <p className="text-xl font-bold text-foreground">{promoterStats.activePromoters}</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-gray-200 shadow-none">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground mb-1">Tickets Sold</p>
+              <p className="text-xl font-bold text-foreground">{promoterStats.ticketsSold}</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-gray-200 shadow-none">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground mb-1">Revenue</p>
+              <p className="text-lg font-bold text-foreground">{formatMultiCurrencyCompact(promoterStats.revenueByCurrency)}</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-gray-200 shadow-none">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground mb-1">Unpaid</p>
+              <p className="text-lg font-bold text-orange-600">{formatMultiCurrencyCompact(promoterStats.unpaidByCurrency)}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top Promoters */}
+        {topPromoters.length > 0 ? (
+          <Card className="rounded-2xl border-gray-200 shadow-none">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Top Promoters</p>
               <div className="space-y-3">
-                <h4 className="text-sm text-muted-foreground">Top Performing Promoters</h4>
-                {topPromoters.map((promoter) => (
-                  <div key={promoter.id} className="p-4 rounded-xl bg-muted flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium">
-                        {promoter.name?.[0]?.toUpperCase() || 'P'}
-                      </div>
-                      <div>
-                        <h5 className="font-medium text-foreground">{promoter.name}</h5>
-                        <p className="text-sm text-muted-foreground">
-                          {promoter.commission_value}% Commission • {promoter.promo_code}
-                        </p>
-                      </div>
+                {topPromoters.map((promoter, i) => (
+                  <div key={promoter.id} className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-muted-foreground/40 w-4 text-center">{i + 1}</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2969FF] to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
+                      {promoter.name?.[0]?.toUpperCase() || 'P'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm truncate">{promoter.name}</p>
+                      <p className="text-xs text-muted-foreground">{promoter.commission_value}% &middot; {promoter.promo_code}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-foreground font-medium">{promoter.total_sales || 0} tickets</p>
-                      <p className="text-sm text-green-600">{formatMultiCurrencyCompact(promoter.earnedByCurrency || {})} earned</p>
+                      <p className="text-sm font-semibold text-foreground">{promoter.total_sales || 0} sales</p>
+                      <p className="text-xs text-green-600">{formatMultiCurrencyCompact(promoter.earnedByCurrency || {})}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-6">
-                <Users className="w-10 h-10 text-foreground/20 mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm">No promoters yet</p>
-              </div>
-            )}
-
-            {/* CTA Button */}
-            <Button
-              onClick={() => navigate('/organizer/promoters')}
-              className="w-full h-12 rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90 text-white"
-            >
-              <Link2 className="w-5 h-5 mr-2" />
-              Manage Event Promoters
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="rounded-2xl border-dashed border-gray-300 shadow-none">
+            <CardContent className="p-6 text-center">
+              <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No promoters yet</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/organizer/promoters')}
+                className="mt-3 rounded-xl"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Add Promoter
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Tax Documents */}
       {organizer?.id && (
