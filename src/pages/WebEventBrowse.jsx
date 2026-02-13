@@ -688,9 +688,9 @@ export function WebEventBrowse() {
                       <div className="border-t border-border/10 pt-4 mt-2">
                         <div className="flex justify-between items-center gap-3">
                           {event.isSoldOut ? (
-                            <span className="font-bold text-red-500 text-lg truncate">Sold Out</span>
+                            <span className="font-bold text-red-500 text-lg flex-shrink-0">Sold Out</span>
                           ) : (
-                            <span className="font-bold text-[#2969FF] text-lg truncate">
+                            <span className="font-bold text-[#2969FF] text-lg flex-shrink-0">
                               {event.is_free ? "Free" : formatPrice(event.min_price, event.currency)}
                             </span>
                           )}
