@@ -2102,15 +2102,6 @@ export function WebEventDetails() {
 
       </div>{/* end max-w-7xl wrapper */}
 
-      {/* Right Side Ad Rail - visible on extra-wide screens (in addition to in-grid sidebar ad) */}
-      {ads.right?.length > 0 && (
-        <div className="hidden 2xl:block w-[160px] flex-shrink-0">
-          <div className="sticky top-24">
-            <AdBanner position="right" ads={ads.right} />
-          </div>
-        </div>
-      )}
-
 {/* Waitlist Dialog */}
       <WaitlistDialog 
         open={waitlistOpen} 
