@@ -162,7 +162,7 @@ export function PromoterLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-100 flex">
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <Logo className="h-8" />

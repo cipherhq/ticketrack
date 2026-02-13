@@ -143,7 +143,7 @@ export function AdminLayout({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -242,7 +242,7 @@ export function AdminLayout({ children }) {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 fixed h-full">
         {renderSidebar()}
