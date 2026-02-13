@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label'
 import { getCategories } from '@/services/events'
 import { supabase } from '@/lib/supabase'
 import { getUserLocation, getUserCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { useAds } from '@/hooks/useAds'
+import { AdBanner } from '@/components/AdBanner'
 
 const dateOptions = [
   { value: 'all', label: 'All Dates' },
@@ -31,6 +33,7 @@ const sortOptions = [
 export function WebEventBrowse() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { ads } = useAds()
   
   // Search bar state
   const [location, setLocation] = useState(searchParams.get('location') || '')
@@ -528,9 +531,15 @@ export function WebEventBrowse() {
         <div className="flex gap-8">
           {/* Desktop Sidebar Filters */}
           <div className="hidden md:block w-64 flex-shrink-0">
-            <div className="sticky top-24 bg-card rounded-2xl p-6 border border-border/10">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Filters</h2>
-              <FilterPanel />
+            <div className="sticky top-24 space-y-4">
+              <div className="bg-card rounded-2xl p-6 border border-border/10">
+                <h2 className="text-lg font-semibold text-foreground mb-4">Filters</h2>
+                <FilterPanel />
+              </div>
+              {/* Ad below filters */}
+              {ads.left?.length > 0 && (
+                <AdBanner position="left" ads={ads.left} />
+              )}
             </div>
           </div>
 
@@ -703,7 +712,23 @@ export function WebEventBrowse() {
               </div>
             )}
           </div>
+
+          {/* Right Side Ad - desktop only */}
+          {ads.right?.length > 0 && (
+            <div className="hidden xl:block w-[180px] flex-shrink-0">
+              <div className="sticky top-24">
+                <AdBanner position="right" ads={ads.right} />
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Bottom Banner Ad */}
+        {ads.bottom?.length > 0 && (
+          <div className="mt-8">
+            <AdBanner position="bottom" ads={ads.bottom} />
+          </div>
+        )}
       </div>
     </div>
   )
