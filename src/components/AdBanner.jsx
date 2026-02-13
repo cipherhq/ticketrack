@@ -58,7 +58,7 @@ export function AdBanner({ position, ads = [] }) {
 
   if (!ads.length) return null;
 
-  const isSidebar = position === 'right';
+  const isSidebar = position === 'right' || position === 'left';
 
   return (
     <div

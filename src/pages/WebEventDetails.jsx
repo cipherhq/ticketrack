@@ -710,7 +710,17 @@ export function WebEventDetails() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <div className="flex justify-center gap-6 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      {/* Left Side Ad Rail - visible on extra-wide screens */}
+      {ads.left?.length > 0 && (
+        <div className="hidden 2xl:block w-[160px] flex-shrink-0">
+          <div className="sticky top-24">
+            <AdBanner position="left" ads={ads.left} />
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl w-full">
       {/* Back Button */}
       <Button
         variant="ghost"
@@ -2012,12 +2022,21 @@ export function WebEventDetails() {
             </CardContent>
           </Card>
 
-          {/* Sidebar Ad */}
-          <div className="hidden lg:block mt-4">
-            <AdBanner position="right" ads={ads.right} />
-          </div>
+          {/* Sidebar Ad - sticky below ticket card */}
+          {ads.right?.length > 0 && (
+            <div className="mt-4 sticky top-[420px]">
+              <AdBanner position="right" ads={ads.right} />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Mobile Ad - shown between content on small screens */}
+      {ads.right?.length > 0 && (
+        <div className="lg:hidden my-6">
+          <AdBanner position="bottom" ads={ads.right} />
+        </div>
+      )}
 
       {/* Group Buy Modal */}
       <StartGroupModal 
@@ -2077,6 +2096,17 @@ export function WebEventDetails() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      )}
+
+      </div>{/* end max-w-7xl wrapper */}
+
+      {/* Right Side Ad Rail - visible on extra-wide screens (in addition to in-grid sidebar ad) */}
+      {ads.right?.length > 0 && (
+        <div className="hidden 2xl:block w-[160px] flex-shrink-0">
+          <div className="sticky top-24">
+            <AdBanner position="right" ads={ads.right} />
           </div>
         </div>
       )}
