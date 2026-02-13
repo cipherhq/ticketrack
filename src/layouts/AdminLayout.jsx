@@ -143,7 +143,7 @@ export function AdminLayout({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-200/60 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -160,7 +160,7 @@ export function AdminLayout({ children }) {
       className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
         isActive(item.path)
           ? 'bg-primary text-white'
-          : 'text-gray-900/60 hover:bg-gray-100 hover:text-gray-900'
+          : 'text-gray-900/60 hover:bg-gray-200/60 hover:text-gray-900'
       }`}
       title={item.label}
     >
@@ -223,7 +223,7 @@ export function AdminLayout({ children }) {
         </div>
         <Link
           to="/"
-          className="w-full mb-2 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors text-sm"
+          className="w-full mb-2 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-200/60 transition-colors text-sm"
         >
           <Home className="w-4 h-4" />
           Back to Website
@@ -242,7 +242,7 @@ export function AdminLayout({ children }) {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-200/60 flex">
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 fixed h-full">
         {renderSidebar()}
@@ -270,7 +270,7 @@ export function AdminLayout({ children }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+                className="lg:hidden p-2 rounded-lg hover:bg-gray-200/60"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu className="w-5 h-5 text-gray-900" />
@@ -280,7 +280,7 @@ export function AdminLayout({ children }) {
             <div className="flex items-center space-x-3">
               <ThemeToggle className="text-gray-900/60" />
               {/* Notification Bell */}
-              <button className="relative p-2 rounded-lg hover:bg-gray-100" title="Notifications">
+              <button className="relative p-2 rounded-lg hover:bg-gray-200/60" title="Notifications">
                 <Bell className="w-5 h-5 text-gray-900/60" />
                 {getTotalNotifications() > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />

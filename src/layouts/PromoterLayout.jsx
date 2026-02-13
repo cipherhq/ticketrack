@@ -162,7 +162,7 @@ export function PromoterLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-200/60 flex">
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <Logo className="h-8" />
@@ -192,7 +192,7 @@ export function PromoterLayout() {
               className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${
                 location.pathname === item.path
                   ? 'bg-primary text-white'
-                  : 'text-gray-900/60 hover:bg-gray-100'
+                  : 'text-gray-900/60 hover:bg-gray-200/60'
               }`}
             >
               <span className="flex items-center space-x-3">
@@ -211,7 +211,7 @@ export function PromoterLayout() {
         </nav>
 
         <div className="p-4 border-t border-gray-200 space-y-1">
-          <Link to="/" className="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100">
+          <Link to="/" className="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-200/60">
             <Home className="w-5 h-5" />
             <span>Back to Platform</span>
           </Link>
@@ -237,7 +237,7 @@ export function PromoterLayout() {
         <nav className="p-4 space-y-1">
           {navItems.map((item) => (
             <Link key={item.path} to={item.path} onClick={() => handleNavClick(item)}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${location.pathname === item.path ? 'bg-primary text-white' : 'text-gray-900/60 hover:bg-gray-100'}`}>
+              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${location.pathname === item.path ? 'bg-primary text-white' : 'text-gray-900/60 hover:bg-gray-200/60'}`}>
               <span className="flex items-center space-x-3">
                 <item.icon className="w-5 h-5" /><span>{item.label}</span>
               </span>
@@ -257,7 +257,7 @@ export function PromoterLayout() {
         <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <button className="lg:hidden p-2 rounded-xl hover:bg-gray-100" onClick={() => setSidebarOpen(true)}>
+              <button className="lg:hidden p-2 rounded-xl hover:bg-gray-200/60" onClick={() => setSidebarOpen(true)}>
                 <Menu className="w-6 h-6 text-gray-900" />
               </button>
               <h1 className="text-gray-900">Promoter Portal</h1>
@@ -267,7 +267,7 @@ export function PromoterLayout() {
               <div className="relative">
                 <button
                   onClick={() => setNotificationOpen(!notificationOpen)}
-                  className="p-2 hover:bg-gray-100 rounded-lg relative"
+                  className="p-2 hover:bg-gray-200/60 rounded-lg relative"
                   title="Notifications"
                 >
                   <Bell className="w-5 h-5 text-gray-900/60" />

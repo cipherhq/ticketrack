@@ -145,7 +145,7 @@ export function FinanceLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-200/60 flex">
       {/* Sidebar */}
       <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-[#0F0F0F] text-white transition-all duration-300 flex flex-col fixed h-full z-40`}>
         {/* Logo */}

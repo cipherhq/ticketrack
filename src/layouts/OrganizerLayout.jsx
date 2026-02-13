@@ -123,7 +123,7 @@ export function OrganizerLayout({ children }) {
       className={`group flex items-center justify-between px-3 py-2 rounded-lg transition-colors text-sm ${
         isActive(item.path)
           ? 'bg-primary text-white'
-          : 'text-gray-900/70 hover:bg-gray-100'
+          : 'text-gray-900/70 hover:bg-gray-200/60'
       }`}
     >
       <span className="flex items-center gap-3">
@@ -148,7 +148,7 @@ export function OrganizerLayout({ children }) {
         {isMobile && (
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-gray-200/60 rounded-lg"
           >
             <X className="w-5 h-5 text-gray-900" />
           </button>
@@ -206,7 +206,7 @@ export function OrganizerLayout({ children }) {
       <div className="px-4 pb-2">
         <Link
           to="/"
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors text-sm"
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-200/60 transition-colors text-sm"
         >
           <Home className="w-4 h-4" />
           Back to Website
@@ -227,12 +227,12 @@ export function OrganizerLayout({ children }) {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-200/60">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-40 flex items-center justify-between px-4">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 hover:bg-gray-100 rounded-lg"
+          className="p-2 hover:bg-gray-200/60 rounded-lg"
         >
           <Menu className="w-6 h-6 text-gray-900" />
         </button>
@@ -240,7 +240,7 @@ export function OrganizerLayout({ children }) {
         <div className="relative">
           <button
             onClick={() => setNotificationOpen(!notificationOpen)}
-            className="p-2 hover:bg-gray-100 rounded-lg relative"
+            className="p-2 hover:bg-gray-200/60 rounded-lg relative"
           >
             <Bell className="w-6 h-6 text-gray-900" />
             {getTotalNotifications() > 0 && (
@@ -284,7 +284,7 @@ export function OrganizerLayout({ children }) {
             <div className="relative">
               <button
                 onClick={() => setNotificationOpen(!notificationOpen)}
-                className="p-2 hover:bg-gray-100 rounded-lg relative"
+                className="p-2 hover:bg-gray-200/60 rounded-lg relative"
                 title="Notifications"
               >
                 <Bell className="w-5 h-5 text-gray-900/60" />
@@ -300,7 +300,7 @@ export function OrganizerLayout({ children }) {
             </div>
             <Link
               to="/organizer/profile"
-              className="flex items-center gap-2 hover:bg-gray-100 rounded-lg p-2"
+              className="flex items-center gap-2 hover:bg-gray-200/60 rounded-lg p-2"
             >
               {organizer?.logo_url ? (
                 <img
