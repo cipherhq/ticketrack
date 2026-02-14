@@ -478,10 +478,10 @@ export function AdminKYC() {
 
                 {/* Payout Limits Info */}
                 <div className="p-4 rounded-xl border border-border/10 bg-blue-50/50">
-                  <h4 className="font-medium text-foreground mb-3">Payout Limits</h4>
+                  <h4 className="font-medium text-foreground mb-3">Payout Limits (NGN)</h4>
                   <div className="space-y-2 text-sm">
-                    <p><span className="text-blue-600">Level 1:</span> ₦500,000/month</p>
-                    <p><span className="text-purple-600">Level 2:</span> ₦5,000,000/month</p>
+                    <p><span className="text-blue-600">Level 1:</span> 500,000/month</p>
+                    <p><span className="text-purple-600">Level 2:</span> 5,000,000/month</p>
                     <p><span className="text-green-600">Level 3:</span> Unlimited</p>
                   </div>
                 </div>

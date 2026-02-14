@@ -217,12 +217,10 @@ export function AdminSMS() {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
+  const formatCurrency = (amount, currency = 'NGN') => {
+    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: 'GH₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' };
+    const symbol = symbols[currency] || currency + ' ';
+    return symbol + new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount || 0);
   };
 
   const smsCount = Math.ceil(form.message.length / 160);
@@ -383,7 +381,7 @@ export function AdminSMS() {
                 <div className="p-3 bg-yellow-50 rounded-xl flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-yellow-600" />
                   <span className="text-sm text-yellow-700">
-                    Estimated cost: {formatCurrency(estimatedCost)} ({totalSms} SMS × ₦4)
+                    Estimated cost: {formatCurrency(estimatedCost)} ({totalSms} SMS × {formatCurrency(4)})
                   </span>
                 </div>
               )}
@@ -432,7 +430,7 @@ export function AdminSMS() {
                             <p className="text-foreground truncate max-w-[200px]">{sms.message}</p>
                           </td>
                           <td className="py-3 px-4">{sms.recipient_count}</td>
-                          <td className="py-3 px-4">{formatCurrency(sms.cost)}</td>
+                          <td className="py-3 px-4">{formatCurrency(sms.cost, sms.currency || 'NGN')}</td>
                           <td className="py-3 px-4">{getStatusBadge(sms.status)}</td>
                           <td className="py-3 px-4">
                             <p className="text-muted-foreground text-sm">
@@ -474,7 +472,7 @@ export function AdminSMS() {
                 </div>
                 <div className="p-3 bg-muted rounded-xl">
                   <p className="text-sm text-muted-foreground">Cost</p>
-                  <p className="text-foreground font-medium">{formatCurrency(selectedSms.cost)}</p>
+                  <p className="text-foreground font-medium">{formatCurrency(selectedSms.cost, selectedSms.currency || 'NGN')}</p>
                 </div>
                 <div className="p-3 bg-muted rounded-xl">
                   <p className="text-sm text-muted-foreground">Status</p>

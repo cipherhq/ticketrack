@@ -50,6 +50,12 @@ export default function AdminWhatsAppPackages() {
     loadData();
   };
 
+  const formatCurrency = (amount, currency = 'NGN') => {
+    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: 'GH₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' };
+    const symbol = symbols[currency] || currency + ' ';
+    return symbol + new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount || 0);
+  };
+
   const profit = stats.totalRevenue - (stats.metaCost * 1600);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>;
@@ -70,7 +76,7 @@ export default function AdminWhatsAppPackages() {
         <div className="bg-card p-4 rounded-xl border">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg"><DollarSign className="w-5 h-5 text-green-600" /></div>
-            <div><p className="text-sm text-muted-foreground">Revenue</p><p className="text-xl font-bold">₦{stats.totalRevenue.toLocaleString()}</p></div>
+            <div><p className="text-sm text-muted-foreground">Revenue</p><p className="text-xl font-bold">{formatCurrency(stats.totalRevenue)}</p></div>
           </div>
         </div>
         <div className="bg-card p-4 rounded-xl border">
@@ -88,7 +94,7 @@ export default function AdminWhatsAppPackages() {
         <div className="bg-card p-4 rounded-xl border">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-100 rounded-lg"><TrendingUp className="w-5 h-5 text-emerald-600" /></div>
-            <div><p className="text-sm text-muted-foreground">Est. Profit</p><p className="text-xl font-bold text-emerald-600">₦{profit.toLocaleString()}</p></div>
+            <div><p className="text-sm text-muted-foreground">Est. Profit</p><p className="text-xl font-bold text-emerald-600">{formatCurrency(profit)}</p></div>
           </div>
         </div>
       </div>
@@ -119,7 +125,7 @@ export default function AdminWhatsAppPackages() {
                 <p className="text-sm text-muted-foreground">{pkg.description}</p>
                 <div className="flex gap-4 mt-1 text-sm">
                   <span className="text-green-600 font-medium">${pkg.credits} credits</span>
-                  <span className="text-muted-foreground">₦{parseFloat(pkg.price).toLocaleString()}</span>
+                  <span className="text-muted-foreground">{formatCurrency(parseFloat(pkg.price))}</span>
                   <span className="text-muted-foreground">≈ {Math.floor(pkg.credits / 0.0156)} utility msgs</span>
                 </div>
               </div>

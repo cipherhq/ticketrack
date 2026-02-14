@@ -156,7 +156,7 @@ export function AdminOrganizers() {
 
       const { data: payouts } = await supabase
         .from('payouts')
-        .select('id, amount, net_amount, status, created_at')
+        .select('id, amount, net_amount, currency, status, created_at')
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false })
         .limit(5);
@@ -618,12 +618,10 @@ export function AdminOrganizers() {
     );
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
+  const formatCurrency = (amount, currency = 'NGN') => {
+    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: 'GH₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' };
+    const symbol = symbols[currency] || currency + ' ';
+    return symbol + new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount || 0);
   };
 
   const getKYCBadge = (status, level) => {
@@ -844,7 +842,7 @@ export function AdminOrganizers() {
                       <p className="text-sm text-muted-foreground">{org.totalTickets} tickets</p>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-foreground font-medium">{formatCurrency(org.totalRevenue)}</p>
+                      <p className="text-foreground font-medium">{formatCurrency(org.totalRevenue, getCurrencyForCountry(org.country_code))}</p>
                     </td>
                     <td className="py-4 px-4">
                       {getKYCBadge(org.kyc_status, org.kyc_level)}
@@ -1015,12 +1013,12 @@ export function AdminOrganizers() {
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
                   <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                  <p className="text-lg font-semibold text-purple-600">{formatCurrency(selectedOrganizer.totalRevenue)}</p>
+                  <p className="text-lg font-semibold text-purple-600">{formatCurrency(selectedOrganizer.totalRevenue, getCurrencyForCountry(selectedOrganizer.country_code))}</p>
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-xl text-center">
                   <DollarSign className="w-6 h-6 text-orange-600 mx-auto mb-2" />
-                  <p className="text-lg font-semibold text-orange-600">{formatCurrency(selectedOrganizer.available_balance)}</p>
+                  <p className="text-lg font-semibold text-orange-600">{formatCurrency(selectedOrganizer.available_balance, getCurrencyForCountry(selectedOrganizer.country_code))}</p>
                   <p className="text-sm text-muted-foreground">Balance</p>
                 </div>
               </div>
@@ -1269,7 +1267,7 @@ export function AdminOrganizers() {
                             <div>
                               <p className="text-foreground font-medium">{event.title}</p>
                               <p className="text-sm text-muted-foreground">
-                                {new Date(event.start_date).toLocaleDateString()} • {formatCurrency(event.ticket_price)}
+                                {new Date(event.start_date).toLocaleDateString()} • {formatCurrency(event.ticket_price, getCurrencyForCountry(selectedOrganizer.country_code))}
                               </p>
                             </div>
                             <Badge className={event.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-muted text-foreground/80'}>
@@ -1289,7 +1287,7 @@ export function AdminOrganizers() {
                         {organizerPayouts.map((payout) => (
                           <div key={payout.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                             <div>
-                              <p className="text-foreground font-medium">{formatCurrency(payout.net_amount)}</p>
+                              <p className="text-foreground font-medium">{formatCurrency(payout.net_amount, payout.currency || getCurrencyForCountry(selectedOrganizer.country_code))}</p>
                               <p className="text-sm text-muted-foreground">
                                 {new Date(payout.created_at).toLocaleDateString()}
                               </p>

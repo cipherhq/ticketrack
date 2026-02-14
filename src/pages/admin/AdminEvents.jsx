@@ -107,7 +107,7 @@ export function AdminEvents() {
           const [ticketsRes, viewsRes, savesRes] = await Promise.all([
             supabase
               .from('tickets')
-              .select('quantity, total_price')
+              .select('quantity, total_price, currency')
               .eq('event_id', event.id)
               .eq('payment_status', 'completed'),
             supabase
@@ -123,11 +123,13 @@ export function AdminEvents() {
 
           const ticketsSold = ticketsRes.data?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
           const revenue = ticketsRes.data?.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0) || 0;
+          const eventCurrency = event.currency || ticketsRes.data?.[0]?.currency || 'NGN';
 
           return {
             ...event,
             ticketsSold,
             revenue,
+            eventCurrency,
             views: viewsRes.count || 0,
             saves: savesRes.count || 0,
           };
@@ -309,12 +311,10 @@ export function AdminEvents() {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount || 0);
+  const formatCurrency = (amount, currency = 'NGN') => {
+    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: 'GH₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' };
+    const symbol = symbols[currency] || currency + ' ';
+    return symbol + new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount || 0);
   };
 
   const getStatusBadge = (status) => {
@@ -522,7 +522,7 @@ export function AdminEvents() {
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-foreground font-medium">{formatCurrency(event.revenue)}</p>
+                      <p className="text-foreground font-medium">{formatCurrency(event.revenue, event.eventCurrency)}</p>
                     </td>
                     <td className="py-4 px-4">{getStatusBadge(event.status)}</td>
                     <td className="py-4 px-4 text-right">
@@ -638,7 +638,7 @@ export function AdminEvents() {
                 </div>
                 <div className="p-4 bg-green-50 rounded-xl text-center">
                   <DollarSign className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                  <p className="text-lg font-semibold text-green-600">{formatCurrency(selectedEvent.revenue)}</p>
+                  <p className="text-lg font-semibold text-green-600">{formatCurrency(selectedEvent.revenue, selectedEvent.eventCurrency)}</p>
                   <p className="text-sm text-muted-foreground">Revenue</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
@@ -693,7 +693,7 @@ export function AdminEvents() {
                     </div>
                     <div className="p-4 bg-muted rounded-xl">
                       <p className="text-sm text-muted-foreground mb-1">Ticket Price</p>
-                      <p className="text-foreground">{formatCurrency(selectedEvent.ticket_price)}</p>
+                      <p className="text-foreground">{formatCurrency(selectedEvent.ticket_price, selectedEvent.eventCurrency)}</p>
                     </div>
                     <div className="p-4 bg-muted rounded-xl">
                       <p className="text-sm text-muted-foreground mb-1">Start Date</p>
@@ -770,7 +770,7 @@ export function AdminEvents() {
                             <p className="text-sm text-muted-foreground">{type.description || 'No description'}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-foreground font-medium">{formatCurrency(type.price)}</p>
+                            <p className="text-foreground font-medium">{formatCurrency(type.price, selectedEvent.eventCurrency)}</p>
                             <p className="text-sm text-muted-foreground">{type.quantity_available || 0} available</p>
                           </div>
                         </div>
@@ -963,7 +963,7 @@ export function AdminEvents() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Ticket Price (₦)</Label>
+                <Label>Ticket Price</Label>
                 <Input
                   type="number"
                   value={editForm.ticket_price}

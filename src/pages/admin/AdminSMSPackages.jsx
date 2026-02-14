@@ -152,7 +152,11 @@ export function AdminSMSPackages() {
     loadPackages();
   };
 
-  const formatCurrency = (amount) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(amount || 0);
+  const formatCurrency = (amount, currency = 'NGN') => {
+    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: 'GH₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' };
+    const symbol = symbols[currency] || currency + ' ';
+    return symbol + new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount || 0);
+  };
 
   const calculateProfit = (pkg) => {
     const totalCredits = pkg.credits + (pkg.bonus_credits || 0);
@@ -262,7 +266,7 @@ export function AdminSMSPackages() {
             <div className="flex items-center justify-between"><Label>Active (visible to organizers)</Label><Switch checked={form.is_active} onCheckedChange={(c) => setForm({ ...form, is_active: c })} /></div>
             {form.credits && form.price_ngn && (
               <div className="p-3 bg-muted rounded-xl">
-                <p className="text-sm text-muted-foreground">Profit per sale (cost ₦4/credit)</p>
+                <p className="text-sm text-muted-foreground">NGN Profit per sale (cost {formatCurrency(4)}/credit)</p>
                 <p className="font-medium">{formatCurrency(parseFloat(form.price_ngn) - (parseInt(form.credits) + parseInt(form.bonus_credits || 0)) * 4)}</p>
               </div>
             )}

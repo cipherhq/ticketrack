@@ -100,7 +100,7 @@ export function AdminSMSRevenue() {
     }
   };
 
-  // Calculate profit (assuming ₦4 cost per SMS)
+  // Calculate profit (cost per SMS in NGN)
   const costPerSMS = 4;
   const totalCost = stats.totalCreditsUsed * costPerSMS;
   const grossProfit = stats.totalRevenue - totalCost;

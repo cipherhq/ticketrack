@@ -70,7 +70,8 @@ export function AdminAffiliates() {
           ),
           events (
             id,
-            title
+            title,
+            currency
           )
         `)
         .order('created_at', { ascending: false });
@@ -147,7 +148,7 @@ export function AdminAffiliates() {
     setDetailsDialogOpen(true);
   };
 
-  const formatCurrency = (amount, currency = 'USD') => {
+  const formatCurrencyVal = (amount, currency = 'NGN') => {
     return formatPrice(amount || 0, currency);
   };
 
@@ -235,7 +236,7 @@ export function AdminAffiliates() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Revenue Generated</p>
-                <p className="text-xl font-semibold text-green-600">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-xl font-semibold text-green-600">{formatCurrencyVal(stats.totalRevenue)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-green-200" />
             </div>
@@ -246,7 +247,7 @@ export function AdminAffiliates() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Unpaid Commission</p>
-                <p className="text-xl font-semibold text-orange-600">{formatCurrency(stats.unpaidCommission)}</p>
+                <p className="text-xl font-semibold text-orange-600">{formatCurrencyVal(stats.unpaidCommission)}</p>
               </div>
               <Wallet className="w-8 h-8 text-orange-200" />
             </div>
@@ -329,12 +330,12 @@ export function AdminAffiliates() {
                         <p className="text-foreground">{affiliate.total_sales || 0}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <p className="text-foreground font-medium">{formatCurrency(affiliate.total_revenue)}</p>
+                        <p className="text-foreground font-medium">{formatCurrencyVal(affiliate.total_revenue, affiliate.events?.currency || 'NGN')}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <p className="text-foreground">{formatCurrency(affiliate.total_commission)}</p>
+                        <p className="text-foreground">{formatCurrencyVal(affiliate.total_commission, affiliate.events?.currency || 'NGN')}</p>
                         {unpaid > 0 && (
-                          <p className="text-xs text-orange-600">{formatCurrency(unpaid)} unpaid</p>
+                          <p className="text-xs text-orange-600">{formatCurrencyVal(unpaid, affiliate.events?.currency || 'NGN')} unpaid</p>
                         )}
                       </td>
                       <td className="py-4 px-4">{getStatusBadge(affiliate)}</td>
@@ -428,9 +429,9 @@ export function AdminAffiliates() {
                 <div>
                   <p className="text-sm text-muted-foreground">Commission Rate</p>
                   <p className="text-foreground">
-                    {selectedAffiliate.commission_type === 'percentage' 
-                      ? `${selectedAffiliate.commission_value}%` 
-                      : formatCurrency(selectedAffiliate.commission_value)}
+                    {selectedAffiliate.commission_type === 'percentage'
+                      ? `${selectedAffiliate.commission_value}%`
+                      : formatCurrencyVal(selectedAffiliate.commission_value, selectedAffiliate.events?.currency || 'NGN')}
                   </p>
                 </div>
                 <div>
@@ -449,11 +450,11 @@ export function AdminAffiliates() {
                   <p className="text-sm text-muted-foreground">Sales</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
-                  <p className="text-lg font-semibold text-purple-600">{formatCurrency(selectedAffiliate.total_revenue)}</p>
+                  <p className="text-lg font-semibold text-purple-600">{formatCurrencyVal(selectedAffiliate.total_revenue, selectedAffiliate.events?.currency || 'NGN')}</p>
                   <p className="text-sm text-muted-foreground">Revenue</p>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-xl text-center">
-                  <p className="text-lg font-semibold text-orange-600">{formatCurrency(selectedAffiliate.total_commission)}</p>
+                  <p className="text-lg font-semibold text-orange-600">{formatCurrencyVal(selectedAffiliate.total_commission, selectedAffiliate.events?.currency || 'NGN')}</p>
                   <p className="text-sm text-muted-foreground">Commission</p>
                 </div>
               </div>
@@ -491,7 +492,7 @@ export function AdminAffiliates() {
             {actionType === 'activate' &&
               `Activate ${selectedAffiliate?.name}? Their promo code will be reactivated.`}
             {actionType === 'payout' &&
-              `Mark ${formatCurrency((parseFloat(selectedAffiliate?.total_commission) || 0) - (parseFloat(selectedAffiliate?.paid_commission) || 0))} commission as paid to ${selectedAffiliate?.name}?`}
+              `Mark ${formatCurrencyVal((parseFloat(selectedAffiliate?.total_commission) || 0) - (parseFloat(selectedAffiliate?.paid_commission) || 0), selectedAffiliate?.events?.currency || 'NGN')} commission as paid to ${selectedAffiliate?.name}?`}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setActionDialogOpen(false)} className="rounded-xl">
