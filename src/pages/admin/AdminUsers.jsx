@@ -54,6 +54,7 @@ export function AdminUsers() {
   const { admin, logAdminAction } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
+  const [allUsersData, setAllUsersData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [stats, setStats] = useState({
@@ -76,14 +77,18 @@ export function AdminUsers() {
 
   useEffect(() => {
     loadRoleData();
-    loadStats();
   }, []);
 
   useEffect(() => {
     if (organizerUserIds !== null) {
       loadUsers();
     }
-  }, [page, userTypeFilter, searchTerm, organizerUserIds]);
+  }, [organizerUserIds]);
+
+  // Re-filter when filters/page change (no refetch needed)
+  useEffect(() => {
+    applyFilters();
+  }, [allUsersData, userTypeFilter, searchTerm, page]);
 
   const loadRoleData = async () => {
     try {
@@ -110,91 +115,113 @@ export function AdminUsers() {
     }
   };
 
-  const loadStats = async () => {
-    try {
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
-
-      const [totalResult, orgResult, newResult] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('organizers').select('*', { count: 'exact', head: true }),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString()),
-      ]);
-
-      const total = totalResult.count || 0;
-      const organizers = orgResult.count || 0;
-      setStats({
-        total,
-        attendees: total - organizers,
-        organizers,
-        newThisMonth: newResult.count || 0,
-      });
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
-  };
-
   const loadUsers = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('profiles')
-        .select(`
-          id, full_name, email, phone, avatar_url, is_admin, admin_role,
-          created_at
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false });
+      // Fetch profiles and ticket attendees in parallel
+      const [profilesResult, ticketsResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, full_name, email, phone, avatar_url, is_admin, admin_role, created_at')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('tickets')
+          .select('attendee_name, attendee_email, attendee_phone, created_at')
+          .in('payment_status', ['completed', 'paid'])
+          .order('created_at', { ascending: false }),
+      ]);
 
-      // Tab-based role filter
-      if (userTypeFilter === 'attendee' && organizerUserIds.length > 0) {
-        query = query.not('id', 'in', `(${organizerUserIds.join(',')})`);
-      } else if (userTypeFilter === 'organizer') {
-        if (organizerUserIds.length === 0) {
-          setUsers([]);
-          setTotalCount(0);
-          setLoading(false);
-          return;
-        }
-        query = query.in('id', organizerUserIds);
-      }
+      const profiles = profilesResult.data || [];
+      const tickets = ticketsResult.data || [];
 
-      // Server-side search
-      if (searchTerm.trim()) {
-        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
-      }
+      // Build profile email set for deduplication
+      const profileEmailSet = new Set();
+      profiles.forEach(p => {
+        if (p.email) profileEmailSet.add(p.email.toLowerCase().trim());
+      });
 
+      // Extract unique guest attendees (ticket buyers without profiles)
+      const guestMap = new Map();
+      tickets.forEach(t => {
+        if (!t.attendee_email) return;
+        const emailKey = t.attendee_email.toLowerCase().trim();
+        if (profileEmailSet.has(emailKey)) return;
+        if (guestMap.has(emailKey)) return;
+        guestMap.set(emailKey, {
+          id: `guest-${emailKey}`,
+          full_name: t.attendee_name || 'Guest',
+          email: t.attendee_email,
+          phone: t.attendee_phone || '',
+          avatar_url: null,
+          is_admin: false,
+          admin_role: null,
+          created_at: t.created_at,
+          isGuest: true,
+          roles: ['attendee'],
+          primaryRole: 'attendee',
+          status: 'active',
+        });
+      });
 
-      // Pagination
-      const from = (page - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data: profiles, count, error } = await query.range(from, to);
-
-      if (error) throw error;
-
-      // Enrich with role data
-      const enrichedUsers = (profiles || []).map(profile => {
+      // Enrich profiles with role data
+      const enrichedProfiles = profiles.map(profile => {
         const organizer = organizerMap[profile.id];
         const promoter = promoterMap[profile.id];
-
         const roles = [];
         if (profile.is_admin) roles.push('admin');
         if (organizer) roles.push('organizer');
         if (promoter) roles.push('promoter');
         if (roles.length === 0) roles.push('attendee');
-
-        let status = 'active';
-
-        return { ...profile, roles, primaryRole: roles[0], status, organizer, promoter };
+        return { ...profile, roles, primaryRole: roles[0], status: 'active', organizer, promoter, isGuest: false };
       });
 
-      setUsers(enrichedUsers);
-      setTotalCount(count || 0);
+      // Combine and sort by newest first
+      const combined = [...enrichedProfiles, ...Array.from(guestMap.values())];
+      combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      setAllUsersData(combined);
+
+      // Update stats
+      const organizers = combined.filter(u => u.roles.includes('organizer')).length;
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      setStats({
+        total: combined.length,
+        attendees: combined.length - organizers,
+        organizers,
+        newThisMonth: combined.filter(u => new Date(u.created_at) >= monthStart).length,
+      });
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...allUsersData];
+
+    // Tab filter
+    if (userTypeFilter === 'attendee' && organizerUserIds && organizerUserIds.length > 0) {
+      filtered = filtered.filter(u => !organizerUserIds.includes(u.id));
+    } else if (userTypeFilter === 'organizer') {
+      filtered = filtered.filter(u => organizerUserIds?.includes(u.id));
+    }
+
+    // Search filter
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(u =>
+        u.full_name?.toLowerCase().includes(term) ||
+        u.email?.toLowerCase().includes(term) ||
+        u.phone?.includes(searchTerm)
+      );
+    }
+
+    setTotalCount(filtered.length);
+    const from = (page - 1) * PAGE_SIZE;
+    setUsers(filtered.slice(from, from + PAGE_SIZE));
   };
 
   const openActionDialog = (user, action) => {
@@ -238,7 +265,6 @@ export function AdminUsers() {
 
       setActionDialogOpen(false);
       loadUsers();
-      loadStats();
     } catch (error) {
       console.error('Action error:', error);
       alert('Failed to perform action: ' + error.message);
@@ -251,8 +277,8 @@ export function AdminUsers() {
     return <Badge className="bg-green-100 text-green-700">Active</Badge>;
   };
 
-  const getRoleBadges = (roles) => {
-    return roles.map(role => {
+  const getRoleBadges = (user) => {
+    return user.roles.map(role => {
       const colors = {
         admin: 'bg-purple-100 text-purple-700',
         organizer: 'bg-blue-100 text-blue-700',
@@ -265,57 +291,54 @@ export function AdminUsers() {
           {role}
         </Badge>
       );
-    });
+    }).concat(user.isGuest ? [
+      <Badge key="guest" className="bg-orange-100 text-orange-700 mr-1">Guest</Badge>
+    ] : []);
   };
 
-  const exportUsers = async () => {
-    try {
-      let query = supabase
-        .from('profiles')
-        .select('id, full_name, email, phone, is_admin, created_at')
-        .order('created_at', { ascending: false });
+  const exportUsers = () => {
+    // Use already-filtered in-memory data
+    let filtered = [...allUsersData];
 
-      if (userTypeFilter === 'attendee' && organizerUserIds && organizerUserIds.length > 0) {
-        query = query.not('id', 'in', `(${organizerUserIds.join(',')})`);
-      } else if (userTypeFilter === 'organizer' && organizerUserIds && organizerUserIds.length > 0) {
-        query = query.in('id', organizerUserIds);
-      }
-
-      if (searchTerm.trim()) {
-        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      if (!data || data.length === 0) return;
-
-      const csv = [
-        ['Name', 'Email', 'Phone', 'Type', 'Status', 'Created'],
-        ...data.map(u => {
-          const isOrg = organizerMap[u.id];
-          const type = isOrg ? 'Organizer' : 'Attendee';
-          const status = 'Active';
-          return [
-            u.full_name || '',
-            u.email || '',
-            u.phone || '',
-            type,
-            status,
-            new Date(u.created_at).toLocaleDateString(),
-          ];
-        })
-      ].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export error:', error);
+    if (userTypeFilter === 'attendee' && organizerUserIds?.length > 0) {
+      filtered = filtered.filter(u => !organizerUserIds.includes(u.id));
+    } else if (userTypeFilter === 'organizer') {
+      filtered = filtered.filter(u => organizerUserIds?.includes(u.id));
     }
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(u =>
+        u.full_name?.toLowerCase().includes(term) ||
+        u.email?.toLowerCase().includes(term) ||
+        u.phone?.includes(searchTerm)
+      );
+    }
+
+    if (filtered.length === 0) return;
+
+    const csv = [
+      ['Name', 'Email', 'Phone', 'Type', 'Source', 'Joined'],
+      ...filtered.map(u => {
+        const type = u.roles.includes('organizer') ? 'Organizer' : u.roles.includes('admin') ? 'Admin' : 'Attendee';
+        return [
+          u.full_name || '',
+          u.email || '',
+          u.phone || '',
+          type,
+          u.isGuest ? 'Guest (Ticket Purchase)' : 'Registered',
+          new Date(u.created_at).toLocaleDateString(),
+        ];
+      })
+    ].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   if (loading) {
@@ -335,7 +358,7 @@ export function AdminUsers() {
           <p className="text-muted-foreground">Manage all users on the platform</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => { loadRoleData(); loadStats(); }} className="rounded-xl border-border/10">
+          <Button variant="outline" onClick={() => { loadRoleData(); }} className="rounded-xl border-border/10">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -466,7 +489,7 @@ export function AdminUsers() {
                             </div>
                             <div>
                               <p className="font-medium text-foreground">{user.full_name || 'Unnamed'}</p>
-                              <p className="text-xs text-muted-foreground">ID: {user.id.slice(0, 8)}...</p>
+                              <p className="text-xs text-muted-foreground">{user.isGuest ? 'Guest' : `ID: ${user.id.slice(0, 8)}...`}</p>
                             </div>
                           </div>
                         </td>
@@ -486,7 +509,7 @@ export function AdminUsers() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex flex-wrap gap-1">
-                            {getRoleBadges(user.roles)}
+                            {getRoleBadges(user)}
                           </div>
                         </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
@@ -504,18 +527,21 @@ export function AdminUsers() {
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuSeparator />
-                              {!user.is_admin ? (
-                                <DropdownMenuItem onClick={() => openActionDialog(user, 'make_admin')}>
-                                  <Shield className="w-4 h-4 mr-2 text-purple-600" />
-                                  Make Admin
-                                </DropdownMenuItem>
-                              ) : user.id !== admin.id && (
-                                <DropdownMenuItem onClick={() => openActionDialog(user, 'remove_admin')} className="text-red-600">
-                                  <Shield className="w-4 h-4 mr-2" />
-                                  Remove Admin
-                                </DropdownMenuItem>
+                              {!user.isGuest && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  {!user.is_admin ? (
+                                    <DropdownMenuItem onClick={() => openActionDialog(user, 'make_admin')}>
+                                      <Shield className="w-4 h-4 mr-2 text-purple-600" />
+                                      Make Admin
+                                    </DropdownMenuItem>
+                                  ) : user.id !== admin.id && (
+                                    <DropdownMenuItem onClick={() => openActionDialog(user, 'remove_admin')} className="text-red-600">
+                                      <Shield className="w-4 h-4 mr-2" />
+                                      Remove Admin
+                                    </DropdownMenuItem>
+                                  )}
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -558,8 +584,8 @@ export function AdminUsers() {
                   <h3 className="text-xl font-semibold">{selectedUser.full_name || 'Unnamed'}</h3>
                   <p className="text-muted-foreground">{selectedUser.email}</p>
                   <div className="flex gap-2 mt-2">
-                    {getRoleBadges(selectedUser.roles)}
-                    {getStatusBadge(selectedUser.status)}
+                    {getRoleBadges(selectedUser)}
+                    {getStatusBadge()}
                   </div>
                 </div>
               </div>
@@ -571,7 +597,7 @@ export function AdminUsers() {
                 </div>
                 <div className="p-4 rounded-xl bg-muted">
                   <p className="text-sm text-muted-foreground">User ID</p>
-                  <p className="font-medium font-mono text-sm">{selectedUser.id}</p>
+                  <p className="font-medium font-mono text-sm">{selectedUser.isGuest ? 'Guest (Ticket Purchase)' : selectedUser.id}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-muted">
                   <p className="text-sm text-muted-foreground">Joined</p>
