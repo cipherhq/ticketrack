@@ -113,7 +113,7 @@ function FeedEventCard({ event, onSaveToggle }) {
 
         {/* Price Badge */}
         <div className="absolute bottom-3 left-3">
-          <Badge className="bg-card/95 text-foreground font-semibold">
+          <Badge className="bg-white text-foreground font-semibold shadow-md">
             {event.is_free || event.min_price === 0 || event.min_price === null || event.min_price === undefined
               ? 'Free'
               : `From ${formatPrice(event.min_price, event.currency || 'USD')}`
