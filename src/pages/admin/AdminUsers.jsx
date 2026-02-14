@@ -148,7 +148,7 @@ export function AdminUsers() {
         .from('profiles')
         .select(`
           id, full_name, email, phone, avatar_url, is_admin, admin_role,
-          created_at, last_sign_in_at, email_verified
+          created_at, email_verified
         `, { count: 'exact' })
         .order('created_at', { ascending: false });
 
@@ -295,7 +295,7 @@ export function AdminUsers() {
     try {
       let query = supabase
         .from('profiles')
-        .select('id, full_name, email, phone, is_admin, created_at, last_sign_in_at, email_verified')
+        .select('id, full_name, email, phone, is_admin, created_at, email_verified')
         .order('created_at', { ascending: false });
 
       if (userTypeFilter === 'attendee' && organizerUserIds && organizerUserIds.length > 0) {
@@ -313,7 +313,7 @@ export function AdminUsers() {
       if (!data || data.length === 0) return;
 
       const csv = [
-        ['Name', 'Email', 'Phone', 'Type', 'Status', 'Created', 'Last Login'],
+        ['Name', 'Email', 'Phone', 'Type', 'Status', 'Created'],
         ...data.map(u => {
           const isOrg = organizerMap[u.id];
           const type = isOrg ? 'Organizer' : 'Attendee';
@@ -326,7 +326,6 @@ export function AdminUsers() {
             type,
             status,
             new Date(u.created_at).toLocaleDateString(),
-            u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : 'Never',
           ];
         })
       ].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -485,7 +484,6 @@ export function AdminUsers() {
                       <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Roles</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Joined</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Last Login</th>
                       <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
@@ -531,11 +529,6 @@ export function AdminUsers() {
                         </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {user.last_sign_in_at 
-                            ? new Date(user.last_sign_in_at).toLocaleDateString()
-                            : 'Never'}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <DropdownMenu>
@@ -629,12 +622,8 @@ export function AdminUsers() {
                   <p className="font-medium">{new Date(selectedUser.created_at).toLocaleString()}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-muted">
-                  <p className="text-sm text-muted-foreground">Last Login</p>
-                  <p className="font-medium">
-                    {selectedUser.last_sign_in_at 
-                      ? new Date(selectedUser.last_sign_in_at).toLocaleString() 
-                      : 'Never'}
-                  </p>
+                  <p className="text-sm text-muted-foreground">Email Verified</p>
+                  <p className="font-medium">{selectedUser.email_verified ? 'Yes' : 'No'}</p>
                 </div>
               </div>
 
