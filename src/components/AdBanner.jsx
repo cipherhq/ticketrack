@@ -101,20 +101,6 @@ export function AdBanner({ position, ads = [] }) {
           )}
         </div>
       </div>
-      {/* Dots indicator for multiple ads */}
-      {ads.length > 1 && (
-        <div className="flex justify-center gap-1.5 mt-2">
-          {ads.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => { setCurrentIndex(i); clearInterval(timerRef.current); }}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === currentIndex ? 'bg-foreground/60 w-4' : 'bg-foreground/20'
-              }`}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
