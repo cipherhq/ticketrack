@@ -650,20 +650,20 @@ export function OrganizerHome() {
               <h3 className="font-semibold text-foreground text-sm">Free Events</h3>
               <HelpTip>Track RSVPs and donations for your free events.</HelpTip>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:divide-x md:divide-gray-200">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Events</p>
                 <p className="text-lg font-bold text-foreground">{freeEventStats.freeEvents}</p>
               </div>
-              <div>
+              <div className="md:pl-4">
                 <p className="text-xs text-muted-foreground mb-1">RSVPs</p>
                 <p className="text-lg font-bold text-foreground">{freeEventStats.totalRSVPs.toLocaleString()}</p>
               </div>
-              <div>
+              <div className="md:pl-4">
                 <p className="text-xs text-muted-foreground mb-1">Donations</p>
                 <p className="text-lg font-bold text-foreground">{freeEventStats.totalDonations}</p>
               </div>
-              <div>
+              <div className="md:pl-4">
                 <p className="text-xs text-muted-foreground mb-1">Donation Amount</p>
                 <p className="text-lg font-bold text-emerald-600">
                   {Object.keys(freeEventStats.donationsByCurrency).length > 0
