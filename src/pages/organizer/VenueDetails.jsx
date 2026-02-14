@@ -41,7 +41,6 @@ export function VenueDetails() {
     address: '',
     capacity: '',
     venue_type: 'indoor',
-    iot_enabled: false,
     latitude: '',
     longitude: ''
   })
@@ -84,7 +83,6 @@ export function VenueDetails() {
         address: venueData.address || '',
         capacity: venueData.capacity?.toString() || '',
         venue_type: venueData.venue_type || 'indoor',
-        iot_enabled: venueData.iot_enabled || false,
         latitude: venueData.latitude?.toString() || '',
         longitude: venueData.longitude?.toString() || ''
       })
@@ -99,15 +97,6 @@ export function VenueDetails() {
 
       setEvents(eventsData || [])
 
-      // Load IoT sensors if enabled
-      if (venueData.iot_enabled) {
-        const { data: sensorsData } = await supabase
-          .from('iot_sensors')
-          .select('*')
-          .eq('venue_id', venueId)
-
-        setSensors(sensorsData || [])
-      }
     } catch (error) {
       console.error('Failed to load venue:', error)
       toast.error('Failed to load venue details')
@@ -123,7 +112,6 @@ export function VenueDetails() {
         address: editForm.address,
         capacity: parseInt(editForm.capacity) || 100,
         venue_type: editForm.venue_type,
-        iot_enabled: editForm.iot_enabled,
         latitude: editForm.latitude ? parseFloat(editForm.latitude) : null,
         longitude: editForm.longitude ? parseFloat(editForm.longitude) : null
       }
@@ -244,14 +232,6 @@ export function VenueDetails() {
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold text-foreground">{venue.name}</h1>
               <Badge variant="outline" className="capitalize">{venue.venue_type}</Badge>
-              {venue.iot_enabled ? (
-                <Badge variant="default" className="bg-green-100 text-green-800">
-                  <Wifi className="w-3 h-3 mr-1" />
-                  IoT Enabled
-                </Badge>
-              ) : (
-                <Badge variant="secondary">Basic</Badge>
-              )}
             </div>
             <p className="text-muted-foreground mt-1 flex items-center gap-1">
               <MapPin className="w-4 h-4" />
@@ -260,12 +240,6 @@ export function VenueDetails() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {venue.iot_enabled && (
-            <Button variant="outline" onClick={() => navigate('/organizer/venues/iot')}>
-              <Activity className="w-4 h-4 mr-2" />
-              IoT Dashboard
-            </Button>
-          )}
           <Button onClick={() => setShowEditVenue(true)}>
             <Edit className="w-4 h-4 mr-2" />
             Edit Venue
@@ -308,20 +282,6 @@ export function VenueDetails() {
           </CardContent>
         </Card>
 
-        {venue.iot_enabled && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">IoT Sensors</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{sensors.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {sensors.filter(s => s.status === 'online').length} online
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Map Preview */}
@@ -353,7 +313,6 @@ export function VenueDetails() {
         <TabsList>
           <TabsTrigger value="layouts">Layouts</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>
-          {venue.iot_enabled && <TabsTrigger value="sensors">IoT Sensors</TabsTrigger>}
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -480,59 +439,6 @@ export function VenueDetails() {
           )}
         </TabsContent>
 
-        {/* IoT Sensors Tab */}
-        {venue.iot_enabled && (
-          <TabsContent value="sensors" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">IoT Sensors</h3>
-              <Button variant="outline" onClick={() => navigate('/organizer/venues/iot')}>
-                <Activity className="w-4 h-4 mr-2" />
-                Open IoT Dashboard
-              </Button>
-            </div>
-
-            {sensors.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">No Sensors Configured</h3>
-                  <p className="text-muted-foreground mb-4">
-                    IoT is enabled but no sensors have been registered yet.
-                  </p>
-                  <Button variant="outline" onClick={() => navigate('/organizer/venues/iot')}>
-                    Configure Sensors
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sensors.map(sensor => (
-                  <Card key={sensor.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-base capitalize">
-                          {sensor.type?.replace('_', ' ') || 'Sensor'}
-                        </CardTitle>
-                        <Badge variant={sensor.status === 'online' ? 'default' : 'secondary'}>
-                          {sensor.status || 'Unknown'}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        <p>Device ID: {sensor.device_id}</p>
-                        <p>Zone: {sensor.zone || 'Unassigned'}</p>
-                        {sensor.last_reading && (
-                          <p>Last Reading: {new Date(sensor.last_reading).toLocaleString()}</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        )}
 
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-4">
@@ -558,10 +464,6 @@ export function VenueDetails() {
                 <div>
                   <span className="text-muted-foreground">Capacity:</span>
                   <p className="font-medium">{venue.capacity}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">IoT Features:</span>
-                  <p className="font-medium">{venue.iot_enabled ? 'Enabled' : 'Disabled'}</p>
                 </div>
                 {venue.latitude && venue.longitude && (
                   <div>
@@ -680,24 +582,6 @@ export function VenueDetails() {
                 />
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="editIotEnabled"
-                checked={editForm.iot_enabled}
-                onChange={(e) => setEditForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
-                className="h-4 w-4 rounded border-border/30 text-[#2969FF] focus:ring-primary"
-              />
-              <Label htmlFor="editIotEnabled" className="flex items-center gap-2 cursor-pointer">
-                <Wifi className="w-4 h-4 text-[#2969FF]" />
-                Enable IoT Smart Features
-              </Label>
-            </div>
-            {editForm.iot_enabled && (
-              <p className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
-                IoT features include real-time occupancy tracking, environmental monitoring, and smart sensor integration.
-              </p>
-            )}
             <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" onClick={() => setShowEditVenue(false)}>
                 Cancel

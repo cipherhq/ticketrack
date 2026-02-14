@@ -41,7 +41,6 @@ export function VenueManagement() {
     address: '',
     capacity: '',
     venue_type: 'indoor',
-    iot_enabled: false
   })
 
   // Form state for editing venues
@@ -50,7 +49,6 @@ export function VenueManagement() {
     address: '',
     capacity: '',
     venue_type: 'indoor',
-    iot_enabled: false
   })
 
   useEffect(() => {
@@ -114,7 +112,6 @@ export function VenueManagement() {
         address: venueForm.address,
         capacity: parseInt(venueForm.capacity) || 100,
         venue_type: venueForm.venue_type,
-        iot_enabled: venueForm.iot_enabled
       }
 
       const { data, error } = await supabase
@@ -159,7 +156,6 @@ export function VenueManagement() {
       address: venue.address || '',
       capacity: venue.capacity?.toString() || '',
       venue_type: venue.venue_type || 'indoor',
-      iot_enabled: venue.iot_enabled || false
     })
     setShowEditVenue(true)
   }
@@ -174,7 +170,6 @@ export function VenueManagement() {
         address: editForm.address,
         capacity: parseInt(editForm.capacity) || 100,
         venue_type: editForm.venue_type,
-        iot_enabled: editForm.iot_enabled
       }
 
       const { data, error } = await supabase
@@ -329,24 +324,6 @@ export function VenueManagement() {
                   </Select>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="iotEnabled"
-                  checked={venueForm.iot_enabled}
-                  onChange={(e) => setVenueForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
-                  className="h-4 w-4 rounded border-border/30 text-[#2969FF] focus:ring-primary"
-                />
-                <Label htmlFor="iotEnabled" className="flex items-center gap-2 cursor-pointer">
-                  <Wifi className="w-4 h-4 text-[#2969FF]" />
-                  Enable IoT Smart Features
-                </Label>
-              </div>
-              {venueForm.iot_enabled && (
-                <p className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
-                  IoT features include real-time occupancy tracking, environmental monitoring, and smart sensor integration.
-                </p>
-              )}
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={() => setShowCreateVenue(false)}>
                   Cancel
@@ -412,24 +389,6 @@ export function VenueManagement() {
                   </Select>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="editIotEnabled"
-                  checked={editForm.iot_enabled}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, iot_enabled: e.target.checked }))}
-                  className="h-4 w-4 rounded border-border/30 text-[#2969FF] focus:ring-primary"
-                />
-                <Label htmlFor="editIotEnabled" className="flex items-center gap-2 cursor-pointer">
-                  <Wifi className="w-4 h-4 text-[#2969FF]" />
-                  Enable IoT Smart Features
-                </Label>
-              </div>
-              {editForm.iot_enabled && (
-                <p className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
-                  IoT features include real-time occupancy tracking, environmental monitoring, and smart sensor integration.
-                </p>
-              )}
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={() => setShowEditVenue(false)}>
                   Cancel
@@ -480,16 +439,6 @@ export function VenueManagement() {
                       <Badge variant="outline" className="capitalize">
                         {venue.venue_type}
                       </Badge>
-                      {venue.iot_enabled ? (
-                        <Badge variant="default" className="bg-green-100 text-green-800">
-                          <Wifi className="w-3 h-3 mr-1" />
-                          IoT
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          Basic
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -543,17 +492,6 @@ export function VenueManagement() {
                           <Layout className="w-4 h-4 mr-1" />
                           Layouts
                         </Button>
-                        {venue.iot_enabled && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate('/organizer/venues/iot')}
-                            className="text-green-600 border-green-200 hover:bg-green-50"
-                          >
-                            <Activity className="w-4 h-4 mr-1" />
-                            IoT
-                          </Button>
-                        )}
                       </div>
                       <div className="flex items-center gap-1">
                         <Button

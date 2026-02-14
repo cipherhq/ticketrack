@@ -45,7 +45,7 @@ import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
 import { VenueLayoutDesigner } from '@/pages/organizer/VenueLayoutDesigner';
 import { VenueManagement } from '@/pages/organizer/VenueManagement';
 import { VenueDetails } from '@/pages/organizer/VenueDetails';
-import { VenueIoTDashboard } from '@/pages/organizer/VenueIoTDashboard';
+
 import EventImport from '@/pages/organizer/EventImport';
 import { Loader2 } from 'lucide-react';
 
@@ -115,7 +115,7 @@ export function OrganizerRoutes() {
           <Route path="/team" element={<TeamManagement />} />
           <Route path="/projects" element={<ProjectManager />} />
           <Route path="/venues" element={<VenueManagement />} />
-          <Route path="/venues/iot" element={<VenueIoTDashboard />} />
+
           <Route path="/venues/:venueId" element={<VenueDetails />} />
           <Route path="/venues/:venueId/layouts" element={<VenueLayoutDesigner />} />
           <Route path="/venues/:venueId/layouts/create" element={<VenueLayoutDesigner />} />
