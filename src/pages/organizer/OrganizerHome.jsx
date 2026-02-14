@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, Users, Calendar, TrendingUp, Plus, Download, ShoppingCart, Loader2, Zap, X, Heart, Ticket, ArrowRight, ChevronRight, BarChart3 } from 'lucide-react';
+import { DollarSign, Users, Calendar, TrendingUp, Plus, Download, ShoppingCart, Loader2, Zap, X, Heart, Ticket, ArrowRight, ChevronRight, BarChart3, Sun } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { useOrganizer } from '../../contexts/OrganizerContext';
@@ -31,6 +31,7 @@ export function OrganizerHome() {
     unpaidByCurrency: {},
   });
   const [topPromoters, setTopPromoters] = useState([]);
+  const [dailySales, setDailySales] = useState({ revenueByCurrency: {}, ticketsSold: 0, orders: 0 });
   const [defaultCurrency, setDefaultCurrency] = useState('USD'); // Fallback from user's country
   const [showConnectBanner, setShowConnectBanner] = useState(false);
   const [connectCountries, setConnectCountries] = useState([]);
@@ -58,6 +59,7 @@ export function OrganizerHome() {
         loadUpcomingEvents(),
         loadPromoterData(),
         loadFreeEventStats(),
+        loadDailySales(),
       ]);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -232,6 +234,64 @@ export function OrganizerHome() {
       });
     } catch (error) {
       console.error('Error loading free event stats:', error);
+    }
+  };
+
+  const loadDailySales = async () => {
+    try {
+      // Get organizer's event IDs
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select('id, currency')
+        .eq('organizer_id', organizer.id);
+
+      if (eventsError) throw eventsError;
+
+      const eventIds = events?.map(e => e.id) || [];
+      if (eventIds.length === 0) return;
+
+      const eventCurrencyMap = {};
+      events?.forEach(e => { eventCurrencyMap[e.id] = e.currency || defaultCurrency; });
+
+      // Start of today in UTC
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayISO = todayStart.toISOString();
+
+      // Get today's completed orders
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, total_amount, currency, event_id')
+        .in('event_id', eventIds)
+        .eq('status', 'completed')
+        .gte('created_at', todayISO);
+
+      const revenueByCurrency = {};
+      let orderCount = 0;
+      if (!ordersError && orders) {
+        orderCount = orders.length;
+        orders.forEach(o => {
+          const currency = o.currency || eventCurrencyMap[o.event_id] || defaultCurrency;
+          revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + (parseFloat(o.total_amount) || 0);
+        });
+      }
+
+      // Get today's tickets for ticket count
+      const { data: tickets, error: ticketsError } = await supabase
+        .from('tickets')
+        .select('quantity, event_id')
+        .in('event_id', eventIds)
+        .in('payment_status', ['completed', 'paid'])
+        .gte('created_at', todayISO);
+
+      let ticketsSold = 0;
+      if (!ticketsError && tickets) {
+        ticketsSold = tickets.reduce((sum, t) => sum + (t.quantity || 1), 0);
+      }
+
+      setDailySales({ revenueByCurrency, ticketsSold, orders: orderCount });
+    } catch (error) {
+      console.error('Error loading daily sales:', error);
     }
   };
 
@@ -466,6 +526,25 @@ export function OrganizerHome() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="rounded-2xl border-[#2969FF]/20 bg-blue-50/50 shadow-none">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-[#2969FF] uppercase tracking-wider">Today's Sales</span>
+              <div className="w-8 h-8 rounded-lg bg-[#2969FF]/10 flex items-center justify-center">
+                <Sun className="w-4 h-4 text-[#2969FF]" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-foreground tracking-tight">
+              {Object.keys(dailySales.revenueByCurrency).length > 0
+                ? formatMultiCurrencyCompact(dailySales.revenueByCurrency)
+                : formatPrice(0, defaultCurrency)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {dailySales.ticketsSold} ticket{dailySales.ticketsSold !== 1 ? 's' : ''} · {dailySales.orders} order{dailySales.orders !== 1 ? 's' : ''}
+            </p>
+          </CardContent>
+        </Card>
+
         <Card className="rounded-2xl border-gray-200 shadow-none">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
