@@ -49,11 +49,6 @@ const USER_TYPES = {
 
 const PAGE_SIZE = 20;
 
-const STATUS_OPTIONS = {
-  all: 'All Status',
-  active: 'Active',
-  pending: 'Pending',
-};
 
 export function AdminUsers() {
   const { admin, logAdminAction } = useAdmin();
@@ -69,7 +64,6 @@ export function AdminUsers() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [userTypeFilter, setUserTypeFilter] = useState('attendee');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
@@ -89,7 +83,7 @@ export function AdminUsers() {
     if (organizerUserIds !== null) {
       loadUsers();
     }
-  }, [page, userTypeFilter, statusFilter, searchTerm, organizerUserIds]);
+  }, [page, userTypeFilter, searchTerm, organizerUserIds]);
 
   const loadRoleData = async () => {
     try {
@@ -148,7 +142,7 @@ export function AdminUsers() {
         .from('profiles')
         .select(`
           id, full_name, email, phone, avatar_url, is_admin, admin_role,
-          created_at, email_verified
+          created_at
         `, { count: 'exact' })
         .order('created_at', { ascending: false });
 
@@ -170,12 +164,6 @@ export function AdminUsers() {
         query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
       }
 
-      // Server-side status filter
-      if (statusFilter === 'active') {
-        query = query.eq('email_verified', true);
-      } else if (statusFilter === 'pending') {
-        query = query.eq('email_verified', false);
-      }
 
       // Pagination
       const from = (page - 1) * PAGE_SIZE;
@@ -196,7 +184,6 @@ export function AdminUsers() {
         if (roles.length === 0) roles.push('attendee');
 
         let status = 'active';
-        if (!profile.email_verified) status = 'pending';
 
         return { ...profile, roles, primaryRole: roles[0], status, organizer, promoter };
       });
@@ -225,9 +212,6 @@ export function AdminUsers() {
       let updates = {};
       
       switch (actionType) {
-        case 'verify':
-          updates = { email_verified: true };
-          break;
         case 'make_admin':
           updates = { is_admin: true, admin_role: 'admin' };
           break;
@@ -263,15 +247,8 @@ export function AdminUsers() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-700">Active</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>;
-      default:
-        return <Badge className="bg-muted text-foreground/80">{status}</Badge>;
-    }
+  const getStatusBadge = () => {
+    return <Badge className="bg-green-100 text-green-700">Active</Badge>;
   };
 
   const getRoleBadges = (roles) => {
@@ -295,7 +272,7 @@ export function AdminUsers() {
     try {
       let query = supabase
         .from('profiles')
-        .select('id, full_name, email, phone, is_admin, created_at, email_verified')
+        .select('id, full_name, email, phone, is_admin, created_at')
         .order('created_at', { ascending: false });
 
       if (userTypeFilter === 'attendee' && organizerUserIds && organizerUserIds.length > 0) {
@@ -317,8 +294,7 @@ export function AdminUsers() {
         ...data.map(u => {
           const isOrg = organizerMap[u.id];
           const type = isOrg ? 'Organizer' : 'Attendee';
-          let status = 'Active';
-          if (!u.email_verified) status = 'Pending';
+          const status = 'Active';
           return [
             u.full_name || '',
             u.email || '',
@@ -446,16 +422,6 @@ export function AdminUsers() {
                 </button>
               ))}
             </div>
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-[150px] rounded-xl border-border/10">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {Object.entries(STATUS_OPTIONS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </CardContent>
       </Card>
@@ -482,7 +448,6 @@ export function AdminUsers() {
                       <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">User</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Contact</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Roles</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
                       <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Joined</th>
                       <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
@@ -524,9 +489,6 @@ export function AdminUsers() {
                             {getRoleBadges(user.roles)}
                           </div>
                         </td>
-                        <td className="py-3 px-4">
-                          {getStatusBadge(user.status)}
-                        </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}
                         </td>
@@ -543,12 +505,6 @@ export function AdminUsers() {
                                 View Details
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              {user.status === 'pending' && (
-                                <DropdownMenuItem onClick={() => openActionDialog(user, 'verify')}>
-                                  <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                                  Verify Email
-                                </DropdownMenuItem>
-                              )}
                               <DropdownMenuSeparator />
                               {!user.is_admin ? (
                                 <DropdownMenuItem onClick={() => openActionDialog(user, 'make_admin')}>
@@ -623,7 +579,7 @@ export function AdminUsers() {
                 </div>
                 <div className="p-4 rounded-xl bg-muted">
                   <p className="text-sm text-muted-foreground">Email Verified</p>
-                  <p className="font-medium">{selectedUser.email_verified ? 'Yes' : 'No'}</p>
+                  <p className="font-medium">Active</p>
                 </div>
               </div>
 
@@ -652,13 +608,11 @@ export function AdminUsers() {
         <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {actionType === 'verify' && <CheckCircle className="w-5 h-5 text-green-600" />}
               {actionType === 'make_admin' && <Shield className="w-5 h-5 text-purple-600" />}
               {actionType === 'remove_admin' && <Shield className="w-5 h-5 text-red-600" />}
               Confirm Action
             </DialogTitle>
             <DialogDescription>
-              {actionType === 'verify' && `Mark ${selectedUser?.email} as verified?`}
               {actionType === 'make_admin' && `Grant admin privileges to ${selectedUser?.full_name || selectedUser?.email}?`}
               {actionType === 'remove_admin' && `Remove admin privileges from ${selectedUser?.full_name || selectedUser?.email}?`}
             </DialogDescription>
