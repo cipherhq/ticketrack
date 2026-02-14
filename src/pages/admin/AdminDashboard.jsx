@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Users, AlertTriangle, DollarSign, TrendingUp, Clock, ShoppingCart, Loader2, RefreshCw, Eye, Heart, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Calendar, Users, AlertTriangle, DollarSign, TrendingUp, Clock, ShoppingCart, Loader2, RefreshCw, Eye, Heart, Sparkles, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -31,16 +31,30 @@ export function AdminDashboard() {
     likesToday: 0,
   });
   const [trendingEvents, setTrendingEvents] = useState([]);
+  const [salesPeriod, setSalesPeriod] = useState('today');
+  const [salesData, setSalesData] = useState({
+    revenueByCurrency: {},
+    orders: 0,
+    ticketsSold: 0,
+  });
+  const [salesLoading, setSalesLoading] = useState(false);
+  const eventCurrencyMapRef = useRef({});
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
+  useEffect(() => {
+    if (Object.keys(eventCurrencyMapRef.current).length > 0) {
+      loadSalesAnalytics(salesPeriod);
+    }
+  }, [salesPeriod]);
+
   const loadDashboardData = async () => {
     setLoading(true);
     try {
       await Promise.all([
-        loadStats(),
+        loadStats().then(() => loadSalesAnalytics('today')),
         loadRecentActivity(),
         loadTopAffiliates(),
         loadEngagementStats(),
@@ -208,6 +222,7 @@ export function AdminDashboard() {
       }
       eventCurrencyMap[e.id] = e.currency;
     });
+    eventCurrencyMapRef.current = eventCurrencyMap;
 
     // Platform revenue (sum of all completed ticket sales)
     const { data: revenueData } = await supabase
@@ -269,6 +284,67 @@ export function AdminDashboard() {
       revenueTodayByCurrency,
       openTickets: openTickets || 0,
     });
+  };
+
+  const loadSalesAnalytics = async (period) => {
+    setSalesLoading(true);
+    try {
+      const currencyMap = eventCurrencyMapRef.current;
+      let startDate = null;
+
+      if (period === 'today') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        startDate = today.toISOString();
+      } else if (period === 'week') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        weekAgo.setHours(0, 0, 0, 0);
+        startDate = weekAgo.toISOString();
+      } else if (period === 'month') {
+        const monthAgo = new Date();
+        monthAgo.setDate(monthAgo.getDate() - 30);
+        monthAgo.setHours(0, 0, 0, 0);
+        startDate = monthAgo.toISOString();
+      }
+
+      // Query orders
+      let ordersQuery = supabase
+        .from('orders')
+        .select('total_amount, currency')
+        .eq('status', 'completed');
+      if (startDate) ordersQuery = ordersQuery.gte('created_at', startDate);
+      const { data: ordersData } = await ordersQuery;
+
+      const revenueByCurrency = {};
+      let ordersCount = 0;
+      ordersData?.forEach(order => {
+        ordersCount++;
+        const currency = order.currency || 'NGN';
+        if (!revenueByCurrency[currency]) revenueByCurrency[currency] = 0;
+        revenueByCurrency[currency] += parseFloat(order.total_amount) || 0;
+      });
+
+      // Query tickets
+      let ticketsQuery = supabase
+        .from('tickets')
+        .select('quantity, event_id')
+        .in('payment_status', ['completed', 'paid']);
+      if (startDate) ticketsQuery = ticketsQuery.gte('created_at', startDate);
+      const { data: ticketsData } = await ticketsQuery;
+
+      const ticketsSold = ticketsData?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
+
+      setSalesData({
+        revenueByCurrency,
+        orders: ordersCount,
+        ticketsSold,
+      });
+    } catch (error) {
+      console.error('Error loading sales analytics:', error);
+    } finally {
+      setSalesLoading(false);
+    }
   };
 
   const loadRecentActivity = async () => {
@@ -450,6 +526,70 @@ export function AdminDashboard() {
           </Card>
         ))}
       </div>
+      {/* Sales Analytics */}
+      <Card className="border-border/10 rounded-2xl">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-foreground flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-[#2969FF]" />
+              Sales Analytics
+            </CardTitle>
+            <div className="flex gap-1 bg-muted rounded-xl p-1">
+              {[
+                { key: 'today', label: 'Today' },
+                { key: 'week', label: 'This Week' },
+                { key: 'month', label: 'This Month' },
+                { key: 'all', label: 'All Time' },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setSalesPeriod(tab.key)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    salesPeriod === tab.key
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {salesLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-muted">
+                <p className="text-sm text-muted-foreground mb-1">Revenue</p>
+                {Object.keys(salesData.revenueByCurrency).length > 0 ? (
+                  <div className="space-y-1">
+                    {Object.entries(salesData.revenueByCurrency).map(([currency, amount]) => (
+                      <p key={currency} className="text-xl font-semibold text-foreground">
+                        {formatPrice(amount, currency)}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xl font-semibold text-foreground">-</p>
+                )}
+              </div>
+              <div className="p-4 rounded-xl bg-muted">
+                <p className="text-sm text-muted-foreground mb-1">Orders</p>
+                <p className="text-xl font-semibold text-foreground">{salesData.orders.toLocaleString()}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-muted">
+                <p className="text-sm text-muted-foreground mb-1">Tickets Sold</p>
+                <p className="text-xl font-semibold text-foreground">{salesData.ticketsSold.toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Recent Activity & Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-border/10 rounded-2xl">
