@@ -210,10 +210,14 @@ export function AdminProcessPayout() {
       }
 
       // Mark payout as completed
-      await supabase
+      const { error: completeError } = await supabase
         .from('payouts')
         .update({ status: 'completed', processed_at: new Date().toISOString() })
         .eq('id', payout.id);
+
+      if (completeError) {
+        console.error('Failed to mark payout as completed:', completeError);
+      }
 
       await logAdminAction('payout_processed', 'payout', payout.id, {
         organizer: selectedOrganizer.business_name,

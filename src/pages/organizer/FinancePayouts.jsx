@@ -176,9 +176,9 @@ export function FinancePayouts() {
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false });
 
-      // Build set of event IDs that already have completed payouts
+      // Build set of event IDs that already have completed/processing payouts
       const paidEventIds = new Set();
-      payouts?.filter(p => p.status === 'completed')?.forEach(p => {
+      payouts?.filter(p => p.status === 'completed' || p.status === 'processing')?.forEach(p => {
         // Check event_ids array (batch payouts from AdminProcessPayout)
         if (Array.isArray(p.event_ids)) {
           p.event_ids.forEach(id => paidEventIds.add(id));
@@ -295,10 +295,10 @@ export function FinancePayouts() {
           status = 'Ready'; // Past payout date, ready for payout
         }
 
-        // Skip paid events from upcoming list entirely
-        if (status === 'Paid') return;
-
-        upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
+        // Only add unpaid events to the upcoming total
+        if (status !== 'Paid') {
+          upcomingPayoutsByCurrency[currency] = (upcomingPayoutsByCurrency[currency] || 0) + netAmount;
+        }
         upcoming.push({
           id: event.id,
           currency,
@@ -331,8 +331,8 @@ export function FinancePayouts() {
 
       // Total paid out from payouts table - group by currency (use net_amount - what organizer actually receives)
       const totalPaidOutByCurrency = {};
-      payouts?.filter(p => p.status === 'completed')?.forEach(p => {
-        const currency = p.currency || getDefaultCurrency(p.country_code || organizer?.country_code || organizer?.country);
+      payouts?.filter(p => p.status === 'completed' || p.status === 'processing')?.forEach(p => {
+        const currency = p.currency || getDefaultCurrency(organizer?.country_code || organizer?.country);
         totalPaidOutByCurrency[currency] = (totalPaidOutByCurrency[currency] || 0) + (parseFloat(p.net_amount) || parseFloat(p.amount) || 0);
       });
 
