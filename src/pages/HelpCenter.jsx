@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   Search, ChevronDown, ChevronUp, Ticket, Users, Megaphone, Settings, ArrowRightLeft, Send, CalendarPlus, Star,
   ShoppingCart, CreditCard, RotateCcw, QrCode, Calendar, BarChart3,
   FileText, Download, CheckCircle, UserPlus, Link as LinkIcon, Wallet,
   HelpCircle, Mail, Shield, Bell, Eye, Plus, Edit, Trash2, Clock,
-  Image as ImageIcon, Building, ClipboardList, Monitor, MapPin
+  Building, ClipboardList, Monitor, MapPin, Gift, Share2, Smartphone,
+  MessageSquare, Tag, Zap, Target, Upload, UserCheck, Heart, Inbox
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,7 +32,6 @@ const helpContent = {
           'Filter events by date, price range, or category using the filter options.',
           'Click on any event card to view full details.'
         ],
-        screenshot: '/help/browse-events.png',
         tips: ['Use specific keywords for better search results', 'Check the "Free Events" filter if you\'re looking for free activities']
       },
       {
@@ -47,7 +47,6 @@ const helpContent = {
           'Choose your payment method (Card, Bank Transfer, or USSD).',
           'Complete the payment to receive your tickets via email.'
         ],
-        screenshot: '/help/buy-tickets.png',
         tips: ['Make sure your email is correct - tickets will be sent there', 'Save your order confirmation for reference']
       },
       {
@@ -61,7 +60,6 @@ const helpContent = {
           'Click on any ticket to see details and QR code.',
           'You can download your ticket or add it to your calendar.'
         ],
-        screenshot: '/help/my-tickets.png',
         tips: ['Keep your QR code ready for check-in at the event', 'Screenshots of your QR code work for check-in too']
       },
       {
@@ -76,7 +74,6 @@ const helpContent = {
           'Submit your request - the organizer will review it.',
           'You\'ll receive an email notification once approved or rejected.'
         ],
-        screenshot: '/help/request-refund.png',
         tips: ['Refund requests must be made before the deadline (usually 48 hours before the event)', 'Keep your reason clear and honest for faster processing'],
         important: 'Not all events allow refunds. Check the event\'s refund policy before purchasing.'
       },
@@ -92,7 +89,6 @@ const helpContent = {
           'Our admin team will review your case and make a final decision.',
           'You\'ll be notified via email of the outcome.'
         ],
-        screenshot: '/help/escalate-refund.png',
         tips: ['Provide documentation if available (e.g., emergency proof)', 'Escalations are reviewed within 3-5 business days']
       },
       {
@@ -105,7 +101,6 @@ const helpContent = {
           'Look for the refund status badge (Pending, Approved, Rejected, or Processed).',
           'Click on the ticket to see detailed refund information and notes from the organizer.'
         ],
-        screenshot: '/help/refund-status.png',
         tips: ['Pending means the organizer is reviewing', 'Approved means money is being processed', 'Processed means the refund is complete']
       },
       {
@@ -121,7 +116,6 @@ const helpContent = {
           'Click "Transfer Ticket" or "Pay & Transfer" if a fee applies.',
           'The ticket will be removed from your account and sent to the recipient.'
         ],
-        screenshot: '/help/transfer-ticket.png',
         tips: [
           'Each ticket can only be transferred once',
           'Only the original buyer can transfer (not someone who received a transfer)',
@@ -139,7 +133,6 @@ const helpContent = {
           'View all tickets you have transferred to others.',
           'Each transfer shows: Transfer ID, old ticket code, new ticket code, recipient name, and date.'
         ],
-        screenshot: '/help/transferred-tickets.png',
         tips: [
           'This is your audit trail for tickets you\'ve sent to others',
           'Received tickets will show a "Received" badge in your Active tickets'
@@ -156,7 +149,6 @@ const helpContent = {
           'The event will be added with date, time, and location details.',
           'You\'ll receive a reminder before the event starts.'
         ],
-        screenshot: '/help/add-calendar.png',
         tips: [
           'Google Calendar opens in a new tab for easy adding',
           'Apple and Outlook download an .ics file - open it to add to your calendar',
@@ -173,7 +165,6 @@ const helpContent = {
           'These events are selected based on popularity and relevance.',
           'Click any event card to view details and buy tickets.'
         ],
-        screenshot: '/help/recommended-events.png',
         tips: [
           'Recommendations update regularly with new events',
           'Check back often to discover new events in your area'
@@ -191,7 +182,6 @@ const helpContent = {
           'Select your preferred method and complete payment.',
           'You will receive confirmation via email immediately.'
         ],
-        screenshot: '/help/payment-methods.png',
         tips: [
           'Card payments are instant',
           'Bank transfers may take a few minutes to confirm',
@@ -210,7 +200,6 @@ const helpContent = {
           'View all organizers you follow in your Profile → Following tab.',
           'Click "Unfollow" anytime to stop receiving updates.'
         ],
-        screenshot: '/help/follow-organizers.png',
         tips: [
           'Follow your favorite event creators to never miss their events',
           'You can manage all your follows from your profile'
@@ -227,10 +216,102 @@ const helpContent = {
           'The price you see at checkout is the final price in that currency.',
           'Check with your bank about international transaction fees.'
         ],
-        screenshot: '/help/multi-currency.png',
         tips: [
           'Prices are always shown in the the event currency',
           'Use a card with no foreign transaction fees for international events'
+        ]
+      },
+      {
+        id: 'referral-program',
+        title: 'How to Use the Referral Program',
+        icon: Gift,
+        steps: [
+          'Go to your Profile or Account menu and find "Referral Program".',
+          'Copy your unique referral link or share it directly via WhatsApp, email, or social media.',
+          'When a friend signs up and purchases a ticket using your link, you earn a commission.',
+          'Track your referral balance in the Referral Dashboard.',
+          'Once your balance reaches the minimum threshold, request a withdrawal.',
+          'Withdrawals are sent to your registered bank account or mobile wallet.'
+        ],
+        tips: [
+          'Share your link on social media for maximum reach',
+          'You earn commission on every ticket your referrals purchase',
+          'Check your referral dashboard regularly to track earnings'
+        ]
+      },
+      {
+        id: 'group-buy',
+        title: 'How to Use Group Buy',
+        icon: Users,
+        steps: [
+          'On an event page, look for the "Group Buy" option (if enabled by the organizer).',
+          'Click "Start a Group" to create a new group buying session.',
+          'Set the number of tickets your group wants to buy.',
+          'Share the group invite link with your friends.',
+          'Friends join your group and confirm their participation.',
+          'Once the group reaches the required size, everyone completes payment.',
+          'Each group member receives their own ticket after payment.'
+        ],
+        tips: [
+          'Group buy often comes with discounted pricing',
+          'You can track who has joined and who is pending',
+          'The group creator can manage members before payment is finalized'
+        ],
+        important: 'Group buy sessions have a time limit. If the group is not filled in time, the session expires and no one is charged.'
+      },
+      {
+        id: 'split-payments',
+        title: 'How to Split Ticket Payments',
+        icon: Share2,
+        steps: [
+          'Purchase tickets for your group at checkout.',
+          'After purchase, go to "My Tickets" and find the order.',
+          'Click "Split Payment" to generate pay-your-share links.',
+          'Set how much each person owes.',
+          'Share the unique payment links with your friends.',
+          'Friends click the link and pay their share directly.',
+          'Track who has paid and send reminders to those who haven\'t.'
+        ],
+        tips: [
+          'You can split evenly or set custom amounts per person',
+          'Payment links expire after a set period',
+          'You receive notifications as friends complete their payments'
+        ]
+      },
+      {
+        id: 'manage-profile',
+        title: 'How to Manage Your Profile & Preferences',
+        icon: Settings,
+        steps: [
+          'Click on your profile icon and go to "Profile" or "Account Settings".',
+          'Update your display name, bio, and profile photo.',
+          'Go to "Preferences" to set your event interest categories (e.g., Music, Tech, Sports).',
+          'Choose your preferred city or location for event recommendations.',
+          'Set your preferred currency for browsing events.',
+          'Save your changes to personalize your event feed.'
+        ],
+        tips: [
+          'Setting interest preferences helps us recommend better events',
+          'Keep your phone number updated for SMS ticket notifications',
+          'Your profile is visible to organizers when you purchase tickets'
+        ]
+      },
+      {
+        id: 'add-to-wallet',
+        title: 'How to Add Tickets to Your Wallet',
+        icon: Smartphone,
+        steps: [
+          'Go to "My Tickets" and open the ticket you want to add.',
+          'Look for the "Add to Wallet" button below your QR code.',
+          'Choose Apple Wallet (iOS) or Google Wallet (Android).',
+          'For Apple Wallet: tap the button and confirm adding the pass.',
+          'For Google Wallet: tap the button, sign in to Google if prompted, and save.',
+          'Your ticket will appear in your phone\'s wallet app for easy access at check-in.'
+        ],
+        tips: [
+          'Wallet passes update automatically if event details change',
+          'No internet needed to show your wallet pass at check-in',
+          'Works with Apple Watch for even faster check-in'
         ]
       },
     ]
@@ -255,7 +336,6 @@ const helpContent = {
           'Set Visibility: public, unlisted, password-protected, or invite-only.',
           'Review and click "Publish Event" to go live!'
         ],
-        screenshot: '/help/create-event.png',
         tips: ['Use a high-quality event image (1200x630px recommended)', 'Write a compelling description to attract attendees']
       },
       {
@@ -270,7 +350,6 @@ const helpContent = {
           'The event will remain hidden until the scheduled date/time.',
           'At the scheduled time, it automatically becomes visible to the public.'
         ],
-        screenshot: '/help/schedule-publishing.png',
         tips: [
           'Great for coordinating marketing campaigns with event launch',
           'Use for surprise event announcements',
@@ -293,7 +372,6 @@ const helpContent = {
           'Drag to reorder questions as needed.',
           'Save your event - questions will appear at checkout!'
         ],
-        screenshot: '/help/custom-forms.png',
         tips: ['Keep questions minimal to avoid checkout abandonment', 'Use dropdowns when you have specific options'],
         example: 'Common custom questions: T-Shirt Size, Meal Preference, Dietary Restrictions, Emergency Contact'
       },
@@ -308,7 +386,6 @@ const helpContent = {
           'Click the Eye icon to expand and see all their responses.',
           'Responses show the question label and their answer.'
         ],
-        screenshot: '/help/view-responses.png',
         tips: ['Not all attendees will have the eye icon - only those who answered custom questions', 'Use the event filter to focus on specific events']
       },
       {
@@ -322,7 +399,6 @@ const helpContent = {
           'The download will include: Name, Email, Phone, Event, Ticket Type, and any Custom Form responses.',
           'Open the CSV in Excel, Google Sheets, or any spreadsheet app.'
         ],
-        screenshot: '/help/export-csv.png',
         tips: ['Filter by event first to get a focused export', 'Custom form columns only appear if attendees answered questions']
       },
       {
@@ -338,7 +414,6 @@ const helpContent = {
           'Submit - the attendee will be notified via email.',
           'Approved refunds are processed by admin.'
         ],
-        screenshot: '/help/organizer-refunds.png',
         tips: ['Respond quickly to maintain good attendee relationships', 'Clear notes help if the refund is escalated'],
         important: 'Approved refunds will be deducted from your payout. Reject only with valid reason.'
       },
@@ -354,7 +429,6 @@ const helpContent = {
           'Click "Check In" to mark attendance.',
           'Green checkmark confirms successful check-in.'
         ],
-        screenshot: '/help/check-in.png',
         tips: ['Test the scanner before the event', 'Have a backup plan (manual search) in case of scanning issues']
       },
       {
@@ -368,7 +442,6 @@ const helpContent = {
           'See sales trends over time in the chart.',
           'Review ticket type breakdown and referral sources.'
         ],
-        screenshot: '/help/analytics.png',
         tips: ['Check analytics regularly to understand your audience', 'Use insights to improve future events']
       },
       {
@@ -383,7 +456,6 @@ const helpContent = {
           'Or click "Disable Transfers" to turn it off.',
           'The setting updates immediately - no need to save.'
         ],
-        screenshot: '/help/enable-transfers.png',
         tips: [
           'Transfers are disabled by default for all events',
           'Enable transfers for events where attendees may need flexibility',
@@ -403,7 +475,6 @@ const helpContent = {
           'Use the search bar to find specific transfers.',
           'Click "Export" to download transfer data as CSV.'
         ],
-        screenshot: '/help/organizer-transfers.png',
         tips: [
           'Monitor transfers to track ticket movement',
           'Use the audit trail for any disputes or issues',
@@ -423,7 +494,6 @@ const helpContent = {
           'Once approved, your Stripe account is connected.',
           'Future event earnings will be paid directly to your bank account.'
         ],
-        screenshot: '/help/stripe-connect.png',
         tips: [
           'Have your bank account details ready before starting',
           'Use a business email for your Stripe account',
@@ -444,7 +514,6 @@ const helpContent = {
           'Submit and wait for review (usually 1-3 business days).',
           'You will receive an email once verified.'
         ],
-        screenshot: '/help/kyc-verification.png',
         tips: [
           'Ensure documents are clear and not expired',
           'Use good lighting for selfie verification',
@@ -463,7 +532,6 @@ const helpContent = {
           'Click on any payout to see which events/orders it includes.',
           'Track payout status: Pending, Processing, Completed, Failed.'
         ],
-        screenshot: '/help/view-payouts.png',
         tips: [
           'Payouts are processed after events complete',
           'Keep your bank details up to date',
@@ -482,7 +550,6 @@ const helpContent = {
           'You receive payouts in your connected bank account currency.',
           'Conversion rates are handled automatically by payment providers.'
         ],
-        screenshot: '/help/multi-currency.png',
         tips: [
           'Choose the currency your target audience uses',
           'International events can use USD, GBP, or EUR',
@@ -504,7 +571,6 @@ const helpContent = {
           'Each recurring date will have its own ticket inventory and can be purchased separately.',
           'Save your event - attendees will see all available dates to choose from.'
         ],
-        screenshot: '/help/recurring-events.png',
         tips: [
           'Use recurring events for classes, workshops, or regular meetups',
           'Each date is treated as a separate event instance with its own tickets',
@@ -527,7 +593,6 @@ const helpContent = {
           'Attendees can buy tickets for the full event duration.',
           'Save your event - it will show as a multi-day event on the public page.'
         ],
-        screenshot: '/help/multi-day-events.png',
         tips: [
           'Perfect for festivals, conferences, or workshops spanning multiple days',
           'You can add activities for each day to show what happens when',
@@ -539,7 +604,7 @@ const helpContent = {
       {
         id: 'venue-layout-designer',
         title: 'How to Design Venue Layouts',
-        icon: ImageIcon,
+        icon: MapPin,
         steps: [
           'Go to Organizer Dashboard → Venues.',
           'Select a venue or create a new one.',
@@ -551,7 +616,6 @@ const helpContent = {
           'Name your layout and click "Save".',
           'You can export the layout as a PDF to share with your team or venue.'
         ],
-        screenshot: '/help/venue-designer.png',
         tips: [
           'Use the AI assistant for layout suggestions based on your event type',
           'The questionnaire feature can auto-generate layouts based on your answers',
@@ -574,7 +638,6 @@ const helpContent = {
           'Enter payment reference if applicable.',
           'Click "Issue Ticket" - the attendee will receive their ticket via email.'
         ],
-        screenshot: '/help/manual-tickets.png',
         tips: [
           'Use for on-site sales or special cases',
           'Manual sales are tracked in your Orders and Analytics',
@@ -594,7 +657,6 @@ const helpContent = {
           'Waitlist members are notified via email when tickets become available.',
           'Each recurring event date has its own separate waitlist.'
         ],
-        screenshot: '/help/waitlist-management.png',
         tips: [
           'Monitor waitlist size to gauge demand for future events',
           'Consider creating additional dates if waitlist is long',
@@ -614,7 +676,6 @@ const helpContent = {
           'Attendees are notified via email about the cancellation and refund.',
           'Refund processing may take 5-10 business days depending on payment method.'
         ],
-        screenshot: '/help/auto-refund.png',
         tips: [
           'Cancellation should be a last resort - consider rescheduling first',
           'Attendees appreciate prompt cancellation notifications',
@@ -637,7 +698,6 @@ const helpContent = {
           'Attendees will receive the streaming link in their ticket confirmation.',
           'You can still add a city/country for event discovery purposes.'
         ],
-        screenshot: '/help/virtual-events.png',
         tips: [
           'Test your streaming link before the event',
           'Include clear instructions for attendees on how to join',
@@ -659,7 +719,6 @@ const helpContent = {
           'Donation events still require "purchase" but amount is optional.',
           'Both types track attendance and send confirmations via email.'
         ],
-        screenshot: '/help/free-events.png',
         tips: [
           'Free events have capacity limits - set a maximum RSVP count',
           'Donation events help cover costs while keeping events accessible',
@@ -681,7 +740,6 @@ const helpContent = {
           'When creating events, select from your saved venues.',
           'Update venue information anytime by clicking "Edit".'
         ],
-        screenshot: '/help/venue-management.png',
         tips: [
           'Save venues you use frequently for faster event creation',
           'Link Google Maps to your venue address for easy navigation',
@@ -703,7 +761,6 @@ const helpContent = {
           'Add subtasks, comments, and labels to organize your work.',
           'Track progress with the progress bar on each event card.'
         ],
-        screenshot: '/help/project-manager.png',
         tips: [
           'Use templates to quickly create common task lists',
           'Assign tasks to team members for collaboration',
@@ -725,7 +782,6 @@ const helpContent = {
           'View all team members and their roles.',
           'Remove team members or change permissions anytime.'
         ],
-        screenshot: '/help/team-management.png',
         tips: [
           'Use roles to control access - managers can create events, staff can only check-in',
           'Team members can be assigned to specific events or have access to all',
@@ -747,12 +803,225 @@ const helpContent = {
           'Track refunds and final revenue calculations.',
           'Use insights to improve future events.'
         ],
-        screenshot: '/help/post-event.png',
         tips: [
           'Check the post-event dashboard within 48 hours of event completion',
           'Compare actual attendance vs. tickets sold to understand no-shows',
           'Export data for accounting and record-keeping',
           'Use feedback to plan your next event'
+        ]
+      },
+      {
+        id: 'promo-codes',
+        title: 'How to Create Promo Codes',
+        icon: Tag,
+        steps: [
+          'Go to Organizer Dashboard → Events → select your event.',
+          'Click on the "Promo Codes" tab.',
+          'Click "Create Promo Code" button.',
+          'Enter a code name (e.g., EARLYBIRD, VIP20, FRIENDS).',
+          'Set discount type: Percentage (e.g., 20% off) or Fixed Amount (e.g., $5 off).',
+          'Set usage limits: total uses and/or per-person limit.',
+          'Optionally set an expiry date for the code.',
+          'Choose which ticket types the code applies to.',
+          'Click "Create" - share the code with your audience!'
+        ],
+        tips: [
+          'Use memorable code names that are easy to type',
+          'Set expiry dates to create urgency',
+          'Track usage in the promo codes dashboard'
+        ]
+      },
+      {
+        id: 'communication-credits',
+        title: 'How to Purchase Communication Credits',
+        icon: MessageSquare,
+        steps: [
+          'Go to Organizer Dashboard → Communication → Credits.',
+          'View your current SMS and WhatsApp credit balance.',
+          'Click "Buy Credits" to purchase more.',
+          'Select a credit bundle (SMS credits, WhatsApp credits, or combo packs).',
+          'Complete payment to add credits to your account.',
+          'Credits are used when sending bulk messages to attendees.'
+        ],
+        tips: [
+          'SMS credits are used per message segment (160 characters)',
+          'WhatsApp messages use WhatsApp credits',
+          'Buy in bulk for better rates',
+          'Credits never expire'
+        ]
+      },
+      {
+        id: 'drip-campaigns',
+        title: 'How to Set Up Drip Campaigns',
+        icon: Zap,
+        steps: [
+          'Go to Organizer Dashboard → Communication → Drip Campaigns.',
+          'Click "Create Drip Campaign".',
+          'Name your campaign and select the target event.',
+          'Add email steps with delays (e.g., Day 1: Welcome, Day 3: Event Details, Day 7: Reminder).',
+          'Write the email content for each step using the rich text editor.',
+          'Set the trigger: on ticket purchase, on RSVP, or manual enrollment.',
+          'Preview each email in the sequence.',
+          'Activate the campaign - emails will send automatically on schedule.'
+        ],
+        tips: [
+          'Keep sequences short (3-5 emails) to avoid overwhelming attendees',
+          'Include useful info like parking, dress code, or what to bring',
+          'Test the campaign by enrolling yourself first'
+        ]
+      },
+      {
+        id: 'audience-segmentation',
+        title: 'How to Create Audience Segments',
+        icon: Target,
+        steps: [
+          'Go to Organizer Dashboard → Communication → Segments.',
+          'Click "Create Segment".',
+          'Name your segment (e.g., "VIP Attendees", "Repeat Customers").',
+          'Set filter criteria: event attended, ticket type, purchase date, location, etc.',
+          'Preview the segment to see how many contacts match.',
+          'Save the segment for use in email campaigns and broadcasts.',
+          'Segments update automatically as new attendees match the criteria.'
+        ],
+        tips: [
+          'Use segments for targeted promotions and announcements',
+          'Combine multiple filters for precise targeting',
+          'Review segment sizes before sending campaigns'
+        ]
+      },
+      {
+        id: 'communication-automations',
+        title: 'How to Set Up Communication Automations',
+        icon: Zap,
+        steps: [
+          'Go to Organizer Dashboard → Communication → Automations.',
+          'Click "Create Automation".',
+          'Choose a trigger event: ticket purchased, event reminder, post-event follow-up, etc.',
+          'Select the channel: Email, SMS, or WhatsApp.',
+          'Set timing: immediately, hours before/after, or days before/after the trigger.',
+          'Write your message content.',
+          'Enable the automation - it will run automatically for matching events.'
+        ],
+        tips: [
+          'Set up post-event thank you messages to build loyalty',
+          'Use event reminders 24 hours and 1 hour before the event',
+          'SMS automations require SMS credits'
+        ]
+      },
+      {
+        id: 'organizer-inbox',
+        title: 'How to Use the Inbox',
+        icon: Inbox,
+        steps: [
+          'Go to Organizer Dashboard → Inbox.',
+          'View messages from attendees organized by conversation.',
+          'Click on a conversation to read the full message thread.',
+          'Type your reply and click "Send".',
+          'Messages are linked to the attendee\'s ticket and event for context.',
+          'You\'ll receive notifications when new messages arrive.'
+        ],
+        tips: [
+          'Respond promptly to build trust with your attendees',
+          'Use the event filter to focus on messages for a specific event',
+          'You can see the attendee\'s ticket details alongside their message'
+        ]
+      },
+      {
+        id: 'invite-promoters',
+        title: 'How to Invite Promoters',
+        icon: Megaphone,
+        steps: [
+          'Go to Organizer Dashboard → Promoters.',
+          'Click "Invite Promoter".',
+          'Enter the promoter\'s email address.',
+          'Set the commission rate (percentage of each ticket sale).',
+          'Optionally set a commission cap or time limit.',
+          'Send the invitation - the promoter will receive an email to accept.',
+          'Once accepted, they can generate promo links for your events.',
+          'Track promoter performance in your Promoters dashboard.'
+        ],
+        tips: [
+          'Competitive commission rates attract more promoters',
+          'You can set different rates for different promoters',
+          'Monitor top-performing promoters and reward them'
+        ]
+      },
+      {
+        id: 'follower-management',
+        title: 'How to Manage Your Followers',
+        icon: Heart,
+        steps: [
+          'Go to Organizer Dashboard → Followers.',
+          'View your total follower count and recent follows.',
+          'See which attendees follow your organizer profile.',
+          'Followers are automatically notified when you publish new events.',
+          'Use the follower list to understand your audience demographics.',
+          'Engage followers by consistently creating quality events.'
+        ],
+        tips: [
+          'A strong follower base helps new events sell faster',
+          'Followers see your events prioritized in their feed',
+          'Encourage attendees to follow you at your events'
+        ]
+      },
+      {
+        id: 'event-import',
+        title: 'How to Import Events',
+        icon: Upload,
+        steps: [
+          'Go to Organizer Dashboard → Events.',
+          'Click "Import Event" button.',
+          'Select the platform you\'re importing from (Eventbrite, Meetup, etc.).',
+          'Paste the event URL or upload the event data file.',
+          'Review the imported event details and make any adjustments.',
+          'Set up ticket types and pricing (these are not imported).',
+          'Click "Publish" to make the event live on Ticketrack.'
+        ],
+        tips: [
+          'Double-check imported dates, times, and timezone',
+          'You\'ll need to re-create ticket types manually',
+          'Event images may need to be re-uploaded'
+        ],
+        important: 'Importing an event does not transfer ticket sales or attendee data from the original platform.'
+      },
+      {
+        id: 'connect-paystack-flutterwave',
+        title: 'How to Connect Paystack or Flutterwave',
+        icon: Wallet,
+        steps: [
+          'Go to Organizer Dashboard → Payouts.',
+          'Click "Connect Paystack" or "Connect Flutterwave" based on your preference.',
+          'You will be redirected to the provider\'s onboarding page.',
+          'Create an account or log into your existing Paystack/Flutterwave account.',
+          'Enter your business details and bank account information.',
+          'Complete verification as required by the provider.',
+          'Once connected, payouts from Nigerian and African events will be processed through your account.'
+        ],
+        tips: [
+          'Paystack is recommended for Nigerian organizers',
+          'Flutterwave supports more African countries',
+          'You can connect both providers for flexibility',
+          'Verification typically takes 1-3 business days'
+        ],
+        important: 'You must connect at least one payment provider to receive payouts for paid events.'
+      },
+      {
+        id: 'organizer-profile',
+        title: 'How to Set Up Your Organizer Profile',
+        icon: UserCheck,
+        steps: [
+          'Go to Organizer Dashboard → Settings → Profile.',
+          'Upload your organizer logo or profile image.',
+          'Enter your organization name and description.',
+          'Add your website URL and social media links.',
+          'Set your default event country and currency.',
+          'Add a contact email for public inquiries.',
+          'Save your profile - it will be visible on all your event pages.'
+        ],
+        tips: [
+          'A complete profile builds trust with potential attendees',
+          'Use a professional logo that represents your brand',
+          'Keep your description concise and highlight what you organize'
         ]
       },
     ]
@@ -775,7 +1044,6 @@ const helpContent = {
           'Submit your application.',
           'Once approved, you\'ll have access to the Promoter Dashboard.'
         ],
-        screenshot: '/help/become-promoter.png',
         tips: ['Make sure your contact info is correct for payouts', 'Approval usually happens within 24 hours']
       },
       {
@@ -790,7 +1058,6 @@ const helpContent = {
           'Share on social media, WhatsApp, email, etc.',
           'Anyone who buys through your link earns you commission!'
         ],
-        screenshot: '/help/promo-link.png',
         tips: ['Your link is unique - don\'t share someone else\'s link', 'Track which platforms work best for you']
       },
       {
@@ -804,7 +1071,6 @@ const helpContent = {
           'Check status: Pending (unpaid), Confirmed, or Paid.',
           'Filter by event or date range.'
         ],
-        screenshot: '/help/track-referrals.png',
         tips: ['Referrals may take a few minutes to appear', 'Pending referrals become confirmed after event ends']
       },
       {
@@ -818,7 +1084,6 @@ const helpContent = {
           'Click on individual referrals to see commission details.',
           'Commission rate varies by event (usually 5-15%).'
         ],
-        screenshot: '/help/commissions.png',
         tips: ['Commissions are calculated after deducting refunds', 'Different events may have different commission rates']
       },
       {
@@ -834,9 +1099,63 @@ const helpContent = {
           'Submit request - payouts are processed weekly.',
           'You\'ll receive a confirmation email when paid.'
         ],
-        screenshot: '/help/request-payout.png',
         tips: ['Minimum payout amount may apply', 'Make sure your bank details are up to date'],
         important: 'Payouts are processed every Monday. Requests made after Monday will be included in the next cycle.'
+      },
+      {
+        id: 'promoter-performance-analytics',
+        title: 'How to Track Performance Analytics',
+        icon: BarChart3,
+        steps: [
+          'Go to your Promoter Dashboard → Analytics.',
+          'View your key metrics: total clicks, conversions, and revenue generated.',
+          'See conversion rate (percentage of clicks that resulted in purchases).',
+          'Filter by event or date range to analyze specific campaigns.',
+          'Review which events perform best for your audience.',
+          'Use insights to focus your promotion efforts on high-converting events.'
+        ],
+        tips: [
+          'Higher conversion rates mean your audience trusts your recommendations',
+          'Compare performance across different events to find your niche',
+          'Track trends over time to see your growth'
+        ]
+      },
+      {
+        id: 'promoter-kyc',
+        title: 'How to Complete KYC Verification',
+        icon: Shield,
+        steps: [
+          'Go to Promoter Dashboard → Settings or Payouts.',
+          'Look for the "Verify Identity" or "Complete KYC" banner.',
+          'Click to start the verification process.',
+          'Upload a valid government-issued ID (passport, driver\'s license, or national ID).',
+          'Upload a proof of address (utility bill or bank statement, less than 3 months old).',
+          'Submit and wait for review (usually 1-3 business days).',
+          'You\'ll receive an email notification once your verification is complete.'
+        ],
+        tips: [
+          'Ensure all documents are clear and legible',
+          'Documents must not be expired',
+          'KYC is required once and applies to all future payouts'
+        ],
+        important: 'KYC verification is required for payouts above certain thresholds. Complete it early to avoid delays in receiving your earnings.'
+      },
+      {
+        id: 'promoter-tax-documents',
+        title: 'How to View and Download Tax Documents',
+        icon: FileText,
+        steps: [
+          'Go to Promoter Dashboard → Tax Documents.',
+          'View available tax forms for the current and previous tax years.',
+          'Click "Download" to save a PDF of any tax document.',
+          'Documents include your total earnings, payouts, and any withholdings.',
+          'Use these documents when filing your tax returns.'
+        ],
+        tips: [
+          'Tax documents are generated annually after the tax year ends',
+          'Keep copies of all tax documents for your records',
+          'Consult a tax professional if you\'re unsure how to report your earnings'
+        ]
       }
     ]
   },
@@ -857,7 +1176,6 @@ const helpContent = {
           'Change your password if needed.',
           'Save changes.'
         ],
-        screenshot: '/help/account-settings.png',
         tips: ['Use a strong password with numbers and symbols', 'Keep your email up to date for important notifications']
       },
       {
@@ -870,7 +1188,6 @@ const helpContent = {
           'Options include: Email alerts, SMS reminders, Marketing updates.',
           'Save your preferences.'
         ],
-        screenshot: '/help/notifications.png',
         tips: ['Keep event reminders on so you don\'t miss your events', 'You can unsubscribe from marketing but still get important alerts']
       },
       {
@@ -885,7 +1202,6 @@ const helpContent = {
           'Include order number or event name if relevant.',
           'Our team typically responds within 24 hours.'
         ],
-        screenshot: '/help/contact-support.png',
         tips: ['Include screenshots if you\'re experiencing a bug', 'The more detail you provide, the faster we can help']
       },
       {
@@ -899,7 +1215,6 @@ const helpContent = {
           'Report suspicious activity to support immediately.',
           'Keep your email secure - it\'s used for password recovery.'
         ],
-        screenshot: '/help/security.png',
         tips: ['Enable two-factor authentication if available', 'Review your login history periodically']
       }
     ]
@@ -943,15 +1258,6 @@ function Accordion({ article, isOpen, onToggle }) {
               ))}
             </ol>
           </div>
-
-          {/* Screenshot Placeholder */}
-          {article.screenshot && (
-            <div className="mb-4 p-6 bg-muted rounded-xl border-2 border-dashed border-border/20 text-center">
-              <ImageIcon className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Screenshot: {article.screenshot}</p>
-              <p className="text-xs text-muted-foreground mt-1">Image will be added here</p>
-            </div>
-          )}
 
           {/* Tips */}
           {article.tips && article.tips.length > 0 && (
@@ -1180,7 +1486,7 @@ export function HelpCenter() {
 
         {/* Footer Note */}
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Last updated: January 2025 • Ticketrack Help Center
+          Last updated: February 2026 • Ticketrack Help Center
         </p>
       </div>
     </div>
