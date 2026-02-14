@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { 
   ArrowLeft, Plus, MessageSquare, Clock, CheckCircle, AlertCircle,
@@ -123,7 +124,7 @@ export function WebSupport() {
   const createTicket = async (e) => {
     e.preventDefault()
     if (!category || !subject || !description) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
 
@@ -168,7 +169,7 @@ export function WebSupport() {
         console.log('Email notification failed:', emailErr)
       }
 
-      alert('Support ticket created successfully!')
+      toast.success('Support ticket created successfully!')
       setCategory('')
       setSubject('')
       setDescription('')
@@ -178,7 +179,7 @@ export function WebSupport() {
       loadTickets()
     } catch (err) {
       console.error('Error creating ticket:', err)
-      alert('Failed to create ticket. Please try again.')
+      toast.error('Failed to create ticket. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -206,7 +207,7 @@ export function WebSupport() {
       loadTicketDetails(selectedTicket)
     } catch (err) {
       console.error('Error sending reply:', err)
-      alert('Failed to send reply')
+      toast.error('Failed to send reply')
     } finally {
       setSubmitting(false)
     }

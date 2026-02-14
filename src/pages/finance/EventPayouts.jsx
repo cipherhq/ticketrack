@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 import { getMinimumPayout, getBelowThresholdMessage } from '@/config/payoutThresholds';
+import { toast } from 'sonner';
 
 export function EventPayouts() {
   const { logFinanceAction, canProcessPayouts, reAuthenticate } = useFinance();
@@ -136,7 +137,7 @@ export function EventPayouts() {
 
   const openPaymentDialog = (type, recipient, event = null) => {
     if (!canProcessPayouts) {
-      alert('You do not have permission to process payouts.');
+      toast.error('You do not have permission to process payouts.');
       return;
     }
     setPaymentDialog({ open: true, type, recipient, event });
@@ -177,7 +178,7 @@ export function EventPayouts() {
           .single();
 
         if (currentEvent?.payout_status === 'paid') {
-          alert('This event has already been paid out. Refreshing data.');
+          toast.error('This event has already been paid out. Refreshing data.');
           setProcessing(false);
           loadEventPayouts();
           return;
@@ -201,7 +202,7 @@ export function EventPayouts() {
             .limit(1);
 
           if (fallbackCheck && fallbackCheck.length > 0) {
-            alert(`This event may have already been paid out (${fallbackCheck[0].payout_number}). Please verify.`);
+            toast.error(`This event may have already been paid out (${fallbackCheck[0].payout_number}). Please verify.`);
             setProcessing(false);
             loadEventPayouts();
             return;
@@ -209,14 +210,14 @@ export function EventPayouts() {
         }
 
         if (existingPayout && existingPayout.length > 0) {
-          alert(`This event has already been paid out (${existingPayout[0].payout_number}). Refresh the page to see updated status.`);
+          toast.error(`This event has already been paid out (${existingPayout[0].payout_number}). Refresh the page to see updated status.`);
           setProcessing(false);
           loadEventPayouts();
           return;
         }
 
         if (currentEvent?.payout_status === 'paid') {
-          alert('This event has already been marked as paid. Refresh the page to see updated status.');
+          toast.error('This event has already been marked as paid. Refresh the page to see updated status.');
           setProcessing(false);
           loadEventPayouts();
           return;
@@ -224,7 +225,7 @@ export function EventPayouts() {
 
         // Validate payout amount
         if (!event.organizerNet || event.organizerNet <= 0) {
-          alert('Invalid payout amount. The organizer net amount must be greater than zero.');
+          toast.error('Invalid payout amount. The organizer net amount must be greater than zero.');
           setProcessing(false);
           return;
         }
@@ -232,7 +233,7 @@ export function EventPayouts() {
         // Check minimum payout threshold based on currency
         const minPayout = getMinimumPayout(event.currency);
         if (event.organizerNet < minPayout) {
-          alert(getBelowThresholdMessage(event.organizerNet, event.currency));
+          toast.error(getBelowThresholdMessage(event.organizerNet, event.currency));
           setProcessing(false);
           return;
         }
@@ -240,7 +241,7 @@ export function EventPayouts() {
         // Check if organizer has a bank account
         const bankAccountId = event.primaryBankAccount?.id;
         if (!bankAccountId) {
-          alert('Organizer must have a bank account to process payout');
+          toast.error('Organizer must have a bank account to process payout');
           setProcessing(false);
           return;
         }
@@ -249,7 +250,7 @@ export function EventPayouts() {
         const kycStatus = event.organizers?.kyc_status;
         const kycVerified = event.organizers?.kyc_verified;
         if (!kycVerified && kycStatus !== 'verified' && kycStatus !== 'approved') {
-          alert('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
+          toast.error('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
           setProcessing(false);
           return;
         }
@@ -337,7 +338,7 @@ export function EventPayouts() {
       loadEventPayouts();
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Failed to process payment.');
+      toast.error('Failed to process payment.');
     } finally {
       setProcessing(false);
     }
@@ -345,7 +346,7 @@ export function EventPayouts() {
 
   const payAllForEvent = async (event) => {
     if (!canProcessPayouts) {
-      alert('You do not have permission to process payouts.');
+      toast.error('You do not have permission to process payouts.');
       return;
     }
     if (!(await confirm('Pay All Pending', `Pay all pending amounts for "${event.title}"?\n\nOrganizer: ${formatPrice(event.organizerNet, event.currency)}\nPromoters: ${formatPrice(event.totalPromoterCommission, event.currency)}`))) return;
@@ -356,7 +357,7 @@ export function EventPayouts() {
         // Check if organizer has a bank account
         const bankAccountId = event.primaryBankAccount?.id;
         if (!bankAccountId) {
-          alert('Organizer must have a bank account to process payout');
+          toast.error('Organizer must have a bank account to process payout');
           setProcessing(false);
           return;
         }
@@ -365,7 +366,7 @@ export function EventPayouts() {
         const kycStatus = event.organizers?.kyc_status;
         const kycVerified = event.organizers?.kyc_verified;
         if (!kycVerified && kycStatus !== 'verified' && kycStatus !== 'approved') {
-          alert('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
+          toast.error('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
           setProcessing(false);
           return;
         }
@@ -440,7 +441,7 @@ export function EventPayouts() {
       loadEventPayouts();
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to process payments.');
+      toast.error('Failed to process payments.');
     } finally {
       setProcessing(false);
     }

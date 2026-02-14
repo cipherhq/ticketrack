@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency, getCurrencySymbol } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 import { sendPayoutProcessedEmail, sendAdminPayoutCompletedEmail } from '@/lib/emailService';
+import { toast } from 'sonner';
 
 export function BackOfficeFunding() {
   const { logFinanceAction, financeUser, reAuthenticate } = useFinance();
@@ -214,10 +215,10 @@ export function BackOfficeFunding() {
       // Force refresh
       setRefreshKey(prev => prev + 1);
       
-      alert(isTrusting ? '✅ Organizer marked as trusted!' : '✅ Trust status removed.');
+      toast.success(isTrusting ? '✅ Organizer marked as trusted!' : '✅ Trust status removed.');
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to update trust status: ' + error.message);
+      toast.error('Failed to update trust status: ' + error.message);
     } finally {
       setProcessing(false);
     }
@@ -235,15 +236,15 @@ export function BackOfficeFunding() {
 
   const openAdvanceDialog = (organizer) => {
     if (!organizer.is_trusted) {
-      alert('⚠️ Please mark this organizer as trusted first before paying an advance.');
+      toast.error('⚠️ Please mark this organizer as trusted first before paying an advance.');
       return;
     }
     if (organizer.availableForAdvance <= 0) {
-      alert('⚠️ This organizer has no available balance for advance payment.');
+      toast.error('⚠️ This organizer has no available balance for advance payment.');
       return;
     }
     if (!organizer.primaryBank) {
-      alert('⚠️ This organizer has not added bank account details.');
+      toast.error('⚠️ This organizer has not added bank account details.');
       return;
     }
     setAdvanceDialog({ open: true, organizer });
@@ -267,12 +268,12 @@ export function BackOfficeFunding() {
     const available = advanceDialog.organizer.availableForAdvance;
 
     if (amount <= 0) {
-      alert('Please enter a valid amount.');
+      toast.error('Please enter a valid amount.');
       return;
     }
 
     if (amount > available) {
-      alert(`Amount exceeds available balance of ${formatPrice(available, advanceDialog.organizer.currency)}`);
+      toast.error(`Amount exceeds available balance of ${formatPrice(available, advanceDialog.organizer.currency)}`);
       return;
     }
 
@@ -280,7 +281,7 @@ export function BackOfficeFunding() {
     const kycStatus = advanceDialog.organizer.kyc_status;
     const kycVerified = advanceDialog.organizer.kyc_verified;
     if (!kycVerified && kycStatus !== 'verified' && kycStatus !== 'approved') {
-      alert('Cannot process advance payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
+      toast.error('Cannot process advance payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
       return;
     }
 
@@ -366,10 +367,10 @@ export function BackOfficeFunding() {
       setAdvanceDialog({ open: false, organizer: null });
       setRefreshKey(prev => prev + 1);
 
-      alert(`✅ Advance payment of ${formatPrice(amount, currency)} processed successfully!`);
+      toast.success(`✅ Advance payment of ${formatPrice(amount, currency)} processed successfully!`);
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to process advance payment: ' + error.message);
+      toast.error('Failed to process advance payment: ' + error.message);
     } finally {
       setProcessing(false);
     }

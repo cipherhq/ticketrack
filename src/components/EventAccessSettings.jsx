@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Globe, Link2, Lock, Ticket, Mail, Plus, Trash2, Copy, RefreshCw, Check, Eye, EyeOff, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -176,7 +177,7 @@ export function EventAccessSettings({
         setInviteCodes(prev => [data, ...prev]);
       } catch (err) {
         console.error('Error adding invite code:', err);
-        alert('Failed to add invite code. It may already exist.');
+        toast.error('Failed to add invite code. It may already exist.');
         return;
       }
     } else {

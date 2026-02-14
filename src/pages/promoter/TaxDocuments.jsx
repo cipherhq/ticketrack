@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { FileText, Download, Calendar, Loader2, Lock, CheckCircle, AlertCircle, Globe, FileCheck, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -127,7 +128,7 @@ export function PromoterTaxDocuments() {
   const generatePDF = async () => {
     const yearNum = parseInt(selectedYear);
     if (!isYearAvailable(yearNum)) {
-      alert(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
+      toast.error(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
       return;
     }
 
@@ -295,7 +296,7 @@ export function PromoterTaxDocuments() {
 
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF.');
+      toast.error('Failed to generate PDF.');
     } finally {
       setGeneratingPDF(false);
     }
@@ -305,7 +306,7 @@ export function PromoterTaxDocuments() {
   const generateCSV = async () => {
     const yearNum = parseInt(selectedYear);
     if (!isYearAvailable(yearNum)) {
-      alert(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
+      toast.error(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
       return;
     }
 
@@ -382,7 +383,7 @@ export function PromoterTaxDocuments() {
 
     } catch (error) {
       console.error('Error generating CSV:', error);
-      alert('Failed to generate CSV.');
+      toast.error('Failed to generate CSV.');
     } finally {
       setGeneratingCSV(false);
     }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Users, Clock, HelpCircle, Settings, Check, Info } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -100,7 +101,7 @@ export function GroupBuySettings({ eventId, onSave }) {
       if (onSave) onSave(settings)
     } catch (err) {
       console.error('Error saving group buy settings:', err)
-      alert('Failed to save settings')
+      toast.error('Failed to save settings')
     } finally {
       setSaving(false)
     }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePromoter } from '@/contexts/PromoterContext'
@@ -73,7 +74,7 @@ export default function PromoterSupport() {
   const handleSubmitTicket = async (e) => {
     e.preventDefault()
     if (!category || !subject || !description) {
-      alert('Please fill in all fields')
+      toast.error('Please fill in all fields')
       return
     }
 
@@ -96,7 +97,7 @@ export default function PromoterSupport() {
 
       if (error) throw error
 
-      alert('Support ticket created successfully!')
+      toast.success('Support ticket created successfully!')
       setCategory('')
       setSubject('')
       setDescription('')
@@ -104,7 +105,7 @@ export default function PromoterSupport() {
       loadTickets()
     } catch (err) {
       console.error('Error creating ticket:', err.message, err.code, err.details)
-      alert('Failed to create ticket. Please try again.')
+      toast.error('Failed to create ticket. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -141,7 +142,7 @@ export default function PromoterSupport() {
       loadTickets()
     } catch (err) {
       console.error('Error sending reply:', err)
-      alert('Failed to send reply')
+      toast.error('Failed to send reply')
     } finally {
       setSubmitting(false)
     }

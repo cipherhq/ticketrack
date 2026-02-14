@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { FileText, Download, Calendar, Loader2, Lock, CheckCircle, AlertCircle, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -136,7 +137,7 @@ export function TaxDocuments({ type, recipientId, countryCode = 'NG' }) {
   const downloadReport = async () => {
     const yearNum = parseInt(selectedYear);
     if (!isYearAvailable(yearNum)) {
-      alert(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
+      toast.error(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
       return;
     }
 
@@ -224,7 +225,7 @@ export function TaxDocuments({ type, recipientId, countryCode = 'NG' }) {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('Failed to generate report.');
+      toast.error('Failed to generate report.');
     } finally {
       setGenerating(false);
     }

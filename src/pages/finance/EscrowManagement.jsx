@@ -27,6 +27,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
+import { toast } from 'sonner';
 
 export function EscrowManagement() {
   const navigate = useNavigate();
@@ -182,7 +183,7 @@ export function EscrowManagement() {
       });
     } catch (error) {
       console.error('Error loading escrow data:', error);
-      alert('Failed to load escrow data: ' + error.message);
+      toast.error('Failed to load escrow data: ' + error.message);
     } finally {
       setLoading(false);
     }

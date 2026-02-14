@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useConfirm } from '@/hooks/useConfirm'
 import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle, DollarSign, Gift, Copy, ExternalLink, Share2, Banknote, TrendingUp, Lock, Trash2, Eye, EyeOff, AlertTriangle, CreditCard, Building, Users, Star, Receipt, X, Plus, Send, Unlink } from 'lucide-react'
@@ -209,7 +210,7 @@ export function AttendeeProfile() {
       ))
     } catch (error) {
       console.error('Error updating communication preference:', error)
-      alert('Failed to update preference. Please try again.')
+      toast.error('Failed to update preference. Please try again.')
     }
   }
 
@@ -226,10 +227,10 @@ export function AttendeeProfile() {
       if (error) throw error
 
       setCommPrefs(prev => prev.map(c => ({ ...c, [fieldName]: false })))
-      alert(`Successfully opted out of all ${channel.toUpperCase()} communications`)
+      toast.success(`Successfully opted out of all ${channel.toUpperCase()} communications`)
     } catch (error) {
       console.error('Error opting out:', error)
-      alert('Failed to update preferences. Please try again.')
+      toast.error('Failed to update preferences. Please try again.')
     }
   }
 
@@ -252,7 +253,7 @@ export function AttendeeProfile() {
       setTelegramLinkUrl(telegramUrl)
     } catch (error) {
       console.error('Error linking Telegram:', error)
-      alert('Failed to generate link. Please try again.')
+      toast.error('Failed to generate link. Please try again.')
     } finally {
       setLinkingTelegram(false)
     }
@@ -283,10 +284,10 @@ export function AttendeeProfile() {
         telegram_username: null,
         telegram_linked_at: null
       }))
-      alert('Telegram account unlinked successfully')
+      toast.success('Telegram account unlinked successfully')
     } catch (error) {
       console.error('Error unlinking Telegram:', error)
-      alert('Failed to unlink Telegram. Please try again.')
+      toast.error('Failed to unlink Telegram. Please try again.')
     } finally {
       setUnlinkingTelegram(false)
     }
@@ -657,13 +658,13 @@ export function AttendeeProfile() {
       if (error) throw error
       if (data?.success) {
         await loadEarnings()
-        alert(data.message)
+        toast.success(data.message)
       } else {
-        alert(data?.message || 'Failed to join')
+        toast.error(data?.message || 'Failed to join')
       }
     } catch (err) {
       console.error('Error:', err)
-      alert('Something went wrong')
+      toast.error('Something went wrong')
     } finally {
       setSaving(false)
     }
@@ -688,7 +689,7 @@ export function AttendeeProfile() {
       if (editForm.phone && editForm.phone !== profile?.phone) {
         const phoneCheck = await validatePhoneForUpdate(editForm.phone, user.id)
         if (!phoneCheck.valid) {
-          alert(phoneCheck.error)
+          toast.error(phoneCheck.error)
           setSaving(false)
           return
         }
@@ -803,7 +804,7 @@ export function AttendeeProfile() {
       navigate('/account-deleted')
     } catch (error) {
       console.error('Error deleting account:', error)
-      alert('Failed to delete account. Please contact support.')
+      toast.error('Failed to delete account. Please contact support.')
     } finally {
       setDeleting(false)
       setShowDeleteDialog(false)
@@ -1536,7 +1537,7 @@ export function AttendeeProfile() {
                                     className="rounded-lg text-xs"
                                     onClick={() => {
                                       navigator.clipboard.writeText(`${window.location.origin}/group/${m.session?.code}`)
-                                      alert('Link copied!')
+                                      toast.success('Link copied!')
                                     }}
                                   >
                                     <Share2 className="w-3 h-3 mr-1" />
@@ -2103,10 +2104,10 @@ export function AttendeeProfile() {
                           document.body.removeChild(a)
                           URL.revokeObjectURL(url)
                           
-                          alert('Your data has been exported successfully!')
+                          toast.success('Your data has been exported successfully!')
                         } catch (error) {
                           console.error('Error exporting data:', error)
-                          alert('Failed to export data. Please try again.')
+                          toast.error('Failed to export data. Please try again.')
                         }
                       }}
                       className="w-full rounded-xl"

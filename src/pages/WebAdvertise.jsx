@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -245,13 +246,13 @@ export function WebAdvertise() {
     const isVideo = file.type.startsWith('video/');
 
     if (!isImage && !isVideo) {
-      alert('Please upload an image or video file');
+      toast.error('Please upload an image or video file');
       return;
     }
 
     const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert(`File too large. Max size: ${isVideo ? '50MB' : '10MB'}`);
+      toast.error(`File too large. Max size: ${isVideo ? '50MB' : '10MB'}`);
       return;
     }
 
@@ -274,7 +275,7 @@ export function WebAdvertise() {
       .upload(filePath, file);
 
     if (uploadError) {
-      alert('Upload failed: ' + uploadError.message);
+      toast.error('Upload failed: ' + uploadError.message);
       setUploading(false);
       return;
     }
@@ -365,7 +366,7 @@ export function WebAdvertise() {
     }
 
     if (!selectedPackage || !creativeUrl || !advertiserName || !advertiserEmail) {
-      alert('Please fill in all required fields.');
+      toast.error('Please fill in all required fields.');
       return;
     }
 
@@ -498,7 +499,7 @@ export function WebAdvertise() {
         throw new Error(result?.error || 'Payment initialization failed');
       }
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
       setSubmitting(false);
     }
   };

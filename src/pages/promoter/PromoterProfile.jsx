@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { UserCircle, Mail, Phone, Calendar, Edit2, Save, X, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,7 +73,7 @@ export function PromoterProfile() {
     await refreshPromoter();
     setIsEditing(false);
     setSaving(false);
-    alert('Profile updated!');
+    toast.success('Profile updated!');
   };
 
   if (promoterLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>;

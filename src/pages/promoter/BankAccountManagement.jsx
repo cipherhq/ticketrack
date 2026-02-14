@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Plus, Trash2, CheckCircle, Building2, Loader2 } from 'lucide-react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,7 +35,7 @@ export function BankAccountManagement() {
     e.preventDefault();
     setSaving(true);
     await supabase.from('promoter_bank_accounts').insert({ promoter_id: promoter.id, ...newAccount, currency: 'NGN', is_primary: accounts.length === 0, is_verified: false });
-    alert('Bank account added!');
+    toast.success('Bank account added!');
     setIsAddOpen(false);
     setNewAccount({ bank_name: '', account_number: '', account_name: '', country: 'Nigeria' });
     loadAccounts();

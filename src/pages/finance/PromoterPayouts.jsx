@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 import { sendPayoutProcessedEmail } from '@/lib/emailService';
+import { toast } from 'sonner';
 
 export function PromoterPayouts() {
   const { logFinanceAction, canProcessPayouts, reAuthenticate } = useFinance();
@@ -108,7 +109,7 @@ export function PromoterPayouts() {
 
   const openPaymentDialog = (promoter) => {
     if (!canProcessPayouts) {
-      alert('You do not have permission to process payouts.');
+      toast.error('You do not have permission to process payouts.');
       return;
     }
     setPaymentDialog({ open: true, promoter });
@@ -203,7 +204,7 @@ export function PromoterPayouts() {
       loadPromoterPayouts();
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Failed to process payment: ' + error.message);
+      toast.error('Failed to process payment: ' + error.message);
     } finally {
       setProcessing(false);
     }

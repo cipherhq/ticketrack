@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useFinance } from '@/contexts/FinanceContext';
 import { brand } from '@/config/brand';
+import { toast } from 'sonner';
 
 // Country configurations for tax/compliance
 const COUNTRY_CONFIG = {
@@ -388,7 +389,7 @@ export function FinanceReports() {
 
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('Failed to generate report: ' + error.message);
+      toast.error('Failed to generate report: ' + error.message);
     } finally {
       setGenerating(false);
     }
@@ -490,7 +491,7 @@ export function FinanceReports() {
 
     } catch (error) {
       console.error('Error generating report:', error);
-      alert('Failed to generate report: ' + error.message);
+      toast.error('Failed to generate report: ' + error.message);
     } finally {
       setGenerating(false);
     }
