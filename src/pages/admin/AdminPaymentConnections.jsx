@@ -90,9 +90,26 @@ const StatusBadge = ({ status }) => {
 
 // Format currency for display
 const formatCurrency = (amount, currency = 'NGN') => {
-  const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: '₵', KES: 'KSh', ZAR: 'R' };
+  const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: 'GH₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' };
   const symbol = symbols[currency] || currency + ' ';
   return symbol + new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+};
+
+// Render a multi-currency revenue object as stacked lines
+const RevenueByCurrency = ({ revenueByCurrency, className = '' }) => {
+  const entries = Object.entries(revenueByCurrency || {}).filter(([, amt]) => amt > 0);
+  if (entries.length === 0) {
+    return <span className={className}>{formatCurrency(0, 'NGN')}</span>;
+  }
+  // Sort by amount descending
+  entries.sort((a, b) => b[1] - a[1]);
+  return (
+    <div className={className}>
+      {entries.map(([currency, amount]) => (
+        <div key={currency}>{formatCurrency(amount, currency)}</div>
+      ))}
+    </div>
+  );
 };
 
 export function AdminPaymentConnections() {
@@ -115,11 +132,11 @@ export function AdminPaymentConnections() {
     flutterwaveConnected: 0,
   });
   const [revenueStats, setRevenueStats] = useState({
-    stripeRevenue: 0,
-    paystackRevenue: 0,
-    flutterwaveRevenue: 0,
-    standardRevenue: 0,
-    totalRevenue: 0,
+    stripeRevenue: {},
+    paystackRevenue: {},
+    flutterwaveRevenue: {},
+    standardRevenue: {},
+    totalRevenue: {},
   });
   const [loadingRevenue, setLoadingRevenue] = useState(false);
 
@@ -143,27 +160,32 @@ export function AdminPaymentConnections() {
 
       if (error) throw error;
 
-      // Calculate revenue by provider
-      let stripeRevenue = 0;
-      let paystackRevenue = 0;
-      let flutterwaveRevenue = 0;
-      let standardRevenue = 0;
+      // Calculate revenue by provider, grouped by currency
+      const stripeRevenue = {};
+      const paystackRevenue = {};
+      const flutterwaveRevenue = {};
+      const standardRevenue = {};
+      const totalRevenue = {};
 
       (orders || []).forEach(order => {
         const amount = parseFloat(order.total_amount) || 0;
+        const currency = order.currency || 'NGN';
+
+        totalRevenue[currency] = (totalRevenue[currency] || 0) + amount;
+
         switch (order.payment_provider?.toLowerCase()) {
           case 'stripe':
           case 'stripe_connect':
-            stripeRevenue += amount;
+            stripeRevenue[currency] = (stripeRevenue[currency] || 0) + amount;
             break;
           case 'paystack':
-            paystackRevenue += amount;
+            paystackRevenue[currency] = (paystackRevenue[currency] || 0) + amount;
             break;
           case 'flutterwave':
-            flutterwaveRevenue += amount;
+            flutterwaveRevenue[currency] = (flutterwaveRevenue[currency] || 0) + amount;
             break;
           default:
-            standardRevenue += amount;
+            standardRevenue[currency] = (standardRevenue[currency] || 0) + amount;
         }
       });
 
@@ -172,7 +194,7 @@ export function AdminPaymentConnections() {
         paystackRevenue,
         flutterwaveRevenue,
         standardRevenue,
-        totalRevenue: stripeRevenue + paystackRevenue + flutterwaveRevenue + standardRevenue,
+        totalRevenue,
       });
     } catch (error) {
       console.error('Error loading revenue stats:', error);
@@ -568,9 +590,9 @@ export function AdminPaymentConnections() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Total Revenue</p>
-                    <p className="text-xl font-bold text-foreground">
-                      {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.totalRevenue)}
-                    </p>
+                    {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                      <RevenueByCurrency revenueByCurrency={revenueStats.totalRevenue} className="text-xl font-bold text-foreground" />
+                    )}
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                     <CheckCircle className="w-5 h-5 text-green-600" />
@@ -584,13 +606,8 @@ export function AdminPaymentConnections() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Stripe Revenue</p>
-                    <p className="text-xl font-bold text-purple-600">
-                      {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.stripeRevenue)}
-                    </p>
-                    {revenueStats.totalRevenue > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {((revenueStats.stripeRevenue / revenueStats.totalRevenue) * 100).toFixed(1)}%
-                      </p>
+                    {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                      <RevenueByCurrency revenueByCurrency={revenueStats.stripeRevenue} className="text-xl font-bold text-purple-600" />
                     )}
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -605,13 +622,8 @@ export function AdminPaymentConnections() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Paystack Revenue</p>
-                    <p className="text-xl font-bold text-blue-600">
-                      {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.paystackRevenue)}
-                    </p>
-                    {revenueStats.totalRevenue > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {((revenueStats.paystackRevenue / revenueStats.totalRevenue) * 100).toFixed(1)}%
-                      </p>
+                    {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                      <RevenueByCurrency revenueByCurrency={revenueStats.paystackRevenue} className="text-xl font-bold text-blue-600" />
                     )}
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -626,13 +638,8 @@ export function AdminPaymentConnections() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Flutterwave Revenue</p>
-                    <p className="text-xl font-bold text-orange-600">
-                      {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.flutterwaveRevenue)}
-                    </p>
-                    {revenueStats.totalRevenue > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {((revenueStats.flutterwaveRevenue / revenueStats.totalRevenue) * 100).toFixed(1)}%
-                      </p>
+                    {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                      <RevenueByCurrency revenueByCurrency={revenueStats.flutterwaveRevenue} className="text-xl font-bold text-orange-600" />
                     )}
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
@@ -647,13 +654,8 @@ export function AdminPaymentConnections() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Standard/Other</p>
-                    <p className="text-xl font-bold text-muted-foreground">
-                      {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : formatCurrency(revenueStats.standardRevenue)}
-                    </p>
-                    {revenueStats.totalRevenue > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {((revenueStats.standardRevenue / revenueStats.totalRevenue) * 100).toFixed(1)}%
-                      </p>
+                    {loadingRevenue ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                      <RevenueByCurrency revenueByCurrency={revenueStats.standardRevenue} className="text-xl font-bold text-muted-foreground" />
                     )}
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
