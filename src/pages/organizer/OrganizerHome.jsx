@@ -676,6 +676,8 @@ export function OrganizerHome() {
         </Card>
       )}
 
+      <hr className="border-gray-200" />
+
       {/* Upcoming Events */}
       <div>
         <div className="flex items-center justify-between mb-4">
