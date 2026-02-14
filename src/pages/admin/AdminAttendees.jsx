@@ -221,7 +221,7 @@ export function AdminAttendees() {
           <p className="text-muted-foreground mt-1">View all ticket purchasers across the platform</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={loadData} className="rounded-xl">
+          <Button variant="outline" size="icon" onClick={() => { loadAttendees(); loadEvents(); }} className="rounded-xl">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button variant="outline" onClick={exportToCSV} className="rounded-xl">

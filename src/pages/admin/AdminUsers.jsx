@@ -40,16 +40,14 @@ import {
 } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
-import { Pagination, usePagination } from '@/components/ui/pagination';
+import { Pagination } from '@/components/ui/pagination';
 
 const USER_TYPES = {
-  all: { label: 'All Users', icon: Users },
-  attendee: { label: 'Attendees', icon: Users },
+  attendee: { label: 'All Users', icon: Users },
   organizer: { label: 'Organizers', icon: UserCheck },
-  promoter: { label: 'Promoters', icon: UserCheck },
-  affiliate: { label: 'Affiliates', icon: UserCheck },
-  admin: { label: 'Admins', icon: Shield },
 };
+
+const PAGE_SIZE = 20;
 
 const STATUS_OPTIONS = {
   all: 'All Status',
@@ -63,15 +61,17 @@ export function AdminUsers() {
   const { admin, logAdminAction } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [stats, setStats] = useState({
     total: 0,
-    active: 0,
-    suspended: 0,
+    attendees: 0,
     organizers: 0,
+    suspended: 0,
     newThisMonth: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
-  const [userTypeFilter, setUserTypeFilter] = useState('all');
+  const [userTypeFilter, setUserTypeFilter] = useState('attendee');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -79,62 +79,129 @@ export function AdminUsers() {
   const [actionType, setActionType] = useState(null);
   const [actionReason, setActionReason] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [organizerUserIds, setOrganizerUserIds] = useState(null);
+  const [organizerMap, setOrganizerMap] = useState({});
+  const [promoterMap, setPromoterMap] = useState({});
 
   useEffect(() => {
-    loadUsers();
+    loadRoleData();
+    loadStats();
   }, []);
+
+  useEffect(() => {
+    if (organizerUserIds !== null) {
+      loadUsers();
+    }
+  }, [page, userTypeFilter, statusFilter, searchTerm, organizerUserIds]);
+
+  const loadRoleData = async () => {
+    try {
+      const [orgResult, promoResult] = await Promise.all([
+        supabase.from('organizers').select('user_id, business_name, is_verified, kyc_status'),
+        supabase.from('promoters').select('user_id, status'),
+      ]);
+
+      const orgMap = {};
+      const orgIds = [];
+      orgResult.data?.forEach(o => {
+        orgMap[o.user_id] = o;
+        orgIds.push(o.user_id);
+      });
+      setOrganizerMap(orgMap);
+      setOrganizerUserIds(orgIds);
+
+      const promoMap = {};
+      promoResult.data?.forEach(p => { promoMap[p.user_id] = p; });
+      setPromoterMap(promoMap);
+    } catch (error) {
+      console.error('Error loading role data:', error);
+      setOrganizerUserIds([]);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const [totalResult, orgResult, suspendedResult, newResult] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('organizers').select('*', { count: 'exact', head: true }),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).or('is_suspended.eq.true,is_banned.eq.true'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString()),
+      ]);
+
+      const total = totalResult.count || 0;
+      const organizers = orgResult.count || 0;
+      setStats({
+        total,
+        attendees: total - organizers,
+        organizers,
+        suspended: suspendedResult.count || 0,
+        newThisMonth: newResult.count || 0,
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
 
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Load profiles with related data
-      const { data: profiles, error } = await supabase
+      let query = supabase
         .from('profiles')
         .select(`
-          id,
-          full_name,
-          email,
-          phone,
-          avatar_url,
-          is_admin,
-          admin_role,
-          is_suspended,
-          is_banned,
-          created_at,
-          last_sign_in_at,
-          email_verified
-        `)
+          id, full_name, email, phone, avatar_url, is_admin, admin_role,
+          is_suspended, is_banned, created_at, last_sign_in_at, email_verified
+        `, { count: 'exact' })
         .order('created_at', { ascending: false });
+
+      // Tab-based role filter
+      if (userTypeFilter === 'attendee' && organizerUserIds.length > 0) {
+        query = query.not('id', 'in', `(${organizerUserIds.join(',')})`);
+      } else if (userTypeFilter === 'organizer') {
+        if (organizerUserIds.length === 0) {
+          setUsers([]);
+          setTotalCount(0);
+          setLoading(false);
+          return;
+        }
+        query = query.in('id', organizerUserIds);
+      }
+
+      // Server-side search
+      if (searchTerm.trim()) {
+        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+      }
+
+      // Server-side status filter
+      if (statusFilter === 'active') {
+        query = query.eq('is_banned', false).eq('is_suspended', false);
+      } else if (statusFilter === 'suspended') {
+        query = query.eq('is_suspended', true);
+      } else if (statusFilter === 'banned') {
+        query = query.eq('is_banned', true);
+      } else if (statusFilter === 'pending') {
+        query = query.eq('email_verified', false);
+      }
+
+      // Pagination
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data: profiles, count, error } = await query.range(from, to);
 
       if (error) throw error;
 
-      // Load organizers
-      const { data: organizers } = await supabase
-        .from('organizers')
-        .select('user_id, business_name, is_verified, kyc_status');
-
-      // Load promoters
-      const { data: promoters } = await supabase
-        .from('promoters')
-        .select('user_id, status');
-
-      // Load affiliates (users with referral codes)
-      const { data: affiliates } = await supabase
-        .from('profiles')
-        .select('id, referral_code')
-        .not('referral_code', 'is', null);
-
-      // Enrich profiles with role info
+      // Enrich with role data
       const enrichedUsers = (profiles || []).map(profile => {
-        const organizer = organizers?.find(o => o.user_id === profile.id);
-        const promoter = promoters?.find(p => p.user_id === profile.id);
-        const isAffiliate = affiliates?.some(a => a.id === profile.id);
+        const organizer = organizerMap[profile.id];
+        const promoter = promoterMap[profile.id];
 
         const roles = [];
         if (profile.is_admin) roles.push('admin');
         if (organizer) roles.push('organizer');
         if (promoter) roles.push('promoter');
-        if (isAffiliate) roles.push('affiliate');
         if (roles.length === 0) roles.push('attendee');
 
         let status = 'active';
@@ -142,59 +209,17 @@ export function AdminUsers() {
         else if (profile.is_suspended) status = 'suspended';
         else if (!profile.email_verified) status = 'pending';
 
-        return {
-          ...profile,
-          roles,
-          primaryRole: roles[0],
-          status,
-          organizer,
-          promoter,
-        };
+        return { ...profile, roles, primaryRole: roles[0], status, organizer, promoter };
       });
 
       setUsers(enrichedUsers);
-
-      // Calculate stats
-      const now = new Date();
-      const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);
-      
-      setStats({
-        total: enrichedUsers.length,
-        active: enrichedUsers.filter(u => u.status === 'active').length,
-        suspended: enrichedUsers.filter(u => u.status === 'suspended' || u.status === 'banned').length,
-        organizers: enrichedUsers.filter(u => u.roles.includes('organizer')).length,
-        newThisMonth: enrichedUsers.filter(u => new Date(u.created_at) >= monthAgo).length,
-      });
-
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
       setLoading(false);
     }
   };
-
-  // Filter users
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = !searchTerm || 
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone?.includes(searchTerm);
-    
-    const matchesType = userTypeFilter === 'all' || user.roles.includes(userTypeFilter);
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-
-    return matchesSearch && matchesType && matchesStatus;
-  });
-
-  // Pagination
-  const {
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage,
-    paginatedItems,
-    handlePageChange,
-  } = usePagination(filteredUsers, 20);
 
   const openActionDialog = (user, action) => {
     setSelectedUser(user);
@@ -252,6 +277,7 @@ export function AdminUsers() {
 
       setActionDialogOpen(false);
       loadUsers();
+      loadStats();
     } catch (error) {
       console.error('Action error:', error);
       alert('Failed to perform action: ' + error.message);
@@ -292,26 +318,58 @@ export function AdminUsers() {
     });
   };
 
-  const exportUsers = () => {
-    const csv = [
-      ['Name', 'Email', 'Phone', 'Roles', 'Status', 'Created', 'Last Login'],
-      ...filteredUsers.map(u => [
-        u.full_name || '',
-        u.email || '',
-        u.phone || '',
-        u.roles.join(', '),
-        u.status,
-        new Date(u.created_at).toLocaleDateString(),
-        u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : 'Never',
-      ])
-    ].map(row => row.join(',')).join('\n');
+  const exportUsers = async () => {
+    try {
+      let query = supabase
+        .from('profiles')
+        .select('id, full_name, email, phone, is_admin, is_suspended, is_banned, created_at, last_sign_in_at, email_verified')
+        .order('created_at', { ascending: false });
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+      if (userTypeFilter === 'attendee' && organizerUserIds && organizerUserIds.length > 0) {
+        query = query.not('id', 'in', `(${organizerUserIds.join(',')})`);
+      } else if (userTypeFilter === 'organizer' && organizerUserIds && organizerUserIds.length > 0) {
+        query = query.in('id', organizerUserIds);
+      }
+
+      if (searchTerm.trim()) {
+        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      if (!data || data.length === 0) return;
+
+      const csv = [
+        ['Name', 'Email', 'Phone', 'Type', 'Status', 'Created', 'Last Login'],
+        ...data.map(u => {
+          const isOrg = organizerMap[u.id];
+          const type = isOrg ? 'Organizer' : 'Attendee';
+          let status = 'Active';
+          if (u.is_banned) status = 'Banned';
+          else if (u.is_suspended) status = 'Suspended';
+          else if (!u.email_verified) status = 'Pending';
+          return [
+            u.full_name || '',
+            u.email || '',
+            u.phone || '',
+            type,
+            status,
+            new Date(u.created_at).toLocaleDateString(),
+            u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : 'Never',
+          ];
+        })
+      ].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+    }
   };
 
   if (loading) {
@@ -331,7 +389,7 @@ export function AdminUsers() {
           <p className="text-muted-foreground">Manage all users on the platform</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={loadUsers} className="rounded-xl border-border/10">
+          <Button variant="outline" onClick={() => { loadRoleData(); loadStats(); }} className="rounded-xl border-border/10">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -359,8 +417,8 @@ export function AdminUsers() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-semibold text-green-600">{stats.active.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Attendees</p>
+                <p className="text-2xl font-semibold text-green-600">{stats.attendees.toLocaleString()}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
@@ -370,19 +428,8 @@ export function AdminUsers() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Suspended</p>
-                <p className="text-2xl font-semibold text-orange-600">{stats.suspended}</p>
-              </div>
-              <Ban className="w-8 h-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/10 rounded-2xl">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="text-sm text-muted-foreground">Organizers</p>
-                <p className="text-2xl font-semibold text-blue-600">{stats.organizers}</p>
+                <p className="text-2xl font-semibold text-blue-600">{stats.organizers.toLocaleString()}</p>
               </div>
               <UserCheck className="w-8 h-8 text-blue-600" />
             </div>
@@ -392,8 +439,19 @@ export function AdminUsers() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm text-muted-foreground">Suspended</p>
+                <p className="text-2xl font-semibold text-orange-600">{stats.suspended.toLocaleString()}</p>
+              </div>
+              <Ban className="w-8 h-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/10 rounded-2xl">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm text-muted-foreground">New This Month</p>
-                <p className="text-2xl font-semibold text-[#2969FF]">{stats.newThisMonth}</p>
+                <p className="text-2xl font-semibold text-[#2969FF]">{stats.newThisMonth.toLocaleString()}</p>
               </div>
               <Calendar className="w-8 h-8 text-[#2969FF]" />
             </div>
@@ -410,21 +468,26 @@ export function AdminUsers() {
               <Input
                 placeholder="Search by name, email, or phone..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
                 className="pl-10 rounded-xl h-10 border-border/10"
               />
             </div>
-            <Select value={userTypeFilter} onValueChange={setUserTypeFilter}>
-              <SelectTrigger className="w-[180px] rounded-xl border-border/10">
-                <SelectValue placeholder="User Type" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {Object.entries(USER_TYPES).map(([key, { label }]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <div className="flex gap-1 bg-muted rounded-xl p-1">
+              {Object.entries(USER_TYPES).map(([key, { label }]) => (
+                <button
+                  key={key}
+                  onClick={() => { setUserTypeFilter(key); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    userTypeFilter === key
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
               <SelectTrigger className="w-[150px] rounded-xl border-border/10">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -442,11 +505,11 @@ export function AdminUsers() {
       <Card className="border-border/10 rounded-2xl">
         <CardHeader>
           <CardTitle className="text-foreground">
-            Users ({filteredUsers.length})
+            {userTypeFilter === 'organizer' ? 'Organizers' : 'Users'} ({totalCount.toLocaleString()})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {paginatedItems.length === 0 ? (
+          {users.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
               <p className="text-muted-foreground">No users found</p>
@@ -467,7 +530,7 @@ export function AdminUsers() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedItems.map((user) => (
+                    {users.map((user) => (
                       <tr key={user.id} className="border-b border-border/5 hover:bg-muted/50">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
@@ -579,11 +642,11 @@ export function AdminUsers() {
               </div>
               
               <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
-                onPageChange={handlePageChange}
+                currentPage={page}
+                totalPages={Math.ceil(totalCount / PAGE_SIZE)}
+                totalItems={totalCount}
+                itemsPerPage={PAGE_SIZE}
+                onPageChange={setPage}
               />
             </>
           )}
