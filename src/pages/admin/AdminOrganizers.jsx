@@ -109,6 +109,8 @@ export function AdminOrganizers() {
   const [savingFeatures, setSavingFeatures] = useState(false);
   const [accountData, setAccountData] = useState({ country_code: '', default_currency: '' });
   const [savingAccount, setSavingAccount] = useState(false);
+  const [profileData, setProfileData] = useState({});
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     loadOrganizers();
@@ -274,6 +276,22 @@ export function AdminOrganizers() {
       feature_sponsors_enabled: organizer.feature_sponsors_enabled ?? true,
       feature_fast_payout_enabled: organizer.feature_fast_payout_enabled ?? true,
       feature_payment_links_enabled: organizer.feature_payment_links_enabled ?? true,
+    });
+    // Initialize profile data for editing
+    setProfileData({
+      business_name: organizer.business_name || '',
+      description: organizer.description || '',
+      email: organizer.email || '',
+      business_email: organizer.business_email || '',
+      phone: organizer.phone || '',
+      business_phone: organizer.business_phone || '',
+      location: organizer.location || '',
+      website: organizer.website || '',
+      website_url: organizer.website_url || '',
+      social_instagram: organizer.social_instagram || organizer.instagram || '',
+      social_twitter: organizer.social_twitter || organizer.twitter || '',
+      social_facebook: organizer.social_facebook || organizer.facebook || '',
+      social_linkedin: organizer.social_linkedin || organizer.linkedin || '',
     });
     setDetailsDialogOpen(true);
     await loadOrganizerDetails(organizer);
@@ -488,6 +506,50 @@ export function AdminOrganizers() {
       alert('Failed to update account settings: ' + err.message);
     } finally {
       setSavingAccount(false);
+    }
+  };
+
+  const saveOrganizerProfile = async () => {
+    if (!selectedOrganizer) return;
+    setSavingProfile(true);
+    try {
+      const updates = {
+        business_name: profileData.business_name,
+        description: profileData.description,
+        email: profileData.email,
+        business_email: profileData.business_email,
+        phone: profileData.phone,
+        business_phone: profileData.business_phone,
+        location: profileData.location,
+        website: profileData.website,
+        website_url: profileData.website_url,
+        social_instagram: profileData.social_instagram,
+        social_twitter: profileData.social_twitter,
+        social_facebook: profileData.social_facebook,
+        social_linkedin: profileData.social_linkedin,
+      };
+
+      const { error } = await supabase
+        .from('organizers')
+        .update(updates)
+        .eq('id', selectedOrganizer.id);
+
+      if (error) throw error;
+
+      await logAdminAction('organizer_profile_updated', 'organizer', selectedOrganizer.id, {
+        name: profileData.business_name,
+        changes: Object.keys(updates).filter(k => updates[k] !== (selectedOrganizer[k] || '')),
+      });
+
+      // Update local state
+      setSelectedOrganizer(prev => ({ ...prev, ...updates }));
+      loadOrganizers();
+      alert('Profile updated successfully');
+    } catch (err) {
+      console.error('Error saving organizer profile:', err);
+      alert('Failed to save profile: ' + err.message);
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -1031,6 +1093,7 @@ export function AdminOrganizers() {
                 <Tabs value={detailsDefaultTab} onValueChange={setDetailsDefaultTab} className="w-full">
                   <TabsList className="bg-muted rounded-xl flex-wrap">
                     <TabsTrigger value="info" className="rounded-lg">Contact Info</TabsTrigger>
+                    <TabsTrigger value="edit-profile" className="rounded-lg">Edit Profile</TabsTrigger>
                     <TabsTrigger value="account" className="rounded-lg">Account</TabsTrigger>
                     <TabsTrigger value="events" className="rounded-lg">Events ({organizerEvents.length})</TabsTrigger>
                     <TabsTrigger value="payouts" className="rounded-lg">Payouts ({organizerPayouts.length})</TabsTrigger>
@@ -1117,6 +1180,130 @@ export function AdminOrganizers() {
                         )}
                       </div>
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="edit-profile" className="mt-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">Business Name</label>
+                        <Input
+                          value={profileData.business_name || ''}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, business_name: e.target.value }))}
+                          className="rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">Location</label>
+                        <Input
+                          value={profileData.location || ''}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
+                          className="rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">Email</label>
+                        <Input
+                          value={profileData.email || ''}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                          className="rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">Business Email</label>
+                        <Input
+                          value={profileData.business_email || ''}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, business_email: e.target.value }))}
+                          className="rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">Phone</label>
+                        <Input
+                          value={profileData.phone || ''}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                          className="rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">Business Phone</label>
+                        <Input
+                          value={profileData.business_phone || ''}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, business_phone: e.target.value }))}
+                          className="rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">Website</label>
+                        <Input
+                          value={profileData.website || profileData.website_url || ''}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value, website_url: e.target.value }))}
+                          className="rounded-xl"
+                          placeholder="https://..."
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-1 block">Description</label>
+                      <Textarea
+                        value={profileData.description || ''}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, description: e.target.value }))}
+                        className="rounded-xl"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-muted-foreground">Social Links</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center gap-2">
+                          <Instagram className="w-4 h-4 text-pink-600 flex-shrink-0" />
+                          <Input
+                            value={profileData.social_instagram || ''}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, social_instagram: e.target.value }))}
+                            className="rounded-xl"
+                            placeholder="Instagram URL"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Twitter className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                          <Input
+                            value={profileData.social_twitter || ''}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, social_twitter: e.target.value }))}
+                            className="rounded-xl"
+                            placeholder="Twitter URL"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Facebook className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                          <Input
+                            value={profileData.social_facebook || ''}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, social_facebook: e.target.value }))}
+                            className="rounded-xl"
+                            placeholder="Facebook URL"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Linkedin className="w-4 h-4 text-blue-700 flex-shrink-0" />
+                          <Input
+                            value={profileData.social_linkedin || ''}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, social_linkedin: e.target.value }))}
+                            className="rounded-xl"
+                            placeholder="LinkedIn URL"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={saveOrganizerProfile}
+                      disabled={savingProfile}
+                      className="rounded-xl bg-[#2969FF] hover:bg-[#2969FF]/90"
+                    >
+                      {savingProfile ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                      )}
+                      Save Profile
+                    </Button>
                   </TabsContent>
 
                   <TabsContent value="account" className="mt-4 space-y-4">

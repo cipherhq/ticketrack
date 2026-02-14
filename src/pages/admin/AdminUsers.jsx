@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import {
   Search, Loader2, RefreshCw, Users, UserCheck, UserX, Ban, Shield,
   Mail, Phone, Calendar, MoreVertical, Eye, Edit, Trash2, Download,
-  CheckCircle, Clock, XCircle, AlertTriangle, Filter, ChevronDown
+  CheckCircle, Clock, XCircle, AlertTriangle, Filter, ChevronDown,
+  Send, KeyRound, Ticket
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -74,6 +75,14 @@ export function AdminUsers() {
   const [organizerUserIds, setOrganizerUserIds] = useState(null);
   const [organizerMap, setOrganizerMap] = useState({});
   const [promoterMap, setPromoterMap] = useState({});
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [userOrders, setUserOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [detailsTab, setDetailsTab] = useState('profile');
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
 
   useEffect(() => {
     loadRoleData();
@@ -245,6 +254,12 @@ export function AdminUsers() {
         case 'remove_admin':
           updates = { is_admin: false, admin_role: null };
           break;
+        case 'suspend':
+          updates = { is_suspended: true, suspended_at: new Date().toISOString(), suspended_reason: actionReason || null };
+          break;
+        case 'unsuspend':
+          updates = { is_suspended: false, suspended_at: null, suspended_reason: null };
+          break;
         default:
           throw new Error('Unknown action');
       }
@@ -273,8 +288,91 @@ export function AdminUsers() {
     }
   };
 
-  const getStatusBadge = () => {
+  const getStatusBadge = (user) => {
+    if (user?.is_suspended) {
+      return <Badge className="bg-red-100 text-red-700">Suspended</Badge>;
+    }
     return <Badge className="bg-green-100 text-green-700">Active</Badge>;
+  };
+
+  const openEditDialog = (user) => {
+    setSelectedUser(user);
+    setEditData({ full_name: user.full_name || '', phone: user.phone || '' });
+    setEditDialogOpen(true);
+  };
+
+  const saveUserProfile = async () => {
+    if (!selectedUser || selectedUser.isGuest) return;
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: editData.full_name, phone: editData.phone })
+        .eq('id', selectedUser.id);
+      if (error) throw error;
+
+      await logAdminAction('user_management', 'edit_profile', {
+        userId: selectedUser.id,
+        userEmail: selectedUser.email,
+        changes: editData,
+      });
+
+      setEditDialogOpen(false);
+      loadUsers();
+    } catch (error) {
+      console.error('Error saving user profile:', error);
+      alert('Failed to save profile: ' + error.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const loadUserOrders = async (user) => {
+    setLoadingOrders(true);
+    try {
+      let query = supabase
+        .from('tickets')
+        .select('id, quantity, total_price, currency, payment_status, checked_in, checked_in_at, created_at, events(title)')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (user.isGuest) {
+        query = query.eq('attendee_email', user.email);
+      } else {
+        query = query.or(`user_id.eq.${user.id},attendee_email.eq.${user.email}`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setUserOrders(data || []);
+    } catch (error) {
+      console.error('Error loading user orders:', error);
+      setUserOrders([]);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!selectedUser || selectedUser.isGuest) return;
+    setSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(selectedUser.email);
+      if (error) throw error;
+
+      await logAdminAction('user_management', 'password_reset_sent', {
+        userId: selectedUser.id,
+        userEmail: selectedUser.email,
+      });
+
+      setResetPasswordOpen(false);
+      alert('Password reset email sent to ' + selectedUser.email);
+    } catch (error) {
+      console.error('Error sending password reset:', error);
+      alert('Failed to send password reset: ' + error.message);
+    } finally {
+      setSendingReset(false);
+    }
   };
 
   const getRoleBadges = (user) => {
@@ -523,12 +621,16 @@ export function AdminUsers() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem onClick={() => { setSelectedUser(user); setDetailsOpen(true); }}>
+                              <DropdownMenuItem onClick={() => { setSelectedUser(user); setDetailsTab('profile'); setUserOrders([]); setDetailsOpen(true); }}>
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
                               {!user.isGuest && (
                                 <>
+                                  <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit Profile
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   {!user.is_admin ? (
                                     <DropdownMenuItem onClick={() => openActionDialog(user, 'make_admin')}>
@@ -541,6 +643,22 @@ export function AdminUsers() {
                                       Remove Admin
                                     </DropdownMenuItem>
                                   )}
+                                  {!user.is_suspended ? (
+                                    <DropdownMenuItem onClick={() => openActionDialog(user, 'suspend')} className="text-red-600">
+                                      <Ban className="w-4 h-4 mr-2" />
+                                      Suspend User
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => openActionDialog(user, 'unsuspend')} className="text-green-600">
+                                      <CheckCircle className="w-4 h-4 mr-2" />
+                                      Unsuspend User
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => { setSelectedUser(user); setResetPasswordOpen(true); }}>
+                                    <KeyRound className="w-4 h-4 mr-2" />
+                                    Reset Password
+                                  </DropdownMenuItem>
                                 </>
                               )}
                             </DropdownMenuContent>
@@ -585,47 +703,180 @@ export function AdminUsers() {
                   <p className="text-muted-foreground">{selectedUser.email}</p>
                   <div className="flex gap-2 mt-2">
                     {getRoleBadges(selectedUser)}
-                    {getStatusBadge()}
+                    {getStatusBadge(selectedUser)}
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-muted">
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{selectedUser.phone || 'Not provided'}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-muted">
-                  <p className="text-sm text-muted-foreground">User ID</p>
-                  <p className="font-medium font-mono text-sm">{selectedUser.isGuest ? 'Guest (Ticket Purchase)' : selectedUser.id}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-muted">
-                  <p className="text-sm text-muted-foreground">Joined</p>
-                  <p className="font-medium">{new Date(selectedUser.created_at).toLocaleString()}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-muted">
-                  <p className="text-sm text-muted-foreground">Email Verified</p>
-                  <p className="font-medium">Active</p>
-                </div>
-              </div>
+              <Tabs value={detailsTab} onValueChange={(val) => {
+                setDetailsTab(val);
+                if (val === 'orders' && userOrders.length === 0) {
+                  loadUserOrders(selectedUser);
+                }
+              }}>
+                <TabsList className="bg-muted rounded-xl">
+                  <TabsTrigger value="profile" className="rounded-lg">Profile</TabsTrigger>
+                  <TabsTrigger value="orders" className="rounded-lg">Orders & Tickets</TabsTrigger>
+                </TabsList>
 
-              {selectedUser.organizer && (
-                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-                  <h4 className="font-medium text-blue-900 mb-2">Organizer Details</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-blue-600">Business Name</p>
-                      <p className="font-medium text-blue-900">{selectedUser.organizer.business_name}</p>
+                <TabsContent value="profile" className="mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-muted">
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="font-medium">{selectedUser.phone || 'Not provided'}</p>
                     </div>
-                    <div>
-                      <p className="text-blue-600">KYC Status</p>
-                      <p className="font-medium text-blue-900 capitalize">{selectedUser.organizer.kyc_status || 'Not submitted'}</p>
+                    <div className="p-4 rounded-xl bg-muted">
+                      <p className="text-sm text-muted-foreground">User ID</p>
+                      <p className="font-medium font-mono text-sm">{selectedUser.isGuest ? 'Guest (Ticket Purchase)' : selectedUser.id}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-muted">
+                      <p className="text-sm text-muted-foreground">Joined</p>
+                      <p className="font-medium">{new Date(selectedUser.created_at).toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-muted">
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <p className="font-medium">{selectedUser.is_suspended ? 'Suspended' : 'Active'}</p>
                     </div>
                   </div>
-                </div>
-              )}
+
+                  {selectedUser.organizer && (
+                    <div className="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                      <h4 className="font-medium text-blue-900 mb-2">Organizer Details</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-blue-600">Business Name</p>
+                          <p className="font-medium text-blue-900">{selectedUser.organizer.business_name}</p>
+                        </div>
+                        <div>
+                          <p className="text-blue-600">KYC Status</p>
+                          <p className="font-medium text-blue-900 capitalize">{selectedUser.organizer.kyc_status || 'Not submitted'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="orders" className="mt-4">
+                  {loadingOrders ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#2969FF]" />
+                    </div>
+                  ) : userOrders.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Ticket className="w-10 h-10 text-foreground/20 mx-auto mb-2" />
+                      <p className="text-muted-foreground">No orders found</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                      {userOrders.map((order) => (
+                        <div key={order.id} className="flex items-center justify-between p-3 bg-muted rounded-xl">
+                          <div className="flex-1">
+                            <p className="font-medium text-foreground text-sm">{order.events?.title || 'Unknown Event'}</p>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                              <span>{order.quantity || 1} ticket{(order.quantity || 1) > 1 ? 's' : ''}</span>
+                              <span>{order.currency || ''} {parseFloat(order.total_price || 0).toLocaleString()}</span>
+                              <span>{new Date(order.created_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge className={
+                              order.payment_status === 'completed' || order.payment_status === 'paid'
+                                ? 'bg-green-100 text-green-700'
+                                : order.payment_status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-red-100 text-red-700'
+                            }>
+                              {order.payment_status}
+                            </Badge>
+                            {order.checked_in ? (
+                              <Badge className="bg-blue-100 text-blue-700">Checked In</Badge>
+                            ) : (
+                              <Badge className="bg-muted text-foreground/60">Not Checked In</Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Profile Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit User Profile</DialogTitle>
+            <DialogDescription>
+              Update profile for {selectedUser?.full_name || selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Full Name</Label>
+              <Input
+                value={editData.full_name || ''}
+                onChange={(e) => setEditData(prev => ({ ...prev, full_name: e.target.value }))}
+                className="rounded-xl mt-1"
+              />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input
+                value={editData.phone || ''}
+                onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                className="rounded-xl mt-1"
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                value={selectedUser?.email || ''}
+                disabled
+                className="rounded-xl mt-1 opacity-60"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Email is linked to authentication and cannot be changed here.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button onClick={saveUserProfile} disabled={savingEdit} className="rounded-xl bg-[#2969FF] hover:bg-[#1e4fd6]">
+              {savingEdit ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Reset Confirmation Dialog */}
+      <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-[#2969FF]" />
+              Send Password Reset
+            </DialogTitle>
+            <DialogDescription>
+              Send a password reset email to {selectedUser?.email}?
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            The user will receive an email with a link to reset their password. This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetPasswordOpen(false)} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button onClick={handlePasswordReset} disabled={sendingReset} className="rounded-xl bg-[#2969FF] hover:bg-[#1e4fd6]">
+              {sendingReset ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+              Send Reset Email
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -636,11 +887,15 @@ export function AdminUsers() {
             <DialogTitle className="flex items-center gap-2">
               {actionType === 'make_admin' && <Shield className="w-5 h-5 text-purple-600" />}
               {actionType === 'remove_admin' && <Shield className="w-5 h-5 text-red-600" />}
+              {actionType === 'suspend' && <Ban className="w-5 h-5 text-red-600" />}
+              {actionType === 'unsuspend' && <CheckCircle className="w-5 h-5 text-green-600" />}
               Confirm Action
             </DialogTitle>
             <DialogDescription>
               {actionType === 'make_admin' && `Grant admin privileges to ${selectedUser?.full_name || selectedUser?.email}?`}
               {actionType === 'remove_admin' && `Remove admin privileges from ${selectedUser?.full_name || selectedUser?.email}?`}
+              {actionType === 'suspend' && `Suspend ${selectedUser?.full_name || selectedUser?.email}? They will not be able to log in.`}
+              {actionType === 'unsuspend' && `Unsuspend ${selectedUser?.full_name || selectedUser?.email}? They will regain access.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -662,8 +917,8 @@ export function AdminUsers() {
               onClick={handleAction} 
               disabled={processing}
               className={`rounded-xl ${
-                actionType === 'remove_admin'
-                  ? 'bg-red-600 hover:bg-red-700' 
+                actionType === 'remove_admin' || actionType === 'suspend'
+                  ? 'bg-red-600 hover:bg-red-700'
                   : 'bg-[#2969FF] hover:bg-[#1e4fd6]'
               }`}
             >

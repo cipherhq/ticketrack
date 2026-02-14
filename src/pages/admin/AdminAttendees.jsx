@@ -13,11 +13,29 @@ import {
   Building,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Send,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -26,9 +44,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
+import { useAdmin } from '@/contexts/AdminContext';
 import { format } from 'date-fns';
 
 export function AdminAttendees() {
+  const { logAdminAction } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [attendees, setAttendees] = useState([]);
   const [events, setEvents] = useState([]);
@@ -36,6 +56,9 @@ export function AdminAttendees() {
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('all');
   const [organizerFilter, setOrganizerFilter] = useState('all');
+  const [selectedAttendee, setSelectedAttendee] = useState(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [processingAction, setProcessingAction] = useState(null);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -147,6 +170,78 @@ export function AdminAttendees() {
     }
 
     setEvents(data || []);
+  };
+
+  const toggleCheckIn = async (attendee) => {
+    setProcessingAction(attendee.id);
+    try {
+      const newCheckedIn = !attendee.checkedIn;
+      const { error } = await supabase
+        .from('tickets')
+        .update({
+          checked_in: newCheckedIn,
+          checked_in_at: newCheckedIn ? new Date().toISOString() : null,
+        })
+        .eq('id', attendee.id);
+
+      if (error) throw error;
+
+      await logAdminAction('attendee_checkin_toggled', 'ticket', {
+        ticketId: attendee.id,
+        attendeeName: attendee.name,
+        attendeeEmail: attendee.email,
+        checkedIn: newCheckedIn,
+      });
+
+      // Update local state
+      setAttendees(prev =>
+        prev.map(a =>
+          a.id === attendee.id
+            ? { ...a, checkedIn: newCheckedIn, checkedInAt: newCheckedIn ? new Date().toISOString() : null }
+            : a
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling check-in:', error);
+      alert('Failed to update check-in status: ' + error.message);
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const resendTicketEmail = async (attendee) => {
+    setProcessingAction(attendee.id);
+    try {
+      const { error } = await supabase.functions.invoke('send-email', {
+        body: {
+          type: 'ticket_confirmation',
+          to: attendee.email,
+          data: {
+            attendeeName: attendee.name,
+            eventName: attendee.eventName,
+            ticketQuantity: attendee.tickets,
+            totalPrice: attendee.amountPaid,
+            currency: attendee.currency,
+            ticketId: attendee.id,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      await logAdminAction('ticket_email_resent', 'ticket', {
+        ticketId: attendee.id,
+        attendeeEmail: attendee.email,
+        eventName: attendee.eventName,
+      });
+
+      alert('Ticket email resent to ' + attendee.email);
+    } catch (error) {
+      console.error('Error resending ticket email:', error);
+      alert('Failed to resend ticket email: ' + error.message);
+    } finally {
+      setProcessingAction(null);
+    }
   };
 
   const formatCurrency = (amount, currency = 'NGN') => {
@@ -335,6 +430,7 @@ export function AdminAttendees() {
                       <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Amount</th>
                       <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Status</th>
                       <th className="text-left py-3 px-4 text-muted-foreground font-medium text-sm">Date</th>
+                      <th className="text-right py-3 px-4 text-muted-foreground font-medium text-sm">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -381,11 +477,48 @@ export function AdminAttendees() {
                             {attendee.purchaseDate ? format(new Date(attendee.purchaseDate), 'MMM d, yyyy') : '—'}
                           </p>
                         </td>
+                        <td className="py-3 px-4 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="rounded-xl" disabled={processingAction === attendee.id}>
+                                {processingAction === attendee.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <MoreVertical className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem onClick={() => { setSelectedAttendee(attendee); setDetailsOpen(true); }}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => toggleCheckIn(attendee)}>
+                                {attendee.checkedIn ? (
+                                  <>
+                                    <XCircle className="w-4 h-4 mr-2 text-red-500" />
+                                    Undo Check-in
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                                    Check In
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => resendTicketEmail(attendee)}>
+                                <Send className="w-4 h-4 mr-2" />
+                                Resend Ticket Email
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
                       </tr>
                     ))}
                     {attendees.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                        <td colSpan={8} className="py-12 text-center text-muted-foreground">
                           <Users className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
                           No attendees found
                         </td>
@@ -427,6 +560,94 @@ export function AdminAttendees() {
           )}
         </CardContent>
       </Card>
+      {/* Attendee Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-lg rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Ticket Details</DialogTitle>
+          </DialogHeader>
+          {selectedAttendee && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#2969FF] flex items-center justify-center text-white font-medium text-lg">
+                  {selectedAttendee.name?.charAt(0) || '?'}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedAttendee.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedAttendee.email}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-muted">
+                  <p className="text-xs text-muted-foreground">Ticket ID</p>
+                  <p className="font-mono text-sm font-medium">{selectedAttendee.id?.slice(0, 12)}...</p>
+                </div>
+                <div className="p-3 rounded-xl bg-muted">
+                  <p className="text-xs text-muted-foreground">Event</p>
+                  <p className="font-medium text-sm">{selectedAttendee.eventName}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-muted">
+                  <p className="text-xs text-muted-foreground">Organizer</p>
+                  <p className="font-medium text-sm">{selectedAttendee.organizerName}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-muted">
+                  <p className="text-xs text-muted-foreground">Phone</p>
+                  <p className="font-medium text-sm">{selectedAttendee.phone}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-muted">
+                  <p className="text-xs text-muted-foreground">Tickets</p>
+                  <p className="font-medium text-sm">{selectedAttendee.tickets}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-muted">
+                  <p className="text-xs text-muted-foreground">Amount Paid</p>
+                  <p className="font-medium text-sm">{formatCurrency(selectedAttendee.amountPaid, selectedAttendee.currency)}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-muted">
+                  <p className="text-xs text-muted-foreground">Check-in Status</p>
+                  {selectedAttendee.checkedIn ? (
+                    <Badge className="bg-green-100 text-green-700 text-xs">
+                      Checked In {selectedAttendee.checkedInAt ? `at ${format(new Date(selectedAttendee.checkedInAt), 'MMM d, HH:mm')}` : ''}
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-muted text-foreground/80 text-xs">Not Checked In</Badge>
+                  )}
+                </div>
+                <div className="p-3 rounded-xl bg-muted">
+                  <p className="text-xs text-muted-foreground">Purchase Date</p>
+                  <p className="font-medium text-sm">
+                    {selectedAttendee.purchaseDate ? format(new Date(selectedAttendee.purchaseDate), 'MMM d, yyyy HH:mm') : '—'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setDetailsOpen(false); toggleCheckIn(selectedAttendee); }}
+                  className="rounded-xl"
+                >
+                  {selectedAttendee.checkedIn ? (
+                    <><XCircle className="w-4 h-4 mr-1" /> Undo Check-in</>
+                  ) : (
+                    <><CheckCircle className="w-4 h-4 mr-1" /> Check In</>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setDetailsOpen(false); resendTicketEmail(selectedAttendee); }}
+                  className="rounded-xl"
+                >
+                  <Send className="w-4 h-4 mr-1" />
+                  Resend Email
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
