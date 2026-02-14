@@ -54,12 +54,13 @@ export function OrganizerHome() {
       // Check if Connect banner should show
       await checkConnectBannerVisibility();
       
+      // loadStats fetches all organizer events, then passes them to loadDailySales to avoid a duplicate query
+      const allEvents = await loadStats();
       await Promise.all([
-        loadStats(),
         loadUpcomingEvents(),
         loadPromoterData(),
         loadFreeEventStats(),
-        loadDailySales(),
+        loadDailySales(allEvents),
       ]);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -174,6 +175,8 @@ export function OrganizerHome() {
       totalAttendees: totalTickets,
       totalEvents: events?.length || 0,
     });
+
+    return events || [];
   };
 
   const loadFreeEventStats = async () => {
@@ -237,21 +240,15 @@ export function OrganizerHome() {
     }
   };
 
-  const loadDailySales = async () => {
+  const loadDailySales = async (allEvents) => {
     try {
-      // Get organizer's event IDs
-      const { data: events, error: eventsError } = await supabase
-        .from('events')
-        .select('id, currency')
-        .eq('organizer_id', organizer.id);
-
-      if (eventsError) throw eventsError;
-
-      const eventIds = events?.map(e => e.id) || [];
+      // Reuse events already fetched by loadStats
+      const events = allEvents || [];
+      const eventIds = events.map(e => e.id);
       if (eventIds.length === 0) return;
 
       const eventCurrencyMap = {};
-      events?.forEach(e => { eventCurrencyMap[e.id] = e.currency || defaultCurrency; });
+      events.forEach(e => { eventCurrencyMap[e.id] = e.currency || defaultCurrency; });
 
       // Start of today in UTC
       const todayStart = new Date();

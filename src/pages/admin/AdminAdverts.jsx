@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { supabase } from '../../lib/supabase';
 import {
   Plus, Edit2, Trash2, Eye, EyeOff, Upload, X,
@@ -49,6 +50,7 @@ const getAdStatus = (ad) => {
 };
 
 export default function AdminAdverts() {
+  const confirm = useConfirm();
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -264,7 +266,7 @@ export default function AdminAdverts() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this ad?')) return;
+    if (!(await confirm('Delete Ad', 'Are you sure you want to delete this ad?', { variant: 'destructive' }))) return;
 
     const { error } = await supabase
       .from('platform_adverts')

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@/hooks/useConfirm';
 import {
   DollarSign, Users, TrendingUp, Building2, CheckCircle, Clock,
   Loader2, Search, Filter, ChevronDown, ChevronUp, ChevronRight,
@@ -82,6 +83,7 @@ const financeNavItems = [
 ];
 
 export function AdminFinance() {
+  const confirm = useConfirm();
   const { logAdminAction } = useAdmin();
   
   // Navigation state
@@ -539,7 +541,7 @@ export function AdminFinance() {
   };
 
   const payAllForEvent = async (event) => {
-    if (!confirm(`Pay all pending amounts for "${event.title}"?`)) return;
+    if (!(await confirm('Pay All Pending', `Pay all pending amounts for "${event.title}"?`))) return;
     setProcessing(true);
     try {
       if (event.organizerNet > 0 && event.payout_status !== 'paid') {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 
 export function PaymentBatching() {
   const { logFinanceAction } = useFinance();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [batches, setBatches] = useState([]);
@@ -180,7 +182,7 @@ export function PaymentBatching() {
   };
 
   const handleProcessBatch = async (batchId) => {
-    if (!confirm('Process this batch? Payouts will be initiated with the payment provider.')) {
+    if (!(await confirm('Process Batch', 'Process this batch? Payouts will be initiated with the payment provider.'))) {
       return;
     }
 
@@ -202,7 +204,7 @@ export function PaymentBatching() {
   };
 
   const handleCancelBatch = async (batchId) => {
-    if (!confirm('Cancel this batch? All payouts will be returned to the queue.')) {
+    if (!(await confirm('Cancel Batch', 'Cancel this batch? All payouts will be returned to the queue.', { variant: 'destructive' }))) {
       return;
     }
 

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  Plus, Search, Eye, Users, ShoppingCart, TrendingUp, DollarSign, 
+import {
+  Plus, Search, Eye, Users, ShoppingCart, TrendingUp, DollarSign,
   Copy, ExternalLink, Edit2, Trash2, BarChart3, Loader2, X,
   Mail, Phone, CheckCircle, Clock, AlertCircle
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 
 export function OrganizerPromoters() {
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
   const [promoters, setPromoters] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -297,7 +299,7 @@ export function OrganizerPromoters() {
   };
 
   const handleRemovePromoter = async (promoter) => {
-    if (!confirm(`Remove ${promoter.full_name} as a promoter? This will remove them from all your events.`)) return;
+    if (!(await confirm('Remove Promoter', `Remove ${promoter.full_name} as a promoter? This will remove them from all your events.`, { variant: 'destructive' }))) return;
 
     try {
       // Remove from organizer's events only

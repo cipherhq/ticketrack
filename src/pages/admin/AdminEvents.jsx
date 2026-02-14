@@ -355,6 +355,11 @@ export function AdminEvents() {
 
   const { currentPage, totalPages, totalItems, itemsPerPage, paginatedItems: paginatedEvents, handlePageChange } = usePagination(filteredEvents, 20);
 
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    handlePageChange(1);
+  }, [debouncedSearch, statusFilter]);
+
   const stats = {
     total: events.length,
     published: events.filter(e => e.status === 'published').length,

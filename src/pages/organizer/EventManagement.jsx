@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { Pagination, usePagination } from '@/components/ui/pagination';
 import { HelpTip, OnboardingBanner } from '@/components/HelpTip';
 import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
 
 const MANUAL_ISSUE_TYPES = [
   { value: 'complimentary', label: 'Complimentary' },
@@ -55,6 +56,7 @@ export function EventManagement() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
   const { user } = useAuth();
+  const confirm = useConfirm();
   const [searchQuery, setSearchQuery] = useState('');
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -474,9 +476,10 @@ export function EventManagement() {
     
     // Check if this is a recurring event with child events
     if (event && event.is_recurring && event.childEventCount > 0) {
-      const confirmDelete = confirm(
-        `This is a recurring event with ${event.childEventCount} child event(s). ` +
-        `Deleting the parent event will also delete all child events. Are you sure you want to continue?`
+      const confirmDelete = await confirm(
+        'Delete Recurring Event',
+        `This is a recurring event with ${event.childEventCount} child event(s). Deleting the parent event will also delete all child events. Are you sure you want to continue?`,
+        { variant: 'destructive' }
       );
       if (!confirmDelete) return;
       
@@ -494,7 +497,7 @@ export function EventManagement() {
       }
     }
     
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
+    if (!(await confirm('Delete Event', 'Are you sure you want to delete this event? This action cannot be undone.', { variant: 'destructive' }))) return;
     
     try {
       setDeleting(id);
@@ -623,7 +626,7 @@ export function EventManagement() {
 
   const cancelSeries = async (event) => {
     if (!event.is_recurring) return;
-    const confirmed = confirm('Cancel entire series? This will cancel this event and all ' + (event.childEventCount || 0) + ' upcoming events in the series. All tickets will be automatically refunded.');
+    const confirmed = await confirm('Cancel Entire Series', 'This will cancel this event and all ' + (event.childEventCount || 0) + ' upcoming events in the series. All tickets will be automatically refunded.', { variant: 'destructive' });
     if (!confirmed) return;
     try {
       setCancelingSeries(event.id);
@@ -681,7 +684,7 @@ export function EventManagement() {
   };
 
   const cancelSingleChildEvent = async (childEvent) => {
-    if (!confirm(`Cancel "${childEvent.title}" on ${formatDate(childEvent.start_date)}? All tickets for this date will be automatically refunded.`)) return;
+    if (!(await confirm('Cancel Event Date', `Cancel "${childEvent.title}" on ${formatDate(childEvent.start_date)}? All tickets for this date will be automatically refunded.`, { variant: 'destructive' }))) return;
     try {
       // Cancel the child event
       await supabase.from('events').update({ status: 'cancelled' }).eq('id', childEvent.id);

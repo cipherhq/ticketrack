@@ -19,6 +19,7 @@ import {
   Sparkles,
   HelpCircle,
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { HelpTip } from '@/components/HelpTip';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -51,6 +52,7 @@ import { toast } from 'sonner';
 
 export function PromoCodes() {
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [promoCodes, setPromoCodes] = useState([]);
   const [events, setEvents] = useState([]);
@@ -281,7 +283,7 @@ export function PromoCodes() {
   };
 
   const deletePromoCode = async (promoId) => {
-    if (!confirm('Are you sure you want to delete this promo code?')) return;
+    if (!(await confirm('Delete Promo Code', 'Are you sure you want to delete this promo code?', { variant: 'destructive' }))) return;
     try {
       const { error } = await supabase.from('promo_codes').delete().eq('id', promoId);
       if (error) throw error;

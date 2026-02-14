@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, CheckCircle, Building2, Loader2 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ const nigerianBanks = ['Access Bank', 'GTBank', 'First Bank', 'Zenith Bank', 'UB
 
 export function BankAccountManagement() {
   const { promoter } = usePromoter();
+  const confirm = useConfirm();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,7 +48,7 @@ export function BankAccountManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this account?')) return;
+    if (!(await confirm('Delete Account', 'Delete this account?', { variant: 'destructive' }))) return;
     await supabase.from('promoter_bank_accounts').delete().eq('id', id);
     loadAccounts();
   };

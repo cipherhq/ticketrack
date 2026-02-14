@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@/hooks/useConfirm';
 import {
   Package,
   Plus,
@@ -27,6 +28,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { toast } from 'sonner';
 
 export function AdminSMSPackages() {
+  const confirm = useConfirm();
   const { logAdminAction } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -139,7 +141,7 @@ export function AdminSMSPackages() {
   };
 
   const handleDelete = async (pkg) => {
-    if (!confirm(`Delete "${pkg.name}" package?`)) return;
+    if (!(await confirm('Delete Package', `Delete "${pkg.name}" package?`, { variant: 'destructive' }))) return;
     try {
       await supabase.from('communication_credit_packages').delete().eq('id', pkg.id);
       loadPackages();

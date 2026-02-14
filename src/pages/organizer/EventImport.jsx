@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { 
-  Upload, Link2, RefreshCw, Check, X, AlertCircle, 
+import {
+  Upload, Link2, RefreshCw, Check, X, AlertCircle,
   Calendar, Users, ChevronRight, Loader2, ExternalLink,
   Plus, Settings, History, Trash2, ArrowLeft, ArrowRight
 } from 'lucide-react'
+import { useConfirm } from '@/hooks/useConfirm'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -68,6 +69,7 @@ const PLATFORMS = {
 export default function EventImport() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const confirm = useConfirm()
   const [organizer, setOrganizer] = useState(null)
   const [connections, setConnections] = useState([])
   const [importedEvents, setImportedEvents] = useState([])
@@ -185,7 +187,7 @@ export default function EventImport() {
   }
 
   const disconnectPlatform = async (connectionId) => {
-    if (!confirm('Are you sure you want to disconnect this platform?')) return
+    if (!(await confirm('Disconnect Platform', 'Are you sure you want to disconnect this platform?', { variant: 'destructive' }))) return
 
     try {
       await supabase

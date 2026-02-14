@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Search, MoreVertical, DollarSign, CheckCircle, Clock, AlertCircle, Send, Loader2, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,56 +30,159 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { formatPrice } from '@/config/currencies';
-import { Pagination, usePagination } from '@/components/ui/pagination';
+import { Pagination } from '@/components/ui/pagination';
 import { toast } from 'sonner';
+
+const ITEMS_PER_PAGE = 20;
 
 export function AdminPayouts() {
   const navigate = useNavigate();
   const { logAdminAction } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [payouts, setPayouts] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedPayout, setSelectedPayout] = useState(null);
   const [actionDialog, setActionDialog] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [stats, setStats] = useState({
+    pending: 0, pendingByCurrency: {},
+    processing: 0, processingByCurrency: {},
+    completed: 0, completedByCurrency: {},
+    failed: 0, failedByCurrency: {},
+  });
 
-  useEffect(() => {
-    loadPayouts();
-  }, []);
-
-  const loadPayouts = async () => {
-    setLoading(true);
+  // Load stats separately (lightweight aggregate query)
+  const loadStats = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('payouts')
-        .select(`
-          *,
-          organizers (
-            id,
-            business_name,
-            email
-          ),
-          bank_accounts (
-            bank_name,
-            account_number,
-            account_name
-          ),
-          events (
-            id,
-            title
-          )
-        `)
-        .order('created_at', { ascending: false });
+        .select('status, net_amount, currency');
 
       if (error) throw error;
-      setPayouts(data || []);
+
+      const groupByCurrency = (items) => {
+        const byCurrency = {};
+        items.forEach(p => {
+          const currency = p.currency || 'NGN';
+          if (!byCurrency[currency]) byCurrency[currency] = 0;
+          byCurrency[currency] += parseFloat(p.net_amount) || 0;
+        });
+        return byCurrency;
+      };
+
+      const all = data || [];
+      setStats({
+        pending: all.filter(p => p.status === 'pending').length,
+        pendingByCurrency: groupByCurrency(all.filter(p => p.status === 'pending')),
+        processing: all.filter(p => p.status === 'processing').length,
+        processingByCurrency: groupByCurrency(all.filter(p => p.status === 'processing')),
+        completed: all.filter(p => p.status === 'completed').length,
+        completedByCurrency: groupByCurrency(all.filter(p => p.status === 'completed')),
+        failed: all.filter(p => p.status === 'failed' || p.status === 'rejected').length,
+        failedByCurrency: groupByCurrency(all.filter(p => p.status === 'failed' || p.status === 'rejected')),
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  }, []);
+
+  // Load paginated payouts with server-side filtering
+  const loadPayouts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const selectQuery = `
+        *,
+        organizers (
+          id,
+          business_name,
+          email
+        ),
+        bank_accounts (
+          bank_name,
+          account_number,
+          account_name
+        ),
+        events (
+          id,
+          title
+        )
+      `;
+
+      if (debouncedSearch) {
+        // With search: fetch all (with status filter), filter client-side, paginate client-side
+        let query = supabase
+          .from('payouts')
+          .select(selectQuery)
+          .order('created_at', { ascending: false });
+
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        // Client-side search filter on joined fields
+        const search = debouncedSearch.toLowerCase();
+        const filtered = (data || []).filter(p =>
+          p.organizers?.business_name?.toLowerCase().includes(search) ||
+          p.events?.title?.toLowerCase().includes(search)
+        );
+
+        const from = (currentPage - 1) * ITEMS_PER_PAGE;
+        setTotalCount(filtered.length);
+        setPayouts(filtered.slice(from, from + ITEMS_PER_PAGE));
+      } else {
+        // No search: full server-side pagination
+        let query = supabase
+          .from('payouts')
+          .select(selectQuery, { count: 'exact' })
+          .order('created_at', { ascending: false });
+
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter);
+        }
+
+        const from = (currentPage - 1) * ITEMS_PER_PAGE;
+        const to = from + ITEMS_PER_PAGE - 1;
+        query = query.range(from, to);
+
+        const { data, error, count } = await query;
+        if (error) throw error;
+
+        setPayouts(data || []);
+        setTotalCount(count || 0);
+      }
     } catch (error) {
       console.error('Error loading payouts:', error);
     } finally {
       setLoading(false);
     }
+  }, [currentPage, debouncedSearch, statusFilter]);
+
+  // Initial load
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  // Re-fetch payouts when page, search, or filter changes
+  useEffect(() => {
+    loadPayouts();
+  }, [loadPayouts]);
+
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+
+  const handlePageChange = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
   const handleAction = (action, payout) => {
@@ -118,6 +221,7 @@ export function AdminPayouts() {
       setActionDialog(null);
       setSelectedPayout(null);
       loadPayouts();
+      loadStats();
     } catch (error) {
       console.error('Action error:', error);
       toast.error('Failed to perform action');
@@ -147,45 +251,18 @@ export function AdminPayouts() {
     }
   };
 
-  const filteredPayouts = payouts.filter((payout) => {
-    const matchesSearch = !debouncedSearch ||
-      payout.organizers?.business_name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      payout.events?.title?.toLowerCase().includes(debouncedSearch.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || payout.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const { currentPage, totalPages, totalItems, itemsPerPage, paginatedItems: paginatedPayouts, handlePageChange } = usePagination(filteredPayouts, 20);
-
-  // Group amounts by currency for each status
-  const groupByCurrency = (filteredPayouts) => {
-    const byCurrency = {};
-    filteredPayouts.forEach(p => {
-      const currency = p.currency || 'NGN';
-      if (!byCurrency[currency]) byCurrency[currency] = 0;
-      byCurrency[currency] += parseFloat(p.net_amount) || 0;
-    });
-    return byCurrency;
-  };
-
   const formatMultiCurrency = (byCurrency) => {
     const entries = Object.entries(byCurrency).filter(([_, amt]) => amt > 0);
     if (entries.length === 0) return formatPrice(0, 'USD');
     return entries.map(([curr, amt]) => formatPrice(amt, curr)).join(' + ');
   };
 
-  const stats = {
-    pending: payouts.filter((p) => p.status === 'pending').length,
-    pendingByCurrency: groupByCurrency(payouts.filter((p) => p.status === 'pending')),
-    processing: payouts.filter((p) => p.status === 'processing').length,
-    processingByCurrency: groupByCurrency(payouts.filter((p) => p.status === 'processing')),
-    completed: payouts.filter((p) => p.status === 'completed').length,
-    completedByCurrency: groupByCurrency(payouts.filter((p) => p.status === 'completed')),
-    failed: payouts.filter((p) => p.status === 'failed' || p.status === 'rejected').length,
-    failedByCurrency: groupByCurrency(payouts.filter((p) => p.status === 'failed' || p.status === 'rejected')),
+  const handleRefresh = () => {
+    loadPayouts();
+    loadStats();
   };
 
-  if (loading) {
+  if (loading && payouts.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" />
@@ -201,7 +278,7 @@ export function AdminPayouts() {
           <p className="text-muted-foreground mt-1">Manage organizer payouts</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" onClick={loadPayouts} className="rounded-xl">
+          <Button variant="outline" size="icon" onClick={handleRefresh} className="rounded-xl">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button
@@ -309,7 +386,7 @@ export function AdminPayouts() {
       {/* Payouts Table */}
       <Card className="border-border/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-foreground">All Payout Requests ({filteredPayouts.length})</CardTitle>
+          <CardTitle className="text-foreground">All Payout Requests ({totalCount})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -328,7 +405,7 @@ export function AdminPayouts() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedPayouts.map((payout) => (
+                {payouts.map((payout) => (
                   <tr key={payout.id} className="border-b border-border/5 hover:bg-muted/50">
                     <td className="py-4 px-4">
                       <p className="text-foreground font-medium">{payout.organizers?.business_name || 'Unknown'}</p>
@@ -393,7 +470,7 @@ export function AdminPayouts() {
                     </td>
                   </tr>
                 ))}
-                {filteredPayouts.length === 0 && (
+                {payouts.length === 0 && (
                   <tr>
                     <td colSpan={9} className="py-8 text-center text-muted-foreground">
                       No payouts found
@@ -406,8 +483,8 @@ export function AdminPayouts() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
+            totalItems={totalCount}
+            itemsPerPage={ITEMS_PER_PAGE}
             onPageChange={handlePageChange}
           />
         </CardContent>

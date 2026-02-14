@@ -25,6 +25,7 @@ import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
 
 // Condition field types
 const CONDITION_FIELDS = [
@@ -123,6 +124,7 @@ export function SegmentBuilder() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
   const isEditing = !!id;
 
   // State
@@ -464,7 +466,7 @@ export function SegmentBuilder() {
   };
 
   const deleteSegment = async (segmentId) => {
-    if (!confirm('Delete this segment?')) return;
+    if (!(await confirm('Delete Segment', 'Delete this segment?', { variant: 'destructive' }))) return;
 
     try {
       const { error } = await supabase

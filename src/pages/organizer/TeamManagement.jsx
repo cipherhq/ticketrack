@@ -9,6 +9,7 @@ import {
   CheckCircle, Clock, XCircle, MoreVertical, Edit2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
 
 
 const ROLES = {
@@ -26,6 +27,7 @@ const STATUS_ICONS = {
 
 export function TeamManagement() {
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -146,7 +148,7 @@ export function TeamManagement() {
   };
 
   const removeMember = async (memberId) => {
-    if (!confirm('Are you sure you want to remove this team member?')) return;
+    if (!(await confirm('Remove Team Member', 'Are you sure you want to remove this team member?', { variant: 'destructive' }))) return;
 
     try {
       const { error } = await supabase

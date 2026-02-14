@@ -38,6 +38,7 @@ import { supabase } from '@/lib/supabase'
 // PDF export
 import jsPDF from 'jspdf'
 import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
 
 // =============================================================================
 // OBJECT LIBRARY - Comprehensive Categories and Items
@@ -1391,6 +1392,7 @@ export function VenueLayoutDesigner() {
   const navigate = useNavigate()
   const { organizer } = useOrganizer()
   const { user } = useAuth()
+  const confirm = useConfirm()
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -2601,8 +2603,8 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
   // SAMPLE DESIGN
   // =============================================================================
 
-  const loadSampleDesign = useCallback(() => {
-    if (!confirm('Load sample design? This will replace your current layout.')) {
+  const loadSampleDesign = useCallback(async () => {
+    if (!(await confirm('Load Sample Design', 'Load sample design? This will replace your current layout.'))) {
       return
     }
 
@@ -2631,7 +2633,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
     setObjects(sampleObjects)
     saveToHistory(sampleObjects)
     setLayoutName('Sample Event Layout')
-  }, [saveToHistory])
+  }, [confirm, saveToHistory])
 
   // =============================================================================
   // COMPUTED VALUES

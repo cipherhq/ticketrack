@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   ArrowLeft, Building, CreditCard, AlertCircle, CheckCircle,
   Loader2, Trash2, Star, Plus, Globe, Info, Eye, EyeOff, Pencil, X
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
@@ -168,6 +169,7 @@ const validateCAInstitutionNumber = (institution) => {
 export function AddBankAccount() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
 
   const [countryCode, setCountryCode] = useState(organizer?.country_code || 'NG');
   const [banks, setBanks] = useState([]);
@@ -616,7 +618,7 @@ export function AddBankAccount() {
   };
 
   const deleteAccount = async (accountId) => {
-    if (!confirm('Are you sure you want to delete this bank account?')) return;
+    if (!(await confirm('Delete Bank Account', 'Are you sure you want to delete this bank account?', { variant: 'destructive' }))) return;
     try {
       const { error } = await supabase.from('bank_accounts').delete().eq('id', accountId);
       if (error) throw error;

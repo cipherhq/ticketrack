@@ -24,6 +24,7 @@ import {
   AlertCircle,
   HelpCircle,
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { HelpTip } from '@/components/HelpTip';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -60,6 +61,7 @@ import { toast } from 'sonner';
 
 export function PromoterManagement() {
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [promoters, setPromoters] = useState([]);
   const [events, setEvents] = useState([]);
@@ -293,7 +295,7 @@ export function PromoterManagement() {
   };
 
   const deletePromoter = async (promoterId) => {
-    if (!confirm('Are you sure you want to remove this promoter?')) return;
+    if (!(await confirm('Remove Promoter', 'Are you sure you want to remove this promoter?', { variant: 'destructive' }))) return;
 
     try {
       const { error: deleteError } = await supabase

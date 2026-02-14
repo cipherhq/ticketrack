@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Clock, Check, X, Mail, MessageCircle, Loader2, AlertCircle, Copy, ExternalLink, RefreshCw } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import {
 import { toast } from 'sonner';
 
 export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
+  const confirm = useConfirm();
   const [splitData, setSplitData] = useState(null);
   const [shares, setShares] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +96,7 @@ export function SplitPaymentTracker({ splitPaymentId, onComplete, onCancel }) {
   };
 
   const handleCancel = async () => {
-    if (!confirm('Cancel this split payment? Any payments made will be refunded.')) return;
+    if (!(await confirm('Cancel Split Payment', 'Cancel this split payment? Any payments made will be refunded.', { variant: 'destructive' }))) return;
     
     setCancelling(true);
     try {

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Search, Filter, Plus, Upload, Download, Mail, Phone, 
+  Users, Search, Filter, Plus, Upload, Download, Mail, Phone,
   MessageSquare, Tag, Trash2, Edit, MoreVertical, CheckCircle,
   XCircle, Calendar, TrendingUp, Loader2, Eye, RefreshCw,
   UserPlus, Heart, Ticket, ExternalLink, Clock
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { ContactImportDialog } from '@/components/ContactImportDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ const SOURCE_CONFIG = {
 export function ContactManagement() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
 
   // State
   const [loading, setLoading] = useState(true);
@@ -305,7 +307,7 @@ export function ContactManagement() {
   };
 
   const deleteContact = async (id) => {
-    if (!confirm('Delete this contact?')) return;
+    if (!(await confirm('Delete Contact', 'Delete this contact?', { variant: 'destructive' }))) return;
 
     try {
       await supabase
@@ -321,7 +323,7 @@ export function ContactManagement() {
 
   const deleteSelected = async () => {
     if (selectedContacts.length === 0) return;
-    if (!confirm(`Delete ${selectedContacts.length} contacts?`)) return;
+    if (!(await confirm('Delete Contacts', `Delete ${selectedContacts.length} contacts?`, { variant: 'destructive' }))) return;
 
     try {
       await supabase

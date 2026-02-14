@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@/hooks/useConfirm';
 import {
   Users,
   Shield,
@@ -65,6 +66,7 @@ const defaultRoles = [
 ];
 
 export function AdminRoles() {
+  const confirm = useConfirm();
   const { admin, logAdminAction } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [admins, setAdmins] = useState([]);
@@ -175,7 +177,7 @@ export function AdminRoles() {
       return;
     }
 
-    if (!confirm(`Remove admin privileges from ${adminUser.email}?`)) return;
+    if (!(await confirm('Remove Admin', `Remove admin privileges from ${adminUser.email}?`, { variant: 'destructive' }))) return;
 
     setProcessing(true);
     try {

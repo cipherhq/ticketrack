@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useConfirm } from '@/hooks/useConfirm'
 import { User, Ticket, Heart, Settings, Camera, Mail, Phone, MapPin, Calendar, Edit2, LogOut, Loader2, CheckCircle, DollarSign, Gift, Copy, ExternalLink, Share2, Banknote, TrendingUp, Lock, Trash2, Eye, EyeOff, AlertTriangle, CreditCard, Building, Users, Star, Receipt, X, Plus, Send, Unlink } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -84,6 +85,7 @@ export function AttendeeProfile() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, signOut, loading: authLoading } = useAuth()
+  const confirm = useConfirm()
   
   const [profile, setProfile] = useState(null)
   const [tickets, setTickets] = useState([])
@@ -258,7 +260,7 @@ export function AttendeeProfile() {
 
   // Unlink Telegram account
   const unlinkTelegram = async () => {
-    if (!confirm('Are you sure you want to unlink your Telegram account? You will no longer receive notifications via Telegram.')) {
+    if (!(await confirm('Unlink Telegram', 'Are you sure you want to unlink your Telegram account? You will no longer receive notifications via Telegram.', { variant: 'destructive' }))) {
       return
     }
 

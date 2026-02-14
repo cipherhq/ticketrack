@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  Calendar, Building2, Users, CheckCircle, Clock, Loader2, 
+import {
+  Calendar, Building2, Users, CheckCircle, Clock, Loader2,
   Search, Filter, ChevronDown, ChevronUp, Banknote, RefreshCw,
   CreditCard, AlertCircle
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ import { getMinimumPayout, getBelowThresholdMessage } from '@/config/payoutThres
 
 export function EventPayouts() {
   const { logFinanceAction, canProcessPayouts, reAuthenticate } = useFinance();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [completedEvents, setCompletedEvents] = useState([]);
   const [expandedEvents, setExpandedEvents] = useState({});
@@ -346,7 +348,7 @@ export function EventPayouts() {
       alert('You do not have permission to process payouts.');
       return;
     }
-    if (!confirm(`Pay all pending amounts for "${event.title}"?\n\nOrganizer: ${formatPrice(event.organizerNet, event.currency)}\nPromoters: ${formatPrice(event.totalPromoterCommission, event.currency)}`)) return;
+    if (!(await confirm('Pay All Pending', `Pay all pending amounts for "${event.title}"?\n\nOrganizer: ${formatPrice(event.organizerNet, event.currency)}\nPromoters: ${formatPrice(event.totalPromoterCommission, event.currency)}`))) return;
     
     setProcessing(true);
     try {

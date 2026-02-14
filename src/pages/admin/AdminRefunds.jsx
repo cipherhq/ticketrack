@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Search, Loader2, RefreshCw, CheckCircle, XCircle, Clock, DollarSign, AlertTriangle, CreditCard, Eye, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { Pagination, usePagination } from '@/components/ui/pagination';
 import { toast } from 'sonner';
 
 export function AdminRefunds() {
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [refunds, setRefunds] = useState([]);
   const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, processed: 0, escalated: 0, total: 0, totalAmount: 0 });
@@ -62,7 +64,7 @@ export function AdminRefunds() {
 
   
   const overrideAndApprove = async (refund) => {
-    if (!confirm('Override organizer decision and approve this refund?')) return;
+    if (!(await confirm('Override Refund', 'Override organizer decision and approve this refund?', { variant: 'destructive' }))) return;
     setProcessing(true);
     try {
       await supabase
@@ -147,6 +149,11 @@ const processRefund = async () => {
   });
 
   const { currentPage, totalPages, totalItems, itemsPerPage, paginatedItems: paginatedRefunds, handlePageChange } = usePagination(filteredRefunds, 20);
+
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    handlePageChange(1);
+  }, [debouncedSearch, statusFilter]);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>;
 

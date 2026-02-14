@@ -8,6 +8,7 @@ import {
   Sparkles, ChevronRight, ChevronLeft, Eye, Trash2, RefreshCw,
   FileText, UserCheck, Heart, AlertCircle
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +119,7 @@ const QUILL_MODULES = {
 export function OrganizerCommunications() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
   
   // View state
   const [view, setView] = useState('list'); // list, create
@@ -379,7 +381,7 @@ export function OrganizerCommunications() {
   };
 
   const deleteCampaign = async (id) => {
-    if (!confirm('Delete this campaign?')) return;
+    if (!(await confirm('Delete Campaign', 'Delete this campaign?', { variant: 'destructive' }))) return;
     await supabase.from('email_campaigns').delete().eq('id', id);
     loadData();
   };

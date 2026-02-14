@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@/hooks/useConfirm';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
@@ -40,6 +41,7 @@ const QUILL_MODULES = {
 // ============================================================================
 
 export function AdminCommunications() {
+  const confirm = useConfirm();
   const { logAdminAction } = useAdmin();
   
   const [view, setView] = useState('list');
@@ -151,7 +153,7 @@ export function AdminCommunications() {
       return;
     }
 
-    if (!confirm(`Send this broadcast to ${recipientCount} recipients?`)) return;
+    if (!(await confirm('Send Broadcast', `Send this broadcast to ${recipientCount} recipients?`))) return;
 
     setSending(true);
     try {
@@ -249,7 +251,7 @@ export function AdminCommunications() {
   };
 
   const deleteBroadcast = async (id) => {
-    if (!confirm('Delete this broadcast record?')) return;
+    if (!(await confirm('Delete Broadcast', 'Delete this broadcast record?', { variant: 'destructive' }))) return;
     await supabase.from('admin_broadcasts').delete().eq('id', id);
     loadBroadcasts();
   };

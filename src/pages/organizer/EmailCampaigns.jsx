@@ -50,6 +50,7 @@ import {
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
 
 // Email templates
 const emailTemplates = [
@@ -113,7 +114,8 @@ export function EmailCampaigns() {
   const navigate = useNavigate();
   const location = useLocation();
   const { organizer } = useOrganizer();
-  
+  const confirm = useConfirm();
+
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState([]);
   const [events, setEvents] = useState([]);
@@ -470,7 +472,7 @@ export function EmailCampaigns() {
   };
 
   const sendCampaign = async (campaignId) => {
-    if (!confirm('Are you sure you want to send this campaign now?')) return;
+    if (!(await confirm('Send Campaign', 'Are you sure you want to send this campaign now?'))) return;
 
     setSending(true);
     try {
@@ -518,7 +520,7 @@ export function EmailCampaigns() {
   };
 
   const deleteCampaign = async (campaignId) => {
-    if (!confirm('Are you sure you want to delete this campaign?')) return;
+    if (!(await confirm('Delete Campaign', 'Are you sure you want to delete this campaign?', { variant: 'destructive' }))) return;
 
     try {
       const { error } = await supabase

@@ -4,12 +4,13 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
 import {
-  Mail, MessageSquare, Bell, Send, Clock, CheckCircle, Users, Calendar, 
+  Mail, MessageSquare, Bell, Send, Clock, CheckCircle, Users, Calendar,
   Loader2, Sparkles, ChevronRight, ChevronLeft, Eye, Trash2, RefreshCw,
   FileText, UserCheck, Heart, AlertCircle, Plus, Filter, Search,
   Phone, Globe, Zap, TrendingUp, BarChart3, Settings, Tag, Target,
   Copy, Download, Upload, MoreVertical
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -215,6 +216,7 @@ export function CommunicationHub() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
 
   // View state
   const [activeTab, setActiveTab] = useState('campaigns');
@@ -536,7 +538,7 @@ export function CommunicationHub() {
   };
 
   const deleteTemplate = async (templateId) => {
-    if (!confirm('Delete this template?')) return;
+    if (!(await confirm('Delete Template', 'Delete this template?', { variant: 'destructive' }))) return;
 
     try {
       const { error } = await supabase
@@ -1285,7 +1287,7 @@ export function CommunicationHub() {
   };
 
   const deleteCampaign = async (id) => {
-    if (!confirm('Delete this campaign?')) return;
+    if (!(await confirm('Delete Campaign', 'Delete this campaign?', { variant: 'destructive' }))) return;
     
     await supabase.from('communication_campaigns').delete().eq('id', id);
     await supabase.from('email_campaigns').delete().eq('id', id); // Also try legacy

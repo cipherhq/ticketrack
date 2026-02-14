@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { supabase } from '../../lib/supabase';
 import { MessageSquare, Plus, Edit2, Trash2, DollarSign, Package, TrendingUp } from 'lucide-react';
 
 export default function AdminWhatsAppPackages() {
+  const confirm = useConfirm();
   const [packages, setPackages] = useState([]);
   const [rates, setRates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export default function AdminWhatsAppPackages() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this package?')) return;
+    if (!(await confirm('Delete Package', 'Delete this package?', { variant: 'destructive' }))) return;
     await supabase.from('whatsapp_credit_packages').delete().eq('id', id);
     loadData();
   };

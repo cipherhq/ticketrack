@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ export function ChargebackDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { logFinanceAction } = useFinance();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [chargeback, setChargeback] = useState(null);
@@ -166,7 +168,7 @@ export function ChargebackDetail() {
   };
 
   const handleAcceptChargeback = async () => {
-    if (!confirm('Are you sure you want to accept this chargeback? The disputed amount will be deducted from the organizer balance.')) return;
+    if (!(await confirm('Accept Chargeback', 'Are you sure you want to accept this chargeback? The disputed amount will be deducted from the organizer balance.'))) return;
 
     setSubmitting(true);
     try {

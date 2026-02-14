@@ -50,6 +50,7 @@ import {
   useDraggable,
 } from '@dnd-kit/core';
 import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
 
 // ==================== CONSTANTS ====================
 
@@ -265,7 +266,8 @@ function DraggableTaskCard({ task, onEdit, onStatusChange, onDelete, subtasksCou
 export function ProjectManager() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
-  
+  const confirm = useConfirm();
+
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -555,7 +557,7 @@ export function ProjectManager() {
   };
 
   const deleteTask = async (taskId) => {
-    if (!confirm('Delete this task?')) return;
+    if (!(await confirm('Delete Task', 'Delete this task?', { variant: 'destructive' }))) return;
     try {
       const { error } = await supabase.from('event_tasks').delete().eq('id', taskId);
       if (error) throw error;

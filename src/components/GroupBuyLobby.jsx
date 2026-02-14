@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useConfirm } from '@/hooks/useConfirm'
 import { 
   Users, Clock, CheckCircle, ShoppingCart, Loader2, Copy, Share2, 
   MessageCircle, Send, X, Crown, UserPlus, ExternalLink, AlertCircle
@@ -35,6 +36,7 @@ const STATUS_CONFIG = {
 export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const confirm = useConfirm()
   const [session, setSession] = useState(null)
   const [myMembership, setMyMembership] = useState(null)
   const [messages, setMessages] = useState([])
@@ -137,7 +139,7 @@ export function GroupBuyLobby({ sessionId, onSelectTickets, onClose }) {
   }
 
   const handleLeaveGroup = async () => {
-    if (!confirm('Are you sure you want to leave this group?')) return
+    if (!(await confirm('Leave Group', 'Are you sure you want to leave this group?', { variant: 'destructive' }))) return
     
     try {
       await leaveGroup(myMembership.id)

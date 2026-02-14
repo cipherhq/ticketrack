@@ -27,6 +27,7 @@ import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
 
 // Trigger types configuration
 const TRIGGER_TYPES = [
@@ -140,6 +141,7 @@ const AUTOMATION_TEMPLATES = [
 export function CommunicationAutomations() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
 
   // State
   const [loading, setLoading] = useState(true);
@@ -400,7 +402,7 @@ export function CommunicationAutomations() {
   };
 
   const deleteAutomation = async (id) => {
-    if (!confirm('Delete this automation?')) return;
+    if (!(await confirm('Delete Automation', 'Delete this automation?', { variant: 'destructive' }))) return;
 
     try {
       const { error } = await supabase

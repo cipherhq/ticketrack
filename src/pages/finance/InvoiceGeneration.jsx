@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 
 export function InvoiceGeneration() {
   const { logFinanceAction } = useFinance();
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [invoices, setInvoices] = useState([]);
@@ -127,7 +129,7 @@ export function InvoiceGeneration() {
   };
 
   const handleBulkGenerate = async () => {
-    if (!confirm('Generate invoices for all organizers with earnings in the current month?')) {
+    if (!(await confirm('Generate Invoices', 'Generate invoices for all organizers with earnings in the current month?'))) {
       return;
     }
 

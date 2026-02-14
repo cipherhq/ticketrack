@@ -55,6 +55,7 @@ const DELAY_UNITS = [
 // For imports
 import { Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '@/hooks/useConfirm';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -63,6 +64,7 @@ import { toast } from 'sonner';
 export function DripCampaigns() {
   const navigate = useNavigate();
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
 
   // State
   const [loading, setLoading] = useState(true);
@@ -153,7 +155,7 @@ export function DripCampaigns() {
   };
 
   const deleteCampaign = async (id) => {
-    if (!confirm('Delete this drip campaign? This will also remove all enrollments.')) return;
+    if (!(await confirm('Delete Drip Campaign', 'Delete this drip campaign? This will also remove all enrollments.', { variant: 'destructive' }))) return;
     
     await supabase.from('drip_campaigns').delete().eq('id', id);
     loadData();
@@ -582,6 +584,7 @@ function CreateDripDialog({ open, onClose, organizerId, onCreated }) {
 // ============================================================================
 
 function DripBuilder({ open, onClose, campaign, organizerId }) {
+  const confirm = useConfirm();
   const [steps, setSteps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -640,7 +643,7 @@ function DripBuilder({ open, onClose, campaign, organizerId }) {
   };
 
   const deleteStep = async (stepId) => {
-    if (!confirm('Delete this step?')) return;
+    if (!(await confirm('Delete Step', 'Delete this step?', { variant: 'destructive' }))) return;
 
     await supabase
       .from('drip_campaign_steps')

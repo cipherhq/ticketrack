@@ -7,6 +7,7 @@ import {
   Circle, ChevronLeft, Settings, Bot, Plus, RefreshCw, Loader2,
   Tag, X, ArrowLeft
 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +46,7 @@ export function Inbox() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { organizer } = useOrganizer();
+  const confirm = useConfirm();
   const messagesEndRef = useRef(null);
 
   // State
@@ -726,7 +728,7 @@ function AutoResponseSettings({ organizerId }) {
   };
 
   const deleteResponse = async (id) => {
-    if (!confirm('Delete this auto-response?')) return;
+    if (!(await confirm('Delete Auto-Response', 'Delete this auto-response?', { variant: 'destructive' }))) return;
     await supabase.from('auto_responses').delete().eq('id', id);
     loadResponses();
   };
