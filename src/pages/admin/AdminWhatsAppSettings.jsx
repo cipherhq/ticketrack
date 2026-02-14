@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { toast } from 'sonner';
 
 export function AdminWhatsAppSettings() {
   const { admin, logAdminAction } = useAdmin();
@@ -99,7 +100,7 @@ export function AdminWhatsAppSettings() {
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error saving config:', error);
-      alert('Failed to save settings');
+      toast.error('Failed to save settings');
     } finally {
       setSaving(false);
     }
@@ -107,12 +108,12 @@ export function AdminWhatsAppSettings() {
 
   const handleTest = async () => {
     if (config.provider === 'manual') {
-      alert('Manual mode does not require testing.');
+      toast.info('Manual mode does not require testing.');
       return;
     }
 
     if (!config.api_key || !config.phone_number_id) {
-      alert('Please enter API key and Phone Number ID first');
+      toast.error('Please enter API key and Phone Number ID first');
       return;
     }
 
@@ -120,9 +121,9 @@ export function AdminWhatsAppSettings() {
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       setConfig({ ...config, is_verified: true });
-      alert('Connection test successful!');
+      toast.success('Connection test successful!');
     } catch (error) {
-      alert('Connection test failed.');
+      toast.error('Connection test failed.');
     } finally {
       setTesting(false);
     }

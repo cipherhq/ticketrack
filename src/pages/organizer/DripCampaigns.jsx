@@ -54,6 +54,7 @@ const DELAY_UNITS = [
 
 // For imports
 import { Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -480,7 +481,7 @@ function CreateDripDialog({ open, onClose, organizerId, onCreated }) {
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      alert('Please enter a campaign name');
+      toast.error('Please enter a campaign name');
       return;
     }
 
@@ -505,7 +506,7 @@ function CreateDripDialog({ open, onClose, organizerId, onCreated }) {
       setTriggerType('signup');
       onCreated(data);
     } catch (error) {
-      alert('Failed to create campaign: ' + error.message);
+      toast.error('Failed to create campaign: ' + error.message);
     } finally {
       setSaving(false);
     }

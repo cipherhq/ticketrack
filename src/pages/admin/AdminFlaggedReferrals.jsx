@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export function AdminFlaggedReferrals() {
   const [loading, setLoading] = useState(true);
@@ -87,7 +88,7 @@ export function AdminFlaggedReferrals() {
       loadFlagged();
     } catch (error) {
       console.error('Error approving referral:', error);
-      alert('Failed to approve');
+      toast.error('Failed to approve');
     } finally {
       setProcessing(null);
     }
@@ -118,7 +119,7 @@ export function AdminFlaggedReferrals() {
       loadFlagged();
     } catch (error) {
       console.error('Error rejecting referral:', error);
-      alert('Failed to reject');
+      toast.error('Failed to reject');
     } finally {
       setProcessing(null);
     }

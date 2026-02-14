@@ -21,6 +21,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { sendPayoutProcessedEmail, sendAdminPayoutCompletedEmail } from '@/lib/emailService';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { getFeesByCurrency } from '@/config/fees';
+import { toast } from 'sonner';
 
 export function AdminProcessPayout() {
   const navigate = useNavigate();
@@ -127,7 +128,7 @@ export function AdminProcessPayout() {
     const kycStatus = selectedOrganizer.kyc_status;
     const kycVerified = selectedOrganizer.kyc_verified;
     if (!kycVerified && kycStatus !== 'verified' && kycStatus !== 'approved') {
-      alert('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
+      toast.error('Cannot process payout: Organizer has not completed KYC verification. Please ask the organizer to complete their KYC verification first.');
       return;
     }
 
@@ -137,7 +138,7 @@ export function AdminProcessPayout() {
       const amount = parseFloat(selectedOrganizer.available_balance) || 0;
 
       if (amount <= 0) {
-        alert('Cannot process payout: organizer has no available balance.');
+        toast.error('Cannot process payout: organizer has no available balance.');
         setProcessing(false);
         return;
       }
@@ -152,7 +153,7 @@ export function AdminProcessPayout() {
         .limit(1);
 
       if (recentPayout && recentPayout.length > 0) {
-        alert(`A payout was already processed for this organizer recently (${recentPayout[0].payout_number}). Please wait and refresh before retrying.`);
+        toast.error(`A payout was already processed for this organizer recently (${recentPayout[0].payout_number}). Please wait and refresh before retrying.`);
         setProcessing(false);
         return;
       }
@@ -264,7 +265,7 @@ export function AdminProcessPayout() {
       setStep(3);
     } catch (error) {
       console.error('Payout error:', error);
-      alert('Failed to process payout');
+      toast.error('Failed to process payout');
     } finally {
       setProcessing(false);
     }

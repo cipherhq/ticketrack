@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 // Common emoji icons for event categories
 const EMOJI_OPTIONS = [
@@ -248,7 +249,7 @@ export function AdminCategories() {
 
       if (error) {
         console.error('Error deleting category:', error);
-        alert('Failed to delete category: ' + error.message);
+        toast.error('Failed to delete category: ' + error.message);
         return;
       }
 
@@ -258,7 +259,7 @@ export function AdminCategories() {
       loadCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
-      alert('An unexpected error occurred');
+      toast.error('An unexpected error occurred');
     } finally {
       setDeleting(false);
     }

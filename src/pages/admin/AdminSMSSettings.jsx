@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { getBalance } from '@/lib/termii';
 import { formatPrice, currencies } from '@/config/currencies';
+import { toast } from 'sonner';
 
 export function AdminSMSSettings() {
   const { admin, logAdminAction } = useAdmin();
@@ -112,7 +113,7 @@ export function AdminSMSSettings() {
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error saving config:', error);
-      alert('Failed to save settings');
+      toast.error('Failed to save settings');
     } finally {
       setSaving(false);
     }
@@ -120,7 +121,7 @@ export function AdminSMSSettings() {
 
   const handleCheckBalance = async () => {
     if (!config.api_key) {
-      alert('Please enter API key first');
+      toast.error('Please enter API key first');
       return;
     }
 
@@ -143,12 +144,12 @@ export function AdminSMSSettings() {
             .eq('id', existing.id);
         }
 
-        alert('Balance: ' + result.currency + ' ' + result.balance);
+        toast.info('Balance: ' + result.currency + ' ' + result.balance);
       } else {
-        alert('Failed to check balance: ' + result.error);
+        toast.info('Failed to check balance: ' + result.error);
       }
     } catch (error) {
-      alert('Error checking balance');
+      toast.error('Error checking balance');
     } finally {
       setTesting(false);
     }

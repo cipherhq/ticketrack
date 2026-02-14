@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { brand } from '@/config/brand';
+import { toast } from 'sonner';
 
 const DOCUMENT_TYPE_LABELS = {
   passport: 'Passport',
@@ -245,12 +246,12 @@ export function AdminKYCReview() {
         console.error('Failed to send approval email:', emailErr);
       }
 
-      alert('Organizer KYC verified successfully!');
+      toast.success('Organizer KYC verified successfully!');
       setReviewModal({ open: false, organizer: null });
       loadOrganizers();
     } catch (error) {
       console.error('Error approving:', error);
-      alert('Failed to approve: ' + error.message);
+      toast.error('Failed to approve: ' + error.message);
     } finally {
       setProcessing(false);
     }
@@ -259,7 +260,7 @@ export function AdminKYCReview() {
   const rejectOrganizer = async () => {
     const org = reviewModal.organizer;
     if (!org || !rejectionReason.trim()) {
-      alert('Please provide a rejection reason');
+      toast.error('Please provide a rejection reason');
       return;
     }
     setProcessing(true);
@@ -315,12 +316,12 @@ export function AdminKYCReview() {
         console.error('Failed to send rejection email:', emailErr);
       }
 
-      alert('Organizer KYC rejected. They have been notified.');
+      toast.success('Organizer KYC rejected. They have been notified.');
       setReviewModal({ open: false, organizer: null });
       loadOrganizers();
     } catch (error) {
       console.error('Error rejecting:', error);
-      alert('Failed to reject: ' + error.message);
+      toast.error('Failed to reject: ' + error.message);
     } finally {
       setProcessing(false);
     }

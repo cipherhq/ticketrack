@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { toast } from 'sonner';
 
 const availablePermissions = [
   { id: 'dashboard', label: 'View Dashboard', group: 'General' },
@@ -101,7 +102,7 @@ export function AdminRoles() {
 
   const handleAddAdmin = async () => {
     if (!newAdmin.email) {
-      alert('Please enter an email address');
+      toast.error('Please enter an email address');
       return;
     }
 
@@ -115,7 +116,7 @@ export function AdminRoles() {
         .single();
 
       if (findError || !user) {
-        alert('User not found. They must have an account first.');
+        toast.error('User not found. They must have an account first.');
         setProcessing(false);
         return;
       }
@@ -132,13 +133,13 @@ export function AdminRoles() {
       if (error) throw error;
 
       await logAdminAction('admin_added', 'profile', user.id, { role: newAdmin.role });
-      alert('Admin added successfully!');
+      toast.success('Admin added successfully!');
       setAddAdminDialogOpen(false);
       setNewAdmin({ email: '', role: 'admin' });
       loadAdmins();
     } catch (error) {
       console.error('Error adding admin:', error);
-      alert('Failed to add admin');
+      toast.error('Failed to add admin');
     } finally {
       setProcessing(false);
     }
@@ -157,12 +158,12 @@ export function AdminRoles() {
       if (error) throw error;
 
       await logAdminAction('admin_role_updated', 'profile', selectedAdmin.id, { role: selectedAdmin.admin_role });
-      alert('Role updated successfully!');
+      toast.success('Role updated successfully!');
       setEditAdminDialogOpen(false);
       loadAdmins();
     } catch (error) {
       console.error('Error updating role:', error);
-      alert('Failed to update role');
+      toast.error('Failed to update role');
     } finally {
       setProcessing(false);
     }
@@ -170,7 +171,7 @@ export function AdminRoles() {
 
   const handleRemoveAdmin = async (adminUser) => {
     if (adminUser.id === admin.id) {
-      alert('You cannot remove yourself as admin');
+      toast.error('You cannot remove yourself as admin');
       return;
     }
 
@@ -189,11 +190,11 @@ export function AdminRoles() {
       if (error) throw error;
 
       await logAdminAction('admin_removed', 'profile', adminUser.id);
-      alert('Admin removed successfully');
+      toast.success('Admin removed successfully');
       loadAdmins();
     } catch (error) {
       console.error('Error removing admin:', error);
-      alert('Failed to remove admin');
+      toast.error('Failed to remove admin');
     } finally {
       setProcessing(false);
     }

@@ -27,6 +27,7 @@ import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { Pagination } from '@/components/ui/pagination';
+import { toast } from 'sonner';
 
 // Source type configuration
 const SOURCE_CONFIG = {
@@ -268,7 +269,7 @@ export function ContactManagement() {
 
   const addContact = async () => {
     if (!addForm.email && !addForm.phone) {
-      alert('Please provide either email or phone');
+      toast.error('Please provide either email or phone');
       return;
     }
 
@@ -297,7 +298,7 @@ export function ContactManagement() {
       loadData();
     } catch (error) {
       console.error('Error adding contact:', error);
-      alert('Failed to add contact: ' + error.message);
+      toast.error('Failed to add contact: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -405,7 +406,7 @@ export function ContactManagement() {
       loadStats();
     } catch (error) {
       console.error('Error toggling opt-in:', error);
-      alert('Failed to update preference');
+      toast.error('Failed to update preference');
     }
   };
 
@@ -421,7 +422,7 @@ export function ContactManagement() {
       if (eventsError) throw eventsError;
 
       if (!events || events.length === 0) {
-        alert('No events found to sync contacts from');
+        toast.info('No events found to sync contacts from');
         setSyncing(false);
         return;
       }
@@ -452,7 +453,7 @@ export function ContactManagement() {
       const allAttendees = [...(tickets || []), ...(orders || [])];
 
       if (allAttendees.length === 0) {
-        alert('No attendees found to sync');
+        toast.info('No attendees found to sync');
         setSyncing(false);
         return;
       }
@@ -491,7 +492,7 @@ export function ContactManagement() {
       const newContacts = Array.from(uniqueContacts.values());
 
       if (newContacts.length === 0) {
-        alert('All attendees are already in your contacts!');
+        toast.info('All attendees are already in your contacts!');
         await loadData();
         setSyncing(false);
         return;
@@ -506,11 +507,11 @@ export function ContactManagement() {
         throw insertError;
       }
 
-      alert(`Successfully synced ${newContacts.length} new contacts from ticket purchases!`);
+      toast.success(`Successfully synced ${newContacts.length} new contacts from ticket purchases!`);
       await loadData();
     } catch (error) {
       console.error('Error syncing contacts:', error);
-      alert('Failed to sync contacts: ' + error.message);
+      toast.error('Failed to sync contacts: ' + error.message);
     } finally {
       setSyncing(false);
     }

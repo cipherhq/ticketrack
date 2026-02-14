@@ -33,6 +33,7 @@ import {
   DollarSign, Percent, Globe, Building2, Edit2, Save, 
   Loader2, Calculator, AlertCircle, CheckCircle, RefreshCw, ArrowRightLeft
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CURRENCY_SYMBOLS = {
   USD: '$', GBP: '£', EUR: '€', NGN: '₦', GHS: '₵', 
@@ -136,7 +137,7 @@ export function AdminFeeManagement() {
       loadData();
     } catch (error) {
       console.error('Error saving country fees:', error);
-      alert('Failed to save fees');
+      toast.error('Failed to save fees');
     } finally {
       setSaving(false);
     }
@@ -184,7 +185,7 @@ export function AdminFeeManagement() {
       loadData();
     } catch (error) {
       console.error('Error saving organizer fees:', error);
-      alert('Failed to save fees');
+      toast.error('Failed to save fees');
     } finally {
       setSaving(false);
     }

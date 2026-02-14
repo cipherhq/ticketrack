@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatMultiCurrency, formatMultiCurrencyCompact, formatPrice } from '@/config/currencies';
+import { toast } from 'sonner';
 
 export function OrganizerPromoters() {
   const { organizer } = useOrganizer();
@@ -219,13 +220,13 @@ export function OrganizerPromoters() {
         await supabase.from('promoter_events').insert(eventAssignments);
       }
 
-      alert('Promoter added successfully!');
+      toast.success('Promoter added successfully!');
       setIsAddOpen(false);
       setNewPromoter({ full_name: '', email: '', phone: '', short_code: '', commission_rate: 10, event_ids: [] });
       loadData();
     } catch (error) {
       console.error('Error adding promoter:', error);
-      alert('Error adding promoter: ' + error.message);
+      toast.error('Error adding promoter: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -248,12 +249,12 @@ export function OrganizerPromoters() {
         })
         .eq('id', selectedPromoter.id);
 
-      alert('Promoter updated!');
+      toast.success('Promoter updated!');
       setIsEditOpen(false);
       loadData();
     } catch (error) {
       console.error('Error updating promoter:', error);
-      alert('Error: ' + error.message);
+      toast.error('Error: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -282,14 +283,14 @@ export function OrganizerPromoters() {
         })
         .eq('id', selectedPromoter.id);
 
-      alert('Payment recorded!');
+      toast.success('Payment recorded!');
       setIsPayOpen(false);
       setPaymentAmount('');
       setPaymentNotes('');
       loadData();
     } catch (error) {
       console.error('Error recording payment:', error);
-      alert('Error: ' + error.message);
+      toast.error('Error: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -307,11 +308,11 @@ export function OrganizerPromoters() {
         .eq('promoter_id', promoter.id)
         .in('event_id', eventIds);
 
-      alert('Promoter removed from your events!');
+      toast.success('Promoter removed from your events!');
       loadData();
     } catch (error) {
       console.error('Error removing promoter:', error);
-      alert('Error: ' + error.message);
+      toast.error('Error: ' + error.message);
     }
   };
 

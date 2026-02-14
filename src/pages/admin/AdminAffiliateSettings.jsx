@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { toast } from 'sonner';
 
 export function AdminAffiliateSettings() {
   const [loading, setLoading] = useState(true);
@@ -184,10 +185,10 @@ export function AdminAffiliateSettings() {
       }
 
       if (error) throw error;
-      alert('Settings saved successfully!');
+      toast.success('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to save settings: ' + error.message);
+      toast.error('Failed to save settings: ' + error.message);
     } finally {
       setSaving(false);
     }

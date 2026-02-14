@@ -24,6 +24,7 @@ import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { Pagination, usePagination } from '@/components/ui/pagination';
 import { sendTicketPurchaseEmail } from '@/lib/emailService';
+import { toast } from 'sonner';
 
 export function ManageAttendees() {
   const navigate = useNavigate();
@@ -322,7 +323,7 @@ export function ManageAttendees() {
 
   const resendTicket = async (attendee) => {
     if (!attendee?.email || !attendee?.id) {
-      alert('Invalid attendee data');
+      toast.error('Invalid attendee data');
       return;
     }
 
@@ -379,14 +380,14 @@ export function ManageAttendees() {
 
       if (emailResult?.error) {
         console.warn('Email sending issue:', emailResult.error);
-        alert(`Ticket details resent to ${attendee.email}\n\nNote: Email delivery may be delayed.`);
+        toast.info(`Ticket details resent to ${attendee.email}\n\nNote: Email delivery may be delayed.`);
       } else {
-        alert(`✓ Ticket confirmation resent to ${attendee.email}`);
+        toast.success(`✓ Ticket confirmation resent to ${attendee.email}`);
       }
 
     } catch (error) {
       console.error('Error resending ticket:', error);
-      alert(`Failed to resend ticket: ${error.message}`);
+      toast.error(`Failed to resend ticket: ${error.message}`);
     } finally {
       setResending(null);
     }
@@ -411,7 +412,7 @@ export function ManageAttendees() {
       ));
     } catch (error) {
       console.error('Error updating check-in status:', error);
-      alert('Failed to update check-in status');
+      toast.error('Failed to update check-in status');
     }
   };
 
@@ -434,7 +435,7 @@ export function ManageAttendees() {
       ));
     } catch (error) {
       console.error('Error updating check-in status:', error);
-      alert('Failed to update check-in status');
+      toast.error('Failed to update check-in status');
     }
   };
 

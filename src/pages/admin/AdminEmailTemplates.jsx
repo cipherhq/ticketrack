@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { toast } from 'sonner';
 
 const defaultTemplates = {
   purchaseCustomer: {
@@ -151,10 +152,10 @@ export function AdminEmailTemplates() {
       if (error) throw error;
 
       await logAdminAction('email_template_updated', 'platform_settings', null, { template: selectedTemplate });
-      alert('Template saved successfully!');
+      toast.success('Template saved successfully!');
     } catch (error) {
       console.error('Error saving template:', error);
-      alert('Failed to save template');
+      toast.error('Failed to save template');
     } finally {
       setSaving(false);
     }

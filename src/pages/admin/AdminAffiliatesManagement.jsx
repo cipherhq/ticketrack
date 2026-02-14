@@ -35,6 +35,7 @@ import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { useAdmin } from '@/contexts/AdminContext';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 export function AdminAffiliatesManagement() {
   const { logAdminAction } = useAdmin();
@@ -210,7 +211,7 @@ export function AdminAffiliatesManagement() {
           reason: actionReason
         });
         
-        alert('Affiliate suspended successfully');
+        toast.success('Affiliate suspended successfully');
 
       } else if (actionType === 'activate') {
         const { error } = await supabase
@@ -228,7 +229,7 @@ export function AdminAffiliatesManagement() {
           email: selectedAffiliate.email
         });
         
-        alert('Affiliate activated successfully');
+        toast.success('Affiliate activated successfully');
 
       } else if (actionType === 'ban') {
         const { error } = await supabase
@@ -247,7 +248,7 @@ export function AdminAffiliatesManagement() {
           reason: actionReason
         });
         
-        alert('Affiliate banned successfully');
+        toast.success('Affiliate banned successfully');
 
       } else if (actionType === 'reset_earnings') {
         const { error } = await supabase
@@ -266,14 +267,14 @@ export function AdminAffiliatesManagement() {
           reason: actionReason
         });
         
-        alert('Affiliate earnings reset successfully');
+        toast.success('Affiliate earnings reset successfully');
       }
 
       setActionDialogOpen(false);
       loadAffiliates();
     } catch (error) {
       console.error('Action error:', error);
-      alert('Failed to perform action: ' + error.message);
+      toast.error('Failed to perform action: ' + error.message);
     } finally {
       setProcessing(false);
     }

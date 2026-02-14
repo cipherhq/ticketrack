@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { toast } from 'sonner';
 
 export function AdminAffiliates() {
   const { logAdminAction } = useAdmin();
@@ -97,7 +98,7 @@ export function AdminAffiliates() {
           .eq('id', selectedAffiliate.id);
         if (error) throw error;
         await logAdminAction('affiliate_approved', 'promoter', selectedAffiliate.id);
-        alert('Affiliate approved successfully');
+        toast.success('Affiliate approved successfully');
       } else if (actionType === 'suspend') {
         const { error } = await supabase
           .from('promoters')
@@ -105,7 +106,7 @@ export function AdminAffiliates() {
           .eq('id', selectedAffiliate.id);
         if (error) throw error;
         await logAdminAction('affiliate_suspended', 'promoter', selectedAffiliate.id);
-        alert('Affiliate suspended');
+        toast.success('Affiliate suspended');
       } else if (actionType === 'activate') {
         const { error } = await supabase
           .from('promoters')
@@ -113,7 +114,7 @@ export function AdminAffiliates() {
           .eq('id', selectedAffiliate.id);
         if (error) throw error;
         await logAdminAction('affiliate_activated', 'promoter', selectedAffiliate.id);
-        alert('Affiliate activated');
+        toast.success('Affiliate activated');
       } else if (actionType === 'payout') {
         // Mark commission as paid
         const { error } = await supabase
@@ -124,14 +125,14 @@ export function AdminAffiliates() {
           .eq('id', selectedAffiliate.id);
         if (error) throw error;
         await logAdminAction('affiliate_payout', 'promoter', selectedAffiliate.id, { amount: selectedAffiliate.total_commission - selectedAffiliate.paid_commission });
-        alert('Commission marked as paid');
+        toast.info('Commission marked as paid');
       }
 
       setActionDialogOpen(false);
       loadAffiliates();
     } catch (error) {
       console.error('Action error:', error);
-      alert('Failed to perform action');
+      toast.error('Failed to perform action');
     } finally {
       setProcessing(false);
     }

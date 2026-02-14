@@ -402,6 +402,8 @@ export function OrganizerHome() {
     const earnedByCurrency = {};
     const promoterEarnedByCurrency = {}; // Per-promoter earnings by currency
 
+    let unpaidByCurrency = {};
+
     if (promoterIds.length > 0) {
       const { data: salesData } = await supabase
         .from('promoter_sales')
@@ -414,7 +416,7 @@ export function OrganizerHome() {
         ticketsSold += sale.tickets_sold || 0;
         revenueByCurrency[currency] = (revenueByCurrency[currency] || 0) + parseFloat(sale.sale_amount || 0);
         earnedByCurrency[currency] = (earnedByCurrency[currency] || 0) + parseFloat(sale.commission_amount || 0);
-        
+
         // Track per-promoter earnings by currency
         if (!promoterEarnedByCurrency[promoterId]) {
           promoterEarnedByCurrency[promoterId] = {};
@@ -436,7 +438,6 @@ export function OrganizerHome() {
       });
 
       // Calculate unpaid by currency
-      const unpaidByCurrency = {};
       Object.keys(earnedByCurrency).forEach(currency => {
         const unpaid = (earnedByCurrency[currency] || 0) - (paidByCurrency[currency] || 0);
         if (unpaid > 0) unpaidByCurrency[currency] = unpaid;
@@ -447,7 +448,7 @@ export function OrganizerHome() {
       activePromoters,
       ticketsSold,
       revenueByCurrency,
-      unpaidByCurrency: typeof unpaidByCurrency !== 'undefined' ? unpaidByCurrency : {},
+      unpaidByCurrency,
     });
 
     // Top promoters by sales - enriched with earnedByCurrency

@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
 import { sendRefundCompletedOrganizerEmail } from '@/lib/emailService';
 import { Pagination, usePagination } from '@/components/ui/pagination';
+import { toast } from 'sonner';
 
 export function OrganizerRefunds() {
   const { organizer } = useOrganizer();
@@ -46,41 +47,60 @@ export function OrganizerRefunds() {
 
       if (refundError) throw refundError;
 
-      // Fetch related data separately
-      const enrichedRefunds = [];
-      for (const refund of (refundData || [])) {
-        let ticket = null, event = null, user = null, order = null;
-        
-        if (refund.ticket_id) {
-          const { data: t } = await supabase.from('tickets').select('id, ticket_code, attendee_name, attendee_email, total_price, order_id').eq('id', refund.ticket_id).maybeSingle();
-          ticket = t;
-        }
-        if (refund.event_id) {
-          const { data: e } = await supabase.from('events').select('id, title, start_date, image_url').eq('id', refund.event_id).maybeSingle();
-          event = e;
-        }
-        if (refund.user_id) {
-          const { data: u } = await supabase.from('profiles').select('full_name, email').eq('id', refund.user_id).maybeSingle();
-          user = u;
-        }
-        // Fetch order to check if it's a Connect order
-        if (refund.order_id) {
-          const { data: o } = await supabase.from('orders').select('id, is_stripe_connect, stripe_account_id, payment_reference').eq('id', refund.order_id).maybeSingle();
-          order = o;
-        } else if (ticket?.order_id) {
-          const { data: o } = await supabase.from('orders').select('id, is_stripe_connect, stripe_account_id, payment_reference').eq('id', ticket.order_id).maybeSingle();
-          order = o;
-        }
-        
-        enrichedRefunds.push({ 
-          ...refund, 
-          ticket, 
-          event, 
-          user, 
-          order,
-          isStripeConnect: order?.is_stripe_connect || refund.is_stripe_connect || false
-        });
+      // Batch fetch related data instead of per-refund queries
+      const refunds = refundData || [];
+      const ticketIds = [...new Set(refunds.map(r => r.ticket_id).filter(Boolean))];
+      const eventIds = [...new Set(refunds.map(r => r.event_id).filter(Boolean))];
+      const userIds = [...new Set(refunds.map(r => r.user_id).filter(Boolean))];
+      const orderIds = [...new Set(refunds.map(r => r.order_id).filter(Boolean))];
+
+      const [ticketsRes, eventsRes, usersRes, ordersRes] = await Promise.all([
+        ticketIds.length > 0
+          ? supabase.from('tickets').select('id, ticket_code, attendee_name, attendee_email, total_price, order_id').in('id', ticketIds)
+          : { data: [] },
+        eventIds.length > 0
+          ? supabase.from('events').select('id, title, start_date, image_url').in('id', eventIds)
+          : { data: [] },
+        userIds.length > 0
+          ? supabase.from('profiles').select('id, full_name, email').in('id', userIds)
+          : { data: [] },
+        orderIds.length > 0
+          ? supabase.from('orders').select('id, is_stripe_connect, stripe_account_id, payment_reference').in('id', orderIds)
+          : { data: [] },
+      ]);
+
+      const ticketMap = {};
+      (ticketsRes.data || []).forEach(t => { ticketMap[t.id] = t; });
+      const eventMap = {};
+      (eventsRes.data || []).forEach(e => { eventMap[e.id] = e; });
+      const userMap = {};
+      (usersRes.data || []).forEach(u => { userMap[u.id] = u; });
+      const orderMap = {};
+      (ordersRes.data || []).forEach(o => { orderMap[o.id] = o; });
+
+      // Fetch any orders referenced via ticket.order_id that weren't in refund.order_id
+      const ticketOrderIds = [...new Set(
+        (ticketsRes.data || []).map(t => t.order_id).filter(id => id && !orderMap[id])
+      )];
+      if (ticketOrderIds.length > 0) {
+        const { data: extraOrders } = await supabase.from('orders').select('id, is_stripe_connect, stripe_account_id, payment_reference').in('id', ticketOrderIds);
+        (extraOrders || []).forEach(o => { orderMap[o.id] = o; });
       }
+
+      const enrichedRefunds = refunds.map(refund => {
+        const ticket = ticketMap[refund.ticket_id] || null;
+        const event = eventMap[refund.event_id] || null;
+        const user = userMap[refund.user_id] || null;
+        const order = orderMap[refund.order_id] || (ticket ? orderMap[ticket.order_id] : null) || null;
+        return {
+          ...refund,
+          ticket,
+          event,
+          user,
+          order,
+          isStripeConnect: order?.is_stripe_connect || refund.is_stripe_connect || false,
+        };
+      });
 
       setRefunds(enrichedRefunds);
 
@@ -153,7 +173,7 @@ export function OrganizerRefunds() {
       loadRefunds();
     } catch (error) {
       console.error('Error updating refund:', error);
-      alert('Failed to update refund request');
+      toast.error('Failed to update refund request');
     } finally {
       setActionLoading(false);
     }
@@ -193,10 +213,10 @@ export function OrganizerRefunds() {
       setConnectRefundNotes('');
       loadRefunds();
 
-      alert(`Refund processed successfully! Refund ID: ${data.refundId}`);
+      toast.success(`Refund processed successfully! Refund ID: ${data.refundId}`);
     } catch (error) {
       console.error('Error processing Connect refund:', error);
-      alert(`Failed to process refund: ${error.message}`);
+      toast.error(`Failed to process refund: ${error.message}`);
     } finally {
       setProcessingConnectRefund(false);
     }
@@ -243,7 +263,7 @@ export function OrganizerRefunds() {
       loadRefunds();
     } catch (error) {
       console.error('Error rejecting refund:', error);
-      alert('Failed to reject refund request');
+      toast.error('Failed to reject refund request');
     } finally {
       setProcessingConnectRefund(false);
     }
@@ -506,7 +526,7 @@ export function OrganizerRefunds() {
                           size="sm"
                           variant="ghost"
                           className="rounded-xl text-muted-foreground"
-                          onClick={() => alert('Notes: ' + (refund.organizer_notes || refund.admin_notes))}
+                          onClick={() => toast.info('Notes: ' + (refund.organizer_notes || refund.admin_notes))}
                         >
                           <MessageSquare className="w-4 h-4 mr-1" /> View Notes
                         </Button>

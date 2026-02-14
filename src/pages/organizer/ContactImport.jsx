@@ -20,6 +20,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 // Required and optional fields
 const FIELD_MAPPINGS = [
@@ -79,7 +80,7 @@ export function ContactImport() {
     // Validate file type
     const validTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
     if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv')) {
-      alert('Please upload a CSV file');
+      toast.error('Please upload a CSV file');
       return;
     }
 
@@ -92,7 +93,7 @@ export function ContactImport() {
     const lines = text.split('\n').filter(line => line.trim());
     
     if (lines.length < 2) {
-      alert('File must contain at least a header row and one data row');
+      toast.error('File must contain at least a header row and one data row');
       return;
     }
 
@@ -244,7 +245,7 @@ export function ContactImport() {
 
   const startImport = async () => {
     if (!consentConfirmed) {
-      alert('Please confirm consent before importing');
+      toast.error('Please confirm consent before importing');
       return;
     }
 

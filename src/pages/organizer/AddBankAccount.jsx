@@ -18,6 +18,7 @@ import {
 } from '../../components/ui/select';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 // ==================== BANK DATA ====================
 
@@ -562,7 +563,7 @@ export function AddBankAccount() {
       setIsVerified(false);
       await loadBankAccounts();
 
-      alert(editingAccountId ? 'Bank account updated successfully!' : 'Bank account added successfully!');
+      toast.success(editingAccountId ? 'Bank account updated successfully!' : 'Bank account added successfully!');
     } catch (error) {
       console.error('Error saving bank account:', error);
       setError(error.message || 'Failed to save bank account. Please try again.');
@@ -622,7 +623,7 @@ export function AddBankAccount() {
       await loadBankAccounts();
     } catch (error) {
       console.error('Error deleting account:', error);
-      alert('Failed to delete bank account');
+      toast.error('Failed to delete bank account');
     }
   };
 

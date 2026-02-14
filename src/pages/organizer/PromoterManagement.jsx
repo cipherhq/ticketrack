@@ -54,6 +54,7 @@ import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { sendPromoterInviteEmail } from '@/lib/emailService';
+import { toast } from 'sonner';
 
 
 
@@ -239,10 +240,10 @@ export function PromoterManagement() {
       console.log('📧 Email result:', emailResult);
 
       if (emailResult?.success) {
-        alert(`✅ Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}`);
+        toast.success(`✅ Invitation sent to ${inviteForm.email}!\n\nPromo Code: ${promoCode}`);
       } else {
         console.error('Email failed:', emailResult);
-        alert(`⚠️ Promoter added but email may not have been sent.\n\nPromo Code: ${promoCode}\n\nError: ${emailResult?.error || 'Unknown'}\n\nPlease share the code manually or try resending.`);
+        toast.error(`⚠️ Promoter added but email may not have been sent.\n\nPromo Code: ${promoCode}\n\nError: ${emailResult?.error || 'Unknown'}\n\nPlease share the code manually or try resending.`);
       }
 
       await loadPromoters();
@@ -272,7 +273,7 @@ export function PromoterManagement() {
       await loadPromoters();
     } catch (err) {
       console.error('Error activating promoter:', err);
-      alert('Failed to activate promoter');
+      toast.error('Failed to activate promoter');
     }
   };
 
@@ -287,7 +288,7 @@ export function PromoterManagement() {
       await loadPromoters();
     } catch (err) {
       console.error('Error deactivating promoter:', err);
-      alert('Failed to deactivate promoter');
+      toast.error('Failed to deactivate promoter');
     }
   };
 
@@ -304,7 +305,7 @@ export function PromoterManagement() {
       await loadPromoters();
     } catch (err) {
       console.error('Error deleting promoter:', err);
-      alert('Failed to remove promoter');
+      toast.error('Failed to remove promoter');
     }
   };
 
@@ -328,14 +329,14 @@ export function PromoterManagement() {
       );
 
       if (emailResult?.success) {
-        alert(`✅ Invitation resent to ${promoter.email}!`);
+        toast.success(`✅ Invitation resent to ${promoter.email}!`);
       } else {
         console.error('Email failed:', emailResult?.error);
-        alert(`❌ Failed to send email. Error: ${emailResult?.error || 'Unknown error'}\n\nPlease share the promo code manually: ${promoter.short_code || promoter.referral_code}`);
+        toast.error(`❌ Failed to send email. Error: ${emailResult?.error || 'Unknown error'}\n\nPlease share the promo code manually: ${promoter.short_code || promoter.referral_code}`);
       }
     } catch (err) {
       console.error('Error resending invitation:', err);
-      alert('Failed to resend invitation. Please try again.');
+      toast.error('Failed to resend invitation. Please try again.');
     }
   };
 
@@ -377,7 +378,7 @@ export function PromoterManagement() {
       setIsPayoutOpen(false);
       setSelectedPromoter(null);
       setPayoutAmount('');
-      alert('Payout recorded successfully!');
+      toast.success('Payout recorded successfully!');
     } catch (err) {
       console.error('Error processing payout:', err);
       setError('Failed to process payout');
@@ -388,7 +389,7 @@ export function PromoterManagement() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    toast.success('Copied to clipboard!');
   };
 
   const filteredPromoters = promoters.filter((p) => {

@@ -37,6 +37,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 // PDF export
 import jsPDF from 'jspdf'
+import { toast } from 'sonner';
 
 // =============================================================================
 // OBJECT LIBRARY - Comprehensive Categories and Items
@@ -1480,13 +1481,13 @@ export function VenueLayoutDesigner() {
 
       if (error) {
         console.error('Error loading layout:', error)
-        alert(`Failed to load layout: ${error.message}`)
+        toast.error(`Failed to load layout: ${error.message}`)
         navigate(`/organizer/venues/${venueId}/layouts`)
         return
       }
 
       if (!data) {
-        alert('Layout not found')
+        toast.info('Layout not found')
         navigate(`/organizer/venues/${venueId}/layouts`)
         return
       }
@@ -1513,7 +1514,7 @@ export function VenueLayoutDesigner() {
       setHistoryIndex(0)
     } catch (error) {
       console.error('Error loading layout:', error)
-      alert(`An error occurred while loading the layout: ${error.message || 'Unknown error'}`)
+      toast.error(`An error occurred while loading the layout: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -1955,17 +1956,17 @@ export function VenueLayoutDesigner() {
     }
 
     if (!currentUserId) {
-      alert('User authentication required. Please log in again.')
+      toast.error('User authentication required. Please log in again.')
       return
     }
 
     if (!organizer?.id) {
-      alert('Organizer information not available. Please refresh the page.')
+      toast.error('Organizer information not available. Please refresh the page.')
       return
     }
 
     if (!venueId) {
-      alert('Venue ID is missing. Please go back and try again.')
+      toast.error('Venue ID is missing. Please go back and try again.')
       return
     }
 
@@ -2006,7 +2007,7 @@ export function VenueLayoutDesigner() {
           console.error('Error updating layout:', error)
           setSaveStatus('error')
           setTimeout(() => setSaveStatus(null), 3000)
-          alert(`Failed to save layout: ${error.message}`)
+          toast.error(`Failed to save layout: ${error.message}`)
           return
         }
 
@@ -2037,7 +2038,7 @@ export function VenueLayoutDesigner() {
           console.error('Error creating layout:', error)
           setSaveStatus('error')
           setTimeout(() => setSaveStatus(null), 3000)
-          alert(`Failed to create layout: ${error.message}`)
+          toast.error(`Failed to create layout: ${error.message}`)
           return
         }
 
@@ -2052,7 +2053,7 @@ export function VenueLayoutDesigner() {
       console.error('Error saving layout:', error)
       setSaveStatus('error')
       setTimeout(() => setSaveStatus(null), 3000)
-      alert(`An unexpected error occurred: ${error.message || 'Please try again.'}`)
+      toast.error(`An unexpected error occurred: ${error.message || 'Please try again.'}`)
     } finally {
       setSaving(false)
     }
@@ -2163,7 +2164,7 @@ export function VenueLayoutDesigner() {
       }
     } catch (error) {
       console.error('Error exporting PDF:', error)
-      alert('Failed to export PDF. Please try again.')
+      toast.error('Failed to export PDF. Please try again.')
     }
   }, [layoutName, canvasWidth, canvasHeight, objects])
 
@@ -2593,7 +2594,7 @@ Keep responses concise and actionable. Use bullet points and emojis for clarity.
     setLayoutName(`${answers.eventType.charAt(0).toUpperCase() + answers.eventType.slice(1)} Event Layout`)
     
     // Show success message
-    alert(`✅ Layout generated successfully!\n\n• ${tablesNeeded || 'Theater'} ${answers.seatingStyle === 'theater' ? 'rows' : 'tables'}\n• ${guestCount} guests capacity\n• All requested features included`)
+    toast.success(`✅ Layout generated successfully!\n\n• ${tablesNeeded || 'Theater'} ${answers.seatingStyle === 'theater' ? 'rows' : 'tables'}\n• ${guestCount} guests capacity\n• All requested features included`)
   }, [questionnaireAnswers, saveToHistory])
 
   // =============================================================================

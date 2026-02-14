@@ -27,6 +27,7 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { toast } from 'sonner';
 
 export function AdminOrders() {
   const [loading, setLoading] = useState(true);
@@ -319,13 +320,13 @@ export function AdminOrders() {
         }
       }
 
-      alert('Refund processed successfully. Note: Actual payment refund must be processed manually through the payment provider.');
+      toast.info('Refund processed successfully. Note: Actual payment refund must be processed manually through the payment provider.');
       
       setRefundDialog(false);
       loadOrders();
     } catch (error) {
       console.error('Refund error:', error);
-      alert('Failed to process refund');
+      toast.error('Failed to process refund');
     } finally {
       setRefunding(false);
     }

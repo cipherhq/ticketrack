@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 // ============================================================================
 // CONSTANTS
@@ -267,7 +268,7 @@ export function Inbox() {
       setReplyText('');
     } catch (error) {
       console.error('Failed to send reply:', error);
-      alert('Failed to send message: ' + error.message);
+      toast.error('Failed to send message: ' + error.message);
     } finally {
       setSending(false);
     }
@@ -677,7 +678,7 @@ function AutoResponseSettings({ organizerId }) {
 
   const saveResponse = async () => {
     if (!form.name || !form.response_message) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -710,7 +711,7 @@ function AutoResponseSettings({ organizerId }) {
       });
       loadResponses();
     } catch (error) {
-      alert('Failed to save: ' + error.message);
+      toast.error('Failed to save: ' + error.message);
     } finally {
       setSaving(false);
     }

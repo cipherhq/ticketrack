@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { toast } from 'sonner';
 
 export function AdminSMSPackages() {
   const { logAdminAction } = useAdmin();
@@ -95,7 +96,7 @@ export function AdminSMSPackages() {
 
   const handleSave = async () => {
     if (!form.name || !form.credits || !form.price_ngn) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
     setSaving(true);
@@ -131,7 +132,7 @@ export function AdminSMSPackages() {
       loadPackages();
     } catch (error) {
       console.error('Error saving package:', error);
-      alert('Failed to save package: ' + error.message);
+      toast.error('Failed to save package: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -143,7 +144,7 @@ export function AdminSMSPackages() {
       await supabase.from('communication_credit_packages').delete().eq('id', pkg.id);
       loadPackages();
     } catch (error) {
-      alert('Failed to delete');
+      toast.error('Failed to delete');
     }
   };
 

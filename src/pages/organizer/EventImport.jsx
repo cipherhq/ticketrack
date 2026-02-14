@@ -30,6 +30,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { FieldMappingEditor } from '@/components/FieldMappingEditor'
+import { toast } from 'sonner';
 
 // Platform logos and info
 const PLATFORMS = {
@@ -173,11 +174,11 @@ export default function EventImport() {
       } else if (platform.authType === 'oauth2') {
         // Redirect to OAuth flow
         // This would typically open a popup or redirect
-        alert('OAuth integration coming soon. For now, use API key method.')
+        toast.info('OAuth integration coming soon. For now, use API key method.')
       }
     } catch (error) {
       console.error('Connection error:', error)
-      alert('Failed to connect: ' + error.message)
+      toast.error('Failed to connect: ' + error.message)
     } finally {
       setConnecting(false)
     }
@@ -231,7 +232,7 @@ export default function EventImport() {
       loadData()
     } catch (error) {
       console.error('Save mappings error:', error)
-      alert('Failed to save mappings: ' + error.message)
+      toast.error('Failed to save mappings: ' + error.message)
     } finally {
       setSavingMappings(false)
     }
@@ -297,14 +298,14 @@ export default function EventImport() {
       const result = await response.json()
 
       if (result.success) {
-        alert(`Import complete! ${result.stats.imported} events imported, ${result.stats.updated} updated.`)
+        toast.success(`Import complete! ${result.stats.imported} events imported, ${result.stats.updated} updated.`)
         loadData()
       } else {
         throw new Error(result.error)
       }
     } catch (error) {
       console.error('Import error:', error)
-      alert('Import failed: ' + error.message)
+      toast.error('Import failed: ' + error.message)
     } finally {
       setImporting(false)
     }

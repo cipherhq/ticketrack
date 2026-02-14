@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOrCreateWallet, getCreditPackages, createPurchase, completePurchase } from '@/lib/smsWallet';
+import { toast } from 'sonner';
 
 export function SMSCredits() {
   const { user } = useAuth();
@@ -76,18 +77,18 @@ export function SMSCredits() {
 
   const handlePurchase = function(pkg) {
     if (!organizer) {
-      alert('Organizer profile not found');
+      toast.error('Organizer profile not found');
       return;
     }
 
     if (!window.PaystackPop) {
-      alert('Payment system not loaded. Please refresh the page.');
+      toast.error('Payment system not loaded. Please refresh the page.');
       return;
     }
 
     const email = organizer.email || organizer.business_email || user?.email;
     if (!email) {
-      alert('No email found. Please update your profile.');
+      toast.error('No email found. Please update your profile.');
       return;
     }
 
@@ -121,11 +122,11 @@ export function SMSCredits() {
         callback: function(response) {
           console.log('Paystack success:', response);
           completePurchase(purchase.id).then(function() {
-            alert('Payment successful! ' + totalCredits + ' SMS credits added.');
+            toast.success('Payment successful! ' + totalCredits + ' SMS credits added.');
             loadData();
           }).catch(function(error) {
             console.error('Error completing purchase:', error);
-            alert('Payment received but credits not added. Contact support with ref: ' + reference);
+            toast.success('Payment received but credits not added. Contact support with ref: ' + reference);
           }).finally(function() {
             setPurchasing(false);
             setSelectedPackage(null);
@@ -141,7 +142,7 @@ export function SMSCredits() {
       handler.openIframe();
     }).catch(function(error) {
       console.error('Error creating purchase:', error);
-      alert('Failed to initiate payment: ' + error.message);
+      toast.error('Failed to initiate payment: ' + error.message);
       setPurchasing(false);
       setSelectedPackage(null);
     });

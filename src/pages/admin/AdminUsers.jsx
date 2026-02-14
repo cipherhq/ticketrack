@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Search, Loader2, RefreshCw, Users, UserCheck, UserX, Ban, Shield,
   Mail, Phone, Calendar, MoreVertical, Eye, Edit, Trash2, Download,
@@ -42,6 +43,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { Pagination } from '@/components/ui/pagination';
+import { toast } from 'sonner';
 
 const USER_TYPES = {
   attendee: { label: 'All Users', icon: Users },
@@ -65,6 +67,7 @@ export function AdminUsers() {
     newThisMonth: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [userTypeFilter, setUserTypeFilter] = useState('attendee');
   const [selectedUser, setSelectedUser] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -97,7 +100,7 @@ export function AdminUsers() {
   // Re-filter when filters/page change (no refetch needed)
   useEffect(() => {
     applyFilters();
-  }, [allUsersData, userTypeFilter, searchTerm, page]);
+  }, [allUsersData, userTypeFilter, debouncedSearch, page]);
 
   const loadRoleData = async () => {
     try {
@@ -219,12 +222,12 @@ export function AdminUsers() {
     }
 
     // Search filter
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const term = debouncedSearch.toLowerCase();
       filtered = filtered.filter(u =>
         u.full_name?.toLowerCase().includes(term) ||
         u.email?.toLowerCase().includes(term) ||
-        u.phone?.includes(searchTerm)
+        u.phone?.includes(debouncedSearch)
       );
     }
 
@@ -282,7 +285,7 @@ export function AdminUsers() {
       loadUsers();
     } catch (error) {
       console.error('Action error:', error);
-      alert('Failed to perform action: ' + error.message);
+      toast.error('Failed to perform action: ' + error.message);
     } finally {
       setProcessing(false);
     }
@@ -321,7 +324,7 @@ export function AdminUsers() {
       loadUsers();
     } catch (error) {
       console.error('Error saving user profile:', error);
-      alert('Failed to save profile: ' + error.message);
+      toast.error('Failed to save profile: ' + error.message);
     } finally {
       setSavingEdit(false);
     }
@@ -366,10 +369,10 @@ export function AdminUsers() {
       });
 
       setResetPasswordOpen(false);
-      alert('Password reset email sent to ' + selectedUser.email);
+      toast.success('Password reset email sent to ' + selectedUser.email);
     } catch (error) {
       console.error('Error sending password reset:', error);
-      alert('Failed to send password reset: ' + error.message);
+      toast.error('Failed to send password reset: ' + error.message);
     } finally {
       setSendingReset(false);
     }

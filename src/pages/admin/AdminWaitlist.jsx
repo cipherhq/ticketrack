@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
 import { notifyNextInWaitlist } from '@/services/waitlist';
+import { toast } from 'sonner';
 
 export function AdminWaitlist() {
   const [loading, setLoading] = useState(true);
@@ -89,13 +90,13 @@ export function AdminWaitlist() {
     try {
       const result = await notifyNextInWaitlist(notifyDialog.eventId);
       if (result.success) {
-        alert(`Notified ${result.name} (${result.email})`);
+        toast.success(`Notified ${result.name} (${result.email})`);
         loadData();
       } else {
-        alert(result.error || 'No one on waitlist');
+        toast.info(result.error || 'No one on waitlist');
       }
     } catch (err) {
-      alert('Error: ' + err.message);
+      toast.error('Error: ' + err.message);
     } finally {
       setNotifying(false);
       setNotifyDialog({ open: false, eventId: null, eventTitle: '' });

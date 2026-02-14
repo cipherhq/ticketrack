@@ -186,104 +186,107 @@ export function AdminDashboard() {
   };
 
   const loadStats = async () => {
-    // Total events
-    const { count: totalEvents } = await supabase
-      .from('events')
-      .select('*', { count: 'exact', head: true });
+    try {
+      // Total events
+      const { count: totalEvents } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true });
 
-    // Total organizers
-    const { count: totalOrganizers } = await supabase
-      .from('organizers')
-      .select('*', { count: 'exact', head: true });
+      // Total organizers
+      const { count: totalOrganizers } = await supabase
+        .from('organizers')
+        .select('*', { count: 'exact', head: true });
 
-    // Pending KYCs
-    const { count: pendingKYCs } = await supabase
-      .from('kyc_verifications')
-      .select('*', { count: 'exact', head: true })
-      .in('status', ['pending', 'in_review']);
+      // Pending KYCs
+      const { count: pendingKYCs } = await supabase
+        .from('kyc_verifications')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending', 'in_review']);
 
-    // Payout queue
-    const { count: payoutQueue } = await supabase
-      .from('payouts')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
+      // Payout queue
+      const { count: payoutQueue } = await supabase
+        .from('payouts')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
 
+      // Get all events with currency for mapping
+      const { data: allEvents } = await supabase
+        .from('events')
+        .select('id, currency');
 
-    // Get all events with currency for mapping
-    const { data: allEvents } = await supabase
-      .from('events')
-      .select('id, currency');
-    
-    const eventCurrencyMap = {};
-    allEvents?.forEach(e => {
-      if (!e.currency) {
-        console.warn('Event missing currency:', e.id);
-        return;
-      }
-      eventCurrencyMap[e.id] = e.currency;
-    });
-    eventCurrencyMapRef.current = eventCurrencyMap;
+      const eventCurrencyMap = {};
+      allEvents?.forEach(e => {
+        if (!e.currency) {
+          console.warn('Event missing currency:', e.id);
+          return;
+        }
+        eventCurrencyMap[e.id] = e.currency;
+      });
+      eventCurrencyMapRef.current = eventCurrencyMap;
 
-    // Platform revenue (sum of all completed ticket sales)
-    const { data: revenueData } = await supabase
-      .from('tickets')
-      .select('total_price, event_id')
-      .eq('payment_status', 'completed');
-    
-    const revenueByCurrency = {};
-    revenueData?.forEach(t => {
-      const currency = eventCurrencyMap[t.event_id];
-      if (!currency) {
-        console.warn('Ticket event missing currency mapping:', t.event_id);
-        return;
-      }
-      if (!revenueByCurrency[currency]) revenueByCurrency[currency] = 0;
-      revenueByCurrency[currency] += parseFloat(t.total_price) || 0;
-    });
+      // Platform revenue (sum of all completed ticket sales)
+      const { data: revenueData } = await supabase
+        .from('tickets')
+        .select('total_price, event_id')
+        .eq('payment_status', 'completed');
 
-    // Today's stats
-    const today = new Date().toISOString().split('T')[0];
-    
-    const { count: activeEventsToday } = await supabase
-      .from('events')
-      .select('*', { count: 'exact', head: true })
-      .lte('start_date', today)
-      .gte('end_date', today);
+      const revenueByCurrency = {};
+      revenueData?.forEach(t => {
+        const currency = eventCurrencyMap[t.event_id];
+        if (!currency) {
+          console.warn('Ticket event missing currency mapping:', t.event_id);
+          return;
+        }
+        if (!revenueByCurrency[currency]) revenueByCurrency[currency] = 0;
+        revenueByCurrency[currency] += parseFloat(t.total_price) || 0;
+      });
 
-    const { data: todayTickets } = await supabase
-      .from('tickets')
-      .select('total_price, quantity, event_id')
-      .eq('payment_status', 'completed')
-      .gte('created_at', `${today}T00:00:00`);
+      // Today's stats
+      const today = new Date().toISOString().split('T')[0];
 
-    const ticketsSoldToday = todayTickets?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
-    
-    const revenueTodayByCurrency = {};
-    todayTickets?.forEach(t => {
-      const currency = eventCurrencyMap[t.event_id];
-      if (!currency) return;
-      if (!revenueTodayByCurrency[currency]) revenueTodayByCurrency[currency] = 0;
-      revenueTodayByCurrency[currency] += parseFloat(t.total_price) || 0;
-    });
+      const { count: activeEventsToday } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .lte('start_date', today)
+        .gte('end_date', today);
 
-    // Open support tickets
-    const { count: openTickets } = await supabase
-      .from('support_tickets')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'open');
+      const { data: todayTickets } = await supabase
+        .from('tickets')
+        .select('total_price, quantity, event_id')
+        .eq('payment_status', 'completed')
+        .gte('created_at', `${today}T00:00:00`);
 
-    setStats({
-      totalEvents: totalEvents || 0,
-      totalOrganizers: totalOrganizers || 0,
-      pendingKYCs: pendingKYCs || 0,
-      payoutQueue: payoutQueue || 0,
-      fraudAlerts: 0,
-      revenueByCurrency,
-      activeEventsToday: activeEventsToday || 0,
-      ticketsSoldToday,
-      revenueTodayByCurrency,
-      openTickets: openTickets || 0,
-    });
+      const ticketsSoldToday = todayTickets?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
+
+      const revenueTodayByCurrency = {};
+      todayTickets?.forEach(t => {
+        const currency = eventCurrencyMap[t.event_id];
+        if (!currency) return;
+        if (!revenueTodayByCurrency[currency]) revenueTodayByCurrency[currency] = 0;
+        revenueTodayByCurrency[currency] += parseFloat(t.total_price) || 0;
+      });
+
+      // Open support tickets
+      const { count: openTickets } = await supabase
+        .from('support_tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'open');
+
+      setStats({
+        totalEvents: totalEvents || 0,
+        totalOrganizers: totalOrganizers || 0,
+        pendingKYCs: pendingKYCs || 0,
+        payoutQueue: payoutQueue || 0,
+        fraudAlerts: 0,
+        revenueByCurrency,
+        activeEventsToday: activeEventsToday || 0,
+        ticketsSoldToday,
+        revenueTodayByCurrency,
+        openTickets: openTickets || 0,
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
   };
 
   const loadSalesAnalytics = async (period) => {

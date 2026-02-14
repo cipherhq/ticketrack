@@ -4,10 +4,11 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Users, UserPlus, Mail, Shield, Loader2, Trash2, 
-  CheckCircle, Clock, XCircle, MoreVertical, Edit2 
+import {
+  Users, UserPlus, Mail, Shield, Loader2, Trash2,
+  CheckCircle, Clock, XCircle, MoreVertical, Edit2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 
 const ROLES = {
@@ -50,7 +51,7 @@ export function TeamManagement() {
       setMembers(data || []);
     } catch (error) {
       console.error('Error loading team:', error);
-      alert('Failed to load team members');
+      toast.error('Failed to load team members');
     } finally {
       setLoading(false);
     }
@@ -58,14 +59,14 @@ export function TeamManagement() {
 
   const inviteMember = async () => {
     if (!inviteData.email) {
-      alert('Email is required');
+      toast.error('Email is required');
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteData.email.trim())) {
-      alert('Please enter a valid email address');
+      toast.error('Please enter a valid email address');
       return;
     }
 
@@ -74,7 +75,7 @@ export function TeamManagement() {
       // Check if already invited
       const existing = members.find(m => m.email.toLowerCase() === inviteData.email.toLowerCase());
       if (existing) {
-        alert('This email is already on your team');
+        toast.info('This email is already on your team');
         setSaving(false);
         return;
       }
@@ -112,15 +113,15 @@ export function TeamManagement() {
           roleName: roleLabels[roleToSend] || "Team Member",
           inviteLink: link
         }, organizer.id);
-        alert("Invitation sent to " + emailToSend + "!");
+        toast.success("Invitation sent to " + emailToSend + "!");
       } catch (emailError) {
         console.error('Email sending failed:', emailError);
-        alert("Team member added but email failed to send. You can share this link manually:\n\n" + link);
+        toast.error("Team member added but email failed to send. You can share this link manually:\n\n" + link);
       }
 
     } catch (error) {
       console.error('Error inviting member:', error);
-      alert('Failed to invite team member');
+      toast.error('Failed to invite team member');
     } finally {
       setSaving(false);
     }
@@ -137,10 +138,10 @@ export function TeamManagement() {
 
       setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
       setEditingMember(null);
-      alert('Role updated');
+      toast.success('Role updated');
     } catch (error) {
       console.error('Error updating role:', error);
-      alert('Failed to update role');
+      toast.error('Failed to update role');
     }
   };
 
@@ -156,10 +157,10 @@ export function TeamManagement() {
       if (error) throw error;
 
       setMembers(members.filter(m => m.id !== memberId));
-      alert('Team member removed');
+      toast.success('Team member removed');
     } catch (error) {
       console.error('Error removing member:', error);
-      alert('Failed to remove team member');
+      toast.error('Failed to remove team member');
     }
   };
 

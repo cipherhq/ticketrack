@@ -154,10 +154,10 @@ export function OrganizerOrders() {
       return;
     }
 
-    // Get tickets for each order
-    const ordersWithTickets = await Promise.all(
-      (ordersData || []).map(async (order) => {
-        const { data: tickets } = await supabase
+    // Batch fetch all tickets for these orders in one query
+    const orderIds = (ordersData || []).map(o => o.id);
+    const { data: allTickets } = orderIds.length > 0
+      ? await supabase
           .from('tickets')
           .select(`
             id,
@@ -168,18 +168,25 @@ export function OrganizerOrders() {
             checked_in_at,
             status,
             unit_price,
+            order_id,
             ticket_types (name)
           `)
-          .eq('order_id', order.id);
+          .in('order_id', orderIds)
+      : { data: [] };
 
-        return {
-          ...order,
-          event: eventMap[order.event_id],
-          tickets: tickets || [],
-          ticketCount: tickets?.length || 0,
-        };
-      })
-    );
+    // Group tickets by order_id
+    const ticketsByOrder = {};
+    (allTickets || []).forEach(t => {
+      if (!ticketsByOrder[t.order_id]) ticketsByOrder[t.order_id] = [];
+      ticketsByOrder[t.order_id].push(t);
+    });
+
+    const ordersWithTickets = (ordersData || []).map(order => ({
+      ...order,
+      event: eventMap[order.event_id],
+      tickets: ticketsByOrder[order.id] || [],
+      ticketCount: (ticketsByOrder[order.id] || []).length,
+    }));
 
     setOrders(ordersWithTickets);
 

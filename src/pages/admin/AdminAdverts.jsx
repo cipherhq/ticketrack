@@ -143,14 +143,14 @@ export default function AdminAdverts() {
     const isVideo = file.type.startsWith('video/');
 
     if (!isImage && !isVideo) {
-      alert('Please upload an image or video file');
+      toast.error('Please upload an image or video file');
       return;
     }
 
     // Validate file size (max 10MB for images, 50MB for videos)
     const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert(`File too large. Max size: ${isVideo ? '50MB' : '10MB'}`);
+      toast.error(`File too large. Max size: ${isVideo ? '50MB' : '10MB'}`);
       return;
     }
 
@@ -165,7 +165,7 @@ export default function AdminAdverts() {
       .upload(filePath, file);
 
     if (uploadError) {
-      alert('Upload failed: ' + uploadError.message);
+      toast.error('Upload failed: ' + uploadError.message);
       setUploading(false);
       return;
     }
@@ -187,12 +187,12 @@ export default function AdminAdverts() {
     e.preventDefault();
 
     if (!formData.image_url) {
-      alert('Please upload an ad image or video');
+      toast.error('Please upload an ad image or video');
       return;
     }
 
     if (!formData.start_date || !formData.end_date) {
-      alert('Please set start and end dates');
+      toast.error('Please set start and end dates');
       return;
     }
 
@@ -217,7 +217,7 @@ export default function AdminAdverts() {
     }
 
     if (error) {
-      alert('Error saving ad: ' + error.message);
+      toast.error('Error saving ad: ' + error.message);
       return;
     }
 
@@ -331,7 +331,7 @@ export default function AdminAdverts() {
 
   const handleReject = async (adId) => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a reason for rejection');
+      toast.error('Please provide a reason for rejection');
       return;
     }
 

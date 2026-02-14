@@ -30,6 +30,7 @@ import {
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 // ============================================================================
 // CONSTANTS
@@ -490,7 +491,7 @@ export function CommunicationHub() {
 
   const saveAsTemplate = async () => {
     if (!templateName.trim()) {
-      alert('Please enter a template name');
+      toast.error('Please enter a template name');
       return;
     }
 
@@ -525,10 +526,10 @@ export function CommunicationHub() {
       setTemplateName('');
       setEditingTemplate(null);
       await loadSavedTemplates();
-      alert(editingTemplate ? 'Template updated!' : 'Template saved!');
+      toast.success(editingTemplate ? 'Template updated!' : 'Template saved!');
     } catch (error) {
       console.error('Error saving template:', error);
-      alert('Failed to save template: ' + error.message);
+      toast.error('Failed to save template: ' + error.message);
     } finally {
       setSavingTemplate(false);
     }
@@ -547,7 +548,7 @@ export function CommunicationHub() {
       await loadSavedTemplates();
     } catch (error) {
       console.error('Error deleting template:', error);
-      alert('Failed to delete template');
+      toast.error('Failed to delete template');
     }
   };
 
@@ -942,7 +943,7 @@ export function CommunicationHub() {
       setAiPrompt('');
     } catch (err) {
       console.error('AI compose error:', err);
-      alert('Failed to generate content. Please try again.');
+      toast.error('Failed to generate content. Please try again.');
     } finally {
       setAiLoading(false);
     }
@@ -950,26 +951,26 @@ export function CommunicationHub() {
 
   const sendCampaign = async (sendNow = true) => {
     if (form.channels.length === 0) {
-      alert('Please select at least one channel');
+      toast.error('Please select at least one channel');
       return;
     }
     if (recipientCount === 0) {
-      alert('No recipients selected');
+      toast.info('No recipients selected');
       return;
     }
 
     // Validate content for each channel
     for (const channel of form.channels) {
       if (channel === 'email' && (!form.content.email.subject || !form.content.email.body)) {
-        alert('Please fill in email subject and body');
+        toast.error('Please fill in email subject and body');
         return;
       }
       if (channel === 'sms' && !form.content.sms.message) {
-        alert('Please fill in SMS message');
+        toast.error('Please fill in SMS message');
         return;
       }
       if (channel === 'whatsapp' && !form.content.whatsapp.message) {
-        alert('Please fill in WhatsApp message');
+        toast.error('Please fill in WhatsApp message');
         return;
       }
     }
@@ -1274,10 +1275,10 @@ export function CommunicationHub() {
       await loadData();
       resetForm();
       setShowCreateWizard(false);
-      alert(sendNow ? `Campaign sent successfully!` : 'Campaign scheduled!');
+      toast.success(sendNow ? `Campaign sent successfully!` : 'Campaign scheduled!');
     } catch (err) {
       console.error('Send error:', err);
-      alert('Failed to send campaign: ' + err.message);
+      toast.error('Failed to send campaign: ' + err.message);
     } finally {
       setSending(false);
     }

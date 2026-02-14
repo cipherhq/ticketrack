@@ -48,6 +48,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { Pagination } from '@/components/ui/pagination';
+import { toast } from 'sonner';
 
 // Status configuration for display
 const STATUS_CONFIG = {
@@ -332,7 +333,7 @@ export function AdminPaymentConnections() {
       loadOrganizers();
     } catch (error) {
       console.error('Error toggling provider:', error);
-      alert('Failed to update: ' + error.message);
+      toast.error('Failed to update: ' + error.message);
     } finally {
       setProcessing(false);
     }
@@ -405,10 +406,10 @@ export function AdminPaymentConnections() {
 
       setActionDialogOpen(false);
       loadOrganizers();
-      alert('Payment connection disconnected successfully');
+      toast.success('Payment connection disconnected successfully');
     } catch (error) {
       console.error('Error disconnecting:', error);
-      alert('Failed to disconnect: ' + error.message);
+      toast.error('Failed to disconnect: ' + error.message);
     } finally {
       setProcessing(false);
     }

@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const CATEGORY_ICONS = {
   payments: CreditCard,
@@ -247,7 +248,7 @@ export function AdminCountryFeatures() {
       
     } catch (error) {
       console.error('Error saving changes:', error);
-      alert('Failed to save changes');
+      toast.error('Failed to save changes');
     } finally {
       setSaving(false);
     }

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 // Source type configuration
 const SOURCE_CONFIG = {
@@ -154,7 +155,7 @@ export function AdminContacts() {
       const { data } = await query.order('created_at', { ascending: false });
 
       if (!data || data.length === 0) {
-        alert('No contacts to export');
+        toast.info('No contacts to export');
         return;
       }
 
@@ -184,7 +185,7 @@ export function AdminContacts() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export error:', err);
-      alert('Failed to export');
+      toast.error('Failed to export');
     }
   };
 

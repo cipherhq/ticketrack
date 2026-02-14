@@ -23,6 +23,7 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { getPaymentProvider } from '@/config/payments';
 import { getDefaultCurrency } from '@/config/currencies';
+import { toast } from 'sonner';
 
 // Channel icons and colors
 const CHANNEL_CONFIG = {
@@ -95,7 +96,7 @@ export function CommunicationCredits() {
         await loadData();
 
         if (data?.success) {
-          alert(`✅ ${data.credits} credits added to your account!`);
+          toast.success(`✅ ${data.credits} credits added to your account!`);
         }
       } catch (error) {
         console.error('Payment verification failed:', error);
@@ -351,12 +352,12 @@ export function CommunicationCredits() {
         } else {
           await loadData();
           setShowPurchaseDialog(false);
-          alert('Credits added successfully!');
+          toast.success('Credits added successfully!');
         }
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Failed to initiate payment: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to initiate payment: ' + (error.message || 'Unknown error'));
     } finally {
       setPurchasing(false);
     }

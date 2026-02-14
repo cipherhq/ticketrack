@@ -47,6 +47,7 @@ import {
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { formatPrice } from '@/config/currencies';
+import { toast } from 'sonner';
 
 export function PromoCodes() {
   const { organizer } = useOrganizer();
@@ -275,7 +276,7 @@ export function PromoCodes() {
       await loadPromoCodes();
     } catch (error) {
       console.error('Error toggling status:', error);
-      alert('Failed to update promo code status');
+      toast.error('Failed to update promo code status');
     }
   };
 
@@ -287,7 +288,7 @@ export function PromoCodes() {
       await loadPromoCodes();
     } catch (error) {
       console.error('Error deleting promo code:', error);
-      alert('Failed to delete promo code');
+      toast.error('Failed to delete promo code');
     }
   };
 

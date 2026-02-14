@@ -77,6 +77,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { Link } from 'react-router-dom';
 import { Pagination, usePagination } from '@/components/ui/pagination';
+import { toast } from 'sonner';
 
 export function AdminOrganizers() {
   const navigate = useNavigate();
@@ -180,7 +181,7 @@ export function AdminOrganizers() {
       navigate('/organizer');
     } catch (error) {
       console.error('Error starting impersonation:', error);
-      alert('Failed to start support session');
+      toast.error('Failed to start support session');
     }
   };
 
@@ -196,7 +197,7 @@ export function AdminOrganizers() {
           .eq('id', selectedOrganizer.id);
         if (error) throw error;
         await logAdminAction('organizer_suspended', 'organizer', selectedOrganizer.id, { name: selectedOrganizer.business_name });
-        alert('Organizer suspended successfully');
+        toast.success('Organizer suspended successfully');
       } else if (actionType === 'activate') {
         const { error } = await supabase
           .from('organizers')
@@ -204,14 +205,14 @@ export function AdminOrganizers() {
           .eq('id', selectedOrganizer.id);
         if (error) throw error;
         await logAdminAction('organizer_activated', 'organizer', selectedOrganizer.id, { name: selectedOrganizer.business_name });
-        alert('Organizer activated successfully');
+        toast.success('Organizer activated successfully');
       }
 
       setActionDialogOpen(false);
       loadOrganizers();
     } catch (error) {
       console.error('Action error:', error);
-      alert('Failed to perform action: ' + error.message);
+      toast.error('Failed to perform action: ' + error.message);
     } finally {
       setProcessing(false);
     }
@@ -347,7 +348,7 @@ export function AdminOrganizers() {
   const toggleDirectPayoutOverride = async (enable) => {
     if (!selectedOrganizer) return;
     if (enable && !payoutOverrideReason.trim()) {
-      alert('Please provide a reason for enabling direct payout override');
+      toast.error('Please provide a reason for enabling direct payout override');
       return;
     }
 
@@ -386,7 +387,7 @@ export function AdminOrganizers() {
       loadOrganizers();
     } catch (err) {
       console.error("Error updating payout override:", err);
-      alert('Failed to update payout override');
+      toast.error('Failed to update payout override');
     } finally {
       setSavingPayoutOverride(false);
     }
@@ -441,7 +442,7 @@ export function AdminOrganizers() {
       loadOrganizers();
     } catch (err) {
       console.error("Error saving feature flags:", err);
-      alert('Failed to save feature flags');
+      toast.error('Failed to save feature flags');
     } finally {
       setSavingFeatures(false);
     }
@@ -500,10 +501,10 @@ export function AdminOrganizers() {
       }
 
       loadOrganizers();
-      alert('Account settings updated successfully');
+      toast.success('Account settings updated successfully');
     } catch (err) {
       console.error("Error saving account settings:", err);
-      alert('Failed to update account settings: ' + err.message);
+      toast.error('Failed to update account settings: ' + err.message);
     } finally {
       setSavingAccount(false);
     }
@@ -544,10 +545,10 @@ export function AdminOrganizers() {
       // Update local state
       setSelectedOrganizer(prev => ({ ...prev, ...updates }));
       loadOrganizers();
-      alert('Profile updated successfully');
+      toast.success('Profile updated successfully');
     } catch (err) {
       console.error('Error saving organizer profile:', err);
-      alert('Failed to save profile: ' + err.message);
+      toast.error('Failed to save profile: ' + err.message);
     } finally {
       setSavingProfile(false);
     }

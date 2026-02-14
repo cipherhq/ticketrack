@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
 import { useAdmin } from '@/contexts/AdminContext'
+import { toast } from 'sonner';
 
 const categories = [
   { value: 'payment', label: 'Payment Issues', icon: '💳' },
@@ -192,7 +193,7 @@ export function AdminSupport() {
       loadTickets()
     } catch (err) {
       console.error('Error updating status:', err)
-      alert('Failed to update status')
+      toast.error('Failed to update status')
     }
   }
 
@@ -218,7 +219,7 @@ export function AdminSupport() {
       loadTickets()
     } catch (err) {
       console.error('Error updating priority:', err)
-      alert('Failed to update priority')
+      toast.error('Failed to update priority')
     }
   }
 
@@ -241,7 +242,7 @@ export function AdminSupport() {
       loadTickets()
     } catch (err) {
       console.error('Error assigning ticket:', err)
-      alert('Failed to assign ticket')
+      toast.error('Failed to assign ticket')
     }
   }
 
@@ -306,7 +307,7 @@ export function AdminSupport() {
       loadTickets()
     } catch (err) {
       console.error('Error sending reply:', err)
-      alert('Failed to send reply')
+      toast.error('Failed to send reply')
     } finally {
       setSubmitting(false)
     }

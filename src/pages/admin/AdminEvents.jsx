@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Search,
   MoreVertical,
@@ -55,12 +56,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { formatPrice } from '@/config/currencies';
+import { Pagination, usePagination } from '@/components/ui/pagination';
+import { toast } from 'sonner';
 
 export function AdminEvents() {
   const { logAdminAction, admin } = useAdmin();
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [actionDialog, setActionDialog] = useState(null);
@@ -101,40 +106,50 @@ export function AdminEvents() {
 
       if (error) throw error;
 
-      // Get ticket stats and engagement stats for each event
-      const eventsWithStats = await Promise.all(
-        (data || []).map(async (event) => {
-          const [ticketsRes, viewsRes, savesRes] = await Promise.all([
-            supabase
-              .from('tickets')
-              .select('quantity, total_price, currency')
-              .eq('event_id', event.id)
-              .eq('payment_status', 'completed'),
-            supabase
-              .from('user_event_interactions')
-              .select('id', { count: 'exact', head: true })
-              .eq('event_id', event.id)
-              .eq('interaction_type', 'view'),
-            supabase
-              .from('saved_events')
-              .select('id', { count: 'exact', head: true })
-              .eq('event_id', event.id)
-          ]);
+      // Batch fetch stats for all events in 3 queries instead of 3 per event
+      const eventIds = (data || []).map(e => e.id);
 
-          const ticketsSold = ticketsRes.data?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
-          const revenue = ticketsRes.data?.reduce((sum, t) => sum + (parseFloat(t.total_price) || 0), 0) || 0;
-          const eventCurrency = event.currency || ticketsRes.data?.[0]?.currency || 'NGN';
+      const [ticketsRes, viewsRes, savesRes] = await Promise.all([
+        eventIds.length > 0
+          ? supabase.from('tickets').select('event_id, quantity, total_price, currency').in('event_id', eventIds).eq('payment_status', 'completed')
+          : { data: [] },
+        eventIds.length > 0
+          ? supabase.from('user_event_interactions').select('event_id').in('event_id', eventIds).eq('interaction_type', 'view')
+          : { data: [] },
+        eventIds.length > 0
+          ? supabase.from('saved_events').select('event_id').in('event_id', eventIds)
+          : { data: [] },
+      ]);
 
-          return {
-            ...event,
-            ticketsSold,
-            revenue,
-            eventCurrency,
-            views: viewsRes.count || 0,
-            saves: savesRes.count || 0,
-          };
-        })
-      );
+      // Aggregate ticket stats per event
+      const ticketStats = {};
+      (ticketsRes.data || []).forEach(t => {
+        if (!ticketStats[t.event_id]) ticketStats[t.event_id] = { sold: 0, revenue: 0, currency: null };
+        ticketStats[t.event_id].sold += (t.quantity || 1);
+        ticketStats[t.event_id].revenue += (parseFloat(t.total_price) || 0);
+        if (!ticketStats[t.event_id].currency) ticketStats[t.event_id].currency = t.currency;
+      });
+
+      // Count views per event
+      const viewCounts = {};
+      (viewsRes.data || []).forEach(v => {
+        viewCounts[v.event_id] = (viewCounts[v.event_id] || 0) + 1;
+      });
+
+      // Count saves per event
+      const saveCounts = {};
+      (savesRes.data || []).forEach(s => {
+        saveCounts[s.event_id] = (saveCounts[s.event_id] || 0) + 1;
+      });
+
+      const eventsWithStats = (data || []).map(event => ({
+        ...event,
+        ticketsSold: ticketStats[event.id]?.sold || 0,
+        revenue: ticketStats[event.id]?.revenue || 0,
+        eventCurrency: event.currency || ticketStats[event.id]?.currency || 'NGN',
+        views: viewCounts[event.id] || 0,
+        saves: saveCounts[event.id] || 0,
+      }));
 
       setEvents(eventsWithStats);
     } catch (error) {
@@ -210,7 +225,7 @@ export function AdminEvents() {
           .eq('id', selectedEvent.id);
         if (error) throw error;
         await logAdminAction('event_approved', 'event', selectedEvent.id, { title: selectedEvent.title });
-        alert('Event approved successfully!');
+        toast.success('Event approved successfully!');
       } else if (actionDialog === 'suspend') {
         const reasons = Object.entries(suspendReasons)
           .filter(([_, v]) => v)
@@ -231,7 +246,7 @@ export function AdminEvents() {
           reasons,
           note: suspendNote 
         });
-        alert('Event suspended successfully!');
+        toast.success('Event suspended successfully!');
       } else if (actionDialog === 'unsuspend') {
         const { error } = await supabase
           .from('events')
@@ -244,7 +259,7 @@ export function AdminEvents() {
           .eq('id', selectedEvent.id);
         if (error) throw error;
         await logAdminAction('event_unsuspended', 'event', selectedEvent.id, { title: selectedEvent.title });
-        alert('Event unsuspended successfully!');
+        toast.success('Event unsuspended successfully!');
       } else if (actionDialog === 'delete') {
         // First delete related records
         await supabase.from('tickets').delete().eq('event_id', selectedEvent.id);
@@ -256,7 +271,7 @@ export function AdminEvents() {
           .eq('id', selectedEvent.id);
         if (error) throw error;
         await logAdminAction('event_deleted', 'event', selectedEvent.id, { title: selectedEvent.title });
-        alert('Event deleted successfully!');
+        toast.success('Event deleted successfully!');
       }
 
       setActionDialog(null);
@@ -264,7 +279,7 @@ export function AdminEvents() {
       loadEvents();
     } catch (error) {
       console.error('Action error:', error);
-      alert(`Failed to perform action: ${error.message}`);
+      toast.error(`Failed to perform action: ${error.message}`);
     } finally {
       setProcessing(false);
     }
@@ -302,19 +317,13 @@ export function AdminEvents() {
       setEditDialog(false);
       setSelectedEvent(null);
       loadEvents();
-      alert('Event updated successfully!');
+      toast.success('Event updated successfully!');
     } catch (error) {
       console.error('Edit error:', error);
-      alert(`Failed to update event: ${error.message}`);
+      toast.error(`Failed to update event: ${error.message}`);
     } finally {
       setProcessing(false);
     }
-  };
-
-  const formatCurrency = (amount, currency = 'NGN') => {
-    const symbols = { NGN: '₦', USD: '$', GBP: '£', EUR: '€', GHS: 'GH₵', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' };
-    const symbol = symbols[currency] || currency + ' ';
-    return symbol + new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount || 0);
   };
 
   const getStatusBadge = (status) => {
@@ -322,7 +331,7 @@ export function AdminEvents() {
       case 'published':
         return <Badge className="bg-green-500 text-white rounded-lg">Published</Badge>;
       case 'draft':
-        return <Badge className="bg-background0 text-white rounded-lg">Draft</Badge>;
+        return <Badge className="bg-gray-500 text-white rounded-lg">Draft</Badge>;
       case 'pending':
         return <Badge className="bg-yellow-500 text-white rounded-lg">Pending</Badge>;
       case 'suspended':
@@ -332,17 +341,19 @@ export function AdminEvents() {
       case 'cancelled':
         return <Badge className="bg-gray-700 text-white rounded-lg">Cancelled</Badge>;
       default:
-        return <Badge className="bg-background0 text-white rounded-lg">{status}</Badge>;
+        return <Badge className="bg-gray-500 text-white rounded-lg">{status}</Badge>;
     }
   };
 
   const filteredEvents = events.filter((event) => {
-    const matchesSearch =
-      event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.organizers?.business_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !debouncedSearch ||
+      event.title?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      event.organizers?.business_name?.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesStatus = statusFilter === 'all' || event.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const { currentPage, totalPages, totalItems, itemsPerPage, paginatedItems: paginatedEvents, handlePageChange } = usePagination(filteredEvents, 20);
 
   const stats = {
     total: events.length,
@@ -483,7 +494,7 @@ export function AdminEvents() {
                 </tr>
               </thead>
               <tbody>
-                {filteredEvents.map((event) => (
+                {paginatedEvents.map((event) => (
                   <tr key={event.id} className="border-b border-border/5 hover:bg-muted/50">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
@@ -522,7 +533,7 @@ export function AdminEvents() {
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <p className="text-foreground font-medium">{formatCurrency(event.revenue, event.eventCurrency)}</p>
+                      <p className="text-foreground font-medium">{formatPrice(event.revenue, event.eventCurrency)}</p>
                     </td>
                     <td className="py-4 px-4">{getStatusBadge(event.status)}</td>
                     <td className="py-4 px-4 text-right">
@@ -588,6 +599,13 @@ export function AdminEvents() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </CardContent>
       </Card>
 
@@ -638,7 +656,7 @@ export function AdminEvents() {
                 </div>
                 <div className="p-4 bg-green-50 rounded-xl text-center">
                   <DollarSign className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                  <p className="text-lg font-semibold text-green-600">{formatCurrency(selectedEvent.revenue, selectedEvent.eventCurrency)}</p>
+                  <p className="text-lg font-semibold text-green-600">{formatPrice(selectedEvent.revenue, selectedEvent.eventCurrency)}</p>
                   <p className="text-sm text-muted-foreground">Revenue</p>
                 </div>
                 <div className="p-4 bg-purple-50 rounded-xl text-center">
@@ -693,7 +711,7 @@ export function AdminEvents() {
                     </div>
                     <div className="p-4 bg-muted rounded-xl">
                       <p className="text-sm text-muted-foreground mb-1">Ticket Price</p>
-                      <p className="text-foreground">{formatCurrency(selectedEvent.ticket_price, selectedEvent.eventCurrency)}</p>
+                      <p className="text-foreground">{formatPrice(selectedEvent.ticket_price, selectedEvent.eventCurrency)}</p>
                     </div>
                     <div className="p-4 bg-muted rounded-xl">
                       <p className="text-sm text-muted-foreground mb-1">Start Date</p>
@@ -770,7 +788,7 @@ export function AdminEvents() {
                             <p className="text-sm text-muted-foreground">{type.description || 'No description'}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-foreground font-medium">{formatCurrency(type.price, selectedEvent.eventCurrency)}</p>
+                            <p className="text-foreground font-medium">{formatPrice(type.price, selectedEvent.eventCurrency)}</p>
                             <p className="text-sm text-muted-foreground">{type.quantity_available || 0} available</p>
                           </div>
                         </div>

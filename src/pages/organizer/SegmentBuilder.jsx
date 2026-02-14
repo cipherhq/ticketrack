@@ -24,6 +24,7 @@ import {
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 // Condition field types
 const CONDITION_FIELDS = [
@@ -210,7 +211,7 @@ export function SegmentBuilder() {
       .single();
 
     if (error || !data) {
-      alert('Segment not found');
+      toast.error('Segment not found');
       navigate('/organizer/segments');
       return;
     }
@@ -395,7 +396,7 @@ export function SegmentBuilder() {
 
   const saveSegment = async () => {
     if (!form.name.trim()) {
-      alert('Please enter a segment name');
+      toast.error('Please enter a segment name');
       return;
     }
 
@@ -456,7 +457,7 @@ export function SegmentBuilder() {
       navigate('/organizer/segments');
     } catch (error) {
       console.error('Save error:', error);
-      alert('Failed to save segment: ' + error.message);
+      toast.error('Failed to save segment: ' + error.message);
     } finally {
       setSaving(false);
     }

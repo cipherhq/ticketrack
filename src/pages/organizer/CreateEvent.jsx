@@ -1111,12 +1111,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     const file = e.target.files?.[0];
     if (file) {
       if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        alert('Please upload a valid image (JPEG, PNG, WebP, or GIF)');
+        toast.error('Please upload a valid image (JPEG, PNG, WebP, or GIF)');
         if (e.target) e.target.value = '';
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image must be less than 5MB');
+        toast.error('Image must be less than 5MB');
         if (e.target) e.target.value = '';
         return;
       }
@@ -1141,12 +1141,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     const file = e.target.files?.[0];
     if (file) {
       if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        alert('Please upload a valid image (JPEG, PNG, WebP, or GIF)');
+        toast.error('Please upload a valid image (JPEG, PNG, WebP, or GIF)');
         if (e.target) e.target.value = '';
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image must be less than 5MB');
+        toast.error('Image must be less than 5MB');
         if (e.target) e.target.value = '';
         return;
       }
@@ -1214,10 +1214,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     const files = Array.from(e.target.files || []);
     const validFiles = files.filter(file => ALLOWED_IMAGE_TYPES.includes(file.type));
     if (validFiles.length < files.length) {
-      alert('Some files were skipped. Only JPEG, PNG, WebP, and GIF images are allowed.');
+      toast.info('Some files were skipped. Only JPEG, PNG, WebP, and GIF images are allowed.');
     }
     if (eventImages.length + validFiles.length > 10) {
-      alert('Maximum 10 images allowed');
+      toast.info('Maximum 10 images allowed');
       if (e.target) e.target.value = '';
       return;
     }
@@ -1237,10 +1237,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     const files = Array.from(e.target.files || []);
     const validFiles = files.filter(file => ALLOWED_IMAGE_TYPES.includes(file.type));
     if (validFiles.length < files.length) {
-      alert('Some files were skipped. Only JPEG, PNG, WebP, and GIF images are allowed.');
+      toast.info('Some files were skipped. Only JPEG, PNG, WebP, and GIF images are allowed.');
     }
     if (sponsorLogos.length + validFiles.length > 5) {
-      alert('Maximum 5 sponsor logos allowed');
+      toast.info('Maximum 5 sponsor logos allowed');
       if (e.target) e.target.value = '';
       return;
     }
@@ -1296,13 +1296,13 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
     if (!file) return;
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      alert('Please upload a valid image (JPEG, PNG, WebP, or GIF)');
+      toast.error('Please upload a valid image (JPEG, PNG, WebP, or GIF)');
       if (e.target) e.target.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be less than 5MB');
+      toast.error('Image must be less than 5MB');
       if (e.target) e.target.value = '';
       return;
     }

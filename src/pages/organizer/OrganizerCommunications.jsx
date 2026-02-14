@@ -19,6 +19,7 @@ import {
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 // ============================================================================
 // CONSTANTS
@@ -249,7 +250,7 @@ export function OrganizerCommunications() {
       setAiPrompt('');
     } catch (err) {
       console.error('AI compose error:', err);
-      alert('Failed to generate content. Please try again.');
+      toast.error('Failed to generate content. Please try again.');
     } finally {
       setAiLoading(false);
     }
@@ -257,11 +258,11 @@ export function OrganizerCommunications() {
 
   const sendCampaign = async (sendNow = true) => {
     if (!form.subject.trim() || !form.body.trim()) {
-      alert('Please fill in subject and message');
+      toast.error('Please fill in subject and message');
       return;
     }
     if (recipientCount === 0) {
-      alert('No recipients selected');
+      toast.info('No recipients selected');
       return;
     }
 
@@ -327,10 +328,10 @@ export function OrganizerCommunications() {
       await loadData();
       resetForm();
       setView('list');
-      alert(sendNow ? `Campaign sent to ${recipientCount} recipients!` : 'Campaign scheduled successfully!');
+      toast.success(sendNow ? `Campaign sent to ${recipientCount} recipients!` : 'Campaign scheduled successfully!');
     } catch (err) {
       console.error('Send error:', err);
-      alert('Failed to send campaign: ' + err.message);
+      toast.error('Failed to send campaign: ' + err.message);
     } finally {
       setSending(false);
     }

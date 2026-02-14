@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { useOrganizer } from '@/contexts/OrganizerContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner';
 
 const categories = [
   { value: 'payment', label: 'Payment Issues', icon: '💳' },
@@ -104,7 +105,7 @@ export function OrganizerSupport() {
   const createTicket = async (e) => {
     e.preventDefault()
     if (!category || !subject || !description) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
 
@@ -149,7 +150,7 @@ export function OrganizerSupport() {
         console.log('Email notification failed:', emailErr)
       }
 
-      alert('Support ticket created successfully!')
+      toast.success('Support ticket created successfully!')
       setCategory('')
       setSubject('')
       setDescription('')
@@ -158,7 +159,7 @@ export function OrganizerSupport() {
       loadTickets()
     } catch (err) {
       console.error('Error creating ticket:', err)
-      alert('Failed to create ticket. Please try again.')
+      toast.error('Failed to create ticket. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -185,7 +186,7 @@ export function OrganizerSupport() {
       loadTicketDetails(selectedTicket)
     } catch (err) {
       console.error('Error sending reply:', err)
-      alert('Failed to send reply')
+      toast.error('Failed to send reply')
     } finally {
       setSubmitting(false)
     }

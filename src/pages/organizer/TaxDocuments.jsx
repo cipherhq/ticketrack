@@ -9,6 +9,7 @@ import { formatPrice } from '@/config/currencies';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { toast } from 'sonner';
 
 const COUNTRY_CONFIG = {
   US: { name: 'United States', currency: 'USD', taxDocument: '1099-K Style', taxId: 'EIN/SSN', notes: 'Report gross receipts to IRS' },
@@ -136,7 +137,7 @@ export function TaxDocuments() {
   const generatePDF = async () => {
     const yearNum = parseInt(selectedYear);
     if (!isYearAvailable(yearNum)) {
-      alert(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
+      toast.info(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
       return;
     }
 
@@ -310,7 +311,7 @@ export function TaxDocuments() {
 
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      toast.error('Failed to generate PDF. Please try again.');
     } finally {
       setGeneratingPDF(false);
     }
@@ -320,7 +321,7 @@ export function TaxDocuments() {
   const generateCSV = async () => {
     const yearNum = parseInt(selectedYear);
     if (!isYearAvailable(yearNum)) {
-      alert(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
+      toast.info(`Report for ${selectedYear} will be available on January 1, ${yearNum + 1}`);
       return;
     }
 
@@ -400,7 +401,7 @@ export function TaxDocuments() {
 
     } catch (error) {
       console.error('Error generating CSV:', error);
-      alert('Failed to generate CSV. Please try again.');
+      toast.error('Failed to generate CSV. Please try again.');
     } finally {
       setGeneratingCSV(false);
     }

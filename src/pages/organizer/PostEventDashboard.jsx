@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useOrganizer } from '@/contexts/OrganizerContext'
 import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner';
 
 const countryNames = {
   'NG': 'Nigeria', 'GH': 'Ghana', 'KE': 'Kenya', 'ZA': 'South Africa',
@@ -126,7 +127,7 @@ export function PostEventDashboard() {
   }
 
   const sendThankYouEmail = async () => {
-    if (!thankYouMessage.trim()) { alert('Please enter a message'); return }
+    if (!thankYouMessage.trim()) { toast.error('Please enter a message'); return }
     setSending(true)
     try {
       const emails = [...new Set(attendees.map(a => a.attendee_email).filter(Boolean))]
@@ -136,13 +137,13 @@ export function PostEventDashboard() {
             data: { eventTitle: event.title, message: thankYouMessage, photosLink } }
         })
       }
-      alert(`Sent to ${emails.length} attendees!`)
-    } catch (err) { alert('Failed to send') }
+      toast.success(`Sent to ${emails.length} attendees!`)
+    } catch (err) { toast.error('Failed to send') }
     finally { setSending(false) }
   }
 
   const sendFeedbackRequest = async () => {
-    if (!feedbackLink.trim()) { alert('Please enter feedback link'); return }
+    if (!feedbackLink.trim()) { toast.error('Please enter feedback link'); return }
     setSending(true)
     try {
       const emails = [...new Set(attendees.map(a => a.attendee_email).filter(Boolean))]
@@ -152,13 +153,13 @@ export function PostEventDashboard() {
             data: { eventTitle: event.title, feedbackLink } }
         })
       }
-      alert(`Sent to ${emails.length} attendees!`)
-    } catch (err) { alert('Failed to send') }
+      toast.success(`Sent to ${emails.length} attendees!`)
+    } catch (err) { toast.error('Failed to send') }
     finally { setSending(false) }
   }
 
   const announceNextEvent = async () => {
-    if (!nextEventId) { alert('Select an event'); return }
+    if (!nextEventId) { toast.info('Select an event'); return }
     const nextEvent = nextEvents.find(e => e.id === nextEventId)
     setSending(true)
     try {
@@ -169,8 +170,8 @@ export function PostEventDashboard() {
             data: { nextEventTitle: nextEvent.title, eventLink: `${window.location.origin}/e/${nextEvent.id}` } }
         })
       }
-      alert(`Sent to ${emails.length} attendees!`)
-    } catch (err) { alert('Failed to send') }
+      toast.success(`Sent to ${emails.length} attendees!`)
+    } catch (err) { toast.error('Failed to send') }
     finally { setSending(false) }
   }
 

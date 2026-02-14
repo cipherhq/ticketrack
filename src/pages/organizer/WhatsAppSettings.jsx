@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export function WhatsAppSettings() {
   const { user } = useAuth();
@@ -91,7 +92,7 @@ export function WhatsAppSettings() {
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error saving config:', error);
-      alert('Failed to save settings');
+      toast.error('Failed to save settings');
     } finally {
       setSaving(false);
     }

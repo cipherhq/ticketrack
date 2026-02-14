@@ -46,6 +46,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export function AdminAttendees() {
   const { logAdminAction } = useAdmin();
@@ -203,7 +204,7 @@ export function AdminAttendees() {
       );
     } catch (error) {
       console.error('Error toggling check-in:', error);
-      alert('Failed to update check-in status: ' + error.message);
+      toast.error('Failed to update check-in status: ' + error.message);
     } finally {
       setProcessingAction(null);
     }
@@ -235,10 +236,10 @@ export function AdminAttendees() {
         eventName: attendee.eventName,
       });
 
-      alert('Ticket email resent to ' + attendee.email);
+      toast.success('Ticket email resent to ' + attendee.email);
     } catch (error) {
       console.error('Error resending ticket email:', error);
-      alert('Failed to resend ticket email: ' + error.message);
+      toast.error('Failed to resend ticket email: ' + error.message);
     } finally {
       setProcessingAction(null);
     }
@@ -268,7 +269,7 @@ export function AdminAttendees() {
       const { data } = await query.order('created_at', { ascending: false });
 
       if (!data || data.length === 0) {
-        alert('No data to export');
+        toast.info('No data to export');
         return;
       }
 
@@ -296,7 +297,7 @@ export function AdminAttendees() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export error:', err);
-      alert('Failed to export');
+      toast.error('Failed to export');
     }
   };
 

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export function AdminSettings() {
   const [loading, setLoading] = useState(true);
@@ -432,9 +433,9 @@ export function AdminSettings() {
     try {
       // Simulate API test - in production, this would call actual test endpoints
       await new Promise(resolve => setTimeout(resolve, 1500));
-      alert(`${service} connection test successful!`);
+      toast.success(`${service} connection test successful!`);
     } catch (error) {
-      alert(`${service} connection test failed.`);
+      toast.error(`${service} connection test failed.`);
     } finally {
       setTestingApi(null);
     }

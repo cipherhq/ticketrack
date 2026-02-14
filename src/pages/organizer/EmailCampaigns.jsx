@@ -49,6 +49,7 @@ import {
 } from '../../components/ui/dropdown-menu';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 // Email templates
 const emailTemplates = [
@@ -460,9 +461,9 @@ export function EmailCampaigns() {
     const failed = data?.failed || 0;
     
     if (failed > 0) {
-      alert(`Campaign sent!\n\n✅ Delivered: ${sent}\n❌ Failed: ${failed}`);
+      toast.error(`Campaign sent!\n\n✅ Delivered: ${sent}\n❌ Failed: ${failed}`);
     } else {
-      alert(`✅ Campaign sent successfully to ${sent} recipients!`);
+      toast.success(`✅ Campaign sent successfully to ${sent} recipients!`);
     }
 
     return data;
@@ -504,7 +505,7 @@ export function EmailCampaigns() {
       await loadCampaigns();
     } catch (error) {
       console.error('Error sending campaign:', error);
-      alert('Failed to send campaign: ' + error.message);
+      toast.error('Failed to send campaign: ' + error.message);
       
       // Revert status on failure
       await supabase
@@ -529,7 +530,7 @@ export function EmailCampaigns() {
       await loadCampaigns();
     } catch (error) {
       console.error('Error deleting campaign:', error);
-      alert('Failed to delete campaign');
+      toast.error('Failed to delete campaign');
     }
   };
 
@@ -552,7 +553,7 @@ export function EmailCampaigns() {
       await loadCampaigns();
     } catch (error) {
       console.error('Error duplicating campaign:', error);
-      alert('Failed to duplicate campaign');
+      toast.error('Failed to duplicate campaign');
     }
   };
 

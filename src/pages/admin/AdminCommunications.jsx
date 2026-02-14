@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAdmin } from '@/contexts/AdminContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 // ============================================================================
 // CONSTANTS
@@ -134,7 +135,7 @@ export function AdminCommunications() {
       setAiPrompt('');
     } catch (err) {
       console.error('AI compose error:', err);
-      alert('Failed to generate content');
+      toast.error('Failed to generate content');
     } finally {
       setAiLoading(false);
     }
@@ -142,11 +143,11 @@ export function AdminCommunications() {
 
   const sendBroadcast = async () => {
     if (!form.subject.trim() || !form.body.trim()) {
-      alert('Please fill in subject and message');
+      toast.error('Please fill in subject and message');
       return;
     }
     if (recipientCount === 0) {
-      alert('No recipients selected');
+      toast.info('No recipients selected');
       return;
     }
 
@@ -204,10 +205,10 @@ export function AdminCommunications() {
       await loadBroadcasts();
       resetForm();
       setView('list');
-      alert(`Broadcast sent to ${recipients.length} recipients!`);
+      toast.success(`Broadcast sent to ${recipients.length} recipients!`);
     } catch (err) {
       console.error('Send error:', err);
-      alert('Failed to send broadcast: ' + err.message);
+      toast.error('Failed to send broadcast: ' + err.message);
     } finally {
       setSending(false);
     }

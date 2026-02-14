@@ -33,6 +33,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { toast } from 'sonner';
 
 export function AdminWhatsApp() {
   const { admin, logAdminAction } = useAdmin();
@@ -116,7 +117,7 @@ export function AdminWhatsApp() {
 
   const handleSend = async () => {
     if (!form.message || !form.eventId) {
-      alert('Please select an event and enter a message');
+      toast.error('Please select an event and enter a message');
       return;
     }
 
@@ -146,7 +147,7 @@ export function AdminWhatsApp() {
       loadWhatsappHistory();
     } catch (error) {
       console.error('Error logging WhatsApp broadcast:', error);
-      alert('Failed to log broadcast');
+      toast.error('Failed to log broadcast');
     } finally {
       setSending(false);
     }

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 // Quick templates
 const quickTemplates = [
@@ -164,11 +165,11 @@ export function WhatsAppBroadcast() {
 
   const handleSendBroadcast = async () => {
     if (!message.trim()) {
-      alert('Please enter a message');
+      toast.error('Please enter a message');
       return;
     }
     if (recipientCount === 0) {
-      alert('No recipients selected');
+      toast.info('No recipients selected');
       return;
     }
 
@@ -196,14 +197,14 @@ export function WhatsAppBroadcast() {
         .update({ status: 'sent', sent_at: new Date().toISOString() })
         .eq('id', broadcast.id);
 
-      alert('Broadcast sent successfully!');
+      toast.success('Broadcast sent successfully!');
       setMessage('');
       setScheduleDate('');
       setScheduleTime('');
       loadData();
     } catch (error) {
       console.error('Error sending broadcast:', error);
-      alert('Failed to send broadcast: ' + error.message);
+      toast.error('Failed to send broadcast: ' + error.message);
     } finally {
       setSending(false);
     }

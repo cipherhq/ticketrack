@@ -26,6 +26,7 @@ import {
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 // Trigger types configuration
 const TRIGGER_TYPES = [
@@ -332,7 +333,7 @@ export function CommunicationAutomations() {
 
   const saveAutomation = async () => {
     if (!form.name || !form.triggerType || form.actions.length === 0) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -376,7 +377,7 @@ export function CommunicationAutomations() {
       resetForm();
     } catch (error) {
       console.error('Save error:', error);
-      alert('Failed to save automation: ' + error.message);
+      toast.error('Failed to save automation: ' + error.message);
     } finally {
       setSaving(false);
     }

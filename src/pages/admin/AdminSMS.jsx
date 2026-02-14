@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { sendBulkSMS } from '@/lib/termii';
+import { toast } from 'sonner';
 
 export function AdminSMS() {
   const { admin, logAdminAction } = useAdmin();
@@ -141,12 +142,12 @@ export function AdminSMS() {
 
   const handleSend = async () => {
     if (!form.message || !form.recipientType || recipients.length === 0) {
-      alert('Please fill in all fields and ensure there are recipients');
+      toast.error('Please fill in all fields and ensure there are recipients');
       return;
     }
 
     if (!termiiConfig?.api_key) {
-      alert('Termii is not configured. Please go to SMS Settings first.');
+      toast.error('Termii is not configured. Please go to SMS Settings first.');
       return;
     }
 
@@ -192,7 +193,7 @@ export function AdminSMS() {
       loadSmsHistory();
     } catch (error) {
       console.error('Error sending SMS:', error);
-      alert('Failed to send SMS: ' + error.message);
+      toast.error('Failed to send SMS: ' + error.message);
     } finally {
       setSending(false);
     }

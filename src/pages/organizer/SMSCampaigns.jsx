@@ -25,6 +25,7 @@ import {
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { getWalletBalance } from '@/lib/smsWallet';
+import { toast } from 'sonner';
 
 export function SMSCampaigns() {
   const navigate = useNavigate();
@@ -206,7 +207,7 @@ export function SMSCampaigns() {
       if (error) throw error;
 
       if (data.success) {
-        alert(`SMS Campaign sent!\n\nRecipients: ${data.recipients}\nDelivered: ${data.sent}\nFailed: ${data.failed}\nCredits used: ${data.credits_used}`);
+        toast.error(`SMS Campaign sent!\n\nRecipients: ${data.recipients}\nDelivered: ${data.sent}\nFailed: ${data.failed}\nCredits used: ${data.credits_used}`);
         
         setShowCompose(false);
         setCampaignName('');
@@ -220,7 +221,7 @@ export function SMSCampaigns() {
       }
     } catch (error) {
       console.error('SMS send error:', error);
-      alert(`Failed to send SMS: ${error.message}`);
+      toast.error(`Failed to send SMS: ${error.message}`);
     } finally {
       setSending(false);
     }

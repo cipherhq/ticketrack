@@ -13,7 +13,6 @@ import {
   Users,
   Mail,
   Plus,
-  MessageSquare,
   Percent,
   Bell,
   TrendingUp,
@@ -34,7 +33,6 @@ const navItems = [
   { icon: Percent, label: 'Promo Codes', path: '/organizer/promo-codes' },
   { icon: TrendingUp, label: 'Promoters', path: '/organizer/promoters' },
   { icon: Mail, label: 'Email Campaigns', path: '/organizer/email-campaigns' },
-  // { icon: MessageSquare, label: 'WhatsApp', path: '/organizer/whatsapp' },
   { icon: Bell, label: 'SMS Campaigns', path: '/organizer/sms' },
   { icon: Shield, label: 'KYC', path: '/organizer/kyc' },
   { icon: UserCircle, label: 'Profile', path: '/organizer/profile' },
@@ -88,9 +86,9 @@ export function OrganizerDashboard() {
               key={item.path}
               to={item.path}
               className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${
-                location.pathname === item.path
-                  ? 'bg-[#2969FF] text-white'
-                  : 'text-muted-foreground hover:bg-muted'
+                item.path === '/organizer'
+                  ? location.pathname === '/organizer' ? 'bg-[#2969FF] text-white' : 'text-muted-foreground hover:bg-muted'
+                  : location.pathname.startsWith(item.path) ? 'bg-[#2969FF] text-white' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               <item.icon className="w-5 h-5" />
@@ -137,9 +135,9 @@ export function OrganizerDashboard() {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${
-                    location.pathname === item.path
-                      ? 'bg-[#2969FF] text-white'
-                      : 'text-muted-foreground hover:bg-muted'
+                    item.path === '/organizer'
+                      ? location.pathname === '/organizer' ? 'bg-[#2969FF] text-white' : 'text-muted-foreground hover:bg-muted'
+                      : location.pathname.startsWith(item.path) ? 'bg-[#2969FF] text-white' : 'text-muted-foreground hover:bg-muted'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />

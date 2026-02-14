@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Search, MoreVertical, DollarSign, CheckCircle, Clock, AlertCircle, Send, Loader2, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,8 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
 import { formatPrice } from '@/config/currencies';
+import { Pagination, usePagination } from '@/components/ui/pagination';
+import { toast } from 'sonner';
 
 export function AdminPayouts() {
   const navigate = useNavigate();
@@ -36,6 +39,7 @@ export function AdminPayouts() {
   const [loading, setLoading] = useState(true);
   const [payouts, setPayouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedPayout, setSelectedPayout] = useState(null);
   const [actionDialog, setActionDialog] = useState(null);
@@ -116,7 +120,7 @@ export function AdminPayouts() {
       loadPayouts();
     } catch (error) {
       console.error('Action error:', error);
-      alert('Failed to perform action');
+      toast.error('Failed to perform action');
     } finally {
       setProcessing(false);
     }
@@ -144,12 +148,14 @@ export function AdminPayouts() {
   };
 
   const filteredPayouts = payouts.filter((payout) => {
-    const matchesSearch =
-      payout.organizers?.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payout.events?.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !debouncedSearch ||
+      payout.organizers?.business_name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      payout.events?.title?.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesStatus = statusFilter === 'all' || payout.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const { currentPage, totalPages, totalItems, itemsPerPage, paginatedItems: paginatedPayouts, handlePageChange } = usePagination(filteredPayouts, 20);
 
   // Group amounts by currency for each status
   const groupByCurrency = (filteredPayouts) => {
@@ -322,7 +328,7 @@ export function AdminPayouts() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPayouts.map((payout) => (
+                {paginatedPayouts.map((payout) => (
                   <tr key={payout.id} className="border-b border-border/5 hover:bg-muted/50">
                     <td className="py-4 px-4">
                       <p className="text-foreground font-medium">{payout.organizers?.business_name || 'Unknown'}</p>
@@ -397,6 +403,13 @@ export function AdminPayouts() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </CardContent>
       </Card>
 

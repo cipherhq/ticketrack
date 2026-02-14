@@ -19,6 +19,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Pagination, usePagination } from '@/components/ui/pagination';
 import { HelpTip, OnboardingBanner } from '@/components/HelpTip';
+import { toast } from 'sonner';
 
 const MANUAL_ISSUE_TYPES = [
   { value: 'complimentary', label: 'Complimentary' },
@@ -232,7 +233,7 @@ export function EventManagement() {
       setEvents(prev => prev.map(e => e.id === eventId ? { ...e, allow_transfers: !currentValue } : e));
     } catch (err) {
       console.error('Error toggling transfers:', err);
-      alert('Failed to update transfer setting');
+      toast.error('Failed to update transfer setting');
     }
   };
 
@@ -467,7 +468,7 @@ export function EventManagement() {
   const deleteEvent = async (id) => {
     const event = events.find(e => e.id === id);
     if (event && event.soldTickets > 0) {
-      alert('Cannot delete this event because tickets have been sold. For audit purposes, events with sales must be preserved.');
+      toast.error('Cannot delete this event because tickets have been sold. For audit purposes, events with sales must be preserved.');
       return;
     }
     
@@ -488,7 +489,7 @@ export function EventManagement() {
         if (childError) throw childError;
       } catch (childErr) {
         console.error('Error deleting child events:', childErr);
-        alert('Failed to delete child events. Please try again.');
+        toast.error('Failed to delete child events. Please try again.');
         return;
       }
     }
@@ -517,7 +518,7 @@ export function EventManagement() {
       await loadEvents();
     } catch (err) {
       console.error('Error deleting event:', err);
-      alert(`Failed to delete event: ${err.message || 'It may have associated tickets or orders.'}`);
+      toast.error(`Failed to delete event: ${err.message || 'It may have associated tickets or orders.'}`);
     } finally {
       setDeleting(null);
     }
@@ -669,11 +670,11 @@ export function EventManagement() {
         }
       }
       
-      alert('Series cancelled successfully. All tickets are being automatically refunded. Attendees will receive email notifications.');
+      toast.success('Series cancelled successfully. All tickets are being automatically refunded. Attendees will receive email notifications.');
       loadEvents();
     } catch (err) {
       console.error('Error cancelling series:', err);
-      alert('Failed to cancel series: ' + (err.message || 'Unknown error'));
+      toast.error('Failed to cancel series: ' + (err.message || 'Unknown error'));
     } finally {
       setCancelingSeries(null);
     }
@@ -697,20 +698,20 @@ export function EventManagement() {
         
         if (refundError) {
           console.error('Error processing auto-refunds:', refundError);
-          alert('Event date cancelled, but there was an error processing refunds. Please check and process refunds manually.');
+          toast.error('Event date cancelled, but there was an error processing refunds. Please check and process refunds manually.');
         } else {
-          alert('Event date cancelled successfully. All tickets are being automatically refunded. Attendees will receive email notifications.');
+          toast.success('Event date cancelled successfully. All tickets are being automatically refunded. Attendees will receive email notifications.');
         }
       } catch (refundError) {
         console.error('Error processing auto-refunds:', refundError);
-        alert('Event date cancelled, but there was an error processing refunds. Please check and process refunds manually.');
+        toast.error('Event date cancelled, but there was an error processing refunds. Please check and process refunds manually.');
       }
       
       // Reload child events for this parent
       await loadChildEvents(childEvent.parent_event_id);
     } catch (err) {
       console.error('Error cancelling child event:', err);
-      alert('Failed to cancel event date: ' + (err.message || 'Unknown error'));
+      toast.error('Failed to cancel event date: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -782,10 +783,10 @@ export function EventManagement() {
 
       closeCancelModal();
       loadEvents();
-      alert('Event cancelled successfully. Attendees will be notified and refunds will be processed automatically.');
+      toast.success('Event cancelled successfully. Attendees will be notified and refunds will be processed automatically.');
     } catch (err) {
       console.error('Error cancelling event:', err);
-      alert('Failed to cancel event: ' + (err.message || 'Unknown error'));
+      toast.error('Failed to cancel event: ' + (err.message || 'Unknown error'));
     } finally {
       setCancelingEvent(false);
     }
@@ -861,7 +862,7 @@ export function EventManagement() {
       setNewAccessCode({ code: '', name: '', maxUses: '' });
     } catch (err) {
       console.error('Error adding code:', err);
-      alert('Failed to add code. It may already exist.');
+      toast.error('Failed to add code. It may already exist.');
     }
   };
 
@@ -902,10 +903,10 @@ export function EventManagement() {
 
       if (error) throw error;
       setEvents(prev => prev.map(e => e.id === accessModal.event.id ? { ...e, access_password: newPassword.trim() } : e));
-      alert('Password updated successfully!');
+      toast.success('Password updated successfully!');
     } catch (err) {
       console.error('Error updating password:', err);
-      alert('Failed to update password');
+      toast.error('Failed to update password');
     }
   };
 
@@ -920,7 +921,7 @@ export function EventManagement() {
 
   const sendInviteEmail = async () => {
     if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
-      alert('Please enter a valid email address');
+      toast.error('Please enter a valid email address');
       return;
     }
 
@@ -972,11 +973,11 @@ export function EventManagement() {
 
       if (emailError) throw emailError;
 
-      alert(`Invite sent to ${inviteEmail}!`);
+      toast.success(`Invite sent to ${inviteEmail}!`);
       setInviteEmail('');
     } catch (err) {
       console.error('Error sending invite:', err);
-      alert('Failed to send invite. Please try again.');
+      toast.error('Failed to send invite. Please try again.');
     } finally {
       setSendingInvite(false);
     }
@@ -984,7 +985,7 @@ export function EventManagement() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    toast.success('Copied to clipboard!');
   };
 
   const formatDate = (dateString) => {

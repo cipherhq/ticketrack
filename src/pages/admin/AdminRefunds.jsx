@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Search, Loader2, RefreshCw, CheckCircle, XCircle, Clock, DollarSign, AlertTriangle, CreditCard, Eye, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,12 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
+import { Pagination, usePagination } from '@/components/ui/pagination';
+import { toast } from 'sonner';
 
 export function AdminRefunds() {
   const [loading, setLoading] = useState(true);
   const [refunds, setRefunds] = useState([]);
   const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, processed: 0, escalated: 0, total: 0, totalAmount: 0 });
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState('all');
   const [processModal, setProcessModal] = useState({ open: false, refund: null });
   const [detailModal, setDetailModal] = useState({ open: false, refund: null });
@@ -71,11 +75,11 @@ export function AdminRefunds() {
         })
         .eq('id', refund.id);
       
-      alert('Refund approved. You can now process it.');
+      toast.success('Refund approved. You can now process it.');
       loadRefunds();
     } catch (err) {
       console.error('Error:', err);
-      alert('Failed to override');
+      toast.error('Failed to override');
     } finally {
       setProcessing(false);
     }
@@ -96,15 +100,15 @@ const processRefund = async () => {
       });
       const result = await response.json();
       if (result.success) {
-        alert('Refund processed successfully! Reference: ' + result.refundReference);
+        toast.success('Refund processed successfully! Reference: ' + result.refundReference);
         setProcessModal({ open: false, refund: null });
         loadRefunds();
       } else {
-        alert('Failed: ' + result.error);
+        toast.error('Failed: ' + result.error);
       }
     } catch (error) {
       console.error('Error processing refund:', error);
-      alert('Failed to process refund');
+      toast.error('Failed to process refund');
     } finally {
       setProcessing(false);
     }
@@ -135,12 +139,14 @@ const processRefund = async () => {
     if (statusFilter === 'rejected' && r.status !== 'rejected') return false;
     if (statusFilter === 'escalated' && !r.escalated_to_admin) return false;
     if (statusFilter === 'connect' && !r.order?.is_stripe_connect) return false;
-    if (searchTerm) {
-      const s = searchTerm.toLowerCase();
+    if (debouncedSearch) {
+      const s = debouncedSearch.toLowerCase();
       return r.ticket?.attendee_name?.toLowerCase().includes(s) || r.ticket?.attendee_email?.toLowerCase().includes(s) || r.event?.title?.toLowerCase().includes(s) || r.order?.order_number?.toLowerCase().includes(s);
     }
     return true;
   });
+
+  const { currentPage, totalPages, totalItems, itemsPerPage, paginatedItems: paginatedRefunds, handlePageChange } = usePagination(filteredRefunds, 20);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#2969FF]" /></div>;
 
@@ -194,7 +200,7 @@ const processRefund = async () => {
             </div>
           ) : (
             <div className="divide-y divide-[#0F0F0F]/10">
-              {filteredRefunds.map(refund => (
+              {paginatedRefunds.map(refund => (
                 <div key={refund.id} className="p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex flex-col md:flex-row md:items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden flex-shrink-0">
@@ -240,6 +246,13 @@ const processRefund = async () => {
               ))}
             </div>
           )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+          />
         </CardContent>
       </Card>
 

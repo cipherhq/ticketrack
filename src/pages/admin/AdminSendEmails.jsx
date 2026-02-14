@@ -34,6 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { toast } from 'sonner';
 
 export function AdminSendEmails() {
   const { admin, logAdminAction } = useAdmin();
@@ -133,7 +134,7 @@ export function AdminSendEmails() {
 
   const handleSend = async () => {
     if (!form.subject || !form.message || !form.recipientType) {
-      alert('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
 
@@ -165,7 +166,7 @@ export function AdminSendEmails() {
       loadEmailHistory();
     } catch (error) {
       console.error('Error sending email:', error);
-      alert('Failed to send email');
+      toast.error('Failed to send email');
     } finally {
       setSending(false);
     }

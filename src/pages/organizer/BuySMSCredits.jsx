@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice, getDefaultCurrency } from '@/config/currencies';
 import { sendSMSCreditsPurchasedEmail } from '@/lib/emailService';
+import { toast } from 'sonner';
 
 export function BuySMSCredits() {
   const { user } = useAuth();
@@ -146,7 +147,7 @@ export function BuySMSCredits() {
       handler.openIframe();
     } catch (error) {
       console.error('Error initiating purchase:', error);
-      alert('Failed to initiate purchase');
+      toast.error('Failed to initiate purchase');
       setProcessing(false);
       setSelectedPackage(null);
     }
@@ -194,10 +195,10 @@ export function BuySMSCredits() {
       // Reload data
       await loadData();
 
-      alert(`Success! ${totalCredits} SMS credits added to your account.`);
+      toast.success(`Success! ${totalCredits} SMS credits added to your account.`);
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Payment received but failed to add credits. Please contact support.');
+      toast.error('Payment received but failed to add credits. Please contact support.');
     } finally {
       setProcessing(false);
       setSelectedPackage(null);

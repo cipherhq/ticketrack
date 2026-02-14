@@ -49,6 +49,7 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
+import { toast } from 'sonner';
 
 // ==================== CONSTANTS ====================
 
@@ -447,7 +448,7 @@ export function ProjectManager() {
 
   const saveTask = async () => {
     if (!taskForm.title.trim()) {
-      alert('Task title is required');
+      toast.error('Task title is required');
       return;
     }
 
@@ -525,7 +526,7 @@ export function ProjectManager() {
       closeTaskModal();
     } catch (error) {
       console.error('Error saving task:', error);
-      alert('Failed to save task');
+      toast.error('Failed to save task');
     } finally {
       setSaving(false);
     }
@@ -615,7 +616,7 @@ export function ProjectManager() {
   };
 
   const applyTemplates = async (eventId) => {
-    if (templates.length === 0) return alert('No templates available');
+    if (templates.length === 0) return toast.info('No templates available');
     setSaving(true);
     try {
       const existingTasks = getEventTasks(eventId);
@@ -625,11 +626,11 @@ export function ProjectManager() {
           event_id: eventId, organizer_id: organizer.id, title: t.title, description: t.description,
           phase: t.phase, priority: 'medium', status: 'pending', sort_order: existingTasks.length + i,
         }));
-      if (newTasks.length === 0) return alert('All templates already applied');
+      if (newTasks.length === 0) return toast.info('All templates already applied');
       const { data, error } = await supabase.from('event_tasks').insert(newTasks).select();
       if (error) throw error;
       setTasks([...tasks, ...data]);
-      alert(`Added ${data.length} tasks`);
+      toast.success(`Added ${data.length} tasks`);
     } catch (error) {
       console.error('Error:', error);
     } finally {

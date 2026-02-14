@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { useAdmin } from '@/contexts/AdminContext';
+import { toast } from 'sonner';
 
 export function AdminKYC() {
   const { logAdminAction } = useAdmin();
@@ -131,12 +132,12 @@ export function AdminKYC() {
       // Log admin action
       await logAdminAction('kyc_approved', 'kyc_verification', selectedKYC.id, { level });
 
-      alert(`KYC approved at Level ${level}`);
+      toast.success(`KYC approved at Level ${level}`);
       setReviewDialogOpen(false);
       loadKYCs();
     } catch (error) {
       console.error('Error approving KYC:', error);
-      alert('Failed to approve KYC');
+      toast.error('Failed to approve KYC');
     } finally {
       setProcessing(false);
     }
@@ -144,7 +145,7 @@ export function AdminKYC() {
 
   const handleReject = async () => {
     if (!selectedKYC || !rejectionReason.trim()) {
-      alert('Please provide a rejection reason');
+      toast.error('Please provide a rejection reason');
       return;
     }
     setProcessing(true);
@@ -176,12 +177,12 @@ export function AdminKYC() {
       // Log admin action
       await logAdminAction('kyc_rejected', 'kyc_verification', selectedKYC.id, { reason: rejectionReason });
 
-      alert('KYC rejected');
+      toast.info('KYC rejected');
       setReviewDialogOpen(false);
       loadKYCs();
     } catch (error) {
       console.error('Error rejecting KYC:', error);
-      alert('Failed to reject KYC');
+      toast.error('Failed to reject KYC');
     } finally {
       setProcessing(false);
     }
@@ -206,7 +207,7 @@ export function AdminKYC() {
     if (url) {
       window.open(url, '_blank');
     } else {
-      alert('Document not available');
+      toast.error('Document not available');
     }
   };
 
