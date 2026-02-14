@@ -52,8 +52,6 @@ const PAGE_SIZE = 20;
 const STATUS_OPTIONS = {
   all: 'All Status',
   active: 'Active',
-  suspended: 'Suspended',
-  banned: 'Banned',
   pending: 'Pending',
 };
 
@@ -67,7 +65,6 @@ export function AdminUsers() {
     total: 0,
     attendees: 0,
     organizers: 0,
-    suspended: 0,
     newThisMonth: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,10 +122,9 @@ export function AdminUsers() {
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
 
-      const [totalResult, orgResult, suspendedResult, newResult] = await Promise.all([
+      const [totalResult, orgResult, newResult] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('organizers').select('*', { count: 'exact', head: true }),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).or('is_suspended.eq.true,is_banned.eq.true'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString()),
       ]);
 
@@ -138,7 +134,6 @@ export function AdminUsers() {
         total,
         attendees: total - organizers,
         organizers,
-        suspended: suspendedResult.count || 0,
         newThisMonth: newResult.count || 0,
       });
     } catch (error) {
@@ -153,7 +148,7 @@ export function AdminUsers() {
         .from('profiles')
         .select(`
           id, full_name, email, phone, avatar_url, is_admin, admin_role,
-          is_suspended, is_banned, created_at, last_sign_in_at, email_verified
+          created_at, last_sign_in_at, email_verified
         `, { count: 'exact' })
         .order('created_at', { ascending: false });
 
@@ -177,11 +172,7 @@ export function AdminUsers() {
 
       // Server-side status filter
       if (statusFilter === 'active') {
-        query = query.eq('is_banned', false).eq('is_suspended', false);
-      } else if (statusFilter === 'suspended') {
-        query = query.eq('is_suspended', true);
-      } else if (statusFilter === 'banned') {
-        query = query.eq('is_banned', true);
+        query = query.eq('email_verified', true);
       } else if (statusFilter === 'pending') {
         query = query.eq('email_verified', false);
       }
@@ -205,9 +196,7 @@ export function AdminUsers() {
         if (roles.length === 0) roles.push('attendee');
 
         let status = 'active';
-        if (profile.is_banned) status = 'banned';
-        else if (profile.is_suspended) status = 'suspended';
-        else if (!profile.email_verified) status = 'pending';
+        if (!profile.email_verified) status = 'pending';
 
         return { ...profile, roles, primaryRole: roles[0], status, organizer, promoter };
       });
@@ -236,18 +225,6 @@ export function AdminUsers() {
       let updates = {};
       
       switch (actionType) {
-        case 'suspend':
-          updates = { is_suspended: true };
-          break;
-        case 'unsuspend':
-          updates = { is_suspended: false };
-          break;
-        case 'ban':
-          updates = { is_banned: true, is_suspended: true };
-          break;
-        case 'unban':
-          updates = { is_banned: false, is_suspended: false };
-          break;
         case 'verify':
           updates = { email_verified: true };
           break;
@@ -290,10 +267,6 @@ export function AdminUsers() {
     switch (status) {
       case 'active':
         return <Badge className="bg-green-100 text-green-700">Active</Badge>;
-      case 'suspended':
-        return <Badge className="bg-orange-100 text-orange-700">Suspended</Badge>;
-      case 'banned':
-        return <Badge className="bg-red-100 text-red-700">Banned</Badge>;
       case 'pending':
         return <Badge className="bg-yellow-100 text-yellow-700">Pending</Badge>;
       default:
@@ -322,7 +295,7 @@ export function AdminUsers() {
     try {
       let query = supabase
         .from('profiles')
-        .select('id, full_name, email, phone, is_admin, is_suspended, is_banned, created_at, last_sign_in_at, email_verified')
+        .select('id, full_name, email, phone, is_admin, created_at, last_sign_in_at, email_verified')
         .order('created_at', { ascending: false });
 
       if (userTypeFilter === 'attendee' && organizerUserIds && organizerUserIds.length > 0) {
@@ -345,9 +318,7 @@ export function AdminUsers() {
           const isOrg = organizerMap[u.id];
           const type = isOrg ? 'Organizer' : 'Attendee';
           let status = 'Active';
-          if (u.is_banned) status = 'Banned';
-          else if (u.is_suspended) status = 'Suspended';
-          else if (!u.email_verified) status = 'Pending';
+          if (!u.email_verified) status = 'Pending';
           return [
             u.full_name || '',
             u.email || '',
@@ -401,7 +372,7 @@ export function AdminUsers() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-border/10 rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -432,17 +403,6 @@ export function AdminUsers() {
                 <p className="text-2xl font-semibold text-blue-600">{stats.organizers.toLocaleString()}</p>
               </div>
               <UserCheck className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/10 rounded-2xl">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Suspended</p>
-                <p className="text-2xl font-semibold text-orange-600">{stats.suspended.toLocaleString()}</p>
-              </div>
-              <Ban className="w-8 h-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -596,30 +556,6 @@ export function AdminUsers() {
                                   Verify Email
                                 </DropdownMenuItem>
                               )}
-                              {user.status === 'active' && (
-                                <DropdownMenuItem onClick={() => openActionDialog(user, 'suspend')}>
-                                  <UserX className="w-4 h-4 mr-2 text-orange-600" />
-                                  Suspend User
-                                </DropdownMenuItem>
-                              )}
-                              {user.status === 'suspended' && (
-                                <>
-                                  <DropdownMenuItem onClick={() => openActionDialog(user, 'unsuspend')}>
-                                    <UserCheck className="w-4 h-4 mr-2 text-green-600" />
-                                    Unsuspend User
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openActionDialog(user, 'ban')} className="text-red-600">
-                                    <Ban className="w-4 h-4 mr-2" />
-                                    Ban User
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {user.status === 'banned' && (
-                                <DropdownMenuItem onClick={() => openActionDialog(user, 'unban')}>
-                                  <UserCheck className="w-4 h-4 mr-2 text-green-600" />
-                                  Unban User
-                                </DropdownMenuItem>
-                              )}
                               <DropdownMenuSeparator />
                               {!user.is_admin ? (
                                 <DropdownMenuItem onClick={() => openActionDialog(user, 'make_admin')}>
@@ -727,20 +663,12 @@ export function AdminUsers() {
         <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {actionType === 'ban' && <Ban className="w-5 h-5 text-red-600" />}
-              {actionType === 'suspend' && <UserX className="w-5 h-5 text-orange-600" />}
-              {actionType === 'unsuspend' && <UserCheck className="w-5 h-5 text-green-600" />}
-              {actionType === 'unban' && <UserCheck className="w-5 h-5 text-green-600" />}
               {actionType === 'verify' && <CheckCircle className="w-5 h-5 text-green-600" />}
               {actionType === 'make_admin' && <Shield className="w-5 h-5 text-purple-600" />}
               {actionType === 'remove_admin' && <Shield className="w-5 h-5 text-red-600" />}
               Confirm Action
             </DialogTitle>
             <DialogDescription>
-              {actionType === 'ban' && `Are you sure you want to permanently ban ${selectedUser?.full_name || selectedUser?.email}?`}
-              {actionType === 'suspend' && `Are you sure you want to suspend ${selectedUser?.full_name || selectedUser?.email}?`}
-              {actionType === 'unsuspend' && `Are you sure you want to unsuspend ${selectedUser?.full_name || selectedUser?.email}?`}
-              {actionType === 'unban' && `Are you sure you want to unban ${selectedUser?.full_name || selectedUser?.email}?`}
               {actionType === 'verify' && `Mark ${selectedUser?.email} as verified?`}
               {actionType === 'make_admin' && `Grant admin privileges to ${selectedUser?.full_name || selectedUser?.email}?`}
               {actionType === 'remove_admin' && `Remove admin privileges from ${selectedUser?.full_name || selectedUser?.email}?`}
@@ -765,7 +693,7 @@ export function AdminUsers() {
               onClick={handleAction} 
               disabled={processing}
               className={`rounded-xl ${
-                actionType === 'ban' || actionType === 'remove_admin' 
+                actionType === 'remove_admin'
                   ? 'bg-red-600 hover:bg-red-700' 
                   : 'bg-[#2969FF] hover:bg-[#1e4fd6]'
               }`}
