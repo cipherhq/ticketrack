@@ -4,7 +4,9 @@ import { supabase } from '@/lib/supabase';
 const ROTATION_INTERVAL = 60000; // 60 seconds per ad
 
 export function AdBanner({ position, ads = [] }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(() =>
+    ads.length > 0 ? Math.floor(Math.random() * ads.length) : 0
+  );
   const [fading, setFading] = useState(false);
   const trackedImpressions = useRef(new Set());
   const containerRef = useRef(null);
