@@ -307,7 +307,7 @@ serve(async (req) => {
           const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
           ticketsToCreate.push({
             event_id: order.event_id,
-            ticket_type_id: item.ticket_type_id,
+            ticket_type_id: item.ticket_type_id || null,
             user_id: order.user_id,
             attendee_email: order.buyer_email,
             attendee_name: order.buyer_name,
@@ -341,7 +341,7 @@ serve(async (req) => {
           );
           tickets = (newTickets || []).map(t => ({
             ...t,
-            ticket_type_name: ticketTypeMap.get(t.ticket_type_id) || "Ticket"
+            ticket_type_name: ticketTypeMap.get(t.ticket_type_id) || (order.is_donation ? "Free Admission + Donation" : "Ticket")
           }));
           log.info(`[complete-stripe-order] Created ${tickets.length} tickets for user_id: ${order.user_id}`);
 
@@ -355,6 +355,48 @@ serve(async (req) => {
             }
           }
         }
+      }
+    }
+
+    // Fallback: create tickets directly for donation/free orders if none were created
+    if (tickets.length === 0 && order.event_id && order.user_id) {
+      const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + (i.quantity || 1), 0) || 1;
+      const fallbackTickets: any[] = [];
+
+      for (let i = 0; i < totalQty; i++) {
+        const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
+        fallbackTickets.push({
+          event_id: order.event_id,
+          ticket_type_id: null,
+          user_id: order.user_id,
+          attendee_email: order.buyer_email,
+          attendee_name: order.buyer_name,
+          attendee_phone: order.buyer_phone || null,
+          ticket_code: ticketCode,
+          qr_code: ticketCode,
+          unit_price: 0,
+          total_price: 0,
+          payment_reference: order.payment_reference,
+          payment_status: "completed",
+          payment_method: order.payment_method || order.payment_provider || "stripe",
+          order_id: orderId,
+          status: "active",
+        });
+      }
+
+      const { data: fallbackCreated, error: fallbackError } = await supabase
+        .from("tickets")
+        .insert(fallbackTickets)
+        .select();
+
+      if (fallbackError) {
+        log.error("[complete-stripe-order] Fallback ticket creation error:", fallbackError);
+      } else {
+        tickets = (fallbackCreated || []).map(t => ({
+          ...t,
+          ticket_type_name: order.is_donation ? "Free Admission + Donation" : "Free Admission"
+        }));
+        log.info(`[complete-stripe-order] Fallback created ${tickets.length} tickets for order ${orderId}`);
       }
     }
 

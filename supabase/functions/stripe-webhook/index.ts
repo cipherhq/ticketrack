@@ -411,7 +411,7 @@ serve(async (req) => {
                 ticketInserts.push({
                   order_id: orderId,
                   event_id: order.event_id,
-                  ticket_type_id: item.ticket_type_id,
+                  ticket_type_id: item.ticket_type_id || null,
                   user_id: order.user_id,
                   attendee_email: order.buyer_email,
                   attendee_name: order.buyer_name,
@@ -433,13 +433,48 @@ serve(async (req) => {
               if (ticketError) {
                 console.error("Error creating tickets:", ticketError);
               } else {
-                // Update ticket_types quantities
+                // Update ticket_types quantities (skip null ticket_type_id)
                 for (const item of order.order_items || []) {
-                  await supabase.rpc("decrement_ticket_quantity", {
-                    p_ticket_type_id: item.ticket_type_id,
-                    p_quantity: item.quantity,
-                  });
+                  if (item.ticket_type_id) {
+                    await supabase.rpc("decrement_ticket_quantity", {
+                      p_ticket_type_id: item.ticket_type_id,
+                      p_quantity: item.quantity,
+                    });
+                  }
                 }
+              }
+            }
+
+            // Fallback: if no tickets created (e.g. no order_items or insert failed), create directly
+            if (ticketInserts.length === 0) {
+              const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + (i.quantity || 1), 0) || 1;
+              const fallbackTickets: any[] = [];
+              for (let i = 0; i < totalQty; i++) {
+                const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() +
+                                  Math.random().toString(36).substring(2, 8).toUpperCase();
+                fallbackTickets.push({
+                  order_id: orderId,
+                  event_id: order.event_id,
+                  ticket_type_id: null,
+                  user_id: order.user_id,
+                  attendee_email: order.buyer_email,
+                  attendee_name: order.buyer_name,
+                  attendee_phone: order.buyer_phone || null,
+                  ticket_code: ticketCode,
+                  qr_code: ticketCode,
+                  unit_price: 0,
+                  total_price: 0,
+                  payment_reference: session.payment_intent,
+                  payment_status: "completed",
+                  payment_method: "stripe",
+                  status: "active",
+                });
+              }
+              const { error: fallbackErr } = await supabase.from("tickets").insert(fallbackTickets);
+              if (fallbackErr) {
+                console.error("Fallback ticket creation error:", fallbackErr);
+              } else {
+                console.log(`Fallback created ${fallbackTickets.length} tickets for order ${orderId}`);
               }
             }
           }

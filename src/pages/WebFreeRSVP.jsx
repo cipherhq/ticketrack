@@ -290,7 +290,9 @@ export function WebFreeRSVP() {
   const actualDonation = customDonation ? parseFloat(customDonation) || 0 : donationAmount
   
   // Donation fee handling - check if donor pays the fee or organizer absorbs it
-  const donorPaysFee = event?.donation_fee_handling === 'pass_to_attendee'
+  // Fall back to event's general fee_handling if donation_fee_handling not explicitly set
+  const donorPaysFee = event?.donation_fee_handling === 'pass_to_attendee' ||
+    (!event?.donation_fee_handling && event?.fee_handling === 'pass_to_attendee')
   const donationTotal = donorPaysFee ? actualDonation + donationFee : actualDonation
 
   // Redirect if no event or not logged in
