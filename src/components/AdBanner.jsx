@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
-const ROTATION_INTERVAL = 8000; // 8 seconds per ad
+const ROTATION_INTERVAL = 60000; // 60 seconds per ad
 
 export function AdBanner({ position, ads = [] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
