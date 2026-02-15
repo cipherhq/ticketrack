@@ -1,17 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
 import {
-  Mail, MessageSquare, Bell, Send, Clock, CheckCircle, Users, Calendar,
+  Mail, MessageSquare, Send, Clock, CheckCircle, Users, Calendar,
   Loader2, Sparkles, ChevronRight, ChevronLeft, Eye, Trash2, RefreshCw,
-  FileText, UserCheck, Heart, AlertCircle, Plus, Filter, Search,
-  Phone, Globe, Zap, TrendingUp, BarChart3, Settings, Tag, Target,
-  Copy, Download, Upload, MoreVertical
+  FileText, UserCheck, Heart, AlertCircle, Plus,
+  Phone, Zap, BarChart3, Target,
+  Copy, Download, MoreVertical
 } from 'lucide-react';
 import { useConfirm } from '@/hooks/useConfirm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -241,22 +241,13 @@ export function CommunicationHub() {
     whatsappCredits: 0,
   });
 
-  // Analytics data
-  const [analytics, setAnalytics] = useState({
-    loading: false,
-    // Daily send counts for last 30 days
-    dailySends: [],
-    // Channel breakdown
-    channelBreakdown: { email: 0, sms: 0, whatsapp: 0, telegram: 0 },
-    // Delivery stats
-    deliveryStats: { sent: 0, delivered: 0, failed: 0, pending: 0 },
-    // Campaign performance
-    campaignPerformance: [],
-    // Credits used this month
-    creditsUsedThisMonth: 0,
-    // Top performing campaigns
-    topCampaigns: [],
-  });
+  // Message History
+  const [messageHistory, setMessageHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyChannel, setHistoryChannel] = useState('all');
+  const [historyStatus, setHistoryStatus] = useState('all');
+  const [historyOffset, setHistoryOffset] = useState(0);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
 
   // Campaign form
   const [form, setForm] = useState({
@@ -586,99 +577,40 @@ export function CommunicationHub() {
     setWizardStep(2);
   };
 
-  const loadAnalytics = async () => {
-    setAnalytics(prev => ({ ...prev, loading: true }));
-    
+  const loadMessageHistory = async (reset = false) => {
+    setHistoryLoading(true);
     try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString();
-
-      // Get messages from last 30 days
-      const { data: recentMessages } = await supabase
+      const offset = reset ? 0 : historyOffset;
+      let query = supabase
         .from('communication_messages')
-        .select('id, channel, status, delivered_at, created_at')
-        .eq('organizer_id', organizer.id)
-        .gte('created_at', thirtyDaysAgoStr)
-        .order('created_at', { ascending: true });
-
-      // Calculate daily sends
-      const dailyMap = {};
-      for (let i = 0; i < 30; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
-        const dateStr = date.toISOString().split('T')[0];
-        dailyMap[dateStr] = { date: dateStr, email: 0, sms: 0, whatsapp: 0, total: 0 };
-      }
-
-      const channelBreakdown = { email: 0, sms: 0, whatsapp: 0 };
-      const deliveryStats = { sent: 0, delivered: 0, failed: 0, pending: 0 };
-
-      (recentMessages || []).forEach(msg => {
-        const dateStr = msg.created_at?.split('T')[0];
-        if (dailyMap[dateStr]) {
-          dailyMap[dateStr][msg.channel] = (dailyMap[dateStr][msg.channel] || 0) + 1;
-          dailyMap[dateStr].total += 1;
-        }
-        
-        // Channel breakdown
-        if (channelBreakdown[msg.channel] !== undefined) {
-          channelBreakdown[msg.channel] += 1;
-        }
-        
-        // Delivery stats
-        if (msg.status === 'sent' || msg.status === 'delivered') {
-          deliveryStats.delivered += 1;
-        } else if (msg.status === 'failed') {
-          deliveryStats.failed += 1;
-        } else if (msg.status === 'pending') {
-          deliveryStats.pending += 1;
-        }
-        deliveryStats.sent += 1;
-      });
-
-      const dailySends = Object.values(dailyMap);
-
-      // Get campaign performance
-      const { data: campaignData } = await supabase
-        .from('communication_campaigns')
-        .select('id, name, channels, sent_count, status, created_at, sent_at')
+        .select('id, channel, recipient_email, recipient_phone, subject, content, status, delivered_at, created_at')
         .eq('organizer_id', organizer.id)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .range(offset, offset + 49);
 
-      // Calculate credits used this month
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      if (historyChannel !== 'all') {
+        query = query.eq('channel', historyChannel);
+      }
+      if (historyStatus !== 'all') {
+        query = query.eq('status', historyStatus);
+      }
 
-      const { data: creditTxns } = await supabase
-        .from('communication_credit_transactions')
-        .select('amount')
-        .eq('organizer_id', organizer.id)
-        .eq('type', 'usage')
-        .gte('created_at', startOfMonth.toISOString());
+      const { data, error } = await query;
+      if (error) throw error;
 
-      const creditsUsedThisMonth = (creditTxns || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-
-      // Top campaigns by send count
-      const topCampaigns = [...(campaignData || [])]
-        .filter(c => c.sent_count > 0)
-        .sort((a, b) => (b.sent_count || 0) - (a.sent_count || 0))
-        .slice(0, 5);
-
-      setAnalytics({
-        loading: false,
-        dailySends,
-        channelBreakdown,
-        deliveryStats,
-        campaignPerformance: campaignData || [],
-        creditsUsedThisMonth,
-        topCampaigns,
-      });
+      const rows = data || [];
+      if (reset) {
+        setMessageHistory(rows);
+        setHistoryOffset(rows.length);
+      } else {
+        setMessageHistory(prev => [...prev, ...rows]);
+        setHistoryOffset(offset + rows.length);
+      }
+      setHasMoreHistory(rows.length === 50);
     } catch (error) {
-      console.error('Error loading analytics:', error);
-      setAnalytics(prev => ({ ...prev, loading: false }));
+      console.error('Error loading message history:', error);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -919,28 +851,30 @@ export function CommunicationHub() {
 
       if (error) throw error;
 
-      // Update content for each channel
-      if (data?.email) {
-        setForm(f => ({
-          ...f,
-          content: {
-            ...f.content,
-            email: { subject: data.email.subject || '', body: data.email.body || '' },
-          }
-        }));
-      }
-      if (data?.sms) {
-        setForm(f => ({
-          ...f,
-          content: { ...f.content, sms: { message: data.sms.message || data.sms } }
-        }));
-      }
-      if (data?.whatsapp) {
-        setForm(f => ({
-          ...f,
-          content: { ...f.content, whatsapp: { message: data.whatsapp.message || data.whatsapp } }
-        }));
-      }
+      // Edge function returns { subject, body } — map to each selected channel
+      const subject = data?.subject || '';
+      const htmlBody = data?.body || '';
+      // Strip HTML tags for plain text channels
+      const plainText = htmlBody.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+
+      setForm(f => {
+        const updated = { ...f, content: { ...f.content } };
+
+        if (f.channels.includes('email')) {
+          updated.content.email = { subject, body: htmlBody };
+        }
+        if (f.channels.includes('sms')) {
+          updated.content.sms = { message: plainText.slice(0, 160) };
+        }
+        if (f.channels.includes('whatsapp')) {
+          updated.content.whatsapp = { message: plainText };
+        }
+        if (f.channels.includes('telegram')) {
+          updated.content.telegram = { message: plainText };
+        }
+
+        return updated;
+      });
 
       setAiPrompt('');
     } catch (err) {
@@ -1003,7 +937,9 @@ export function CommunicationHub() {
       // If sending now, trigger the send
       if (sendNow) {
         const event = events.find(e => e.id === form.eventId);
-        
+        let totalSuccess = 0;
+        let totalFail = 0;
+
         // Send via each channel with properly filtered recipients
         for (const channel of form.channels) {
           // Fetch recipients with opt-out filtering
@@ -1082,6 +1018,8 @@ export function CommunicationHub() {
             }
             
             console.log(`📧 Email campaign: ${successCount} sent, ${failCount} failed`);
+            totalSuccess += successCount;
+            totalFail += failCount;
           }
           
           // SMS sending
@@ -1141,19 +1079,21 @@ export function CommunicationHub() {
             }
             
             console.log(`📱 SMS campaign: ${successCount} sent, ${failCount} failed`);
+            totalSuccess += successCount;
+            totalFail += failCount;
           }
           
           // WhatsApp sending
           if (channel === 'whatsapp') {
             console.log(`💬 Sending WhatsApp to ${recipients.length} recipients...`);
-            
+
             let successCount = 0;
             let failCount = 0;
-            
+
             for (const recipient of recipients) {
               try {
                 console.log(`  → Sending WhatsApp to: ${recipient.phone}`);
-                
+
                 // Replace variables in message
                 let personalizedMessage = form.content.whatsapp.message;
                 personalizedMessage = personalizedMessage.replace(/\{\{attendee_name\}\}/g, recipient.name || 'there');
@@ -1162,7 +1102,7 @@ export function CommunicationHub() {
                 personalizedMessage = personalizedMessage.replace(/\{\{event_time\}\}/g, event?.start_date ? format(new Date(event.start_date), 'h:mm a') : '');
                 personalizedMessage = personalizedMessage.replace(/\{\{event_venue\}\}/g, event?.venue_name || '');
                 personalizedMessage = personalizedMessage.replace(/\{\{organizer_name\}\}/g, organizer.business_name || '');
-                
+
                 // Send WhatsApp via edge function
                 const { data: waResult, error } = await supabase.functions.invoke('send-whatsapp', {
                   body: {
@@ -1171,17 +1111,18 @@ export function CommunicationHub() {
                     type: 'text',
                   }
                 });
-                
-                console.log(`  💬 WhatsApp Response for ${recipient.phone}:`, waResult, error);
-                
-                if (error || waResult?.error) {
-                  console.error(`  ❌ WhatsApp failed for ${recipient.phone}:`, error || waResult?.error);
+
+                const failed = error || !waResult?.success || waResult?.error;
+                const errorMsg = error?.message || waResult?.error || null;
+
+                if (failed) {
+                  console.error(`  ❌ WhatsApp failed for ${recipient.phone}:`, errorMsg);
                   failCount++;
                 } else {
                   console.log(`  ✅ WhatsApp sent to ${recipient.phone}`);
                   successCount++;
                 }
-                
+
                 // Log to communication_messages
                 await supabase.from('communication_messages').insert({
                   organizer_id: organizer.id,
@@ -1189,17 +1130,19 @@ export function CommunicationHub() {
                   channel: 'whatsapp',
                   recipient_phone: recipient.phone,
                   content: personalizedMessage,
-                  status: (error || waResult?.error) ? 'failed' : 'sent',
-                  error_message: error?.message || waResult?.error || null,
-                  delivered_at: (error || waResult?.error) ? null : new Date().toISOString(),
+                  status: failed ? 'failed' : 'sent',
+                  error_message: errorMsg,
+                  delivered_at: failed ? null : new Date().toISOString(),
                 });
               } catch (err) {
                 console.error(`Error sending WhatsApp to ${recipient.phone}:`, err);
                 failCount++;
               }
             }
-            
+
             console.log(`💬 WhatsApp campaign: ${successCount} sent, ${failCount} failed`);
+            totalSuccess += successCount;
+            totalFail += failCount;
           }
 
           // Send Telegram messages
@@ -1260,16 +1203,20 @@ export function CommunicationHub() {
             }
 
             console.log(`📨 Telegram campaign: ${successCount} sent, ${failCount} failed`);
+            totalSuccess += successCount;
+            totalFail += failCount;
           }
         }
 
-        // Update campaign status
+        // Update campaign status based on results
+        const campaignStatus = totalFail === 0 ? 'sent' : totalSuccess === 0 ? 'failed' : 'partially_failed';
         await supabase
           .from('communication_campaigns')
           .update({
-            status: 'sent',
+            status: campaignStatus,
             sent_at: new Date().toISOString(),
-            sent_count: recipientCount,
+            sent_count: totalSuccess,
+            failed_count: totalFail,
           })
           .eq('id', campaign.id);
       }
@@ -1277,7 +1224,15 @@ export function CommunicationHub() {
       await loadData();
       resetForm();
       setShowCreateWizard(false);
-      toast.success(sendNow ? `Campaign sent successfully!` : 'Campaign scheduled!');
+      if (!sendNow) {
+        toast.success('Campaign scheduled!');
+      } else if (totalFail === 0) {
+        toast.success('Campaign sent successfully!');
+      } else if (totalSuccess === 0) {
+        toast.error(`Campaign failed: all ${totalFail} messages failed to send.`);
+      } else {
+        toast.warning(`Campaign partially sent: ${totalSuccess} delivered, ${totalFail} failed.`);
+      }
     } catch (err) {
       console.error('Send error:', err);
       toast.error('Failed to send campaign: ' + err.message);
@@ -1371,7 +1326,7 @@ export function CommunicationHub() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -1403,12 +1358,12 @@ export function CommunicationHub() {
         <Card className="border-border/10 rounded-xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.emailsSent.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Emails Sent</p>
+                <p className="text-2xl font-bold">{(stats.emailsSent + stats.smsSent + stats.whatsappSent).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Messages Sent</p>
               </div>
             </div>
           </CardContent>
@@ -1427,61 +1382,19 @@ export function CommunicationHub() {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-border/10 rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <Phone className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.smsCredits.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">SMS Available</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/10 rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.whatsappCredits.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">WhatsApp Available</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/10 rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{segments.length}</p>
-                <p className="text-xs text-muted-foreground">Segments</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={(tab) => {
         setActiveTab(tab);
-        if (tab === 'analytics' && !analytics.dailySends.length) {
-          loadAnalytics();
+        if (tab === 'history' && messageHistory.length === 0) {
+          loadMessageHistory(true);
         }
       }}>
         <TabsList>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         {/* Campaigns Tab */}
@@ -1511,13 +1424,17 @@ export function CommunicationHub() {
                           </h3>
                           <Badge variant="secondary" className={
                             campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
+                            campaign.status === 'failed' ? 'bg-red-100 text-red-700' :
+                            campaign.status === 'partially_failed' ? 'bg-amber-100 text-amber-700' :
                             campaign.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
                             campaign.status === 'sending' ? 'bg-yellow-100 text-yellow-700' :
                             'bg-muted text-foreground/80'
                           }>
                             {campaign.status === 'sent' && <CheckCircle className="w-3 h-3 mr-1" />}
+                            {campaign.status === 'failed' && <AlertCircle className="w-3 h-3 mr-1" />}
+                            {campaign.status === 'partially_failed' && <AlertCircle className="w-3 h-3 mr-1" />}
                             {campaign.status === 'scheduled' && <Clock className="w-3 h-3 mr-1" />}
-                            {campaign.status}
+                            {campaign.status === 'partially_failed' ? 'partial' : campaign.status}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -1742,403 +1659,136 @@ export function CommunicationHub() {
           )}
         </TabsContent>
 
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-6">
-          {analytics.loading ? (
+        {/* History Tab */}
+        <TabsContent value="history" className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Select value={historyChannel} onValueChange={(v) => { setHistoryChannel(v); setHistoryOffset(0); setHasMoreHistory(true); }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Channel" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Channels</SelectItem>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="sms">SMS</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={historyStatus} onValueChange={(v) => { setHistoryStatus(v); setHistoryOffset(0); setHasMoreHistory(true); }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button variant="outline" size="sm" onClick={() => loadMessageHistory(true)}>
+              <RefreshCw className="w-4 h-4 mr-1" />
+              Refresh
+            </Button>
+
+            <div className="ml-auto">
+              <Button variant="outline" size="sm" onClick={() => navigate('/organizer/analytics')}>
+                <BarChart3 className="w-4 h-4 mr-1" />
+                View Analytics
+              </Button>
+            </div>
+          </div>
+
+          {/* Message Table */}
+          {historyLoading && messageHistory.length === 0 ? (
             <Card className="border-border/10 rounded-xl">
               <CardContent className="py-12 text-center">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2969FF] mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading analytics...</p>
+                <p className="text-muted-foreground">Loading message history...</p>
+              </CardContent>
+            </Card>
+          ) : messageHistory.length === 0 ? (
+            <Card className="border-border/10 rounded-xl">
+              <CardContent className="py-12 text-center">
+                <Clock className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No messages yet</h3>
+                <p className="text-muted-foreground">Messages you send will appear here with delivery status</p>
               </CardContent>
             </Card>
           ) : (
-            <>
-              {/* Summary Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="border-border/10 rounded-xl">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <Send className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold">{analytics.deliveryStats.sent.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">Messages Sent (30d)</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            <Card className="border-border/10 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/10 bg-muted/50">
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Recipient</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Channel</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Content</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                      <th className="text-right py-3 px-4 font-medium text-muted-foreground">Date/Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {messageHistory.map(msg => {
+                      const channel = CHANNELS.find(c => c.id === msg.channel);
+                      const ChannelIcon = channel?.icon || Mail;
+                      const recipient = msg.recipient_email || msg.recipient_phone || '-';
+                      const contentPreview = (msg.subject || (typeof msg.content === 'string' ? msg.content : msg.content?.message) || '').replace(/<[^>]+>/g, '').slice(0, 60);
+                      const timestamp = msg.delivered_at || msg.created_at;
 
-                <Card className="border-border/10 rounded-xl">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold">
-                          {analytics.deliveryStats.sent > 0 
-                            ? Math.round((analytics.deliveryStats.delivered / analytics.deliveryStats.sent) * 100)
-                            : 0}%
-                        </p>
-                        <p className="text-xs text-muted-foreground">Delivery Rate</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/10 rounded-xl">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                        <Zap className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold">{analytics.creditsUsedThisMonth.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">Credits Used (Month)</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/10 rounded-xl">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                        <BarChart3 className="w-5 h-5 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold">{analytics.campaignPerformance.length}</p>
-                        <p className="text-xs text-muted-foreground">Recent Campaigns</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Messages Over Time */}
-                <Card className="border-border/10 rounded-xl">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-[#2969FF]" />
-                      Messages Over Time (Last 30 Days)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {analytics.dailySends.length > 0 ? (
-                      <div className="space-y-2">
-                        {/* Mini bar chart using CSS */}
-                        <div className="flex items-end gap-1 h-32">
-                          {analytics.dailySends.map((day, idx) => {
-                            const maxTotal = Math.max(...analytics.dailySends.map(d => d.total), 1);
-                            const height = (day.total / maxTotal) * 100;
-                            return (
-                              <div 
-                                key={idx} 
-                                className="flex-1 bg-[#2969FF]/20 rounded-t relative group cursor-pointer"
-                                style={{ height: `${Math.max(height, 4)}%` }}
-                              >
-                                <div 
-                                  className="absolute bottom-0 left-0 right-0 bg-[#2969FF] rounded-t transition-all"
-                                  style={{ height: `${height > 0 ? 100 : 0}%` }}
-                                />
-                                {/* Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
-                                  <div className="bg-[#0F0F0F] text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                                    {day.date}: {day.total} sent
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{analytics.dailySends[0]?.date?.slice(5)}</span>
-                          <span>{analytics.dailySends[analytics.dailySends.length - 1]?.date?.slice(5)}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-32 flex items-center justify-center text-muted-foreground">
-                        No message data yet
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Channel Breakdown */}
-                <Card className="border-border/10 rounded-xl">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Target className="w-4 h-4 text-[#2969FF]" />
-                      Channel Breakdown
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(analytics.channelBreakdown.email + analytics.channelBreakdown.sms + analytics.channelBreakdown.whatsapp) > 0 ? (
-                      <div className="space-y-4">
-                        {/* Email */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4 text-blue-600" />
-                              <span>Email</span>
+                      return (
+                        <tr key={msg.id} className="border-b border-border/5 hover:bg-muted/30">
+                          <td className="py-3 px-4">
+                            <span className="truncate max-w-[180px] block">{recipient}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-1.5">
+                              <ChannelIcon className={`w-3.5 h-3.5 ${channel?.color || 'text-muted-foreground'}`} />
+                              <span className="capitalize">{msg.channel}</span>
                             </div>
-                            <span className="font-medium">{analytics.channelBreakdown.email.toLocaleString()}</span>
-                          </div>
-                          <div className="h-2 bg-[#0F0F0F]/10 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-500 rounded-full transition-all"
-                              style={{ 
-                                width: `${(analytics.channelBreakdown.email / Math.max(analytics.deliveryStats.sent, 1)) * 100}%` 
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* SMS */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-green-600" />
-                              <span>SMS</span>
-                            </div>
-                            <span className="font-medium">{analytics.channelBreakdown.sms.toLocaleString()}</span>
-                          </div>
-                          <div className="h-2 bg-[#0F0F0F]/10 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-green-500 rounded-full transition-all"
-                              style={{ 
-                                width: `${(analytics.channelBreakdown.sms / Math.max(analytics.deliveryStats.sent, 1)) * 100}%` 
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* WhatsApp */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <MessageSquare className="w-4 h-4 text-emerald-600" />
-                              <span>WhatsApp</span>
-                            </div>
-                            <span className="font-medium">{analytics.channelBreakdown.whatsapp.toLocaleString()}</span>
-                          </div>
-                          <div className="h-2 bg-[#0F0F0F]/10 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-emerald-500 rounded-full transition-all"
-                              style={{ 
-                                width: `${(analytics.channelBreakdown.whatsapp / Math.max(analytics.deliveryStats.sent, 1)) * 100}%` 
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-32 flex items-center justify-center text-muted-foreground">
-                        No channel data yet
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Delivery Stats & Top Campaigns */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Delivery Stats */}
-                <Card className="border-border/10 rounded-xl">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      Delivery Status
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-3 bg-green-50 rounded-xl">
-                        <p className="text-2xl font-bold text-green-600">{analytics.deliveryStats.delivered}</p>
-                        <p className="text-xs text-green-700">Delivered</p>
-                      </div>
-                      <div className="text-center p-3 bg-red-50 rounded-xl">
-                        <p className="text-2xl font-bold text-red-600">{analytics.deliveryStats.failed}</p>
-                        <p className="text-xs text-red-700">Failed</p>
-                      </div>
-                      <div className="text-center p-3 bg-yellow-50 rounded-xl">
-                        <p className="text-2xl font-bold text-yellow-600">{analytics.deliveryStats.pending}</p>
-                        <p className="text-xs text-yellow-700">Pending</p>
-                      </div>
-                    </div>
-
-                    {/* Delivery rate visual */}
-                    <div className="mt-4">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">Overall Delivery Rate</span>
-                        <span className="font-medium">
-                          {analytics.deliveryStats.sent > 0 
-                            ? Math.round((analytics.deliveryStats.delivered / analytics.deliveryStats.sent) * 100)
-                            : 0}%
-                        </span>
-                      </div>
-                      <div className="h-3 bg-[#0F0F0F]/10 rounded-full overflow-hidden flex">
-                        <div 
-                          className="h-full bg-green-500"
-                          style={{ 
-                            width: `${analytics.deliveryStats.sent > 0 ? (analytics.deliveryStats.delivered / analytics.deliveryStats.sent) * 100 : 0}%` 
-                          }}
-                        />
-                        <div 
-                          className="h-full bg-red-500"
-                          style={{ 
-                            width: `${analytics.deliveryStats.sent > 0 ? (analytics.deliveryStats.failed / analytics.deliveryStats.sent) * 100 : 0}%` 
-                          }}
-                        />
-                        <div 
-                          className="h-full bg-yellow-500"
-                          style={{ 
-                            width: `${analytics.deliveryStats.sent > 0 ? (analytics.deliveryStats.pending / analytics.deliveryStats.sent) * 100 : 0}%` 
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Top Campaigns */}
-                <Card className="border-border/10 rounded-xl">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-amber-600" />
-                      Top Campaigns
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {analytics.topCampaigns.length > 0 ? (
-                      <div className="space-y-3">
-                        {analytics.topCampaigns.map((campaign, idx) => (
-                          <div key={campaign.id} className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                              idx === 0 ? 'bg-amber-100 text-amber-700' :
-                              idx === 1 ? 'bg-muted text-muted-foreground' :
-                              idx === 2 ? 'bg-orange-100 text-orange-700' :
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="truncate max-w-[250px] block text-muted-foreground">
+                              {contentPreview || '-'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge className={
+                              msg.status === 'sent' ? 'bg-green-100 text-green-700' :
+                              msg.status === 'delivered' ? 'bg-blue-100 text-blue-700' :
+                              msg.status === 'failed' ? 'bg-red-100 text-red-700' :
+                              msg.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                               'bg-muted text-muted-foreground'
-                            }`}>
-                              {idx + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{campaign.name || 'Untitled Campaign'}</p>
-                              <p className="text-xs text-muted-foreground">{campaign.sent_count?.toLocaleString() || 0} messages</p>
-                            </div>
-                            <div className="flex gap-1">
-                              {campaign.channels?.map(ch => {
-                                const channel = CHANNELS.find(c => c.id === ch);
-                                const Icon = channel?.icon || Mail;
-                                return (
-                                  <Icon key={ch} className={`w-3 h-3 ${channel?.color || 'text-muted-foreground'}`} />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="h-32 flex items-center justify-center text-muted-foreground">
-                        <div className="text-center">
-                          <Send className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                          <p>No campaigns with sends yet</p>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                            }>
+                              {msg.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-right text-muted-foreground whitespace-nowrap">
+                            {timestamp ? format(new Date(timestamp), 'MMM d, yyyy h:mm a') : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
 
-              {/* Recent Campaign Activity */}
-              <Card className="border-border/10 rounded-xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#2969FF]" />
-                    Recent Campaign Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {analytics.campaignPerformance.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border/10">
-                            <th className="text-left py-2 font-medium text-muted-foreground">Campaign</th>
-                            <th className="text-left py-2 font-medium text-muted-foreground">Channels</th>
-                            <th className="text-right py-2 font-medium text-muted-foreground">Sent</th>
-                            <th className="text-right py-2 font-medium text-muted-foreground">Status</th>
-                            <th className="text-right py-2 font-medium text-muted-foreground">Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {analytics.campaignPerformance.slice(0, 8).map(campaign => (
-                            <tr key={campaign.id} className="border-b border-border/5 hover:bg-muted/50">
-                              <td className="py-3">
-                                <p className="font-medium truncate max-w-[200px]">{campaign.name || 'Untitled'}</p>
-                              </td>
-                              <td className="py-3">
-                                <div className="flex gap-1">
-                                  {campaign.channels?.map(ch => {
-                                    const channel = CHANNELS.find(c => c.id === ch);
-                                    const Icon = channel?.icon || Mail;
-                                    return (
-                                      <div key={ch} className={`w-6 h-6 rounded-full ${channel?.bgColor} flex items-center justify-center`}>
-                                        <Icon className={`w-3 h-3 ${channel?.color}`} />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </td>
-                              <td className="py-3 text-right font-medium">
-                                {campaign.sent_count?.toLocaleString() || 0}
-                              </td>
-                              <td className="py-3 text-right">
-                                <Badge className={
-                                  campaign.status === 'sent' ? 'bg-green-100 text-green-700' :
-                                  campaign.status === 'sending' ? 'bg-blue-100 text-blue-700' :
-                                  campaign.status === 'scheduled' ? 'bg-purple-100 text-purple-700' :
-                                  campaign.status === 'draft' ? 'bg-muted text-muted-foreground' :
-                                  'bg-muted text-muted-foreground'
-                                }>
-                                  {campaign.status}
-                                </Badge>
-                              </td>
-                              <td className="py-3 text-right text-muted-foreground">
-                                {campaign.sent_at 
-                                  ? format(new Date(campaign.sent_at), 'MMM d, yyyy')
-                                  : format(new Date(campaign.created_at), 'MMM d, yyyy')
-                                }
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="py-8 text-center text-muted-foreground">
-                      <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      <p>No campaigns yet. Create your first campaign to see analytics.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Refresh Button */}
-              <div className="flex justify-center">
-                <Button 
-                  variant="outline" 
-                  onClick={loadAnalytics}
-                  className="rounded-xl"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh Analytics
-                </Button>
-              </div>
-            </>
+              {/* Load More */}
+              {hasMoreHistory && (
+                <div className="p-4 text-center border-t border-border/10">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => loadMessageHistory(false)}
+                    disabled={historyLoading}
+                  >
+                    {historyLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                    Load More
+                  </Button>
+                </div>
+              )}
+            </Card>
           )}
         </TabsContent>
       </Tabs>
