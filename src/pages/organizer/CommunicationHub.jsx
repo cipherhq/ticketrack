@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -283,6 +283,11 @@ export function CommunicationHub() {
   const [templateName, setTemplateName] = useState('');
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
+
+  // Refs for cursor-position variable insertion
+  const quillRef = useRef(null);
+  const smsRef = useRef(null);
+  const whatsappRef = useRef(null);
 
   // ============================================================================
   // DATA LOADING
@@ -807,28 +812,39 @@ export function CommunicationHub() {
 
   const insertVariable = (channel, variable) => {
     if (channel === 'email') {
-      setForm(f => ({
-        ...f,
-        content: {
-          ...f.content,
-          email: {
-            ...f.content.email,
-            body: f.content.email.body + variable,
-          }
-        }
-      }));
+      const editor = quillRef.current?.getEditor?.();
+      if (editor) {
+        const selection = editor.getSelection();
+        const pos = selection ? selection.index : editor.getLength() - 1;
+        editor.insertText(pos, variable);
+        editor.setSelection(pos + variable.length);
+      } else {
+        setForm(f => ({
+          ...f,
+          content: { ...f.content, email: { ...f.content.email, body: f.content.email.body + variable } }
+        }));
+      }
     } else {
-      const field = channel === 'sms' ? 'message' : 'message';
-      setForm(f => ({
-        ...f,
-        content: {
-          ...f.content,
-          [channel]: {
-            ...f.content[channel],
-            [field]: (f.content[channel]?.[field] || '') + variable,
-          }
-        }
-      }));
+      const ref = channel === 'sms' ? smsRef : whatsappRef;
+      const el = ref.current;
+      if (el) {
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? start;
+        const current = el.value;
+        const newValue = current.slice(0, start) + variable + current.slice(end);
+        updateContent(channel, 'message', newValue);
+        // Restore cursor after React re-render
+        requestAnimationFrame(() => {
+          el.focus();
+          const newPos = start + variable.length;
+          el.setSelectionRange(newPos, newPos);
+        });
+      } else {
+        setForm(f => ({
+          ...f,
+          content: { ...f.content, [channel]: { ...f.content[channel], message: (f.content[channel]?.message || '') + variable } }
+        }));
+      }
     }
   };
 
@@ -2038,6 +2054,7 @@ export function CommunicationHub() {
                       <Label>Message Body</Label>
                       <div className="mt-1 rounded-xl overflow-hidden border border-border/10">
                         <ReactQuill
+                          ref={quillRef}
                           theme="snow"
                           value={form.content.email.body}
                           onChange={v => updateContent('email', 'body', v)}
@@ -2070,6 +2087,7 @@ export function CommunicationHub() {
                     <div>
                       <Label>SMS Message <span className="text-muted-foreground">({(form.content.sms.message || '').length}/160)</span></Label>
                       <Textarea
+                        ref={smsRef}
                         value={form.content.sms.message}
                         onChange={e => updateContent('sms', 'message', e.target.value)}
                         placeholder="Write your SMS message..."
@@ -2099,6 +2117,7 @@ export function CommunicationHub() {
                     <div>
                       <Label>WhatsApp Message</Label>
                       <Textarea
+                        ref={whatsappRef}
                         value={form.content.whatsapp.message}
                         onChange={e => updateContent('whatsapp', 'message', e.target.value)}
                         placeholder="Write your WhatsApp message..."
