@@ -865,10 +865,25 @@ export function CheckInByEvents() {
       </div>
 
       {/* Event Selection with Search */}
-      <Card className="border-border/10 rounded-2xl">
+      <Card className={`rounded-2xl overflow-hidden ${selectedEvent ? 'border-2 border-[#2969FF] ring-2 ring-[#2969FF]/20' : 'border-border/10'}`}>
+        {selectedEvent && currentEvent && (
+          <div className="bg-[#2969FF] px-4 py-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Calendar className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-semibold text-base truncate">{currentEvent.title}</p>
+              <p className="text-white/80 text-xs">
+                {new Date(currentEvent.start_date).toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                {currentEvent.venue_name && ` • ${currentEvent.venue_name}`}
+              </p>
+            </div>
+            <Badge className="bg-white/20 text-white border-0 text-xs">Active</Badge>
+          </div>
+        )}
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
-            <Calendar className="w-5 h-5 text-[#2969FF]" />
+            {!selectedEvent && <Calendar className="w-5 h-5 text-[#2969FF]" />}
             <Select value={selectedEvent} onValueChange={(val) => { setSelectedEvent(val); setEventSearchTerm(''); }}>
               <SelectTrigger className="flex-1 rounded-xl border-border/10 h-12">
                 <SelectValue placeholder="Select an event" />
@@ -887,7 +902,7 @@ export function CheckInByEvents() {
                   </div>
                 </div>
                 {events
-                  .filter(event => 
+                  .filter(event =>
                     event.title?.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
                     event.venue_name?.toLowerCase().includes(eventSearchTerm.toLowerCase())
                   )
@@ -896,14 +911,14 @@ export function CheckInByEvents() {
                     <div className="flex flex-col">
                       <span>{event.title}</span>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(event.start_date).toLocaleDateString('en-NG', { 
-                          month: 'short', day: 'numeric', year: 'numeric' 
+                        {new Date(event.start_date).toLocaleDateString('en-NG', {
+                          month: 'short', day: 'numeric', year: 'numeric'
                         })}
                       </span>
                     </div>
                   </SelectItem>
                 ))}
-                {events.filter(event => 
+                {events.filter(event =>
                   event.title?.toLowerCase().includes(eventSearchTerm.toLowerCase()) ||
                   event.venue_name?.toLowerCase().includes(eventSearchTerm.toLowerCase())
                 ).length === 0 && (
