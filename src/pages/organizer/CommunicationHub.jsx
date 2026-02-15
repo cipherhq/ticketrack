@@ -284,6 +284,11 @@ export function CommunicationHub() {
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
 
+  // Campaign detail view
+  const [viewingCampaign, setViewingCampaign] = useState(null);
+  const [campaignMessages, setCampaignMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
   // Refs for cursor-position variable insertion
   const quillRef = useRef(null);
   const smsRef = useRef(null);
@@ -1260,10 +1265,49 @@ export function CommunicationHub() {
 
   const deleteCampaign = async (id) => {
     if (!(await confirm('Delete Campaign', 'Delete this campaign?', { variant: 'destructive' }))) return;
-    
+
     await supabase.from('communication_campaigns').delete().eq('id', id);
     await supabase.from('email_campaigns').delete().eq('id', id); // Also try legacy
     loadCampaigns();
+  };
+
+  const viewCampaignDetails = async (campaign) => {
+    setViewingCampaign(campaign);
+    setCampaignMessages([]);
+    setMessagesLoading(true);
+    try {
+      const { data } = await supabase
+        .from('communication_messages')
+        .select('id, channel, recipient_email, recipient_phone, subject, content, status, error_message, delivered_at, created_at')
+        .eq('campaign_id', campaign.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      setCampaignMessages(data || []);
+    } catch (err) {
+      console.error('Error loading campaign messages:', err);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const duplicateCampaign = (campaign) => {
+    setForm({
+      name: (campaign.name || 'Campaign') + ' (copy)',
+      channels: campaign.channels || ['email'],
+      audienceType: campaign.audience_type || '',
+      eventId: campaign.audience_event_id || '',
+      segmentId: campaign.audience_segment_id || '',
+      template: 'custom',
+      content: campaign.content || {
+        email: { subject: '', body: '' },
+        sms: { message: '' },
+        whatsapp: { message: '' },
+        telegram: { message: '' },
+      },
+      scheduleFor: '',
+    });
+    setWizardStep(1);
+    setShowCreateWizard(true);
   };
 
   const resetForm = () => {
@@ -1475,11 +1519,11 @@ export function CommunicationHub() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {/* View details */}}>
+                          <DropdownMenuItem onClick={() => viewCampaignDetails(campaign)}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {/* Duplicate */}}>
+                          <DropdownMenuItem onClick={() => duplicateCampaign(campaign)}>
                             <Copy className="w-4 h-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>
@@ -2386,6 +2430,146 @@ export function CommunicationHub() {
               {editingTemplate ? 'Update Template' : 'Save Template'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Campaign Details Dialog */}
+      <Dialog open={!!viewingCampaign} onOpenChange={(open) => { if (!open) setViewingCampaign(null); }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Campaign Details</DialogTitle>
+            <DialogDescription>
+              {viewingCampaign?.name || viewingCampaign?.content?.email?.subject || 'Untitled'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingCampaign && (
+            <div className="space-y-4">
+              {/* Campaign Summary */}
+              <div className="bg-muted rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge className={
+                    viewingCampaign.status === 'sent' ? 'bg-green-100 text-green-700' :
+                    viewingCampaign.status === 'failed' ? 'bg-red-100 text-red-700' :
+                    viewingCampaign.status === 'partially_failed' ? 'bg-amber-100 text-amber-700' :
+                    viewingCampaign.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                    'bg-muted text-foreground/80'
+                  }>
+                    {viewingCampaign.status === 'partially_failed' ? 'Partially Sent' : viewingCampaign.status}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Channels</span>
+                  <div className="flex items-center gap-1.5">
+                    {(viewingCampaign.channels || ['email']).map(ch => {
+                      const channel = CHANNELS.find(c => c.id === ch);
+                      return channel ? (
+                        <div key={ch} className="flex items-center gap-1">
+                          <channel.icon className={`w-3.5 h-3.5 ${channel.color}`} />
+                          <span>{channel.name}</span>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Recipients</span>
+                  <span className="font-medium">{viewingCampaign.sent_count || viewingCampaign.total_recipients || 0}</span>
+                </div>
+                {viewingCampaign.failed_count > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Failed</span>
+                    <span className="font-medium text-red-600">{viewingCampaign.failed_count}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sent At</span>
+                  <span>{viewingCampaign.sent_at ? format(new Date(viewingCampaign.sent_at), 'MMM d, yyyy h:mm a') : format(new Date(viewingCampaign.created_at), 'MMM d, yyyy h:mm a')}</span>
+                </div>
+                {viewingCampaign.content?.email?.subject && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subject</span>
+                    <span className="font-medium truncate max-w-[300px]">{viewingCampaign.content.email.subject}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Message Delivery Log */}
+              <div>
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  Delivery Log
+                </h3>
+
+                {messagesLoading ? (
+                  <div className="py-8 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-[#2969FF] mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading messages...</p>
+                  </div>
+                ) : campaignMessages.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground text-sm">
+                    No message records found for this campaign
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border border-border/10 rounded-xl">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border/10 bg-muted/50">
+                          <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Recipient</th>
+                          <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Channel</th>
+                          <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Status</th>
+                          <th className="text-right py-2.5 px-3 font-medium text-muted-foreground">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {campaignMessages.map(msg => {
+                          const channel = CHANNELS.find(c => c.id === msg.channel);
+                          const ChannelIcon = channel?.icon || Mail;
+                          return (
+                            <tr key={msg.id} className="border-b border-border/5 hover:bg-muted/30">
+                              <td className="py-2.5 px-3">
+                                <span className="truncate max-w-[200px] block">
+                                  {msg.recipient_email || msg.recipient_phone || '-'}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex items-center gap-1.5">
+                                  <ChannelIcon className={`w-3.5 h-3.5 ${channel?.color || 'text-muted-foreground'}`} />
+                                  <span className="capitalize">{msg.channel}</span>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <Badge className={
+                                  msg.status === 'sent' ? 'bg-green-100 text-green-700' :
+                                  msg.status === 'delivered' ? 'bg-blue-100 text-blue-700' :
+                                  msg.status === 'failed' ? 'bg-red-100 text-red-700' :
+                                  msg.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-muted text-muted-foreground'
+                                }>
+                                  {msg.status}
+                                </Badge>
+                                {msg.error_message && (
+                                  <p className="text-xs text-red-500 mt-0.5 truncate max-w-[200px]">{msg.error_message}</p>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-muted-foreground whitespace-nowrap">
+                                {msg.delivered_at
+                                  ? format(new Date(msg.delivered_at), 'h:mm a')
+                                  : msg.created_at
+                                    ? format(new Date(msg.created_at), 'h:mm a')
+                                    : '-'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
