@@ -950,11 +950,12 @@ export function CommunicationHub() {
 
       if (campaignError) throw campaignError;
 
+      let totalSuccess = 0;
+      let totalFail = 0;
+
       // If sending now, trigger the send
       if (sendNow) {
         const event = events.find(e => e.id === form.eventId);
-        let totalSuccess = 0;
-        let totalFail = 0;
 
         // Send via each channel with properly filtered recipients
         for (const channel of form.channels) {
