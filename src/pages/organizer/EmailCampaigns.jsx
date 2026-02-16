@@ -367,17 +367,17 @@ export function EmailCampaigns() {
         .in('id', preSelectedAttendeeIds);
       recipients = attendees?.map(a => ({
         email: a.attendee_email,
-        name: a.attendee_name,
+        name: a.attendee_name || 'there',
         ticket_type: a.ticket_types?.name
       })) || [];
     } else if (formData.recipientType === 'followers') {
       const { data: followers } = await supabase
         .from('followers')
-        .select('profiles(email, first_name, last_name)')
+        .select('profiles(email, full_name, first_name, last_name)')
         .eq('organizer_id', organizer.id);
       recipients = followers?.map(f => ({
         email: f.profiles?.email,
-        name: `${f.profiles?.first_name || ''} ${f.profiles?.last_name || ''}`.trim() || 'there'
+        name: f.profiles?.full_name || `${f.profiles?.first_name || ''} ${f.profiles?.last_name || ''}`.trim() || 'there'
       })).filter(r => r.email) || [];
     } else if (formData.recipientType === 'event_attendees' && formData.eventId) {
       const { data: attendees } = await supabase
@@ -387,7 +387,7 @@ export function EmailCampaigns() {
         .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
       recipients = attendees?.map(a => ({
         email: a.attendee_email,
-        name: a.attendee_name,
+        name: a.attendee_name || 'there',
         ticket_type: a.ticket_types?.name
       })) || [];
     } else if (formData.recipientType === 'all_attendees') {
@@ -395,7 +395,7 @@ export function EmailCampaigns() {
         .from('events')
         .select('id')
         .eq('organizer_id', organizer.id);
-      
+
       if (orgEvents?.length > 0) {
         const eventIds = orgEvents.map(e => e.id);
         const { data: attendees } = await supabase
@@ -405,7 +405,7 @@ export function EmailCampaigns() {
           .in('payment_status', ['completed', 'free', 'paid', 'complimentary']);
         recipients = attendees?.map(a => ({
           email: a.attendee_email,
-          name: a.attendee_name,
+          name: a.attendee_name || 'there',
           ticket_type: a.ticket_types?.name
         })) || [];
       }

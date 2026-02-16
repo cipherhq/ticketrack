@@ -87,8 +87,13 @@ serve(async (req) => {
           let personalizedBody = body;
 
           // Replace recipient-specific variables
-          personalizedSubject = personalizedSubject.replace(/\{\{attendee_name\}\}/g, recipient.name || 'there');
-          personalizedBody = personalizedBody.replace(/\{\{attendee_name\}\}/g, recipient.name || 'there');
+          const recipientName = (recipient.name || '').trim() || 'there';
+          personalizedSubject = personalizedSubject.replace(/\{\{attendee_name\}\}/g, recipientName);
+          personalizedSubject = personalizedSubject.replace(/\{\{name\}\}/g, recipientName);
+          personalizedSubject = personalizedSubject.replace(/\{\{first_name\}\}/g, recipientName);
+          personalizedBody = personalizedBody.replace(/\{\{attendee_name\}\}/g, recipientName);
+          personalizedBody = personalizedBody.replace(/\{\{name\}\}/g, recipientName);
+          personalizedBody = personalizedBody.replace(/\{\{first_name\}\}/g, recipientName);
           personalizedBody = personalizedBody.replace(/\{\{ticket_type\}\}/g, recipient.ticket_type || 'General');
 
           // Replace event/organizer variables
