@@ -1,6 +1,7 @@
 // Create Credit Purchase - Multi-gateway payment for communication credits
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,8 +52,22 @@ serve(async (req) => {
   try {
     // Route to appropriate payment provider
     if (provider === 'stripe') {
-      const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-      if (!STRIPE_SECRET_KEY) {
+      // Read Stripe key from payment_gateway_config (same as all other Stripe functions)
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+
+      const { data: gatewayConfig } = await supabase
+        .from('payment_gateway_config')
+        .select('secret_key_encrypted')
+        .eq('provider', 'stripe')
+        .eq('is_active', true)
+        .in('country_code', ['US', 'GB'])
+        .limit(1)
+        .single();
+
+      if (!gatewayConfig?.secret_key_encrypted) {
         return new Response(
           JSON.stringify({ success: false, error: 'Stripe not configured. Please contact support.' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -61,7 +76,7 @@ serve(async (req) => {
 
       // Dynamically import Stripe
       const Stripe = (await import('https://esm.sh/stripe@14.5.0?target=deno')).default;
-      const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
+      const stripe = new Stripe(gatewayConfig.secret_key_encrypted, { apiVersion: '2023-10-16' });
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
