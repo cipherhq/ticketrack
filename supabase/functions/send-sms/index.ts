@@ -10,6 +10,7 @@ const TERMII_API_URL = 'https://api.ng.termii.com/api';
 const TWILIO_API_URL = 'https://api.twilio.com/2010-04-01';
 const AFRICASTALKING_SMS_URL = 'https://api.africastalking.com/version1/messaging';
 const AFRICASTALKING_SANDBOX_URL = 'https://api.sandbox.africastalking.com/version1/messaging';
+const BULKSMS_API_URL = 'https://www.bulksmsnigeria.com/api/v2/sms';
 
 // Africa's Talking credentials
 const AT_API_KEY = Deno.env.get('AFRICASTALKING_API_KEY');
@@ -232,6 +233,49 @@ async function sendAfricasTalkingSMS(
   }
 }
 
+async function sendBulkSMSNigeria(
+  to: string,
+  message: string,
+  apiToken: string,
+  senderId: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const formattedPhone = formatPhoneNumber(to);
+
+    console.log('Sending SMS via BulkSMSNigeria:', { to: formattedPhone, from: senderId, length: message.length });
+
+    const response = await fetch(BULKSMS_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        from: senderId || 'Ticketrack',
+        to: formattedPhone,
+        body: message,
+        gateway: 'direct-refund',
+      }),
+    });
+
+    const data = await response.json();
+    console.log('BulkSMSNigeria response:', data);
+
+    if (data.status === 'success') {
+      return {
+        success: true,
+        messageId: data.data?.message_id,
+      };
+    }
+
+    return { success: false, error: data.message || data.error?.message || 'Failed to send SMS via BulkSMSNigeria' };
+  } catch (error) {
+    console.error('BulkSMSNigeria error:', error);
+    return { success: false, error: `Network error: ${error.message}` };
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -254,29 +298,64 @@ serve(async (req) => {
     
     // Support single recipient mode (for individual sends)
     if (phone) {
-      // Single recipient - skip wallet check for now, just send
-      const smsConfigs = await supabase
-        .from('platform_sms_config')
-        .select('*')
-        .eq('is_active', true);
-      
-      const provider = smsConfigs.data?.[0];
-      if (!provider) {
+      // Credit check for single SMS
+      const { data: singlePricing } = await supabase
+        .from('communication_channel_pricing')
+        .select('credits_per_message')
+        .eq('channel', 'sms')
+        .single();
+      const singleCreditsPerSms = singlePricing?.credits_per_message || 5;
+      const singleSegments = Math.ceil(message.length / 160) || 1;
+      const singleCreditsNeeded = singleSegments * singleCreditsPerSms;
+
+      // Atomically deduct credits BEFORE sending
+      const { data: deductOk, error: deductErr } = await supabase.rpc('deduct_communication_credits', {
+        p_organizer_id: organizer_id,
+        p_amount: singleCreditsNeeded,
+        p_channel: 'sms',
+        p_campaign_id: null,
+        p_message_count: 1,
+        p_description: `Single SMS to ${maskPhone(phone)}`
+      });
+
+      if (deductErr || deductOk === false) {
         return new Response(
-          JSON.stringify({ error: 'SMS service not configured' }), 
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Insufficient message credits', credits_needed: singleCreditsNeeded }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
+
+      const bulksmsToken = Deno.env.get('BULKSMS_API_TOKEN');
+      const country = detectCountryFromPhone(phone);
+
       let result;
-      if (provider.provider === 'twilio') {
-        result = await sendTwilioSMS(phone, message, provider.api_key, provider.secret_key, provider.sender_id);
+      // Prefer BulkSMSNigeria for Nigerian numbers
+      if (bulksmsToken && country === 'NG') {
+        result = await sendBulkSMSNigeria(phone, message, bulksmsToken, 'Ticketrack');
       } else {
-        result = await sendTermiiSMS(phone, message, provider.api_key, provider.sender_id || 'Ticketrack');
+        // Fall back to platform_sms_config providers
+        const smsConfigs = await supabase
+          .from('platform_sms_config')
+          .select('*')
+          .eq('is_active', true);
+
+        const provider = smsConfigs.data?.[0];
+        if (!provider) {
+          return new Response(
+            JSON.stringify({ error: 'SMS service not configured' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (provider.provider === 'twilio') {
+          result = await sendTwilioSMS(phone, message, provider.api_key, provider.secret_key, provider.sender_id);
+        } else {
+          result = await sendTermiiSMS(phone, message, provider.api_key, provider.sender_id || 'Ticketrack');
+        }
       }
-      
+
       return new Response(
-        JSON.stringify({ success: result.success, error: result.error, messageId: result.messageId }), 
+        JSON.stringify({ success: result.success, error: result.error, messageId: result.messageId }),
         { status: result.success ? 200 : 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -442,23 +521,32 @@ serve(async (req) => {
     const smsSegments = Math.ceil(messageLength / 160) || 1;
     const creditsNeeded = recipients.length * smsSegments * creditsPerSms;
 
-    // Check unified credit balance
-    const { data: creditBalance } = await supabase
-      .from('communication_credit_balances')
-      .select('balance, bonus_balance')
-      .eq('organizer_id', organizer_id)
-      .single();
-    
-    const totalCredits = (creditBalance?.balance || 0) + (creditBalance?.bonus_balance || 0);
+    // Atomically deduct credits BEFORE sending (prevents race conditions & overspending)
+    const { data: deductResult, error: deductError } = await supabase.rpc('deduct_communication_credits', {
+      p_organizer_id: organizer_id,
+      p_amount: creditsNeeded,
+      p_channel: 'sms',
+      p_campaign_id: null,
+      p_message_count: recipients.length * smsSegments,
+      p_description: `SMS campaign to ${recipients.length} recipients`
+    });
 
-    if (totalCredits < creditsNeeded) {
+    if (deductError || deductResult === false) {
+      // Get current balance for error message
+      const { data: creditBalance } = await supabase
+        .from('communication_credit_balances')
+        .select('balance, bonus_balance')
+        .eq('organizer_id', organizer_id)
+        .single();
+      const totalCredits = (creditBalance?.balance || 0) + (creditBalance?.bonus_balance || 0);
+
       return new Response(
-        JSON.stringify({ 
-          error: 'Insufficient message credits', 
-          credits_needed: creditsNeeded, 
+        JSON.stringify({
+          error: 'Insufficient message credits',
+          credits_needed: creditsNeeded,
           credits_available: totalCredits,
           credits_per_sms: creditsPerSms
-        }), 
+        }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -485,6 +573,8 @@ serve(async (req) => {
     // Send messages
     const results = { total: recipients.length, sent: 0, failed: 0, logs: [] as any[] };
 
+    const bulksmsToken = Deno.env.get('BULKSMS_API_TOKEN');
+
     for (const recipient of recipients) {
       const country = detectCountryFromPhone(recipient.phone);
       const provider = providerByCountry[country] || defaultProvider;
@@ -492,8 +582,16 @@ serve(async (req) => {
       let result: { success: boolean; messageId?: string; error?: string };
       let providerUsed = provider.provider;
 
-      // Use Africa's Talking for Nigeria and Ghana if configured
-      if ((country === 'NG' || country === 'GH') && AT_API_KEY && AT_USERNAME) {
+      // For Nigerian numbers: prefer BulkSMSNigeria → Africa's Talking → Termii → Twilio
+      if (country === 'NG' && bulksmsToken) {
+        result = await sendBulkSMSNigeria(
+          recipient.phone,
+          message,
+          bulksmsToken,
+          provider.sender_id || 'Ticketrack'
+        );
+        providerUsed = 'bulksmsnigeria';
+      } else if ((country === 'NG' || country === 'GH') && AT_API_KEY && AT_USERNAME) {
         result = await sendAfricasTalkingSMS(
           recipient.phone,
           message,
@@ -549,20 +647,6 @@ serve(async (req) => {
       await supabase.from('sms_logs').insert(results.logs);
     }
 
-    // Deduct credits using unified credit system
-    const { data: deductResult, error: deductError } = await supabase.rpc('deduct_communication_credits', {
-      p_organizer_id: organizer_id,
-      p_amount: creditsNeeded,
-      p_channel: 'sms',
-      p_campaign_id: campaign?.id || null,
-      p_message_count: recipients.length * smsSegments,
-      p_description: `SMS campaign to ${recipients.length} recipients`
-    });
-
-    if (deductError) {
-      console.error('Failed to deduct credits:', deductError);
-    }
-    
     // Get updated balance for response
     const { data: updatedBalance } = await supabase
       .from('communication_credit_balances')

@@ -20,11 +20,11 @@ const PROVIDER_PRIORITY: Record<string, string[]> = {
   'CA': ['twilio_verify'],
   'AU': ['twilio_verify'],
   'EU': ['twilio_verify'],
-  'NG': ['twilio_verify', 'termii'],  // Twilio first, Termii fallback
-  'GH': ['twilio_verify', 'termii'],  // Twilio first, Termii fallback
-  'KE': ['twilio_verify', 'termii'],  // Twilio first, Termii fallback
-  'ZA': ['twilio_verify', 'termii'],  // Twilio first, Termii fallback
-  'DEFAULT': ['twilio_verify', 'termii'],  // Twilio is default globally
+  'NG': ['bulksmsnigeria', 'twilio_verify', 'termii'],  // BulkSMS first for Nigeria
+  'GH': ['bulksmsnigeria', 'twilio_verify', 'termii'],  // BulkSMS first for Ghana
+  'KE': ['twilio_verify', 'termii'],
+  'ZA': ['twilio_verify', 'termii'],
+  'DEFAULT': ['twilio_verify', 'termii'],
 };
 
 function formatPhoneNumber(phone: string): string {
@@ -125,6 +125,47 @@ async function sendTermiiOTP(
   }
 }
 
+// BulkSMSNigeria - primary for Nigeria and Ghana OTP
+async function sendBulkSMSNigeriaOTP(
+  to: string,
+  otp: string,
+  apiToken: string,
+  senderId: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const message = `Your Ticketrack verification code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
+    const formattedPhone = formatPhoneNumber(to);
+
+    console.log('Sending OTP via BulkSMSNigeria:', { to: formattedPhone });
+
+    const response = await fetch('https://www.bulksmsnigeria.com/api/v2/sms', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        from: senderId,
+        to: formattedPhone,
+        body: message,
+        gateway: 'otp',
+      }),
+    });
+
+    const data = await response.json();
+    console.log('BulkSMSNigeria OTP response:', JSON.stringify(data));
+
+    if (data.status === 'success') {
+      return { success: true, messageId: data.data?.message_id };
+    }
+    return { success: false, error: data.message || data.error?.message || 'BulkSMSNigeria OTP failed' };
+  } catch (error) {
+    console.error('BulkSMSNigeria OTP error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Cryptographically secure OTP generation using Web Crypto API
 function generateOTP(): string {
   // Generate secure random bytes
@@ -182,13 +223,14 @@ serve(async (req) => {
     const twilioVerifySid = Deno.env.get('TWILIO_VERIFY_SERVICE_SID');
     const termiiKey = Deno.env.get('TERMII_API_KEY');
     const termiiSender = Deno.env.get('TERMII_SENDER_ID') || 'Ticketrack';
+    const bulksmsToken = Deno.env.get('BULKSMS_API_TOKEN');
 
     // Get provider priority for this country
     const providers = PROVIDER_PRIORITY[country] || PROVIDER_PRIORITY['DEFAULT'];
-    
-    let result: { success: boolean; status?: string; messageId?: string; error?: string } = { 
-      success: false, 
-      error: 'No provider available' 
+
+    let result: { success: boolean; status?: string; messageId?: string; error?: string } = {
+      success: false,
+      error: 'No provider available'
     };
     let usedProvider = '';
     let otp = '';
@@ -196,7 +238,15 @@ serve(async (req) => {
 
     // Try providers in priority order
     for (const provider of providers) {
-      if (provider === 'twilio_verify' && twilioSid && twilioToken && twilioVerifySid) {
+      if (provider === 'bulksmsnigeria' && bulksmsToken) {
+        console.log(`Trying BulkSMSNigeria for ${country}...`);
+        otp = generateOTP();
+        result = await sendBulkSMSNigeriaOTP(formattedPhone, otp, bulksmsToken, 'Ticketrack');
+        if (result.success) {
+          usedProvider = 'bulksmsnigeria';
+          break;
+        }
+      } else if (provider === 'twilio_verify' && twilioSid && twilioToken && twilioVerifySid) {
         console.log(`Trying Twilio Verify for ${country}...`);
         result = await sendTwilioVerify(formattedPhone, twilioSid, twilioToken, twilioVerifySid, channel);
         if (result.success) {

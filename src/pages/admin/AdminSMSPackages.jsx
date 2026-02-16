@@ -124,12 +124,15 @@ export function AdminSMSPackages() {
       };
 
       if (editingPackage) {
-        await supabase.from('communication_credit_packages').update(packageData).eq('id', editingPackage.id);
+        const { error } = await supabase.from('communication_credit_packages').update(packageData).eq('id', editingPackage.id);
+        if (error) throw error;
         await logAdminAction('credit_package_updated', 'communication_credit_packages', editingPackage.id, packageData);
       } else {
-        await supabase.from('communication_credit_packages').insert(packageData);
+        const { error } = await supabase.from('communication_credit_packages').insert(packageData);
+        if (error) throw error;
         await logAdminAction('credit_package_created', 'communication_credit_packages', null, packageData);
       }
+      toast.success(editingPackage ? 'Package updated' : 'Package created');
       setDialogOpen(false);
       loadPackages();
     } catch (error) {
@@ -242,7 +245,7 @@ export function AdminSMSPackages() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader><DialogTitle>{editingPackage ? 'Edit' : 'Create'} Package</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl mt-1" placeholder="e.g., Starter Pack" /></div>
