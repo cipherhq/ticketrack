@@ -1,0 +1,4 @@
+Replace this file with the contents from your Stripe Dashboard:
+1. Go to https://dashboard.stripe.com/settings/payments/apple_pay
+2. Download the domain association file
+3. Replace this placeholder with those contents

@@ -480,6 +480,132 @@ serve(async (req) => {
           }
         }
       }
+    } else if (event.type === "payment_intent.succeeded") {
+      // Handle inline wallet payments (Apple Pay / Google Pay)
+      const paymentIntent = event.data.object;
+      const metadata = paymentIntent.metadata || {};
+
+      // Only process intents created by inline wallet flow
+      if (metadata.payment_flow === "inline_wallet") {
+        const orderId = metadata.order_id;
+
+        if (orderId) {
+          // Idempotency check
+          const { data: existingOrder } = await supabase
+            .from("orders")
+            .select("status")
+            .eq("id", orderId)
+            .single();
+
+          if (existingOrder?.status === "completed") {
+            safeLog.info(`Order ${orderId} already completed (wallet), skipping duplicate webhook`);
+          } else {
+            // Update order status
+            await supabase
+              .from("orders")
+              .update({
+                status: "completed",
+                payment_reference: paymentIntent.id,
+                paid_at: new Date().toISOString(),
+              })
+              .eq("id", orderId);
+
+            // Get order details for ticket creation
+            const { data: order } = await supabase
+              .from("orders")
+              .select("*, order_items(*)")
+              .eq("id", orderId)
+              .single();
+
+            if (order) {
+              // Check if tickets already exist
+              const { data: existingTickets } = await supabase
+                .from("tickets")
+                .select("id")
+                .eq("order_id", orderId);
+
+              if (!existingTickets || existingTickets.length === 0) {
+                const ticketInserts: any[] = [];
+                for (const item of order.order_items || []) {
+                  for (let i = 0; i < item.quantity; i++) {
+                    const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() +
+                                      Math.random().toString(36).substring(2, 8).toUpperCase();
+                    ticketInserts.push({
+                      order_id: orderId,
+                      event_id: order.event_id,
+                      ticket_type_id: item.ticket_type_id || null,
+                      user_id: order.user_id,
+                      attendee_email: order.buyer_email,
+                      attendee_name: order.buyer_name,
+                      attendee_phone: order.buyer_phone || null,
+                      ticket_code: ticketCode,
+                      qr_code: ticketCode,
+                      unit_price: item.unit_price,
+                      total_price: item.unit_price,
+                      payment_reference: paymentIntent.id,
+                      payment_status: "completed",
+                      payment_method: "stripe",
+                      status: "active",
+                    });
+                  }
+                }
+
+                if (ticketInserts.length > 0) {
+                  const { error: ticketError } = await supabase.from("tickets").insert(ticketInserts);
+                  if (ticketError) {
+                    console.error("Error creating tickets (wallet):", ticketError);
+                  } else {
+                    for (const item of order.order_items || []) {
+                      if (item.ticket_type_id) {
+                        await supabase.rpc("decrement_ticket_quantity", {
+                          p_ticket_type_id: item.ticket_type_id,
+                          p_quantity: item.quantity,
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Send organizer notification
+              const { data: eventData } = await supabase
+                .from("events")
+                .select("title, organizer_id")
+                .eq("id", order.event_id)
+                .single();
+
+              if (eventData?.organizer_id) {
+                const { data: organizer } = await supabase
+                  .from("organizers")
+                  .select("business_name, user_id, email, business_email")
+                  .eq("id", eventData.organizer_id)
+                  .single();
+
+                const organizerEmail = organizer?.email || organizer?.business_email;
+                if (organizerEmail) {
+                  await sendEmailWithServiceRole({
+                    type: "new_ticket_sale",
+                    to: organizerEmail,
+                    data: {
+                      eventTitle: eventData.title,
+                      eventId: order.event_id,
+                      ticketType: "Ticket",
+                      quantity: order.order_items?.reduce((sum: number, i: any) => sum + (i.quantity || 1), 0) || 1,
+                      buyerName: order.buyer_name,
+                      buyerEmail: order.buyer_email,
+                      amount: order.total_amount,
+                      currency: order.currency || "USD",
+                      isFree: false,
+                    },
+                  });
+                }
+              }
+            }
+
+            safeLog.info(`Wallet payment completed for order ${orderId}`);
+          }
+        }
+      }
     } else if (event.type === "checkout.session.expired") {
       const session = event.data.object;
       const orderId = session.metadata?.order_id;

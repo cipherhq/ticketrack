@@ -72,6 +72,30 @@ export const initStripeCheckout = async (orderId, successUrl, cancelUrl) => {
   return data;
 };
 
+// Get Stripe publishable key from payment_gateway_config
+export const getStripePublishableKey = async (countryCode) => {
+  const { data } = await supabase
+    .from('payment_gateway_config')
+    .select('public_key')
+    .eq('provider', 'stripe')
+    .eq('is_active', true)
+    .in('country_code', [countryCode || 'US', 'GB', 'US'])
+    .limit(1)
+    .single();
+
+  return data?.public_key || null;
+};
+
+// Create a PaymentIntent for inline wallet payments (Apple Pay / Google Pay)
+export const initStripePaymentIntent = async (orderId) => {
+  const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+    body: { orderId }
+  });
+
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 // Payment method options per provider (fallback defaults)
 const DEFAULT_PAYMENT_METHODS = {
   paystack: [

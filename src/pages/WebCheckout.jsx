@@ -1,5 +1,5 @@
 import { getOrganizerFees, DEFAULT_FEES, calculateFees } from '@/config/fees'
-import { getPaymentProvider, getPaymentProviderWithFallback, getPaymentProviders, getProviderInfo, initStripeCheckout, initPayPalCheckout, initFlutterwaveCheckout, getActiveGateway } from '@/config/payments'
+import { getPaymentProvider, getPaymentProviderWithFallback, getPaymentProviders, getProviderInfo, initStripeCheckout, initPayPalCheckout, initFlutterwaveCheckout, getActiveGateway, getStripePublishableKey, initStripePaymentIntent } from '@/config/payments'
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
 import { useState, useEffect } from 'react'
@@ -17,6 +17,7 @@ import { markWaitlistPurchased } from '@/services/waitlist'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { logger, handleApiError, getUserMessage, ERROR_CODES } from '@/lib/logger'
 import { toast } from 'sonner'
+import StripeExpressCheckout from '@/components/StripeExpressCheckout'
 
 
 // Credit promoter for referral sale
@@ -494,6 +495,8 @@ export function WebCheckout() {
   const [fees, setFees] = useState(DEFAULT_FEES)
   const [paymentProvider, setPaymentProvider] = useState('paystack')
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState([{ id: 'card', icon: 'CreditCard', label: 'Card' }])
+  const [stripePublishableKey, setStripePublishableKey] = useState(null)
+  const [walletPayAvailable, setWalletPayAvailable] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -575,10 +578,20 @@ export function WebCheckout() {
         event.country_code
       );
       setPaymentProvider(provider);
-      
+
+      // Fetch Stripe publishable key for wallet payments
+      if (provider === 'stripe') {
+        try {
+          const pubKey = await getStripePublishableKey(event.country_code);
+          if (pubKey) setStripePublishableKey(pubKey);
+        } catch (e) {
+          console.error('Failed to fetch Stripe publishable key:', e);
+        }
+      }
+
       // Build available payment methods based on provider and features
       const methods = [];
-      
+
       if (provider === 'stripe') {
         methods.push({ id: 'card', label: 'Card / Apple Pay / Google Pay' });
       } else if (provider === 'paypal') {
@@ -1270,6 +1283,102 @@ export function WebCheckout() {
     }
   };
 
+  // Handle wallet (Apple Pay / Google Pay) before-payment: validate, create order, return orderId
+  const handleWalletBeforePayment = async () => {
+    if (!validateForm()) {
+      throw new Error('Please correct the errors in the form');
+    }
+
+    if (!user) {
+      throw new Error('Please log in to continue');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    // Check per-user ticket limit
+    await checkUserTicketLimit();
+
+    // For recurring events, ensure child event exists and map ticket types
+    const { finalEventId, mappedTicketSummary } = await prepareChildEventAndTickets();
+
+    // Reserve tickets first
+    await reserveAllTickets(mappedTicketSummary);
+
+    // Create order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        user_id: user.id,
+        event_id: finalEventId,
+        order_number: `ORD${Date.now().toString(36).toUpperCase()}`,
+        status: 'pending',
+        subtotal: totalAmount,
+        platform_fee: actualPlatformFee,
+        platform_fee_absorbed: organizerAbsorbsFee,
+        tax_amount: 0,
+        discount_amount: discountAmount,
+        promo_code_id: promoApplied?.id || null,
+        total_amount: finalTotal,
+        currency: event?.currency || getDefaultCurrency(event?.country_code || event?.country),
+        payment_method: 'card',
+        payment_provider: 'stripe',
+        buyer_email: formData.email,
+        buyer_phone: formData.phone || null,
+        buyer_name: `${formData.firstName} ${formData.lastName}`,
+        waitlist_id: fromWaitlist ? waitlistId : null
+      })
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Create order items
+    const orderItems = mappedTicketSummary.map(ticket => ({
+      order_id: order.id,
+      ticket_type_id: ticket.id,
+      quantity: ticket.quantity,
+      unit_price: ticket.price,
+      subtotal: ticket.subtotal
+    }));
+
+    await supabase.from('order_items').insert(orderItems);
+
+    return order.id;
+  };
+
+  // Handle wallet payment success: finalize and navigate
+  const handleWalletPaymentSuccess = async (paymentIntentId, orderId) => {
+    try {
+      const result = await finalizePayment(orderId, paymentIntentId);
+      if (result.success) {
+        const { data: order } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+
+        navigate('/payment-success', {
+          state: { order, event, tickets: result.tickets, reference: paymentIntentId }
+        });
+      } else {
+        setError('Payment received but there was an error creating tickets. Please contact support.');
+        setLoading(false);
+      }
+    } catch (err) {
+      logger.error('Wallet payment finalization error', err);
+      setError('Payment received but there was an error creating tickets. Please contact support.');
+      setLoading(false);
+    }
+  };
+
+  // Handle wallet payment error
+  const handleWalletPaymentError = (message) => {
+    logger.error('Wallet payment error', { message });
+    setError(message || 'Payment failed. Please try again.');
+    setLoading(false);
+  };
+
   // Handle PayPal payment
   const handlePayPalPayment = async () => {
     if (!validateForm()) {
@@ -1795,6 +1904,32 @@ const formatDate = (dateString) => {
                 ))}
               </CardContent>
             </Card>
+          )}
+
+          {/* Express Checkout (Apple Pay / Google Pay) */}
+          {paymentProvider === 'stripe' && stripePublishableKey && finalTotal > 0 && (
+            <div className="space-y-3">
+              <StripeExpressCheckout
+                stripePublishableKey={stripePublishableKey}
+                amount={finalTotal}
+                currency={event?.currency}
+                label={`Tickets for ${event?.title || 'Event'}`}
+                onAvailable={() => setWalletPayAvailable(true)}
+                onNotAvailable={() => setWalletPayAvailable(false)}
+                onBeforePayment={handleWalletBeforePayment}
+                onPaymentSuccess={handleWalletPaymentSuccess}
+                onPaymentError={handleWalletPaymentError}
+                initPaymentIntent={initStripePaymentIntent}
+                disabled={loading || !formData.email || !formData.firstName || !formData.lastName}
+              />
+              {walletPayAvailable && (
+                <div className="flex items-center gap-3">
+                  <Separator className="flex-1" />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">or pay with card</span>
+                  <Separator className="flex-1" />
+                </div>
+              )}
+            </div>
           )}
 
           <Card className="border-border/10 rounded-2xl">
