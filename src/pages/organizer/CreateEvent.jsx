@@ -1,4 +1,4 @@
-import { currencyOptions, formatPrice, getCurrencyFromCountryCode, currencies } from '@/config/currencies'
+import { currencyOptions, formatPrice, getCurrencyFromCountryCode, getDefaultCurrency, currencies } from '@/config/currencies'
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
@@ -390,6 +390,12 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         const currency = await getCurrencyFromCountryCode(supabase, organizer.country_code);
         if (currency) {
           setFormData(prev => ({ ...prev, currency }));
+        } else {
+          // Fallback to hardcoded mapping when DB lookup fails
+          const fallback = getDefaultCurrency(organizer.country_code);
+          if (fallback) {
+            setFormData(prev => ({ ...prev, currency: fallback }));
+          }
         }
       }
     };

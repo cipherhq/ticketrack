@@ -1,19 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Camera, Mail, Phone, Globe, MapPin, Save, Building2, 
+import {
+  Camera, Mail, Phone, Globe, MapPin, Save, Building2,
   Loader2, CheckCircle, Instagram, Twitter, Facebook, Linkedin,
-  Upload, X
+  Upload, X, ChevronDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { PhoneInput } from '../../components/ui/phone-input';
+import { PhoneInput, COUNTRIES } from '../../components/ui/phone-input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { useOrganizer } from '../../contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import { uploadOrganizerLogo } from '@/services/organizerService';
 import { validateOrganizerPhoneForUpdate } from '@/lib/phoneValidation';
+import { getDefaultCurrency, currencies } from '@/config/currencies';
 
 export function OrganizerProfile() {
   const { organizer, refreshOrganizer } = useOrganizer();
@@ -37,6 +38,7 @@ export function OrganizerProfile() {
     twitter: '',
     facebook: '',
     linkedin: '',
+    country_code: '',
   });
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export function OrganizerProfile() {
         twitter: organizer.twitter || '',
         facebook: organizer.facebook || '',
         linkedin: organizer.linkedin || '',
+        country_code: organizer.country_code || '',
       });
       setLoading(false);
     }
@@ -141,6 +144,7 @@ export function OrganizerProfile() {
           twitter: formData.twitter.trim() || null,
           facebook: formData.facebook.trim() || null,
           linkedin: formData.linkedin.trim() || null,
+          country_code: formData.country_code || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', organizer.id);
@@ -330,6 +334,49 @@ export function OrganizerProfile() {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/10 rounded-2xl">
+        <CardHeader>
+          <CardTitle className="text-foreground">Country & Currency</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Your country determines the default currency for new events.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="country_code" className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              Country
+            </Label>
+            <div className="relative">
+              <select
+                id="country_code"
+                value={formData.country_code}
+                onChange={(e) => setFormData({ ...formData, country_code: e.target.value })}
+                className="w-full h-12 rounded-xl border border-input bg-background px-3 pr-10 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#2969FF]"
+              >
+                <option value="">Select your country</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+          {formData.country_code && (() => {
+            const currencyCode = getDefaultCurrency(formData.country_code);
+            const currency = currencies[currencyCode];
+            const country = COUNTRIES.find(c => c.code === formData.country_code);
+            return currency ? (
+              <div className="p-3 bg-muted/50 rounded-xl text-sm text-muted-foreground">
+                {country?.name || formData.country_code} → <span className="font-medium text-foreground">{currency.symbol} {currency.name}</span>
+              </div>
+            ) : null;
+          })()}
         </CardContent>
       </Card>
 
