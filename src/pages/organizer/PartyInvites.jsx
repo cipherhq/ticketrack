@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   PartyPopper, Users, Plus, Search, Send, Clock, Copy, Loader2, Trash2,
-  CheckCircle, HelpCircle, X, Mail, RefreshCw, Link2, ChevronDown,
-  Calendar, UserPlus, ClipboardList, Settings2, Bell,
+  CheckCircle, HelpCircle, X, Mail, RefreshCw, Link2, ChevronDown, ChevronLeft,
+  Calendar, UserPlus, ClipboardList, Settings2, Bell, MapPin, Image,
   Phone, MessageCircle, CreditCard, AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
 import {
   createPartyInvite,
-  getEventInvites,
+  getOrganizerInvites,
   addGuestsToInvite,
   getInviteGuests,
   getInviteStats,
@@ -38,27 +38,48 @@ import { sendPartyInviteEmail, sendPartyInviteReminderEmail } from '@/lib/emailS
 
 const APP_URL = window.location.origin;
 
+function formatDateShort(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export function PartyInvites() {
   const { organizer } = useOrganizer();
 
+  // View state: 'list' | 'create' | 'detail'
+  const [view, setView] = useState('list');
 
-  // Events
-  const [events, setEvents] = useState([]);
-  const [selectedEventId, setSelectedEventId] = useState('');
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [loadingEvents, setLoadingEvents] = useState(true);
+  // Campaign list
+  const [campaigns, setCampaigns] = useState([]);
+  const [campaignStats, setCampaignStats] = useState({});
+  const [loadingCampaigns, setLoadingCampaigns] = useState(true);
 
-  // Invite state
+  // Selected campaign (detail view)
   const [invite, setInvite] = useState(null);
   const [guests, setGuests] = useState([]);
   const [stats, setStats] = useState({ total: 0, going: 0, maybe: 0, pending: 0, declined: 0 });
   const [loadingInvite, setLoadingInvite] = useState(false);
 
+  // Create form
+  const [createTitle, setCreateTitle] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+  const [createStartDate, setCreateStartDate] = useState('');
+  const [createEndDate, setCreateEndDate] = useState('');
+  const [createVenueName, setCreateVenueName] = useState('');
+  const [createCity, setCreateCity] = useState('');
+  const [createAddress, setCreateAddress] = useState('');
+  const [createCoverImage, setCreateCoverImage] = useState(null);
+  const [createMessage, setCreateMessage] = useState('');
+  const [createAllowPlusOnes, setCreateAllowPlusOnes] = useState(false);
+  const [createMaxPlusOnes, setCreateMaxPlusOnes] = useState(1);
+  const [createRsvpDeadline, setCreateRsvpDeadline] = useState('');
+  const [creating, setCreating] = useState(false);
+
   // Tabs
   const [activeTab, setActiveTab] = useState('guests');
 
   // Add guest form
-  const [addMode, setAddMode] = useState('manual'); // manual | paste | contacts
+  const [addMode, setAddMode] = useState('manual');
   const [manualName, setManualName] = useState('');
   const [manualEmail, setManualEmail] = useState('');
   const [manualPhone, setManualPhone] = useState('');
@@ -68,7 +89,15 @@ export function PartyInvites() {
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [addingGuests, setAddingGuests] = useState(false);
 
-  // Settings
+  // Settings (detail view)
+  const [settingsTitle, setSettingsTitle] = useState('');
+  const [settingsDescription, setSettingsDescription] = useState('');
+  const [settingsStartDate, setSettingsStartDate] = useState('');
+  const [settingsEndDate, setSettingsEndDate] = useState('');
+  const [settingsVenueName, setSettingsVenueName] = useState('');
+  const [settingsCity, setSettingsCity] = useState('');
+  const [settingsAddress, setSettingsAddress] = useState('');
+  const [settingsCoverImage, setSettingsCoverImage] = useState(null);
   const [inviteMessage, setInviteMessage] = useState('');
   const [allowPlusOnes, setAllowPlusOnes] = useState(false);
   const [maxPlusOnes, setMaxPlusOnes] = useState(1);
@@ -88,34 +117,39 @@ export function PartyInvites() {
   // Filter
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Load organizer events
+  // ============================================================================
+  // LOAD CAMPAIGNS
+  // ============================================================================
+
   useEffect(() => {
     if (!organizer?.id) return;
-    loadEvents();
+    loadCampaigns();
+    loadCreditAndFreeEmailData();
   }, [organizer?.id]);
 
-  async function loadEvents() {
-    setLoadingEvents(true);
+  async function loadCampaigns() {
+    setLoadingCampaigns(true);
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('id, title, start_date, image_url, venue_name, city, status')
-        .eq('organizer_id', organizer.id)
-        .in('status', ['published', 'active'])
-        .order('start_date', { ascending: false });
-      if (error) throw error;
-      setEvents(data || []);
+      const data = await getOrganizerInvites(organizer.id);
+      setCampaigns(data);
+      // Load stats for each campaign
+      const statsMap = {};
+      await Promise.all(data.map(async (inv) => {
+        try {
+          const s = await getInviteStats(inv.id);
+          statsMap[inv.id] = s;
+        } catch {}
+      }));
+      setCampaignStats(statsMap);
     } catch (err) {
-      console.error('Error loading events:', err);
+      console.error('Error loading campaigns:', err);
     } finally {
-      setLoadingEvents(false);
+      setLoadingCampaigns(false);
     }
   }
 
-  // Load credits and free email usage
   async function loadCreditAndFreeEmailData() {
     if (!organizer?.id) return;
-    // Load credit balance
     try {
       const { data: bal } = await supabase
         .from('communication_credit_balances')
@@ -126,7 +160,6 @@ export function PartyInvites() {
     } catch (err) {
       console.warn('Could not load credit balance:', err.message);
     }
-    // Load free email usage (table may not exist yet)
     try {
       const usage = await getFreeEmailUsage(organizer.id);
       setFreeEmailsUsed(usage);
@@ -135,43 +168,96 @@ export function PartyInvites() {
     }
   }
 
-  useEffect(() => {
-    if (organizer?.id) loadCreditAndFreeEmailData();
-  }, [organizer?.id]);
+  // ============================================================================
+  // CREATE CAMPAIGN
+  // ============================================================================
 
-  // Load invite for selected event
-  useEffect(() => {
-    if (!selectedEventId || !organizer?.id) return;
-    setSelectedEvent(events.find(e => e.id === selectedEventId) || null);
-    loadInvite();
-  }, [selectedEventId]);
+  async function handleUploadCoverImage(file) {
+    if (!file) return null;
+    const ext = file.name.split('.').pop();
+    const path = `party-invites/${organizer.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('event-images').upload(path, file);
+    if (error) throw error;
+    const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(path);
+    return publicUrl;
+  }
 
-  async function loadInvite() {
+  async function handleCreateCampaign() {
+    if (!createTitle.trim()) {
+      toast.error('Title is required');
+      return;
+    }
+    setCreating(true);
+    try {
+      let coverImageUrl = null;
+      if (createCoverImage) {
+        coverImageUrl = await handleUploadCoverImage(createCoverImage);
+      }
+      const inv = await createPartyInvite(organizer.id, {
+        title: createTitle.trim(),
+        description: createDescription.trim(),
+        startDate: createStartDate ? new Date(createStartDate).toISOString() : null,
+        endDate: createEndDate ? new Date(createEndDate).toISOString() : null,
+        venueName: createVenueName.trim(),
+        city: createCity.trim(),
+        address: createAddress.trim(),
+        coverImageUrl,
+        message: createMessage.trim(),
+        allowPlusOnes: createAllowPlusOnes,
+        maxPlusOnes: createMaxPlusOnes,
+        rsvpDeadline: createRsvpDeadline ? new Date(createRsvpDeadline).toISOString() : null,
+      });
+      toast.success('Invite campaign created!');
+      // Reset form
+      setCreateTitle('');
+      setCreateDescription('');
+      setCreateStartDate('');
+      setCreateEndDate('');
+      setCreateVenueName('');
+      setCreateCity('');
+      setCreateAddress('');
+      setCreateCoverImage(null);
+      setCreateMessage('');
+      setCreateAllowPlusOnes(false);
+      setCreateMaxPlusOnes(1);
+      setCreateRsvpDeadline('');
+      // Open the new campaign
+      openCampaign(inv);
+      await loadCampaigns();
+    } catch (err) {
+      console.error('Error creating campaign:', err);
+      toast.error('Failed to create campaign');
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  // ============================================================================
+  // OPEN CAMPAIGN DETAIL
+  // ============================================================================
+
+  async function openCampaign(inv) {
+    setInvite(inv);
+    setView('detail');
+    setActiveTab('guests');
+    setStatusFilter('all');
+    // Populate settings fields
+    setSettingsTitle(inv.title || '');
+    setSettingsDescription(inv.description || '');
+    setSettingsStartDate(inv.start_date ? inv.start_date.slice(0, 16) : '');
+    setSettingsEndDate(inv.end_date ? inv.end_date.slice(0, 16) : '');
+    setSettingsVenueName(inv.venue_name || '');
+    setSettingsCity(inv.city || '');
+    setSettingsAddress(inv.address || '');
+    setSettingsCoverImage(null);
+    setInviteMessage(inv.message || '');
+    setAllowPlusOnes(inv.allow_plus_ones);
+    setMaxPlusOnes(inv.max_plus_ones);
+    setRsvpDeadline(inv.rsvp_deadline ? inv.rsvp_deadline.slice(0, 16) : '');
+    // Load guests
     setLoadingInvite(true);
     try {
-      const invites = await getEventInvites(selectedEventId, organizer.id);
-      if (invites.length > 0) {
-        const inv = invites[0];
-        setInvite(inv);
-        setInviteMessage(inv.message || '');
-        setAllowPlusOnes(inv.allow_plus_ones);
-        setMaxPlusOnes(inv.max_plus_ones);
-        setRsvpDeadline(inv.rsvp_deadline ? inv.rsvp_deadline.slice(0, 16) : '');
-        await loadGuestsAndStats(inv.id);
-      } else {
-        // Auto-create invite for this event
-        const inv = await createPartyInvite(selectedEventId, organizer.id);
-        setInvite(inv);
-        setInviteMessage('');
-        setAllowPlusOnes(false);
-        setMaxPlusOnes(1);
-        setRsvpDeadline('');
-        setGuests([]);
-        setStats({ total: 0, going: 0, maybe: 0, pending: 0, declined: 0 });
-      }
-    } catch (err) {
-      console.error('Error loading invite:', err);
-      toast.error('Failed to load invite data');
+      await loadGuestsAndStats(inv.id);
     } finally {
       setLoadingInvite(false);
     }
@@ -190,12 +276,15 @@ export function PartyInvites() {
     }
   }
 
-  // Add guests (manual)
+  // ============================================================================
+  // ADD GUESTS
+  // ============================================================================
+
   async function handleAddManual() {
     if (!manualName.trim()) return;
     setAddingGuests(true);
     try {
-      await addGuestsToInvite(invite.id, selectedEventId, organizer.id, [{
+      await addGuestsToInvite(invite.id, organizer.id, [{
         name: manualName.trim(),
         email: manualEmail.trim() || null,
         phone: manualPhone.trim() || null,
@@ -213,14 +302,12 @@ export function PartyInvites() {
     }
   }
 
-  // Add guests (paste)
   async function handleAddPaste() {
     if (!pasteText.trim()) return;
     setAddingGuests(true);
     try {
       const lines = pasteText.split('\n').filter(l => l.trim());
       const parsed = lines.map(line => {
-        // Parse "Name <email>" or "email" or "Name, email"
         const angleMatch = line.match(/^(.+?)\s*<(.+?)>$/);
         if (angleMatch) return { name: angleMatch[1].trim(), email: angleMatch[2].trim(), source: 'paste' };
         const commaMatch = line.match(/^(.+?),\s*(.+@.+)$/);
@@ -235,7 +322,7 @@ export function PartyInvites() {
         return;
       }
 
-      await addGuestsToInvite(invite.id, selectedEventId, organizer.id, parsed);
+      await addGuestsToInvite(invite.id, organizer.id, parsed);
       setPasteText('');
       await loadGuestsAndStats(invite.id);
       toast.success(`${parsed.length} guest${parsed.length > 1 ? 's' : ''} added`);
@@ -246,7 +333,6 @@ export function PartyInvites() {
     }
   }
 
-  // Add from contacts
   async function loadContacts() {
     try {
       let query = supabase
@@ -277,7 +363,7 @@ export function PartyInvites() {
         phone: c.phone,
         source: 'contacts',
       }));
-      await addGuestsToInvite(invite.id, selectedEventId, organizer.id, toAdd);
+      await addGuestsToInvite(invite.id, organizer.id, toAdd);
       setSelectedContacts([]);
       await loadGuestsAndStats(invite.id);
       toast.success(`${toAdd.length} guest${toAdd.length > 1 ? 's' : ''} added`);
@@ -288,7 +374,6 @@ export function PartyInvites() {
     }
   }
 
-  // Remove guest
   async function handleRemoveGuest(guestId) {
     try {
       await removeGuest(guestId);
@@ -299,16 +384,33 @@ export function PartyInvites() {
     }
   }
 
-  // Save settings
+  // ============================================================================
+  // SETTINGS
+  // ============================================================================
+
   async function handleSaveSettings() {
     setSavingSettings(true);
     try {
-      await updateInviteSettings(invite.id, {
+      let coverImageUrl = invite.cover_image_url;
+      if (settingsCoverImage) {
+        coverImageUrl = await handleUploadCoverImage(settingsCoverImage);
+      }
+      const updated = await updateInviteSettings(invite.id, {
+        title: settingsTitle,
+        description: settingsDescription,
+        startDate: settingsStartDate ? new Date(settingsStartDate).toISOString() : null,
+        endDate: settingsEndDate ? new Date(settingsEndDate).toISOString() : null,
+        venueName: settingsVenueName,
+        city: settingsCity,
+        address: settingsAddress,
+        coverImageUrl,
         message: inviteMessage,
         allowPlusOnes,
         maxPlusOnes,
         rsvpDeadline: rsvpDeadline ? new Date(rsvpDeadline).toISOString() : null,
       });
+      setInvite(updated);
+      setSettingsCoverImage(null);
       toast.success('Settings saved');
     } catch {
       toast.error('Failed to save settings');
@@ -317,22 +419,23 @@ export function PartyInvites() {
     }
   }
 
-  // Computed values for credits
+  // ============================================================================
+  // SENDING
+  // ============================================================================
+
   const freeEmailsRemaining = Math.max(0, FREE_EMAIL_LIMIT - freeEmailsUsed);
   const unsentEmailGuests = guests.filter(g => g.email && !g.email_sent_at);
   const unsentSmsGuests = guests.filter(g => g.phone && !g.sms_sent_at);
   const freeEmailsToUse = Math.min(freeEmailsRemaining, unsentEmailGuests.length);
   const paidEmailCount = Math.max(0, unsentEmailGuests.length - freeEmailsToUse);
-  const emailCreditsNeeded = paidEmailCount; // 1 credit per email
-  const smsCreditsNeeded = unsentSmsGuests.length * 5; // 5 credits per SMS
+  const emailCreditsNeeded = paidEmailCount;
+  const smsCreditsNeeded = unsentSmsGuests.length * 5;
 
-  // Send invites (with free email logic)
   async function handleSendInvites() {
     if (unsentEmailGuests.length === 0) {
       toast.info('No unsent guests with email addresses');
       return;
     }
-    // Check if we have enough credits for paid portion
     if (paidEmailCount > 0 && creditBalance < emailCreditsNeeded) {
       toast.error(`Insufficient credits. You need ${emailCreditsNeeded} credits for ${paidEmailCount} paid email${paidEmailCount > 1 ? 's' : ''}.`);
       return;
@@ -346,7 +449,6 @@ export function PartyInvites() {
       for (const g of unsentEmailGuests) {
         const isFree = freeUsed < freeEmailsToUse;
 
-        // Deduct credit for paid emails
         if (!isFree) {
           const { error: deductError } = await supabase.rpc('deduct_communication_credits', {
             p_organizer_id: organizer.id,
@@ -366,11 +468,11 @@ export function PartyInvites() {
 
         const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
         await sendPartyInviteEmail(g.email, {
-          eventTitle: selectedEvent?.title,
-          eventDate: selectedEvent?.start_date,
-          venueName: selectedEvent?.venue_name,
-          city: selectedEvent?.city,
-          eventImage: selectedEvent?.image_url,
+          eventTitle: invite.title,
+          eventDate: invite.start_date,
+          venueName: invite.venue_name,
+          city: invite.city,
+          eventImage: invite.cover_image_url,
           organizerName: organizer?.business_name,
           message: invite.message,
           rsvpUrl,
@@ -399,7 +501,6 @@ export function PartyInvites() {
     }
   }
 
-  // Send reminders
   async function handleSendReminders() {
     const pending = guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at);
     if (pending.length === 0) {
@@ -411,10 +512,10 @@ export function PartyInvites() {
       for (const g of pending) {
         const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
         await sendPartyInviteReminderEmail(g.email, {
-          eventTitle: selectedEvent?.title,
-          eventDate: selectedEvent?.start_date,
-          venueName: selectedEvent?.venue_name,
-          city: selectedEvent?.city,
+          eventTitle: invite.title,
+          eventDate: invite.start_date,
+          venueName: invite.venue_name,
+          city: invite.city,
           rsvpUrl,
           goingCount: stats.going,
         }, organizer.id);
@@ -430,7 +531,6 @@ export function PartyInvites() {
     }
   }
 
-  // Send SMS invites
   async function handleSendSmsInvites() {
     if (unsentSmsGuests.length === 0) {
       toast.info('No unsent guests with phone numbers');
@@ -447,7 +547,7 @@ export function PartyInvites() {
 
       for (const g of unsentSmsGuests) {
         const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
-        const message = `You're invited to ${selectedEvent?.title}! RSVP here: ${rsvpUrl}${invite.message ? `\n\n${invite.message}` : ''}\n\n- ${organizer?.business_name}`;
+        const message = `You're invited to ${invite.title}! RSVP here: ${rsvpUrl}${invite.message ? `\n\n${invite.message}` : ''}\n\n- ${organizer?.business_name}`;
 
         const { error: smsError } = await supabase.functions.invoke('send-sms', {
           body: {
@@ -485,7 +585,6 @@ export function PartyInvites() {
     }
   }
 
-  // Copy share link
   function copyShareLink() {
     const url = `${APP_URL}/invite/${invite.share_token}`;
     navigator.clipboard.writeText(url);
@@ -509,7 +608,7 @@ export function PartyInvites() {
   // RENDER
   // ============================================================================
 
-  if (loadingEvents) {
+  if (loadingCampaigns) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -517,6 +616,752 @@ export function PartyInvites() {
     );
   }
 
+  // ============================================================================
+  // VIEW: CREATE CAMPAIGN
+  // ============================================================================
+  if (view === 'create') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setView('list')} className="gap-1">
+            <ChevronLeft className="w-4 h-4" /> Back
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-900">Create New Invite</h1>
+        </div>
+
+        <Card className="rounded-2xl">
+          <CardContent className="p-6 space-y-5">
+            {/* Title */}
+            <div>
+              <Label className="text-sm font-medium">Title *</Label>
+              <Input
+                value={createTitle}
+                onChange={e => setCreateTitle(e.target.value)}
+                placeholder="e.g. Sarah's Birthday Bash"
+                className="rounded-xl mt-1"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label className="text-sm font-medium">Description</Label>
+              <textarea
+                value={createDescription}
+                onChange={e => setCreateDescription(e.target.value)}
+                placeholder="Tell your guests what to expect..."
+                rows={3}
+                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+
+            {/* Dates */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Start Date & Time</Label>
+                <Input
+                  type="datetime-local"
+                  value={createStartDate}
+                  onChange={e => setCreateStartDate(e.target.value)}
+                  className="rounded-xl mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">End Date & Time</Label>
+                <Input
+                  type="datetime-local"
+                  value={createEndDate}
+                  onChange={e => setCreateEndDate(e.target.value)}
+                  className="rounded-xl mt-1"
+                />
+              </div>
+            </div>
+
+            {/* Venue */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Venue Name</Label>
+                <Input
+                  value={createVenueName}
+                  onChange={e => setCreateVenueName(e.target.value)}
+                  placeholder="e.g. The Grand Hall"
+                  className="rounded-xl mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">City</Label>
+                <Input
+                  value={createCity}
+                  onChange={e => setCreateCity(e.target.value)}
+                  placeholder="e.g. Lagos"
+                  className="rounded-xl mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Address</Label>
+                <Input
+                  value={createAddress}
+                  onChange={e => setCreateAddress(e.target.value)}
+                  placeholder="Full address"
+                  className="rounded-xl mt-1"
+                />
+              </div>
+            </div>
+
+            {/* Cover Image */}
+            <div>
+              <Label className="text-sm font-medium">Cover Image</Label>
+              <div className="mt-1">
+                <label className="flex items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                  <Image className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm text-gray-500">
+                    {createCoverImage ? createCoverImage.name : 'Click to upload cover image'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => setCreateCoverImage(e.target.files[0] || null)}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Custom Message */}
+            <div>
+              <Label className="text-sm font-medium">Custom Invite Message</Label>
+              <textarea
+                value={createMessage}
+                onChange={e => setCreateMessage(e.target.value)}
+                placeholder="Add a personal message..."
+                rows={2}
+                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+
+            {/* Plus-Ones */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Allow Plus-Ones</Label>
+                <p className="text-xs text-gray-400">Let guests bring additional people</p>
+              </div>
+              <button
+                onClick={() => setCreateAllowPlusOnes(!createAllowPlusOnes)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${createAllowPlusOnes ? 'bg-primary' : 'bg-gray-300'}`}
+              >
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${createAllowPlusOnes ? 'left-[22px]' : 'left-0.5'}`} />
+              </button>
+            </div>
+            {createAllowPlusOnes && (
+              <div>
+                <Label className="text-xs text-gray-500">Max plus-ones per guest</Label>
+                <Select value={String(createMaxPlusOnes)} onValueChange={v => setCreateMaxPlusOnes(Number(v))}>
+                  <SelectTrigger className="w-24 rounded-lg h-9 mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* RSVP Deadline */}
+            <div>
+              <Label className="text-sm font-medium">RSVP Deadline</Label>
+              <p className="text-xs text-gray-400 mb-1">After this date, guests can no longer respond</p>
+              <Input
+                type="datetime-local"
+                value={createRsvpDeadline}
+                onChange={e => setCreateRsvpDeadline(e.target.value)}
+                className="rounded-xl w-full sm:w-64"
+              />
+            </div>
+
+            <Button
+              onClick={handleCreateCampaign}
+              disabled={!createTitle.trim() || creating}
+              className="w-full sm:w-auto rounded-xl gap-2 h-12 px-8"
+            >
+              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PartyPopper className="w-4 h-4" />}
+              Create Invite Campaign
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // VIEW: CAMPAIGN DETAIL
+  // ============================================================================
+  if (view === 'detail' && invite) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => { setView('list'); loadCampaigns(); }} className="gap-1">
+              <ChevronLeft className="w-4 h-4" /> Back
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{invite.title || 'Untitled Invite'}</h1>
+              {invite.start_date && (
+                <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {formatDateShort(invite.start_date)}
+                  {invite.venue_name && <><span className="mx-1">·</span><MapPin className="w-3.5 h-3.5" />{invite.venue_name}</>}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {loadingInvite ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Going', count: stats.going, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
+                { label: 'Maybe', count: stats.maybe, color: 'text-amber-600', bg: 'bg-amber-50', icon: HelpCircle },
+                { label: 'Pending', count: stats.pending, color: 'text-blue-600', bg: 'bg-blue-50', icon: Clock },
+                { label: 'Declined', count: stats.declined, color: 'text-gray-500', bg: 'bg-gray-50', icon: X },
+              ].map(s => (
+                <Card key={s.label} className="rounded-2xl">
+                  <CardContent className="p-4 text-center">
+                    <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center mx-auto mb-2`}>
+                      <s.icon className={`w-5 h-5 ${s.color}`} />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900">{s.count}</p>
+                    <p className="text-xs text-gray-500">{s.label}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Credit Info Banner */}
+            <Card className="rounded-2xl border-blue-200 bg-blue-50/50">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">
+                      Free Emails: <span className="font-bold">{freeEmailsRemaining} / {FREE_EMAIL_LIMIT}</span> remaining
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">
+                      Credits: <span className="font-bold">{creditBalance}</span>
+                    </span>
+                  </div>
+                </div>
+                {paidEmailCount > 0 && (
+                  <p className="text-xs text-amber-700 mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {paidEmailCount} email{paidEmailCount > 1 ? 's' : ''} will use {emailCreditsNeeded} credit{emailCreditsNeeded > 1 ? 's' : ''} (1 per email)
+                  </p>
+                )}
+                {unsentSmsGuests.length > 0 && (
+                  <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5" />
+                    SMS sending costs 5 credits each ({smsCreditsNeeded} credits for {unsentSmsGuests.length} SMS)
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={handleSendInvites}
+                disabled={sendingInvites || unsentEmailGuests.length === 0 || (paidEmailCount > 0 && creditBalance < emailCreditsNeeded)}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-2"
+              >
+                {sendingInvites ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                Send Email Invites ({unsentEmailGuests.length})
+              </Button>
+              <Button
+                onClick={handleSendSmsInvites}
+                disabled={sendingSms || unsentSmsGuests.length === 0 || creditBalance < smsCreditsNeeded}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2"
+              >
+                {sendingSms ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+                Send SMS Invites ({unsentSmsGuests.length})
+              </Button>
+              <Button
+                onClick={handleSendReminders}
+                disabled={sendingReminders || guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length === 0}
+                variant="outline"
+                className="rounded-xl gap-2"
+              >
+                {sendingReminders ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />}
+                Send Reminders ({guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length})
+              </Button>
+              <Button variant="outline" onClick={copyShareLink} className="rounded-xl gap-2">
+                <Copy className="w-4 h-4" /> Copy Share Link
+              </Button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 gap-1">
+              {[
+                { id: 'guests', label: 'Guest List', icon: Users },
+                { id: 'add', label: 'Add Guests', icon: UserPlus },
+                { id: 'settings', label: 'Settings', icon: Settings2 },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab: Guest List */}
+            {activeTab === 'guests' && (
+              <Card className="rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-[160px] rounded-lg h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All ({stats.total})</SelectItem>
+                        <SelectItem value="going">Going ({stats.going})</SelectItem>
+                        <SelectItem value="maybe">Maybe ({stats.maybe})</SelectItem>
+                        <SelectItem value="pending">Pending ({stats.pending})</SelectItem>
+                        <SelectItem value="declined">Declined ({stats.declined})</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="sm" onClick={() => loadGuestsAndStats(invite.id)} className="gap-1">
+                      <RefreshCw className="w-3.5 h-3.5" /> Refresh
+                    </Button>
+                  </div>
+
+                  {filteredGuests.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-400">No guests yet. Add some in the "Add Guests" tab.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 border-b">
+                            <th className="pb-2 font-medium">Name</th>
+                            <th className="pb-2 font-medium hidden sm:table-cell">Email</th>
+                            <th className="pb-2 font-medium hidden md:table-cell">Phone</th>
+                            <th className="pb-2 font-medium">RSVP</th>
+                            <th className="pb-2 font-medium hidden md:table-cell">Sent</th>
+                            <th className="pb-2 font-medium w-10"></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {filteredGuests.map(g => (
+                            <tr key={g.id} className="hover:bg-gray-50">
+                              <td className="py-3">
+                                <div>
+                                  <p className="font-medium text-gray-900">{g.name}</p>
+                                  <p className="text-xs text-gray-400 sm:hidden">{g.email || '\u2014'}</p>
+                                </div>
+                              </td>
+                              <td className="py-3 hidden sm:table-cell text-gray-600">{g.email || '\u2014'}</td>
+                              <td className="py-3 hidden md:table-cell text-gray-600">{g.phone || '\u2014'}</td>
+                              <td className="py-3">
+                                {statusBadge(g.rsvp_status)}
+                                {g.plus_ones > 0 && (
+                                  <span className="ml-1 text-xs text-gray-400">+{g.plus_ones}</span>
+                                )}
+                              </td>
+                              <td className="py-3 hidden md:table-cell">
+                                <div className="flex items-center gap-2">
+                                  {g.email_sent_at ? (
+                                    <span className="text-xs text-blue-600 flex items-center gap-1" title="Email sent">
+                                      <Mail className="w-3 h-3" /> <CheckCircle className="w-3 h-3" />
+                                    </span>
+                                  ) : g.email ? (
+                                    <span className="text-xs text-gray-400 flex items-center gap-1" title="Email not sent">
+                                      <Mail className="w-3 h-3" />
+                                    </span>
+                                  ) : null}
+                                  {g.sms_sent_at ? (
+                                    <span className="text-xs text-emerald-600 flex items-center gap-1" title="SMS sent">
+                                      <Phone className="w-3 h-3" /> <CheckCircle className="w-3 h-3" />
+                                    </span>
+                                  ) : g.phone ? (
+                                    <span className="text-xs text-gray-400 flex items-center gap-1" title="SMS not sent">
+                                      <Phone className="w-3 h-3" />
+                                    </span>
+                                  ) : null}
+                                  {!g.email && !g.phone && (
+                                    <span className="text-xs text-gray-400">No contact</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3">
+                                <button
+                                  onClick={() => handleRemoveGuest(g.id)}
+                                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                  title="Remove guest"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tab: Add Guests */}
+            {activeTab === 'add' && (
+              <Card className="rounded-2xl">
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex gap-2">
+                    {[
+                      { id: 'manual', label: 'Manual Entry' },
+                      { id: 'paste', label: 'Paste List' },
+                      { id: 'contacts', label: 'From Contacts' },
+                    ].map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => setAddMode(m.id)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          addMode === m.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {addMode === 'manual' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-xs">Name *</Label>
+                          <Input
+                            value={manualName}
+                            onChange={e => setManualName(e.target.value)}
+                            placeholder="Jane Doe"
+                            className="rounded-lg mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Email</Label>
+                          <Input
+                            type="email"
+                            value={manualEmail}
+                            onChange={e => setManualEmail(e.target.value)}
+                            placeholder="jane@email.com"
+                            className="rounded-lg mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Phone</Label>
+                          <Input
+                            value={manualPhone}
+                            onChange={e => setManualPhone(e.target.value)}
+                            placeholder="+234..."
+                            className="rounded-lg mt-1"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleAddManual}
+                        disabled={!manualName.trim() || addingGuests}
+                        className="rounded-xl gap-2"
+                      >
+                        {addingGuests ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        Add Guest
+                      </Button>
+                    </div>
+                  )}
+
+                  {addMode === 'paste' && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-500">
+                        One guest per line. Formats: "Name &lt;email&gt;", "Name, email", or just "email"
+                      </p>
+                      <textarea
+                        value={pasteText}
+                        onChange={e => setPasteText(e.target.value)}
+                        placeholder={"Jane Doe <jane@email.com>\nJohn Smith, john@email.com\nfriend@email.com"}
+                        rows={6}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      />
+                      <Button
+                        onClick={handleAddPaste}
+                        disabled={!pasteText.trim() || addingGuests}
+                        className="rounded-xl gap-2"
+                      >
+                        {addingGuests ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />}
+                        Add Guests
+                      </Button>
+                    </div>
+                  )}
+
+                  {addMode === 'contacts' && (
+                    <div className="space-y-3">
+                      <Input
+                        value={contactSearch}
+                        onChange={e => setContactSearch(e.target.value)}
+                        placeholder="Search contacts..."
+                        className="rounded-lg"
+                      />
+                      <div className="max-h-60 overflow-y-auto space-y-1 border rounded-xl p-2">
+                        {contacts.length === 0 ? (
+                          <p className="text-sm text-gray-400 text-center py-4">No contacts found</p>
+                        ) : contacts.map(c => {
+                          const isSelected = selectedContacts.some(sc => sc.id === c.id);
+                          return (
+                            <button
+                              key={c.id}
+                              onClick={() => {
+                                setSelectedContacts(prev =>
+                                  isSelected ? prev.filter(sc => sc.id !== c.id) : [...prev, c]
+                                );
+                              }}
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                                isSelected ? 'bg-primary/10 border border-primary/20' : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                isSelected ? 'bg-primary border-primary' : 'border-gray-300'
+                              }`}>
+                                {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
+                                <p className="text-xs text-gray-400 truncate">{c.email || c.phone || '\u2014'}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <Button
+                        onClick={handleAddContacts}
+                        disabled={selectedContacts.length === 0 || addingGuests}
+                        className="rounded-xl gap-2"
+                      >
+                        {addingGuests ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                        Add {selectedContacts.length} Contact{selectedContacts.length !== 1 ? 's' : ''}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tab: Settings */}
+            {activeTab === 'settings' && (
+              <Card className="rounded-2xl">
+                <CardContent className="p-4 space-y-5">
+                  {/* Title */}
+                  <div>
+                    <Label className="text-sm font-medium">Title</Label>
+                    <Input
+                      value={settingsTitle}
+                      onChange={e => setSettingsTitle(e.target.value)}
+                      placeholder="Invite title"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <Label className="text-sm font-medium">Description</Label>
+                    <textarea
+                      value={settingsDescription}
+                      onChange={e => setSettingsDescription(e.target.value)}
+                      placeholder="Describe your event..."
+                      rows={3}
+                      className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Start Date & Time</Label>
+                      <Input
+                        type="datetime-local"
+                        value={settingsStartDate}
+                        onChange={e => setSettingsStartDate(e.target.value)}
+                        className="rounded-xl mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">End Date & Time</Label>
+                      <Input
+                        type="datetime-local"
+                        value={settingsEndDate}
+                        onChange={e => setSettingsEndDate(e.target.value)}
+                        className="rounded-xl mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Venue */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Venue Name</Label>
+                      <Input
+                        value={settingsVenueName}
+                        onChange={e => setSettingsVenueName(e.target.value)}
+                        placeholder="Venue name"
+                        className="rounded-xl mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">City</Label>
+                      <Input
+                        value={settingsCity}
+                        onChange={e => setSettingsCity(e.target.value)}
+                        placeholder="City"
+                        className="rounded-xl mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Address</Label>
+                      <Input
+                        value={settingsAddress}
+                        onChange={e => setSettingsAddress(e.target.value)}
+                        placeholder="Address"
+                        className="rounded-xl mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cover Image */}
+                  <div>
+                    <Label className="text-sm font-medium">Cover Image</Label>
+                    {invite.cover_image_url && !settingsCoverImage && (
+                      <div className="mt-1 mb-2">
+                        <img src={invite.cover_image_url} alt="" className="w-32 h-20 object-cover rounded-lg" />
+                      </div>
+                    )}
+                    <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-primary/40 transition-colors mt-1">
+                      <Image className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-500">
+                        {settingsCoverImage ? settingsCoverImage.name : 'Upload new image'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => setSettingsCoverImage(e.target.files[0] || null)}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Invite Message */}
+                  <div>
+                    <Label className="text-sm font-medium">Custom Invite Message</Label>
+                    <textarea
+                      value={inviteMessage}
+                      onChange={e => setInviteMessage(e.target.value)}
+                      placeholder="Add a personal message to your invite..."
+                      rows={3}
+                      className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+
+                  {/* Plus Ones */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm font-medium">Allow Plus-Ones</Label>
+                      <p className="text-xs text-gray-400">Let guests bring additional people</p>
+                    </div>
+                    <button
+                      onClick={() => setAllowPlusOnes(!allowPlusOnes)}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${allowPlusOnes ? 'bg-primary' : 'bg-gray-300'}`}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${allowPlusOnes ? 'left-[22px]' : 'left-0.5'}`} />
+                    </button>
+                  </div>
+                  {allowPlusOnes && (
+                    <div>
+                      <Label className="text-xs text-gray-500">Max plus-ones per guest</Label>
+                      <Select value={String(maxPlusOnes)} onValueChange={v => setMaxPlusOnes(Number(v))}>
+                        <SelectTrigger className="w-24 rounded-lg h-9 mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* RSVP Deadline */}
+                  <div>
+                    <Label className="text-sm font-medium">RSVP Deadline</Label>
+                    <p className="text-xs text-gray-400 mb-1">After this date, guests can no longer respond</p>
+                    <Input
+                      type="datetime-local"
+                      value={rsvpDeadline}
+                      onChange={e => setRsvpDeadline(e.target.value)}
+                      className="rounded-lg w-full sm:w-64"
+                    />
+                  </div>
+
+                  {/* Shareable Link */}
+                  <div>
+                    <Label className="text-sm font-medium">Shareable Invite Link</Label>
+                    <p className="text-xs text-gray-400 mb-2">Anyone with this link can RSVP (they'll enter their name)</p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        readOnly
+                        value={`${APP_URL}/invite/${invite.share_token}`}
+                        className="rounded-lg text-sm bg-gray-50 flex-1"
+                      />
+                      <Button variant="outline" size="sm" onClick={copyShareLink} className="rounded-lg gap-1 shrink-0">
+                        <Copy className="w-3.5 h-3.5" /> Copy
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                    className="rounded-xl gap-2"
+                  >
+                    {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                    Save Settings
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // VIEW: CAMPAIGN LIST (default)
+  // ============================================================================
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -526,484 +1371,88 @@ export function PartyInvites() {
             <PartyPopper className="w-6 h-6 text-primary" />
             Party Invites
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Send beautiful invites and track RSVPs</p>
+          <p className="text-sm text-gray-500 mt-1">Create invite campaigns and track RSVPs</p>
         </div>
+        <Button onClick={() => setView('create')} className="rounded-xl gap-2">
+          <Plus className="w-4 h-4" /> Create New Invite
+        </Button>
       </div>
 
-      {/* Event Selector */}
-      <Card className="rounded-2xl">
-        <CardContent className="p-4">
-          <Label className="text-sm font-medium text-gray-700 mb-2 block">Select Event</Label>
-          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-            <SelectTrigger className="h-12 rounded-xl">
-              <SelectValue placeholder="Choose an event to manage invites" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map(e => (
-                <SelectItem key={e.id} value={e.id}>
-                  <span className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    {e.title}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {!selectedEventId && (
-        <div className="text-center py-16">
-          <PartyPopper className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-400">Select an event above to get started</p>
+      {/* Campaign List */}
+      {campaigns.length === 0 ? (
+        <div className="text-center py-20">
+          <PartyPopper className="w-14 h-14 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-700 mb-1">No invite campaigns yet</h2>
+          <p className="text-gray-400 mb-6">Create your first invite campaign to get started</p>
+          <Button onClick={() => setView('create')} className="rounded-xl gap-2">
+            <Plus className="w-4 h-4" /> Create New Invite
+          </Button>
         </div>
-      )}
+      ) : (
+        <div className="grid gap-4">
+          {campaigns.map(c => {
+            const s = campaignStats[c.id] || { total: 0, going: 0, maybe: 0, pending: 0, declined: 0 };
+            return (
+              <Card
+                key={c.id}
+                className="rounded-2xl cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => openCampaign(c)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    {/* Cover thumbnail */}
+                    {c.cover_image_url ? (
+                      <img src={c.cover_image_url} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center shrink-0">
+                        <PartyPopper className="w-7 h-7 text-purple-400" />
+                      </div>
+                    )}
 
-      {selectedEventId && loadingInvite && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        </div>
-      )}
-
-      {selectedEventId && !loadingInvite && invite && (
-        <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Going', count: stats.going, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
-              { label: 'Maybe', count: stats.maybe, color: 'text-amber-600', bg: 'bg-amber-50', icon: HelpCircle },
-              { label: 'Pending', count: stats.pending, color: 'text-blue-600', bg: 'bg-blue-50', icon: Clock },
-              { label: 'Declined', count: stats.declined, color: 'text-gray-500', bg: 'bg-gray-50', icon: X },
-            ].map(s => (
-              <Card key={s.label} className="rounded-2xl">
-                <CardContent className="p-4 text-center">
-                  <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center mx-auto mb-2`}>
-                    <s.icon className={`w-5 h-5 ${s.color}`} />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">{c.title || 'Untitled Invite'}</h3>
+                      <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                        {c.start_date && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {formatDateShort(c.start_date)}
+                          </span>
+                        )}
+                        {c.venue_name && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {c.venue_name}
+                          </span>
+                        )}
+                      </div>
+                      {/* RSVP mini badges */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Users className="w-3.5 h-3.5" /> {s.total} guest{s.total !== 1 ? 's' : ''}
+                        </span>
+                        {s.going > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                            {s.going} going
+                          </span>
+                        )}
+                        {s.maybe > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                            {s.maybe} maybe
+                          </span>
+                        )}
+                        {s.pending > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {s.pending} pending
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{s.count}</p>
-                  <p className="text-xs text-gray-500">{s.label}</p>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-
-          {/* Credit Info Banner */}
-          <Card className="rounded-2xl border-blue-200 bg-blue-50/50">
-            <CardContent className="p-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">
-                    Free Emails: <span className="font-bold">{freeEmailsRemaining} / {FREE_EMAIL_LIMIT}</span> remaining
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">
-                    Credits: <span className="font-bold">{creditBalance}</span>
-                  </span>
-                </div>
-              </div>
-              {paidEmailCount > 0 && (
-                <p className="text-xs text-amber-700 mt-2 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  {paidEmailCount} email{paidEmailCount > 1 ? 's' : ''} will use {emailCreditsNeeded} credit{emailCreditsNeeded > 1 ? 's' : ''} (1 per email)
-                </p>
-              )}
-              {unsentSmsGuests.length > 0 && (
-                <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5" />
-                  SMS sending costs 5 credits each ({smsCreditsNeeded} credits for {unsentSmsGuests.length} SMS)
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={handleSendInvites}
-              disabled={sendingInvites || unsentEmailGuests.length === 0 || (paidEmailCount > 0 && creditBalance < emailCreditsNeeded)}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-2"
-            >
-              {sendingInvites ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-              Send Email Invites ({unsentEmailGuests.length})
-            </Button>
-            <Button
-              onClick={handleSendSmsInvites}
-              disabled={sendingSms || unsentSmsGuests.length === 0 || creditBalance < smsCreditsNeeded}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2"
-            >
-              {sendingSms ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-              Send SMS Invites ({unsentSmsGuests.length})
-            </Button>
-            <Button
-              onClick={handleSendReminders}
-              disabled={sendingReminders || guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length === 0}
-              variant="outline"
-              className="rounded-xl gap-2"
-            >
-              {sendingReminders ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />}
-              Send Reminders ({guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length})
-            </Button>
-            <Button variant="outline" onClick={copyShareLink} className="rounded-xl gap-2">
-              <Copy className="w-4 h-4" /> Copy Share Link
-            </Button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 gap-1">
-            {[
-              { id: 'guests', label: 'Guest List', icon: Users },
-              { id: 'add', label: 'Add Guests', icon: UserPlus },
-              { id: 'settings', label: 'Settings', icon: Settings2 },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab: Guest List */}
-          {activeTab === 'guests' && (
-            <Card className="rounded-2xl">
-              <CardContent className="p-4">
-                {/* Filter */}
-                <div className="flex items-center gap-2 mb-4">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[160px] rounded-lg h-9 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All ({stats.total})</SelectItem>
-                      <SelectItem value="going">Going ({stats.going})</SelectItem>
-                      <SelectItem value="maybe">Maybe ({stats.maybe})</SelectItem>
-                      <SelectItem value="pending">Pending ({stats.pending})</SelectItem>
-                      <SelectItem value="declined">Declined ({stats.declined})</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button variant="ghost" size="sm" onClick={() => loadGuestsAndStats(invite.id)} className="gap-1">
-                    <RefreshCw className="w-3.5 h-3.5" /> Refresh
-                  </Button>
-                </div>
-
-                {filteredGuests.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-400">No guests yet. Add some in the "Add Guests" tab.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-gray-500 border-b">
-                          <th className="pb-2 font-medium">Name</th>
-                          <th className="pb-2 font-medium hidden sm:table-cell">Email</th>
-                          <th className="pb-2 font-medium hidden md:table-cell">Phone</th>
-                          <th className="pb-2 font-medium">RSVP</th>
-                          <th className="pb-2 font-medium hidden md:table-cell">Sent</th>
-                          <th className="pb-2 font-medium w-10"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {filteredGuests.map(g => (
-                          <tr key={g.id} className="hover:bg-gray-50">
-                            <td className="py-3">
-                              <div>
-                                <p className="font-medium text-gray-900">{g.name}</p>
-                                <p className="text-xs text-gray-400 sm:hidden">{g.email || '—'}</p>
-                              </div>
-                            </td>
-                            <td className="py-3 hidden sm:table-cell text-gray-600">{g.email || '—'}</td>
-                            <td className="py-3 hidden md:table-cell text-gray-600">{g.phone || '—'}</td>
-                            <td className="py-3">
-                              {statusBadge(g.rsvp_status)}
-                              {g.plus_ones > 0 && (
-                                <span className="ml-1 text-xs text-gray-400">+{g.plus_ones}</span>
-                              )}
-                            </td>
-                            <td className="py-3 hidden md:table-cell">
-                              <div className="flex items-center gap-2">
-                                {g.email_sent_at ? (
-                                  <span className="text-xs text-blue-600 flex items-center gap-1" title="Email sent">
-                                    <Mail className="w-3 h-3" /> <CheckCircle className="w-3 h-3" />
-                                  </span>
-                                ) : g.email ? (
-                                  <span className="text-xs text-gray-400 flex items-center gap-1" title="Email not sent">
-                                    <Mail className="w-3 h-3" />
-                                  </span>
-                                ) : null}
-                                {g.sms_sent_at ? (
-                                  <span className="text-xs text-emerald-600 flex items-center gap-1" title="SMS sent">
-                                    <Phone className="w-3 h-3" /> <CheckCircle className="w-3 h-3" />
-                                  </span>
-                                ) : g.phone ? (
-                                  <span className="text-xs text-gray-400 flex items-center gap-1" title="SMS not sent">
-                                    <Phone className="w-3 h-3" />
-                                  </span>
-                                ) : null}
-                                {!g.email && !g.phone && (
-                                  <span className="text-xs text-gray-400">No contact</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3">
-                              <button
-                                onClick={() => handleRemoveGuest(g.id)}
-                                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                                title="Remove guest"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Tab: Add Guests */}
-          {activeTab === 'add' && (
-            <Card className="rounded-2xl">
-              <CardContent className="p-4 space-y-4">
-                {/* Mode switcher */}
-                <div className="flex gap-2">
-                  {[
-                    { id: 'manual', label: 'Manual Entry' },
-                    { id: 'paste', label: 'Paste List' },
-                    { id: 'contacts', label: 'From Contacts' },
-                  ].map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => setAddMode(m.id)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        addMode === m.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Manual */}
-                {addMode === 'manual' && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <Label className="text-xs">Name *</Label>
-                        <Input
-                          value={manualName}
-                          onChange={e => setManualName(e.target.value)}
-                          placeholder="Jane Doe"
-                          className="rounded-lg mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Email</Label>
-                        <Input
-                          type="email"
-                          value={manualEmail}
-                          onChange={e => setManualEmail(e.target.value)}
-                          placeholder="jane@email.com"
-                          className="rounded-lg mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Phone</Label>
-                        <Input
-                          value={manualPhone}
-                          onChange={e => setManualPhone(e.target.value)}
-                          placeholder="+234..."
-                          className="rounded-lg mt-1"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      onClick={handleAddManual}
-                      disabled={!manualName.trim() || addingGuests}
-                      className="rounded-xl gap-2"
-                    >
-                      {addingGuests ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                      Add Guest
-                    </Button>
-                  </div>
-                )}
-
-                {/* Paste */}
-                {addMode === 'paste' && (
-                  <div className="space-y-3">
-                    <p className="text-xs text-gray-500">
-                      One guest per line. Formats: "Name &lt;email&gt;", "Name, email", or just "email"
-                    </p>
-                    <textarea
-                      value={pasteText}
-                      onChange={e => setPasteText(e.target.value)}
-                      placeholder={"Jane Doe <jane@email.com>\nJohn Smith, john@email.com\nfriend@email.com"}
-                      rows={6}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    />
-                    <Button
-                      onClick={handleAddPaste}
-                      disabled={!pasteText.trim() || addingGuests}
-                      className="rounded-xl gap-2"
-                    >
-                      {addingGuests ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />}
-                      Add Guests
-                    </Button>
-                  </div>
-                )}
-
-                {/* Contacts */}
-                {addMode === 'contacts' && (
-                  <div className="space-y-3">
-                    <Input
-                      value={contactSearch}
-                      onChange={e => setContactSearch(e.target.value)}
-                      placeholder="Search contacts..."
-                      className="rounded-lg"
-                    />
-                    <div className="max-h-60 overflow-y-auto space-y-1 border rounded-xl p-2">
-                      {contacts.length === 0 ? (
-                        <p className="text-sm text-gray-400 text-center py-4">No contacts found</p>
-                      ) : contacts.map(c => {
-                        const isSelected = selectedContacts.some(sc => sc.id === c.id);
-                        return (
-                          <button
-                            key={c.id}
-                            onClick={() => {
-                              setSelectedContacts(prev =>
-                                isSelected ? prev.filter(sc => sc.id !== c.id) : [...prev, c]
-                              );
-                            }}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                              isSelected ? 'bg-primary/10 border border-primary/20' : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                              isSelected ? 'bg-primary border-primary' : 'border-gray-300'
-                            }`}>
-                              {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
-                              <p className="text-xs text-gray-400 truncate">{c.email || c.phone || '—'}</p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <Button
-                      onClick={handleAddContacts}
-                      disabled={selectedContacts.length === 0 || addingGuests}
-                      className="rounded-xl gap-2"
-                    >
-                      {addingGuests ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                      Add {selectedContacts.length} Contact{selectedContacts.length !== 1 ? 's' : ''}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Tab: Settings */}
-          {activeTab === 'settings' && (
-            <Card className="rounded-2xl">
-              <CardContent className="p-4 space-y-5">
-                {/* Invite Message */}
-                <div>
-                  <Label className="text-sm font-medium">Custom Invite Message</Label>
-                  <textarea
-                    value={inviteMessage}
-                    onChange={e => setInviteMessage(e.target.value)}
-                    placeholder="Add a personal message to your invite..."
-                    rows={3}
-                    className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                  />
-                </div>
-
-                {/* Plus Ones */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-medium">Allow Plus-Ones</Label>
-                    <p className="text-xs text-gray-400">Let guests bring additional people</p>
-                  </div>
-                  <button
-                    onClick={() => setAllowPlusOnes(!allowPlusOnes)}
-                    className={`relative w-11 h-6 rounded-full transition-colors ${allowPlusOnes ? 'bg-primary' : 'bg-gray-300'}`}
-                  >
-                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${allowPlusOnes ? 'left-[22px]' : 'left-0.5'}`} />
-                  </button>
-                </div>
-                {allowPlusOnes && (
-                  <div>
-                    <Label className="text-xs text-gray-500">Max plus-ones per guest</Label>
-                    <Select value={String(maxPlusOnes)} onValueChange={v => setMaxPlusOnes(Number(v))}>
-                      <SelectTrigger className="w-24 rounded-lg h-9 mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 4, 5].map(n => (
-                          <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* RSVP Deadline */}
-                <div>
-                  <Label className="text-sm font-medium">RSVP Deadline</Label>
-                  <p className="text-xs text-gray-400 mb-1">After this date, guests can no longer respond</p>
-                  <Input
-                    type="datetime-local"
-                    value={rsvpDeadline}
-                    onChange={e => setRsvpDeadline(e.target.value)}
-                    className="rounded-lg w-full sm:w-64"
-                  />
-                </div>
-
-                {/* Shareable Link */}
-                <div>
-                  <Label className="text-sm font-medium">Shareable Invite Link</Label>
-                  <p className="text-xs text-gray-400 mb-2">Anyone with this link can RSVP (they'll enter their name)</p>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      readOnly
-                      value={`${APP_URL}/invite/${invite.share_token}`}
-                      className="rounded-lg text-sm bg-gray-50 flex-1"
-                    />
-                    <Button variant="outline" size="sm" onClick={copyShareLink} className="rounded-lg gap-1 shrink-0">
-                      <Copy className="w-3.5 h-3.5" /> Copy
-                    </Button>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleSaveSettings}
-                  disabled={savingSettings}
-                  className="rounded-xl gap-2"
-                >
-                  {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                  Save Settings
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </>
+            );
+          })}
+        </div>
       )}
     </div>
   );

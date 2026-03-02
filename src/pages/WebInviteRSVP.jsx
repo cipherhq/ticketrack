@@ -28,7 +28,6 @@ export function WebInviteRSVP() {
   const [loading, setLoading] = useState(true);
   const [invite, setInvite] = useState(null);
   const [guest, setGuest] = useState(null);
-  const [event, setEvent] = useState(null);
   const [organizer, setOrganizer] = useState(null);
   const [error, setError] = useState('');
 
@@ -60,8 +59,7 @@ export function WebInviteRSVP() {
         if (!guestData) { setError('Invite not found'); return; }
         setGuest(guestData);
         setInvite(guestData.invite);
-        setEvent(guestData.invite?.event);
-        setOrganizer(guestData.invite?.event?.organizer);
+        setOrganizer(guestData.invite?.organizer);
         setName(guestData.name);
         setEmail(guestData.email || '');
         if (guestData.rsvp_responded_at) {
@@ -79,8 +77,7 @@ export function WebInviteRSVP() {
         const inviteData = await getInviteByToken(token);
         if (!inviteData) { setError('Invite not found'); return; }
         setInvite(inviteData);
-        setEvent(inviteData.event);
-        setOrganizer(inviteData.event?.organizer);
+        setOrganizer(inviteData.organizer);
         try {
           const list = await getPublicGuestList(inviteData.id);
           setGuestList(list);
@@ -101,7 +98,7 @@ export function WebInviteRSVP() {
     setSubmitting(true);
     try {
       if (isShareLink) {
-        await registerAndRSVP(invite.id, event.id, organizer.id, {
+        await registerAndRSVP(invite.id, invite.organizer_id, {
           name: name.trim(),
           email: email.trim() || null,
           status: selectedStatus,
@@ -151,7 +148,7 @@ export function WebInviteRSVP() {
     );
   }
 
-  const coverImage = event?.cover_image_url;
+  const coverImage = invite?.cover_image_url;
   const statusLabels = { going: 'Going', maybe: 'Maybe', declined: "Can't Make It" };
   const statusColors = { going: 'bg-emerald-500', maybe: 'bg-amber-500', declined: 'bg-gray-500' };
 
@@ -174,7 +171,7 @@ export function WebInviteRSVP() {
             {/* Event Image Hero */}
             {coverImage && (
               <div className="relative h-52 sm:h-60">
-                <img src={coverImage} alt={event?.title} className="w-full h-full object-cover" />
+                <img src={coverImage} alt={invite?.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
               </div>
             )}
@@ -182,7 +179,7 @@ export function WebInviteRSVP() {
             <div className="p-6 sm:p-8">
               {/* Event Title */}
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
-                {event?.title}
+                {invite?.title}
               </h1>
 
               {/* Hosted by */}
@@ -206,16 +203,16 @@ export function WebInviteRSVP() {
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
                   <div>
-                    <p className="font-medium text-gray-900">{formatDate(event?.start_date)}</p>
-                    <p className="text-sm text-gray-500">{formatTime(event?.start_date)}{event?.end_date ? ` - ${formatTime(event.end_date)}` : ''}</p>
+                    <p className="font-medium text-gray-900">{formatDate(invite?.start_date)}</p>
+                    <p className="text-sm text-gray-500">{formatTime(invite?.start_date)}{invite?.end_date ? ` - ${formatTime(invite.end_date)}` : ''}</p>
                   </div>
                 </div>
-                {(event?.venue_name || event?.city) && (
+                {(invite?.venue_name || invite?.city) && (
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-medium text-gray-900">{event?.venue_name || 'Venue TBA'}</p>
-                      {event?.city && <p className="text-sm text-gray-500">{event.address || event.city}</p>}
+                      <p className="font-medium text-gray-900">{invite?.venue_name || 'Venue TBA'}</p>
+                      {invite?.city && <p className="text-sm text-gray-500">{invite.address || invite.city}</p>}
                     </div>
                   </div>
                 )}

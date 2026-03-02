@@ -4,29 +4,35 @@ import { supabase } from '@/lib/supabase';
 // PARTY INVITE CRUD
 // ============================================================================
 
-export async function createPartyInvite(eventId, organizerId, options = {}) {
-  const { data, error } = await supabase
+export async function createPartyInvite(organizerId, data = {}) {
+  const { data: result, error } = await supabase
     .from('party_invites')
     .insert({
-      event_id: eventId,
       organizer_id: organizerId,
-      message: options.message || '',
-      allow_plus_ones: options.allowPlusOnes || false,
-      max_plus_ones: options.maxPlusOnes || 1,
-      rsvp_deadline: options.rsvpDeadline || null,
+      title: data.title || '',
+      description: data.description || '',
+      start_date: data.startDate || null,
+      end_date: data.endDate || null,
+      venue_name: data.venueName || '',
+      city: data.city || '',
+      address: data.address || '',
+      cover_image_url: data.coverImageUrl || null,
+      message: data.message || '',
+      allow_plus_ones: data.allowPlusOnes || false,
+      max_plus_ones: data.maxPlusOnes || 1,
+      rsvp_deadline: data.rsvpDeadline || null,
     })
     .select()
     .single();
 
   if (error) throw error;
-  return data;
+  return result;
 }
 
-export async function getEventInvites(eventId, organizerId) {
+export async function getOrganizerInvites(organizerId) {
   const { data, error } = await supabase
     .from('party_invites')
     .select('*')
-    .eq('event_id', eventId)
     .eq('organizer_id', organizerId)
     .order('created_at', { ascending: false });
 
@@ -39,11 +45,7 @@ export async function getInviteByToken(shareToken) {
     .from('party_invites')
     .select(`
       *,
-      event:events (
-        id, title, slug, description, start_date, end_date,
-        venue_name, city, address, cover_image_url,
-        organizer:organizers (id, business_name, logo_url)
-      )
+      organizer:organizers (id, business_name, logo_url)
     `)
     .eq('share_token', shareToken)
     .eq('is_active', true)
@@ -55,6 +57,14 @@ export async function getInviteByToken(shareToken) {
 
 export async function updateInviteSettings(inviteId, settings) {
   const updates = {};
+  if (settings.title !== undefined) updates.title = settings.title;
+  if (settings.description !== undefined) updates.description = settings.description;
+  if (settings.startDate !== undefined) updates.start_date = settings.startDate;
+  if (settings.endDate !== undefined) updates.end_date = settings.endDate;
+  if (settings.venueName !== undefined) updates.venue_name = settings.venueName;
+  if (settings.city !== undefined) updates.city = settings.city;
+  if (settings.address !== undefined) updates.address = settings.address;
+  if (settings.coverImageUrl !== undefined) updates.cover_image_url = settings.coverImageUrl;
   if (settings.message !== undefined) updates.message = settings.message;
   if (settings.allowPlusOnes !== undefined) updates.allow_plus_ones = settings.allowPlusOnes;
   if (settings.maxPlusOnes !== undefined) updates.max_plus_ones = settings.maxPlusOnes;
@@ -76,10 +86,9 @@ export async function updateInviteSettings(inviteId, settings) {
 // GUEST MANAGEMENT
 // ============================================================================
 
-export async function addGuestsToInvite(inviteId, eventId, organizerId, guests) {
+export async function addGuestsToInvite(inviteId, organizerId, guests) {
   const rows = guests.map(g => ({
     invite_id: inviteId,
-    event_id: eventId,
     organizer_id: organizerId,
     name: g.name,
     email: g.email || null,
@@ -119,11 +128,7 @@ export async function getGuestByRsvpToken(rsvpToken) {
       *,
       invite:party_invites (
         *,
-        event:events (
-          id, title, slug, description, start_date, end_date,
-          venue_name, city, address, cover_image_url,
-          organizer:organizers (id, business_name, logo_url)
-        )
+        organizer:organizers (id, business_name, logo_url)
       )
     `)
     .eq('rsvp_token', rsvpToken)
@@ -154,12 +159,11 @@ export async function submitGuestRSVP(rsvpToken, { status, plusOnes, plusOneName
 }
 
 // Register a new guest from share link (no rsvp_token pre-assigned)
-export async function registerAndRSVP(inviteId, eventId, organizerId, { name, email, status, plusOnes, plusOneNames, note }) {
+export async function registerAndRSVP(inviteId, organizerId, { name, email, status, plusOnes, plusOneNames, note }) {
   const { data, error } = await supabase
     .from('party_invite_guests')
     .insert({
       invite_id: inviteId,
-      event_id: eventId,
       organizer_id: organizerId,
       name,
       email: email || null,
