@@ -125,6 +125,7 @@ const AccountRecovery = lazyWithRetry(() => import('./pages/AccountRecovery').th
 const AcceptTeamInvitation = lazyWithRetry(() => import('./pages/AcceptTeamInvitation').then(m => ({ default: m.AcceptTeamInvitation })), 'AcceptTeamInvitation');
 const TeamDashboard = lazyWithRetry(() => import('./pages/TeamDashboard').then(m => ({ default: m.TeamDashboard })), 'TeamDashboard');
 const CreateEvent = lazyWithRetry(() => import('./pages/organizer/CreateEvent').then(m => ({ default: m.CreateEvent })), 'CreateEvent');
+const WebInviteRSVP = lazyWithRetry(() => import('./pages/WebInviteRSVP').then(m => ({ default: m.WebInviteRSVP })), 'WebInviteRSVP');
 const NotFound = lazyWithRetry(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })), 'NotFound');
 
 // Stripe Connect V2 Demo Pages - Lazy loaded
@@ -246,6 +247,11 @@ function App() {
               <Route path="/accept-invite" element={
                 <Suspense fallback={<PageLoader />}>
                   <AcceptTeamInvitation />
+                </Suspense>
+              } />
+              <Route path="/invite/:token" element={
+                <Suspense fallback={<PageLoader />}>
+                  <WebInviteRSVP />
                 </Suspense>
               } />
               <Route path="/team-dashboard" element={

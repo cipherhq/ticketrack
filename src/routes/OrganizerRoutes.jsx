@@ -42,6 +42,7 @@ import { TeamManagement } from "@/pages/organizer/TeamManagement";
 import { ProjectManager } from "@/pages/organizer/ProjectManager";
 import { TaxDocuments } from '@/pages/organizer/TaxDocuments';
 import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
+import { PartyInvites } from '@/pages/organizer/PartyInvites';
 import { VenueLayoutDesigner } from '@/pages/organizer/VenueLayoutDesigner';
 import { VenueManagement } from '@/pages/organizer/VenueManagement';
 import { VenueDetails } from '@/pages/organizer/VenueDetails';
@@ -111,6 +112,7 @@ export function OrganizerRoutes() {
           <Route path="/stripe-connect" element={<StripeConnect />} />
           <Route path="/paystack-connect" element={<PaystackFlutterwaveConnect />} />
           <Route path="/flutterwave-connect" element={<PaystackFlutterwaveConnect />} />
+          <Route path="/invites" element={<PartyInvites />} />
           <Route path="/support" element={<OrganizerSupport />} />
           <Route path="/team" element={<TeamManagement />} />
           <Route path="/projects" element={<ProjectManager />} />

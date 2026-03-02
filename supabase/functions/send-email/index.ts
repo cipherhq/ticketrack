@@ -114,6 +114,8 @@ const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; from
   promo_code_used: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   promo_code_created: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   event_invite: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  party_invite: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  party_invite_reminder: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   post_event_thank_you: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
   post_event_feedback: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
   post_event_next_event: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
@@ -598,6 +600,42 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   // AD APPROVAL
   ad_approved: d => ({ subject: `Your ad on ${BRAND_NAME} has been approved!`, html: baseTemplate(`<div class="success"><strong>Approved!</strong></div><h2>Your Ad is Now Live</h2><p>Hi ${d.advertiserName},</p><p>Great news! Your advertisement has been approved and is now live on ${BRAND_NAME}.</p><div class="card"><div class="row"><span class="label">Ad Position</span><span class="value">${d.position}</span></div><div class="row"><span class="label">Duration</span><span class="value">${d.durationDays} days</span></div><div class="row"><span class="label">Start Date</span><span class="value">${formatDate(d.startDate)}</span></div><div class="row"><span class="label">End Date</span><span class="value">${formatDate(d.endDate)}</span></div></div><p>You can track your ad's performance (impressions, clicks) in your dashboard.</p><div class="btn-wrap"><a href="${APP_URL}/my-ads" class="btn">View My Ads</a></div>`, `Your ad is now live on ${BRAND_NAME}!`) }),
   ad_rejected: d => ({ subject: `Update on your ${BRAND_NAME} ad submission`, html: baseTemplate(`<h2>Ad Review Update</h2><p>Hi ${d.advertiserName},</p><p>Unfortunately, your advertisement could not be approved at this time.</p><div class="card"><div class="row"><span class="label">Ad Position</span><span class="value">${d.position}</span></div>${d.rejectionReason ? `<div class="row"><span class="label">Reason</span><span class="value" style="color:#dc2626">${d.rejectionReason}</span></div>` : ''}</div><p>You can update your ad creative and resubmit from your dashboard.</p><div class="btn-wrap"><a href="${APP_URL}/my-ads" class="btn">Resubmit Ad</a></div><p style="font-size:13px;color:#6b7280">If you have questions, <a href="${APP_URL}/support" style="color:${BRAND_COLOR}">contact our support team</a>.</p>`, `Update on your ${BRAND_NAME} ad submission`) }),
+  // PARTY INVITES
+  party_invite: d => ({ subject: `🎉 You're Invited! ${d.eventTitle}`, html: baseTemplate(`
+    ${d.eventImage ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td><img src="${d.eventImage}" alt="${d.eventTitle}" style="width:100%;max-height:250px;object-fit:cover;border-radius:8px;margin-bottom:20px" /></td></tr></table>` : ''}
+    <h2 style="font-size:26px;margin:0 0 8px 0;color:#1a1a2e">You're Invited!</h2>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#6b7280">Hosted by <strong style="color:#1a1a2e">${d.organizerName || 'the organizer'}</strong></p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8fafc;border-radius:8px;margin-bottom:20px">
+      <tr><td style="padding:20px">
+        <h3 style="margin:0 0 12px 0;font-size:20px;color:#1a1a2e">${d.eventTitle}</h3>
+        <p style="margin:0 0 6px 0;font-size:14px;color:#374151">📅 ${d.eventDate ? formatDate(d.eventDate) : 'TBA'} ${d.eventDate ? '• ' + formatTime(d.eventDate) : ''}</p>
+        <p style="margin:0;font-size:14px;color:#374151">📍 ${d.venueName || 'TBA'}${d.city ? ', ' + d.city : ''}</p>
+      </td></tr>
+    </table>
+    ${d.message ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:20px"><tr><td style="padding:16px 20px;background:#faf5ff;border-radius:8px;border-left:4px solid ${BRAND_COLOR}"><p style="margin:0;font-size:15px;color:#374151;font-style:italic">"${d.message}"</p></td></tr></table>` : ''}
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr><td align="center" style="padding:12px 0">
+        <a href="${d.rsvpUrl}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;padding:16px 48px;text-decoration:none;border-radius:12px;font-weight:700;font-size:18px">RSVP Now</a>
+      </td></tr>
+    </table>
+    <p style="font-size:13px;color:#9ca3af;text-align:center;margin-top:16px">Click the button above to let them know if you can make it.</p>
+  `, `${d.organizerName || 'Someone'} invited you to ${d.eventTitle}!`) }),
+  party_invite_reminder: d => ({ subject: `⏰ Don't forget to RSVP - ${d.eventTitle}`, html: baseTemplate(`
+    <h2 style="font-size:24px;margin:0 0 8px 0;color:#1a1a2e">Don't Forget to RSVP!</h2>
+    <p style="margin:0 0 20px 0;font-size:16px;color:#6b7280">You haven't responded to your invite for <strong style="color:#1a1a2e">${d.eventTitle}</strong>.</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8fafc;border-radius:8px;margin-bottom:20px">
+      <tr><td style="padding:20px">
+        <p style="margin:0 0 6px 0;font-size:14px;color:#374151">📅 ${d.eventDate ? formatDate(d.eventDate) : 'TBA'}</p>
+        <p style="margin:0;font-size:14px;color:#374151">📍 ${d.venueName || 'TBA'}${d.city ? ', ' + d.city : ''}</p>
+      </td></tr>
+    </table>
+    ${d.goingCount ? `<p style="margin:0 0 20px 0;font-size:15px;color:#374151;text-align:center">🎉 <strong>${d.goingCount} ${d.goingCount === 1 ? 'person is' : 'people are'} already going!</strong></p>` : ''}
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr><td align="center" style="padding:12px 0">
+        <a href="${d.rsvpUrl}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;padding:16px 48px;text-decoration:none;border-radius:12px;font-weight:700;font-size:18px">RSVP Now</a>
+      </td></tr>
+    </table>
+  `, `Reminder: RSVP to ${d.eventTitle}`) }),
 }
 
 // ============================================================================

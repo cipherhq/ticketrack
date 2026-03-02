@@ -123,9 +123,11 @@ serve(async (req) => {
         });
       }
 
+      // Return 200 with success: false so Supabase client can read error details
+      // (non-2xx causes FunctionsHttpError which sets data to null)
       return new Response(
-        JSON.stringify({ error: result.error }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: result.error, provider: result.provider }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

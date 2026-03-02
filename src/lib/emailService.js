@@ -794,6 +794,32 @@ export const sendAdminPayoutCompletedEmail = (email, data) =>
   });
 
 // ============================================================================
+// PARTY INVITE EMAILS
+// ============================================================================
+
+export const sendPartyInviteEmail = (email, data, organizerId) =>
+  sendEmail('party_invite', email, {
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    city: data.city,
+    eventImage: data.eventImage,
+    organizerName: data.organizerName,
+    message: data.message,
+    rsvpUrl: data.rsvpUrl,
+  }, { organizerId });
+
+export const sendPartyInviteReminderEmail = (email, data, organizerId) =>
+  sendEmail('party_invite_reminder', email, {
+    eventTitle: data.eventTitle,
+    eventDate: data.eventDate,
+    venueName: data.venueName,
+    city: data.city,
+    rsvpUrl: data.rsvpUrl,
+    goingCount: data.goingCount,
+  }, { organizerId });
+
+// ============================================================================
 // DEFAULT EXPORT
 // ============================================================================
 
@@ -892,4 +918,7 @@ export default {
   sendAdminFlaggedContentEmail,
   sendAdminDailyStatsEmail,
   sendAdminPayoutCompletedEmail,
+  // Party Invites
+  sendPartyInviteEmail,
+  sendPartyInviteReminderEmail,
 };
