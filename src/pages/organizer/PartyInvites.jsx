@@ -99,7 +99,7 @@ export function PartyInvites() {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, start_date, cover_image_url, venue_name, city, status')
+        .select('id, title, start_date, image_url, venue_name, city, status')
         .eq('organizer_id', organizer.id)
         .in('status', ['published', 'active'])
         .order('start_date', { ascending: false });
@@ -370,7 +370,7 @@ export function PartyInvites() {
           eventDate: selectedEvent?.start_date,
           venueName: selectedEvent?.venue_name,
           city: selectedEvent?.city,
-          eventImage: selectedEvent?.cover_image_url,
+          eventImage: selectedEvent?.image_url,
           organizerName: organizer?.business_name,
           message: invite.message,
           rsvpUrl,
