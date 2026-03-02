@@ -3,7 +3,7 @@ import {
   PartyPopper, Users, Plus, Search, Send, Clock, Copy, Loader2, Trash2,
   CheckCircle, HelpCircle, X, Mail, RefreshCw, Link2, ChevronDown, ChevronLeft,
   Calendar, UserPlus, ClipboardList, Settings2, Bell, MapPin, Image,
-  Phone, MessageCircle, CreditCard, AlertCircle
+  Phone, MessageCircle, CreditCard, AlertCircle, ArrowRight, Check, Upload
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,216 @@ import { sendPartyInviteEmail, sendPartyInviteReminderEmail } from '@/lib/emailS
 
 const APP_URL = window.location.origin;
 
+const WIZARD_STEPS = [
+  { number: 1, label: 'Name' },
+  { number: 2, label: 'Date' },
+  { number: 3, label: 'Location' },
+  { number: 4, label: 'Image' },
+];
+
+function StepIndicator({ currentStep }) {
+  return (
+    <div className="flex items-center justify-center gap-0 w-full max-w-md mx-auto">
+      {WIZARD_STEPS.map((step, i) => (
+        <div key={step.number} className="flex items-center">
+          <div className="flex flex-col items-center">
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                step.number < currentStep
+                  ? 'bg-primary text-white'
+                  : step.number === currentStep
+                  ? 'border-2 border-primary text-primary bg-white'
+                  : 'border-2 border-gray-300 text-gray-400 bg-white'
+              }`}
+            >
+              {step.number < currentStep ? <Check className="w-4 h-4" /> : step.number}
+            </div>
+            <span className={`text-xs mt-1 ${
+              step.number <= currentStep ? 'text-primary font-medium' : 'text-gray-400'
+            }`}>
+              {step.label}
+            </span>
+          </div>
+          {i < WIZARD_STEPS.length - 1 && (
+            <div
+              className={`w-12 sm:w-16 h-0.5 mb-5 mx-1 transition-colors ${
+                step.number < currentStep ? 'bg-primary' : 'bg-gray-300'
+              }`}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Step1_PartyName({ value, onChange, onNext }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+        What is the name of your party?
+      </h2>
+      <p className="text-gray-500 mb-8 text-center">Give your party a name that guests will remember</p>
+      <Input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="e.g. Sarah's Birthday Bash"
+        className="rounded-xl text-center text-lg h-14 max-w-md w-full"
+        autoFocus
+        onKeyDown={e => { if (e.key === 'Enter' && value.trim()) onNext(); }}
+      />
+      <Button
+        onClick={onNext}
+        disabled={!value.trim()}
+        className="mt-6 rounded-xl gap-2 h-12 px-8"
+      >
+        Continue <ArrowRight className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+}
+
+function Step2_DateTime({ startDate, endDate, onChangeStart, onChangeEnd, onNext, onBack }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+        When is your party?
+      </h2>
+      <p className="text-gray-500 mb-8 text-center">You can always add or change this later</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md">
+        <div>
+          <Label className="text-sm font-medium">Start Date & Time</Label>
+          <Input
+            type="datetime-local"
+            value={startDate}
+            onChange={e => onChangeStart(e.target.value)}
+            className="rounded-xl mt-1"
+          />
+        </div>
+        <div>
+          <Label className="text-sm font-medium">End Date & Time</Label>
+          <Input
+            type="datetime-local"
+            value={endDate}
+            onChange={e => onChangeEnd(e.target.value)}
+            className="rounded-xl mt-1"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mt-8">
+        <Button variant="outline" onClick={onBack} className="rounded-xl h-12 px-6">
+          Back
+        </Button>
+        <Button onClick={onNext} className="rounded-xl gap-2 h-12 px-8">
+          {startDate || endDate ? 'Continue' : 'Skip for now'} <ArrowRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Step3_Location({ venueName, city, address, onChangeVenue, onChangeCity, onChangeAddress, onNext, onBack }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+        Where is your party taking place?
+      </h2>
+      <p className="text-gray-500 mb-8 text-center">You can always add or change this later</p>
+      <div className="space-y-4 w-full max-w-md">
+        <div>
+          <Label className="text-sm font-medium">Venue Name</Label>
+          <Input
+            value={venueName}
+            onChange={e => onChangeVenue(e.target.value)}
+            placeholder="e.g. The Grand Hall"
+            className="rounded-xl mt-1"
+          />
+        </div>
+        <div>
+          <Label className="text-sm font-medium">City</Label>
+          <Input
+            value={city}
+            onChange={e => onChangeCity(e.target.value)}
+            placeholder="e.g. Lagos"
+            className="rounded-xl mt-1"
+          />
+        </div>
+        <div>
+          <Label className="text-sm font-medium">Address</Label>
+          <Input
+            value={address}
+            onChange={e => onChangeAddress(e.target.value)}
+            placeholder="Full address"
+            className="rounded-xl mt-1"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mt-8">
+        <Button variant="outline" onClick={onBack} className="rounded-xl h-12 px-6">
+          Back
+        </Button>
+        <Button onClick={onNext} className="rounded-xl gap-2 h-12 px-8">
+          {venueName || city || address ? 'Continue' : 'Skip for now'} <ArrowRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+        Add a cover image
+      </h2>
+      <p className="text-gray-500 mb-8 text-center">Make your invite stand out with a great photo</p>
+      <div className="w-full max-w-md">
+        <label className="flex flex-col items-center justify-center gap-3 px-4 py-12 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
+          {coverImage ? (
+            <>
+              <img
+                src={URL.createObjectURL(coverImage)}
+                alt="Preview"
+                className="w-full max-h-48 object-cover rounded-xl"
+              />
+              <span className="text-sm text-gray-600">{coverImage.name}</span>
+            </>
+          ) : (
+            <>
+              <Upload className="w-10 h-10 text-gray-400" />
+              <span className="text-sm text-gray-500">Click to upload cover image</span>
+              <span className="text-xs text-gray-400">PNG, JPG up to 5MB</span>
+            </>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => onChange(e.target.files[0] || null)}
+          />
+        </label>
+      </div>
+      <div className="flex items-center gap-3 mt-8">
+        <Button variant="outline" onClick={onBack} className="rounded-xl h-12 px-6">
+          Back
+        </Button>
+        <Button
+          onClick={onCreate}
+          disabled={creating}
+          className="rounded-xl gap-2 h-12 px-8"
+        >
+          {creating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <PartyPopper className="w-4 h-4" />
+          )}
+          {coverImage ? 'Create Party' : 'Skip & Create'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function formatDateShort(dateStr) {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -60,19 +270,15 @@ export function PartyInvites() {
   const [stats, setStats] = useState({ total: 0, going: 0, maybe: 0, pending: 0, declined: 0 });
   const [loadingInvite, setLoadingInvite] = useState(false);
 
-  // Create form
+  // Create form (wizard)
+  const [createStep, setCreateStep] = useState(1);
   const [createTitle, setCreateTitle] = useState('');
-  const [createDescription, setCreateDescription] = useState('');
   const [createStartDate, setCreateStartDate] = useState('');
   const [createEndDate, setCreateEndDate] = useState('');
   const [createVenueName, setCreateVenueName] = useState('');
   const [createCity, setCreateCity] = useState('');
   const [createAddress, setCreateAddress] = useState('');
   const [createCoverImage, setCreateCoverImage] = useState(null);
-  const [createMessage, setCreateMessage] = useState('');
-  const [createAllowPlusOnes, setCreateAllowPlusOnes] = useState(false);
-  const [createMaxPlusOnes, setCreateMaxPlusOnes] = useState(1);
-  const [createRsvpDeadline, setCreateRsvpDeadline] = useState('');
   const [creating, setCreating] = useState(false);
 
   // Tabs
@@ -195,32 +401,28 @@ export function PartyInvites() {
       }
       const inv = await createPartyInvite(organizer.id, {
         title: createTitle.trim(),
-        description: createDescription.trim(),
+        description: '',
         startDate: createStartDate ? new Date(createStartDate).toISOString() : null,
         endDate: createEndDate ? new Date(createEndDate).toISOString() : null,
         venueName: createVenueName.trim(),
         city: createCity.trim(),
         address: createAddress.trim(),
         coverImageUrl,
-        message: createMessage.trim(),
-        allowPlusOnes: createAllowPlusOnes,
-        maxPlusOnes: createMaxPlusOnes,
-        rsvpDeadline: createRsvpDeadline ? new Date(createRsvpDeadline).toISOString() : null,
+        message: '',
+        allowPlusOnes: false,
+        maxPlusOnes: 1,
+        rsvpDeadline: null,
       });
-      toast.success('Invite campaign created!');
+      toast.success('Party created!');
       // Reset form
+      setCreateStep(1);
       setCreateTitle('');
-      setCreateDescription('');
       setCreateStartDate('');
       setCreateEndDate('');
       setCreateVenueName('');
       setCreateCity('');
       setCreateAddress('');
       setCreateCoverImage(null);
-      setCreateMessage('');
-      setCreateAllowPlusOnes(false);
-      setCreateMaxPlusOnes(1);
-      setCreateRsvpDeadline('');
       // Open the new campaign
       openCampaign(inv);
       await loadCampaigns();
@@ -617,176 +819,66 @@ export function PartyInvites() {
   }
 
   // ============================================================================
-  // VIEW: CREATE CAMPAIGN
+  // VIEW: CREATE CAMPAIGN (Multi-Step Wizard)
   // ============================================================================
   if (view === 'create') {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => setView('list')} className="gap-1">
-            <ChevronLeft className="w-4 h-4" /> Back
-          </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Invite</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => { setView('list'); setCreateStep(1); }} className="gap-1">
+              <ChevronLeft className="w-4 h-4" /> Back
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">Create a Party</h1>
+          </div>
+          <span className="text-sm text-gray-400">Step {createStep} of 4</span>
         </div>
 
         <Card className="rounded-2xl">
-          <CardContent className="p-6 space-y-5">
-            {/* Title */}
-            <div>
-              <Label className="text-sm font-medium">Title *</Label>
-              <Input
+          <CardContent className="p-6">
+            <StepIndicator currentStep={createStep} />
+
+            {createStep === 1 && (
+              <Step1_PartyName
                 value={createTitle}
-                onChange={e => setCreateTitle(e.target.value)}
-                placeholder="e.g. Sarah's Birthday Bash"
-                className="rounded-xl mt-1"
+                onChange={setCreateTitle}
+                onNext={() => setCreateStep(2)}
               />
-            </div>
-
-            {/* Description */}
-            <div>
-              <Label className="text-sm font-medium">Description</Label>
-              <textarea
-                value={createDescription}
-                onChange={e => setCreateDescription(e.target.value)}
-                placeholder="Tell your guests what to expect..."
-                rows={3}
-                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-
-            {/* Dates */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Start Date & Time</Label>
-                <Input
-                  type="datetime-local"
-                  value={createStartDate}
-                  onChange={e => setCreateStartDate(e.target.value)}
-                  className="rounded-xl mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">End Date & Time</Label>
-                <Input
-                  type="datetime-local"
-                  value={createEndDate}
-                  onChange={e => setCreateEndDate(e.target.value)}
-                  className="rounded-xl mt-1"
-                />
-              </div>
-            </div>
-
-            {/* Venue */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Venue Name</Label>
-                <Input
-                  value={createVenueName}
-                  onChange={e => setCreateVenueName(e.target.value)}
-                  placeholder="e.g. The Grand Hall"
-                  className="rounded-xl mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">City</Label>
-                <Input
-                  value={createCity}
-                  onChange={e => setCreateCity(e.target.value)}
-                  placeholder="e.g. Lagos"
-                  className="rounded-xl mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Address</Label>
-                <Input
-                  value={createAddress}
-                  onChange={e => setCreateAddress(e.target.value)}
-                  placeholder="Full address"
-                  className="rounded-xl mt-1"
-                />
-              </div>
-            </div>
-
-            {/* Cover Image */}
-            <div>
-              <Label className="text-sm font-medium">Cover Image</Label>
-              <div className="mt-1">
-                <label className="flex items-center justify-center gap-2 px-4 py-8 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                  <Image className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-500">
-                    {createCoverImage ? createCoverImage.name : 'Click to upload cover image'}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={e => setCreateCoverImage(e.target.files[0] || null)}
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Custom Message */}
-            <div>
-              <Label className="text-sm font-medium">Custom Invite Message</Label>
-              <textarea
-                value={createMessage}
-                onChange={e => setCreateMessage(e.target.value)}
-                placeholder="Add a personal message..."
-                rows={2}
-                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-            </div>
-
-            {/* Plus-Ones */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Allow Plus-Ones</Label>
-                <p className="text-xs text-gray-400">Let guests bring additional people</p>
-              </div>
-              <button
-                onClick={() => setCreateAllowPlusOnes(!createAllowPlusOnes)}
-                className={`relative w-11 h-6 rounded-full transition-colors ${createAllowPlusOnes ? 'bg-primary' : 'bg-gray-300'}`}
-              >
-                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${createAllowPlusOnes ? 'left-[22px]' : 'left-0.5'}`} />
-              </button>
-            </div>
-            {createAllowPlusOnes && (
-              <div>
-                <Label className="text-xs text-gray-500">Max plus-ones per guest</Label>
-                <Select value={String(createMaxPlusOnes)} onValueChange={v => setCreateMaxPlusOnes(Number(v))}>
-                  <SelectTrigger className="w-24 rounded-lg h-9 mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5].map(n => (
-                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             )}
 
-            {/* RSVP Deadline */}
-            <div>
-              <Label className="text-sm font-medium">RSVP Deadline</Label>
-              <p className="text-xs text-gray-400 mb-1">After this date, guests can no longer respond</p>
-              <Input
-                type="datetime-local"
-                value={createRsvpDeadline}
-                onChange={e => setCreateRsvpDeadline(e.target.value)}
-                className="rounded-xl w-full sm:w-64"
+            {createStep === 2 && (
+              <Step2_DateTime
+                startDate={createStartDate}
+                endDate={createEndDate}
+                onChangeStart={setCreateStartDate}
+                onChangeEnd={setCreateEndDate}
+                onNext={() => setCreateStep(3)}
+                onBack={() => setCreateStep(1)}
               />
-            </div>
+            )}
 
-            <Button
-              onClick={handleCreateCampaign}
-              disabled={!createTitle.trim() || creating}
-              className="w-full sm:w-auto rounded-xl gap-2 h-12 px-8"
-            >
-              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PartyPopper className="w-4 h-4" />}
-              Create Invite Campaign
-            </Button>
+            {createStep === 3 && (
+              <Step3_Location
+                venueName={createVenueName}
+                city={createCity}
+                address={createAddress}
+                onChangeVenue={setCreateVenueName}
+                onChangeCity={setCreateCity}
+                onChangeAddress={setCreateAddress}
+                onNext={() => setCreateStep(4)}
+                onBack={() => setCreateStep(2)}
+              />
+            )}
+
+            {createStep === 4 && (
+              <Step4_CoverImage
+                coverImage={createCoverImage}
+                onChange={setCreateCoverImage}
+                onBack={() => setCreateStep(3)}
+                onCreate={handleCreateCampaign}
+                creating={creating}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -1369,12 +1461,12 @@ export function PartyInvites() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <PartyPopper className="w-6 h-6 text-primary" />
-            Party Invites
+            RackParty
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Create invite campaigns and track RSVPs</p>
+          <p className="text-sm text-gray-500 mt-1">Create beautiful party invites and track RSVPs</p>
         </div>
         <Button onClick={() => setView('create')} className="rounded-xl gap-2">
-          <Plus className="w-4 h-4" /> Create New Invite
+          <Plus className="w-4 h-4" /> Create a Party
         </Button>
       </div>
 
@@ -1382,10 +1474,10 @@ export function PartyInvites() {
       {campaigns.length === 0 ? (
         <div className="text-center py-20">
           <PartyPopper className="w-14 h-14 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-700 mb-1">No invite campaigns yet</h2>
-          <p className="text-gray-400 mb-6">Create your first invite campaign to get started</p>
+          <h2 className="text-lg font-semibold text-gray-700 mb-1">No parties yet</h2>
+          <p className="text-gray-400 mb-6">Create your first party to get started</p>
           <Button onClick={() => setView('create')} className="rounded-xl gap-2">
-            <Plus className="w-4 h-4" /> Create New Invite
+            <Plus className="w-4 h-4" /> Create a Party
           </Button>
         </div>
       ) : (

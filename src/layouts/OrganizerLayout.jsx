@@ -47,7 +47,7 @@ const menuGroups = [
     label: 'Marketing',
     items: [
       { title: 'Communication Hub', icon: LayoutDashboard, path: '/organizer/hub', tip: 'Unified email, SMS, and WhatsApp campaigns' },
-      { title: 'Party Invites', icon: PartyPopper, path: '/organizer/invites', tip: 'Send beautiful event invites and track RSVPs' },
+      { title: 'RackParty', icon: PartyPopper, path: '/organizer/invites', tip: 'Create stunning party invites with RSVP tracking' },
       { title: 'Contacts', icon: Users, path: '/organizer/contacts', tip: 'Manage your audience contacts and segments' },
       { title: 'Automations', icon: Zap, path: '/organizer/automations', tip: 'Event reminders and automated messages' },
       { title: 'Message Credits', icon: Coins, path: '/organizer/credits', tip: 'Buy credits for SMS and WhatsApp' },
