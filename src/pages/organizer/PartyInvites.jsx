@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   PartyPopper, Users, Plus, Search, Send, Clock, Copy, Loader2, Trash2,
   CheckCircle, HelpCircle, X, Mail, RefreshCw, Link2, ChevronDown, ChevronLeft,
   Calendar, UserPlus, ClipboardList, Settings2, Bell, MapPin, Image,
-  Phone, MessageCircle, CreditCard, AlertCircle, ArrowRight, Check, Upload
+  Phone, MessageCircle, CreditCard, AlertCircle, ArrowRight, Check, Upload, Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
@@ -269,54 +270,418 @@ function Step3_Location({ venueName, city, address, onChangeVenue, onChangeCity,
   );
 }
 
-function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating }) {
+const PARTY_TEMPLATES = [
+  {
+    id: 'birthday',
+    name: 'Birthday Bash',
+    emoji: '🎂',
+    gradient: 'linear-gradient(135deg, #ec4899, #f43f5e, #f59e0b)',
+    textColor: '#ffffff',
+    decorEmojis: ['🎈', '🎉', '🎊', '✨'],
+    overlayPattern: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%)',
+  },
+  {
+    id: 'elegant',
+    name: 'Elegant Night',
+    emoji: '🥂',
+    gradient: 'linear-gradient(135deg, #1e3a5f, #1e293b)',
+    textColor: '#fbbf24',
+    decorEmojis: ['✨', '🌟', '💫'],
+    overlayPattern: 'radial-gradient(circle at 50% 0%, rgba(251,191,36,0.08) 0%, transparent 60%)',
+  },
+  {
+    id: 'garden',
+    name: 'Garden Party',
+    emoji: '🌿',
+    gradient: 'linear-gradient(135deg, #16a34a, #84cc16, #fef9c3)',
+    textColor: '#14532d',
+    decorEmojis: ['🌸', '🌺', '🍃', '🦋'],
+    overlayPattern: 'radial-gradient(circle at 30% 70%, rgba(255,255,255,0.12) 0%, transparent 50%)',
+  },
+  {
+    id: 'club',
+    name: 'Club Night',
+    emoji: '🎵',
+    gradient: 'linear-gradient(135deg, #312e81, #7c3aed)',
+    textColor: '#ffffff',
+    decorEmojis: ['🔥', '💜', '🎶', '⚡'],
+    overlayPattern: 'radial-gradient(circle at 70% 30%, rgba(124,58,237,0.2) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(99,102,241,0.15) 0%, transparent 50%)',
+  },
+  {
+    id: 'dinner',
+    name: 'Dinner Party',
+    emoji: '🍷',
+    gradient: 'linear-gradient(135deg, #881337, #1c1917, #fef3c7)',
+    textColor: '#fef3c7',
+    decorEmojis: ['🕯️', '🍽️', '🌹'],
+    overlayPattern: 'radial-gradient(circle at 50% 50%, rgba(254,243,199,0.05) 0%, transparent 60%)',
+  },
+  {
+    id: 'beach',
+    name: 'Beach Vibes',
+    emoji: '🏖️',
+    gradient: 'linear-gradient(135deg, #3b82f6, #14b8a6, #fde68a)',
+    textColor: '#ffffff',
+    decorEmojis: ['🌊', '🐚', '🌴', '☀️'],
+    overlayPattern: 'radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 40%)',
+  },
+  {
+    id: 'bridal',
+    name: 'Bridal Shower',
+    emoji: '💐',
+    gradient: 'linear-gradient(135deg, #f9a8d4, #c4b5fd)',
+    textColor: '#581c87',
+    decorEmojis: ['💕', '🌸', '💍', '✨'],
+    overlayPattern: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.15) 0%, transparent 50%)',
+  },
+  {
+    id: 'casual',
+    name: 'Casual Hangout',
+    emoji: '😎',
+    gradient: 'linear-gradient(135deg, #ef4444, #f97316, #22c55e, #3b82f6)',
+    textColor: '#ffffff',
+    decorEmojis: ['🎮', '🍕', '🎪', '🤘'],
+    overlayPattern: 'radial-gradient(circle at 40% 60%, rgba(255,255,255,0.08) 0%, transparent 50%)',
+  },
+];
+
+const ACCENT_COLORS = [
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Pink', value: '#ec4899' },
+  { name: 'Gold', value: '#f59e0b' },
+  { name: 'Emerald', value: '#10b981' },
+  { name: 'Purple', value: '#8b5cf6' },
+  { name: 'Red', value: '#ef4444' },
+  { name: 'Teal', value: '#14b8a6' },
+  { name: 'Orange', value: '#f97316' },
+];
+
+function TemplatePreview({ template, accentColor, partyName, startDate, venueName, forCapture }) {
+  const width = forCapture ? 600 : 280;
+  const height = forCapture ? 800 : 380;
+  const scale = forCapture ? 1 : 0.47;
+  const titleSize = forCapture ? 42 : 20;
+  const labelSize = forCapture ? 16 : 8;
+  const dateSize = forCapture ? 18 : 9;
+  const venueSize = forCapture ? 16 : 8;
+  const emojiSize = forCapture ? 48 : 22;
+  const stripeHeight = forCapture ? 6 : 3;
+
+  const formattedDate = startDate
+    ? format(new Date(startDate), 'EEE, MMM d, yyyy · h:mm a')
+    : null;
+
+  const emojiPositions = [
+    { top: '8%', left: '5%', rotate: '-15deg' },
+    { top: '12%', right: '8%', rotate: '20deg' },
+    { bottom: '18%', left: '10%', rotate: '10deg' },
+    { bottom: '12%', right: '5%', rotate: '-10deg' },
+    { top: '40%', left: '3%', rotate: '25deg' },
+    { top: '35%', right: '4%', rotate: '-20deg' },
+  ];
+
+  return (
+    <div
+      style={{
+        width,
+        height,
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: forCapture ? 0 : 16,
+        background: template.gradient,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      {/* Overlay pattern */}
+      <div style={{ position: 'absolute', inset: 0, background: template.overlayPattern }} />
+
+      {/* Accent stripe top */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: stripeHeight, background: accentColor }} />
+
+      {/* Scattered emojis */}
+      {template.decorEmojis.map((emoji, i) => {
+        const pos = emojiPositions[i % emojiPositions.length];
+        return (
+          <span
+            key={i}
+            style={{
+              position: 'absolute',
+              fontSize: emojiSize,
+              opacity: 0.15,
+              transform: `rotate(${pos.rotate})`,
+              top: pos.top,
+              left: pos.left,
+              right: pos.right,
+              bottom: pos.bottom,
+              pointerEvents: 'none',
+            }}
+          >
+            {emoji}
+          </span>
+        );
+      })}
+
+      {/* Content */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: forCapture ? 48 : 24,
+          textAlign: 'center',
+        }}
+      >
+        {/* "YOU'RE INVITED" label */}
+        <div
+          style={{
+            fontSize: labelSize,
+            fontWeight: 700,
+            letterSpacing: forCapture ? 4 : 2,
+            textTransform: 'uppercase',
+            color: accentColor,
+            marginBottom: forCapture ? 24 : 12,
+          }}
+        >
+          YOU&apos;RE INVITED
+        </div>
+
+        {/* Party name */}
+        <div
+          style={{
+            fontSize: titleSize,
+            fontWeight: 800,
+            color: template.textColor,
+            lineHeight: 1.2,
+            maxWidth: '90%',
+            wordBreak: 'break-word',
+            marginBottom: forCapture ? 32 : 16,
+            textShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}
+        >
+          {partyName || 'Your Party Name'}
+        </div>
+
+        {/* Date pill */}
+        {formattedDate && (
+          <div
+            style={{
+              fontSize: dateSize,
+              fontWeight: 600,
+              color: template.textColor,
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: 999,
+              padding: forCapture ? '10px 24px' : '5px 12px',
+              marginBottom: forCapture ? 16 : 8,
+            }}
+          >
+            {formattedDate}
+          </div>
+        )}
+
+        {/* Venue */}
+        {venueName && (
+          <div
+            style={{
+              fontSize: venueSize,
+              fontWeight: 500,
+              color: template.textColor,
+              opacity: 0.85,
+              marginTop: forCapture ? 8 : 4,
+            }}
+          >
+            📍 {venueName}
+          </div>
+        )}
+      </div>
+
+      {/* Accent stripe bottom */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: stripeHeight, background: accentColor }} />
+    </div>
+  );
+}
+
+function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, partyName, startDate, venueName }) {
+  const [mode, setMode] = useState('template');
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(ACCENT_COLORS[0].value);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const previewRef = useRef(null);
+
+  const activeTemplate = PARTY_TEMPLATES.find(t => t.id === selectedTemplate);
+
+  async function handleCreateWithTemplate() {
+    if (!activeTemplate) return;
+    setGeneratingImage(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+        width: 600,
+        height: 800,
+      });
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      const file = new File([blob], 'party-cover.png', { type: 'image/png' });
+      onCreate(file);
+    } catch (err) {
+      console.error('Error generating cover image:', err);
+      toast.error('Failed to generate cover image');
+      setGeneratingImage(false);
+    }
+  }
+  const isCreating = creating || generatingImage;
+  const hasSelection = mode === 'template' ? !!activeTemplate : !!coverImage;
+
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
         Add a cover image
       </h2>
-      <p className="text-gray-500 mb-8 text-center">Make your invite stand out with a great photo</p>
-      <div className="w-full max-w-md">
-        <label className="flex flex-col items-center justify-center gap-3 px-4 py-12 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
-          {coverImage ? (
-            <>
-              <img
-                src={URL.createObjectURL(coverImage)}
-                alt="Preview"
-                className="w-full max-h-48 object-cover rounded-xl"
+      <p className="text-gray-500 mb-8 text-center">Pick a themed template or upload your own</p>
+
+      <div className="w-full max-w-2xl">
+        <Tabs value={mode} onValueChange={setMode}>
+          <TabsList className="w-full grid grid-cols-2 mb-6">
+            <TabsTrigger value="template" className="gap-2">
+              <Sparkles className="w-4 h-4" /> Choose a Theme
+            </TabsTrigger>
+            <TabsTrigger value="upload" className="gap-2">
+              <Upload className="w-4 h-4" /> Upload Your Own
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Template tab */}
+          <TabsContent value="template">
+            {/* Template grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              {PARTY_TEMPLATES.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedTemplate(t.id)}
+                  className={`relative rounded-xl p-3 text-left transition-all border-2 ${
+                    selectedTemplate === t.id
+                      ? 'border-primary ring-2 ring-primary/20 scale-[1.02]'
+                      : 'border-transparent hover:border-gray-200'
+                  }`}
+                  style={{ background: t.gradient }}
+                >
+                  <span className="text-2xl block mb-1">{t.emoji}</span>
+                  <span className="text-xs font-semibold block" style={{ color: t.textColor }}>
+                    {t.name}
+                  </span>
+                  {selectedTemplate === t.id && (
+                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Accent colors */}
+            {activeTemplate && (
+              <div className="mb-6">
+                <p className="text-sm font-medium text-gray-700 mb-2">Accent Color</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {ACCENT_COLORS.map(c => (
+                    <button
+                      key={c.value}
+                      onClick={() => setSelectedColor(c.value)}
+                      title={c.name}
+                      className={`w-8 h-8 rounded-full transition-all ${
+                        selectedColor === c.value
+                          ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
+                          : 'hover:scale-110'
+                      }`}
+                      style={{ background: c.value }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Live preview */}
+            {activeTemplate && (
+              <div className="flex justify-center mb-4">
+                <div className="shadow-xl rounded-2xl overflow-hidden">
+                  <TemplatePreview
+                    template={activeTemplate}
+                    accentColor={selectedColor}
+                    partyName={partyName}
+                    startDate={startDate}
+                    venueName={venueName}
+                  />
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Upload tab */}
+          <TabsContent value="upload">
+            <label className="flex flex-col items-center justify-center gap-3 px-4 py-12 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
+              {coverImage ? (
+                <>
+                  <img
+                    src={URL.createObjectURL(coverImage)}
+                    alt="Preview"
+                    className="w-full max-h-48 object-cover rounded-xl"
+                  />
+                  <span className="text-sm text-gray-600">{coverImage.name}</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-10 h-10 text-gray-400" />
+                  <span className="text-sm text-gray-500">Click to upload cover image</span>
+                  <span className="text-xs text-gray-400">PNG, JPG up to 5MB</span>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => onChange(e.target.files[0] || null)}
               />
-              <span className="text-sm text-gray-600">{coverImage.name}</span>
-            </>
-          ) : (
-            <>
-              <Upload className="w-10 h-10 text-gray-400" />
-              <span className="text-sm text-gray-500">Click to upload cover image</span>
-              <span className="text-xs text-gray-400">PNG, JPG up to 5MB</span>
-            </>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={e => onChange(e.target.files[0] || null)}
-          />
-        </label>
+            </label>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Hidden capture target for html2canvas */}
+      {activeTemplate && (
+        <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
+          <div ref={previewRef}>
+            <TemplatePreview
+              template={activeTemplate}
+              accentColor={selectedColor}
+              partyName={partyName}
+              startDate={startDate}
+              venueName={venueName}
+              forCapture
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mt-8">
         <Button variant="outline" onClick={onBack} className="rounded-xl h-12 px-6">
           Back
         </Button>
         <Button
-          onClick={onCreate}
-          disabled={creating}
+          onClick={mode === 'template' && activeTemplate ? handleCreateWithTemplate : () => onCreate()}
+          disabled={isCreating}
           className="rounded-xl gap-2 h-12 px-8"
         >
-          {creating ? (
+          {isCreating ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <PartyPopper className="w-4 h-4" />
           )}
-          {coverImage ? 'Create Party' : 'Skip & Create'}
+          {hasSelection ? 'Create Party' : 'Skip & Create'}
         </Button>
       </div>
     </div>
@@ -463,16 +828,17 @@ export function PartyInvites() {
     return publicUrl;
   }
 
-  async function handleCreateCampaign() {
+  async function handleCreateCampaign(overrideCoverImage) {
     if (!createTitle.trim()) {
       toast.error('Title is required');
       return;
     }
     setCreating(true);
     try {
+      const fileToUpload = overrideCoverImage || createCoverImage;
       let coverImageUrl = null;
-      if (createCoverImage) {
-        coverImageUrl = await handleUploadCoverImage(createCoverImage);
+      if (fileToUpload) {
+        coverImageUrl = await handleUploadCoverImage(fileToUpload);
       }
       const inv = await createPartyInvite(organizer.id, {
         title: createTitle.trim(),
@@ -952,6 +1318,9 @@ export function PartyInvites() {
                 onBack={() => setCreateStep(3)}
                 onCreate={handleCreateCampaign}
                 creating={creating}
+                partyName={createTitle}
+                startDate={createStartDate}
+                venueName={createVenueName}
               />
             )}
           </CardContent>
