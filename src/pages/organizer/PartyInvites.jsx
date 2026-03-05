@@ -38,6 +38,7 @@ import { sendPartyInviteEmail, sendPartyInviteReminderEmail } from '@/lib/emailS
 import { Calendar as CalendarWidget } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, parse, set as setDate } from 'date-fns';
+import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
 
 const APP_URL = window.location.origin;
 
@@ -214,13 +215,29 @@ function Step2_DateTime({ startDate, endDate, onChangeStart, onChangeEnd, onNext
 }
 
 function Step3_Location({ venueName, city, address, onChangeVenue, onChangeCity, onChangeAddress, onNext, onBack }) {
+  const handlePlaceSelect = (placeData) => {
+    if (placeData.name) onChangeVenue(placeData.name);
+    if (placeData.city) onChangeCity(placeData.city);
+    if (placeData.address) onChangeAddress(placeData.address);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
         Where is your party taking place?
       </h2>
-      <p className="text-gray-500 mb-8 text-center">You can always add or change this later</p>
+      <p className="text-gray-500 mb-8 text-center">Search for a venue or enter the details manually</p>
       <div className="space-y-4 w-full max-w-md">
+        <div>
+          <Label className="text-sm font-medium">Search Venue</Label>
+          <AddressAutocomplete
+            value={address}
+            onChange={onChangeAddress}
+            onPlaceSelect={handlePlaceSelect}
+            placeholder="Search for a venue or address..."
+            className="mt-1"
+          />
+        </div>
         <div>
           <Label className="text-sm font-medium">Venue Name</Label>
           <Input
@@ -236,15 +253,6 @@ function Step3_Location({ venueName, city, address, onChangeVenue, onChangeCity,
             value={city}
             onChange={e => onChangeCity(e.target.value)}
             placeholder="e.g. Lagos"
-            className="rounded-xl mt-1"
-          />
-        </div>
-        <div>
-          <Label className="text-sm font-medium">Address</Label>
-          <Input
-            value={address}
-            onChange={e => onChangeAddress(e.target.value)}
-            placeholder="Full address"
             className="rounded-xl mt-1"
           />
         </div>
