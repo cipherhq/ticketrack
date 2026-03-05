@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   PartyPopper, Users, Plus, Search, Send, Clock, Copy, Loader2, Trash2,
   CheckCircle, HelpCircle, X, Mail, RefreshCw, Link2, ChevronDown, ChevronLeft,
@@ -35,6 +35,9 @@ import {
   incrementFreeEmailUsage,
 } from '@/services/partyInvites';
 import { sendPartyInviteEmail, sendPartyInviteReminderEmail } from '@/lib/emailService';
+import { Calendar as CalendarWidget } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format, parse, set as setDate } from 'date-fns';
 
 const APP_URL = window.location.origin;
 
@@ -107,6 +110,86 @@ function Step1_PartyName({ value, onChange, onNext }) {
   );
 }
 
+function DateTimePicker({ label, value, onChange }) {
+  // value is a datetime-local string like "2026-03-04T18:00" or ""
+  const dateObj = useMemo(() => value ? new Date(value) : null, [value]);
+  const hour = dateObj ? String(dateObj.getHours()).padStart(2, '0') : '';
+  const minute = dateObj ? String(dateObj.getMinutes()).padStart(2, '0') : '';
+
+  const handleDaySelect = (day) => {
+    if (!day) return;
+    const base = dateObj || new Date();
+    const merged = setDate(day, { hours: base.getHours(), minutes: base.getMinutes() });
+    onChange(format(merged, "yyyy-MM-dd'T'HH:mm"));
+  };
+
+  const handleTimeChange = (type, val) => {
+    const base = dateObj || new Date();
+    const h = type === 'hour' ? parseInt(val, 10) : base.getHours();
+    const m = type === 'minute' ? parseInt(val, 10) : base.getMinutes();
+    const merged = setDate(dateObj || new Date(), { hours: h, minutes: m });
+    if (!dateObj) {
+      // If no date selected yet, set to today
+      onChange(format(merged, "yyyy-MM-dd'T'HH:mm"));
+    } else {
+      onChange(format(setDate(dateObj, { hours: h, minutes: m }), "yyyy-MM-dd'T'HH:mm"));
+    }
+  };
+
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minutes = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium">{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="w-full flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl text-left hover:border-primary/40 transition-colors bg-white">
+            <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+            <span className={dateObj ? 'text-gray-900 text-sm' : 'text-gray-400 text-sm'}>
+              {dateObj ? format(dateObj, 'EEE, MMM d, yyyy') : 'Pick a date'}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="center">
+          <CalendarWidget
+            mode="single"
+            selected={dateObj}
+            onSelect={handleDaySelect}
+            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+      {/* Time selectors */}
+      <div className="flex items-center gap-2">
+        <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+        <Select value={hour} onValueChange={v => handleTimeChange('hour', v)}>
+          <SelectTrigger className="w-20 rounded-lg h-10 text-sm">
+            <SelectValue placeholder="HH" />
+          </SelectTrigger>
+          <SelectContent className="max-h-48">
+            {hours.map(h => (
+              <SelectItem key={h} value={h}>{h}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-gray-500 font-medium">:</span>
+        <Select value={minute} onValueChange={v => handleTimeChange('minute', v)}>
+          <SelectTrigger className="w-20 rounded-lg h-10 text-sm">
+            <SelectValue placeholder="MM" />
+          </SelectTrigger>
+          <SelectContent className="max-h-48">
+            {minutes.map(m => (
+              <SelectItem key={m} value={m}>{m}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
 function Step2_DateTime({ startDate, endDate, onChangeStart, onChangeEnd, onNext, onBack }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
@@ -114,25 +197,9 @@ function Step2_DateTime({ startDate, endDate, onChangeStart, onChangeEnd, onNext
         When is your party?
       </h2>
       <p className="text-gray-500 mb-8 text-center">You can always add or change this later</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md">
-        <div>
-          <Label className="text-sm font-medium">Start Date & Time</Label>
-          <Input
-            type="datetime-local"
-            value={startDate}
-            onChange={e => onChangeStart(e.target.value)}
-            className="rounded-xl mt-1"
-          />
-        </div>
-        <div>
-          <Label className="text-sm font-medium">End Date & Time</Label>
-          <Input
-            type="datetime-local"
-            value={endDate}
-            onChange={e => onChangeEnd(e.target.value)}
-            className="rounded-xl mt-1"
-          />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-lg">
+        <DateTimePicker label="Start" value={startDate} onChange={onChangeStart} />
+        <DateTimePicker label="End" value={endDate} onChange={onChangeEnd} />
       </div>
       <div className="flex items-center gap-3 mt-8">
         <Button variant="outline" onClick={onBack} className="rounded-xl h-12 px-6">
