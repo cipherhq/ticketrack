@@ -360,12 +360,12 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
   const width = forCapture ? 600 : 280;
   const height = forCapture ? 800 : 380;
   const scale = forCapture ? 1 : 0.47;
-  const titleSize = forCapture ? 42 : 20;
-  const labelSize = forCapture ? 16 : 8;
-  const dateSize = forCapture ? 18 : 9;
-  const venueSize = forCapture ? 16 : 8;
-  const emojiSize = forCapture ? 48 : 22;
-  const stripeHeight = forCapture ? 6 : 3;
+  const titleSize = forCapture ? 56 : 26;
+  const labelSize = forCapture ? 20 : 10;
+  const dateSize = forCapture ? 22 : 11;
+  const venueSize = forCapture ? 20 : 10;
+  const emojiSize = forCapture ? 56 : 26;
+  const stripeHeight = forCapture ? 8 : 4;
 
   const formattedDate = startDate
     ? format(new Date(startDate), 'EEE, MMM d, yyyy · h:mm a')
@@ -407,7 +407,7 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
             style={{
               position: 'absolute',
               fontSize: emojiSize,
-              opacity: 0.15,
+              opacity: 0.2,
               transform: `rotate(${pos.rotate})`,
               top: pos.top,
               left: pos.left,
@@ -438,11 +438,12 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
         <div
           style={{
             fontSize: labelSize,
-            fontWeight: 700,
-            letterSpacing: forCapture ? 4 : 2,
+            fontWeight: 900,
+            letterSpacing: forCapture ? 6 : 3,
             textTransform: 'uppercase',
             color: accentColor,
-            marginBottom: forCapture ? 24 : 12,
+            marginBottom: forCapture ? 28 : 14,
+            textShadow: '0 1px 4px rgba(0,0,0,0.3)',
           }}
         >
           YOU&apos;RE INVITED
@@ -452,13 +453,14 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
         <div
           style={{
             fontSize: titleSize,
-            fontWeight: 800,
+            fontWeight: 900,
             color: template.textColor,
-            lineHeight: 1.2,
+            lineHeight: 1.15,
             maxWidth: '90%',
             wordBreak: 'break-word',
-            marginBottom: forCapture ? 32 : 16,
-            textShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            marginBottom: forCapture ? 36 : 18,
+            textShadow: '0 3px 12px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)',
+            letterSpacing: forCapture ? -1 : -0.5,
           }}
         >
           {partyName || 'Your Party Name'}
@@ -469,13 +471,15 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
           <div
             style={{
               fontSize: dateSize,
-              fontWeight: 600,
+              fontWeight: 700,
               color: template.textColor,
-              background: 'rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.2)',
               backdropFilter: 'blur(8px)',
               borderRadius: 999,
-              padding: forCapture ? '10px 24px' : '5px 12px',
+              padding: forCapture ? '12px 28px' : '6px 14px',
               marginBottom: forCapture ? 16 : 8,
+              textShadow: '0 1px 4px rgba(0,0,0,0.25)',
+              border: '1px solid rgba(255,255,255,0.15)',
             }}
           >
             {formattedDate}
@@ -487,10 +491,11 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
           <div
             style={{
               fontSize: venueSize,
-              fontWeight: 500,
+              fontWeight: 700,
               color: template.textColor,
-              opacity: 0.85,
+              opacity: 0.9,
               marginTop: forCapture ? 8 : 4,
+              textShadow: '0 1px 4px rgba(0,0,0,0.3)',
             }}
           >
             📍 {venueName}
