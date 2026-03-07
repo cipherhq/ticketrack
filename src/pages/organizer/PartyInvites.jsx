@@ -413,16 +413,17 @@ function TemplatePreview({
   template, accentColor, partyName, startDate, venueName, forCapture,
   captureWidth, captureHeight,
   textColorOverride, fontFamily, fontWeight,
-  tagline, backgroundPattern, backgroundImage,
+  tagline, backgroundPattern, backgroundImage, fontScale,
 }) {
   const baseW = captureWidth || (forCapture ? 600 : 280);
   const baseH = captureHeight || (forCapture ? 800 : 380);
   const scaleFactor = baseW / 600;
-  const titleSize = Math.round(56 * scaleFactor * (forCapture ? 1 : 0.47));
-  const labelSize = Math.round(20 * scaleFactor * (forCapture ? 1 : 0.47));
-  const dateSize = Math.round(22 * scaleFactor * (forCapture ? 1 : 0.47));
-  const venueSize = Math.round(20 * scaleFactor * (forCapture ? 1 : 0.47));
-  const taglineSize = Math.round(18 * scaleFactor * (forCapture ? 1 : 0.47));
+  const fs = fontScale || 1;
+  const titleSize = Math.round(56 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const labelSize = Math.round(20 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const dateSize = Math.round(22 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const venueSize = Math.round(20 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const taglineSize = Math.round(18 * fs * scaleFactor * (forCapture ? 1 : 0.47));
   const emojiSize = Math.round(56 * scaleFactor * (forCapture ? 1 : 0.47));
   const stripeHeight = Math.round(8 * scaleFactor * (forCapture ? 1 : 0.47));
 
@@ -567,7 +568,7 @@ function TemplatePreview({
   );
 }
 
-function TemplateControls({ activeTemplate, selectedColor, setSelectedColor, textOverride, setTextOverride, selectedFont, setSelectedFont, tagline, setTagline, selectedPattern, setSelectedPattern, favorites, setFavorites, setSelectedTemplate }) {
+function TemplateControls({ activeTemplate, selectedColor, setSelectedColor, textOverride, setTextOverride, selectedFont, setSelectedFont, fontScale, setFontScale, tagline, setTagline, selectedPattern, setSelectedPattern, favorites, setFavorites, setSelectedTemplate }) {
   return (
     <>
       {/* Favorites row */}
@@ -692,6 +693,28 @@ function TemplateControls({ activeTemplate, selectedColor, setSelectedColor, tex
             </div>
           </div>
 
+          {/* Font size */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-700">Font Size</p>
+              <span className="text-xs text-gray-400">{Math.round(fontScale * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0.6"
+              max="1.6"
+              step="0.05"
+              value={fontScale}
+              onChange={e => setFontScale(parseFloat(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+              <span>Small</span>
+              <span>Default</span>
+              <span>Large</span>
+            </div>
+          </div>
+
           {/* Custom tagline */}
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">Custom Tagline</p>
@@ -732,6 +755,7 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
   const [selectedColor, setSelectedColor] = useState(ACCENT_COLORS[0].value);
   const [textOverride, setTextOverride] = useState(null);
   const [selectedFont, setSelectedFont] = useState('bold-modern');
+  const [fontScale, setFontScale] = useState(1);
   const [tagline, setTagline] = useState('');
   const [selectedPattern, setSelectedPattern] = useState('none');
   const [blendPhoto, setBlendPhoto] = useState(null);
@@ -760,6 +784,7 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
     textColorOverride: textOverride,
     fontFamily: activeFontObj.family,
     fontWeight: activeFontObj.weight,
+    fontScale,
     tagline,
     backgroundPattern: selectedPattern,
     backgroundImage: mode === 'blend' ? blendPhotoUrl : undefined,
@@ -846,6 +871,8 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
               setTextOverride={setTextOverride}
               selectedFont={selectedFont}
               setSelectedFont={setSelectedFont}
+              fontScale={fontScale}
+              setFontScale={setFontScale}
               tagline={tagline}
               setTagline={setTagline}
               selectedPattern={selectedPattern}
@@ -911,6 +938,8 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
               setTextOverride={setTextOverride}
               selectedFont={selectedFont}
               setSelectedFont={setSelectedFont}
+              fontScale={fontScale}
+              setFontScale={setFontScale}
               tagline={tagline}
               setTagline={setTagline}
               selectedPattern={selectedPattern}
