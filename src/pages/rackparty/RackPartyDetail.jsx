@@ -5,6 +5,7 @@ import {
   CheckCircle, HelpCircle, X, Clock, Mail, Bell, Phone, MessageCircle,
   CreditCard, AlertCircle, Trash2, Plus, UserPlus, ClipboardList, Settings2,
   RefreshCw, Image, Palette, MessageSquare, Megaphone, Activity, Pencil,
+  Upload, Eye,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -69,6 +70,7 @@ export function RackPartyDetail() {
   const [contacts, setContacts] = useState([]);
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [addingGuests, setAddingGuests] = useState(false);
+  const [csvParsed, setCsvParsed] = useState([]);
 
   // Settings
   const [settingsTitle, setSettingsTitle] = useState('');
@@ -185,19 +187,46 @@ export function RackPartyDetail() {
     finally { setAddingGuests(false); }
   }
 
+  function isPhoneValue(val) {
+    const stripped = val.replace(/[\s\-().+]/g, '');
+    return stripped.length >= 7 && /^\d+$/.test(stripped);
+  }
+
   async function handleAddPaste() {
     if (!pasteText.trim()) return;
     setAddingGuests(true);
     try {
       const lines = pasteText.split('\n').filter(l => l.trim());
       const parsed = lines.map(line => {
+        // "Name <email>"
         const angleMatch = line.match(/^(.+?)\s*<(.+?)>$/);
         if (angleMatch) return { name: angleMatch[1].trim(), email: angleMatch[2].trim(), source: 'paste' };
-        const commaMatch = line.match(/^(.+?),\s*(.+@.+)$/);
-        if (commaMatch) return { name: commaMatch[1].trim(), email: commaMatch[2].trim(), source: 'paste' };
-        const emailOnly = line.trim();
-        if (emailOnly.includes('@')) return { name: emailOnly.split('@')[0], email: emailOnly, source: 'paste' };
-        return { name: emailOnly, email: null, source: 'paste' };
+
+        // Comma-separated: split into parts
+        const parts = line.split(',').map(p => p.trim()).filter(Boolean);
+        if (parts.length >= 2) {
+          let name = null, email = null, phone = null;
+          // First part that doesn't look like email/phone is the name
+          for (const part of parts) {
+            if (part.includes('@')) {
+              email = part;
+            } else if (isPhoneValue(part)) {
+              phone = part;
+            } else if (!name) {
+              name = part;
+            }
+          }
+          if (name && (email || phone)) return { name, email, phone, source: 'paste' };
+          // If no name detected but we have contact info, use email prefix or phone as name
+          if (!name && email) return { name: email.split('@')[0], email, phone, source: 'paste' };
+          if (!name && phone) return { name: phone, email: null, phone, source: 'paste' };
+        }
+
+        // Single value: email, phone, or name
+        const val = line.trim();
+        if (val.includes('@')) return { name: val.split('@')[0], email: val, source: 'paste' };
+        if (isPhoneValue(val)) return { name: val, email: null, phone: val, source: 'paste' };
+        return { name: val, email: null, source: 'paste' };
       }).filter(g => g.name);
       if (parsed.length === 0) { toast.error('No valid entries found'); return; }
       await addGuestsToInvite(invite.id, organizer.id, parsed);
@@ -233,6 +262,75 @@ export function RackPartyDetail() {
       await loadGuestsAndStats(invite.id);
       logActivity(invite.id, 'guest_added', organizer?.business_name, { count: toAdd.length });
       toast.success(`${toAdd.length} guest${toAdd.length > 1 ? 's' : ''} added`);
+    } catch { toast.error('Failed to add guests'); }
+    finally { setAddingGuests(false); }
+  }
+
+  function handleCsvFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) { toast.error('CSV file is empty'); return; }
+
+      // Try to detect header row
+      const firstLine = lines[0].toLowerCase();
+      const hasHeader = firstLine.includes('name') || firstLine.includes('email') || firstLine.includes('phone');
+      const dataLines = hasHeader ? lines.slice(1) : lines;
+
+      // Detect delimiter (comma or tab)
+      const delimiter = lines[0].includes('\t') ? '\t' : ',';
+
+      // Parse header columns if present
+      let nameIdx = 0, emailIdx = -1, phoneIdx = -1;
+      if (hasHeader) {
+        const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+        nameIdx = headers.findIndex(h => h.includes('name'));
+        emailIdx = headers.findIndex(h => h.includes('email') || h.includes('mail'));
+        phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile') || h.includes('tel'));
+        if (nameIdx === -1) nameIdx = 0;
+      } else {
+        // Auto-detect by content: first col = name, look for @ = email, digits = phone
+        const sampleCols = dataLines[0].split(delimiter).map(c => c.trim().replace(/['"]/g, ''));
+        sampleCols.forEach((col, i) => {
+          if (i === 0) return; // assume first is name
+          if (col.includes('@')) emailIdx = i;
+          else if (isPhoneValue(col)) phoneIdx = i;
+        });
+      }
+
+      const parsed = dataLines.map(line => {
+        const cols = line.split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
+        const name = cols[nameIdx] || '';
+        const email = emailIdx >= 0 ? cols[emailIdx] || null : null;
+        const phone = phoneIdx >= 0 ? cols[phoneIdx] || null : null;
+        // If no explicit column detection, check remaining columns
+        let detectedEmail = email, detectedPhone = phone;
+        if (emailIdx === -1 || phoneIdx === -1) {
+          cols.forEach((col, i) => {
+            if (i === nameIdx) return;
+            if (!detectedEmail && col.includes('@')) detectedEmail = col;
+            else if (!detectedPhone && isPhoneValue(col)) detectedPhone = col;
+          });
+        }
+        return { name: name.trim(), email: detectedEmail || null, phone: detectedPhone || null, source: 'csv' };
+      }).filter(g => g.name);
+
+      setCsvParsed(parsed);
+    };
+    reader.readAsText(file);
+  }
+
+  async function handleAddCsv() {
+    if (csvParsed.length === 0) return;
+    setAddingGuests(true);
+    try {
+      await addGuestsToInvite(invite.id, organizer.id, csvParsed);
+      setCsvParsed([]);
+      await loadGuestsAndStats(invite.id);
+      logActivity(invite.id, 'guest_added', organizer?.business_name, { count: csvParsed.length, source: 'csv' });
+      toast.success(`${csvParsed.length} guest${csvParsed.length > 1 ? 's' : ''} added from CSV`);
     } catch { toast.error('Failed to add guests'); }
     finally { setAddingGuests(false); }
   }
@@ -734,6 +832,11 @@ export function RackPartyDetail() {
                                 <Phone className="w-3 h-3" />
                               </span>
                             ) : null}
+                            {g.link_viewed_at && (
+                              <span className="text-xs text-purple-600 flex items-center gap-1" title={`Link viewed ${new Date(g.link_viewed_at).toLocaleString()}`}>
+                                <Eye className="w-3 h-3" />
+                              </span>
+                            )}
                             {!g.email && !g.phone && <span className="text-xs text-gray-400">No contact</span>}
                           </div>
                         </td>
@@ -761,13 +864,15 @@ export function RackPartyDetail() {
                 { id: 'manual', label: 'Manual Entry' },
                 { id: 'paste', label: 'Paste List' },
                 { id: 'contacts', label: 'From Contacts' },
+                { id: 'upload', label: 'Upload CSV', icon: Upload },
               ].map(m => (
                 <button
-                  key={m.id} onClick={() => setAddMode(m.id)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  key={m.id} onClick={() => { setAddMode(m.id); if (m.id !== 'upload') setCsvParsed([]); }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
                     addMode === m.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
+                  {m.icon && <m.icon className="w-3.5 h-3.5" />}
                   {m.label}
                 </button>
               ))}
@@ -797,11 +902,11 @@ export function RackPartyDetail() {
             {addMode === 'paste' && (
               <div className="space-y-3">
                 <p className="text-xs text-gray-500">
-                  One guest per line. Formats: "Name &lt;email&gt;", "Name, email", or just "email"
+                  One guest per line. Formats: "Name &lt;email&gt;", "Name, email", "Name, phone", or just email/phone
                 </p>
                 <textarea
                   value={pasteText} onChange={e => setPasteText(e.target.value)}
-                  placeholder={"Jane Doe <jane@email.com>\nJohn Smith, john@email.com\nfriend@email.com"}
+                  placeholder={"Jane Doe <jane@email.com>\nJohn Smith, john@email.com\nAda, 08012345678\nfriend@email.com"}
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
@@ -844,6 +949,59 @@ export function RackPartyDetail() {
                   {addingGuests ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
                   Add {selectedContacts.length} Contact{selectedContacts.length !== 1 ? 's' : ''}
                 </Button>
+              </div>
+            )}
+            {addMode === 'upload' && (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500">
+                  Upload a CSV or text file with columns: name, phone, email. Header row is auto-detected.
+                </p>
+                <label className="flex items-center gap-3 px-4 py-6 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-primary/40 hover:bg-gray-50 transition-colors">
+                  <Upload className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm text-gray-500">{csvParsed.length > 0 ? `${csvParsed.length} guests parsed` : 'Choose .csv or .txt file'}</span>
+                  <input
+                    type="file"
+                    accept=".csv,.txt"
+                    className="hidden"
+                    onChange={e => { handleCsvFile(e.target.files[0]); e.target.value = ''; }}
+                  />
+                </label>
+                {csvParsed.length > 0 && (
+                  <>
+                    <div className="max-h-60 overflow-y-auto border rounded-xl">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 border-b bg-gray-50">
+                            <th className="px-3 py-2 font-medium">Name</th>
+                            <th className="px-3 py-2 font-medium">Email</th>
+                            <th className="px-3 py-2 font-medium">Phone</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {csvParsed.slice(0, 50).map((g, i) => (
+                            <tr key={i} className="hover:bg-gray-50">
+                              <td className="px-3 py-2 text-gray-900">{g.name}</td>
+                              <td className="px-3 py-2 text-gray-600">{g.email || '\u2014'}</td>
+                              <td className="px-3 py-2 text-gray-600">{g.phone || '\u2014'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {csvParsed.length > 50 && (
+                        <p className="text-xs text-gray-400 text-center py-2">Showing 50 of {csvParsed.length} guests</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleAddCsv} disabled={addingGuests} className="rounded-xl gap-2">
+                        {addingGuests ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        Add {csvParsed.length} Guest{csvParsed.length !== 1 ? 's' : ''}
+                      </Button>
+                      <Button variant="outline" onClick={() => setCsvParsed([])} className="rounded-xl">
+                        Clear
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </CardContent>

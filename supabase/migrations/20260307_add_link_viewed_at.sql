@@ -1,0 +1,1 @@
+ALTER TABLE party_invite_guests ADD COLUMN IF NOT EXISTS link_viewed_at TIMESTAMPTZ DEFAULT NULL;

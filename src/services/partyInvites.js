@@ -538,6 +538,22 @@ export async function getActivityLog(inviteId) {
 }
 
 // ============================================================================
+// LINK VIEW TRACKING
+// ============================================================================
+
+export async function markLinkViewed(rsvpToken) {
+  try {
+    await supabase
+      .from('party_invite_guests')
+      .update({ link_viewed_at: new Date().toISOString() })
+      .eq('rsvp_token', rsvpToken)
+      .is('link_viewed_at', null);
+  } catch {
+    // Silently swallow — tracking should never break the RSVP page
+  }
+}
+
+// ============================================================================
 // PUBLIC GUEST LIST
 // ============================================================================
 

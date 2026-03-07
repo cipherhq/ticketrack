@@ -25,6 +25,7 @@ CREATE INDEX IF NOT EXISTS idx_wall_posts_created_at ON party_invite_wall_posts(
 ALTER TABLE party_invite_wall_posts ENABLE ROW LEVEL SECURITY;
 
 -- Organizer (host) can do everything
+DROP POLICY IF EXISTS "wall_posts_organizer_all" ON party_invite_wall_posts;
 CREATE POLICY "wall_posts_organizer_all" ON party_invite_wall_posts
   FOR ALL
   USING (
@@ -37,6 +38,7 @@ CREATE POLICY "wall_posts_organizer_all" ON party_invite_wall_posts
   );
 
 -- Anyone can read wall posts on active invites
+DROP POLICY IF EXISTS "wall_posts_public_select" ON party_invite_wall_posts;
 CREATE POLICY "wall_posts_public_select" ON party_invite_wall_posts
   FOR SELECT
   USING (
@@ -48,6 +50,7 @@ CREATE POLICY "wall_posts_public_select" ON party_invite_wall_posts
   );
 
 -- Anyone can insert wall posts on active invites
+DROP POLICY IF EXISTS "wall_posts_public_insert" ON party_invite_wall_posts;
 CREATE POLICY "wall_posts_public_insert" ON party_invite_wall_posts
   FOR INSERT
   WITH CHECK (
@@ -75,6 +78,7 @@ CREATE INDEX IF NOT EXISTS idx_announcements_created_at ON party_invite_announce
 ALTER TABLE party_invite_announcements ENABLE ROW LEVEL SECURITY;
 
 -- Organizer full CRUD
+DROP POLICY IF EXISTS "announcements_organizer_all" ON party_invite_announcements;
 CREATE POLICY "announcements_organizer_all" ON party_invite_announcements
   FOR ALL
   USING (
@@ -86,6 +90,7 @@ CREATE POLICY "announcements_organizer_all" ON party_invite_announcements
   );
 
 -- Anyone can read announcements on active invites
+DROP POLICY IF EXISTS "announcements_public_select" ON party_invite_announcements;
 CREATE POLICY "announcements_public_select" ON party_invite_announcements
   FOR SELECT
   USING (
@@ -112,6 +117,7 @@ CREATE INDEX IF NOT EXISTS idx_activity_created_at ON party_invite_activity(crea
 ALTER TABLE party_invite_activity ENABLE ROW LEVEL SECURITY;
 
 -- Organizer can read activity
+DROP POLICY IF EXISTS "activity_organizer_select" ON party_invite_activity;
 CREATE POLICY "activity_organizer_select" ON party_invite_activity
   FOR SELECT
   USING (
@@ -124,6 +130,7 @@ CREATE POLICY "activity_organizer_select" ON party_invite_activity
   );
 
 -- Organizer can insert activity
+DROP POLICY IF EXISTS "activity_organizer_insert" ON party_invite_activity;
 CREATE POLICY "activity_organizer_insert" ON party_invite_activity
   FOR INSERT
   WITH CHECK (

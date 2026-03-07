@@ -12,6 +12,7 @@ import {
   getPublicAnnouncements,
   getPublicWallPosts,
   createWallPost,
+  markLinkViewed,
 } from '@/services/partyInvites';
 
 function formatDate(dateStr) {
@@ -64,6 +65,7 @@ export function WebInviteRSVP() {
       if (guestRsvpToken) {
         const guestData = await getGuestByRsvpToken(guestRsvpToken);
         if (!guestData) { setError('Invite not found'); return; }
+        markLinkViewed(guestRsvpToken); // fire-and-forget link view tracking
         setGuest(guestData);
         setInvite(guestData.invite);
         setOrganizer(guestData.invite?.organizer);
