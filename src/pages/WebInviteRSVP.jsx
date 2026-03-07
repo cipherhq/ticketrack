@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Loader2, Calendar, MapPin, Clock, ChevronUp, ChevronDown, Check, HelpCircle, X, Users } from 'lucide-react';
+import { Loader2, Calendar, MapPin, Clock, ChevronUp, ChevronDown, Check, HelpCircle, X, Users, Megaphone, MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -9,6 +9,9 @@ import {
   submitGuestRSVP,
   registerAndRSVP,
   getPublicGuestList,
+  getPublicAnnouncements,
+  getPublicWallPosts,
+  createWallPost,
 } from '@/services/partyInvites';
 
 function formatDate(dateStr) {
@@ -42,6 +45,10 @@ export function WebInviteRSVP() {
   const [submitted, setSubmitted] = useState(false);
   const [changingResponse, setChangingResponse] = useState(false);
   const [guestList, setGuestList] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [wallPosts, setWallPosts] = useState([]);
+  const [wallPostContent, setWallPostContent] = useState('');
+  const [postingWall, setPostingWall] = useState(false);
 
   const isShareLink = !guestRsvpToken;
   const isExpired = invite?.rsvp_deadline && new Date(invite.rsvp_deadline) < new Date();
@@ -68,10 +75,16 @@ export function WebInviteRSVP() {
           setPlusOneNames(guestData.plus_one_names || []);
           setNote(guestData.note || '');
         }
-        // Load guest list
+        // Load guest list, announcements, wall posts
         try {
-          const list = await getPublicGuestList(guestData.invite_id);
+          const [list, anns, posts] = await Promise.all([
+            getPublicGuestList(guestData.invite_id),
+            getPublicAnnouncements(guestData.invite_id).catch(() => []),
+            getPublicWallPosts(guestData.invite_id).catch(() => []),
+          ]);
           setGuestList(list);
+          setAnnouncements(anns);
+          setWallPosts(posts);
         } catch {}
       } else {
         const inviteData = await getInviteByToken(token);
@@ -79,8 +92,14 @@ export function WebInviteRSVP() {
         setInvite(inviteData);
         setOrganizer(inviteData.organizer);
         try {
-          const list = await getPublicGuestList(inviteData.id);
+          const [list, anns, posts] = await Promise.all([
+            getPublicGuestList(inviteData.id),
+            getPublicAnnouncements(inviteData.id).catch(() => []),
+            getPublicWallPosts(inviteData.id).catch(() => []),
+          ]);
           setGuestList(list);
+          setAnnouncements(anns);
+          setWallPosts(posts);
         } catch {}
       }
     } catch (err) {
@@ -163,6 +182,39 @@ export function WebInviteRSVP() {
       setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } }), 200);
       setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1, y: 0.6 } }), 400);
     } catch {}
+  }
+
+  function relativeTime(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  async function handleWallPost() {
+    if (!wallPostContent.trim()) return;
+    const authorName = name || guest?.name || 'Guest';
+    setPostingWall(true);
+    try {
+      await createWallPost(invite.id, {
+        authorName,
+        authorEmail: email || guest?.email || null,
+        authorGuestId: guest?.id || null,
+        isHost: false,
+        content: wallPostContent.trim(),
+      });
+      setWallPostContent('');
+      const posts = await getPublicWallPosts(invite.id);
+      setWallPosts(posts);
+    } catch {
+      // silently fail
+    } finally {
+      setPostingWall(false);
+    }
   }
 
   return (
@@ -248,6 +300,24 @@ export function WebInviteRSVP() {
               {invite?.message && (
                 <div className="mt-5 p-4 bg-purple-50 rounded-xl border-l-4 border-purple-400 rsvp-animate-message">
                   <p className="text-sm text-purple-800 italic">"{invite.message}"</p>
+                </div>
+              )}
+
+              {/* Announcements */}
+              {announcements.length > 0 && (
+                <div className="mt-5 space-y-2">
+                  {announcements.map(a => (
+                    <div key={a.id} className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                      <div className="flex items-start gap-2">
+                        <Megaphone className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-blue-900">{a.title}</p>
+                          <p className="text-sm text-blue-800 mt-0.5">{a.content}</p>
+                          <p className="text-xs text-blue-400 mt-1">{relativeTime(a.created_at)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -460,6 +530,60 @@ export function WebInviteRSVP() {
                       </span>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Guest Wall */}
+              {(submitted || hasResponded || !isShareLink) && (
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="w-4 h-4 text-gray-400" />
+                    <p className="text-sm font-medium text-gray-500">Guest Wall</p>
+                  </div>
+
+                  {/* Post form */}
+                  <div className="flex gap-2 mb-4">
+                    <textarea
+                      value={wallPostContent}
+                      onChange={e => setWallPostContent(e.target.value)}
+                      placeholder="Leave a message..."
+                      rows={2}
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleWallPost(); } }}
+                    />
+                    <button
+                      onClick={handleWallPost}
+                      disabled={!wallPostContent.trim() || postingWall}
+                      className="self-end px-3 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-blue-600 transition-colors"
+                    >
+                      {postingWall ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {/* Posts */}
+                  {wallPosts.length > 0 && (
+                    <div className="space-y-2.5 max-h-80 overflow-y-auto">
+                      {wallPosts.slice(0, 50).map(post => (
+                        <div key={post.id} className="flex gap-2.5 p-2.5 rounded-lg bg-gray-50">
+                          <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-bold text-gray-600">
+                              {(post.author_name || '?')[0].toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-semibold text-gray-900">{post.author_name}</span>
+                              {post.is_host && (
+                                <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700">Host</span>
+                              )}
+                              <span className="text-[10px] text-gray-400">{relativeTime(post.created_at)}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap break-words">{post.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -4,7 +4,7 @@ import {
   Users, Calendar, MapPin, Loader2, ChevronLeft, Copy, Download,
   CheckCircle, HelpCircle, X, Clock, Mail, Bell, Phone, MessageCircle,
   CreditCard, AlertCircle, Trash2, Plus, UserPlus, ClipboardList, Settings2,
-  RefreshCw, Image,
+  RefreshCw, Image, Palette, MessageSquare, Megaphone, Activity, Pencil,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,9 +34,15 @@ import {
   markSmsSent,
   getFreeEmailUsage,
   incrementFreeEmailUsage,
+  logActivity,
+  duplicatePartyInvite,
 } from '@/services/partyInvites';
 import { sendPartyInviteEmail, sendPartyInviteReminderEmail } from '@/lib/emailService';
 import { APP_URL, formatDateShort, statusBadge } from '@/components/rackparty/shared';
+import { DesignTab } from '@/components/rackparty/DesignTab';
+import { WallTab } from '@/components/rackparty/WallTab';
+import { AnnouncementsTab } from '@/components/rackparty/AnnouncementsTab';
+import { ActivityTab } from '@/components/rackparty/ActivityTab';
 
 export function RackPartyDetail() {
   const { id } = useParams();
@@ -83,6 +89,11 @@ export function RackPartyDetail() {
   const [sendingInvites, setSendingInvites] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [sendingSms, setSendingSms] = useState(false);
+
+  // Inline title edit
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editTitleValue, setEditTitleValue] = useState('');
+  const [duplicating, setDuplicating] = useState(false);
 
   // Credits
   const [creditBalance, setCreditBalance] = useState(0);
@@ -168,6 +179,7 @@ export function RackPartyDetail() {
       }]);
       setManualName(''); setManualEmail(''); setManualPhone('');
       await loadGuestsAndStats(invite.id);
+      logActivity(invite.id, 'guest_added', organizer?.business_name, { count: 1 });
       toast.success('Guest added');
     } catch { toast.error('Failed to add guest'); }
     finally { setAddingGuests(false); }
@@ -191,6 +203,7 @@ export function RackPartyDetail() {
       await addGuestsToInvite(invite.id, organizer.id, parsed);
       setPasteText('');
       await loadGuestsAndStats(invite.id);
+      logActivity(invite.id, 'guest_added', organizer?.business_name, { count: parsed.length });
       toast.success(`${parsed.length} guest${parsed.length > 1 ? 's' : ''} added`);
     } catch { toast.error('Failed to add guests'); }
     finally { setAddingGuests(false); }
@@ -218,6 +231,7 @@ export function RackPartyDetail() {
       await addGuestsToInvite(invite.id, organizer.id, toAdd);
       setSelectedContacts([]);
       await loadGuestsAndStats(invite.id);
+      logActivity(invite.id, 'guest_added', organizer?.business_name, { count: toAdd.length });
       toast.success(`${toAdd.length} guest${toAdd.length > 1 ? 's' : ''} added`);
     } catch { toast.error('Failed to add guests'); }
     finally { setAddingGuests(false); }
@@ -253,6 +267,7 @@ export function RackPartyDetail() {
         rsvpDeadline: rsvpDeadline ? new Date(rsvpDeadline).toISOString() : null,
       });
       setInvite(updated); setSettingsCoverImage(null);
+      logActivity(invite.id, 'settings_updated', organizer?.business_name);
       toast.success('Settings saved');
     } catch { toast.error('Failed to save settings'); }
     finally { setSavingSettings(false); }
@@ -305,6 +320,7 @@ export function RackPartyDetail() {
         if (freeUsed > 0) await incrementFreeEmailUsage(organizer.id, freeUsed);
         await loadGuestsAndStats(invite.id);
         await loadCreditAndFreeEmailData();
+        logActivity(invite.id, 'email_sent', organizer?.business_name, { count: sent });
         const freeNote = freeUsed > 0 ? ` (${freeUsed} free)` : '';
         toast.success(`${sent} invite${sent > 1 ? 's' : ''} sent!${freeNote}`);
       }
@@ -327,6 +343,7 @@ export function RackPartyDetail() {
       }
       await markReminded(pending.map(g => g.id));
       await loadGuestsAndStats(invite.id);
+      logActivity(invite.id, 'reminder_sent', organizer?.business_name, { count: pending.length });
       toast.success(`${pending.length} reminder${pending.length > 1 ? 's' : ''} sent!`);
     } catch (err) { console.error('Reminder error:', err); toast.error('Error sending reminders'); }
     finally { setSendingReminders(false); }
@@ -359,6 +376,7 @@ export function RackPartyDetail() {
         await markSmsSent(sentIds);
         await loadGuestsAndStats(invite.id);
         await loadCreditAndFreeEmailData();
+        logActivity(invite.id, 'sms_sent', organizer?.business_name, { count: sent });
         toast.success(`${sent} SMS invite${sent > 1 ? 's' : ''} sent!`);
       }
     } catch (err) { console.error('SMS error:', err); toast.error('Error sending SMS invites'); }
@@ -390,6 +408,44 @@ export function RackPartyDetail() {
     } catch (err) { console.error('Flyer error:', err); toast.error('Failed to generate flyer'); }
   }
 
+  // Inline title edit
+  async function handleSaveTitle() {
+    if (!editTitleValue.trim() || editTitleValue.trim() === invite.title) {
+      setEditingTitle(false);
+      return;
+    }
+    try {
+      const updated = await updateInviteSettings(invite.id, { title: editTitleValue.trim() });
+      setInvite(updated);
+      setSettingsTitle(updated.title);
+      logActivity(invite.id, 'title_changed', organizer?.business_name, { title: editTitleValue.trim() });
+      toast.success('Title updated');
+    } catch {
+      toast.error('Failed to update title');
+    }
+    setEditingTitle(false);
+  }
+
+  // Duplicate party
+  async function handleDuplicate() {
+    setDuplicating(true);
+    try {
+      const copy = await duplicatePartyInvite(invite.id, organizer.id);
+      toast.success('Party duplicated!');
+      navigate(`${basePath}/${copy.id}`);
+    } catch (err) {
+      console.error('Duplicate error:', err);
+      toast.error('Failed to duplicate party');
+    } finally {
+      setDuplicating(false);
+    }
+  }
+
+  // Enhanced stats: total expected = going + sum of plus_ones from going guests
+  const totalExpected = guests
+    .filter(g => g.rsvp_status === 'going')
+    .reduce((sum, g) => sum + 1 + (g.plus_ones || 0), 0);
+
   const filteredGuests = statusFilter === 'all' ? guests : guests.filter(g => g.rsvp_status === statusFilter);
 
   if (loading) {
@@ -411,7 +467,25 @@ export function RackPartyDetail() {
             <ChevronLeft className="w-4 h-4" /> Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{invite.title || 'Untitled Invite'}</h1>
+            {editingTitle ? (
+              <input
+                autoFocus
+                value={editTitleValue}
+                onChange={e => setEditTitleValue(e.target.value)}
+                onBlur={handleSaveTitle}
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveTitle(); if (e.key === 'Escape') setEditingTitle(false); }}
+                className="text-2xl font-bold text-gray-900 border-b-2 border-primary bg-transparent outline-none w-full"
+              />
+            ) : (
+              <h1
+                className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-primary/80 transition-colors group flex items-center gap-2"
+                onClick={() => { setEditTitleValue(invite.title || ''); setEditingTitle(true); }}
+                title="Click to edit title"
+              >
+                {invite.title || 'Untitled Invite'}
+                <Pencil className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h1>
+            )}
             {invite.start_date && (
               <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
                 <Calendar className="w-3.5 h-3.5" />
@@ -421,15 +495,26 @@ export function RackPartyDetail() {
             )}
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDuplicate}
+          disabled={duplicating}
+          className="rounded-xl gap-1.5"
+        >
+          {duplicating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+          Duplicate
+        </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: 'Going', count: stats.going, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
           { label: 'Maybe', count: stats.maybe, color: 'text-amber-600', bg: 'bg-amber-50', icon: HelpCircle },
           { label: 'Pending', count: stats.pending, color: 'text-blue-600', bg: 'bg-blue-50', icon: Clock },
           { label: 'Declined', count: stats.declined, color: 'text-gray-500', bg: 'bg-gray-50', icon: X },
+          { label: 'Total Expected', count: totalExpected, color: 'text-violet-600', bg: 'bg-violet-50', icon: Users },
         ].map(s => (
           <Card key={s.label} className="rounded-2xl">
             <CardContent className="p-4 text-center">
@@ -550,16 +635,20 @@ export function RackPartyDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-1">
+      <div className="flex border-b border-gray-200 gap-1 overflow-x-auto scrollbar-hide">
         {[
-          { id: 'guests', label: 'Guest List', icon: Users },
-          { id: 'add', label: 'Add Guests', icon: UserPlus },
+          { id: 'guests', label: 'Guests', icon: Users },
+          { id: 'add', label: 'Add', icon: UserPlus },
+          { id: 'design', label: 'Design', icon: Palette },
+          { id: 'wall', label: 'Wall', icon: MessageSquare },
+          { id: 'announcements', label: 'Announce', icon: Megaphone },
+          { id: 'activity', label: 'Activity', icon: Activity },
           { id: 'settings', label: 'Settings', icon: Settings2 },
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -757,6 +846,42 @@ export function RackPartyDetail() {
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tab: Design */}
+      {activeTab === 'design' && (
+        <Card className="rounded-2xl">
+          <CardContent className="p-4">
+            <DesignTab invite={invite} organizer={organizer} onInviteUpdate={setInvite} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tab: Wall */}
+      {activeTab === 'wall' && (
+        <Card className="rounded-2xl">
+          <CardContent className="p-4">
+            <WallTab invite={invite} organizer={organizer} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tab: Announcements */}
+      {activeTab === 'announcements' && (
+        <Card className="rounded-2xl">
+          <CardContent className="p-4">
+            <AnnouncementsTab invite={invite} organizer={organizer} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tab: Activity */}
+      {activeTab === 'activity' && (
+        <Card className="rounded-2xl">
+          <CardContent className="p-4">
+            <ActivityTab invite={invite} />
           </CardContent>
         </Card>
       )}
