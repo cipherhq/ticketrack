@@ -226,3 +226,50 @@ img[alt*="tickettrack"] {
     image-rendering: crisp-edges;
   }
 }
+
+/* RSVP Page Animations */
+@keyframes rsvpFadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes rsvpScaleIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes rsvpSlideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.rsvp-animate-card {
+  animation: rsvpScaleIn 0.5s ease-out both;
+  animation-delay: 0s;
+}
+.rsvp-animate-title {
+  animation: rsvpFadeInUp 0.5s ease-out both;
+  animation-delay: 0.2s;
+}
+.rsvp-animate-host {
+  animation: rsvpSlideInLeft 0.4s ease-out both;
+  animation-delay: 0.35s;
+}
+.rsvp-animate-detail-1 {
+  animation: rsvpSlideInLeft 0.4s ease-out both;
+  animation-delay: 0.45s;
+}
+.rsvp-animate-detail-2 {
+  animation: rsvpSlideInLeft 0.4s ease-out both;
+  animation-delay: 0.55s;
+}
+.rsvp-animate-message {
+  animation: rsvpFadeInUp 0.4s ease-out both;
+  animation-delay: 0.6s;
+}
+.rsvp-animate-buttons {
+  animation: rsvpFadeInUp 0.5s ease-out both;
+  animation-delay: 0.7s;
+}
+.rsvp-animate-guest-list {
+  animation: rsvpFadeInUp 0.4s ease-out both;
+  animation-delay: 0.8s;
+}

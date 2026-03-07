@@ -116,6 +116,7 @@ export function WebInviteRSVP() {
       }
       setSubmitted(true);
       setChangingResponse(false);
+      if (selectedStatus === 'going') { fireConfetti(); }
     } catch (err) {
       console.error('RSVP error:', err);
       setError('Failed to submit RSVP. Please try again.');
@@ -152,6 +153,18 @@ export function WebInviteRSVP() {
   const statusLabels = { going: 'Going', maybe: 'Maybe', declined: "Can't Make It" };
   const statusColors = { going: 'bg-emerald-500', maybe: 'bg-amber-500', declined: 'bg-gray-500' };
 
+  const goingCount = guestList.filter(g => g.status === 'going').length;
+  const maybeCount = guestList.filter(g => g.status === 'maybe').length;
+
+  async function fireConfetti() {
+    try {
+      const confetti = (await import('canvas-confetti')).default;
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } }), 200);
+      setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1, y: 0.6 } }), 400);
+    } catch {}
+  }
+
   return (
     <div className="min-h-screen relative">
       {/* Blurred backdrop */}
@@ -167,7 +180,7 @@ export function WebInviteRSVP() {
       <div className="relative z-10 min-h-screen flex items-start justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
           {/* Card */}
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden rsvp-animate-card">
             {/* Event Image Hero */}
             {coverImage && (
               <div className="relative h-52 sm:h-60">
@@ -177,13 +190,26 @@ export function WebInviteRSVP() {
             )}
 
             <div className="p-6 sm:p-8">
+              {/* Live Guest Count Banner */}
+              <div className="rsvp-animate-title mb-4">
+                <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-blue-50 border border-blue-100">
+                  <Users className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm font-semibold text-blue-700">
+                    {goingCount > 0
+                      ? `Join ${goingCount} other${goingCount > 1 ? 's' : ''}!${maybeCount > 0 ? ` (${maybeCount} maybe)` : ''}`
+                      : 'Be the first to RSVP!'
+                    }
+                  </span>
+                </div>
+              </div>
+
               {/* Event Title */}
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight rsvp-animate-title">
                 {invite?.title}
               </h1>
 
               {/* Hosted by */}
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex items-center gap-2 mt-3 rsvp-animate-host">
                 {organizer?.logo_url ? (
                   <img src={organizer.logo_url} alt="" className="w-6 h-6 rounded-full object-cover" />
                 ) : (
@@ -200,7 +226,7 @@ export function WebInviteRSVP() {
 
               {/* Date, Time, Venue */}
               <div className="mt-5 space-y-3">
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 rsvp-animate-detail-1">
                   <Calendar className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium text-gray-900">{formatDate(invite?.start_date)}</p>
@@ -208,7 +234,7 @@ export function WebInviteRSVP() {
                   </div>
                 </div>
                 {(invite?.venue_name || invite?.city) && (
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 rsvp-animate-detail-2">
                     <MapPin className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
                     <div>
                       <p className="font-medium text-gray-900">{invite?.venue_name || 'Venue TBA'}</p>
@@ -220,7 +246,7 @@ export function WebInviteRSVP() {
 
               {/* Invite Message */}
               {invite?.message && (
-                <div className="mt-5 p-4 bg-purple-50 rounded-xl border-l-4 border-purple-400">
+                <div className="mt-5 p-4 bg-purple-50 rounded-xl border-l-4 border-purple-400 rsvp-animate-message">
                   <p className="text-sm text-purple-800 italic">"{invite.message}"</p>
                 </div>
               )}
@@ -273,7 +299,7 @@ export function WebInviteRSVP() {
 
               {/* RSVP Form */}
               {!isExpired && !submitted && !hasResponded && (
-                <div className="mt-6 space-y-5">
+                <div className="mt-6 space-y-5 rsvp-animate-buttons">
                   {/* Share link: name/email form first */}
                   {isShareLink && (
                     <div className="space-y-3">
@@ -403,7 +429,7 @@ export function WebInviteRSVP() {
 
               {/* Guest List Preview */}
               {guestList.length > 0 && (
-                <div className="mt-6 pt-5 border-t border-gray-100">
+                <div className="mt-6 pt-5 border-t border-gray-100 rsvp-animate-guest-list">
                   <div className="flex items-center gap-2 mb-3">
                     <Users className="w-4 h-4 text-gray-400" />
                     <p className="text-sm font-medium text-gray-500">

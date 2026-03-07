@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   PartyPopper, Users, Plus, Search, Send, Clock, Copy, Loader2, Trash2,
   CheckCircle, HelpCircle, X, Mail, RefreshCw, Link2, ChevronDown, ChevronLeft,
   Calendar, UserPlus, ClipboardList, Settings2, Bell, MapPin, Image,
-  Phone, MessageCircle, CreditCard, AlertCircle, ArrowRight, Check, Upload, Sparkles
+  Phone, MessageCircle, CreditCard, AlertCircle, ArrowRight, Check, Upload, Sparkles,
+  Download, Heart
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -272,76 +274,76 @@ function Step3_Location({ venueName, city, address, onChangeVenue, onChangeCity,
 
 const PARTY_TEMPLATES = [
   {
-    id: 'birthday',
-    name: 'Birthday Bash',
-    emoji: '🎂',
+    id: 'birthday', name: 'Birthday Bash', emoji: '🎂', premium: false,
     gradient: 'linear-gradient(135deg, #ec4899, #f43f5e, #f59e0b)',
-    textColor: '#ffffff',
-    decorEmojis: ['🎈', '🎉', '🎊', '✨'],
+    textColor: '#ffffff', decorEmojis: ['🎈', '🎉', '🎊', '✨'],
     overlayPattern: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%)',
   },
   {
-    id: 'elegant',
-    name: 'Elegant Night',
-    emoji: '🥂',
+    id: 'elegant', name: 'Elegant Night', emoji: '🥂', premium: false,
     gradient: 'linear-gradient(135deg, #1e3a5f, #1e293b)',
-    textColor: '#fbbf24',
-    decorEmojis: ['✨', '🌟', '💫'],
+    textColor: '#fbbf24', decorEmojis: ['✨', '🌟', '💫'],
     overlayPattern: 'radial-gradient(circle at 50% 0%, rgba(251,191,36,0.08) 0%, transparent 60%)',
   },
   {
-    id: 'garden',
-    name: 'Garden Party',
-    emoji: '🌿',
+    id: 'garden', name: 'Garden Party', emoji: '🌿', premium: false,
     gradient: 'linear-gradient(135deg, #16a34a, #84cc16, #fef9c3)',
-    textColor: '#14532d',
-    decorEmojis: ['🌸', '🌺', '🍃', '🦋'],
+    textColor: '#14532d', decorEmojis: ['🌸', '🌺', '🍃', '🦋'],
     overlayPattern: 'radial-gradient(circle at 30% 70%, rgba(255,255,255,0.12) 0%, transparent 50%)',
   },
   {
-    id: 'club',
-    name: 'Club Night',
-    emoji: '🎵',
+    id: 'club', name: 'Club Night', emoji: '🎵', premium: false,
     gradient: 'linear-gradient(135deg, #312e81, #7c3aed)',
-    textColor: '#ffffff',
-    decorEmojis: ['🔥', '💜', '🎶', '⚡'],
+    textColor: '#ffffff', decorEmojis: ['🔥', '💜', '🎶', '⚡'],
     overlayPattern: 'radial-gradient(circle at 70% 30%, rgba(124,58,237,0.2) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(99,102,241,0.15) 0%, transparent 50%)',
   },
   {
-    id: 'dinner',
-    name: 'Dinner Party',
-    emoji: '🍷',
+    id: 'dinner', name: 'Dinner Party', emoji: '🍷', premium: false,
     gradient: 'linear-gradient(135deg, #881337, #1c1917, #fef3c7)',
-    textColor: '#fef3c7',
-    decorEmojis: ['🕯️', '🍽️', '🌹'],
+    textColor: '#fef3c7', decorEmojis: ['🕯️', '🍽️', '🌹'],
     overlayPattern: 'radial-gradient(circle at 50% 50%, rgba(254,243,199,0.05) 0%, transparent 60%)',
   },
   {
-    id: 'beach',
-    name: 'Beach Vibes',
-    emoji: '🏖️',
+    id: 'beach', name: 'Beach Vibes', emoji: '🏖️', premium: false,
     gradient: 'linear-gradient(135deg, #3b82f6, #14b8a6, #fde68a)',
-    textColor: '#ffffff',
-    decorEmojis: ['🌊', '🐚', '🌴', '☀️'],
+    textColor: '#ffffff', decorEmojis: ['🌊', '🐚', '🌴', '☀️'],
     overlayPattern: 'radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 40%)',
   },
   {
-    id: 'bridal',
-    name: 'Bridal Shower',
-    emoji: '💐',
+    id: 'bridal', name: 'Bridal Shower', emoji: '💐', premium: false,
     gradient: 'linear-gradient(135deg, #f9a8d4, #c4b5fd)',
-    textColor: '#581c87',
-    decorEmojis: ['💕', '🌸', '💍', '✨'],
+    textColor: '#581c87', decorEmojis: ['💕', '🌸', '💍', '✨'],
     overlayPattern: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.15) 0%, transparent 50%)',
   },
   {
-    id: 'casual',
-    name: 'Casual Hangout',
-    emoji: '😎',
+    id: 'casual', name: 'Casual Hangout', emoji: '😎', premium: false,
     gradient: 'linear-gradient(135deg, #ef4444, #f97316, #22c55e, #3b82f6)',
-    textColor: '#ffffff',
-    decorEmojis: ['🎮', '🍕', '🎪', '🤘'],
+    textColor: '#ffffff', decorEmojis: ['🎮', '🍕', '🎪', '🤘'],
     overlayPattern: 'radial-gradient(circle at 40% 60%, rgba(255,255,255,0.08) 0%, transparent 50%)',
+  },
+  {
+    id: 'gold-foil', name: 'Gold Foil', emoji: '👑', premium: true,
+    gradient: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+    textColor: '#ffd700', decorEmojis: ['👑', '✨', '💎', '⭐'],
+    overlayPattern: 'radial-gradient(circle at 30% 20%, rgba(255,215,0,0.1) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(255,215,0,0.06) 0%, transparent 50%)',
+  },
+  {
+    id: 'holographic', name: 'Holographic', emoji: '🌈', premium: true,
+    gradient: 'linear-gradient(135deg, #a855f7, #ec4899, #06b6d4, #a855f7)',
+    textColor: '#ffffff', decorEmojis: ['💠', '🔮', '🌟', '💜'],
+    overlayPattern: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 40%), radial-gradient(circle at 20% 20%, rgba(168,85,247,0.15) 0%, transparent 50%)',
+  },
+  {
+    id: 'midnight-gala', name: 'Midnight Gala', emoji: '🌙', premium: true,
+    gradient: 'linear-gradient(135deg, #0c0a1d, #1a1145, #2d1b69)',
+    textColor: '#e2d9f3', decorEmojis: ['🌙', '⭐', '✨', '🌌'],
+    overlayPattern: 'radial-gradient(circle at 80% 20%, rgba(139,92,246,0.12) 0%, transparent 50%), radial-gradient(circle at 20% 70%, rgba(99,102,241,0.08) 0%, transparent 50%)',
+  },
+  {
+    id: 'rose-luxe', name: 'Rose Luxe', emoji: '🌹', premium: true,
+    gradient: 'linear-gradient(135deg, #4a0e2e, #831843, #be185d)',
+    textColor: '#fecdd3', decorEmojis: ['🌹', '💕', '🥀', '✨'],
+    overlayPattern: 'radial-gradient(circle at 60% 30%, rgba(254,205,211,0.1) 0%, transparent 50%), radial-gradient(circle at 30% 80%, rgba(190,24,93,0.15) 0%, transparent 50%)',
   },
 ];
 
@@ -356,16 +358,77 @@ const ACCENT_COLORS = [
   { name: 'Orange', value: '#f97316' },
 ];
 
-function TemplatePreview({ template, accentColor, partyName, startDate, venueName, forCapture }) {
-  const width = forCapture ? 600 : 280;
-  const height = forCapture ? 800 : 380;
-  const scale = forCapture ? 1 : 0.47;
-  const titleSize = forCapture ? 56 : 26;
-  const labelSize = forCapture ? 20 : 10;
-  const dateSize = forCapture ? 22 : 11;
-  const venueSize = forCapture ? 20 : 10;
-  const emojiSize = forCapture ? 56 : 26;
-  const stripeHeight = forCapture ? 8 : 4;
+const FONT_OPTIONS = [
+  { id: 'bold-modern', label: 'Bold Modern', family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', weight: 900, google: null },
+  { id: 'elegant-script', label: 'Elegant Script', family: '"Playfair Display", serif', weight: 700, google: 'Playfair+Display:wght@700' },
+  { id: 'playful', label: 'Playful', family: '"Pacifico", cursive', weight: 400, google: 'Pacifico' },
+  { id: 'minimal', label: 'Minimal', family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', weight: 300, google: null },
+  { id: 'luxury', label: 'Luxury', family: '"Cormorant Garamond", serif', weight: 700, google: 'Cormorant+Garamond:wght@700' },
+];
+
+function loadGoogleFont(fontUrl) {
+  if (!fontUrl) return;
+  const id = `gf-${fontUrl.replace(/[^a-zA-Z0-9]/g, '')}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${fontUrl}&display=swap`;
+  document.head.appendChild(link);
+}
+
+const BACKGROUND_PATTERNS = [
+  { id: 'none', label: 'None', svg: null },
+  { id: 'confetti', label: 'Confetti', svg: "data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='5' width='4' height='4' rx='1' fill='%23fff' fill-opacity='0.12' transform='rotate(30 12 7)'/%3E%3Crect x='40' y='15' width='5' height='3' rx='1' fill='%23fff' fill-opacity='0.1' transform='rotate(-20 42 16)'/%3E%3Crect x='25' y='35' width='3' height='5' rx='1' fill='%23fff' fill-opacity='0.08' transform='rotate(45 26 37)'/%3E%3Crect x='5' y='45' width='4' height='3' rx='1' fill='%23fff' fill-opacity='0.1' transform='rotate(-15 7 46)'/%3E%3Crect x='50' y='45' width='3' height='4' rx='1' fill='%23fff' fill-opacity='0.12' transform='rotate(60 51 47)'/%3E%3C/svg%3E" },
+  { id: 'geometric', label: 'Geometric', svg: "data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='none' stroke='%23fff' stroke-opacity='0.06' stroke-width='1'/%3E%3C/svg%3E" },
+  { id: 'stars', label: 'Stars', svg: "data:image/svg+xml,%3Csvg width='50' height='50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='25,2 31,18 48,18 34,28 39,45 25,35 11,45 16,28 2,18 19,18' fill='%23fff' fill-opacity='0.06'/%3E%3C/svg%3E" },
+  { id: 'floral', label: 'Floral', svg: "data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='8' fill='none' stroke='%23fff' stroke-opacity='0.06'/%3E%3Ccircle cx='30' cy='20' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3Ccircle cx='38' cy='26' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3Ccircle cx='36' cy='36' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3Ccircle cx='24' cy='36' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3Ccircle cx='22' cy='26' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3C/svg%3E" },
+];
+
+const EXPORT_SIZES = [
+  { label: 'Story (1080×1920)', w: 1080, h: 1920 },
+  { label: 'Square (1080×1080)', w: 1080, h: 1080 },
+  { label: 'Landscape (1920×1080)', w: 1920, h: 1080 },
+];
+
+const FAVORITES_KEY = 'rackparty_template_favorites';
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'); } catch { return []; }
+}
+function toggleFavorite(templateId, accentColor) {
+  const favs = getFavorites();
+  const key = `${templateId}__${accentColor}`;
+  const idx = favs.findIndex(f => f.key === key);
+  if (idx >= 0) { favs.splice(idx, 1); } else { favs.push({ key, templateId, accentColor }); }
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
+  return favs;
+}
+function isFavorited(templateId, accentColor) {
+  return getFavorites().some(f => f.key === `${templateId}__${accentColor}`);
+}
+
+const isPremiumOrganizer = true;
+
+function TemplatePreview({
+  template, accentColor, partyName, startDate, venueName, forCapture,
+  captureWidth, captureHeight,
+  textColorOverride, fontFamily, fontWeight,
+  tagline, backgroundPattern, backgroundImage,
+}) {
+  const baseW = captureWidth || (forCapture ? 600 : 280);
+  const baseH = captureHeight || (forCapture ? 800 : 380);
+  const scaleFactor = baseW / 600;
+  const titleSize = Math.round(56 * scaleFactor * (forCapture ? 1 : 0.47));
+  const labelSize = Math.round(20 * scaleFactor * (forCapture ? 1 : 0.47));
+  const dateSize = Math.round(22 * scaleFactor * (forCapture ? 1 : 0.47));
+  const venueSize = Math.round(20 * scaleFactor * (forCapture ? 1 : 0.47));
+  const taglineSize = Math.round(18 * scaleFactor * (forCapture ? 1 : 0.47));
+  const emojiSize = Math.round(56 * scaleFactor * (forCapture ? 1 : 0.47));
+  const stripeHeight = Math.round(8 * scaleFactor * (forCapture ? 1 : 0.47));
+
+  const effectiveTextColor = textColorOverride === 'light' ? '#ffffff' : textColorOverride === 'dark' ? '#1a1a1a' : template.textColor;
+  const effectiveFont = fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  const effectiveWeight = fontWeight || 900;
 
   const formattedDate = startDate
     ? format(new Date(startDate), 'EEE, MMM d, yyyy · h:mm a')
@@ -380,20 +443,35 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
     { top: '35%', right: '4%', rotate: '-20deg' },
   ];
 
+  const patternObj = BACKGROUND_PATTERNS.find(p => p.id === backgroundPattern);
+
   return (
     <div
       style={{
-        width,
-        height,
+        width: baseW,
+        height: baseH,
         position: 'relative',
         overflow: 'hidden',
         borderRadius: forCapture ? 0 : 16,
         background: template.gradient,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontFamily: effectiveFont,
       }}
     >
+      {/* Background image for blend mode */}
+      {backgroundImage && (
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+      )}
+      {backgroundImage && (
+        <div style={{ position: 'absolute', inset: 0, background: template.gradient, opacity: 0.7 }} />
+      )}
+
       {/* Overlay pattern */}
       <div style={{ position: 'absolute', inset: 0, background: template.overlayPattern }} />
+
+      {/* Background pattern overlay */}
+      {patternObj?.svg && (
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url("${patternObj.svg}")`, backgroundRepeat: 'repeat', pointerEvents: 'none' }} />
+      )}
 
       {/* Accent stripe top */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: stripeHeight, background: accentColor }} />
@@ -409,10 +487,7 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
               fontSize: emojiSize,
               opacity: 0.2,
               transform: `rotate(${pos.rotate})`,
-              top: pos.top,
-              left: pos.left,
-              right: pos.right,
-              bottom: pos.bottom,
+              top: pos.top, left: pos.left, right: pos.right, bottom: pos.bottom,
               pointerEvents: 'none',
             }}
           >
@@ -424,80 +499,63 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
       {/* Content */}
       <div
         style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: forCapture ? 48 : 24,
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          padding: Math.round(48 * scaleFactor * (forCapture ? 1 : 0.47)),
           textAlign: 'center',
         }}
       >
-        {/* "YOU'RE INVITED" label */}
-        <div
-          style={{
-            fontSize: labelSize,
-            fontWeight: 900,
-            letterSpacing: forCapture ? 6 : 3,
-            textTransform: 'uppercase',
-            color: accentColor,
-            marginBottom: forCapture ? 28 : 14,
-            textShadow: '0 1px 4px rgba(0,0,0,0.3)',
-          }}
-        >
+        <div style={{
+          fontSize: labelSize, fontWeight: 900, letterSpacing: Math.round(6 * scaleFactor * (forCapture ? 1 : 0.47)),
+          textTransform: 'uppercase', color: accentColor,
+          marginBottom: Math.round(28 * scaleFactor * (forCapture ? 1 : 0.47)),
+          textShadow: '0 1px 4px rgba(0,0,0,0.3)',
+        }}>
           YOU&apos;RE INVITED
         </div>
 
-        {/* Party name */}
-        <div
-          style={{
-            fontSize: titleSize,
-            fontWeight: 900,
-            color: template.textColor,
-            lineHeight: 1.15,
-            maxWidth: '90%',
-            wordBreak: 'break-word',
-            marginBottom: forCapture ? 36 : 18,
-            textShadow: '0 3px 12px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)',
-            letterSpacing: forCapture ? -1 : -0.5,
-          }}
-        >
+        <div style={{
+          fontSize: titleSize, fontWeight: effectiveWeight, color: effectiveTextColor,
+          lineHeight: 1.15, maxWidth: '90%', wordBreak: 'break-word',
+          marginBottom: Math.round((tagline ? 12 : 36) * scaleFactor * (forCapture ? 1 : 0.47)),
+          textShadow: '0 3px 12px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)',
+          letterSpacing: forCapture ? -1 : -0.5,
+          fontFamily: effectiveFont,
+        }}>
           {partyName || 'Your Party Name'}
         </div>
 
-        {/* Date pill */}
+        {/* Tagline */}
+        {tagline && (
+          <div style={{
+            fontSize: taglineSize, fontStyle: 'italic', color: effectiveTextColor, opacity: 0.85,
+            marginBottom: Math.round(24 * scaleFactor * (forCapture ? 1 : 0.47)),
+            textShadow: '0 1px 4px rgba(0,0,0,0.3)', maxWidth: '85%',
+          }}>
+            {tagline}
+          </div>
+        )}
+
         {formattedDate && (
-          <div
-            style={{
-              fontSize: dateSize,
-              fontWeight: 700,
-              color: template.textColor,
-              background: 'rgba(255,255,255,0.2)',
-              backdropFilter: 'blur(8px)',
-              borderRadius: 999,
-              padding: forCapture ? '12px 28px' : '6px 14px',
-              marginBottom: forCapture ? 16 : 8,
-              textShadow: '0 1px 4px rgba(0,0,0,0.25)',
-              border: '1px solid rgba(255,255,255,0.15)',
-            }}
-          >
+          <div style={{
+            fontSize: dateSize, fontWeight: 700, color: effectiveTextColor,
+            background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)',
+            borderRadius: 999,
+            padding: `${Math.round(12 * scaleFactor * (forCapture ? 1 : 0.47))}px ${Math.round(28 * scaleFactor * (forCapture ? 1 : 0.47))}px`,
+            marginBottom: Math.round(16 * scaleFactor * (forCapture ? 1 : 0.47)),
+            textShadow: '0 1px 4px rgba(0,0,0,0.25)',
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}>
             {formattedDate}
           </div>
         )}
 
-        {/* Venue */}
         {venueName && (
-          <div
-            style={{
-              fontSize: venueSize,
-              fontWeight: 700,
-              color: template.textColor,
-              opacity: 0.9,
-              marginTop: forCapture ? 8 : 4,
-              textShadow: '0 1px 4px rgba(0,0,0,0.3)',
-            }}
-          >
+          <div style={{
+            fontSize: venueSize, fontWeight: 700, color: effectiveTextColor, opacity: 0.9,
+            marginTop: Math.round(8 * scaleFactor * (forCapture ? 1 : 0.47)),
+            textShadow: '0 1px 4px rgba(0,0,0,0.3)',
+          }}>
             📍 {venueName}
           </div>
         )}
@@ -509,26 +567,213 @@ function TemplatePreview({ template, accentColor, partyName, startDate, venueNam
   );
 }
 
+function TemplateControls({ activeTemplate, selectedColor, setSelectedColor, textOverride, setTextOverride, selectedFont, setSelectedFont, tagline, setTagline, selectedPattern, setSelectedPattern, favorites, setFavorites, setSelectedTemplate }) {
+  return (
+    <>
+      {/* Favorites row */}
+      {favorites.length > 0 && (
+        <div className="mb-5">
+          <p className="text-sm font-medium text-gray-700 mb-2">Favorites</p>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {favorites.map(f => {
+              const t = PARTY_TEMPLATES.find(tp => tp.id === f.templateId);
+              if (!t) return null;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => { setSelectedTemplate(t.id); setSelectedColor(f.accentColor); }}
+                  className="shrink-0 rounded-lg p-2 border border-gray-200 hover:border-primary/40 transition-colors flex items-center gap-2"
+                  style={{ background: t.gradient }}
+                >
+                  <span className="text-lg">{t.emoji}</span>
+                  <div className="w-4 h-4 rounded-full border border-white/40" style={{ background: f.accentColor }} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Template grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {PARTY_TEMPLATES.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setSelectedTemplate(t.id)}
+            className={`relative rounded-xl p-3 text-left transition-all border-2 ${
+              activeTemplate?.id === t.id
+                ? 'border-primary ring-2 ring-primary/20 scale-[1.02]'
+                : 'border-transparent hover:border-gray-200'
+            }`}
+            style={{ background: t.gradient }}
+          >
+            <span className="text-2xl block mb-1">{t.emoji}</span>
+            <span className="text-xs font-semibold block" style={{ color: t.textColor }}>
+              {t.name}
+            </span>
+            {t.premium && (
+              <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-yellow-400 text-yellow-900">PRO</span>
+            )}
+            {activeTemplate?.id === t.id && (
+              <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                <Check className="w-3 h-3 text-white" />
+              </div>
+            )}
+            {/* Heart favorite button */}
+            <button
+              onClick={e => { e.stopPropagation(); setFavorites(toggleFavorite(t.id, selectedColor)); }}
+              className="absolute bottom-1.5 right-1.5 p-0.5"
+            >
+              <Heart className={`w-3.5 h-3.5 ${isFavorited(t.id, selectedColor) ? 'fill-red-500 text-red-500' : 'text-white/50 hover:text-white/80'}`} />
+            </button>
+          </button>
+        ))}
+      </div>
+
+      {/* Controls shown when template selected */}
+      {activeTemplate && (
+        <div className="space-y-5">
+          {/* Accent colors */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Accent Color</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {ACCENT_COLORS.map(c => (
+                <button
+                  key={c.value}
+                  onClick={() => setSelectedColor(c.value)}
+                  title={c.name}
+                  className={`w-8 h-8 rounded-full transition-all ${
+                    selectedColor === c.value ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110'
+                  }`}
+                  style={{ background: c.value }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Text color toggle */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Text Color</p>
+            <div className="flex gap-2">
+              {[
+                { val: null, label: 'Auto' },
+                { val: 'light', label: 'Light' },
+                { val: 'dark', label: 'Dark' },
+              ].map(opt => (
+                <button
+                  key={opt.label}
+                  onClick={() => setTextOverride(opt.val)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    textOverride === opt.val ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Font picker */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Font Style</p>
+            <div className="flex flex-wrap gap-2">
+              {FONT_OPTIONS.map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => { setSelectedFont(f.id); if (f.google) loadGoogleFont(f.google); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                    selectedFont === f.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  style={{ fontFamily: f.family, fontWeight: f.weight }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom tagline */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Custom Tagline</p>
+            <Input
+              value={tagline}
+              onChange={e => setTagline(e.target.value)}
+              placeholder="e.g. Dress Code: All White"
+              className="rounded-lg text-sm"
+            />
+          </div>
+
+          {/* Background patterns */}
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Background Pattern</p>
+            <div className="flex gap-2 flex-wrap">
+              {BACKGROUND_PATTERNS.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPattern(p.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    selectedPattern === p.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, partyName, startDate, venueName }) {
   const [mode, setMode] = useState('template');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedColor, setSelectedColor] = useState(ACCENT_COLORS[0].value);
+  const [textOverride, setTextOverride] = useState(null);
+  const [selectedFont, setSelectedFont] = useState('bold-modern');
+  const [tagline, setTagline] = useState('');
+  const [selectedPattern, setSelectedPattern] = useState('none');
+  const [blendPhoto, setBlendPhoto] = useState(null);
+  const [blendPhotoUrl, setBlendPhotoUrl] = useState(null);
+  const [favorites, setFavorites] = useState(getFavorites());
   const [generatingImage, setGeneratingImage] = useState(false);
   const previewRef = useRef(null);
+  const exportRef = useRef(null);
 
   const activeTemplate = PARTY_TEMPLATES.find(t => t.id === selectedTemplate);
+  const activeFontObj = FONT_OPTIONS.find(f => f.id === selectedFont) || FONT_OPTIONS[0];
+
+  function handleBlendPhotoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBlendPhoto(file);
+    setBlendPhotoUrl(URL.createObjectURL(file));
+  }
+
+  const templatePreviewProps = {
+    template: activeTemplate,
+    accentColor: selectedColor,
+    partyName,
+    startDate,
+    venueName,
+    textColorOverride: textOverride,
+    fontFamily: activeFontObj.family,
+    fontWeight: activeFontObj.weight,
+    tagline,
+    backgroundPattern: selectedPattern,
+    backgroundImage: mode === 'blend' ? blendPhotoUrl : undefined,
+  };
 
   async function handleCreateWithTemplate() {
     if (!activeTemplate) return;
     setGeneratingImage(true);
     try {
+      if (activeFontObj.google) { loadGoogleFont(activeFontObj.google); }
+      await document.fonts.ready;
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(previewRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-        width: 600,
-        height: 800,
+        scale: 2, useCORS: true, backgroundColor: null, width: 600, height: 800,
       });
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
       const file = new File([blob], 'party-cover.png', { type: 'image/png' });
@@ -539,8 +784,36 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
       setGeneratingImage(false);
     }
   }
+
+  async function handleExportSize(size) {
+    if (!activeTemplate) return;
+    setGeneratingImage(true);
+    try {
+      if (activeFontObj.google) { loadGoogleFont(activeFontObj.google); }
+      await document.fonts.ready;
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(exportRef.current, {
+        scale: 1, useCORS: true, backgroundColor: null, width: size.w, height: size.h,
+      });
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `party-${size.w}x${size.h}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error('Failed to export image');
+    } finally {
+      setGeneratingImage(false);
+    }
+  }
+
+  const [exportSize, setExportSize] = useState(EXPORT_SIZES[0]);
+
   const isCreating = creating || generatingImage;
-  const hasSelection = mode === 'template' ? !!activeTemplate : !!coverImage;
+  const hasSelection = (mode === 'template' || mode === 'blend') ? !!activeTemplate : !!coverImage;
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
@@ -551,76 +824,106 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
 
       <div className="w-full max-w-2xl">
         <Tabs value={mode} onValueChange={setMode}>
-          <TabsList className="w-full grid grid-cols-2 mb-6">
+          <TabsList className="w-full grid grid-cols-3 mb-6">
             <TabsTrigger value="template" className="gap-2">
-              <Sparkles className="w-4 h-4" /> Choose a Theme
+              <Sparkles className="w-4 h-4" /> Theme
+            </TabsTrigger>
+            <TabsTrigger value="blend" className="gap-2">
+              <Image className="w-4 h-4" /> Photo + Theme
             </TabsTrigger>
             <TabsTrigger value="upload" className="gap-2">
-              <Upload className="w-4 h-4" /> Upload Your Own
+              <Upload className="w-4 h-4" /> Upload
             </TabsTrigger>
           </TabsList>
 
           {/* Template tab */}
           <TabsContent value="template">
-            {/* Template grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              {PARTY_TEMPLATES.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTemplate(t.id)}
-                  className={`relative rounded-xl p-3 text-left transition-all border-2 ${
-                    selectedTemplate === t.id
-                      ? 'border-primary ring-2 ring-primary/20 scale-[1.02]'
-                      : 'border-transparent hover:border-gray-200'
-                  }`}
-                  style={{ background: t.gradient }}
-                >
-                  <span className="text-2xl block mb-1">{t.emoji}</span>
-                  <span className="text-xs font-semibold block" style={{ color: t.textColor }}>
-                    {t.name}
-                  </span>
-                  {selectedTemplate === t.id && (
-                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
+            <TemplateControls
+              activeTemplate={activeTemplate}
+              selectedColor={selectedColor}
+              setSelectedColor={setSelectedColor}
+              textOverride={textOverride}
+              setTextOverride={setTextOverride}
+              selectedFont={selectedFont}
+              setSelectedFont={setSelectedFont}
+              tagline={tagline}
+              setTagline={setTagline}
+              selectedPattern={selectedPattern}
+              setSelectedPattern={setSelectedPattern}
+              favorites={favorites}
+              setFavorites={setFavorites}
+              setSelectedTemplate={setSelectedTemplate}
+            />
 
-            {/* Accent colors */}
+            {/* Live preview */}
             {activeTemplate && (
-              <div className="mb-6">
-                <p className="text-sm font-medium text-gray-700 mb-2">Accent Color</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {ACCENT_COLORS.map(c => (
-                    <button
-                      key={c.value}
-                      onClick={() => setSelectedColor(c.value)}
-                      title={c.name}
-                      className={`w-8 h-8 rounded-full transition-all ${
-                        selectedColor === c.value
-                          ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
-                          : 'hover:scale-110'
-                      }`}
-                      style={{ background: c.value }}
-                    />
-                  ))}
+              <div className="flex justify-center mb-4 mt-6">
+                <div className="shadow-xl rounded-2xl overflow-hidden">
+                  <TemplatePreview {...templatePreviewProps} />
                 </div>
               </div>
             )}
 
-            {/* Live preview */}
+            {/* Social export buttons */}
             {activeTemplate && (
-              <div className="flex justify-center mb-4">
+              <div className="mt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Download for Social Media</p>
+                <div className="flex flex-wrap gap-2">
+                  {EXPORT_SIZES.map(size => (
+                    <Button
+                      key={size.label}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setExportSize(size); setTimeout(() => handleExportSize(size), 100); }}
+                      disabled={generatingImage}
+                      className="rounded-lg gap-1.5 text-xs"
+                    >
+                      <Download className="w-3.5 h-3.5" /> {size.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Photo + Theme blend tab */}
+          <TabsContent value="blend">
+            {/* Photo upload */}
+            <div className="mb-5">
+              <label className="flex flex-col items-center justify-center gap-2 px-4 py-6 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                {blendPhotoUrl ? (
+                  <img src={blendPhotoUrl} alt="Blend" className="w-full max-h-32 object-cover rounded-xl" />
+                ) : (
+                  <>
+                    <Image className="w-8 h-8 text-gray-400" />
+                    <span className="text-sm text-gray-500">Upload a photo as background</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handleBlendPhotoUpload} />
+              </label>
+            </div>
+
+            <TemplateControls
+              activeTemplate={activeTemplate}
+              selectedColor={selectedColor}
+              setSelectedColor={setSelectedColor}
+              textOverride={textOverride}
+              setTextOverride={setTextOverride}
+              selectedFont={selectedFont}
+              setSelectedFont={setSelectedFont}
+              tagline={tagline}
+              setTagline={setTagline}
+              selectedPattern={selectedPattern}
+              setSelectedPattern={setSelectedPattern}
+              favorites={favorites}
+              setFavorites={setFavorites}
+              setSelectedTemplate={setSelectedTemplate}
+            />
+
+            {activeTemplate && (
+              <div className="flex justify-center mb-4 mt-6">
                 <div className="shadow-xl rounded-2xl overflow-hidden">
-                  <TemplatePreview
-                    template={activeTemplate}
-                    accentColor={selectedColor}
-                    partyName={partyName}
-                    startDate={startDate}
-                    venueName={venueName}
-                  />
+                  <TemplatePreview {...templatePreviewProps} />
                 </div>
               </div>
             )}
@@ -631,11 +934,7 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
             <label className="flex flex-col items-center justify-center gap-3 px-4 py-12 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors">
               {coverImage ? (
                 <>
-                  <img
-                    src={URL.createObjectURL(coverImage)}
-                    alt="Preview"
-                    className="w-full max-h-48 object-cover rounded-xl"
-                  />
+                  <img src={URL.createObjectURL(coverImage)} alt="Preview" className="w-full max-h-48 object-cover rounded-xl" />
                   <span className="text-sm text-gray-600">{coverImage.name}</span>
                 </>
               ) : (
@@ -645,12 +944,7 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
                   <span className="text-xs text-gray-400">PNG, JPG up to 5MB</span>
                 </>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={e => onChange(e.target.files[0] || null)}
-              />
+              <input type="file" accept="image/*" className="hidden" onChange={e => onChange(e.target.files[0] || null)} />
             </label>
           </TabsContent>
         </Tabs>
@@ -660,14 +954,10 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
       {activeTemplate && (
         <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
           <div ref={previewRef}>
-            <TemplatePreview
-              template={activeTemplate}
-              accentColor={selectedColor}
-              partyName={partyName}
-              startDate={startDate}
-              venueName={venueName}
-              forCapture
-            />
+            <TemplatePreview {...templatePreviewProps} forCapture />
+          </div>
+          <div ref={exportRef}>
+            <TemplatePreview {...templatePreviewProps} forCapture captureWidth={exportSize.w} captureHeight={exportSize.h} />
           </div>
         </div>
       )}
@@ -677,15 +967,11 @@ function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, pa
           Back
         </Button>
         <Button
-          onClick={mode === 'template' && activeTemplate ? handleCreateWithTemplate : () => onCreate()}
+          onClick={(mode === 'template' || mode === 'blend') && activeTemplate ? handleCreateWithTemplate : () => onCreate()}
           disabled={isCreating}
           className="rounded-xl gap-2 h-12 px-8"
         >
-          {isCreating ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <PartyPopper className="w-4 h-4" />
-          )}
+          {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PartyPopper className="w-4 h-4" />}
           {hasSelection ? 'Create Party' : 'Skip & Create'}
         </Button>
       </div>
@@ -1239,6 +1525,28 @@ export function PartyInvites() {
     toast.success('Link copied!');
   }
 
+  const flyerRef = useRef(null);
+  async function handleDownloadFlyerWithQR() {
+    if (!flyerRef.current) return;
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(flyerRef.current, {
+        scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 600, height: 900,
+      });
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(invite.title || 'party').replace(/\s+/g, '-')}-flyer.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Flyer downloaded!');
+    } catch (err) {
+      console.error('Flyer error:', err);
+      toast.error('Failed to generate flyer');
+    }
+  }
+
   const filteredGuests = statusFilter === 'all' ? guests : guests.filter(g => g.rsvp_status === statusFilter);
 
   const statusBadge = (status) => {
@@ -1447,6 +1755,51 @@ export function PartyInvites() {
               <Button variant="outline" onClick={copyShareLink} className="rounded-xl gap-2">
                 <Copy className="w-4 h-4" /> Copy Share Link
               </Button>
+              <Button variant="outline" onClick={handleDownloadFlyerWithQR} className="rounded-xl gap-2">
+                <Download className="w-4 h-4" /> Flyer with QR
+              </Button>
+            </div>
+
+            {/* Hidden QR flyer for capture */}
+            <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
+              <div ref={flyerRef} style={{ width: 600, height: 900, background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', position: 'relative', overflow: 'hidden' }}>
+                {/* Top half: cover or gradient */}
+                <div style={{ height: 400, position: 'relative', overflow: 'hidden' }}>
+                  {invite.cover_image_url ? (
+                    <img src={invite.cover_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }} />
+                  )}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.6))' }} />
+                  <div style={{ position: 'absolute', bottom: 24, left: 32, right: 32, color: '#fff' }}>
+                    <div style={{ fontSize: 36, fontWeight: 900, lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+                      {invite.title}
+                    </div>
+                  </div>
+                </div>
+                {/* Bottom half: info + QR */}
+                <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {invite.start_date && (
+                    <div style={{ fontSize: 18, color: '#374151', fontWeight: 600 }}>
+                      {format(new Date(invite.start_date), 'EEE, MMM d, yyyy · h:mm a')}
+                    </div>
+                  )}
+                  {invite.venue_name && (
+                    <div style={{ fontSize: 16, color: '#6b7280' }}>
+                      📍 {invite.venue_name}{invite.city ? `, ${invite.city}` : ''}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, color: '#9ca3af', marginBottom: 4 }}>Scan to RSVP</div>
+                      <div style={{ fontSize: 12, color: '#d1d5db', wordBreak: 'break-all' }}>
+                        {`${APP_URL}/invite/${invite.share_token}`}
+                      </div>
+                    </div>
+                    <QRCodeSVG value={`${APP_URL}/invite/${invite.share_token}`} size={120} level="M" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Tabs */}
