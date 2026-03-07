@@ -407,12 +407,18 @@ export function RackPartyDetail() {
           }
         }
         const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
-        await sendPartyInviteEmail(g.email, {
+        const result = await sendPartyInviteEmail(g.email, {
           eventTitle: invite.title, eventDate: invite.start_date,
           venueName: invite.venue_name, city: invite.city,
           eventImage: invite.cover_image_url, organizerName: organizer?.business_name,
           message: invite.message, rsvpUrl,
         }, organizer.id);
+        if (result?.success === false) {
+          console.error(`Email failed for ${g.email}:`, result.error);
+          if (sent === 0) { toast.error(`Email failed: ${result.error || 'Unknown error'}`); break; }
+          toast.warning(`Sent ${sent} but failed on ${g.email}: ${result.error}`);
+          break;
+        }
         sentIds.push(g.id); sent++;
         if (isFree) freeUsed++;
       }
@@ -434,18 +440,29 @@ export function RackPartyDetail() {
     if (pending.length === 0) { toast.info('No pending guests to remind'); return; }
     setSendingReminders(true);
     try {
+      let sent = 0;
+      const sentIds = [];
       for (const g of pending) {
         const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
-        await sendPartyInviteReminderEmail(g.email, {
+        const result = await sendPartyInviteReminderEmail(g.email, {
           eventTitle: invite.title, eventDate: invite.start_date,
           venueName: invite.venue_name, city: invite.city,
           rsvpUrl, goingCount: stats.going,
         }, organizer.id);
+        if (result?.success === false) {
+          console.error(`Reminder failed for ${g.email}:`, result.error);
+          if (sent === 0) { toast.error(`Reminder failed: ${result.error || 'Unknown error'}`); break; }
+          toast.warning(`Sent ${sent} reminders but failed on ${g.email}`);
+          break;
+        }
+        sentIds.push(g.id); sent++;
       }
-      await markReminded(pending.map(g => g.id));
-      await loadGuestsAndStats(invite.id);
-      logActivity(invite.id, 'reminder_sent', organizer?.business_name, { count: pending.length });
-      toast.success(`${pending.length} reminder${pending.length > 1 ? 's' : ''} sent!`);
+      if (sentIds.length > 0) {
+        await markReminded(sentIds);
+        await loadGuestsAndStats(invite.id);
+        logActivity(invite.id, 'reminder_sent', organizer?.business_name, { count: sent });
+        toast.success(`${sent} reminder${sent > 1 ? 's' : ''} sent!`);
+      }
     } catch (err) { console.error('Reminder error:', err); toast.error('Error sending reminders'); }
     finally { setSendingReminders(false); }
   }
