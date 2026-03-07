@@ -240,9 +240,12 @@ export function RackPartyDetail() {
 
   async function loadContacts() {
     try {
-      let query = supabase.from('contacts').select('id, name, email, phone')
-        .eq('organizer_id', organizer.id).order('name').limit(100);
-      if (contactSearch) query = query.or(`name.ilike.%${contactSearch}%,email.ilike.%${contactSearch}%`);
+      let query = supabase.from('contacts').select('id, full_name, email, phone')
+        .eq('organizer_id', organizer.id)
+        .eq('is_active', true)
+        .order('full_name')
+        .limit(500);
+      if (contactSearch) query = query.or(`full_name.ilike.%${contactSearch}%,email.ilike.%${contactSearch}%,phone.ilike.%${contactSearch}%`);
       const { data } = await query;
       setContacts(data || []);
     } catch {}
@@ -256,7 +259,7 @@ export function RackPartyDetail() {
     if (selectedContacts.length === 0) return;
     setAddingGuests(true);
     try {
-      const toAdd = selectedContacts.map(c => ({ name: c.name, email: c.email, phone: c.phone, source: 'contacts' }));
+      const toAdd = selectedContacts.map(c => ({ name: c.full_name || c.email || 'Guest', email: c.email, phone: c.phone, source: 'contacts' }));
       await addGuestsToInvite(invite.id, organizer.id, toAdd);
       setSelectedContacts([]);
       await loadGuestsAndStats(invite.id);
@@ -938,7 +941,7 @@ export function RackPartyDetail() {
                           {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{c.full_name || c.email || 'Unknown'}</p>
                           <p className="text-xs text-gray-400 truncate">{c.email || c.phone || '\u2014'}</p>
                         </div>
                       </button>
