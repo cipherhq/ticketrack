@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone, Users, Calendar, BookOpen, DollarSign, UserCircle, Grid3X3 } from 'lucide-react'
+import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone, Users, Calendar, BookOpen, DollarSign, UserCircle, Grid3X3, ChevronDown, PartyPopper } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 import {
@@ -156,20 +156,46 @@ export function WebLayout() {
 
             {/* Auth Buttons / User Profile */}
             <div className="hidden md:flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (user) {
-                    navigate('/create-event');
-                  } else {
-                    navigate('/login', { state: { from: '/create-event' } });
-                  }
-                }}
-                className="rounded-xl border-primary text-primary hover:bg-primary/10 flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Create Event
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="rounded-xl border-primary text-primary hover:bg-primary/10 flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (user) {
+                        navigate('/create-event');
+                      } else {
+                        navigate('/login', { state: { from: '/create-event' } });
+                      }
+                    }}
+                    className="cursor-pointer rounded-lg"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Create Event
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (user) {
+                        navigate('/rackparty/create');
+                      } else {
+                        navigate('/login', { state: { from: '/rackparty/create' } });
+                      }
+                    }}
+                    className="cursor-pointer rounded-lg"
+                  >
+                    <PartyPopper className="w-4 h-4 mr-2" />
+                    Create Party Invite
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               
               {isLoggedIn ? (
                 <DropdownMenu>
@@ -313,17 +339,37 @@ export function WebLayout() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-background border-t border-gray-200 dark:border-border max-h-[85vh] overflow-y-auto">
             <div className="px-4 py-3">
-              {/* Create Event CTA - Always visible */}
-              <button
-                onClick={() => {
-                  navigate('/create-event')
-                  setMobileMenuOpen(false)
-                }}
-                className="w-full mb-4 py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium flex items-center justify-center gap-2 touch-manipulation"
-              >
-                <Plus className="w-5 h-5" />
-                Create Event
-              </button>
+              {/* Create CTAs - Always visible */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <button
+                  onClick={() => {
+                    if (user) {
+                      navigate('/create-event');
+                    } else {
+                      navigate('/login', { state: { from: '/create-event' } });
+                    }
+                    setMobileMenuOpen(false)
+                  }}
+                  className="py-3 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium flex items-center justify-center gap-2 touch-manipulation"
+                >
+                  <Plus className="w-5 h-5" />
+                  Create Event
+                </button>
+                <button
+                  onClick={() => {
+                    if (user) {
+                      navigate('/rackparty/create');
+                    } else {
+                      navigate('/login', { state: { from: '/rackparty/create' } });
+                    }
+                    setMobileMenuOpen(false)
+                  }}
+                  className="py-3 px-4 border border-primary text-primary hover:bg-primary/10 rounded-xl font-medium flex items-center justify-center gap-2 touch-manipulation"
+                >
+                  <PartyPopper className="w-5 h-5" />
+                  Party Invite
+                </button>
+              </div>
 
               {/* Quick Actions Grid */}
               <div className="grid grid-cols-4 gap-2 mb-4">
@@ -571,6 +617,20 @@ export function WebLayout() {
                       className="hover:text-white transition-colors"
                     >
                       Create Event
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => {
+                        if (user) {
+                          navigate('/rackparty/create');
+                        } else {
+                          navigate('/login', { state: { from: '/rackparty/create' } });
+                        }
+                      }}
+                      className="hover:text-white transition-colors"
+                    >
+                      Create Party Invite
                     </button>
                   </li>
                   <li>
