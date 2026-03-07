@@ -352,10 +352,21 @@ export function WebInviteRSVP() {
                       </div>
                     )}
                     <h3 className="text-lg font-bold text-gray-900">
-                      {submitted ? 'Response Recorded!' : `You responded: ${statusLabels[selectedStatus]}`}
+                      {selectedStatus === 'going'
+                        ? "You're on the list! Let's gooo"
+                        : selectedStatus === 'maybe'
+                        ? "We'll keep a spot warm for you"
+                        : "We'll miss you!"}
                     </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {selectedStatus === 'going'
+                        ? 'Get ready for a good time'
+                        : selectedStatus === 'maybe'
+                        ? 'No pressure — decide whenever you want'
+                        : 'Maybe next time!'}
+                    </p>
                     {plusOnes > 0 && (
-                      <p className="text-sm text-gray-500 mt-1">+{plusOnes} guest{plusOnes > 1 ? 's' : ''}</p>
+                      <p className="text-sm text-gray-500 mt-1">+{plusOnes} guest{plusOnes > 1 ? 's' : ''} rolling with you</p>
                     )}
                   </div>
                   {!isShareLink && (
