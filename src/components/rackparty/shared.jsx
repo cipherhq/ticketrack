@@ -424,11 +424,11 @@ export function TemplatePreview({
   const baseH = captureHeight || (forCapture ? 800 : 380);
   const scaleFactor = baseW / 600;
   const fs = fontScale || 1;
-  const titleSize = Math.round(56 * fs * scaleFactor * (forCapture ? 1 : 0.47));
-  const labelSize = Math.round(20 * fs * scaleFactor * (forCapture ? 1 : 0.47));
-  const dateSize = Math.round(22 * fs * scaleFactor * (forCapture ? 1 : 0.47));
-  const venueSize = Math.round(20 * fs * scaleFactor * (forCapture ? 1 : 0.47));
-  const taglineSize = Math.round(18 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const titleSize = Math.round(80 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const labelSize = Math.round(24 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const dateSize = Math.round(26 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const venueSize = Math.round(24 * fs * scaleFactor * (forCapture ? 1 : 0.47));
+  const taglineSize = Math.round(22 * fs * scaleFactor * (forCapture ? 1 : 0.47));
   const emojiSize = Math.round(56 * scaleFactor * (forCapture ? 1 : 0.47));
   const stripeHeight = Math.round(8 * scaleFactor * (forCapture ? 1 : 0.47));
 
@@ -501,19 +501,20 @@ export function TemplatePreview({
         }}
       >
         <div style={{
-          fontSize: labelSize, fontWeight: 900, letterSpacing: Math.round(6 * scaleFactor * (forCapture ? 1 : 0.47)),
+          fontSize: labelSize, fontWeight: 900, letterSpacing: Math.round(8 * scaleFactor * (forCapture ? 1 : 0.47)),
           textTransform: 'uppercase', color: accentColor,
           marginBottom: Math.round(28 * scaleFactor * (forCapture ? 1 : 0.47)),
-          textShadow: '0 1px 4px rgba(0,0,0,0.3)',
+          textShadow: '0 2px 8px rgba(0,0,0,0.4)',
         }}>
           YOU&apos;RE INVITED
         </div>
         <div style={{
-          fontSize: titleSize, fontWeight: effectiveWeight, color: effectiveTextColor,
-          lineHeight: 1.15, maxWidth: '90%', wordBreak: 'break-word',
+          fontSize: titleSize, fontWeight: 900, color: effectiveTextColor,
+          lineHeight: 1.05, maxWidth: '95%', wordBreak: 'break-word',
           marginBottom: Math.round((tagline ? 12 : 36) * scaleFactor * (forCapture ? 1 : 0.47)),
-          textShadow: '0 3px 12px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)',
-          letterSpacing: forCapture ? -1 : -0.5,
+          textShadow: '0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4)',
+          letterSpacing: forCapture ? -2 : -1,
+          textTransform: 'uppercase',
           fontFamily: effectiveFont,
         }}>
           {partyName || 'Your Party Name'}

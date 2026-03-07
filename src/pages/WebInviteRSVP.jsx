@@ -256,7 +256,7 @@ export function WebInviteRSVP() {
               </div>
 
               {/* Event Title */}
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight rsvp-animate-title">
+              <h1 className="text-3xl sm:text-5xl font-black text-gray-900 leading-none tracking-tight uppercase rsvp-animate-title">
                 {invite?.title}
               </h1>
 
