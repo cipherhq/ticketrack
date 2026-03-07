@@ -43,11 +43,19 @@ const menuGroups = [
     ]
   },
   {
+    id: 'rackparty',
+    label: 'RackParty',
+    items: [
+      { title: 'Parties', icon: PartyPopper, path: '/organizer/rackparty', tip: 'Create and manage party invites' },
+      { title: 'Guest Book', icon: Users, path: '/organizer/rackparty/guestbook', tip: 'All guests across all parties' },
+      { title: 'Responses', icon: BarChart3, path: '/organizer/rackparty/responses', tip: 'RSVP analytics dashboard' },
+    ]
+  },
+  {
     id: 'marketing',
     label: 'Marketing',
     items: [
       { title: 'Communication Hub', icon: LayoutDashboard, path: '/organizer/hub', tip: 'Unified email, SMS, and WhatsApp campaigns' },
-      { title: 'RackParty', icon: PartyPopper, path: '/organizer/invites', tip: 'Create stunning party invites with RSVP tracking' },
       { title: 'Contacts', icon: Users, path: '/organizer/contacts', tip: 'Manage your audience contacts and segments' },
       { title: 'Automations', icon: Zap, path: '/organizer/automations', tip: 'Event reminders and automated messages' },
       { title: 'Message Credits', icon: Coins, path: '/organizer/credits', tip: 'Buy credits for SMS and WhatsApp' },
@@ -94,8 +102,8 @@ export function OrganizerLayout({ children }) {
   };
 
   const isActive = (path) => {
-    if (path === '/organizer') {
-      return location.pathname === '/organizer';
+    if (path === '/organizer' || path === '/organizer/rackparty') {
+      return location.pathname === path;
     }
     return location.pathname.startsWith(path);
   };

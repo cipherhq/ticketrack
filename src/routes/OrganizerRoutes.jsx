@@ -43,6 +43,11 @@ import { ProjectManager } from "@/pages/organizer/ProjectManager";
 import { TaxDocuments } from '@/pages/organizer/TaxDocuments';
 import { PostEventDashboard } from '@/pages/organizer/PostEventDashboard';
 import { PartyInvites } from '@/pages/organizer/PartyInvites';
+import { RackPartyList } from '@/pages/rackparty/RackPartyList';
+import { RackPartyCreate } from '@/pages/rackparty/RackPartyCreate';
+import { RackPartyDetail } from '@/pages/rackparty/RackPartyDetail';
+import { RackPartyGuestBook } from '@/pages/rackparty/RackPartyGuestBook';
+import { RackPartyResponses } from '@/pages/rackparty/RackPartyResponses';
 import { VenueLayoutDesigner } from '@/pages/organizer/VenueLayoutDesigner';
 import { VenueManagement } from '@/pages/organizer/VenueManagement';
 import { VenueDetails } from '@/pages/organizer/VenueDetails';
@@ -112,7 +117,12 @@ export function OrganizerRoutes() {
           <Route path="/stripe-connect" element={<StripeConnect />} />
           <Route path="/paystack-connect" element={<PaystackFlutterwaveConnect />} />
           <Route path="/flutterwave-connect" element={<PaystackFlutterwaveConnect />} />
-          <Route path="/invites" element={<PartyInvites />} />
+          <Route path="/invites" element={<Navigate to="/organizer/rackparty" replace />} />
+          <Route path="/rackparty" element={<RackPartyList />} />
+          <Route path="/rackparty/create" element={<RackPartyCreate />} />
+          <Route path="/rackparty/guestbook" element={<RackPartyGuestBook />} />
+          <Route path="/rackparty/responses" element={<RackPartyResponses />} />
+          <Route path="/rackparty/:id" element={<RackPartyDetail />} />
           <Route path="/support" element={<OrganizerSupport />} />
           <Route path="/team" element={<TeamManagement />} />
           <Route path="/projects" element={<ProjectManager />} />

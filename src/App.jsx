@@ -153,6 +153,10 @@ const FinanceApp = lazyWithRetry(
   () => import('./routes/FinanceRoutes').then(m => ({ default: m.FinanceApp })),
   'FinanceApp'
 );
+const RackPartyRoutes = lazyWithRetry(
+  () => import('./routes/RackPartyRoutes').then(m => ({ default: m.RackPartyRoutes })),
+  'RackPartyRoutes'
+);
 
 function App() {
   return (
@@ -208,6 +212,13 @@ function App() {
               <Route path="/finance/*" element={
                 <Suspense fallback={<PageLoader />}>
                   <FinanceApp />
+                </Suspense>
+              } />
+
+              {/* RackParty Standalone Routes - Lazy loaded */}
+              <Route path="/rackparty/*" element={
+                <Suspense fallback={<PageLoader />}>
+                  <RackPartyRoutes />
                 </Suspense>
               } />
 

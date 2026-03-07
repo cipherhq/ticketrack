@@ -271,6 +271,91 @@ export async function incrementFreeEmailUsage(organizerId, count) {
   return current + count;
 }
 
+// ============================================================================
+// NEW: ID-BASED LOOKUP, CROSS-PARTY GUESTS, ANALYTICS
+// ============================================================================
+
+export async function getInviteById(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invites')
+    .select('*')
+    .eq('id', inviteId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getAllOrganizerGuests(organizerId, { search, status, partyId } = {}) {
+  let query = supabase
+    .from('party_invite_guests')
+    .select('*, invite:party_invites!invite_id(id, title, start_date)')
+    .eq('organizer_id', organizerId)
+    .order('created_at', { ascending: false });
+
+  if (status) {
+    query = query.eq('rsvp_status', status);
+  }
+  if (partyId) {
+    query = query.eq('invite_id', partyId);
+  }
+  if (search) {
+    query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getOrganizerPartyAnalytics(organizerId) {
+  // Load all invites
+  const { data: invites, error: invErr } = await supabase
+    .from('party_invites')
+    .select('*')
+    .eq('organizer_id', organizerId)
+    .order('created_at', { ascending: false });
+
+  if (invErr) throw invErr;
+
+  // Load all guests across all invites
+  const { data: allGuests, error: gErr } = await supabase
+    .from('party_invite_guests')
+    .select('invite_id, rsvp_status, rsvp_responded_at')
+    .eq('organizer_id', organizerId);
+
+  if (gErr) throw gErr;
+
+  const guests = allGuests || [];
+  const parties = invites || [];
+
+  // Compute per-party stats
+  const perParty = parties.map(inv => {
+    const partyGuests = guests.filter(g => g.invite_id === inv.id);
+    const total = partyGuests.length;
+    const going = partyGuests.filter(g => g.rsvp_status === 'going').length;
+    const maybe = partyGuests.filter(g => g.rsvp_status === 'maybe').length;
+    const pending = partyGuests.filter(g => g.rsvp_status === 'pending').length;
+    const declined = partyGuests.filter(g => g.rsvp_status === 'declined').length;
+    const responded = partyGuests.filter(g => g.rsvp_responded_at).length;
+    return { ...inv, total, going, maybe, pending, declined, responded };
+  });
+
+  // Compute totals
+  const totalParties = parties.length;
+  const totalGuests = guests.length;
+  const going = guests.filter(g => g.rsvp_status === 'going').length;
+  const maybe = guests.filter(g => g.rsvp_status === 'maybe').length;
+  const pending = guests.filter(g => g.rsvp_status === 'pending').length;
+  const declined = guests.filter(g => g.rsvp_status === 'declined').length;
+  const responded = guests.filter(g => g.rsvp_responded_at).length;
+
+  return {
+    totals: { totalParties, totalGuests, going, maybe, pending, declined, responded },
+    perParty,
+  };
+}
+
 // Get going/maybe guests for public display (first names only)
 export async function getPublicGuestList(inviteId) {
   const { data, error } = await supabase
