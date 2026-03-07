@@ -139,7 +139,7 @@ export async function getGuestByRsvpToken(rsvpToken) {
   return data;
 }
 
-export async function submitGuestRSVP(rsvpToken, { status, plusOnes, plusOneNames, note }) {
+export async function submitGuestRSVP(rsvpToken, { status, plusOnes, plusOneNames, note, email, phone }) {
   const updates = {
     rsvp_status: status,
     rsvp_responded_at: new Date().toISOString(),
@@ -147,6 +147,8 @@ export async function submitGuestRSVP(rsvpToken, { status, plusOnes, plusOneName
   if (plusOnes !== undefined) updates.plus_ones = plusOnes;
   if (plusOneNames !== undefined) updates.plus_one_names = plusOneNames;
   if (note !== undefined) updates.note = note;
+  if (email) updates.email = email;
+  if (phone) updates.phone = phone;
 
   const { data, error } = await supabase
     .from('party_invite_guests')
@@ -160,7 +162,7 @@ export async function submitGuestRSVP(rsvpToken, { status, plusOnes, plusOneName
 }
 
 // Register a new guest from share link (no rsvp_token pre-assigned)
-export async function registerAndRSVP(inviteId, organizerId, { name, email, status, plusOnes, plusOneNames, note }) {
+export async function registerAndRSVP(inviteId, organizerId, { name, email, phone, status, plusOnes, plusOneNames, note }) {
   const { data, error } = await supabase
     .from('party_invite_guests')
     .insert({
@@ -168,6 +170,7 @@ export async function registerAndRSVP(inviteId, organizerId, { name, email, stat
       organizer_id: organizerId,
       name,
       email: email || null,
+      phone: phone || null,
       rsvp_status: status,
       plus_ones: plusOnes || 0,
       plus_one_names: plusOneNames || [],

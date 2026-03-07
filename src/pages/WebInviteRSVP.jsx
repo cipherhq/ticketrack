@@ -38,6 +38,7 @@ export function WebInviteRSVP() {
   // Form state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [plusOnes, setPlusOnes] = useState(0);
   const [plusOneNames, setPlusOneNames] = useState([]);
@@ -122,6 +123,7 @@ export function WebInviteRSVP() {
         await registerAndRSVP(invite.id, invite.organizer_id, {
           name: name.trim(),
           email: email.trim() || null,
+          phone: phone.trim() || null,
           status: selectedStatus,
           plusOnes,
           plusOneNames: plusOneNames.filter(n => n.trim()),
@@ -133,6 +135,8 @@ export function WebInviteRSVP() {
           plusOnes,
           plusOneNames: plusOneNames.filter(n => n.trim()),
           note: note.trim(),
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
         });
       }
       setSubmitted(true);
@@ -394,11 +398,21 @@ export function WebInviteRSVP() {
                       />
                       <Input
                         type="email"
-                        placeholder="Email (optional)"
+                        placeholder="Email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         className="rounded-xl h-12"
                       />
+                      <Input
+                        type="tel"
+                        placeholder="Phone number"
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        className="rounded-xl h-12"
+                      />
+                      <p className="text-[11px] text-gray-400 text-center leading-tight">
+                        So the host can keep you in the loop — no spam, just party updates
+                      </p>
                     </div>
                   )}
 
@@ -473,6 +487,34 @@ export function WebInviteRSVP() {
                           ))}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Contact info for direct RSVP guests missing email/phone */}
+                  {!isShareLink && selectedStatus && (!guest?.email || !guest?.phone) && (
+                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
+                      <p className="text-xs font-medium text-gray-500 text-center">Stay in the loop — drop your details so the host can reach you</p>
+                      {!guest?.email && (
+                        <Input
+                          type="email"
+                          placeholder="Email"
+                          value={email}
+                          onChange={e => setEmail(e.target.value)}
+                          className="rounded-xl h-11"
+                        />
+                      )}
+                      {!guest?.phone && (
+                        <Input
+                          type="tel"
+                          placeholder="Phone number"
+                          value={phone}
+                          onChange={e => setPhone(e.target.value)}
+                          className="rounded-xl h-11"
+                        />
+                      )}
+                      <p className="text-[11px] text-gray-400 text-center leading-tight">
+                        Only the host sees this — just for party updates, nothing else
+                      </p>
                     </div>
                   )}
 
