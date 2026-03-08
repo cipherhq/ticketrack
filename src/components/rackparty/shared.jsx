@@ -238,6 +238,7 @@ export function StepIndicator({ currentStep }) {
 }
 
 export function DateTimePicker({ label, value, onChange }) {
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const dateObj = useMemo(() => value ? new Date(value) : null, [value]);
   const hours24 = dateObj ? dateObj.getHours() : null;
   const displayHour = hours24 !== null ? (hours24 === 0 ? '12' : hours24 > 12 ? String(hours24 - 12) : String(hours24)) : '';
@@ -249,6 +250,7 @@ export function DateTimePicker({ label, value, onChange }) {
     const base = dateObj || new Date();
     const merged = setDate(day, { hours: base.getHours(), minutes: base.getMinutes() });
     onChange(format(merged, "yyyy-MM-dd'T'HH:mm"));
+    setCalendarOpen(false);
   };
 
   const handleTimeChange = (type, val) => {
@@ -277,7 +279,7 @@ export function DateTimePicker({ label, value, onChange }) {
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium">{label}</Label>
-      <Popover>
+      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger asChild>
           <button className="w-full flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl text-left hover:border-primary/40 transition-colors bg-white">
             <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
