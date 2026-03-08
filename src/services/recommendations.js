@@ -269,22 +269,29 @@ export async function getForYouFeed(limit = 30) {
   // Add variety by mixing in some random upcoming events
   const trending = await getTrendingEvents(10);
   
-  // Merge and dedupe
-  const seen = new Set();
+  // Merge and dedupe by ID and by title+date to avoid visual duplicates
+  const seenIds = new Set();
+  const seenKeys = new Set();
   const feed = [];
-  
+
+  const getDedupeKey = (event) => `${(event.title || '').toLowerCase().trim()}|${event.start_date}`;
+
   // Add recommendations first (they're scored)
   for (const event of recommendations) {
-    if (!seen.has(event.id)) {
-      seen.add(event.id);
+    const key = getDedupeKey(event);
+    if (!seenIds.has(event.id) && !seenKeys.has(key)) {
+      seenIds.add(event.id);
+      seenKeys.add(key);
       feed.push({ ...event, source: 'recommended' });
     }
   }
-  
+
   // Add some trending events
   for (const event of trending) {
-    if (!seen.has(event.id) && feed.length < limit) {
-      seen.add(event.id);
+    const key = getDedupeKey(event);
+    if (!seenIds.has(event.id) && !seenKeys.has(key) && feed.length < limit) {
+      seenIds.add(event.id);
+      seenKeys.add(key);
       feed.push({ ...event, source: 'trending' });
     }
   }
