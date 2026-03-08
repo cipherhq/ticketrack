@@ -1,4 +1,4 @@
-import { currencyOptions, formatPrice, getCurrencyFromCountryCode } from '@/config/currencies'
+import { currencyOptions, formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -115,17 +115,14 @@ export function WebCreateEvent() {
     const setDefaultCurrency = async () => {
       if (!user?.id || formData.currency) return;
       try {
-        // Get user country from profile
         const { data: profile } = await supabase
           .from("profiles")
           .select("country_code")
           .eq("id", user.id)
           .single();
         if (profile?.country_code) {
-          const currency = await getCurrencyFromCountryCode(supabase, profile.country_code);
-          if (currency) {
-            setFormData(prev => ({ ...prev, currency }));
-          }
+          const currency = getDefaultCurrency(profile.country_code);
+          setFormData(prev => ({ ...prev, currency }));
         }
       } catch (err) {
         console.error("Error getting default currency:", err);

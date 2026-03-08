@@ -381,26 +381,14 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
   }, []);
 
 
-  // Auto-set currency from organizer country
+  // Auto-set currency from organizer country — use hardcoded mapping as primary source
   useEffect(() => {
-    const setCurrencyFromCountry = async () => {
-      // Skip if editing existing event or currency already set
-      if (isEditMode || formData.currency) return;
-      
-      if (organizer?.country_code) {
-        const currency = await getCurrencyFromCountryCode(supabase, organizer.country_code);
-        if (currency) {
-          setFormData(prev => ({ ...prev, currency }));
-        } else {
-          // Fallback to hardcoded mapping when DB lookup fails
-          const fallback = getDefaultCurrency(organizer.country_code);
-          if (fallback) {
-            setFormData(prev => ({ ...prev, currency: fallback }));
-          }
-        }
-      }
-    };
-    setCurrencyFromCountry();
+    if (isEditMode || formData.currency) return;
+
+    if (organizer?.country_code) {
+      const currency = getDefaultCurrency(organizer.country_code);
+      setFormData(prev => ({ ...prev, currency }));
+    }
   }, [organizer?.country_code, isEditMode]);
 
   // Show pre-create payment gateway prompt for new events (first event only)
@@ -934,11 +922,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
       
       if (updateError) throw updateError;
       
-      // Get currency for selected country
-      const currency = await getCurrencyFromCountryCode(supabase, countryCode);
-      if (currency) {
-        setFormData(prev => ({ ...prev, currency }));
-      }
+      // Set currency for selected country
+      const currency = getDefaultCurrency(countryCode);
+      setFormData(prev => ({ ...prev, currency }));
     } catch (err) {
       console.error("Error saving country:", err);
       showError("Failed to save country. Please try again.");
