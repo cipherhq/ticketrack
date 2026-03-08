@@ -577,14 +577,14 @@ export function RackPartyDetail() {
   if (!invite) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(basePath)} className="gap-1">
-            <ChevronLeft className="w-4 h-4" /> Back
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Button variant="ghost" size="sm" onClick={() => navigate(basePath)} className="gap-1 px-2 sm:px-3 shrink-0">
+            <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back</span>
           </Button>
-          <div>
+          <div className="min-w-0">
             {editingTitle ? (
               <input
                 autoFocus
@@ -592,11 +592,11 @@ export function RackPartyDetail() {
                 onChange={e => setEditTitleValue(e.target.value)}
                 onBlur={handleSaveTitle}
                 onKeyDown={e => { if (e.key === 'Enter') handleSaveTitle(); if (e.key === 'Escape') setEditingTitle(false); }}
-                className="text-2xl font-bold text-gray-900 border-b-2 border-primary bg-transparent outline-none w-full"
+                className="text-lg sm:text-2xl font-bold text-gray-900 border-b-2 border-primary bg-transparent outline-none w-full"
               />
             ) : (
               <h1
-                className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-primary/80 transition-colors group flex items-center gap-2"
+                className="text-lg sm:text-2xl font-bold text-gray-900 cursor-pointer hover:text-primary/80 transition-colors group flex items-center gap-2 truncate"
                 onClick={() => { setEditTitleValue(invite.title || ''); setEditingTitle(true); }}
                 title="Click to edit title"
               >
@@ -626,21 +626,21 @@ export function RackPartyDetail() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
         {[
           { label: 'Going', count: stats.going, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
           { label: 'Maybe', count: stats.maybe, color: 'text-amber-600', bg: 'bg-amber-50', icon: HelpCircle },
           { label: 'Pending', count: stats.pending, color: 'text-blue-600', bg: 'bg-blue-50', icon: Clock },
           { label: 'Declined', count: stats.declined, color: 'text-gray-500', bg: 'bg-gray-50', icon: X },
-          { label: 'Total Expected', count: totalExpected, color: 'text-violet-600', bg: 'bg-violet-50', icon: Users },
+          { label: 'Expected', count: totalExpected, color: 'text-violet-600', bg: 'bg-violet-50', icon: Users },
         ].map(s => (
           <Card key={s.label} className="rounded-2xl">
-            <CardContent className="p-4 text-center">
-              <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center mx-auto mb-2`}>
-                <s.icon className={`w-5 h-5 ${s.color}`} />
+            <CardContent className="p-2.5 sm:p-4 text-center">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${s.bg} flex items-center justify-center mx-auto mb-1.5 sm:mb-2`}>
+                <s.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${s.color}`} />
               </div>
-              <p className="text-2xl font-bold text-gray-900">{s.count}</p>
-              <p className="text-xs text-gray-500">{s.label}</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{s.count}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500">{s.label}</p>
             </CardContent>
           </Card>
         ))}
@@ -648,17 +648,17 @@ export function RackPartyDetail() {
 
       {/* Credit Info Banner */}
       <Card className="rounded-2xl border-blue-200 bg-blue-50/50">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">
-                Free Emails: <span className="font-bold">{freeEmailsRemaining} / {FREE_EMAIL_LIMIT}</span> remaining
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+              <span className="text-xs sm:text-sm font-medium text-blue-900">
+                Free: <span className="font-bold">{freeEmailsRemaining}/{FREE_EMAIL_LIMIT}</span>
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+              <span className="text-xs sm:text-sm font-medium text-blue-900">
                 Credits: <span className="font-bold">{creditBalance}</span>
               </span>
             </div>
@@ -679,36 +679,36 @@ export function RackPartyDetail() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
         <Button
           onClick={handleSendInvites}
           disabled={sendingInvites || unsentEmailGuests.length === 0 || (paidEmailCount > 0 && creditBalance < emailCreditsNeeded)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-1.5 text-xs sm:text-sm"
         >
-          {sendingInvites ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-          Send Email Invites ({unsentEmailGuests.length})
+          {sendingInvites ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4 shrink-0" />}
+          <span className="truncate">Email ({unsentEmailGuests.length})</span>
         </Button>
         <Button
           onClick={handleSendSmsInvites}
           disabled={sendingSms || unsentSmsGuests.length === 0 || creditBalance < smsCreditsNeeded}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-1.5 text-xs sm:text-sm"
         >
-          {sendingSms ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-          Send SMS Invites ({unsentSmsGuests.length})
+          {sendingSms ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4 shrink-0" />}
+          <span className="truncate">SMS ({unsentSmsGuests.length})</span>
         </Button>
         <Button
           onClick={handleSendReminders}
           disabled={sendingReminders || guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length === 0}
-          variant="outline" className="rounded-xl gap-2"
+          variant="outline" className="rounded-xl gap-1.5 text-xs sm:text-sm"
         >
-          {sendingReminders ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />}
-          Send Reminders ({guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length})
+          {sendingReminders ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4 shrink-0" />}
+          <span className="truncate">Remind ({guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length})</span>
         </Button>
-        <Button variant="outline" onClick={copyShareLink} className="rounded-xl gap-2">
-          <Copy className="w-4 h-4" /> Copy Share Link
+        <Button variant="outline" onClick={copyShareLink} className="rounded-xl gap-1.5 text-xs sm:text-sm">
+          <Copy className="w-4 h-4 shrink-0" /> <span className="truncate">Share Link</span>
         </Button>
-        <Button variant="outline" onClick={handleDownloadFlyerWithQR} className="rounded-xl gap-2">
-          <Download className="w-4 h-4" /> Flyer with QR
+        <Button variant="outline" onClick={handleDownloadFlyerWithQR} className="rounded-xl gap-1.5 text-xs sm:text-sm col-span-2 sm:col-span-1">
+          <Download className="w-4 h-4 shrink-0" /> <span className="truncate">Flyer with QR</span>
         </Button>
       </div>
 
@@ -753,7 +753,7 @@ export function RackPartyDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-1 overflow-x-auto scrollbar-hide">
+      <div className="flex border-b border-gray-200 gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide -mx-1 px-1">
         {[
           { id: 'guests', label: 'Guests', icon: Users },
           { id: 'add', label: 'Add', icon: UserPlus },
@@ -766,13 +766,13 @@ export function RackPartyDetail() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            <tab.icon className="w-4 h-4" />
+            <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             {tab.label}
           </button>
         ))}
@@ -781,7 +781,7 @@ export function RackPartyDetail() {
       {/* Tab: Guest List */}
       {activeTab === 'guests' && (
         <Card className="rounded-2xl">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[160px] rounded-lg h-9 text-sm">
@@ -878,22 +878,23 @@ export function RackPartyDetail() {
       {/* Tab: Add Guests */}
       {activeTab === 'add' && (
         <Card className="rounded-2xl">
-          <CardContent className="p-4 space-y-4">
-            <div className="flex gap-2">
+          <CardContent className="p-3 sm:p-4 space-y-4">
+            <div className="grid grid-cols-2 sm:flex gap-2">
               {[
-                { id: 'manual', label: 'Manual Entry' },
-                { id: 'paste', label: 'Paste List' },
-                { id: 'contacts', label: 'From Contacts' },
-                { id: 'upload', label: 'Upload CSV', icon: Upload },
+                { id: 'manual', label: 'Manual', fullLabel: 'Manual Entry', icon: Plus },
+                { id: 'paste', label: 'Paste', fullLabel: 'Paste List', icon: ClipboardList },
+                { id: 'contacts', label: 'Contacts', fullLabel: 'From Contacts', icon: Users },
+                { id: 'upload', label: 'CSV', fullLabel: 'Upload CSV', icon: Upload },
               ].map(m => (
                 <button
                   key={m.id} onClick={() => { setAddMode(m.id); if (m.id !== 'upload') setCsvParsed([]); }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center sm:justify-start gap-1.5 ${
                     addMode === m.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
                   {m.icon && <m.icon className="w-3.5 h-3.5" />}
-                  {m.label}
+                  <span className="sm:hidden">{m.label}</span>
+                  <span className="hidden sm:inline">{m.fullLabel}</span>
                 </button>
               ))}
             </div>
@@ -1031,7 +1032,7 @@ export function RackPartyDetail() {
       {/* Tab: Design */}
       {activeTab === 'design' && (
         <Card className="rounded-2xl">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <DesignTab invite={invite} organizer={organizer} onInviteUpdate={setInvite} />
           </CardContent>
         </Card>
@@ -1040,7 +1041,7 @@ export function RackPartyDetail() {
       {/* Tab: Wall */}
       {activeTab === 'wall' && (
         <Card className="rounded-2xl">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <WallTab invite={invite} organizer={organizer} />
           </CardContent>
         </Card>
@@ -1049,7 +1050,7 @@ export function RackPartyDetail() {
       {/* Tab: Announcements */}
       {activeTab === 'announcements' && (
         <Card className="rounded-2xl">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <AnnouncementsTab invite={invite} organizer={organizer} />
           </CardContent>
         </Card>
@@ -1058,7 +1059,7 @@ export function RackPartyDetail() {
       {/* Tab: Activity */}
       {activeTab === 'activity' && (
         <Card className="rounded-2xl">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <ActivityTab invite={invite} />
           </CardContent>
         </Card>
@@ -1067,7 +1068,7 @@ export function RackPartyDetail() {
       {/* Tab: Settings */}
       {activeTab === 'settings' && (
         <Card className="rounded-2xl">
-          <CardContent className="p-4 space-y-5">
+          <CardContent className="p-3 sm:p-4 space-y-5">
             <div>
               <Label className="text-sm font-medium">Title</Label>
               <Input value={settingsTitle} onChange={e => setSettingsTitle(e.target.value)} placeholder="Invite title" className="rounded-xl mt-1" />
@@ -1139,9 +1140,9 @@ export function RackPartyDetail() {
               <Label className="text-sm font-medium">Shareable Invite Link</Label>
               <p className="text-xs text-gray-400 mb-2">Anyone with this link can RSVP (they'll enter their name)</p>
               <div className="flex items-center gap-2">
-                <Input readOnly value={`${APP_URL}/invite/${invite.share_token}`} className="rounded-lg text-sm bg-gray-50 flex-1" />
+                <Input readOnly value={`${APP_URL}/invite/${invite.share_token}`} className="rounded-lg text-xs sm:text-sm bg-gray-50 flex-1 min-w-0" />
                 <Button variant="outline" size="sm" onClick={copyShareLink} className="rounded-lg gap-1 shrink-0">
-                  <Copy className="w-3.5 h-3.5" /> Copy
+                  <Copy className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Copy</span>
                 </Button>
               </div>
             </div>

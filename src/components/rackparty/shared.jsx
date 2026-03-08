@@ -203,12 +203,12 @@ export function statusBadge(status) {
 
 export function StepIndicator({ currentStep }) {
   return (
-    <div className="flex items-center justify-center gap-0 w-full max-w-md mx-auto">
+    <div className="flex items-center justify-center gap-0 w-full max-w-lg mx-auto px-2">
       {WIZARD_STEPS.map((step, i) => (
         <div key={step.number} className="flex items-center">
           <div className="flex flex-col items-center">
             <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors ${
                 step.number < currentStep
                   ? 'bg-primary text-white'
                   : step.number === currentStep
@@ -216,9 +216,9 @@ export function StepIndicator({ currentStep }) {
                   : 'border-2 border-gray-300 text-gray-400 bg-white'
               }`}
             >
-              {step.number < currentStep ? <Check className="w-4 h-4" /> : step.number}
+              {step.number < currentStep ? <Check className="w-3.5 h-3.5" /> : step.number}
             </div>
-            <span className={`text-xs mt-1 ${
+            <span className={`text-[10px] sm:text-xs mt-1 ${
               step.number <= currentStep ? 'text-primary font-medium' : 'text-gray-400'
             }`}>
               {step.label}
@@ -226,7 +226,7 @@ export function StepIndicator({ currentStep }) {
           </div>
           {i < WIZARD_STEPS.length - 1 && (
             <div
-              className={`w-12 sm:w-16 h-0.5 mb-5 mx-1 transition-colors ${
+              className={`w-6 sm:w-12 h-0.5 mb-5 mx-0.5 sm:mx-1 transition-colors ${
                 step.number < currentStep ? 'bg-primary' : 'bg-gray-300'
               }`}
             />
@@ -296,10 +296,10 @@ export function DateTimePicker({ label, value, onChange }) {
           />
         </PopoverContent>
       </Popover>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <Clock className="w-4 h-4 text-gray-400 shrink-0" />
         <Select value={displayHour} onValueChange={v => handleTimeChange('hour', v)}>
-          <SelectTrigger className="w-[68px] rounded-lg h-10 text-sm">
+          <SelectTrigger className="w-[60px] sm:w-[68px] rounded-lg h-10 text-sm">
             <SelectValue placeholder="Hr" />
           </SelectTrigger>
           <SelectContent className="max-h-48">
@@ -310,7 +310,7 @@ export function DateTimePicker({ label, value, onChange }) {
         </Select>
         <span className="text-gray-500 font-medium">:</span>
         <Select value={minute} onValueChange={v => handleTimeChange('minute', v)}>
-          <SelectTrigger className="w-[68px] rounded-lg h-10 text-sm">
+          <SelectTrigger className="w-[60px] sm:w-[68px] rounded-lg h-10 text-sm">
             <SelectValue placeholder="Min" />
           </SelectTrigger>
           <SelectContent className="max-h-48">
@@ -320,7 +320,7 @@ export function DateTimePicker({ label, value, onChange }) {
           </SelectContent>
         </Select>
         <Select value={ampm} onValueChange={v => handleTimeChange('ampm', v)}>
-          <SelectTrigger className="w-[72px] rounded-lg h-10 text-sm font-medium">
+          <SelectTrigger className="w-[62px] sm:w-[72px] rounded-lg h-10 text-sm font-medium">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -335,11 +335,11 @@ export function DateTimePicker({ label, value, onChange }) {
 
 export function Step1_PartyName({ value, onChange, onNext }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+    <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-2 sm:px-4">
+      <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
         What is the name of your party?
       </h2>
-      <p className="text-gray-500 mb-8 text-center">Give your party a name that guests will remember</p>
+      <p className="text-gray-500 mb-6 sm:mb-8 text-center text-sm sm:text-base">Give your party a name that guests will remember</p>
       <Input
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -361,11 +361,11 @@ export function Step1_PartyName({ value, onChange, onNext }) {
 
 export function Step2_DateTime({ startDate, endDate, onChangeStart, onChangeEnd, onNext, onBack }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+    <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-2 sm:px-4">
+      <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
         When is your party?
       </h2>
-      <p className="text-gray-500 mb-8 text-center">You can always add or change this later</p>
+      <p className="text-gray-500 mb-6 sm:mb-8 text-center text-sm sm:text-base">You can always add or change this later</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-lg">
         <DateTimePicker label="Start" value={startDate} onChange={onChangeStart} />
         <DateTimePicker label="End" value={endDate} onChange={onChangeEnd} />
@@ -390,11 +390,11 @@ export function Step3_Location({ venueName, city, address, onChangeVenue, onChan
   };
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
-        Where is your party taking place?
+    <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-2 sm:px-4">
+      <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+        Where is your party?
       </h2>
-      <p className="text-gray-500 mb-8 text-center">Search for a venue or enter the details manually</p>
+      <p className="text-gray-500 mb-6 sm:mb-8 text-center text-sm sm:text-base">Search for a venue or enter manually</p>
       <div className="space-y-4 w-full max-w-md">
         <div>
           <Label className="text-sm font-medium">Search Venue</Label>
@@ -799,7 +799,9 @@ export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, onNex
       if (onNext) { onNext(file); } else { onCreate(file); }
     } catch (err) {
       console.error('Error generating cover image:', err);
-      toast.error('Failed to generate cover image');
+      toast.error('Cover generation failed — continuing without it');
+      // Still proceed even if image generation fails (common on mobile)
+      if (onNext) { onNext(); } else { onCreate(); }
     } finally {
       setGeneratingImage(false);
     }
@@ -836,11 +838,11 @@ export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, onNex
   const hasSelection = (mode === 'template' || mode === 'blend') ? !!activeTemplate : !!coverImage;
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+    <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-1 sm:px-4">
+      <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
         Add a cover image
       </h2>
-      <p className="text-gray-500 mb-8 text-center">Pick a themed template or upload your own</p>
+      <p className="text-gray-500 mb-6 sm:mb-8 text-center text-sm sm:text-base">Pick a theme or upload your own</p>
       <div className="w-full max-w-2xl">
         <Tabs value={mode} onValueChange={setMode}>
           <TabsList className="w-full grid grid-cols-3 mb-6">
@@ -975,13 +977,13 @@ export function Step5_Options({
   onBack, onCreate, creating,
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
+    <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-2 sm:px-4">
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
         Party options
       </h2>
-      <p className="text-gray-500 mb-8 text-center">Set the vibes before you launch</p>
+      <p className="text-gray-500 mb-6 sm:mb-8 text-center text-sm sm:text-base">Set the vibes before you launch</p>
 
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-5">
         {/* Plus Ones */}
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
           <div className="flex items-center gap-3">

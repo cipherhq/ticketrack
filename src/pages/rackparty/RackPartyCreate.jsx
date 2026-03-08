@@ -83,19 +83,19 @@ export function RackPartyCreate() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(basePath)} className="gap-1">
-            <ChevronLeft className="w-4 h-4" /> Back
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate(basePath)} className="gap-1 px-2 sm:px-3">
+            <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back</span>
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Create a Party</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Create a Party</h1>
         </div>
-        <span className="text-sm text-gray-400">Step {createStep} of 5</span>
+        <span className="text-xs sm:text-sm text-gray-400">Step {createStep}/5</span>
       </div>
 
       <Card className="rounded-2xl">
-        <CardContent className="p-6">
+        <CardContent className="p-3 sm:p-6">
           <StepIndicator currentStep={createStep} />
 
           {createStep === 1 && (
