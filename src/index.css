@@ -241,35 +241,128 @@ img[alt*="tickettrack"] {
   to { opacity: 1; transform: translateX(0); }
 }
 
+/* Envelope Animation */
+@keyframes envelopeFlapOpen {
+  0% { transform: rotateX(0deg); }
+  100% { transform: rotateX(-180deg); }
+}
+@keyframes envelopeCardSlideUp {
+  0% { transform: translateY(60%); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes envelopeBodyFade {
+  0% { opacity: 1; transform: scale(1); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.92) translateY(30px); }
+}
+@keyframes envelopeSealPop {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.8; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.envelope-wrapper {
+  perspective: 800px;
+  animation: envelopeBodyFade 2.2s ease-in-out forwards;
+}
+.envelope-body {
+  position: relative;
+  background: linear-gradient(145deg, #e8d5b7, #d4b896, #c9a87c);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+  overflow: visible;
+  min-height: 200px;
+}
+.envelope-body::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px dashed rgba(255,255,255,0.15);
+  border-radius: 10px;
+  pointer-events: none;
+}
+.envelope-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  transform-origin: top center;
+  animation: envelopeFlapOpen 0.8s ease-in-out 0.5s forwards;
+  z-index: 10;
+}
+.envelope-flap-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #d4b896, #c9a87c);
+  clip-path: polygon(0 0, 50% 100%, 100% 0);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.envelope-flap-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent);
+  clip-path: polygon(0 0, 50% 100%, 100% 0);
+}
+.envelope-seal {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  animation: envelopeSealPop 0.4s ease-out 0.4s forwards;
+}
+.envelope-seal-circle {
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle at 35% 35%, #c0392b, #922b21);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  color: #fde8d0;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+}
+
+.rsvp-card-reveal {
+  animation: envelopeCardSlideUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1.2s both;
+}
+
 .rsvp-animate-card {
   animation: rsvpScaleIn 0.5s ease-out both;
-  animation-delay: 0s;
+  animation-delay: 2s;
 }
 .rsvp-animate-title {
   animation: rsvpFadeInUp 0.5s ease-out both;
-  animation-delay: 0.2s;
+  animation-delay: 2.1s;
 }
 .rsvp-animate-host {
   animation: rsvpSlideInLeft 0.4s ease-out both;
-  animation-delay: 0.35s;
+  animation-delay: 2.2s;
 }
 .rsvp-animate-detail-1 {
   animation: rsvpSlideInLeft 0.4s ease-out both;
-  animation-delay: 0.45s;
+  animation-delay: 2.3s;
 }
 .rsvp-animate-detail-2 {
   animation: rsvpSlideInLeft 0.4s ease-out both;
-  animation-delay: 0.55s;
+  animation-delay: 2.4s;
 }
 .rsvp-animate-message {
   animation: rsvpFadeInUp 0.4s ease-out both;
-  animation-delay: 0.6s;
+  animation-delay: 2.5s;
 }
 .rsvp-animate-buttons {
   animation: rsvpFadeInUp 0.5s ease-out both;
-  animation-delay: 0.7s;
+  animation-delay: 2.6s;
 }
 .rsvp-animate-guest-list {
   animation: rsvpFadeInUp 0.4s ease-out both;
-  animation-delay: 0.8s;
+  animation-delay: 2.7s;
 }

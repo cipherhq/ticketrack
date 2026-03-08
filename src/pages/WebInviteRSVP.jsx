@@ -237,19 +237,34 @@ export function WebInviteRSVP() {
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-start justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
+
+          {/* Envelope Animation */}
+          <div className="envelope-wrapper pointer-events-none" aria-hidden="true">
+            <div className="envelope-body" style={{ height: 220 }}>
+              <div className="envelope-flap">
+                <div className="envelope-flap-inner" />
+              </div>
+              <div className="envelope-seal">
+                <div className="envelope-seal-circle">
+                  {(invite?.title || 'P')[0]}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Card */}
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden rsvp-animate-card">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden rsvp-card-reveal">
             {/* Event Image Hero */}
             {coverImage && (
-              <div className="relative h-52 sm:h-60">
+              <div className="relative h-56 sm:h-72">
                 <img src={coverImage} alt={invite?.title} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
               </div>
             )}
 
             <div className="p-6 sm:p-8">
               {/* Live Guest Count Banner */}
-              <div className="rsvp-animate-title mb-4">
+              <div className="rsvp-animate-title mb-5">
                 <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-blue-50 border border-blue-100">
                   <Users className="w-4 h-4 text-blue-500" />
                   <span className="text-sm font-semibold text-blue-700">
@@ -262,41 +277,41 @@ export function WebInviteRSVP() {
               </div>
 
               {/* Event Title */}
-              <h1 className="text-3xl sm:text-5xl font-black text-gray-900 leading-none tracking-tight uppercase rsvp-animate-title">
+              <h1 className="text-4xl sm:text-6xl font-black text-gray-900 leading-[0.95] tracking-tight uppercase rsvp-animate-title">
                 {invite?.title}
               </h1>
 
               {/* Hosted by */}
-              <div className="flex items-center gap-2 mt-3 rsvp-animate-host">
+              <div className="flex items-center gap-2.5 mt-4 rsvp-animate-host">
                 {organizer?.logo_url ? (
-                  <img src={organizer.logo_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  <img src={organizer.logo_url} alt="" className="w-7 h-7 rounded-full object-cover" />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
                     <span className="text-xs font-bold text-blue-600">
                       {(organizer?.business_name || 'O')[0]}
                     </span>
                   </div>
                 )}
-                <span className="text-sm text-gray-500">
-                  Hosted by <span className="font-medium text-gray-700">{organizer?.business_name || 'Organizer'}</span>
+                <span className="text-base text-gray-500">
+                  Hosted by <span className="font-semibold text-gray-800">{organizer?.business_name || 'Organizer'}</span>
                 </span>
               </div>
 
               {/* Date, Time, Venue */}
-              <div className="mt-5 space-y-3">
+              <div className="mt-6 space-y-4">
                 <div className="flex items-start gap-3 rsvp-animate-detail-1">
-                  <Calendar className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                  <Calendar className="w-5 h-5 text-blue-500 mt-1 shrink-0" />
                   <div>
-                    <p className="font-medium text-gray-900">{formatDate(invite?.start_date)}</p>
-                    <p className="text-sm text-gray-500">{formatTime(invite?.start_date)}{invite?.end_date ? ` - ${formatTime(invite.end_date)}` : ''}</p>
+                    <p className="text-lg font-bold text-gray-900">{formatDate(invite?.start_date)}</p>
+                    <p className="text-base text-gray-500 font-medium">{formatTime(invite?.start_date)}{invite?.end_date ? ` — ${formatTime(invite.end_date)}` : ''}</p>
                   </div>
                 </div>
                 {(invite?.venue_name || invite?.city) && (
                   <div className="flex items-start gap-3 rsvp-animate-detail-2">
-                    <MapPin className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                    <MapPin className="w-5 h-5 text-blue-500 mt-1 shrink-0" />
                     <div>
-                      <p className="font-medium text-gray-900">{invite?.venue_name || 'Venue TBA'}</p>
-                      {invite?.city && <p className="text-sm text-gray-500">{invite.address || invite.city}</p>}
+                      <p className="text-lg font-bold text-gray-900">{invite?.venue_name || 'Venue TBA'}</p>
+                      {invite?.city && <p className="text-base text-gray-500">{invite.address || invite.city}</p>}
                     </div>
                   </div>
                 )}
@@ -304,8 +319,8 @@ export function WebInviteRSVP() {
 
               {/* Invite Message */}
               {invite?.message && (
-                <div className="mt-5 p-4 bg-purple-50 rounded-xl border-l-4 border-purple-400 rsvp-animate-message">
-                  <p className="text-sm text-purple-800 italic">"{invite.message}"</p>
+                <div className="mt-6 p-4 bg-purple-50 rounded-xl border-l-4 border-purple-400 rsvp-animate-message">
+                  <p className="text-base text-purple-800 italic leading-relaxed">"{invite.message}"</p>
                 </div>
               )}
 
@@ -355,14 +370,14 @@ export function WebInviteRSVP() {
                         <X className="w-7 h-7 text-white" />
                       </div>
                     )}
-                    <h3 className="text-lg font-bold text-gray-900">
+                    <h3 className="text-xl font-bold text-gray-900">
                       {selectedStatus === 'going'
                         ? "You're on the list! Let's gooo"
                         : selectedStatus === 'maybe'
                         ? "We'll keep a spot warm for you"
                         : "We'll miss you!"}
                     </h3>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-base text-gray-500 mt-1">
                       {selectedStatus === 'going'
                         ? 'Get ready for a good time'
                         : selectedStatus === 'maybe'
@@ -418,7 +433,7 @@ export function WebInviteRSVP() {
 
                   {/* RSVP Buttons */}
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-3 text-center">Will you be there?</p>
+                    <p className="text-base font-semibold text-gray-600 mb-4 text-center">Will you be there?</p>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { key: 'going', label: 'Going', color: 'emerald', emoji: '🎉' },
@@ -428,18 +443,18 @@ export function WebInviteRSVP() {
                         <button
                           key={opt.key}
                           onClick={() => setSelectedStatus(opt.key)}
-                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                          className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
                             selectedStatus === opt.key
                               ? opt.key === 'going'
-                                ? 'border-emerald-500 bg-emerald-50 shadow-md'
+                                ? 'border-emerald-500 bg-emerald-50 shadow-lg scale-[1.03]'
                                 : opt.key === 'maybe'
-                                ? 'border-amber-500 bg-amber-50 shadow-md'
-                                : 'border-gray-400 bg-gray-100 shadow-md'
+                                ? 'border-amber-500 bg-amber-50 shadow-lg scale-[1.03]'
+                                : 'border-gray-400 bg-gray-100 shadow-lg scale-[1.03]'
                               : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                           }`}
                         >
-                          <span className="text-2xl">{opt.emoji}</span>
-                          <span className={`text-sm font-semibold ${
+                          <span className="text-3xl">{opt.emoji}</span>
+                          <span className={`text-base font-bold ${
                             selectedStatus === opt.key ? 'text-gray-900' : 'text-gray-600'
                           }`}>{opt.label}</span>
                         </button>
@@ -451,7 +466,7 @@ export function WebInviteRSVP() {
                   {invite?.allow_plus_ones && selectedStatus && selectedStatus !== 'declined' && (
                     <div className="p-4 bg-gray-50 rounded-xl space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-700">Bringing guests?</p>
+                        <p className="text-base font-semibold text-gray-700">Bringing guests?</p>
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => setPlusOnes(Math.max(0, plusOnes - 1))}
@@ -557,7 +572,7 @@ export function WebInviteRSVP() {
                 <div className="mt-6 pt-5 border-t border-gray-100 rsvp-animate-guest-list">
                   <div className="flex items-center gap-2 mb-3">
                     <Users className="w-4 h-4 text-gray-400" />
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-base font-semibold text-gray-500">
                       {guestList.filter(g => g.status === 'going').length} going
                       {guestList.filter(g => g.status === 'maybe').length > 0 &&
                         ` · ${guestList.filter(g => g.status === 'maybe').length} maybe`
@@ -593,7 +608,7 @@ export function WebInviteRSVP() {
                 <div className="mt-6 pt-5 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
                     <MessageSquare className="w-4 h-4 text-gray-400" />
-                    <p className="text-sm font-medium text-gray-500">Guest Wall</p>
+                    <p className="text-base font-semibold text-gray-500">Guest Wall</p>
                   </div>
 
                   {/* Post form */}
