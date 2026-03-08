@@ -997,7 +997,7 @@ export function RackPartyDetail() {
                   </div>
                   <div>
                     <Label className="text-xs">Phone</Label>
-                    <Input value={manualPhone} onChange={e => setManualPhone(e.target.value)} placeholder="+234..." className="rounded-lg mt-1" />
+                    <Input value={manualPhone} onChange={e => setManualPhone(e.target.value)} placeholder="Phone number" className="rounded-lg mt-1" />
                   </div>
                 </div>
                 <Button onClick={handleAddManual} disabled={!manualName.trim() || addingGuests} className="rounded-xl gap-2">

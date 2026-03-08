@@ -238,17 +238,22 @@ export function WebInviteRSVP() {
       <div className="relative z-10 min-h-screen flex items-start justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
 
-          {/* Envelope Animation */}
-          <div className="envelope-wrapper pointer-events-none" aria-hidden="true">
-            <div className="envelope-body" style={{ height: 220 }}>
-              <div className="envelope-flap">
-                <div className="envelope-flap-inner" />
-              </div>
-              <div className="envelope-seal">
-                <div className="envelope-seal-circle">
-                  {(invite?.title || 'P')[0]}
-                </div>
-              </div>
+          {/* Gift Box Animation */}
+          <div className="gift-box-wrapper pointer-events-none" aria-hidden="true">
+            <div className="gift-box-body">
+              <div className="gift-box-lid" />
+              <div className="gift-bow" />
+              <div className="gift-bow-knot" />
+              <div className="gift-ribbon-h" />
+              <div className="gift-ribbon-v" />
+              <div className="gift-sparkle gift-sparkle--dot" />
+              <div className="gift-sparkle gift-sparkle--star" />
+              <div className="gift-sparkle gift-sparkle--dot" />
+              <div className="gift-sparkle gift-sparkle--star" />
+              <div className="gift-sparkle gift-sparkle--dot" />
+              <div className="gift-sparkle gift-sparkle--star" />
+              <div className="gift-sparkle gift-sparkle--dot" />
+              <div className="gift-sparkle gift-sparkle--star" />
             </div>
           </div>
 
