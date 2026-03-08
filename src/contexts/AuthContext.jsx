@@ -349,6 +349,33 @@ export function AuthProvider({ children }) {
       if (error) {
         console.error('Signup error details:', error)
         if (error.message?.includes('fetch')) throw new Error(AUTH_ERRORS.NETWORK_ERROR)
+
+        // Extract the actual error from the edge function response body
+        let edgeError = null
+        try {
+          if (error.context?.body) {
+            const reader = error.context.body.getReader()
+            const { value } = await reader.read()
+            const bodyText = new TextDecoder().decode(value)
+            edgeError = JSON.parse(bodyText)
+          }
+        } catch (_) {}
+
+        // If we got a parsed error from the edge function, use it
+        if (edgeError?.error) {
+          const errMsg = edgeError.error
+          if (errMsg === 'EMAIL_ALREADY_REGISTERED' || errMsg.includes('already registered') || errMsg.includes('already exists')) {
+            const customError = new Error('EMAIL_ALREADY_REGISTERED')
+            customError.isEmailExists = true
+            customError.userMessage = edgeError.userMessage || 'An account with this email already exists.'
+            throw customError
+          }
+          if (errMsg.includes('phone number is already registered')) {
+            throw new Error(errMsg)
+          }
+          throw new Error(errMsg)
+        }
+
         throw new Error(error.message || AUTH_ERRORS.UNKNOWN)
       }
 
