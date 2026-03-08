@@ -5,66 +5,30 @@
 
 // Comprehensive timezone list with city/country format
 export const timezones = [
-  // Africa
-  { value: 'Africa/Lagos', label: 'Lagos, Nigeria', region: 'Africa' },
-  { value: 'Africa/Accra', label: 'Accra, Ghana', region: 'Africa' },
-  { value: 'Africa/Nairobi', label: 'Nairobi, Kenya', region: 'Africa' },
-  { value: 'Africa/Johannesburg', label: 'Johannesburg, South Africa', region: 'Africa' },
-  { value: 'Africa/Cairo', label: 'Cairo, Egypt', region: 'Africa' },
-  { value: 'Africa/Casablanca', label: 'Casablanca, Morocco', region: 'Africa' },
-  { value: 'Africa/Dar_es_Salaam', label: 'Dar es Salaam, Tanzania', region: 'Africa' },
-  { value: 'Africa/Kampala', label: 'Kampala, Uganda', region: 'Africa' },
-  { value: 'Africa/Kigali', label: 'Kigali, Rwanda', region: 'Africa' },
-  { value: 'Africa/Addis_Ababa', label: 'Addis Ababa, Ethiopia', region: 'Africa' },
-  { value: 'Africa/Dakar', label: 'Dakar, Senegal', region: 'Africa' },
-  { value: 'Africa/Abidjan', label: 'Abidjan, Ivory Coast', region: 'Africa' },
-  { value: 'Africa/Douala', label: 'Douala, Cameroon', region: 'Africa' },
-  
-  // Americas
-  { value: 'America/New_York', label: 'New York, USA', region: 'Americas' },
-  { value: 'America/Chicago', label: 'Chicago, USA', region: 'Americas' },
-  { value: 'America/Denver', label: 'Denver, USA', region: 'Americas' },
-  { value: 'America/Los_Angeles', label: 'Los Angeles, USA', region: 'Americas' },
-  { value: 'America/Toronto', label: 'Toronto, Canada', region: 'Americas' },
-  { value: 'America/Vancouver', label: 'Vancouver, Canada', region: 'Americas' },
-  { value: 'America/Mexico_City', label: 'Mexico City, Mexico', region: 'Americas' },
-  { value: 'America/Sao_Paulo', label: 'São Paulo, Brazil', region: 'Americas' },
-  { value: 'America/Buenos_Aires', label: 'Buenos Aires, Argentina', region: 'Americas' },
-  { value: 'America/Bogota', label: 'Bogotá, Colombia', region: 'Americas' },
-  { value: 'America/Lima', label: 'Lima, Peru', region: 'Americas' },
-  
-  // Europe
-  { value: 'Europe/London', label: 'London, UK', region: 'Europe' },
-  { value: 'Europe/Paris', label: 'Paris, France', region: 'Europe' },
-  { value: 'Europe/Berlin', label: 'Berlin, Germany', region: 'Europe' },
-  { value: 'Europe/Madrid', label: 'Madrid, Spain', region: 'Europe' },
-  { value: 'Europe/Rome', label: 'Rome, Italy', region: 'Europe' },
-  { value: 'Europe/Amsterdam', label: 'Amsterdam, Netherlands', region: 'Europe' },
-  { value: 'Europe/Brussels', label: 'Brussels, Belgium', region: 'Europe' },
-  { value: 'Europe/Dublin', label: 'Dublin, Ireland', region: 'Europe' },
-  { value: 'Europe/Zurich', label: 'Zurich, Switzerland', region: 'Europe' },
-  { value: 'Europe/Stockholm', label: 'Stockholm, Sweden', region: 'Europe' },
-  { value: 'Europe/Warsaw', label: 'Warsaw, Poland', region: 'Europe' },
-  { value: 'Europe/Moscow', label: 'Moscow, Russia', region: 'Europe' },
-  
-  // Asia
-  { value: 'Asia/Dubai', label: 'Dubai, UAE', region: 'Asia' },
-  { value: 'Asia/Riyadh', label: 'Riyadh, Saudi Arabia', region: 'Asia' },
-  { value: 'Asia/Kolkata', label: 'Mumbai, India', region: 'Asia' },
-  { value: 'Asia/Singapore', label: 'Singapore', region: 'Asia' },
-  { value: 'Asia/Hong_Kong', label: 'Hong Kong', region: 'Asia' },
-  { value: 'Asia/Tokyo', label: 'Tokyo, Japan', region: 'Asia' },
-  { value: 'Asia/Seoul', label: 'Seoul, South Korea', region: 'Asia' },
-  { value: 'Asia/Shanghai', label: 'Shanghai, China', region: 'Asia' },
-  { value: 'Asia/Jakarta', label: 'Jakarta, Indonesia', region: 'Asia' },
-  { value: 'Asia/Bangkok', label: 'Bangkok, Thailand', region: 'Asia' },
-  { value: 'Asia/Kuala_Lumpur', label: 'Kuala Lumpur, Malaysia', region: 'Asia' },
-  
-  // Oceania
-  { value: 'Australia/Sydney', label: 'Sydney, Australia', region: 'Oceania' },
-  { value: 'Australia/Melbourne', label: 'Melbourne, Australia', region: 'Oceania' },
-  { value: 'Australia/Perth', label: 'Perth, Australia', region: 'Oceania' },
-  { value: 'Pacific/Auckland', label: 'Auckland, New Zealand', region: 'Oceania' },
+  // Nigeria
+  { value: 'Africa/Lagos', label: 'Lagos, Nigeria (WAT)', region: 'Nigeria' },
+
+  // Ghana
+  { value: 'Africa/Accra', label: 'Accra, Ghana (GMT)', region: 'Ghana' },
+
+  // United States
+  { value: 'America/New_York', label: 'Eastern Time (ET)', region: 'United States' },
+  { value: 'America/Chicago', label: 'Central Time (CT)', region: 'United States' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)', region: 'United States' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)', region: 'United States' },
+  { value: 'America/Anchorage', label: 'Alaska Time (AKT)', region: 'United States' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time (HST)', region: 'United States' },
+
+  // United Kingdom
+  { value: 'Europe/London', label: 'London, UK (GMT/BST)', region: 'United Kingdom' },
+
+  // Canada
+  { value: 'America/Toronto', label: 'Eastern Time (ET)', region: 'Canada' },
+  { value: 'America/Winnipeg', label: 'Central Time (CT)', region: 'Canada' },
+  { value: 'America/Edmonton', label: 'Mountain Time (MT)', region: 'Canada' },
+  { value: 'America/Vancouver', label: 'Pacific Time (PT)', region: 'Canada' },
+  { value: 'America/Halifax', label: 'Atlantic Time (AT)', region: 'Canada' },
+  { value: 'America/St_Johns', label: "Newfoundland Time (NT)", region: 'Canada' },
 ];
 
 /**
