@@ -180,7 +180,10 @@ export function isFavorited(templateId, accentColor) {
 
 export function formatDateShort(dateStr) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const d = new Date(dateStr);
+  const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${date} · ${time}`;
 }
 
 export function statusBadge(status) {
@@ -236,8 +239,10 @@ export function StepIndicator({ currentStep }) {
 
 export function DateTimePicker({ label, value, onChange }) {
   const dateObj = useMemo(() => value ? new Date(value) : null, [value]);
-  const hour = dateObj ? String(dateObj.getHours()).padStart(2, '0') : '';
+  const hours24 = dateObj ? dateObj.getHours() : null;
+  const displayHour = hours24 !== null ? (hours24 === 0 ? '12' : hours24 > 12 ? String(hours24 - 12) : String(hours24)) : '';
   const minute = dateObj ? String(dateObj.getMinutes()).padStart(2, '0') : '';
+  const ampm = hours24 !== null ? (hours24 >= 12 ? 'PM' : 'AM') : 'AM';
 
   const handleDaySelect = (day) => {
     if (!day) return;
@@ -248,17 +253,25 @@ export function DateTimePicker({ label, value, onChange }) {
 
   const handleTimeChange = (type, val) => {
     const base = dateObj || new Date();
-    const h = type === 'hour' ? parseInt(val, 10) : base.getHours();
-    const m = type === 'minute' ? parseInt(val, 10) : base.getMinutes();
-    const merged = setDate(dateObj || new Date(), { hours: h, minutes: m });
-    if (!dateObj) {
-      onChange(format(merged, "yyyy-MM-dd'T'HH:mm"));
-    } else {
-      onChange(format(setDate(dateObj, { hours: h, minutes: m }), "yyyy-MM-dd'T'HH:mm"));
+    let h = base.getHours();
+    let m = base.getMinutes();
+    const currentAmpm = h >= 12 ? 'PM' : 'AM';
+
+    if (type === 'hour') {
+      const h12 = parseInt(val, 10);
+      h = currentAmpm === 'AM' ? (h12 === 12 ? 0 : h12) : (h12 === 12 ? 12 : h12 + 12);
+    } else if (type === 'minute') {
+      m = parseInt(val, 10);
+    } else if (type === 'ampm') {
+      const currentH12 = h % 12 || 12;
+      h = val === 'AM' ? (currentH12 === 12 ? 0 : currentH12) : (currentH12 === 12 ? 12 : currentH12 + 12);
     }
+
+    const target = dateObj || new Date();
+    onChange(format(setDate(target, { hours: h, minutes: m }), "yyyy-MM-dd'T'HH:mm"));
   };
 
-  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const hour12Options = Array.from({ length: 12 }, (_, i) => String(i + 1));
   const minutes = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
 
   return (
@@ -285,25 +298,34 @@ export function DateTimePicker({ label, value, onChange }) {
       </Popover>
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 text-gray-400 shrink-0" />
-        <Select value={hour} onValueChange={v => handleTimeChange('hour', v)}>
-          <SelectTrigger className="w-20 rounded-lg h-10 text-sm">
-            <SelectValue placeholder="HH" />
+        <Select value={displayHour} onValueChange={v => handleTimeChange('hour', v)}>
+          <SelectTrigger className="w-[68px] rounded-lg h-10 text-sm">
+            <SelectValue placeholder="Hr" />
           </SelectTrigger>
           <SelectContent className="max-h-48">
-            {hours.map(h => (
+            {hour12Options.map(h => (
               <SelectItem key={h} value={h}>{h}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         <span className="text-gray-500 font-medium">:</span>
         <Select value={minute} onValueChange={v => handleTimeChange('minute', v)}>
-          <SelectTrigger className="w-20 rounded-lg h-10 text-sm">
-            <SelectValue placeholder="MM" />
+          <SelectTrigger className="w-[68px] rounded-lg h-10 text-sm">
+            <SelectValue placeholder="Min" />
           </SelectTrigger>
           <SelectContent className="max-h-48">
             {minutes.map(m => (
               <SelectItem key={m} value={m}>{m}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={ampm} onValueChange={v => handleTimeChange('ampm', v)}>
+          <SelectTrigger className="w-[72px] rounded-lg h-10 text-sm font-medium">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="AM">AM</SelectItem>
+            <SelectItem value="PM">PM</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -1008,15 +1030,10 @@ export function Step5_Options({
 
         {/* RSVP Deadline */}
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-4 h-4 text-gray-400" />
-            <Label className="text-sm font-medium text-gray-700">RSVP deadline</Label>
-          </div>
-          <Input
-            type="datetime-local"
+          <DateTimePicker
+            label="RSVP deadline"
             value={rsvpDeadline}
-            onChange={e => onChangeRsvpDeadline(e.target.value)}
-            className="rounded-xl"
+            onChange={onChangeRsvpDeadline}
           />
           <p className="text-xs text-gray-400 mt-1">Leave blank for no deadline</p>
         </div>

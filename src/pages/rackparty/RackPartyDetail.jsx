@@ -39,7 +39,7 @@ import {
   duplicatePartyInvite,
 } from '@/services/partyInvites';
 import { sendPartyInviteEmail, sendPartyInviteReminderEmail } from '@/lib/emailService';
-import { APP_URL, formatDateShort, statusBadge } from '@/components/rackparty/shared';
+import { APP_URL, formatDateShort, statusBadge, DateTimePicker } from '@/components/rackparty/shared';
 import { DesignTab } from '@/components/rackparty/DesignTab';
 import { WallTab } from '@/components/rackparty/WallTab';
 import { AnnouncementsTab } from '@/components/rackparty/AnnouncementsTab';
@@ -1077,14 +1077,8 @@ export function RackPartyDetail() {
               <textarea value={settingsDescription} onChange={e => setSettingsDescription(e.target.value)} placeholder="Describe your event..." rows={3} className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Start Date & Time</Label>
-                <Input type="datetime-local" value={settingsStartDate} onChange={e => setSettingsStartDate(e.target.value)} className="rounded-xl mt-1" />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">End Date & Time</Label>
-                <Input type="datetime-local" value={settingsEndDate} onChange={e => setSettingsEndDate(e.target.value)} className="rounded-xl mt-1" />
-              </div>
+              <DateTimePicker label="Start Date & Time" value={settingsStartDate} onChange={setSettingsStartDate} />
+              <DateTimePicker label="End Date & Time" value={settingsEndDate} onChange={setSettingsEndDate} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -1138,9 +1132,8 @@ export function RackPartyDetail() {
               </div>
             )}
             <div>
-              <Label className="text-sm font-medium">RSVP Deadline</Label>
               <p className="text-xs text-gray-400 mb-1">After this date, guests can no longer respond</p>
-              <Input type="datetime-local" value={rsvpDeadline} onChange={e => setRsvpDeadline(e.target.value)} className="rounded-lg w-full sm:w-64" />
+              <DateTimePicker label="RSVP Deadline" value={rsvpDeadline} onChange={setRsvpDeadline} />
             </div>
             <div>
               <Label className="text-sm font-medium">Shareable Invite Link</Label>
