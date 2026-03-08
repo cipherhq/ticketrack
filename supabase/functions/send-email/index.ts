@@ -473,6 +473,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                   <td align="center" style="padding: 24px;">
                     <p style="margin: 0 0 4px 0; font-size: 12px; color: #059669; text-transform: uppercase;">Sale Amount</p>
                     <p style="margin: 0; font-size: 32px; font-weight: 700; color: #047857;">${d.isFree ? 'FREE' : formatCurrency(d.amount || 0, d.currency || 'NGN')}</p>
+                    ${!d.isFree ? '<p style="margin: 4px 0 0 0; font-size: 11px; color: #6b7280;">Includes Ticketrack service fee</p>' : ''}
                   </td>
                 </tr>
               </table>
