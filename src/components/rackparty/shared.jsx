@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  Check, ArrowRight, Clock, Calendar, Image, Upload, Sparkles,
-  Download, Heart, Loader2, PartyPopper,
+  Check, ArrowRight, ChevronRight, Clock, Calendar, Image, Upload, Sparkles,
+  Download, Heart, Loader2, PartyPopper, UserPlus, MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,7 @@ export const WIZARD_STEPS = [
   { number: 2, label: 'Date' },
   { number: 3, label: 'Location' },
   { number: 4, label: 'Image' },
+  { number: 5, label: 'Options' },
 ];
 
 export const PARTY_TEMPLATES = [
@@ -720,7 +721,7 @@ export function TemplateControls({ activeTemplate, selectedColor, setSelectedCol
   );
 }
 
-export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creating, partyName, startDate, venueName }) {
+export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, onNext, creating, partyName, startDate, venueName }) {
   const [mode, setMode] = useState('template');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedColor, setSelectedColor] = useState(ACCENT_COLORS[0].value);
@@ -773,10 +774,11 @@ export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creat
       });
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
       const file = new File([blob], 'party-cover.png', { type: 'image/png' });
-      onCreate(file);
+      if (onNext) { onNext(file); } else { onCreate(file); }
     } catch (err) {
       console.error('Error generating cover image:', err);
       toast.error('Failed to generate cover image');
+    } finally {
       setGeneratingImage(false);
     }
   }
@@ -927,12 +929,110 @@ export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, creat
           Back
         </Button>
         <Button
-          onClick={(mode === 'template' || mode === 'blend') && activeTemplate ? handleCreateWithTemplate : () => onCreate()}
+          onClick={(mode === 'template' || mode === 'blend') && activeTemplate ? handleCreateWithTemplate : () => (onNext ? onNext() : onCreate())}
           disabled={isCreating}
           className="rounded-xl gap-2 h-12 px-8"
         >
-          {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PartyPopper className="w-4 h-4" />}
-          {hasSelection ? 'Create Party' : 'Skip & Create'}
+          {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : onNext ? <ChevronRight className="w-4 h-4" /> : <PartyPopper className="w-4 h-4" />}
+          {onNext ? (hasSelection ? 'Next' : 'Skip & Next') : (hasSelection ? 'Create Party' : 'Skip & Create')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// STEP 5: Party Options (plus ones, message, RSVP deadline)
+// ============================================================================
+
+export function Step5_Options({
+  allowPlusOnes, onChangeAllowPlusOnes,
+  maxPlusOnes, onChangeMaxPlusOnes,
+  message, onChangeMessage,
+  rsvpDeadline, onChangeRsvpDeadline,
+  onBack, onCreate, creating,
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">
+        Party options
+      </h2>
+      <p className="text-gray-500 mb-8 text-center">Set the vibes before you launch</p>
+
+      <div className="w-full max-w-md space-y-6">
+        {/* Plus Ones */}
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <UserPlus className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">Allow +1s</p>
+              <p className="text-xs text-gray-500">Guests can bring friends</p>
+            </div>
+          </div>
+          <button
+            onClick={() => onChangeAllowPlusOnes(!allowPlusOnes)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${allowPlusOnes ? 'bg-blue-600' : 'bg-gray-300'}`}
+          >
+            <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${allowPlusOnes ? 'left-[22px]' : 'left-0.5'}`} />
+          </button>
+        </div>
+
+        {allowPlusOnes && (
+          <div className="pl-4">
+            <Label className="text-sm text-gray-600">Max +1s per guest</Label>
+            <Select value={String(maxPlusOnes)} onValueChange={v => onChangeMaxPlusOnes(Number(v))}>
+              <SelectTrigger className="w-24 rounded-lg h-9 mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Invite Message */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <MessageSquare className="w-4 h-4 text-gray-400" />
+            <Label className="text-sm font-medium text-gray-700">Personal message</Label>
+          </div>
+          <textarea
+            value={message}
+            onChange={e => onChangeMessage(e.target.value)}
+            placeholder="Add a personal touch — e.g. 'Dress code: all white'"
+            rows={3}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+          />
+        </div>
+
+        {/* RSVP Deadline */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-gray-400" />
+            <Label className="text-sm font-medium text-gray-700">RSVP deadline</Label>
+          </div>
+          <Input
+            type="datetime-local"
+            value={rsvpDeadline}
+            onChange={e => onChangeRsvpDeadline(e.target.value)}
+            className="rounded-xl"
+          />
+          <p className="text-xs text-gray-400 mt-1">Leave blank for no deadline</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 mt-8">
+        <Button variant="outline" onClick={onBack} className="rounded-xl h-12 px-6">
+          Back
+        </Button>
+        <Button
+          onClick={() => onCreate()}
+          disabled={creating}
+          className="rounded-xl gap-2 h-12 px-8"
+        >
+          {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PartyPopper className="w-4 h-4" />}
+          Create Party
         </Button>
       </div>
     </div>

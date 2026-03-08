@@ -13,6 +13,7 @@ import {
   Step2_DateTime,
   Step3_Location,
   Step4_CoverImage,
+  Step5_Options,
 } from '@/components/rackparty/shared';
 
 export function RackPartyCreate() {
@@ -29,6 +30,10 @@ export function RackPartyCreate() {
   const [createCity, setCreateCity] = useState('');
   const [createAddress, setCreateAddress] = useState('');
   const [createCoverImage, setCreateCoverImage] = useState(null);
+  const [createAllowPlusOnes, setCreateAllowPlusOnes] = useState(false);
+  const [createMaxPlusOnes, setCreateMaxPlusOnes] = useState(1);
+  const [createMessage, setCreateMessage] = useState('');
+  const [createRsvpDeadline, setCreateRsvpDeadline] = useState('');
   const [creating, setCreating] = useState(false);
 
   async function handleUploadCoverImage(file) {
@@ -62,10 +67,10 @@ export function RackPartyCreate() {
         city: createCity.trim(),
         address: createAddress.trim(),
         coverImageUrl,
-        message: '',
-        allowPlusOnes: false,
-        maxPlusOnes: 1,
-        rsvpDeadline: null,
+        message: createMessage.trim(),
+        allowPlusOnes: createAllowPlusOnes,
+        maxPlusOnes: createMaxPlusOnes,
+        rsvpDeadline: createRsvpDeadline ? new Date(createRsvpDeadline).toISOString() : null,
       });
       toast.success('Party created!');
       navigate(basePath + '/' + inv.id);
@@ -86,7 +91,7 @@ export function RackPartyCreate() {
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">Create a Party</h1>
         </div>
-        <span className="text-sm text-gray-400">Step {createStep} of 4</span>
+        <span className="text-sm text-gray-400">Step {createStep} of 5</span>
       </div>
 
       <Card className="rounded-2xl">
@@ -130,11 +135,27 @@ export function RackPartyCreate() {
               coverImage={createCoverImage}
               onChange={setCreateCoverImage}
               onBack={() => setCreateStep(3)}
-              onCreate={handleCreateCampaign}
-              creating={creating}
+              onNext={(file) => { if (file) setCreateCoverImage(file); setCreateStep(5); }}
+              creating={false}
               partyName={createTitle}
               startDate={createStartDate}
               venueName={createVenueName}
+            />
+          )}
+
+          {createStep === 5 && (
+            <Step5_Options
+              allowPlusOnes={createAllowPlusOnes}
+              onChangeAllowPlusOnes={setCreateAllowPlusOnes}
+              maxPlusOnes={createMaxPlusOnes}
+              onChangeMaxPlusOnes={setCreateMaxPlusOnes}
+              message={createMessage}
+              onChangeMessage={setCreateMessage}
+              rsvpDeadline={createRsvpDeadline}
+              onChangeRsvpDeadline={setCreateRsvpDeadline}
+              onBack={() => setCreateStep(4)}
+              onCreate={() => handleCreateCampaign(createCoverImage)}
+              creating={creating}
             />
           )}
         </CardContent>
