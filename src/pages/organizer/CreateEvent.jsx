@@ -34,6 +34,7 @@ import {
   shouldShowPostcreatePrompt,
   calculateSnoozeUntil,
 } from '@/components/PaymentGatewayPrompt';
+import { DateTimePicker } from '@/components/rackparty/shared';
 import 'react-quill/dist/quill.snow.css';
 
 
@@ -2321,41 +2322,30 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
           {activeTab === 'datetime' && (
             <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Start Date <span className="text-red-500">*</span></Label>
-                  <Input
-                    type="date"
-                    min={new Date().toISOString().split('T')[0]}
-                    value={formData.startDate}
-                    onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    className={`h-12 rounded-xl bg-gray-100 ${fieldErrors.startDate ? 'border-2 border-red-500' : 'border-0'}`}
+                <DateTimePicker
+                  label="Start Date & Time *"
+                  value={formData.startDate && formData.startTime ? `${formData.startDate}T${formData.startTime}` : formData.startDate ? `${formData.startDate}T00:00` : ''}
+                  onChange={(val) => {
+                    if (val) {
+                      const [date, time] = val.split('T');
+                      handleInputChange('startDate', date);
+                      handleInputChange('startTime', time);
+                    }
+                  }}
+                />
+                {!formData.isRecurring ? (
+                  <DateTimePicker
+                    label="End Date & Time *"
+                    value={formData.endDate && formData.endTime ? `${formData.endDate}T${formData.endTime}` : formData.endDate ? `${formData.endDate}T23:59` : ''}
+                    onChange={(val) => {
+                      if (val) {
+                        const [date, time] = val.split('T');
+                        handleInputChange('endDate', date);
+                        handleInputChange('endTime', time);
+                      }
+                    }}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Start Time <span className="text-red-500">*</span></Label>
-                  <Input
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) => handleInputChange('startTime', e.target.value)}
-                    className={`h-12 rounded-xl bg-gray-100 ${fieldErrors.startTime ? 'border-2 border-red-500' : 'border-0'}`}
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {!formData.isRecurring && (
-                  <div className="space-y-2">
-                    <Label>End Date <span className="text-red-500">*</span></Label>
-                    <Input
-                      type="date"
-                      value={formData.endDate}
-                      min={formData.startDate || new Date().toISOString().split('T')[0]}
-                      onChange={(e) => handleInputChange('endDate', e.target.value)}
-                      className={`h-12 rounded-xl bg-gray-100 ${fieldErrors.endDate ? 'border-2 border-red-500' : 'border-0'}`}
-                    />
-                  </div>
-                )}
-                <div className={formData.isRecurring ? "col-span-2" : ""}>
+                ) : (
                   <div className="space-y-2">
                     <Label>End Time <span className="text-red-500">*</span></Label>
                     <Input
@@ -2364,11 +2354,9 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                       onChange={(e) => handleInputChange('endTime', e.target.value)}
                       className="h-12 rounded-xl bg-gray-100 border-0"
                     />
-                    {formData.isRecurring && (
-                      <p className="text-xs text-gray-600">Each recurring event will end at this time on the same day</p>
-                    )}
+                    <p className="text-xs text-gray-600">Each recurring event will end at this time on the same day</p>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
