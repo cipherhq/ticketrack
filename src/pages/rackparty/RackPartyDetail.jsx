@@ -1460,7 +1460,7 @@ export function RackPartyDetail() {
                             }`}
                             onClick={() => setSelectedCreditPackage(pkg)}
                           >
-                            <CardContent className="p-4">
+                            <CardContent className="p-4 text-center">
                               {pkg.badge_text && (
                                 <Badge className={`mb-2 ${pkg.is_popular ? 'bg-blue-600' : 'bg-gray-600'}`}>
                                   {pkg.badge_text}
@@ -1475,7 +1475,7 @@ export function RackPartyDetail() {
                                 <p className="text-xs text-gray-500">credits</p>
                               </div>
                               {pkg.bonus_credits > 0 && (
-                                <div className="flex items-center gap-1 text-xs text-green-600 mb-2">
+                                <div className="flex items-center justify-center gap-1 text-xs text-green-600 mb-2">
                                   <Sparkles className="w-3.5 h-3.5" />
                                   <span>+{formatCreditsNumber(pkg.bonus_credits)} bonus</span>
                                 </div>
