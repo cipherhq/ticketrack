@@ -3522,23 +3522,23 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Speakers, Artists & Headliners</h3>
-                  <p className="text-sm text-gray-600">Add speakers, performers, or headliners to showcase on your event page (optional)</p>
+                  <h3 className="font-semibold text-gray-900">Event Lineup</h3>
+                  <p className="text-sm text-gray-600">Add headliners, artists, speakers, or performers to showcase on your event page (optional)</p>
                 </div>
                 <Button onClick={addSpeaker} variant="outline" className="rounded-xl">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Speaker
+                  Add Headliner
                 </Button>
               </div>
 
               {speakers.length === 0 ? (
                 <div className="text-center py-16 bg-gray-100 rounded-xl border-2 border-dashed border-gray-200">
                   <Mic className="w-12 h-12 text-gray-900/20 mx-auto mb-4" />
-                  <p className="text-gray-600 text-lg mb-2">No speakers added yet</p>
-                  <p className="text-gray-600 text-sm mb-4">Click "Add Speaker" to feature speakers, artists, or headliners on your event page</p>
+                  <p className="text-gray-600 text-lg mb-2">No headliners added yet</p>
+                  <p className="text-gray-600 text-sm mb-4">Add speakers, artists, pastors, performers, or any headliners to feature on your event page</p>
                   <Button onClick={addSpeaker} variant="outline" className="rounded-xl">
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Your First Speaker
+                    Add Your First Headliner
                   </Button>
                 </div>
               ) : (
@@ -3549,7 +3549,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-[#2969FF] flex items-center gap-2">
                             <Mic className="w-4 h-4" />
-                            Speaker {index + 1}
+                            Headliner {index + 1}
                           </span>
                           <button onClick={() => removeSpeaker(speaker.tempId)} className="text-red-500 hover:text-red-600">
                             <Trash2 className="w-4 h-4" />
@@ -3572,7 +3572,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                                 <>
                                   <img
                                     src={speaker.imagePreview || speaker.image_url}
-                                    alt={speaker.name || 'Speaker'}
+                                    alt={speaker.name || 'Headliner'}
                                     className="w-full h-full object-cover"
                                   />
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -3612,7 +3612,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                               <div className="space-y-2">
                                 <Label>Name <span className="text-red-500">*</span></Label>
                                 <Input
-                                  placeholder="Speaker name"
+                                  placeholder="Name"
                                   value={speaker.name}
                                   onChange={(e) => updateSpeaker(speaker.tempId, 'name', e.target.value)}
                                   className="h-12 rounded-xl bg-gray-100 border-0"
@@ -3621,7 +3621,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                               <div className="space-y-2">
                                 <Label>Role / Title</Label>
                                 <Input
-                                  placeholder="e.g., Keynote Speaker, DJ, Artist"
+                                  placeholder="e.g., Keynote Speaker, Artist, Pastor, DJ"
                                   value={speaker.role}
                                   onChange={(e) => updateSpeaker(speaker.tempId, 'role', e.target.value)}
                                   className="h-12 rounded-xl bg-gray-100 border-0"
@@ -3687,21 +3687,21 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     </Card>
                   ))}
 
-                  {/* Add Another Speaker Button */}
+                  {/* Add Another Headliner Button */}
                   <button
                     type="button"
                     onClick={addSpeaker}
                     className="w-full py-3 border-2 border-dashed border-[#2969FF]/30 rounded-xl text-[#2969FF] hover:bg-[#2969FF]/5 transition-colors flex items-center justify-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
-                    Add another speaker
+                    Add another headliner
                   </button>
                 </div>
               )}
 
               <div className="flex items-center gap-2 p-3 bg-[#2969FF]/5 rounded-xl text-sm text-[#2969FF]">
                 <Info className="w-4 h-4 flex-shrink-0" />
-                Speakers will be displayed on your event details page. Adding speakers is optional.
+Headliners will be displayed on your event details page. Adding headliners is optional.
               </div>
             </div>
           )}
