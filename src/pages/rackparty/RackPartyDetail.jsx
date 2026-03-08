@@ -5,11 +5,15 @@ import {
   CheckCircle, HelpCircle, X, Clock, Mail, Bell, Phone, MessageCircle,
   CreditCard, AlertCircle, Trash2, Plus, UserPlus, ClipboardList, Settings2,
   RefreshCw, Image, Palette, MessageSquare, Megaphone, Activity, Pencil,
-  Upload, Eye, PartyPopper,
+  Upload, Eye, PartyPopper, Sparkles, Coins, Package,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -22,6 +26,8 @@ import {
 import { toast } from 'sonner';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { getPaymentProvider } from '@/config/payments';
+import { getDefaultCurrency } from '@/config/currencies';
 import { format } from 'date-fns';
 import {
   getInviteById,
@@ -103,10 +109,18 @@ export function RackPartyDetail() {
   const [freeEmailsUsed, setFreeEmailsUsed] = useState(0);
   const FREE_EMAIL_LIMIT = 10;
 
+  // Credit purchase dialog
+  const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [creditPackages, setCreditPackages] = useState([]);
+  const [selectedCreditPackage, setSelectedCreditPackage] = useState(null);
+  const [purchasingCredits, setPurchasingCredits] = useState(false);
+  const [loadingPackages, setLoadingPackages] = useState(false);
+
   useEffect(() => {
     if (!organizer?.id || !id) return;
     loadInvite();
     loadCreditAndFreeEmailData();
+    handleCreditPaymentCallback();
   }, [organizer?.id, id]);
 
   async function loadInvite() {
@@ -167,6 +181,145 @@ export function RackPartyDetail() {
       const usage = await getFreeEmailUsage(organizer.id);
       setFreeEmailsUsed(usage);
     } catch {}
+  }
+
+  // Credit purchase helpers
+  async function loadCreditPackages() {
+    setLoadingPackages(true);
+    try {
+      let { data } = await supabase
+        .from('communication_credit_packages')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (!data || data.length === 0) {
+        const { data: legacyData } = await supabase
+          .from('sms_credit_packages')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order');
+
+        if (legacyData && legacyData.length > 0) {
+          data = legacyData.map(pkg => ({
+            ...pkg,
+            price_ngn: pkg.price,
+            price_per_credit: pkg.price / (pkg.credits + (pkg.bonus_credits || 0)),
+            description: null,
+            badge_text: pkg.is_popular ? 'Popular' : null,
+          }));
+        }
+      }
+
+      setCreditPackages(data || []);
+    } catch (err) {
+      console.error('Error loading credit packages:', err);
+    } finally {
+      setLoadingPackages(false);
+    }
+  }
+
+  function getOrganizerCurrency() {
+    const countryCode = organizer?.country_code;
+    const countryToCurrency = {
+      NG: 'NGN', GH: 'GHS', US: 'USD', GB: 'GBP', CA: 'CAD',
+    };
+    return countryToCurrency[countryCode] || 'USD';
+  }
+
+  function getPackagePrice(pkg, currency) {
+    const priceMap = {
+      NGN: pkg.price_ngn, GHS: pkg.price_ghs, USD: pkg.price_usd,
+      GBP: pkg.price_gbp, CAD: pkg.price_cad,
+    };
+    return priceMap[currency] || null;
+  }
+
+  function formatCreditsCurrency(amount, currency = 'NGN') {
+    const symbols = { NGN: '\u20A6', GHS: 'GH\u20B5', USD: '$', GBP: '\u00A3', EUR: '\u20AC', CAD: 'C$', AUD: 'A$' };
+    const symbol = symbols[currency] || '$';
+    const noDecimals = ['NGN', 'GHS'];
+    const formatted = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: noDecimals.includes(currency) ? 0 : 2,
+      maximumFractionDigits: noDecimals.includes(currency) ? 0 : 2,
+    }).format(amount || 0);
+    return `${symbol}${formatted}`;
+  }
+
+  function formatCreditsNumber(n) {
+    return new Intl.NumberFormat('en-US').format(n || 0);
+  }
+
+  function openCreditDialog() {
+    setSelectedCreditPackage(null);
+    setShowCreditDialog(true);
+    if (creditPackages.length === 0) loadCreditPackages();
+  }
+
+  async function processCreditsPayment() {
+    if (!selectedCreditPackage) return;
+    setPurchasingCredits(true);
+    try {
+      const currency = getOrganizerCurrency();
+      const provider = getPaymentProvider(currency);
+      const amount = getPackagePrice(selectedCreditPackage, currency);
+
+      if (!amount) throw new Error('This package is not available in your region');
+
+      const { data, error } = await supabase.functions.invoke('create-credit-purchase', {
+        body: {
+          organizerId: organizer.id,
+          packageId: selectedCreditPackage.id,
+          credits: selectedCreditPackage.credits,
+          bonusCredits: selectedCreditPackage.bonus_credits,
+          amount,
+          currency,
+          email: organizer.business_email || organizer.email,
+          callbackUrl: `${window.location.origin}${location.pathname}?payment=success`,
+          provider,
+        },
+      });
+
+      if (error) throw error;
+      if (data && !data.success) throw new Error(data.error || 'Payment initialization failed');
+
+      const redirectUrl = data?.url || data?.authorization_url || data?.link || data?.paymentUrl;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        await loadCreditAndFreeEmailData();
+        setShowCreditDialog(false);
+        toast.success('Credits added successfully!');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Failed to initiate payment: ' + (error.message || 'Unknown error'));
+    } finally {
+      setPurchasingCredits(false);
+    }
+  }
+
+  async function handleCreditPaymentCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const reference = urlParams.get('reference') || urlParams.get('trxref');
+
+    if (paymentStatus === 'success' && reference && organizer?.id) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      try {
+        const { data, error } = await supabase.functions.invoke('verify-credit-purchase', {
+          body: { reference, organizerId: organizer.id },
+        });
+        if (error) console.error('Verification error:', error);
+        await loadCreditAndFreeEmailData();
+        if (data?.success) {
+          toast.success(`${data.credits} credits added to your account!`);
+        }
+      } catch (error) {
+        console.error('Payment verification failed:', error);
+        await loadCreditAndFreeEmailData();
+      }
+    }
   }
 
   // Add guests
@@ -664,14 +817,12 @@ export function RackPartyDetail() {
                   Credits: <span className="font-bold">{creditBalance}</span>
                 </span>
               </div>
-              <a
-                href="/organizer/credits"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={openCreditDialog}
                 className="ml-auto text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
               >
                 Buy Credits
-              </a>
+              </button>
             </div>
             {paidEmailCount > 0 && (
               <p className="text-xs text-amber-700 mt-2 flex items-center gap-1">
@@ -951,14 +1102,12 @@ export function RackPartyDetail() {
                     <p className="text-sm text-white flex items-center gap-1.5">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       You need more credits to send all invites.{' '}
-                      <a
-                        href="/organizer/credits"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={openCreditDialog}
                         className="font-bold underline hover:no-underline"
                       >
                         Buy Credits
-                      </a>
+                      </button>
                     </p>
                   </div>
                 )}
@@ -1239,6 +1388,162 @@ export function RackPartyDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Credit Purchase Dialog */}
+      <Dialog open={showCreditDialog} onOpenChange={(open) => { setShowCreditDialog(open); if (!open) setSelectedCreditPackage(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Coins className="w-5 h-5 text-blue-600" />
+              {selectedCreditPackage ? 'Confirm Purchase' : 'Buy Credits'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedCreditPackage
+                ? `You're about to purchase the ${selectedCreditPackage.name} package`
+                : 'Choose a credit package to power your email and SMS invites'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!selectedCreditPackage ? (
+            // Package grid
+            <div className="py-2">
+              {loadingPackages ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                </div>
+              ) : creditPackages.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No packages available for your region yet.</p>
+                  <p className="text-sm text-gray-400 mt-2">Please contact support for assistance.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(() => {
+                    const currency = getOrganizerCurrency();
+                    return creditPackages
+                      .filter(pkg => getPackagePrice(pkg, currency) != null)
+                      .map(pkg => {
+                        const price = getPackagePrice(pkg, currency);
+                        const totalCredits = pkg.credits + (pkg.bonus_credits || 0);
+                        const pricePerCredit = totalCredits > 0 ? price / totalCredits : 0;
+                        return (
+                          <Card
+                            key={pkg.id}
+                            className={`rounded-xl transition-all cursor-pointer hover:shadow-md border-2 ${
+                              pkg.is_popular ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-200'
+                            }`}
+                            onClick={() => setSelectedCreditPackage(pkg)}
+                          >
+                            <CardContent className="p-4">
+                              {pkg.badge_text && (
+                                <Badge className={`mb-2 ${pkg.is_popular ? 'bg-blue-600' : 'bg-gray-600'}`}>
+                                  {pkg.badge_text}
+                                </Badge>
+                              )}
+                              <h3 className="text-base font-bold mb-0.5">{pkg.name}</h3>
+                              {pkg.description && <p className="text-xs text-gray-500 mb-3">{pkg.description}</p>}
+                              <div className="mb-3">
+                                <p className="text-2xl font-bold text-blue-600">
+                                  {formatCreditsNumber(totalCredits)}
+                                </p>
+                                <p className="text-xs text-gray-500">credits</p>
+                              </div>
+                              {pkg.bonus_credits > 0 && (
+                                <div className="flex items-center gap-1 text-xs text-green-600 mb-2">
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                  <span>+{formatCreditsNumber(pkg.bonus_credits)} bonus</span>
+                                </div>
+                              )}
+                              <div className="border-t pt-3">
+                                <p className="text-lg font-bold">{formatCreditsCurrency(price, currency)}</p>
+                                <p className="text-[10px] text-gray-400">
+                                  {formatCreditsCurrency(pricePerCredit, currency)}/credit
+                                </p>
+                              </div>
+                              <Button className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+                                Buy Now
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      });
+                  })()}
+                </div>
+              )}
+            </div>
+          ) : (
+            // Confirmation view
+            (() => {
+              const currency = getOrganizerCurrency();
+              const provider = getPaymentProvider(currency);
+              const providerNames = { stripe: 'Stripe', paystack: 'Paystack', flutterwave: 'Flutterwave' };
+              const displayAmount = getPackagePrice(selectedCreditPackage, currency);
+
+              return (
+                <div className="py-4 space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-xl">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-500">Credits</span>
+                      <span className="font-semibold">{formatCreditsNumber(selectedCreditPackage.credits)}</span>
+                    </div>
+                    {selectedCreditPackage.bonus_credits > 0 && (
+                      <div className="flex items-center justify-between mb-2 text-green-600">
+                        <span className="flex items-center gap-1">
+                          <Sparkles className="w-4 h-4" />
+                          Bonus Credits
+                        </span>
+                        <span className="font-semibold">+{formatCreditsNumber(selectedCreditPackage.bonus_credits)}</span>
+                      </div>
+                    )}
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">Total Credits</span>
+                        <span className="font-bold text-blue-600">
+                          {formatCreditsNumber(selectedCreditPackage.credits + (selectedCreditPackage.bonus_credits || 0))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-gray-900">Amount to Pay</span>
+                      <span className="text-2xl font-bold text-blue-600">
+                        {formatCreditsCurrency(displayAmount, currency)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-400 text-center">
+                    You'll be redirected to {providerNames[provider] || 'payment'} to complete payment
+                  </p>
+                </div>
+              );
+            })()
+          )}
+
+          {selectedCreditPackage && (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedCreditPackage(null)}>
+                Back
+              </Button>
+              <Button
+                onClick={processCreditsPayment}
+                disabled={purchasingCredits}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {purchasingCredits ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <CreditCard className="w-4 h-4 mr-2" />
+                )}
+                Pay Now
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
