@@ -116,6 +116,11 @@ export function RackPartyDetail() {
   const [purchasingCredits, setPurchasingCredits] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
 
+  // Credit purchase history
+  const [creditTransactions, setCreditTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [showPurchaseHistory, setShowPurchaseHistory] = useState(false);
+
   useEffect(() => {
     if (!organizer?.id || !id) return;
     loadInvite();
@@ -219,6 +224,24 @@ export function RackPartyDetail() {
     }
   }
 
+  async function loadCreditTransactions() {
+    if (!organizer?.id) return;
+    setLoadingTransactions(true);
+    try {
+      const { data } = await supabase
+        .from('communication_credit_transactions')
+        .select('*')
+        .eq('organizer_id', organizer.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      setCreditTransactions(data || []);
+    } catch (err) {
+      console.error('Error loading credit transactions:', err);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  }
+
   function getOrganizerCurrency() {
     const countryCode = organizer?.country_code;
     const countryToCurrency = {
@@ -252,8 +275,10 @@ export function RackPartyDetail() {
 
   function openCreditDialog() {
     setSelectedCreditPackage(null);
+    setShowPurchaseHistory(false);
     setShowCreditDialog(true);
     if (creditPackages.length === 0) loadCreditPackages();
+    loadCreditTransactions();
   }
 
   async function processCreditsPayment() {
@@ -1471,6 +1496,53 @@ export function RackPartyDetail() {
                   })()}
                 </div>
               )}
+
+              {/* Purchase History */}
+              <div className="mt-4 border-t pt-4">
+                <button
+                  onClick={() => setShowPurchaseHistory(!showPurchaseHistory)}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  {showPurchaseHistory ? 'Hide Purchase History' : 'View Purchase History'}
+                </button>
+                {showPurchaseHistory && (
+                  <div className="mt-3">
+                    {loadingTransactions ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                      </div>
+                    ) : creditTransactions.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">No purchase history yet</p>
+                    ) : (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {creditTransactions.map((tx) => (
+                          <div key={tx.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {tx.description || tx.package_name || 'Credit Purchase'}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {new Date(tx.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-blue-600">
+                                +{formatCreditsNumber(tx.credits || tx.amount)} credits
+                              </p>
+                              {tx.payment_amount != null && (
+                                <p className="text-xs text-gray-400">
+                                  {formatCreditsCurrency(tx.payment_amount, tx.currency || 'NGN')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             // Confirmation view

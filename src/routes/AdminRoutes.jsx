@@ -40,6 +40,7 @@ import { AdminUsers } from '@/pages/admin/AdminUsers'; // NEW: All user manageme
 import { AdminPaymentConnections } from '@/pages/admin/AdminPaymentConnections'; // Payment connections management
 import { AdminContacts } from '@/pages/admin/AdminContacts'; // All contacts management
 import { AdminCommunications } from '@/pages/admin/AdminCommunications'; // Platform broadcasts
+import { AdminRackParty } from '@/pages/admin/AdminRackParty';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -166,6 +167,7 @@ export function AdminRoutes() {
             <Route path="/payment-connections" element={<PermissionRoute permission="canManagePaymentConnections"><AdminPaymentConnections /></PermissionRoute>} />
             <Route path="/contacts" element={<AdminContacts />} />
             <Route path="/communications" element={<AdminCommunications />} />
+            <Route path="/rackparty" element={<AdminRackParty />} />
           </Routes>
         </AdminLayout>
       </AdminProvider>

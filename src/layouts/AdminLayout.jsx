@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Shield, Calendar, DollarSign, RefreshCw,
   MessageSquare, Users, Menu, X, Building, UserCheck,
   Mail, Send, Bell, TrendingUp, LogOut, Loader2, Settings,
-  Clock, Home, FolderOpen, Receipt, ChevronDown, Globe, Megaphone, CreditCard,
+  Clock, Home, FolderOpen, Receipt, ChevronDown, Globe, Megaphone, CreditCard, PartyPopper,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,7 @@ const navGroups = [
       { icon: Calendar, label: 'Events', path: '/admin/events' },
       { icon: FolderOpen, label: 'Categories', path: '/admin/categories' },
       { icon: Megaphone, label: 'Adverts', path: '/admin/adverts' },
+      { icon: PartyPopper, label: 'RackParty', path: '/admin/rackparty' },
     ]
   },
   {
