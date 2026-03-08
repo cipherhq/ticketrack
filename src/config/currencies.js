@@ -187,21 +187,21 @@ export const getUserDefaultCurrency = async (supabase, userId) => {
 // This is database-driven and cached for performance
 export const getCurrencyFromCountryCode = async (supabase, countryCode) => {
   if (!countryCode) return null;
-  
+
   // Check cache first
   if (countryCurrencyCache[countryCode]) {
     return countryCurrencyCache[countryCode];
   }
-  
+
   try {
     const { data: country, error } = await supabase
       .from('countries')
       .select('default_currency')
       .eq('code', countryCode)
       .single();
-    
+
     if (error) throw error;
-    
+
     if (country?.default_currency) {
       // Cache the result
       countryCurrencyCache[countryCode] = country.default_currency;
@@ -210,8 +210,9 @@ export const getCurrencyFromCountryCode = async (supabase, countryCode) => {
   } catch (err) {
     console.error('Error getting currency from country code:', err);
   }
-  
-  return null;
+
+  // Always fall back to hardcoded mapping instead of returning null
+  return getDefaultCurrency(countryCode);
 };
 
 // Synchronous version using pre-loaded countries data
