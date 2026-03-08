@@ -5,7 +5,7 @@ import {
   CheckCircle, HelpCircle, X, Clock, Mail, Bell, Phone, MessageCircle,
   CreditCard, AlertCircle, Trash2, Plus, UserPlus, ClipboardList, Settings2,
   RefreshCw, Image, Palette, MessageSquare, Megaphone, Activity, Pencil,
-  Upload, Eye,
+  Upload, Eye, PartyPopper,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -57,7 +57,8 @@ export function RackPartyDetail() {
   const [stats, setStats] = useState({ total: 0, going: 0, maybe: 0, pending: 0, declined: 0 });
   const [loading, setLoading] = useState(true);
 
-  const [activeTab, setActiveTab] = useState('guests');
+  const [activeTab, setActiveTab] = useState(location.state?.freshlyCreated ? 'add' : 'guests');
+  const [isNewParty, setIsNewParty] = useState(location.state?.freshlyCreated === true);
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Add guest form
@@ -386,7 +387,7 @@ export function RackPartyDetail() {
   async function handleSendInvites() {
     if (unsentEmailGuests.length === 0) { toast.info('No unsent guests with email addresses'); return; }
     if (paidEmailCount > 0 && creditBalance < emailCreditsNeeded) {
-      toast.error(`Insufficient credits. You need ${emailCreditsNeeded} credits for ${paidEmailCount} paid email${paidEmailCount > 1 ? 's' : ''}.`);
+      toast.error(`Insufficient credits. You need ${emailCreditsNeeded} credits for ${paidEmailCount} paid email${paidEmailCount > 1 ? 's' : ''}. Buy credits from the credit banner above.`);
       return;
     }
     setSendingInvites(true);
@@ -470,7 +471,7 @@ export function RackPartyDetail() {
   async function handleSendSmsInvites() {
     if (unsentSmsGuests.length === 0) { toast.info('No unsent guests with phone numbers'); return; }
     if (creditBalance < smsCreditsNeeded) {
-      toast.error(`Insufficient credits. You need ${smsCreditsNeeded} credits for ${unsentSmsGuests.length} SMS (5 credits each).`);
+      toast.error(`Insufficient credits. You need ${smsCreditsNeeded} credits for ${unsentSmsGuests.length} SMS (5 credits each). Buy credits from the credit banner above.`);
       return;
     }
     setSendingSms(true);
@@ -647,70 +648,82 @@ export function RackPartyDetail() {
       </div>
 
       {/* Credit Info Banner */}
-      <Card className="rounded-2xl border-blue-200 bg-blue-50/50">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
-              <span className="text-xs sm:text-sm font-medium text-blue-900">
-                Free: <span className="font-bold">{freeEmailsRemaining}/{FREE_EMAIL_LIMIT}</span>
-              </span>
+      {guests.length > 0 && (
+        <Card className="rounded-2xl border-blue-200 bg-blue-50/50">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+                <span className="text-xs sm:text-sm font-medium text-blue-900">
+                  Free: <span className="font-bold">{freeEmailsRemaining}/{FREE_EMAIL_LIMIT}</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+                <span className="text-xs sm:text-sm font-medium text-blue-900">
+                  Credits: <span className="font-bold">{creditBalance}</span>
+                </span>
+              </div>
+              <a
+                href="/organizer/credits"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                Buy Credits
+              </a>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
-              <span className="text-xs sm:text-sm font-medium text-blue-900">
-                Credits: <span className="font-bold">{creditBalance}</span>
-              </span>
-            </div>
-          </div>
-          {paidEmailCount > 0 && (
-            <p className="text-xs text-amber-700 mt-2 flex items-center gap-1">
-              <AlertCircle className="w-3.5 h-3.5" />
-              {paidEmailCount} email{paidEmailCount > 1 ? 's' : ''} will use {emailCreditsNeeded} credit{emailCreditsNeeded > 1 ? 's' : ''} (1 per email)
-            </p>
-          )}
-          {unsentSmsGuests.length > 0 && (
-            <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1">
-              <Phone className="w-3.5 h-3.5" />
-              SMS sending costs 5 credits each ({smsCreditsNeeded} credits for {unsentSmsGuests.length} SMS)
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            {paidEmailCount > 0 && (
+              <p className="text-xs text-amber-700 mt-2 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {paidEmailCount} email{paidEmailCount > 1 ? 's' : ''} will use {emailCreditsNeeded} credit{emailCreditsNeeded > 1 ? 's' : ''} (1 per email)
+              </p>
+            )}
+            {unsentSmsGuests.length > 0 && (
+              <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1">
+                <Phone className="w-3.5 h-3.5" />
+                SMS sending costs 5 credits each ({smsCreditsNeeded} credits for {unsentSmsGuests.length} SMS)
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-        <Button
-          onClick={handleSendInvites}
-          disabled={sendingInvites || unsentEmailGuests.length === 0 || (paidEmailCount > 0 && creditBalance < emailCreditsNeeded)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-1.5 text-xs sm:text-sm"
-        >
-          {sendingInvites ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4 shrink-0" />}
-          <span className="truncate">Email ({unsentEmailGuests.length})</span>
-        </Button>
-        <Button
-          onClick={handleSendSmsInvites}
-          disabled={sendingSms || unsentSmsGuests.length === 0 || creditBalance < smsCreditsNeeded}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-1.5 text-xs sm:text-sm"
-        >
-          {sendingSms ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4 shrink-0" />}
-          <span className="truncate">SMS ({unsentSmsGuests.length})</span>
-        </Button>
-        <Button
-          onClick={handleSendReminders}
-          disabled={sendingReminders || guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length === 0}
-          variant="outline" className="rounded-xl gap-1.5 text-xs sm:text-sm"
-        >
-          {sendingReminders ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4 shrink-0" />}
-          <span className="truncate">Remind ({guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length})</span>
-        </Button>
-        <Button variant="outline" onClick={copyShareLink} className="rounded-xl gap-1.5 text-xs sm:text-sm">
-          <Copy className="w-4 h-4 shrink-0" /> <span className="truncate">Share Link</span>
-        </Button>
-        <Button variant="outline" onClick={handleDownloadFlyerWithQR} className="rounded-xl gap-1.5 text-xs sm:text-sm col-span-2 sm:col-span-1">
-          <Download className="w-4 h-4 shrink-0" /> <span className="truncate">Flyer with QR</span>
-        </Button>
-      </div>
+      {guests.length > 0 && (
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+          <Button
+            onClick={handleSendInvites}
+            disabled={sendingInvites || unsentEmailGuests.length === 0 || (paidEmailCount > 0 && creditBalance < emailCreditsNeeded)}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl gap-1.5 text-xs sm:text-sm"
+          >
+            {sendingInvites ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4 shrink-0" />}
+            <span className="truncate">Email ({unsentEmailGuests.length})</span>
+          </Button>
+          <Button
+            onClick={handleSendSmsInvites}
+            disabled={sendingSms || unsentSmsGuests.length === 0 || creditBalance < smsCreditsNeeded}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-1.5 text-xs sm:text-sm"
+          >
+            {sendingSms ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4 shrink-0" />}
+            <span className="truncate">SMS ({unsentSmsGuests.length})</span>
+          </Button>
+          <Button
+            onClick={handleSendReminders}
+            disabled={sendingReminders || guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length === 0}
+            variant="outline" className="rounded-xl gap-1.5 text-xs sm:text-sm"
+          >
+            {sendingReminders ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4 shrink-0" />}
+            <span className="truncate">Remind ({guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at).length})</span>
+          </Button>
+          <Button variant="outline" onClick={copyShareLink} className="rounded-xl gap-1.5 text-xs sm:text-sm">
+            <Copy className="w-4 h-4 shrink-0" /> <span className="truncate">Share Link</span>
+          </Button>
+          <Button variant="outline" onClick={handleDownloadFlyerWithQR} className="rounded-xl gap-1.5 text-xs sm:text-sm col-span-2 sm:col-span-1">
+            <Download className="w-4 h-4 shrink-0" /> <span className="truncate">Flyer with QR</span>
+          </Button>
+        </div>
+      )}
 
       {/* Hidden QR flyer for capture */}
       <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
@@ -801,8 +814,11 @@ export function RackPartyDetail() {
             </div>
             {filteredGuests.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-400">No guests yet. Add some in the "Add Guests" tab.</p>
+                <UserPlus className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 mb-3">No guests yet</p>
+                <Button onClick={() => setActiveTab('add')} className="rounded-xl gap-2">
+                  <UserPlus className="w-4 h-4" /> Add Guests
+                </Button>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -879,6 +895,76 @@ export function RackPartyDetail() {
       {activeTab === 'add' && (
         <Card className="rounded-2xl">
           <CardContent className="p-3 sm:p-4 space-y-4">
+            {/* Welcome banner for freshly created party */}
+            {isNewParty && guests.length === 0 && (
+              <div className="rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 p-4 sm:p-5 text-white">
+                <div className="flex items-center gap-2 mb-2">
+                  <PartyPopper className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <h3 className="text-base sm:text-lg font-bold">Party created! Now add your guests</h3>
+                </div>
+                <p className="text-sm text-white/90">
+                  Add guests manually, paste a list, import from contacts, or upload a CSV. You can use email, phone, or both.
+                </p>
+              </div>
+            )}
+
+            {/* "Ready to send?" prompt when guests have been added */}
+            {isNewParty && guests.length > 0 && (
+              <div className="rounded-xl bg-gradient-to-r from-blue-500 to-emerald-500 p-4 sm:p-5 text-white space-y-3">
+                <h3 className="text-base sm:text-lg font-bold">Ready to send?</h3>
+                <p className="text-sm text-white/90">
+                  You have <span className="font-bold">{guests.length}</span> guest{guests.length !== 1 ? 's' : ''}.{' '}
+                  <span className="font-bold">{guests.filter(g => g.email).length}</span> with email.{' '}
+                  <span className="font-bold">{guests.filter(g => g.phone).length}</span> with phone.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {unsentEmailGuests.length > 0 && (
+                    <Button
+                      onClick={handleSendInvites}
+                      disabled={sendingInvites || (paidEmailCount > 0 && creditBalance < emailCreditsNeeded)}
+                      className="bg-white text-blue-700 hover:bg-blue-50 rounded-xl gap-1.5 text-xs sm:text-sm"
+                    >
+                      {sendingInvites ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                      Send Email ({unsentEmailGuests.length})
+                    </Button>
+                  )}
+                  {unsentSmsGuests.length > 0 && (
+                    <Button
+                      onClick={handleSendSmsInvites}
+                      disabled={sendingSms || creditBalance < smsCreditsNeeded}
+                      className="bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl gap-1.5 text-xs sm:text-sm"
+                    >
+                      {sendingSms ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+                      Send SMS ({unsentSmsGuests.length})
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => { setIsNewParty(false); setActiveTab('guests'); }}
+                    className="border-white/40 text-white hover:bg-white/20 rounded-xl gap-1.5 text-xs sm:text-sm"
+                  >
+                    <Users className="w-4 h-4" /> View Guest List
+                  </Button>
+                </div>
+                {((paidEmailCount > 0 && creditBalance < emailCreditsNeeded) || (unsentSmsGuests.length > 0 && creditBalance < smsCreditsNeeded)) && (
+                  <div className="rounded-lg bg-amber-500/20 border border-amber-300/40 p-3 mt-1">
+                    <p className="text-sm text-white flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      You need more credits to send all invites.{' '}
+                      <a
+                        href="/organizer/credits"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold underline hover:no-underline"
+                      >
+                        Buy Credits
+                      </a>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 sm:flex gap-2">
               {[
                 { id: 'manual', label: 'Manual', fullLabel: 'Manual Entry', icon: Plus },

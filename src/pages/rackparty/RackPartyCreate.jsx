@@ -73,7 +73,7 @@ export function RackPartyCreate() {
         rsvpDeadline: createRsvpDeadline ? new Date(createRsvpDeadline).toISOString() : null,
       });
       toast.success('Party created!');
-      navigate(basePath + '/' + inv.id);
+      navigate(basePath + '/' + inv.id, { state: { freshlyCreated: true } });
     } catch (err) {
       console.error('Error creating campaign:', err);
       toast.error('Failed to create campaign');
