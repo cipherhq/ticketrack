@@ -148,7 +148,7 @@ async function handleChargeCompleted(supabase: any, data: any) {
   // Find the order by payment reference (tx_ref format: TKT-{orderId}-{timestamp})
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("*, events(title, organizer_id, organizers(id, business_name, user_id, flutterwave_subaccount_id))")
+    .select("*, order_items(id, quantity, ticket_type_id), events(title, organizer_id, organizers(id, business_name, user_id, email, business_email, flutterwave_subaccount_id))")
     .eq("payment_reference", tx_ref)
     .single();
 
@@ -177,8 +177,35 @@ async function handleChargeCompleted(supabase: any, data: any) {
   // Generate tickets
   await generateTickets(supabase, order);
 
-  // Send confirmation email
+  // Send confirmation email to attendee
   await sendConfirmationEmail(supabase, order);
+
+  // Send sale notification to organizer
+  const organizerEmail = order.events?.organizers?.email || order.events?.organizers?.business_email;
+  if (organizerEmail) {
+    try {
+      const totalQty = order.order_items?.reduce((sum: number, i: any) => sum + (i.quantity || 1), 0) || 1;
+      await sendEmailWithServiceRole({
+        type: "new_ticket_sale",
+        to: organizerEmail,
+        data: {
+          eventTitle: order.events?.title,
+          eventId: order.event_id,
+          ticketType: "Ticket",
+          quantity: totalQty,
+          buyerName: order.buyer_name,
+          buyerEmail: order.buyer_email,
+          buyerPhone: order.buyer_phone || null,
+          amount: order.total_amount,
+          currency: order.currency || "NGN",
+          isFree: parseFloat(order.total_amount) === 0,
+          appUrl: "https://ticketrack.com",
+        },
+      });
+    } catch (emailErr) {
+      safeLog.warn("Failed to send organizer sale notification:", emailErr);
+    }
+  }
 
   // Log the payment
   await supabase.from("admin_audit_logs").insert({
