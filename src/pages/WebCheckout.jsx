@@ -1012,6 +1012,47 @@ export function WebCheckout() {
           }
         })
       }
+
+      // Check if event is now sold out and send congratulatory email
+      try {
+        const { data: ticketTypes } = await supabase
+          .from('ticket_types')
+          .select('quantity_available, quantity_sold')
+          .eq('event_id', event.id)
+
+        if (ticketTypes && ticketTypes.length > 0) {
+          const isSoldOut = ticketTypes.every(
+            tt => (tt.quantity_sold || 0) >= (tt.quantity_available || 0) && (tt.quantity_available || 0) > 0
+          )
+
+          if (isSoldOut && organizerEmail) {
+            const { data: revenueData } = await supabase
+              .from('orders')
+              .select('total_amount')
+              .eq('event_id', event.id)
+              .eq('status', 'completed')
+
+            const totalRevenue = revenueData?.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0) || 0
+
+            sendConfirmationEmail({
+              type: 'event_sold_out',
+              to: organizerEmail,
+              data: {
+                eventTitle: event.title,
+                eventId: event.id,
+                totalSold: ticketTypes.reduce((sum, tt) => sum + (tt.quantity_sold || 0), 0),
+                totalRevenue,
+                currency: event.currency || 'NGN',
+                eventDate: event.start_date,
+                appUrl: window.location.origin
+              }
+            })
+          }
+        }
+      } catch (soldOutErr) {
+        console.warn('Failed to check/send sold-out notification:', soldOutErr)
+      }
+
       return { success: true, tickets }
     } catch (err) {
       console.error('Finalize payment error:', err)

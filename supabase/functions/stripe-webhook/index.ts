@@ -478,6 +478,64 @@ serve(async (req) => {
               }
             }
           }
+
+          // Check if event is now sold out and send congratulatory email
+          try {
+            const { data: ticketTypes } = await supabase
+              .from("ticket_types")
+              .select("quantity_available, quantity_sold")
+              .eq("event_id", order.event_id);
+
+            if (ticketTypes && ticketTypes.length > 0) {
+              const isSoldOut = ticketTypes.every(
+                (tt: any) => (tt.quantity_sold || 0) >= (tt.quantity_available || 0) && (tt.quantity_available || 0) > 0
+              );
+
+              if (isSoldOut) {
+                const { data: eventInfo } = await supabase
+                  .from("events")
+                  .select("title, start_date, tickets_sold, capacity, currency, organizer_id")
+                  .eq("id", order.event_id)
+                  .single();
+
+                if (eventInfo?.organizer_id) {
+                  const { data: orgData } = await supabase
+                    .from("organizers")
+                    .select("email, business_email")
+                    .eq("id", eventInfo.organizer_id)
+                    .single();
+
+                  const orgEmail = orgData?.email || orgData?.business_email;
+                  if (orgEmail) {
+                    const { data: revenueData } = await supabase
+                      .from("orders")
+                      .select("total_amount")
+                      .eq("event_id", order.event_id)
+                      .eq("status", "completed");
+
+                    const totalRevenue = revenueData?.reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || 0), 0) || 0;
+
+                    await sendEmailWithServiceRole({
+                      type: "event_sold_out",
+                      to: orgEmail,
+                      data: {
+                        eventTitle: eventInfo.title,
+                        eventId: order.event_id,
+                        totalSold: eventInfo.tickets_sold || ticketTypes.reduce((sum: number, tt: any) => sum + (tt.quantity_sold || 0), 0),
+                        totalRevenue,
+                        currency: eventInfo.currency || order.currency || "USD",
+                        eventDate: eventInfo.start_date,
+                        appUrl: "https://ticketrack.com",
+                      },
+                    });
+                    safeLog.info(`Sold out email sent for event ${order.event_id}`);
+                  }
+                }
+              }
+            }
+          } catch (soldOutErr) {
+            safeLog.warn("Failed to check/send sold-out notification:", soldOutErr);
+          }
         }
       }
     } else if (event.type === "payment_intent.succeeded") {
@@ -598,6 +656,47 @@ serve(async (req) => {
                       isFree: false,
                     },
                   });
+                }
+
+                // Check if event is now sold out (wallet payment path)
+                try {
+                  const { data: ttypes } = await supabase
+                    .from("ticket_types")
+                    .select("quantity_available, quantity_sold")
+                    .eq("event_id", order.event_id);
+
+                  if (ttypes && ttypes.length > 0) {
+                    const allSoldOut = ttypes.every(
+                      (tt: any) => (tt.quantity_sold || 0) >= (tt.quantity_available || 0) && (tt.quantity_available || 0) > 0
+                    );
+
+                    if (allSoldOut && organizerEmail) {
+                      const { data: revData } = await supabase
+                        .from("orders")
+                        .select("total_amount")
+                        .eq("event_id", order.event_id)
+                        .eq("status", "completed");
+
+                      const totalRev = revData?.reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || 0), 0) || 0;
+
+                      await sendEmailWithServiceRole({
+                        type: "event_sold_out",
+                        to: organizerEmail,
+                        data: {
+                          eventTitle: eventData.title,
+                          eventId: order.event_id,
+                          totalSold: ttypes.reduce((sum: number, tt: any) => sum + (tt.quantity_sold || 0), 0),
+                          totalRevenue: totalRev,
+                          currency: order.currency || "USD",
+                          eventDate: eventData.start_date,
+                          appUrl: "https://ticketrack.com",
+                        },
+                      });
+                      safeLog.info(`Sold out email sent for event ${order.event_id} (wallet)`);
+                    }
+                  }
+                } catch (soldOutErr) {
+                  safeLog.warn("Failed to check/send sold-out notification (wallet):", soldOutErr);
                 }
               }
             }

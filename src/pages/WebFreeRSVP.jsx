@@ -51,6 +51,48 @@ const sendConfirmationEmail = async (emailData) => {
   }
 }
 
+// Check if event is sold out and send congratulatory email to organizer
+const checkAndSendSoldOutEmail = async (eventId, organizerEmail, event) => {
+  try {
+    const { data: ticketTypes } = await supabase
+      .from('ticket_types')
+      .select('quantity_available, quantity_sold')
+      .eq('event_id', eventId)
+
+    if (ticketTypes && ticketTypes.length > 0) {
+      const isSoldOut = ticketTypes.every(
+        tt => (tt.quantity_sold || 0) >= (tt.quantity_available || 0) && (tt.quantity_available || 0) > 0
+      )
+
+      if (isSoldOut && organizerEmail) {
+        const { data: revenueData } = await supabase
+          .from('orders')
+          .select('total_amount')
+          .eq('event_id', eventId)
+          .eq('status', 'completed')
+
+        const totalRevenue = revenueData?.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0) || 0
+
+        sendConfirmationEmail({
+          type: 'event_sold_out',
+          to: organizerEmail,
+          data: {
+            eventTitle: event?.title,
+            eventId: eventId,
+            totalSold: ticketTypes.reduce((sum, tt) => sum + (tt.quantity_sold || 0), 0),
+            totalRevenue,
+            currency: event?.currency || 'NGN',
+            eventDate: event?.start_date,
+            appUrl: window.location.origin
+          }
+        })
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to check/send sold-out notification:', err)
+  }
+}
+
 // Credit promoter for referral - non-blocking, errors won't affect RSVP
 const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
   try {
@@ -640,6 +682,8 @@ export function WebFreeRSVP() {
             }
           })
         }
+        // Check sold out
+        checkAndSendSoldOutEmail(eventId, organizerEmail, event)
       } catch (orgEmailErr) {
         console.warn('Organizer notification failed:', orgEmailErr?.message)
       }
@@ -969,6 +1013,8 @@ export function WebFreeRSVP() {
             }
           })
         }
+        // Check sold out
+        checkAndSendSoldOutEmail(event.id, organizerEmail, event)
       } catch (orgEmailErr) {
         console.warn('Organizer notification failed:', orgEmailErr?.message)
       }
@@ -1111,6 +1157,8 @@ export function WebFreeRSVP() {
             }
           })
         }
+        // Check sold out
+        checkAndSendSoldOutEmail(event.id, organizerEmail, event)
       } catch (orgEmailErr) {
         console.warn('Organizer notification failed:', orgEmailErr?.message)
       }

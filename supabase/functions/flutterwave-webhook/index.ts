@@ -207,6 +207,53 @@ async function handleChargeCompleted(supabase: any, data: any) {
     }
   }
 
+  // Check if event is now sold out and send congratulatory email
+  try {
+    const { data: ticketTypes } = await supabase
+      .from("ticket_types")
+      .select("quantity_available, quantity_sold")
+      .eq("event_id", order.event_id);
+
+    if (ticketTypes && ticketTypes.length > 0) {
+      const isSoldOut = ticketTypes.every(
+        (tt: any) => (tt.quantity_sold || 0) >= (tt.quantity_available || 0) && (tt.quantity_available || 0) > 0
+      );
+
+      if (isSoldOut && organizerEmail) {
+        const { data: eventInfo } = await supabase
+          .from("events")
+          .select("title, start_date, tickets_sold, capacity, currency")
+          .eq("id", order.event_id)
+          .single();
+
+        const { data: revenueData } = await supabase
+          .from("orders")
+          .select("total_amount")
+          .eq("event_id", order.event_id)
+          .eq("status", "completed");
+
+        const totalRevenue = revenueData?.reduce((sum: number, o: any) => sum + parseFloat(o.total_amount || 0), 0) || 0;
+
+        await sendEmailWithServiceRole({
+          type: "event_sold_out",
+          to: organizerEmail,
+          data: {
+            eventTitle: eventInfo?.title || order.events?.title,
+            eventId: order.event_id,
+            totalSold: eventInfo?.tickets_sold || ticketTypes.reduce((sum: number, tt: any) => sum + (tt.quantity_sold || 0), 0),
+            totalRevenue,
+            currency: eventInfo?.currency || order.currency || "NGN",
+            eventDate: eventInfo?.start_date,
+            appUrl: "https://ticketrack.com",
+          },
+        });
+        safeLog.info(`Sold out email sent for event ${order.event_id}`);
+      }
+    }
+  } catch (soldOutErr) {
+    safeLog.warn("Failed to check/send sold-out notification:", soldOutErr);
+  }
+
   // Log the payment
   await supabase.from("admin_audit_logs").insert({
     action: order.is_donation ? "donation_payment_received" : "payment_received",

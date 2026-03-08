@@ -98,6 +98,7 @@ const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; from
   organizer_welcome: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   new_ticket_sale: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   low_ticket_alert: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  event_sold_out: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   event_published: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   event_cancelled_organizer: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   event_reminder_organizer: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
@@ -519,6 +520,84 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
 </html>` }),
   daily_sales_summary: d => ({ subject: `Daily Sales - ${d.date}`, html: baseTemplate(`<h2>Daily Summary</h2><p>Performance on ${d.date}:</p><div class="card"><div class="row"><span class="label">Revenue</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.totalRevenue, d.currency)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Orders</span><span class="value">${d.ordersCount}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/analytics" class="btn">Analytics</a></div>`) }),
   low_ticket_alert: d => ({ subject: `⚠️ Low Tickets: ${d.eventTitle}`, html: baseTemplate(`<div class="highlight"><strong>Running Low!</strong></div><h2>${d.eventTitle}</h2><div class="card"><div class="row"><span class="label">${d.ticketType}</span><span class="value" style="color:#dc3545">${d.remaining} left</span></div><div class="row"><span class="label">Sold</span><span class="value">${d.sold}/${d.total}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/tickets" class="btn">Manage</a></div>`) }),
+  event_sold_out: d => ({ subject: `🎉 SOLD OUT: ${d.eventTitle}!`, html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f7; font-family: Arial, sans-serif;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f7;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #10b981 100%); padding: 40px;">
+              <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #ffffff;">${BRAND_NAME}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 40px 40px 10px 40px;">
+              <div style="font-size: 60px; margin-bottom: 12px;">🎉</div>
+              <h2 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 800; color: #1a1a2e;">SOLD OUT!</h2>
+              <p style="margin: 0; font-size: 16px; color: #6b7280;">Congratulations! Your event has sold out!</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 40px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: linear-gradient(135deg, #fefce8, #ecfdf5); border-radius: 12px; border: 2px solid #eab308;">
+                <tr>
+                  <td align="center" style="padding: 28px;">
+                    <p style="margin: 0 0 4px 0; font-size: 12px; color: #92400e; text-transform: uppercase; letter-spacing: 1px;">Event</p>
+                    <p style="margin: 0; font-size: 24px; font-weight: 700; color: #1a1a2e;">${d.eventTitle}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 40px 20px 40px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8fafc; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #374151;"><strong>Total Tickets Sold:</strong> ${d.totalSold || 'All'}</p>
+                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #374151;"><strong>Total Revenue:</strong> ${d.totalRevenue ? formatCurrency(d.totalRevenue, d.currency || 'NGN') : 'View in dashboard'}</p>
+                    <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Event Date:</strong> ${d.eventDate ? formatDate(d.eventDate) : 'See dashboard'}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 20px 40px;">
+              <div style="background: #ecfdf5; border-radius: 12px; padding: 24px; text-align: center;">
+                <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #047857;">🌟 Amazing Achievement!</p>
+                <p style="margin: 0; font-size: 14px; color: #065f46;">Wishing you a fantastic and successful event. Your hard work has paid off!</p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 0 40px 40px 40px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="center" style="background-color: #2969FF; border-radius: 8px;">
+                    <a href="${APP_URL}/organizer/events/${d.eventId}" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">View Event Dashboard</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                ${BRAND_NAME} Technologies Ltd | Lagos, Nigeria<br>
+                &copy; ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>` }),
   event_published: d => ({ subject: `✅ Published: ${d.eventTitle}`, html: baseTemplate(`<div class="success"><strong>Live!</strong></div><h2>${d.eventTitle}</h2><p>Your event is visible.</p><div class="card"><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Link</span><span class="value"><a href="${d.eventUrl}">${d.eventUrl}</a></span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}" class="btn">Manage</a></div>`) }),
   event_cancelled_organizer: d => ({ subject: `Cancelled: ${d.eventTitle}`, html: baseTemplate(`<h2>Cancellation Confirmed</h2><p><strong>${d.eventTitle}</strong> cancelled.</p><div class="card"><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Refunds</span><span class="value">${formatCurrency(d.refundTotal, d.currency)}</span></div></div><p>Attendees notified. Refunds processing.</p>`) }),
   event_reminder_organizer: d => ({ subject: `Your event is ${d.timeUntil}: ${d.eventTitle}`, html: baseTemplate(`<h2>Event ${d.timeUntil}!</h2><p>Get ready for <strong>${d.eventTitle}</strong>!</p><div class="card"><div class="row"><span class="label">Date</span><span class="value">${formatDate(d.eventDate)}</span></div><div class="row"><span class="label">Tickets</span><span class="value">${d.ticketsSold}</span></div><div class="row"><span class="label">Revenue</span><span class="value">${formatCurrency(d.revenue, d.currency)}</span></div></div><h3>Checklist:</h3><ul><li>Download attendee list</li><li>Set up check-in</li><li>Brief team</li></ul><div class="btn-wrap"><a href="${APP_URL}/organizer/events/${d.eventId}/check-in" class="btn">Check-In</a></div>`) }),
