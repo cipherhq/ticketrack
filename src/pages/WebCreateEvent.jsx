@@ -346,7 +346,17 @@ export function WebCreateEvent() {
     if (activeTab === 'datetime') {
       if (!formData.startDate) errors.push("Start date is required");
       if (!formData.startTime) errors.push("Start time is required");
+      if (!formData.endDate) errors.push("End date is required");
       if (!formData.endTime) errors.push("End time is required");
+      if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
+        errors.push("End date cannot be before start date");
+      }
+      if (formData.startDate && formData.endDate && formData.startDate === formData.endDate && formData.startTime && formData.endTime && formData.endTime <= formData.startTime) {
+        errors.push("End time must be after start time for same-day events");
+      }
+      if (formData.gateOpeningTime && formData.startTime && formData.gateOpeningTime >= formData.startTime) {
+        errors.push("Gate opening time must be before event start time");
+      }
     }
     
     if (activeTab === 'venue') {
@@ -1090,6 +1100,7 @@ export function WebCreateEvent() {
                       type="date"
                       value={formData.startDate}
                       onChange={(e) => handleInputChange('startDate', e.target.value)}
+                      autoComplete="off"
                       className="h-12 rounded-xl bg-gray-50 border-0"
                     />
                   </div>
@@ -1099,6 +1110,7 @@ export function WebCreateEvent() {
                       type="time"
                       value={formData.startTime}
                       onChange={(e) => handleInputChange('startTime', e.target.value)}
+                      autoComplete="off"
                       className="h-12 rounded-xl bg-gray-50 border-0"
                     />
                   </div>
@@ -1110,9 +1122,14 @@ export function WebCreateEvent() {
                     <Input
                       type="date"
                       value={formData.endDate}
+                      min={formData.startDate || undefined}
                       onChange={(e) => handleInputChange('endDate', e.target.value)}
-                      className="h-12 rounded-xl bg-gray-50 border-0"
+                      autoComplete="off"
+                      className={`h-12 rounded-xl bg-gray-50 border-0 ${formData.endDate && formData.startDate && formData.endDate < formData.startDate ? 'ring-2 ring-red-400' : ''}`}
                     />
+                    {formData.endDate && formData.startDate && formData.endDate < formData.startDate && (
+                      <p className="text-xs text-red-500">End date cannot be before start date</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>End Time <span className="text-red-500">*</span></Label>
@@ -1120,8 +1137,12 @@ export function WebCreateEvent() {
                       type="time"
                       value={formData.endTime}
                       onChange={(e) => handleInputChange('endTime', e.target.value)}
-                      className="h-12 rounded-xl bg-gray-50 border-0"
+                      autoComplete="off"
+                      className={`h-12 rounded-xl bg-gray-50 border-0 ${formData.startDate && formData.endDate && formData.startDate === formData.endDate && formData.startTime && formData.endTime && formData.endTime <= formData.startTime ? 'ring-2 ring-red-400' : ''}`}
                     />
+                    {formData.startDate && formData.endDate && formData.startDate === formData.endDate && formData.startTime && formData.endTime && formData.endTime <= formData.startTime && (
+                      <p className="text-xs text-red-500">End time must be after start time</p>
+                    )}
                   </div>
                 </div>
 
@@ -1132,10 +1153,14 @@ export function WebCreateEvent() {
                       type="time"
                       value={formData.gateOpeningTime}
                       onChange={(e) => handleInputChange('gateOpeningTime', e.target.value)}
-                      className="h-12 rounded-xl bg-gray-50 border-0"
-                      placeholder="Optional"
+                      autoComplete="off"
+                      className={`h-12 rounded-xl bg-gray-50 border-0 ${formData.gateOpeningTime && formData.startTime && formData.gateOpeningTime >= formData.startTime ? 'ring-2 ring-red-400' : ''}`}
                     />
-                    <p className="text-xs text-gray-600">Optional - when gates open for attendees</p>
+                    {formData.gateOpeningTime && formData.startTime && formData.gateOpeningTime >= formData.startTime ? (
+                      <p className="text-xs text-red-500">Gate opening must be before start time</p>
+                    ) : (
+                      <p className="text-xs text-gray-600">Optional - when gates open for attendees</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Timezone <span className="text-red-500">*</span></Label>
