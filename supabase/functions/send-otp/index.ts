@@ -13,15 +13,16 @@ const PHONE_PREFIX_TO_COUNTRY: Record<string, string> = {
 };
 
 // Provider priority by country
-// Twilio Verify is now the default for all countries, with Termii as fallback
+// Twilio Verify is primary for OTP (dedicated verification service, best deliverability)
+// BulkSMS/Termii are better for campaign/bulk SMS, not OTP
 const PROVIDER_PRIORITY: Record<string, string[]> = {
   'US': ['twilio_verify'],
   'GB': ['twilio_verify'],
   'CA': ['twilio_verify'],
   'AU': ['twilio_verify'],
   'EU': ['twilio_verify'],
-  'NG': ['bulksmsnigeria', 'twilio_verify', 'termii'],  // BulkSMS first for Nigeria
-  'GH': ['bulksmsnigeria', 'twilio_verify', 'termii'],  // BulkSMS first for Ghana
+  'NG': ['twilio_verify', 'termii', 'bulksmsnigeria'],  // Twilio Verify first for reliable OTP
+  'GH': ['twilio_verify', 'termii', 'bulksmsnigeria'],  // Twilio Verify first for reliable OTP
   'KE': ['twilio_verify', 'termii'],
   'ZA': ['twilio_verify', 'termii'],
   'DEFAULT': ['twilio_verify', 'termii'],
