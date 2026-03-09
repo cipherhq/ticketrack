@@ -453,28 +453,34 @@ export const calculateSnoozeUntil = (days = SNOOZE_DAYS) => {
 };
 
 /**
+ * Check if organizer is eligible for direct payouts (5+ completed events or override)
+ */
+const isPayoutEligible = (organizer) => {
+  return organizer?.direct_payout_eligible || organizer?.direct_payout_override;
+};
+
+/**
  * Check if PRE-CREATE prompt should be shown
- * Shows only for first event creation when no payment gateway connected
+ * Only shows when organizer is eligible for direct payouts (5+ completed events)
  */
 export const shouldShowPrecreatePrompt = (organizer, eventCount = 0) => {
   if (!organizer) return false;
   if (hasPaymentGateway(organizer)) return false;
+  if (!isPayoutEligible(organizer)) return false;
   if (organizer.dismissed_precreate_prompt) return false;
   if (!isSnoozeExpired(organizer.precreate_prompt_snoozed_until)) return false;
-
-  // Only show for first event (or first few events)
-  if (eventCount > 0) return false;
 
   return true;
 };
 
 /**
  * Check if POST-CREATE prompt should be shown
- * Shows after creating paid events when no payment gateway connected
+ * Only shows when organizer is eligible for direct payouts (5+ completed events)
  */
 export const shouldShowPostcreatePrompt = (organizer, hasPaidContent = true) => {
   if (!organizer) return false;
   if (hasPaymentGateway(organizer)) return false;
+  if (!isPayoutEligible(organizer)) return false;
   if (organizer.dismissed_postcreate_prompt) return false;
   if (!isSnoozeExpired(organizer.postcreate_prompt_snoozed_until)) return false;
   if (!hasPaidContent) return false; // Only show for paid events
@@ -484,10 +490,12 @@ export const shouldShowPostcreatePrompt = (organizer, hasPaidContent = true) => 
 
 /**
  * Check if DASHBOARD BANNER should be shown
+ * Only shows when organizer is eligible for direct payouts (5+ completed events)
  */
 export const shouldShowDashboardBanner = (organizer) => {
   if (!organizer) return false;
   if (hasPaymentGateway(organizer)) return false;
+  if (!isPayoutEligible(organizer)) return false;
   if (organizer.dismissed_dashboard_banner) return false;
   if (!isSnoozeExpired(organizer.dashboard_banner_snoozed_until)) return false;
 
