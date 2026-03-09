@@ -8,8 +8,6 @@ const COUNTRIES = [
   { code: 'US', name: 'United States', dial: '+1', flag: '🇺🇸' },
   { code: 'GB', name: 'United Kingdom', dial: '+44', flag: '🇬🇧' },
   { code: 'CA', name: 'Canada', dial: '+1', flag: '🇨🇦' },
-  { code: 'KE', name: 'Kenya', dial: '+254', flag: '🇰🇪' },
-  { code: 'ZA', name: 'South Africa', dial: '+27', flag: '🇿🇦' },
 ]
 
 // Export countries for use elsewhere

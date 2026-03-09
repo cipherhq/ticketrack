@@ -8,8 +8,8 @@ const corsHeaders = {
 
 // Phone prefix to country mapping
 const PHONE_PREFIX_TO_COUNTRY: Record<string, string> = {
-  '234': 'NG', '233': 'GH', '254': 'KE', '27': 'ZA',
-  '1': 'US', '44': 'GB', '1242': 'BS', '1246': 'BB',
+  '234': 'NG', '233': 'GH',
+  '1': 'US', '44': 'GB',
 };
 
 // Provider priority by country
@@ -19,12 +19,8 @@ const PROVIDER_PRIORITY: Record<string, string[]> = {
   'US': ['twilio_verify'],
   'GB': ['twilio_verify'],
   'CA': ['twilio_verify'],
-  'AU': ['twilio_verify'],
-  'EU': ['twilio_verify'],
-  'NG': ['twilio_verify', 'termii', 'bulksmsnigeria'],  // Twilio Verify first for reliable OTP
-  'GH': ['twilio_verify', 'termii', 'bulksmsnigeria'],  // Twilio Verify first for reliable OTP
-  'KE': ['twilio_verify', 'termii'],
-  'ZA': ['twilio_verify', 'termii'],
+  'NG': ['twilio_verify', 'termii', 'bulksmsnigeria'],
+  'GH': ['twilio_verify', 'termii', 'bulksmsnigeria'],
   'DEFAULT': ['twilio_verify', 'termii'],
 };
 

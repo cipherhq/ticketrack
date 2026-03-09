@@ -18,10 +18,10 @@ const AT_USERNAME = Deno.env.get('AFRICASTALKING_USERNAME');
 const AT_SENDER_ID = Deno.env.get('AFRICASTALKING_SENDER_ID') || 'Ticketrack';
 const AT_ENVIRONMENT = Deno.env.get('AFRICASTALKING_ENVIRONMENT') || 'production';
 
-// Map phone prefixes to country codes
+// Map phone prefixes to country codes (supported: NG, GH, US, GB, CA)
 const PHONE_PREFIX_TO_COUNTRY: Record<string, string> = {
-  '234': 'NG', '233': 'GH', '254': 'KE', '27': 'ZA',  // Nigeria, Ghana, Kenya, South Africa
-  '1': 'US', '44': 'GB', '1242': 'BS', '1246': 'BB',  // US/UK/Caribbean
+  '234': 'NG', '233': 'GH',
+  '1': 'US', '44': 'GB',
 };
 
 function maskPhone(phone: string): string {
