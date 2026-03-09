@@ -107,6 +107,24 @@ serve(async (req) => {
       );
     }
 
+    // Set country on profile (used for currency selection when creating events)
+    const effectiveCountryCode = countryCode || 'NG';
+    const countryNames: Record<string, string> = {
+      NG: 'Nigeria', GB: 'United Kingdom', US: 'United States',
+      GH: 'Ghana', CA: 'Canada',
+    };
+    try {
+      await supabase
+        .from('profiles')
+        .update({
+          country: countryNames[effectiveCountryCode] || effectiveCountryCode,
+          country_code: effectiveCountryCode,
+        })
+        .eq('id', authData.user.id);
+    } catch (profileErr) {
+      console.warn('Failed to set country on profile:', profileErr);
+    }
+
     // Send welcome email (non-blocking)
     try {
       await supabase.functions.invoke('send-email', {
