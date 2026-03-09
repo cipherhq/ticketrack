@@ -41,8 +41,9 @@ export function FinancePayouts() {
   // Handle ?tab=connect redirect to payment connect page
   useEffect(() => {
     if (searchParams.get('tab') === 'connect' && organizer) {
-      const currency = organizer.default_currency || organizer.currency;
-      if (currency === 'NGN' || currency === 'GHS') {
+      const country = organizer.country_code;
+      // Nigeria and Ghana use Paystack; US, UK, Canada use Stripe
+      if (country === 'NG' || country === 'GH') {
         navigate('/organizer/paystack-connect', { replace: true });
       } else {
         navigate('/organizer/stripe-connect', { replace: true });
