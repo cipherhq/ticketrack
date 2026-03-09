@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getConnectRoute } from '@/components/PaymentGatewayPrompt';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +30,7 @@ export function StripeConnectEducationModal({ open, onClose, organizerCountry })
 
   const handleSetup = () => {
     onClose();
-    navigate('/organizer/finance?tab=connect');
+    navigate(getConnectRoute(organizerCountry));
   };
 
   const handleDismiss = () => {

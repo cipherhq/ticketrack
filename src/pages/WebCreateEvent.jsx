@@ -22,6 +22,7 @@ import {
   shouldShowPrecreatePrompt,
   shouldShowPostcreatePrompt,
   calculateSnoozeUntil,
+  getConnectRoute,
 } from '@/components/PaymentGatewayPrompt';
 
 const eventTypes = [
@@ -1858,7 +1859,7 @@ export function WebCreateEvent() {
         onClose={() => setShowPreCreatePrompt(false)}
         onSetup={() => {
           setShowPreCreatePrompt(false);
-          navigate('/organizer/finance?tab=connect');
+          navigate(getConnectRoute(organizerData?.country_code));
         }}
         onSkip={() => setShowPreCreatePrompt(false)}
         onDontShowAgain={async () => {
@@ -1889,7 +1890,7 @@ export function WebCreateEvent() {
         }}
         onSetup={() => {
           setShowPostCreatePrompt(false);
-          navigate('/organizer/finance?tab=connect');
+          navigate(getConnectRoute(organizerData?.country_code));
         }}
         onDontShowAgain={async () => {
           if (organizerData?.id) {

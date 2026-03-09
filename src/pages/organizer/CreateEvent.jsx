@@ -33,6 +33,7 @@ import {
   shouldShowPrecreatePrompt,
   shouldShowPostcreatePrompt,
   calculateSnoozeUntil,
+  getConnectRoute,
 } from '@/components/PaymentGatewayPrompt';
 import { DateTimePicker } from '@/components/rackparty/shared';
 import 'react-quill/dist/quill.snow.css';
@@ -3970,7 +3971,7 @@ Headliners will be displayed on your event details page. Adding headliners is op
         onClose={() => setShowPreCreatePrompt(false)}
         onSetup={() => {
           setShowPreCreatePrompt(false);
-          navigate('/organizer/finance?tab=connect');
+          navigate(getConnectRoute(organizer?.country_code));
         }}
         onSkip={() => setShowPreCreatePrompt(false)}
         onDontShowAgain={async () => {
@@ -4001,7 +4002,7 @@ Headliners will be displayed on your event details page. Adding headliners is op
         }}
         onSetup={() => {
           setShowPostCreatePrompt(false);
-          navigate('/organizer/finance?tab=connect');
+          navigate(getConnectRoute(organizer?.country_code));
         }}
         onDontShowAgain={async () => {
           if (organizer?.id) {

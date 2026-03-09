@@ -19,28 +19,13 @@ import {
   Bell,
 } from 'lucide-react';
 
-// Gateway configuration by country
+// Gateway configuration by country (supported: NG, GH, US, GB, CA)
 const GATEWAY_BY_COUNTRY = {
   US: { name: 'Stripe Connect', color: 'purple', primary: true },
   GB: { name: 'Stripe Connect', color: 'purple', primary: true },
   CA: { name: 'Stripe Connect', color: 'purple', primary: true },
-  AU: { name: 'Stripe Connect', color: 'purple', primary: true },
-  DE: { name: 'Stripe Connect', color: 'purple', primary: true },
-  FR: { name: 'Stripe Connect', color: 'purple', primary: true },
-  IE: { name: 'Stripe Connect', color: 'purple', primary: true },
-  NL: { name: 'Stripe Connect', color: 'purple', primary: true },
-  ES: { name: 'Stripe Connect', color: 'purple', primary: true },
-  IT: { name: 'Stripe Connect', color: 'purple', primary: true },
-  BE: { name: 'Stripe Connect', color: 'purple', primary: true },
-  AT: { name: 'Stripe Connect', color: 'purple', primary: true },
-  CH: { name: 'Stripe Connect', color: 'purple', primary: true },
   NG: { name: 'Paystack', color: 'green', alt: 'Flutterwave', primary: true },
   GH: { name: 'Paystack', color: 'green', alt: 'Flutterwave', primary: true },
-  KE: { name: 'Flutterwave', color: 'orange', primary: true },
-  ZA: { name: 'Flutterwave', color: 'orange', primary: true },
-  TZ: { name: 'Flutterwave', color: 'orange', primary: true },
-  UG: { name: 'Flutterwave', color: 'orange', primary: true },
-  RW: { name: 'Flutterwave', color: 'orange', primary: true },
 };
 
 // Default gateway for unknown countries
@@ -518,6 +503,16 @@ export const shouldShowPaymentPrompt = (organizer) => {
          !organizer?.dismissed_precreate_prompt &&
          !organizer?.dismissed_postcreate_prompt &&
          !organizer?.dismissed_dashboard_banner;
+};
+
+/**
+ * Get the correct payment connect route for a country code
+ */
+export const getConnectRoute = (countryCode) => {
+  if (countryCode === 'NG' || countryCode === 'GH') {
+    return '/organizer/paystack-connect';
+  }
+  return '/organizer/stripe-connect';
 };
 
 // Export constants and helpers

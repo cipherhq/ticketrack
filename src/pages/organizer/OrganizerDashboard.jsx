@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { useOrganizer } from '../../contexts/OrganizerContext';
-import { PaymentGatewayBanner } from '../../components/PaymentGatewayPrompt';
+import { PaymentGatewayBanner, getConnectRoute } from '../../components/PaymentGatewayPrompt';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/organizer' },
@@ -55,7 +55,7 @@ export function OrganizerDashboard() {
   const showBanner = isMainDashboard && showDashboardBanner && !bannerDismissed;
 
   const handleBannerSetup = () => {
-    navigate('/organizer/finance?tab=connect');
+    navigate(getConnectRoute(organizer?.country_code));
   };
 
   const handleBannerDismiss = async () => {
