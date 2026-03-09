@@ -4,7 +4,7 @@ import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { useFeatureFlags } from '@/contexts/FeatureFlagsContext';
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, Clock, Tag, X, User, UserCheck, Mail, Phone } from 'lucide-react'
+import { CreditCard, Building2, Smartphone, Lock, ArrowLeft, Loader2, Calendar, MapPin, Clock, Tag, X, User, UserCheck, Users, Mail, Phone } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -428,6 +428,7 @@ export function WebCheckout() {
   })
   const [formErrors, setFormErrors] = useState({})
   const [buyingForSelf, setBuyingForSelf] = useState(true)
+  const [guestNames, setGuestNames] = useState({}) // { 1: "Jane Doe", 2: "Bob Smith" } — keyed by ticket index (0 = buyer)
 
   // Validation patterns
   const validationPatterns = {
@@ -814,20 +815,23 @@ export function WebCheckout() {
     
     const ticketsToCreate = []
     let ticketIndex = 0
-    
+    const buyerName = `${formData.firstName} ${formData.lastName}`
+
     for (const item of itemsToUse) {
       const ticketTypeId = item.ticket_type_id || item.id;
       const quantity = item.quantity || 0;
       const unitPrice = parseFloat(item.unit_price || item.price || 0);
-      
+
       for (let i = 0; i < quantity; i++) {
+        const currentIdx = ticketIndex
+        const attendeeName = (currentIdx > 0 && guestNames[currentIdx]?.trim()) ? guestNames[currentIdx].trim() : buyerName
         const ticketCode = generateTicketNumber(ticketIndex++)
         ticketsToCreate.push({
           event_id: ticketEventId,
           ticket_type_id: ticketTypeId, // Use correct ticket type ID from order_items
           user_id: user.id,
           attendee_email: formData.email,
-          attendee_name: `${formData.firstName} ${formData.lastName}`,
+          attendee_name: attendeeName,
           attendee_phone: formData.phone || null,
           ticket_code: ticketCode,
           qr_code: ticketCode,
@@ -935,7 +939,7 @@ export function WebCheckout() {
         // Generate PDF for ALL tickets (multi-page PDF)
         const ticketsForPdf = tickets.map(t => ({
           ticket_code: t.ticket_code,
-          attendee_name: `${formData.firstName} ${formData.lastName}`,
+          attendee_name: t.attendee_name || `${formData.firstName} ${formData.lastName}`,
           attendee_email: formData.email,
           ticket_type_name: t.ticket_type_name || ticketSummary.find(ts => ts.id === t.ticket_type_id)?.name || "General"
         }))
@@ -1124,6 +1128,11 @@ export function WebCheckout() {
       // Reserve tickets first (prevents overselling) - use mapped ticket summary for child events
       await reserveAllTickets(mappedTicketSummary)
 
+      // Build guest names JSON for order notes (so webhooks can read them)
+      const guestNamesForOrder = Object.keys(guestNames).some(k => guestNames[k]?.trim())
+        ? JSON.stringify({ guest_names: guestNames })
+        : null
+
       // Create order - use finalEventId which will be the child event ID if it was created
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -1145,7 +1154,8 @@ export function WebCheckout() {
           buyer_email: formData.email,
           buyer_phone: formData.phone || null,
           buyer_name: `${formData.firstName} ${formData.lastName}`,
-          waitlist_id: fromWaitlist ? waitlistId : null
+          waitlist_id: fromWaitlist ? waitlistId : null,
+          notes: guestNamesForOrder
         })
         .select()
         .single()
@@ -1287,7 +1297,8 @@ export function WebCheckout() {
           buyer_email: formData.email,
           buyer_phone: formData.phone || null,
           buyer_name: `${formData.firstName} ${formData.lastName}`,
-          waitlist_id: fromWaitlist ? waitlistId : null
+          waitlist_id: fromWaitlist ? waitlistId : null,
+          notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null
         })
         .select()
         .single();
@@ -1367,7 +1378,8 @@ export function WebCheckout() {
         buyer_email: formData.email,
         buyer_phone: formData.phone || null,
         buyer_name: `${formData.firstName} ${formData.lastName}`,
-        waitlist_id: fromWaitlist ? waitlistId : null
+        waitlist_id: fromWaitlist ? waitlistId : null,
+        notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null
       })
       .select()
       .single();
@@ -1465,7 +1477,8 @@ export function WebCheckout() {
           buyer_email: formData.email,
           buyer_phone: formData.phone || null,
           buyer_name: `${formData.firstName} ${formData.lastName}`,
-          waitlist_id: fromWaitlist ? waitlistId : null
+          waitlist_id: fromWaitlist ? waitlistId : null,
+          notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null
         })
         .select()
         .single();
@@ -1550,7 +1563,8 @@ export function WebCheckout() {
             buyer_email: formData.email,
             buyer_phone: formData.phone || null,
             buyer_name: `${formData.firstName} ${formData.lastName}`,
-            waitlist_id: fromWaitlist ? waitlistId : null
+            waitlist_id: fromWaitlist ? waitlistId : null,
+            notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null
           })
           .select()
           .single();
@@ -1907,6 +1921,58 @@ const formatDate = (dateString) => {
               )}
             </CardContent>
           </Card>
+
+          {/* Guest / Ticket Holder Names */}
+          {totalTicketCount > 1 && (
+            <Card className="border-border/10 rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Ticket Holder Names
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Assign names to each ticket (optional)</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(() => {
+                  let idx = 0
+                  return ticketSummary.map((ticket) =>
+                    Array.from({ length: ticket.quantity }, (_, i) => {
+                      const currentIdx = idx++
+                      const buyerName = `${formData.firstName} ${formData.lastName}`.trim()
+                      if (currentIdx === 0) {
+                        return (
+                          <div key={`guest-${currentIdx}`} className="space-y-1">
+                            <Label className="text-sm text-muted-foreground">
+                              Ticket {currentIdx + 1} · {ticket.name}
+                            </Label>
+                            <Input
+                              value={buyerName || 'You'}
+                              disabled
+                              className="rounded-xl border-border/10 bg-muted text-muted-foreground"
+                            />
+                          </div>
+                        )
+                      }
+                      return (
+                        <div key={`guest-${currentIdx}`} className="space-y-1">
+                          <Label className="text-sm text-muted-foreground">
+                            Ticket {currentIdx + 1} · {ticket.name}
+                          </Label>
+                          <Input
+                            placeholder="Guest name (leave blank to use your name)"
+                            value={guestNames[currentIdx] || ''}
+                            onChange={(e) => setGuestNames(prev => ({ ...prev, [currentIdx]: e.target.value }))}
+                            className="rounded-xl border-border/10"
+                          />
+                        </div>
+                      )
+                    })
+                  )
+                })()}
+                <p className="text-xs text-muted-foreground">Leave blank to use your name on the ticket</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Custom Form Fields */}
           {customFields.length > 0 && (

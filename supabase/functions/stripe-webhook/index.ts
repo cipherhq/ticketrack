@@ -403,9 +403,23 @@ serve(async (req) => {
 
           // Only create tickets if they don't exist
           if (!existingTickets || existingTickets.length === 0) {
+            // Parse guest names from order notes
+            let guestNames: Record<string, string> = {};
+            try {
+              if (order.notes) {
+                const parsed = JSON.parse(order.notes);
+                if (parsed?.guest_names) guestNames = parsed.guest_names;
+              }
+            } catch { /* ignore parse errors */ }
+
+            let ticketIndex = 0;
             const ticketInserts: any[] = [];
             for (const item of order.order_items || []) {
               for (let i = 0; i < item.quantity; i++) {
+                const currentIdx = ticketIndex++;
+                const attendeeName = (currentIdx > 0 && guestNames[String(currentIdx)]?.trim())
+                  ? guestNames[String(currentIdx)].trim()
+                  : order.buyer_name;
                 const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() +
                                   Math.random().toString(36).substring(2, 8).toUpperCase();
                 ticketInserts.push({
@@ -414,7 +428,7 @@ serve(async (req) => {
                   ticket_type_id: item.ticket_type_id || null,
                   user_id: order.user_id,
                   attendee_email: order.buyer_email,
-                  attendee_name: order.buyer_name,
+                  attendee_name: attendeeName,
                   attendee_phone: order.buyer_phone || null,
                   ticket_code: ticketCode,
                   qr_code: ticketCode,
@@ -583,9 +597,23 @@ serve(async (req) => {
                 .eq("order_id", orderId);
 
               if (!existingTickets || existingTickets.length === 0) {
+                // Parse guest names from order notes
+                let guestNames: Record<string, string> = {};
+                try {
+                  if (order.notes) {
+                    const parsed = JSON.parse(order.notes);
+                    if (parsed?.guest_names) guestNames = parsed.guest_names;
+                  }
+                } catch { /* ignore parse errors */ }
+
+                let ticketIndex = 0;
                 const ticketInserts: any[] = [];
                 for (const item of order.order_items || []) {
                   for (let i = 0; i < item.quantity; i++) {
+                    const currentIdx = ticketIndex++;
+                    const attendeeName = (currentIdx > 0 && guestNames[String(currentIdx)]?.trim())
+                      ? guestNames[String(currentIdx)].trim()
+                      : order.buyer_name;
                     const ticketCode = "TKT" + Date.now().toString(36).toUpperCase() +
                                       Math.random().toString(36).substring(2, 8).toUpperCase();
                     ticketInserts.push({
@@ -594,7 +622,7 @@ serve(async (req) => {
                       ticket_type_id: item.ticket_type_id || null,
                       user_id: order.user_id,
                       attendee_email: order.buyer_email,
-                      attendee_name: order.buyer_name,
+                      attendee_name: attendeeName,
                       attendee_phone: order.buyer_phone || null,
                       ticket_code: ticketCode,
                       qr_code: ticketCode,
