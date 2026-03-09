@@ -841,11 +841,7 @@ export function WebCheckout() {
           payment_status: 'completed',
           payment_method: paymentProvider || 'paystack',
           order_id: orderId,
-          status: 'active',
-          metadata: {
-            communication_consent: formData.communicationConsent,
-            consent_timestamp: new Date().toISOString()
-          }
+          status: 'active'
         })
       }
     }
