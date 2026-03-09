@@ -2,7 +2,7 @@ import { getCountryFees } from '@/config/fees';
 import { formatPrice, formatMultiCurrencyCompact, getDefaultCurrency } from '@/config/currencies';
 import { calculatePayoutDate, formatPayoutDelayLabel, getPayoutDelayDays } from '@/config/payoutThresholds';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   DollarSign, Clock, CheckCircle, Plus, CreditCard, Building2,
   Download, Calendar, Loader2, FileText, HelpCircle, Zap, AlertCircle, Info,
@@ -35,7 +35,20 @@ import { toast } from 'sonner';
 
 export function FinancePayouts() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { organizer } = useOrganizer();
+
+  // Handle ?tab=connect redirect to payment connect page
+  useEffect(() => {
+    if (searchParams.get('tab') === 'connect' && organizer) {
+      const currency = organizer.default_currency || organizer.currency;
+      if (currency === 'NGN' || currency === 'GHS') {
+        navigate('/organizer/paystack-connect', { replace: true });
+      } else {
+        navigate('/organizer/stripe-connect', { replace: true });
+      }
+    }
+  }, [searchParams, organizer, navigate]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     inEscrowByCurrency: {},

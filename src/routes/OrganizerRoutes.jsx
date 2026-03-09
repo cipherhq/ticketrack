@@ -84,6 +84,7 @@ export function OrganizerRoutes() {
           <Route path="/events/:id/post-event" element={<PostEventDashboard />} />
           <Route path="/events/import" element={<EventImport />} />
           <Route path="/payouts" element={<FinancePayouts />} />
+          <Route path="/finance" element={<FinancePayouts />} />
           <Route path="/profile" element={<OrganizerProfile />} />
           <Route path="/communications" element={<OrganizerCommunications />} />
           <Route path="/attendees" element={<ManageAttendees />} />
