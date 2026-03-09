@@ -72,67 +72,6 @@ const GHANAIAN_BANKS = [
   { code: 'GH150100', name: 'Republic Bank Ghana' },
 ];
 
-// Kenyan banks list
-const KENYAN_BANKS = [
-  { code: 'KE001', name: 'Kenya Commercial Bank' },
-  { code: 'KE002', name: 'Standard Chartered Bank Kenya' },
-  { code: 'KE003', name: 'Barclays Bank of Kenya' },
-  { code: 'KE004', name: 'Bank of India (Kenya)' },
-  { code: 'KE005', name: 'Bank of Baroda (Kenya)' },
-  { code: 'KE007', name: 'Commercial Bank of Africa' },
-  { code: 'KE010', name: 'Prime Bank' },
-  { code: 'KE011', name: 'Co-operative Bank of Kenya' },
-  { code: 'KE012', name: 'National Bank of Kenya' },
-  { code: 'KE014', name: 'Oriental Commercial Bank' },
-  { code: 'KE016', name: 'Citibank N.A. Kenya' },
-  { code: 'KE018', name: 'Middle East Bank Kenya' },
-  { code: 'KE019', name: 'Bank of Africa Kenya' },
-  { code: 'KE023', name: 'Consolidated Bank of Kenya' },
-  { code: 'KE025', name: 'Credit Bank' },
-  { code: 'KE026', name: 'Transnational Bank' },
-  { code: 'KE030', name: 'Chase Bank Kenya' },
-  { code: 'KE031', name: 'Stanbic Bank Kenya' },
-  { code: 'KE035', name: 'African Banking Corporation' },
-  { code: 'KE039', name: 'Imperial Bank Kenya' },
-  { code: 'KE041', name: 'NIC Bank' },
-  { code: 'KE043', name: 'Giro Commercial Bank' },
-  { code: 'KE049', name: 'Equatorial Commercial Bank' },
-  { code: 'KE051', name: 'Paramount Universal Bank' },
-  { code: 'KE054', name: 'Jamii Bora Bank' },
-  { code: 'KE055', name: 'Guaranty Trust Bank Kenya' },
-  { code: 'KE057', name: 'I&M Bank' },
-  { code: 'KE061', name: 'Housing Finance Company' },
-  { code: 'KE063', name: 'Diamond Trust Bank' },
-  { code: 'KE066', name: 'Equity Bank' },
-  { code: 'KE068', name: 'Family Bank' },
-  { code: 'KE070', name: 'Gulf African Bank' },
-  { code: 'KE072', name: 'First Community Bank' },
-  { code: 'KE074', name: 'DIB Bank Kenya' },
-  { code: 'KE076', name: 'UBA Kenya' },
-  { code: 'KE078', name: 'Sidian Bank' },
-  { code: 'KE079', name: 'M-Pesa' },
-];
-
-// South African banks list
-const SOUTH_AFRICAN_BANKS = [
-  { code: 'ZA001', name: 'ABSA Bank' },
-  { code: 'ZA002', name: 'Standard Bank' },
-  { code: 'ZA003', name: 'First National Bank (FNB)' },
-  { code: 'ZA004', name: 'Nedbank' },
-  { code: 'ZA005', name: 'Capitec Bank' },
-  { code: 'ZA006', name: 'Investec Bank' },
-  { code: 'ZA007', name: 'African Bank' },
-  { code: 'ZA008', name: 'Bidvest Bank' },
-  { code: 'ZA009', name: 'Discovery Bank' },
-  { code: 'ZA010', name: 'Grindrod Bank' },
-  { code: 'ZA011', name: 'Mercantile Bank' },
-  { code: 'ZA012', name: 'Sasfin Bank' },
-  { code: 'ZA013', name: 'TymeBank' },
-  { code: 'ZA014', name: 'Bank Zero' },
-  { code: 'ZA015', name: 'Ubank' },
-  { code: 'ZA016', name: 'Old Mutual' },
-];
-
 // Status badge component
 const StatusBadge = ({ status }) => {
   const statusConfig = {
@@ -171,33 +110,30 @@ export function PaystackFlutterwaveConnect() {
   const [bankCode, setBankCode] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [businessName, setBusinessName] = useState('');
-  
+  const [selectedProvider, setSelectedProvider] = useState(null);
+
   // Determine which provider to use based on country
   const isNigeria = organizer?.country_code === 'NG';
   const isGhana = organizer?.country_code === 'GH';
-  const isKenya = organizer?.country_code === 'KE';
-  const isSouthAfrica = organizer?.country_code === 'ZA';
-  const isEligible = isNigeria || isGhana || isKenya || isSouthAfrica;
-  
-  // Nigeria uses Paystack, other countries use Flutterwave
-  const provider = isNigeria ? 'Paystack' : 'Flutterwave';
+  const isEligible = isNigeria || isGhana;
+
+  // If already connected, use the connected provider; otherwise use selectedProvider (user's choice)
+  const connectedProvider = organizer?.paystack_subaccount_id ? 'Paystack' :
+                            organizer?.flutterwave_subaccount_id ? 'Flutterwave' : null;
+  const provider = connectedProvider || selectedProvider;
   
   // Get appropriate bank list based on country
   const getBanks = () => {
     if (isNigeria) return NIGERIAN_BANKS;
     if (isGhana) return GHANAIAN_BANKS;
-    if (isKenya) return KENYAN_BANKS;
-    if (isSouthAfrica) return SOUTH_AFRICAN_BANKS;
     return [];
   };
   const banks = getBanks();
-  
+
   // Get currency symbol based on country
   const getCurrency = () => {
     if (isNigeria) return '₦';
     if (isGhana) return 'GH₵';
-    if (isKenya) return 'KSh';
-    if (isSouthAfrica) return 'R';
     return '$';
   };
   const currency = getCurrency();
@@ -205,9 +141,9 @@ export function PaystackFlutterwaveConnect() {
   // Get current subaccount status
   const paystackStatus = organizer?.paystack_subaccount_status || 'not_started';
   const flutterwaveStatus = organizer?.flutterwave_subaccount_status || 'not_started';
-  const currentStatus = isNigeria ? paystackStatus : flutterwaveStatus;
+  const currentStatus = provider === 'Paystack' ? paystackStatus : provider === 'Flutterwave' ? flutterwaveStatus : 'not_started';
   const isConnected = currentStatus === 'active';
-  const subaccountId = isNigeria ? organizer?.paystack_subaccount_id : organizer?.flutterwave_subaccount_id;
+  const subaccountId = provider === 'Paystack' ? organizer?.paystack_subaccount_id : organizer?.flutterwave_subaccount_id;
 
   useEffect(() => {
     if (organizer?.id) {
@@ -229,7 +165,7 @@ export function PaystackFlutterwaveConnect() {
     setAccountName('');
 
     try {
-      if (isNigeria) {
+      if (provider === 'Paystack') {
         // Verify with Paystack
         const { data, error: fnError } = await supabase.functions.invoke('verify-bank-account', {
           body: { bankCode, accountNumber, provider: 'paystack' }
@@ -242,7 +178,7 @@ export function PaystackFlutterwaveConnect() {
         setAccountName(data.accountName);
         setAccountVerified(true);
       } else {
-        // For Ghana, Kenya, South Africa - skip verification (Flutterwave doesn't have easy verification)
+        // Flutterwave - skip verification
         setAccountVerified(true);
         setAccountName(businessName);
       }
@@ -256,7 +192,7 @@ export function PaystackFlutterwaveConnect() {
 
   // Create subaccount
   const createSubaccount = async () => {
-    if (!accountVerified && isNigeria) {
+    if (!accountVerified && provider === 'Paystack') {
       setError('Please verify your bank account first');
       return;
     }
@@ -265,7 +201,7 @@ export function PaystackFlutterwaveConnect() {
     setError('');
 
     try {
-      const endpoint = isNigeria ? 'create-paystack-subaccount' : 'create-flutterwave-subaccount';
+      const endpoint = provider === 'Paystack' ? 'create-paystack-subaccount' : 'create-flutterwave-subaccount';
       
       const { data, error: fnError } = await supabase.functions.invoke(endpoint, {
         body: {
@@ -341,7 +277,7 @@ export function PaystackFlutterwaveConnect() {
             <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Not Available in Your Region</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Direct payments via Paystack/Flutterwave are currently only available for organizers in Nigeria, Ghana, Kenya, and South Africa.
+              Direct payments via Paystack/Flutterwave are currently only available for organizers in Nigeria and Ghana.
               Your region uses our standard payout system.
             </p>
             <Button onClick={() => navigate('/organizer/finance')} className="mt-6">
@@ -364,7 +300,7 @@ export function PaystackFlutterwaveConnect() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{provider} Direct Payments</h1>
+            <h1 className="text-2xl font-bold text-foreground">Direct Payments</h1>
             <p className="text-muted-foreground">Receive payments directly to your bank account</p>
           </div>
         </div>
@@ -378,7 +314,7 @@ export function PaystackFlutterwaveConnect() {
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">Unlock Direct Payouts</h3>
               <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                Complete {requiredEvents} successful events to unlock {provider} direct payments and receive money directly to your bank account.
+                Complete {requiredEvents} successful events to unlock direct payments and receive money directly to your bank account.
               </p>
 
               {/* Progress Bar */}
@@ -449,7 +385,7 @@ export function PaystackFlutterwaveConnect() {
                 <div>
                   <h4 className="font-semibold text-foreground">Faster Settlements</h4>
                   <p className="text-sm text-muted-foreground">
-                    {isNigeria ? 'Next-day' : 'T+1 to T+2'} direct deposits once unlocked
+                    Next-day direct deposits once unlocked
                   </p>
                 </div>
               </div>
@@ -478,7 +414,7 @@ export function PaystackFlutterwaveConnect() {
         {/* Benefits Preview */}
         <Card className="rounded-xl">
           <CardHeader>
-            <CardTitle>What You'll Get with {provider} Direct Payments</CardTitle>
+            <CardTitle>What You'll Get with Direct Payments</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-60">
@@ -496,7 +432,7 @@ export function PaystackFlutterwaveConnect() {
                 <div>
                   <p className="font-medium text-foreground">Faster Settlements</p>
                   <p className="text-sm text-muted-foreground">
-                    {isNigeria ? 'Next-day' : 'T+1 to T+2'} settlement to your bank
+                    Next-day settlement to your bank
                   </p>
                 </div>
               </div>
@@ -521,6 +457,85 @@ export function PaystackFlutterwaveConnect() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Provider selection screen (unlocked, not connected, no choice yet)
+  if (!provider) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Direct Payments</h1>
+            <p className="text-muted-foreground">Choose your preferred payment provider to receive direct payments</p>
+          </div>
+          <HelpTip content="Direct Payments allows attendee payments to go directly to your bank account, minus the platform fee. Choose Paystack or Flutterwave based on your preference." />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Paystack Card */}
+          <Card className="border-border/10 rounded-xl overflow-hidden hover:border-green-300 transition-colors cursor-pointer group" onClick={() => setSelectedProvider('Paystack')}>
+            <div className="h-2 bg-gradient-to-r from-green-400 to-green-600" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700">
+                <CreditCard className="w-5 h-5" />
+                Paystack
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground">Next-day settlements</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground">Bank verification</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground">Widely trusted in Nigeria</span>
+                </div>
+              </div>
+              <Button className="w-full bg-green-600 hover:bg-green-700 text-white group-hover:shadow-md transition-shadow">
+                Select Paystack
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Flutterwave Card */}
+          <Card className="border-border/10 rounded-xl overflow-hidden hover:border-orange-300 transition-colors cursor-pointer group" onClick={() => setSelectedProvider('Flutterwave')}>
+            <div className="h-2 bg-gradient-to-r from-orange-400 to-orange-600" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <CreditCard className="w-5 h-5" />
+                Flutterwave
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground">Multi-currency support</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground">Flexible payouts</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-muted-foreground">Pan-African coverage</span>
+                </div>
+              </div>
+              <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white group-hover:shadow-md transition-shadow">
+                Select Flutterwave
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -680,7 +695,7 @@ export function PaystackFlutterwaveConnect() {
                 <div>
                   <p className="font-medium text-foreground">Faster Settlements</p>
                   <p className="text-sm text-muted-foreground">
-                    {isNigeria ? 'Next-day' : 'T+1 to T+2'} settlement to your bank
+                    Next-day settlement to your bank
                   </p>
                 </div>
               </div>
@@ -807,7 +822,7 @@ export function PaystackFlutterwaveConnect() {
                   maxLength={10}
                   className="flex-1"
                 />
-                {isNigeria && (
+                {provider === 'Paystack' && (
                   <Button
                     type="button"
                     variant="outline"
@@ -845,7 +860,7 @@ export function PaystackFlutterwaveConnect() {
             </Button>
             <Button
               onClick={createSubaccount}
-              disabled={connecting || (!accountVerified && isNigeria) || !bankCode || accountNumber.length < 10}
+              disabled={connecting || (!accountVerified && provider === 'Paystack') || !bankCode || accountNumber.length < 10}
               className="bg-[#00C3F7] hover:bg-[#0BA4DB]"
             >
               {connecting ? (
