@@ -137,12 +137,10 @@ const creditAffiliate = async (orderId, eventId, platformFee, currency, buyerId,
       return
     }
 
-    // Find user by referral code
-    const { data: referrer } = await supabase
-      .from('profiles')
-      .select('id, email, phone, referral_code, affiliate_status')
-      .eq('referral_code', affiliateCode).eq('affiliate_status', 'approved')
-      .single()
+    // Find affiliate by referral code (uses secure RPC to avoid exposing profiles)
+    const { data: referrerRows } = await supabase
+      .rpc('lookup_affiliate', { p_referral_code: affiliateCode })
+    const referrer = referrerRows?.[0] || null
 
     if (!referrer) {
       localStorage.removeItem('affiliate_code')
@@ -257,13 +255,8 @@ const creditAffiliate = async (orderId, eventId, platformFee, currency, buyerId,
       })
       .eq('id', orderId)
 
-    // Update referrer's referral count
-    await supabase
-      .from('profiles')
-      .update({ 
-        referral_count: referrer.referral_count ? referrer.referral_count + 1 : 1 
-      })
-      .eq('id', referrer.id)
+    // Update referrer's referral count (uses secure RPC)
+    await supabase.rpc('increment_referral_count', { p_referrer_id: referrer.id })
 
     // Clear affiliate code from localStorage
     localStorage.removeItem('affiliate_code')

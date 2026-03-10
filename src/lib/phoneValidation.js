@@ -51,27 +51,20 @@ export async function checkPhoneExists(phone, excludeUserId = null) {
   }
 
   try {
-    let query = supabase
-      .from('profiles')
-      .select('id, phone')
-      .eq('phone', normalized)
-    
-    // If updating, exclude current user
-    if (excludeUserId) {
-      query = query.neq('id', excludeUserId)
-    }
-
-    const { data, error } = await query.maybeSingle()
+    const { data: exists, error } = await supabase
+      .rpc('check_phone_exists', {
+        p_phone: normalized,
+        p_exclude_user_id: excludeUserId || null
+      })
 
     if (error) {
       console.error('Phone check error:', error)
       return { exists: false, error: error.message }
     }
 
-    if (data) {
-      return { 
-        exists: true, 
-        userId: data.id,
+    if (exists) {
+      return {
+        exists: true,
         message: 'This phone number is already registered to another account'
       }
     }
