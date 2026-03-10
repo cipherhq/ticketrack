@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { requireAuth, requireOrganizerOrAdmin, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,9 +15,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Require authentication - only logged-in organizers can create connect accounts
+    const { user, supabase } = await requireAuth(req);
 
     // Get request body
     const { organizerId, refreshUrl, returnUrl } = await req.json();
@@ -24,6 +24,9 @@ serve(async (req) => {
     if (!organizerId) {
       throw new Error("Organizer ID is required");
     }
+
+    // Verify the caller owns this organizer or is an admin
+    await requireOrganizerOrAdmin(supabase, user.id, organizerId);
 
     // Get organizer details
     const { data: organizer, error: orgError } = await supabase
@@ -160,7 +163,7 @@ serve(async (req) => {
         console.log("Created Stripe account:", accountId);
       } catch (stripeError: any) {
         console.error("Stripe account creation error:", stripeError);
-        throw new Error(stripeError.message || "Failed to create Stripe account");
+        throw new Error("Failed to create Stripe account");
       }
 
       // Save account ID to database
@@ -264,7 +267,7 @@ serve(async (req) => {
         });
         console.log("Created account link for new account:", accountId);
       } else {
-        throw new Error(linkError.message || "Failed to create Stripe onboarding link");
+        throw new Error("Failed to create Stripe onboarding link");
       }
     }
 
@@ -277,13 +280,14 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("Create Connect account error:", error);
     // Return 200 with error in body so frontend can read the error message
     // (Supabase functions.invoke doesn't parse body on non-2xx responses)
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || "Failed to create Stripe Connect account"
+        error: "Failed to create Stripe Connect account"
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

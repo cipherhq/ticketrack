@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 
 // ============================================================================
 // PARTY INVITE CRUD
@@ -304,7 +305,8 @@ export async function getAllOrganizerGuests(organizerId, { search, status, party
     query = query.eq('invite_id', partyId);
   }
   if (search) {
-    query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+    const s = sanitizeFilterValue(search);
+    query = query.or(`name.ilike.%${s}%,email.ilike.%${s}%`);
   }
 
   const { data, error } = await query;

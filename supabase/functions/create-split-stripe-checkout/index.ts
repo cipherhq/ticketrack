@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,21 +14,24 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      shareId, 
-      splitPaymentId, 
-      email, 
-      name, 
-      amount, 
-      currency, 
-      eventTitle,
-      successUrl, 
-      cancelUrl 
-    } = await req.json();
+    // Optional auth - split payment participants may or may not be logged in
+    const auth = await optionalAuth(req);
+    const supabase = auth?.supabase ?? createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const {
+      shareId,
+      splitPaymentId,
+      email,
+      name,
+      amount,
+      currency,
+      eventTitle,
+      successUrl,
+      cancelUrl
+    } = await req.json();
 
     // Get split payment details
     const { data: splitPayment, error: splitError } = await supabase
@@ -56,6 +60,13 @@ serve(async (req) => {
       throw new Error("This share has already been paid");
     }
 
+    // CRITICAL: Validate client-supplied amount matches the DB share amount
+    const dbShareAmount = parseFloat(share.amount);
+    const clientAmount = parseFloat(amount);
+    if (isNaN(clientAmount) || Math.abs(clientAmount - dbShareAmount) > 0.01) {
+      throw new Error("Amount mismatch");
+    }
+
     // Get Stripe config
     const countryCode = splitPayment.events?.country_code || "US";
     const { data: gatewayConfig } = await supabase
@@ -75,7 +86,7 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // Create Stripe Checkout session
+    // Create Stripe Checkout session - use DB amount, not client amount
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -86,7 +97,7 @@ serve(async (req) => {
               name: `Your share - ${eventTitle || "Event"}`,
               description: `Split payment share for ${name || email}`,
             },
-            unit_amount: Math.round(amount * 100),
+            unit_amount: Math.round(dbShareAmount * 100),
           },
           quantity: 1,
         },
@@ -116,7 +127,7 @@ serve(async (req) => {
     // Update share with payment reference
     await supabase
       .from("group_split_shares")
-      .update({ 
+      .update({
         payment_reference: session.id,
         payment_status: 'pending',
         updated_at: new Date().toISOString()
@@ -124,16 +135,17 @@ serve(async (req) => {
       .eq("id", shareId);
 
     return new Response(
-      JSON.stringify({ 
-        sessionId: session.id, 
-        url: session.url 
+      JSON.stringify({
+        sessionId: session.id,
+        url: session.url
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("Split Stripe checkout error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to create split payment checkout" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

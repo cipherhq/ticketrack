@@ -10,12 +10,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { 
-  errorResponse, 
-  logError, 
+import {
+  errorResponse,
+  logError,
   safeLog,
-  ERROR_CODES 
+  ERROR_CODES
 } from "../_shared/errorHandler.ts";
+import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,11 +31,16 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // AUTH: Require authenticated user
+    const auth = await requireAuth(req);
+    const supabase = auth.supabase;
 
     const { requestId, organizerId, amount, eventId } = await req.json();
+
+    // AUTH: Verify caller owns the organizer (or is admin)
+    if (organizerId) {
+      await requireOrganizerOrAdmin(supabase, auth.user.id, organizerId);
+    }
 
     // If requestId provided, process existing request
     // Otherwise, create new request and process
@@ -333,6 +339,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     logError("fast_payout", error);
 
     return errorResponse(

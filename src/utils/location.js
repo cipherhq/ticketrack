@@ -229,7 +229,7 @@ export async function getCountryFromIP() {
   
   try {
     // Try ip-api.com first (free, no key needed, 45 req/min)
-    const response = await fetch('http://ip-api.com/json/?fields=countryCode', {
+    const response = await fetch('https://ip-api.com/json/?fields=countryCode', {
       signal: AbortSignal.timeout(3000) // 3 second timeout
     })
     

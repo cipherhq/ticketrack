@@ -13,6 +13,7 @@ import {
   safeLog,
   ERROR_CODES,
 } from "../_shared/errorHandler.ts";
+import { requireAuth, requireOrganizerOrAdmin, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,9 +36,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Authenticate user and verify organizer ownership
+    const { user, supabase } = await requireAuth(req);
 
     const body: InvoiceRequest = await req.json();
     const {
@@ -58,6 +58,9 @@ serve(async (req) => {
         corsHeaders
       );
     }
+
+    // Verify user owns this organizer or is admin
+    await requireOrganizerOrAdmin(supabase, user.id, organizer_id);
 
     safeLog.info(`Generating ${invoice_type} invoice for organizer ${organizer_id}`);
 
@@ -179,12 +182,15 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders);
+    }
     logError("generate_invoice", error);
     return errorResponse(
       ERROR_CODES.INTERNAL_ERROR,
       500,
-      error,
       undefined,
+      "An internal error occurred",
       corsHeaders
     );
   }

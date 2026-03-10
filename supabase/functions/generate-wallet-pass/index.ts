@@ -21,6 +21,7 @@ import {
   safeLog,
   ERROR_CODES
 } from "../_shared/errorHandler.ts";
+import { requireAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 // Import node-forge - use esm.sh with deno target for better compatibility
 import forge from 'https://esm.sh/node-forge@1.3.1?target=deno'
@@ -449,6 +450,9 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const { user, supabase: authSupabase } = await requireAuth(req);
+
     // Safely parse the request body
     let body: any = {}
     try {
@@ -462,8 +466,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'invalid_request',
-        message: 'Invalid or empty request body',
-        debug: parseError instanceof Error ? parseError.message : String(parseError)
+        message: 'Invalid or empty request body'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -530,10 +533,7 @@ serve(async (req) => {
       }
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseClient = authSupabase;
 
     if (!ticketId || !platform) {
       throw new Error('Missing ticketId or platform')
@@ -559,6 +559,18 @@ serve(async (req) => {
       throw new Error('Ticket not found')
     }
 
+    // Verify user owns this ticket
+    if (ticket.user_id && ticket.user_id !== user.id) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'forbidden',
+        message: 'You do not have access to this ticket'
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     const event = ticket.event
 
     if (platform === 'apple') {
@@ -570,16 +582,15 @@ serve(async (req) => {
     }
 
   } catch (error) {
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders);
+    }
     logError('wallet_pass_generation', error)
-    // Return detailed error for debugging
-    const errorMessage = error instanceof Error ? error.message : String(error)
     return new Response(
       JSON.stringify({
         success: false,
         error: 'wallet_pass_generation_failed',
-        message: 'Failed to generate wallet pass.',
-        debug: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined
+        message: 'Failed to generate wallet pass.'
       }),
       {
         status: 400,

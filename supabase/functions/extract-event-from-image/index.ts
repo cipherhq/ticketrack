@@ -1,6 +1,7 @@
 // Extract event details from flyer image using Claude Vision API
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { requireAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +14,9 @@ serve(async (req) => {
   }
 
   try {
+    // Require authenticated user to prevent AI abuse
+    await requireAuth(req);
+
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!anthropicKey) {
       console.error('ANTHROPIC_API_KEY not set');
@@ -207,6 +211,9 @@ IMPORTANT:
     );
 
   } catch (err) {
+    if (err instanceof AuthError) {
+      return authErrorResponse(err, corsHeaders);
+    }
     console.error('Extract event error:', err?.message || err);
     return new Response(
       JSON.stringify({ success: false, error: 'An unexpected error occurred. Please try again.' }),

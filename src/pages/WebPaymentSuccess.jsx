@@ -81,6 +81,7 @@ const sendTicketEmailWithPDF = async (order, event, tickets) => {
       type: "ticket_purchase",
       to: order.buyer_email,
       data: {
+        orderId: order.id,
         attendeeName: order.buyer_name,
         eventTitle: event.title,
         eventDate: event.start_date,

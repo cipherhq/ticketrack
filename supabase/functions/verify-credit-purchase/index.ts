@@ -1,12 +1,13 @@
 /**
  * Verify Credit Purchase - Supabase Edge Function
- * 
+ *
  * Verifies a Paystack payment and adds credits if not already processed.
  * This acts as a fallback if the webhook didn't process the payment.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { optionalAuth, requireServiceRole, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,10 +20,28 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Allow both authenticated users and service-role callers (webhooks)
+    let supabase;
+    let authUserId: string | null = null;
+
+    try {
+      // Try service role first (for webhook callbacks)
+      supabase = requireServiceRole(req);
+    } catch {
+      // Fall back to user auth
+      const auth = await optionalAuth(req);
+      if (auth) {
+        supabase = auth.supabase;
+        authUserId = auth.user.id;
+      } else {
+        supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+      }
+    }
+
     const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { reference, organizerId } = await req.json();
 
@@ -45,8 +64,8 @@ serve(async (req) => {
     if (existingTx?.status === 'completed') {
       console.log('Transaction already processed');
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           message: 'Already processed',
           credits: existingTx.credits,
         }),
@@ -111,7 +130,7 @@ serve(async (req) => {
     if (addError) {
       console.error('Error adding credits:', addError);
       return new Response(
-        JSON.stringify({ success: false, error: addError.message }),
+        JSON.stringify({ success: false, error: 'Failed to add credits' }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -119,8 +138,8 @@ serve(async (req) => {
     console.log(`Successfully added ${credits + bonusCredits} credits for organizer ${organizerId}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         credits: credits + bonusCredits,
         transactionId: txId,
       }),
@@ -128,9 +147,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error('Verification error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: 'Failed to verify credit purchase' }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

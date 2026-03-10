@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
+import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -58,10 +59,16 @@ serve(async (req) => {
   }
 
   try {
+    const auth = await requireAuth(req);
     const resend = new Resend(RESEND_API_KEY);
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = auth.supabase;
 
     const { campaignId, recipients, subject, body, variables, organizerId } = await req.json();
+
+    // Verify caller is organizer or admin
+    if (organizerId) {
+      await requireOrganizerOrAdmin(supabase, auth.user.id, organizerId);
+    }
 
     if (!recipients || recipients.length === 0) {
       return new Response(
@@ -174,9 +181,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error('Bulk email error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: 'An internal error occurred while sending bulk email' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

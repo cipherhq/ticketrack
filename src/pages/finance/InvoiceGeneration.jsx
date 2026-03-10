@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { useConfirm } from '@/hooks/useConfirm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -222,13 +223,22 @@ export function InvoiceGeneration() {
     }
   };
 
+  const escapeHtml = (str) => {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+
   const generateInvoiceHTML = (invoice) => {
+    const safeNumber = escapeHtml(invoice.invoice_number);
+    const safeName = escapeHtml(invoice.organizers?.business_name || 'Organizer');
+    const safeEmail = escapeHtml(invoice.organizers?.email || '');
+
     return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Invoice ${invoice.invoice_number}</title>
+  <title>Invoice ${safeNumber}</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
@@ -249,15 +259,15 @@ export function InvoiceGeneration() {
     <div class="logo">Ticketrack</div>
     <div class="invoice-info">
       <h2>Earnings Statement</h2>
-      <p>Invoice #: ${invoice.invoice_number}</p>
+      <p>Invoice #: ${safeNumber}</p>
       <p>Date: ${new Date().toLocaleDateString()}</p>
     </div>
   </div>
 
   <div class="section">
     <div class="section-title">BILL TO</div>
-    <strong>${invoice.organizers?.business_name || 'Organizer'}</strong><br>
-    ${invoice.organizers?.email || ''}
+    <strong>${safeName}</strong><br>
+    ${safeEmail}
   </div>
 
   <div class="section">
@@ -595,7 +605,7 @@ export function InvoiceGeneration() {
           </DialogHeader>
           {selectedInvoice && (
             <div
-              dangerouslySetInnerHTML={{ __html: generateInvoiceHTML(selectedInvoice) }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(generateInvoiceHTML(selectedInvoice)) }}
               className="bg-card p-4 rounded-xl border max-h-[600px] overflow-y-auto"
             />
           )}

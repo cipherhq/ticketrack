@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 // Meta WhatsApp Cloud API (legacy)
 const META_WHATSAPP_API_URL = 'https://graph.facebook.com/v21.0';
@@ -25,6 +26,8 @@ serve(async (req) => {
   }
 
   try {
+    const auth = await requireAuth(req);
+
     // Check if any WhatsApp provider is configured
     if (!USE_AFRICASTALKING && (!META_WHATSAPP_PHONE_ID || !META_WHATSAPP_TOKEN)) {
       return new Response(
@@ -45,6 +48,11 @@ serve(async (req) => {
       force_provider, // Optional: 'africastalking' or 'meta' to force a specific provider
     } = await req.json();
 
+    // Verify caller is organizer or admin if organizer_id provided
+    if (organizer_id) {
+      await requireOrganizerOrAdmin(auth.supabase, auth.user.id, organizer_id);
+    }
+
     if (!to) {
       return new Response(
         JSON.stringify({ error: 'Recipient phone number is required' }),
@@ -60,12 +68,10 @@ serve(async (req) => {
       formattedPhone = '234' + formattedPhone.substring(1);
     }
 
-    // Initialize Supabase client if credit deduction is needed
+    // Use authenticated Supabase client if credit deduction is needed
     let supabase: any = null;
     if (deduct_credits && organizer_id) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      supabase = createClient(supabaseUrl, supabaseServiceKey);
+      supabase = auth.supabase;
 
       // Get channel pricing
       const { data: pricing } = await supabase
@@ -174,9 +180,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error('WhatsApp send error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: 'An internal error occurred while sending WhatsApp message' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

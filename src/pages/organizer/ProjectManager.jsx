@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { sendTaskAssignedEmail } from '@/lib/emailService';
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -323,7 +324,7 @@ export function ProjectManager() {
         supabase.from('events').select('id, title, start_date, end_date, status, currency').eq('organizer_id', organizer.id).order('start_date', { ascending: true }),
         supabase.from('event_tasks').select('*, assigned_member:organizer_team_members(id, name, email)').eq('organizer_id', organizer.id).order('sort_order', { ascending: true }),
         supabase.from('organizer_team_members').select('id, name, email, role').eq('organizer_id', organizer.id).in('status', ['active', 'pending']),
-        supabase.from('task_templates').select('*').or(`is_global.eq.true,organizer_id.eq.${organizer.id}`).order('sort_order', { ascending: true }),
+        supabase.from('task_templates').select('*').or(`is_global.eq.true,organizer_id.eq.${sanitizeFilterValue(organizer.id)}`).order('sort_order', { ascending: true }),
         supabase.from('task_comments').select('*, author:profiles(full_name, avatar_url)').eq('organizer_id', organizer.id).order('created_at', { ascending: false }),
         supabase.from('task_subtasks').select('*').eq('organizer_id', organizer.id).order('sort_order', { ascending: true }),
       ]);

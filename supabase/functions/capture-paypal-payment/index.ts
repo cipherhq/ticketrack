@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,11 +13,37 @@ serve(async (req) => {
   }
 
   try {
+    // Optional auth - buyers may or may not be logged in
+    const auth = await optionalAuth(req);
+    const supabase = auth?.supabase ?? createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     const { orderId, paypalOrderId } = await req.json();
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Idempotency check: if order already completed, return existing tickets
+    const { data: existingOrder } = await supabase
+      .from("orders")
+      .select("id, status")
+      .eq("id", orderId)
+      .single();
+
+    if (existingOrder?.status === "completed") {
+      const { data: existingTickets } = await supabase
+        .from("tickets")
+        .select("*")
+        .eq("order_id", orderId);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Order already completed",
+          tickets: existingTickets || [],
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Get PayPal config
     const { data: gatewayConfig } = await supabase
@@ -34,8 +61,8 @@ serve(async (req) => {
     const clientId = gatewayConfig.public_key;
     const clientSecret = gatewayConfig.secret_key_encrypted;
     const sandboxMode = gatewayConfig.sandbox_mode;
-    const baseUrl = sandboxMode 
-      ? "https://api-m.sandbox.paypal.com" 
+    const baseUrl = sandboxMode
+      ? "https://api-m.sandbox.paypal.com"
       : "https://api-m.paypal.com";
 
     // Get PayPal access token
@@ -125,9 +152,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("PayPal capture error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to capture PayPal payment" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

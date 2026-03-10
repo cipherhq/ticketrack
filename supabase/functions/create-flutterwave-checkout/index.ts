@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { 
-  errorResponse, 
-  logError, 
+import {
+  errorResponse,
+  logError,
   safeLog,
-  ERROR_CODES 
+  ERROR_CODES
 } from "../_shared/errorHandler.ts";
+import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,11 +19,14 @@ serve(async (req) => {
   }
 
   try {
-    const { orderId, successUrl, cancelUrl } = await req.json();
+    // Optional auth - buyers may or may not be logged in
+    const auth = await optionalAuth(req);
+    const supabase = auth?.supabase ?? createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { orderId, successUrl, cancelUrl } = await req.json();
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -32,6 +36,11 @@ serve(async (req) => {
 
     if (orderError || !order) {
       throw new Error("Order not found");
+    }
+
+    // Verify order is still pending - prevent double payment
+    if (order.status !== "pending") {
+      throw new Error("Order is no longer pending");
     }
 
     const countryCode = order.events?.country_code || "NG";
@@ -57,7 +66,7 @@ serve(async (req) => {
     }
 
     const organizer = order.events?.organizers;
-    const useSubaccount = 
+    const useSubaccount =
       organizer?.flutterwave_subaccount_id &&
       organizer?.flutterwave_subaccount_status === 'active';
 
@@ -155,6 +164,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     logError('flutterwave_checkout_error', error);
     return errorResponse(
       ERROR_CODES.INTERNAL_ERROR,

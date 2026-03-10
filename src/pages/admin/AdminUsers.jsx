@@ -41,6 +41,7 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 import { useAdmin } from '@/contexts/AdminContext';
 import { Pagination } from '@/components/ui/pagination';
 import { toast } from 'sonner';
@@ -342,7 +343,7 @@ export function AdminUsers() {
       if (user.isGuest) {
         query = query.eq('attendee_email', user.email);
       } else {
-        query = query.or(`user_id.eq.${user.id},attendee_email.eq.${user.email}`);
+        query = query.or(`user_id.eq.${sanitizeFilterValue(user.id)},attendee_email.eq.${sanitizeFilterValue(user.email)}`);
       }
 
       const { data, error } = await query;

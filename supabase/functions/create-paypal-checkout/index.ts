@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { errorResponse, logError } from '../_shared/errorHandler.ts';
+import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,11 +14,23 @@ serve(async (req) => {
   }
 
   try {
+    // Optional auth - buyers may or may not be logged in
+    const auth = await optionalAuth(req);
+    const supabase = auth?.supabase ?? createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     const { orderId, successUrl, cancelUrl } = await req.json();
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Validate redirect URLs - must be ticketrack.com or relative paths
+    const allowedOrigin = "https://ticketrack.com";
+    if (successUrl && !successUrl.startsWith(allowedOrigin) && !successUrl.startsWith("/")) {
+      throw new Error("Invalid successUrl");
+    }
+    if (cancelUrl && !cancelUrl.startsWith(allowedOrigin) && !cancelUrl.startsWith("/")) {
+      throw new Error("Invalid cancelUrl");
+    }
 
     // Get order details
     const { data: order, error: orderError } = await supabase
@@ -28,6 +41,11 @@ serve(async (req) => {
 
     if (orderError || !order) {
       throw new Error("Order not found");
+    }
+
+    // Verify order is still pending - prevent double payment
+    if (order.status !== "pending") {
+      throw new Error("Order is no longer pending");
     }
 
     // Get PayPal config
@@ -46,8 +64,8 @@ serve(async (req) => {
     const clientId = gatewayConfig.public_key;
     const clientSecret = gatewayConfig.secret_key_encrypted;
     const sandboxMode = gatewayConfig.sandbox_mode;
-    const baseUrl = sandboxMode 
-      ? "https://api-m.sandbox.paypal.com" 
+    const baseUrl = sandboxMode
+      ? "https://api-m.sandbox.paypal.com"
       : "https://api-m.paypal.com";
 
     // Get PayPal access token
@@ -116,14 +134,15 @@ serve(async (req) => {
     )?.href;
 
     return new Response(
-      JSON.stringify({ 
-        paypalOrderId: paypalOrderData.id, 
-        approvalUrl 
+      JSON.stringify({
+        paypalOrderId: paypalOrderData.id,
+        approvalUrl
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     logError('paypal-checkout', error);
-    return errorResponse('PAY_001', 400, error, undefined, corsHeaders);
+    return errorResponse('PAY_001', 400, error, 'Failed to create PayPal checkout', corsHeaders);
   }
 });

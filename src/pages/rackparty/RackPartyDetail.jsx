@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 import { getPaymentProvider } from '@/config/payments';
 import { getDefaultCurrency } from '@/config/currencies';
 import { format } from 'date-fns';
@@ -424,7 +425,7 @@ export function RackPartyDetail() {
         .eq('is_active', true)
         .order('full_name')
         .limit(500);
-      if (contactSearch) query = query.or(`full_name.ilike.%${contactSearch}%,email.ilike.%${contactSearch}%,phone.ilike.%${contactSearch}%`);
+      if (contactSearch) { const cs = sanitizeFilterValue(contactSearch); query = query.or(`full_name.ilike.%${cs}%,email.ilike.%${cs}%,phone.ilike.%${cs}%`); }
       const { data } = await query;
       setContacts(data || []);
     } catch {}

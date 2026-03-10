@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { errorResponse, logError } from '../_shared/errorHandler.ts';
+import { requireAuth, AuthError, authErrorResponse } from '../_shared/auth.ts';
 
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
@@ -14,6 +15,9 @@ serve(async (req) => {
   }
 
   try {
+    // Require authenticated user to prevent anonymous abuse of AI API
+    const auth = await requireAuth(req);
+
     const { prompt, context, type } = await req.json();
 
     if (!prompt) {
@@ -152,6 +156,7 @@ Keep the email concise, professional, and action-oriented. Use HTML formatting w
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     logError('ai-compose', error);
     return errorResponse('SRV_001', 500, error, undefined, corsHeaders);
   }

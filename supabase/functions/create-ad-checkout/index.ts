@@ -2,6 +2,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { requireAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,30 +14,29 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  let body;
   try {
-    body = await req.json();
-  } catch (e) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Invalid JSON: ' + e.message }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
+    // Require authentication - only logged-in users can purchase ads
+    const { user, supabase } = await requireAuth(req);
 
-  const { packageId, adId, email, provider = 'paystack', callbackUrl } = body;
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid request body' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-  if (!packageId || !adId || !email || !callbackUrl) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Missing required fields' }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
+    const { packageId, adId, email, provider = 'paystack', callbackUrl } = body;
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+    if (!packageId || !adId || !email || !callbackUrl) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing required fields' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-  try {
     // Fetch the package
     const { data: pkg, error: pkgError } = await supabase
       .from('ad_packages')
@@ -52,10 +52,10 @@ serve(async (req) => {
       );
     }
 
-    // Verify ad record exists and belongs to the requesting user
+    // Verify ad record exists
     const { data: ad, error: adError } = await supabase
       .from('platform_adverts')
-      .select('id, advertiser_email')
+      .select('id, advertiser_email, user_id')
       .eq('id', adId)
       .single();
 
@@ -66,10 +66,13 @@ serve(async (req) => {
       );
     }
 
-    // Verify the email matches the ad's advertiser
-    if (ad.advertiser_email && ad.advertiser_email.toLowerCase() !== email.toLowerCase()) {
+    // Verify the authenticated user owns this ad (check user_id or email match)
+    const adOwnedByUser = ad.user_id === user.id ||
+      (ad.advertiser_email && user.email && ad.advertiser_email.toLowerCase() === user.email.toLowerCase());
+
+    if (!adOwnedByUser) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized: email does not match ad owner' }),
+        JSON.stringify({ success: false, error: 'You do not own this ad' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -147,7 +150,7 @@ serve(async (req) => {
 
       if (!gatewayConfig?.secret_key_encrypted) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Paystack not configured for ' + countryCode }),
+          JSON.stringify({ success: false, error: 'Payment provider not configured for this region' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -176,7 +179,7 @@ serve(async (req) => {
 
       if (!paystackData.status) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Paystack: ' + (paystackData.message || 'Payment failed') }),
+          JSON.stringify({ success: false, error: 'Payment initialization failed' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -191,9 +194,11 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-  } catch (e) {
+  } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
+    console.error('Create ad checkout error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: 'Exception: ' + e.message }),
+      JSON.stringify({ success: false, error: 'Failed to create ad checkout' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

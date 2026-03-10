@@ -14,6 +14,7 @@ import {
   safeLog,
   ERROR_CODES,
 } from "../_shared/errorHandler.ts";
+import { requireAuth, requireAdmin, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,9 +39,10 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // AUTH: Require authenticated admin user
+    const auth = await requireAuth(req);
+    await requireAdmin(auth.supabase, auth.user.id);
+    const supabase = auth.supabase;
 
     const { batch_id } = await req.json();
 
@@ -146,6 +148,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     logError("process_payout_batch", error);
     return errorResponse(
       ERROR_CODES.INTERNAL_ERROR,

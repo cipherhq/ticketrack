@@ -5,6 +5,15 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Sanitize a value for use in Supabase PostgREST .or() / .filter() strings.
+ * Strips commas and parentheses that could inject additional filter conditions.
+ */
+export function sanitizeFilterValue(value) {
+  if (value == null) return ''
+  return String(value).replace(/[,()]/g, '')
+}
+
 export function formatCurrency(amount, symbol = '₦') {
   return `${symbol}${amount.toLocaleString()}`
 }

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,11 +14,16 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // AUTH: Require authenticated user
+    const auth = await requireAuth(req);
+    const supabase = auth.supabase;
 
     const { refundRequestId, organizerId, notes } = await req.json();
+
+    // AUTH: Verify caller owns the organizer (or is admin)
+    if (organizerId) {
+      await requireOrganizerOrAdmin(supabase, auth.user.id, organizerId);
+    }
 
     if (!refundRequestId || !organizerId) {
       throw new Error("refundRequestId and organizerId are required");
@@ -234,9 +240,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("Process refund error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Refund processing failed" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

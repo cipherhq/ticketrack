@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 import { formatPrice, getDefaultCurrency } from '@/config/currencies'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { logger, handleApiError, getUserMessage, ERROR_CODES } from '@/lib/logger'
@@ -102,7 +103,7 @@ const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
     const { data: promoter, error: promoterError } = await supabase
       .from('promoters')
       .select('id, commission_type, commission_value, commission_rate')
-      .or(`short_code.eq.${refCode},referral_code.eq.${refCode}`)
+      .or(`short_code.eq.${sanitizeFilterValue(refCode)},referral_code.eq.${sanitizeFilterValue(refCode)}`)
       .single()
     
     if (promoterError || !promoter) {
@@ -609,6 +610,7 @@ export function WebFreeRSVP() {
           type: "ticket_purchase",
           to: formData.email,
           data: {
+            orderId: order.id,
             attendeeName: `${formData.firstName} ${formData.lastName}`,
             eventTitle: event.title,
             eventDate: event.start_date,
@@ -633,6 +635,7 @@ export function WebFreeRSVP() {
           type: "ticket_purchase",
           to: formData.email,
           data: {
+            orderId: order.id,
             attendeeName: `${formData.firstName} ${formData.lastName}`,
             eventTitle: event.title,
             eventDate: event.start_date,
@@ -941,6 +944,7 @@ export function WebFreeRSVP() {
           type: "ticket_purchase",
           to: formData.email,
           data: {
+            orderId: order.id,
             attendeeName: `${formData.firstName} ${formData.lastName}`,
             eventTitle: event.title,
             eventDate: event.start_date,
@@ -965,6 +969,7 @@ export function WebFreeRSVP() {
           type: "ticket_purchase",
           to: formData.email,
           data: {
+            orderId: order.id,
             attendeeName: `${formData.firstName} ${formData.lastName}`,
             eventTitle: event.title,
             eventDate: event.start_date,
@@ -1085,6 +1090,7 @@ export function WebFreeRSVP() {
           type: "ticket_purchase",
           to: formData.email,
           data: {
+            orderId: order.id,
             attendeeName: `${formData.firstName} ${formData.lastName}`,
             eventTitle: event.title,
             eventDate: event.start_date,
@@ -1109,6 +1115,7 @@ export function WebFreeRSVP() {
           type: "ticket_purchase",
           to: formData.email,
           data: {
+            orderId: order.id,
             attendeeName: `${formData.firstName} ${formData.lastName}`,
             eventTitle: event.title,
             eventDate: event.start_date,

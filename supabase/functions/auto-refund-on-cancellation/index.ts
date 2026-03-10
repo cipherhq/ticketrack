@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,15 +13,15 @@ serve(async (req) => {
   }
 
   try {
+    // AUTH: Require authenticated user
+    const auth = await requireAuth(req);
+    const supabase = auth.supabase;
+
     const { eventId, reason = "Event cancelled", organizerId } = await req.json();
 
     if (!eventId) {
       throw new Error("eventId is required");
     }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get event details
     const { data: event, error: eventError } = await supabase
@@ -32,6 +33,9 @@ serve(async (req) => {
     if (eventError || !event) {
       throw new Error("Event not found");
     }
+
+    // AUTH: Verify caller owns the event's organizer (or is admin)
+    await requireOrganizerOrAdmin(supabase, auth.user.id, event.organizer_id);
 
     // Get all tickets for this event (from completed orders)
     const { data: tickets, error: ticketsError } = await supabase
@@ -285,11 +289,12 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("Auto-refund on cancellation error:", error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: "Refund processing failed",
       }),
       {
         status: 400,

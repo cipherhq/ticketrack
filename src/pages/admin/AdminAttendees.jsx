@@ -44,6 +44,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 import { useAdmin } from '@/contexts/AdminContext';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -117,7 +118,8 @@ export function AdminAttendees() {
         query = query.eq('events.organizer_id', organizerFilter);
       }
       if (searchQuery.trim()) {
-        query = query.or(`attendee_name.ilike.%${searchQuery}%,attendee_email.ilike.%${searchQuery}%,attendee_phone.ilike.%${searchQuery}%`);
+        const sq = sanitizeFilterValue(searchQuery);
+        query = query.or(`attendee_name.ilike.%${sq}%,attendee_email.ilike.%${sq}%,attendee_phone.ilike.%${sq}%`);
       }
 
       // Pagination

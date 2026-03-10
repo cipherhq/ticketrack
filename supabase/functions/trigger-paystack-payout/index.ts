@@ -9,11 +9,12 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { 
-  errorResponse, 
-  logError, 
-  ERROR_CODES 
+import {
+  errorResponse,
+  logError,
+  ERROR_CODES
 } from "../_shared/errorHandler.ts";
+import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,11 +36,19 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // AUTH: Require authenticated user
+    const auth = await requireAuth(req).catch((e: AuthError) => {
+      throw e;
+    });
+    const supabase = auth.supabase;
 
     const { eventId, organizerId, triggeredBy, isDonationPayout } = await req.json();
+
+    // AUTH: Verify caller owns the organizer (or is admin)
+    const targetOrganizerId = organizerId || (eventId ? (await supabase.from("events").select("organizer_id").eq("id", eventId).single()).data?.organizer_id : null);
+    if (targetOrganizerId) {
+      await requireOrganizerOrAdmin(supabase, auth.user.id, targetOrganizerId);
+    }
 
     if (!eventId && !organizerId) {
       throw new Error("Either eventId or organizerId is required");
@@ -390,7 +399,8 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    logError("paystack_payout", error, { eventId, organizerId });
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
+    logError("paystack_payout", error);
 
     return errorResponse(
       ERROR_CODES.PAYOUT_FAILED,

@@ -4,10 +4,11 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireServiceRole, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+let supabase: any = null;
 
 const APP_URL = Deno.env.get('APP_URL') || 'https://ticketrack.com'
 
@@ -197,6 +198,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    supabase = await requireServiceRole(req);
+
     console.log('=== Event Reminders Scheduler Started ===')
     const startTime = Date.now()
 
@@ -237,11 +240,12 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error('Scheduler error:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { 
-        status: 500, 
+      JSON.stringify({ success: false, error: 'An internal error occurred while processing event reminders' }),
+      {
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )

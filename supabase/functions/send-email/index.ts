@@ -36,13 +36,13 @@ const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000,
 
 type AuthLevel = 'SYSTEM_ONLY' | 'USER_AUTH' | 'ORGANIZER_AUTH' | 'ADMIN_AUTH' | 'FINANCE_AUTH'
 
-const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; fromEmail?: string; allowAnon?: boolean }> = {
+const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; fromEmail?: string; allowAnon?: boolean; verifyOrder?: boolean }> = {
   // System-only emails
   welcome: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   email_verification: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   password_reset: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
-  ticket_purchase: { auth: 'USER_AUTH', rateKey: 'standard', allowAnon: true }, // Allow from frontend (triggered by legitimate purchases)
-  payment_link: { auth: 'USER_AUTH', rateKey: 'standard', allowAnon: true }, // Payment link sent by organizer
+  ticket_purchase: { auth: 'USER_AUTH', rateKey: 'standard', verifyOrder: true }, // Requires valid orderId in data
+  payment_link: { auth: 'USER_AUTH', rateKey: 'standard', verifyOrder: true }, // Requires valid orderId in data
   ticket_cancelled: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   ticket_refunded: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
   event_cancelled: { auth: 'SYSTEM_ONLY', rateKey: 'standard' },
@@ -203,8 +203,23 @@ async function checkAuth(type: string, auth: any, req: any) {
   const perm = EMAIL_PERMISSIONS[type] as any
   if (!perm) return { ok: false, err: `Unknown email type: ${type}` }
   if (perm.auth === 'SYSTEM_ONLY' && !auth.isServiceRole) return { ok: false, err: 'System only' }
-  // Allow anon for specific email types (e.g., ticket_purchase triggered by legitimate payment flow)
-  if (perm.auth === 'USER_AUTH' && !auth.userId && !auth.isServiceRole && !perm.allowAnon) return { ok: false, err: 'Auth required' }
+
+  // For verifyOrder types: if user is not authenticated, verify the order exists in DB
+  if (perm.verifyOrder && !auth.userId && !auth.isServiceRole) {
+    const orderId = req.data?.orderId || req.data?.orderNumber
+    if (!orderId) return { ok: false, err: 'Auth or valid orderId required' }
+    const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const { data: order } = await svc.from('orders').select('id, buyer_email').eq('id', orderId).single()
+    if (!order) return { ok: false, err: 'Invalid order' }
+    // Verify the email recipient matches the order buyer
+    const toEmail = Array.isArray(req.to) ? req.to[0] : req.to
+    if (order.buyer_email?.toLowerCase() !== toEmail?.toLowerCase()) {
+      return { ok: false, err: 'Email does not match order' }
+    }
+    return { ok: true }
+  }
+
+  if (perm.auth === 'USER_AUTH' && !auth.userId && !auth.isServiceRole) return { ok: false, err: 'Auth required' }
   if (perm.auth === 'ORGANIZER_AUTH' && !auth.isServiceRole && !auth.isAdmin) {
     if (!auth.userId) return { ok: false, err: 'Auth required' }
     if (req.organizerId && !auth.organizerIds.includes(req.organizerId)) return { ok: false, err: 'Not your organizer' }
@@ -903,7 +918,14 @@ Deno.serve(async (req) => {
     }
 
     if (req.method !== 'POST') return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers: cors })
-    if (origin && !ALLOWED_ORIGINS.includes(origin)) return new Response(JSON.stringify({ success: false, error: 'Unauthorized origin' }), { status: 403, headers: cors })
+
+    // CORS origin enforcement — reject requests with no Origin unless from service role
+    const authHeader = req.headers.get('Authorization') || ''
+    const isServiceRoleRequest = authHeader.includes(SUPABASE_SERVICE_ROLE_KEY)
+    if (!isServiceRoleRequest) {
+      if (!origin) return new Response(JSON.stringify({ success: false, error: 'Origin header required' }), { status: 403, headers: cors })
+      if (!ALLOWED_ORIGINS.includes(origin)) return new Response(JSON.stringify({ success: false, error: 'Unauthorized origin' }), { status: 403, headers: cors })
+    }
 
     const body = await req.json()
     if (!body.type || !body.to || !body.data) return new Response(JSON.stringify({ success: false, error: 'Missing fields' }), { status: 400, headers: cors })

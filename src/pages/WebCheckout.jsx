@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 import { markWaitlistPurchased } from '@/services/waitlist'
 import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/ticketGenerator'
 import { logger, handleApiError, getUserMessage, ERROR_CODES } from '@/lib/logger'
@@ -33,7 +34,7 @@ const creditPromoter = async (orderId, eventId, saleAmount, ticketCount) => {
     const { data: promoter } = await supabase
       .from('promoters')
       .select('id, commission_type, commission_value, commission_rate, organizer_id')
-      .or(`short_code.eq.${refCode},referral_code.eq.${refCode}`)
+      .or(`short_code.eq.${sanitizeFilterValue(refCode)},referral_code.eq.${sanitizeFilterValue(refCode)}`)
       .single()
     
     if (!promoter) return
@@ -940,6 +941,7 @@ export function WebCheckout() {
           type: "ticket_purchase",
           to: formData.email,
           data: {
+            orderId,
             attendeeName: `${formData.firstName} ${formData.lastName}`,
             eventTitle: event.title,
             eventDate: event.start_date,
@@ -990,6 +992,7 @@ export function WebCheckout() {
           type: "ticket_purchase",
           to: formData.email,
           data: {
+            orderId,
             attendeeName: `${formData.firstName} ${formData.lastName}`,
             eventTitle: event.title,
             eventDate: event.start_date,

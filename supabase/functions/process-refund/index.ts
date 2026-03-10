@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError, requireServiceRole } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,15 +14,27 @@ serve(async (req) => {
   }
 
   try {
+    // AUTH: Allow service-role (internal calls from auto-refund) OR authenticated organizer/admin
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("Authorization") || "";
+    const isServiceRole = authHeader.includes(SUPABASE_SERVICE_ROLE_KEY);
+
+    let supabase: any;
+    let authUserId: string | null = null;
+
+    if (isServiceRole) {
+      supabase = requireServiceRole(req);
+    } else {
+      const auth = await requireAuth(req);
+      supabase = auth.supabase;
+      authUserId = auth.user.id;
+    }
+
     const { refundRequestId } = await req.json();
 
     if (!refundRequestId) {
       throw new Error("refundRequestId is required");
     }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get refund request with order details
     const { data: refundRequest, error: refundError } = await supabase
@@ -38,6 +51,11 @@ serve(async (req) => {
 
     if (refundError || !refundRequest) {
       throw new Error("Refund request not found");
+    }
+
+    // AUTH: If user-authenticated (not service-role), verify they own the organizer
+    if (authUserId && refundRequest.organizer?.id) {
+      await requireOrganizerOrAdmin(supabase, authUserId, refundRequest.organizer.id);
     }
 
     if (refundRequest.status !== "approved") {
@@ -371,9 +389,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("Refund error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: "Refund processing failed" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

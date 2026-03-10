@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ImageWithFallback } from '@/components/ui/image-with-fallback'
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 import { formatPrice } from '@/config/currencies'
 import { getUserLocation, getUserCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
 
@@ -168,7 +169,7 @@ export function WebSearch() {
 
       // Text search
       if (query.trim()) {
-        const searchTerm = `%${query.trim()}%`
+        const searchTerm = `%${sanitizeFilterValue(query.trim())}%`
         queryBuilder = queryBuilder.or(`title.ilike.${searchTerm},description.ilike.${searchTerm},venue_name.ilike.${searchTerm},category.ilike.${searchTerm}`)
         saveRecentSearch(query.trim())
       }

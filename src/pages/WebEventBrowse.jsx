@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { getCategories } from '@/services/events'
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 import { getUserLocation, getUserCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
 import { useAds } from '@/hooks/useAds'
 import { AdBanner } from '@/components/AdBanner'
@@ -151,13 +152,13 @@ export function WebEventBrowse() {
 
       // Location filter (search in city or venue)
       if (location.trim()) {
-        const locationTerm = `%${location.trim()}%`
+        const locationTerm = `%${sanitizeFilterValue(location.trim())}%`
         query = query.or(`city.ilike.${locationTerm},venue_name.ilike.${locationTerm}`)
       }
 
       // Text search
       if (searchTerm.trim()) {
-        const term = `%${searchTerm.trim()}%`
+        const term = `%${sanitizeFilterValue(searchTerm.trim())}%`
         // Use separate filter for text search to avoid conflicts with location filter
         query = query.or(`title.ilike.${term},description.ilike.${term},category.ilike.${term}`)
       }

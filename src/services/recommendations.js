@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 
 /**
  * Recommendations Service
@@ -201,7 +202,7 @@ export async function getSimilarEvents(eventId, limit = 6) {
     .eq('status', 'published')
     .neq('id', eventId)
     .gt('start_date', new Date().toISOString())
-    .or(`category.eq.${event.category},event_type.eq.${event.event_type},city.eq.${event.city}`)
+    .or(`category.eq.${sanitizeFilterValue(event.category)},event_type.eq.${sanitizeFilterValue(event.event_type)},city.eq.${sanitizeFilterValue(event.city)}`)
     .order('start_date', { ascending: true })
     .limit(limit);
 

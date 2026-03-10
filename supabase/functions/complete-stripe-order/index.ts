@@ -9,6 +9,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 // Production logging guard - only log in development
 const IS_DEV = Deno.env.get('ENVIRONMENT') === 'development';
@@ -29,6 +30,9 @@ serve(async (req) => {
   }
 
   try {
+    // Optional auth - buyers may or may not be logged in during checkout completion
+    const auth = await optionalAuth(req);
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -42,7 +46,7 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = auth?.supabase ?? createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
     log.info(`[complete-stripe-order] Received body:`, JSON.stringify(body));
@@ -88,7 +92,7 @@ serve(async (req) => {
 
     if (!orderId) {
       return new Response(
-        JSON.stringify({ success: false, error: "Missing orderId - could not retrieve from URL or Stripe session" }),
+        JSON.stringify({ success: false, error: "Missing orderId" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -122,7 +126,7 @@ serve(async (req) => {
         errorDetails: baseError?.details
       }));
       return new Response(
-        JSON.stringify({ success: false, error: "Order not found", details: baseError?.message }),
+        JSON.stringify({ success: false, error: "Order not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -218,7 +222,7 @@ serve(async (req) => {
 
     log.info(`[complete-stripe-order] Order ${orderId} assembled: user_id=${order.user_id}, event=${order.events?.title || 'MISSING'}, items=${order.order_items?.length || 0}`);
 
-    // If already completed, just return the tickets
+    // Idempotency: if already completed, just return the tickets
     if (order.status === "completed") {
       log.info(`[complete-stripe-order] Order ${orderId} already completed, returning existing tickets`);
 
@@ -468,9 +472,10 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     log.error("[complete-stripe-order] Error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: "Failed to complete order" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -67,17 +67,45 @@ serve(async (req) => {
     // Get Flutterwave secret hash from environment
     const flutterwaveSecretHash = Deno.env.get("FLUTTERWAVE_SECRET_HASH");
 
-    // Verify webhook signature
-    let isValidSignature = false;
-
-    if (signature && flutterwaveSecretHash) {
-      // Flutterwave uses a simple hash comparison
-      isValidSignature = signature === flutterwaveSecretHash;
+    if (!signature || !flutterwaveSecretHash) {
+      logError("flutterwave_webhook_auth", new Error("Missing webhook signature or secret hash"));
+      return errorResponse(
+        ERROR_CODES.AUTH_INVALID,
+        401,
+        undefined,
+        "Missing webhook signature",
+        corsHeaders
+      );
     }
 
-    // In development, allow unsigned webhooks
-    const isDev = Deno.env.get("ENVIRONMENT") === "development";
-    if (!isValidSignature && !isDev) {
+    // Verify webhook signature using constant-time comparison to prevent timing attacks
+    const encoder = new TextEncoder();
+    const signatureBytes = encoder.encode(signature);
+    const expectedBytes = encoder.encode(flutterwaveSecretHash);
+
+    let isValidSignature = false;
+    if (signatureBytes.length === expectedBytes.length) {
+      // Use constant-time comparison via crypto.subtle
+      const sigKey = await crypto.subtle.importKey(
+        "raw", signatureBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+      );
+      const sigMac = new Uint8Array(await crypto.subtle.sign("HMAC", sigKey, expectedBytes));
+      const expectedKey = await crypto.subtle.importKey(
+        "raw", expectedBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+      );
+      const expectedMac = new Uint8Array(await crypto.subtle.sign("HMAC", expectedKey, expectedBytes));
+      // If signature matches expected, both HMACs will match
+      // Actually, the simplest constant-time approach is to HMAC both and compare
+      const selfKey = await crypto.subtle.importKey(
+        "raw", encoder.encode("flutterwave-verify"), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+      );
+      const hmacOfSig = new Uint8Array(await crypto.subtle.sign("HMAC", selfKey, signatureBytes));
+      const hmacOfExpected = new Uint8Array(await crypto.subtle.sign("HMAC", selfKey, expectedBytes));
+      isValidSignature = hmacOfSig.length === hmacOfExpected.length &&
+        hmacOfSig.every((byte, i) => byte === hmacOfExpected[i]);
+    }
+
+    if (!isValidSignature) {
       logError("flutterwave_webhook_auth", new Error("Invalid signature"));
       return errorResponse(
         ERROR_CODES.AUTH_INVALID,

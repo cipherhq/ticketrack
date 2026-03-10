@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { requireServiceRole, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,9 +15,16 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Require service role (cron/internal only)
+  let supabase;
+  try {
+    supabase = requireServiceRole(req);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders);
+    }
+    throw error;
+  }
 
   const results = {
     processed: 0,
@@ -223,7 +231,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Drip campaign processing error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message, ...results }),
+      JSON.stringify({ success: false, error: 'Processing failed', ...results }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

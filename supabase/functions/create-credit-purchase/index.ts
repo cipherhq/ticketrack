@@ -2,6 +2,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { requireAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,51 +14,75 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Parse request body
-  let body;
   try {
-    body = await req.json();
-  } catch (e) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Invalid JSON: ' + e.message }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
+    // Require authentication - only logged-in organizers can purchase credits
+    const { user, supabase } = await requireAuth(req);
 
-  const {
-    organizerId,
-    credits,
-    bonusCredits,
-    amount,
-    currency = 'NGN',
-    email,
-    callbackUrl,
-    provider = 'paystack'
-  } = body;
+    // Parse request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid request body' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-  // Validate required fields
-  if (!organizerId || !credits || !amount || !email) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'Missing required fields',
-        received: { organizerId: !!organizerId, credits: !!credits, amount: !!amount, email: !!email }
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
+    const {
+      organizerId,
+      credits,
+      bonusCredits,
+      amount,
+      currency = 'NGN',
+      email,
+      callbackUrl,
+      provider = 'paystack'
+    } = body;
 
-  const reference = `CREDIT-${String(organizerId).substring(0, 8)}-${Date.now()}`;
+    // Validate required fields
+    if (!organizerId || !credits || !amount || !email) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Missing required fields',
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-  try {
+    // CRITICAL: Validate credits and amount match a valid sms_credit_packages record
+    const { data: validPackage, error: pkgError } = await supabase
+      .from('sms_credit_packages')
+      .select('id, credits, bonus_credits, price, currency')
+      .eq('credits', credits)
+      .eq('is_active', true)
+      .single();
+
+    if (pkgError || !validPackage) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid credit package' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the amount matches the package price (allow minor float tolerance)
+    const dbPrice = parseFloat(validPackage.price);
+    const clientAmount = parseFloat(amount);
+    if (isNaN(clientAmount) || Math.abs(clientAmount - dbPrice) > 0.01) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Amount does not match package price' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use the DB price, not client-supplied amount
+    const verifiedAmount = dbPrice;
+
+    const reference = `CREDIT-${String(organizerId).substring(0, 8)}-${Date.now()}`;
+
     // Route to appropriate payment provider
     if (provider === 'stripe') {
-      // Read Stripe key from payment_gateway_config (same as all other Stripe functions)
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      );
-
       const { data: gatewayConfig } = await supabase
         .from('payment_gateway_config')
         .select('secret_key_encrypted')
@@ -88,7 +113,7 @@ serve(async (req) => {
                 name: `${credits} Message Credits`,
                 description: `${credits}${bonusCredits ? ` + ${bonusCredits} bonus` : ''} credits for SMS, WhatsApp, and Email`,
               },
-              unit_amount: Math.round(Number(amount) * 100),
+              unit_amount: Math.round(verifiedAmount * 100),
             },
             quantity: 1,
           },
@@ -134,7 +159,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           tx_ref: reference,
-          amount: Number(amount),
+          amount: verifiedAmount,
           currency,
           redirect_url: callbackUrl,
           customer: { email },
@@ -155,7 +180,7 @@ serve(async (req) => {
 
       if (flutterwaveData.status !== 'success') {
         return new Response(
-          JSON.stringify({ success: false, error: 'Flutterwave: ' + (flutterwaveData.message || 'Payment failed') }),
+          JSON.stringify({ success: false, error: 'Payment initialization failed' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -187,7 +212,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           email,
-          amount: Math.round(Number(amount) * 100),
+          amount: Math.round(verifiedAmount * 100),
           currency,
           reference,
           callback_url: callbackUrl,
@@ -204,7 +229,7 @@ serve(async (req) => {
 
       if (!paystackData.status) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Paystack: ' + (paystackData.message || 'Payment failed') }),
+          JSON.stringify({ success: false, error: 'Payment initialization failed' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -219,9 +244,11 @@ serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-  } catch (e) {
+  } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
+    console.error('Create credit purchase error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: 'Exception: ' + e.message }),
+      JSON.stringify({ success: false, error: 'Failed to create credit purchase' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

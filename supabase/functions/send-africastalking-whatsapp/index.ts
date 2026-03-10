@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } from "../_shared/auth.ts";
 
 const AT_API_KEY = Deno.env.get('AFRICASTALKING_API_KEY');
 const AT_USERNAME = Deno.env.get('AFRICASTALKING_USERNAME');
@@ -23,6 +24,8 @@ serve(async (req) => {
   }
 
   try {
+    const auth = await requireAuth(req);
+
     if (!AT_API_KEY || !AT_USERNAME) {
       return new Response(
         JSON.stringify({ error: "Africa's Talking not configured" }),
@@ -40,6 +43,11 @@ serve(async (req) => {
       campaign_id,
       deduct_credits = false,
     } = await req.json();
+
+    // Verify caller is organizer or admin if organizer_id provided
+    if (organizer_id) {
+      await requireOrganizerOrAdmin(auth.supabase, auth.user.id, organizer_id);
+    }
 
     if (!to) {
       return new Response(
@@ -61,12 +69,10 @@ serve(async (req) => {
       formattedPhone = formattedPhone.substring(1);
     }
 
-    // Initialize Supabase for credit handling
+    // Use authenticated Supabase client for credit handling
     let supabase: any = null;
     if (deduct_credits && organizer_id) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      supabase = createClient(supabaseUrl, supabaseServiceKey);
+      supabase = auth.supabase;
 
       // Get channel pricing for WhatsApp
       const { data: pricing } = await supabase
@@ -215,9 +221,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("Africa's Talking WhatsApp error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: 'An internal error occurred while sending WhatsApp message' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

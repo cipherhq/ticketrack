@@ -11,12 +11,45 @@ export function ImpersonationProvider({ children }) {
   const [adminInfo, setAdminInfo] = useState(null);
   const [sessionId, setSessionId] = useState(null);
 
-  // Check for existing impersonation session on mount
+  // Check for existing impersonation session on mount — validate against DB
   useEffect(() => {
     const stored = localStorage.getItem('impersonation_session');
-    if (stored) {
+    if (!stored) return;
+
+    const validateSession = async () => {
       try {
         const session = JSON.parse(stored);
+
+        // Reject sessions older than 4 hours
+        if (session.startedAt) {
+          const ageMs = Date.now() - new Date(session.startedAt).getTime();
+          if (ageMs > 4 * 60 * 60 * 1000) {
+            localStorage.removeItem('impersonation_session');
+            return;
+          }
+        }
+
+        // Validate the session still exists in DB and hasn't ended
+        if (session.sessionId) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user || user.id !== session.admin?.id) {
+            localStorage.removeItem('impersonation_session');
+            return;
+          }
+
+          const { data: logEntry } = await supabase
+            .from('admin_impersonation_log')
+            .select('id, ended_at')
+            .eq('id', session.sessionId)
+            .eq('admin_id', user.id)
+            .single();
+
+          if (!logEntry || logEntry.ended_at) {
+            localStorage.removeItem('impersonation_session');
+            return;
+          }
+        }
+
         setIsImpersonating(true);
         setImpersonationType(session.type);
         setImpersonationTarget(session.target);
@@ -25,7 +58,9 @@ export function ImpersonationProvider({ children }) {
       } catch (e) {
         localStorage.removeItem('impersonation_session');
       }
-    }
+    };
+
+    validateSession();
   }, []);
 
   const startImpersonation = async (type, target, admin) => {

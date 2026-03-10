@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireAuth, requireAdmin, authErrorResponse, AuthError, requireServiceRole } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,9 +13,20 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // AUTH: Allow service-role (webhook calls) OR authenticated admin
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("Authorization") || "";
+    const isServiceRole = authHeader.includes(SUPABASE_SERVICE_ROLE_KEY);
+
+    let supabase: any;
+
+    if (isServiceRole) {
+      supabase = requireServiceRole(req);
+    } else {
+      const auth = await requireAuth(req);
+      await requireAdmin(auth.supabase, auth.user.id);
+      supabase = auth.supabase;
+    }
 
     const { chargebackId, action } = await req.json();
 
@@ -117,9 +129,10 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: "Failed" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

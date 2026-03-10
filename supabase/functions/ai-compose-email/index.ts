@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { requireAuth, AuthError, authErrorResponse } from '../_shared/auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,10 @@ serve(async (req) => {
   }
 
   try {
+    // Require authenticated user to prevent anonymous abuse of AI API
+    const auth = await requireAuth(req);
+    const supabase = auth.supabase;
+
     const groqApiKey = Deno.env.get('GROQ_API_KEY');
     if (!groqApiKey) {
       return new Response(
@@ -156,9 +161,10 @@ Return only valid JSON with "subject" and "body" fields.`;
     );
 
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

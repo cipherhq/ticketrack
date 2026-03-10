@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 
 // Send email via Edge Function
 const sendEmail = async (emailData) => {
@@ -79,7 +80,7 @@ export function AcceptInvitation() {
       const { data: promoter, error: findError } = await supabase
         .from('promoters')
         .select('*, organizers:organizer_id(id, business_name, email, user_id)')
-        .or(`short_code.eq.${promoCode},referral_code.eq.${promoCode}`)
+        .or(`short_code.eq.${sanitizeFilterValue(promoCode)},referral_code.eq.${sanitizeFilterValue(promoCode)}`)
         .eq('email', user.email.toLowerCase())
         .single();
 
@@ -88,7 +89,7 @@ export function AcceptInvitation() {
         const { data: existingPromoter } = await supabase
           .from('promoters')
           .select('email')
-          .or(`short_code.eq.${promoCode},referral_code.eq.${promoCode}`)
+          .or(`short_code.eq.${sanitizeFilterValue(promoCode)},referral_code.eq.${sanitizeFilterValue(promoCode)}`)
           .single();
 
         if (existingPromoter) {

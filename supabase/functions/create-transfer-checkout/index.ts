@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { requireAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +15,9 @@ serve(async (req) => {
   }
 
   try {
+    // Require authentication - only logged-in users can transfer tickets
+    const { user, supabase } = await requireAuth(req);
+
     const {
       ticketId,
       recipientEmail,
@@ -28,20 +32,36 @@ serve(async (req) => {
       throw new Error("Missing required fields");
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     // Verify ticket exists and get event info
     const { data: ticket, error: ticketError } = await supabase
       .from("tickets")
-      .select("id, event_id, events(id, title, currency, country_code)")
+      .select("id, event_id, user_id, events(id, title, currency, country_code)")
       .eq("id", ticketId)
       .single();
 
     if (ticketError || !ticket) {
       throw new Error("Ticket not found");
     }
+
+    // CRITICAL: Validate transferFee matches the platform's configured transfer fee
+    const { data: transferFeeSetting } = await supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "ticket_transfer_fee")
+      .single();
+
+    if (transferFeeSetting?.value) {
+      const configuredFee = parseFloat(transferFeeSetting.value);
+      const clientFee = parseFloat(transferFee);
+      if (isNaN(clientFee) || Math.abs(clientFee - configuredFee) > 0.01) {
+        throw new Error("Invalid transfer fee");
+      }
+    }
+
+    // Use the configured fee (or the validated client fee)
+    const verifiedFee = transferFeeSetting?.value
+      ? parseFloat(transferFeeSetting.value)
+      : parseFloat(transferFee);
 
     const countryCode = ticket.events?.country_code || "US";
 
@@ -75,7 +95,7 @@ serve(async (req) => {
               name: `Ticket Transfer Fee`,
               description: `Transfer fee for ${ticket.events?.title || "event ticket"}`,
             },
-            unit_amount: Math.round(transferFee * 100),
+            unit_amount: Math.round(verifiedFee * 100),
           },
           quantity: 1,
         },
@@ -98,9 +118,10 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    if (error instanceof AuthError) return authErrorResponse(error, corsHeaders);
     console.error("Error creating transfer checkout:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to create transfer checkout" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,

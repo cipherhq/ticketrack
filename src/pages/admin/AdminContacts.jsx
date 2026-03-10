@@ -12,6 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -113,7 +114,8 @@ export function AdminContacts() {
         query = query.eq('source', sourceFilter);
       }
       if (searchQuery.trim()) {
-        query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`);
+        const sq = sanitizeFilterValue(searchQuery);
+        query = query.or(`full_name.ilike.%${sq}%,email.ilike.%${sq}%,phone.ilike.%${sq}%`);
       }
 
       // Pagination

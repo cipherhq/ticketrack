@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { getEvent } from '@/services/events'
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 import { EventAccessGate } from '@/components/EventAccessGate'
 import { toast } from 'sonner'
 import { useAds } from '@/hooks/useAds'
@@ -489,7 +490,7 @@ export function WebEventDetails() {
           const { data: promoter } = await supabase
             .from('promoters')
             .select('id')
-            .or(`short_code.eq.${refCode},referral_code.eq.${refCode}`)
+            .or(`short_code.eq.${sanitizeFilterValue(refCode)},referral_code.eq.${sanitizeFilterValue(refCode)}`)
             .single()
           
           if (promoter) {

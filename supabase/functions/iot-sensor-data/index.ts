@@ -5,10 +5,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireServiceRole, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const SENSOR_API_KEY = Deno.env.get('SENSOR_API_KEY') || 'ticketrack-sensor-2024'
+const SENSOR_API_KEY = Deno.env.get('SENSOR_API_KEY')
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -31,13 +32,23 @@ serve(async (req) => {
   }
 
   try {
-    // Validate sensor API key
+    // Authenticate: accept either service role key or a valid sensor API key
     const sensorKey = req.headers.get('x-sensor-key')
-    if (!sensorKey || sensorKey !== SENSOR_API_KEY) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Invalid sensor key" }),
-        { status: 401, headers: corsHeaders }
-      )
+    let isServiceRole = false;
+    try {
+      requireServiceRole(req);
+      isServiceRole = true;
+    } catch {
+      // Not service role -- fall through to sensor key check
+    }
+
+    if (!isServiceRole) {
+      if (!SENSOR_API_KEY || !sensorKey || sensorKey !== SENSOR_API_KEY) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid sensor key" }),
+          { status: 401, headers: corsHeaders }
+        )
+      }
     }
 
     const sensorData = await req.json()
@@ -103,9 +114,12 @@ serve(async (req) => {
     }
 
   } catch (error) {
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders);
+    }
     console.error('Sensor data processing error:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: "Failed to process sensor data" }),
       { status: 500, headers: corsHeaders }
     )
   }

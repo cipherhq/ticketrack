@@ -73,8 +73,19 @@ serve(async (req) => {
 
     let isValidSignature = false;
 
+    if (!signature) {
+      logError("paystack_webhook_auth", new Error("Missing x-paystack-signature header"));
+      return errorResponse(
+        ERROR_CODES.AUTH_INVALID,
+        401,
+        undefined,
+        "Missing webhook signature",
+        corsHeaders
+      );
+    }
+
     for (const secret of paystackSecrets) {
-      if (signature && secret) {
+      if (secret) {
         const hash = createHmac("sha512", secret)
           .update(body)
           .toString();
@@ -85,9 +96,7 @@ serve(async (req) => {
       }
     }
 
-    // In development, allow unsigned webhooks
-    const isDev = Deno.env.get("ENVIRONMENT") === "development";
-    if (!isValidSignature && !isDev) {
+    if (!isValidSignature) {
       logError("paystack_webhook_auth", new Error("Invalid signature"));
       return errorResponse(
         ERROR_CODES.AUTH_INVALID,

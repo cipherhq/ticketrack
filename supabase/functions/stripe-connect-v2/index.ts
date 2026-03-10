@@ -22,6 +22,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { requireAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 // =============================================================================
 // CONFIGURATION
@@ -64,6 +65,12 @@ serve(async (req) => {
     const url = new URL(req.url);
     const path = url.pathname.split("/").pop();
 
+    // Webhook path does NOT require user auth (uses Stripe signature verification)
+    // All other routes require authenticated user
+    if (path !== "webhook") {
+      await requireAuth(req);
+    }
+
     // Route to appropriate handler
     switch (path) {
       case "create-account":
@@ -86,10 +93,13 @@ serve(async (req) => {
         return jsonResponse({ error: "Unknown endpoint" }, 404);
     }
   } catch (error) {
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders);
+    }
     console.error("Request error:", error);
     return jsonResponse({
       success: false,
-      error: error.message || "An unexpected error occurred",
+      error: "An unexpected error occurred",
     }, 500);
   }
 });

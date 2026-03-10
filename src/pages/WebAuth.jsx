@@ -17,7 +17,9 @@ export function WebAuth() {
 
   const isLogin = location.pathname === '/login'
   // Support both state.from (preferred) and redirect query param (backwards compat)
-  const from = location.state?.from || searchParams.get('redirect') || '/profile'
+  // Validate redirect to prevent open redirect attacks - only allow relative paths
+  const rawRedirect = location.state?.from || searchParams.get('redirect') || '/profile'
+  const from = (rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')) ? rawRedirect : '/profile'
 
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)

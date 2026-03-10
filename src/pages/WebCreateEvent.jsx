@@ -16,6 +16,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import { AddressAutocomplete } from '../components/ui/AddressAutocomplete';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { sanitizeFilterValue } from '@/lib/utils';
 import {
   PreCreateEventPrompt,
   PostCreateEventPrompt,
@@ -435,7 +436,7 @@ export function WebCreateEvent() {
       const { data, error } = await supabase
         .from("events")
         .select("id")
-        .or(`slug.eq.${url},custom_url.eq.${url}`)
+        .or(`slug.eq.${sanitizeFilterValue(url)},custom_url.eq.${sanitizeFilterValue(url)}`)
         .limit(1);
       if (error) throw error;
       if (data && data.length > 0) {

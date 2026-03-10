@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { sanitizeFilterValue } from '@/lib/utils'
 
 // Fetch all published events with optional filters
 export async function getEvents({ 
@@ -29,7 +30,8 @@ export async function getEvents({
   }
 
   if (search) {
-    query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,venue_name.ilike.%${search}%`)
+    const s = sanitizeFilterValue(search)
+    query = query.or(`title.ilike.%${s}%,description.ilike.%${s}%,venue_name.ilike.%${s}%`)
   }
 
   if (featured === true) {
@@ -68,7 +70,8 @@ export async function getEvent(idOrSlug) {
     query = query.eq('id', idOrSlug)
   } else {
     // Use or() filter - format: field.operator.value,field.operator.value
-    query = query.or(`slug.eq.${idOrSlug},custom_url.eq.${idOrSlug}`)
+    const slug = sanitizeFilterValue(idOrSlug)
+    query = query.or(`slug.eq.${slug},custom_url.eq.${slug}`)
   }
   
   const { data, error } = await query.single()
@@ -149,7 +152,7 @@ export async function getPromoterByCode(promoCode) {
   const { data, error } = await supabase
     .from('promoters')
     .select('id, organizer_id, referral_code')
-    .or(`referral_code.eq.${promoCode},short_code.eq.${promoCode}`)
+    .or(`referral_code.eq.${sanitizeFilterValue(promoCode)},short_code.eq.${sanitizeFilterValue(promoCode)}`)
     .single()
 
   if (error) {

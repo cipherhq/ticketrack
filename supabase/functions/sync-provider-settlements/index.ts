@@ -16,6 +16,7 @@ import {
   safeLog,
   ERROR_CODES,
 } from "../_shared/errorHandler.ts";
+import { requireServiceRole, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,9 +37,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Require service role (cron/internal only)
+    const supabase = requireServiceRole(req);
 
     const body: SyncRequest = await req.json().catch(() => ({}));
 
@@ -99,12 +99,15 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return authErrorResponse(error, corsHeaders);
+    }
     logError("sync_provider_settlements", error);
     return errorResponse(
       ERROR_CODES.INTERNAL_ERROR,
       500,
-      error,
       undefined,
+      "An internal error occurred",
       corsHeaders
     );
   }
