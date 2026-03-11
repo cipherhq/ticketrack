@@ -33,6 +33,11 @@ export function ForgotPassword() {
 
     try {
       const captchaToken = await getTurnstileToken()
+      if (!captchaToken) {
+        setError('Verification failed. Please refresh the page and try again.')
+        setLoading(false)
+        return
+      }
       const result = await resetPassword(email, captchaToken)
       console.log('[ForgotPassword] Reset result:', result)
       setStep('submitted')

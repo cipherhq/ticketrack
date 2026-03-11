@@ -9,13 +9,20 @@ export function useTurnstile() {
   const resolveRef = useRef(null);
 
   useEffect(() => {
-    // Wait for Turnstile script to load, then render invisible widget
+    let interval = null;
+
     const renderWidget = () => {
-      if (!window.turnstile || !containerRef.current || widgetId.current !== null) return;
+      if (!window.turnstile || !containerRef.current) return;
+      // Remove any existing widget first
+      if (widgetId.current !== null) {
+        try { window.turnstile.remove(widgetId.current); } catch (_) {}
+        widgetId.current = null;
+      }
 
       widgetId.current = window.turnstile.render(containerRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
         size: 'invisible',
+        execution: 'execute', // Don't auto-execute; wait for explicit execute() call
         callback: (token) => {
           tokenRef.current = token;
           if (resolveRef.current) {
@@ -30,47 +37,51 @@ export function useTurnstile() {
             resolveRef.current = null;
           }
         },
+        'expired-callback': () => {
+          tokenRef.current = null;
+        },
       });
     };
 
-    // If turnstile is already loaded, render immediately
     if (window.turnstile) {
       renderWidget();
     } else {
-      // Poll for turnstile to be available
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         if (window.turnstile) {
           clearInterval(interval);
+          interval = null;
           renderWidget();
         }
       }, 200);
-      return () => clearInterval(interval);
     }
+
+    return () => {
+      if (interval) clearInterval(interval);
+      if (widgetId.current !== null && window.turnstile) {
+        try { window.turnstile.remove(widgetId.current); } catch (_) {}
+        widgetId.current = null;
+      }
+    };
   }, []);
 
   const getToken = useCallback(() => {
     return new Promise((resolve) => {
-      // If we already have a token, use it and reset
-      if (tokenRef.current) {
-        const token = tokenRef.current;
-        tokenRef.current = null;
-        // Reset widget for next use
-        if (widgetId.current !== null && window.turnstile) {
-          window.turnstile.reset(widgetId.current);
-        }
-        resolve(token);
-        return;
-      }
-
-      // If turnstile isn't loaded, resolve with null (allow auth without captcha)
       if (!window.turnstile || widgetId.current === null) {
         resolve(null);
         return;
       }
 
-      // Execute and wait for callback
+      // Reset widget to get a fresh token every time
+      tokenRef.current = null;
       resolveRef.current = resolve;
-      window.turnstile.execute(widgetId.current);
+
+      try {
+        window.turnstile.reset(widgetId.current);
+        window.turnstile.execute(widgetId.current);
+      } catch (_) {
+        resolveRef.current = null;
+        resolve(null);
+      }
 
       // Timeout after 10 seconds
       setTimeout(() => {

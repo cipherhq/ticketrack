@@ -194,6 +194,11 @@ export function WebAuth() {
       if (isLogin) {
         // Get Turnstile captcha token for bot protection
         const captchaToken = await getTurnstileToken()
+        if (!captchaToken && loginMethod !== "phone") {
+          setError("Verification failed. Please refresh the page and try again.")
+          setLoading(false)
+          return
+        }
 
         if (loginMethod === "phone") {
           // Phone login - send OTP with type 'login'
