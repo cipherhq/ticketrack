@@ -8,7 +8,6 @@ import { brand } from '@/config/brand'
 const AuthContext = createContext({})
 
 // Session warning time - warn 5 minutes before expiry
-// In development, you can test by calling window.__testSessionWarning() in browser console
 const SESSION_WARNING_MINUTES = 5
 const SESSION_WARNING_MS = SESSION_WARNING_MINUTES * 60 * 1000
 
@@ -126,9 +125,9 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Development helper to test session warning (call window.__testSessionWarning() in console)
+  // Development-only helper to test session warning (call window.__testSessionWarning() in console)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
       window.__testSessionWarning = () => {
         setSessionWarning(true)
         toast.warning(
@@ -142,7 +141,6 @@ export function AuthProvider({ children }) {
             },
           }
         )
-        console.log('Session warning test triggered')
       }
       window.__testSessionExpired = () => {
         setSessionExpired(true)
@@ -150,7 +148,6 @@ export function AuthProvider({ children }) {
           duration: 5000,
           id: 'session-expired',
         })
-        console.log('Session expired test triggered')
       }
     }
     return () => {

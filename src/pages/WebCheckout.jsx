@@ -1671,13 +1671,10 @@ export function WebCheckout() {
     try {
       const code = promoCode.trim().toUpperCase()
 
-      // Find promo code in database
-      const { data: promo, error } = await supabase
-        .from('promo_codes')
-        .select('*')
-        .eq('code', code)
-        .eq('is_active', true)
-        .single()
+      // Validate promo code via secure RPC
+      const { data: promoResults, error } = await supabase
+        .rpc('validate_promo_code', { p_code: code, p_event_id: event?.id || null })
+      const promo = promoResults?.[0] || null
       
       if (error || !promo) {
         setPromoError('Invalid promo code')
