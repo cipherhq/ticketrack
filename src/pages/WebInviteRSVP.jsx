@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import {
   getInviteByToken,
   getGuestByRsvpToken,
@@ -31,9 +32,12 @@ import {
   getDatePollOptions,
   voteOnDateOption,
   getPublicFundInfo,
+  createFundContribution,
+  verifyFundContribution,
 } from '@/services/partyInvites';
 import { generateGoogleCalendarUrl, downloadICSFile } from '@/components/rackparty/shared';
 import { supabase } from '@/lib/supabase';
+import { compressImage } from '@/lib/imageCompression';
 
 function formatDate(dateStr) {
   if (!dateStr) return 'TBA';
@@ -96,6 +100,11 @@ export function WebInviteRSVP() {
 
   // Fund
   const [fundInfo, setFundInfo] = useState(null);
+  const [showContributeForm, setShowContributeForm] = useState(false);
+  const [contributionAmount, setContributionAmount] = useState('');
+  const [contributionMessage, setContributionMessage] = useState('');
+  const [contributionEmail, setContributionEmail] = useState('');
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   const isShareLink = !guestRsvpToken;
   const isExpired = invite?.rsvp_deadline && new Date(invite.rsvp_deadline) < new Date();
@@ -104,6 +113,29 @@ export function WebInviteRSVP() {
   useEffect(() => {
     loadData();
   }, [token, guestRsvpToken]);
+
+  // Detect payment return from fund contribution
+  useEffect(() => {
+    const ref = searchParams.get('trxref') || searchParams.get('reference');
+    if (!ref) return;
+
+    async function verifyPayment() {
+      try {
+        const result = await verifyFundContribution(ref, 'paystack');
+        if (result?.success) {
+          toast.success('Contribution received! Thank you for your generosity.');
+          // Reload fund data
+          if (invite?.id) {
+            const fi = await getPublicFundInfo(invite.id);
+            setFundInfo(fi);
+          }
+        }
+      } catch {
+        // Silently handle — webhook may have already processed it
+      }
+    }
+    verifyPayment();
+  }, [searchParams, invite?.id]);
 
   async function loadData() {
     setLoading(true);
@@ -291,9 +323,10 @@ export function WebInviteRSVP() {
     try {
       let imageUrl = null;
       if (wallImageFile) {
-        const ext = wallImageFile.name.split('.').pop();
+        const compressed = await compressImage(wallImageFile);
+        const ext = compressed.name.split('.').pop();
         const path = `party-wall/${invite.id}/${Date.now()}.${ext}`;
-        const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, wallImageFile);
+        const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, compressed);
         if (!uploadErr) {
           const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(path);
           imageUrl = publicUrl;
@@ -355,9 +388,10 @@ export function WebInviteRSVP() {
     if (!file || file.size > 5 * 1024 * 1024) return;
     setUploadingPhoto(true);
     try {
-      const ext = file.name.split('.').pop();
+      const compressed = await compressImage(file);
+      const ext = compressed.name.split('.').pop();
       const path = `party-photos/${invite.id}/${Date.now()}.${ext}`;
-      const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, file);
+      const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, compressed);
       if (uploadErr) throw uploadErr;
       const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(path);
       await uploadPartyPhoto(invite.id, {
@@ -1078,6 +1112,90 @@ export function WebInviteRSVP() {
                       )}
                       <p className="text-xs text-gray-500 mt-2">{fundInfo.contribution_count || 0} contribution{fundInfo.contribution_count !== 1 ? 's' : ''}</p>
                     </div>
+
+                    {/* Contribute button / form */}
+                    {!showContributeForm ? (
+                      <button
+                        onClick={() => setShowContributeForm(true)}
+                        className="w-full mt-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Wallet className="w-4 h-4" />
+                        Contribute
+                      </button>
+                    ) : (
+                      <div className="mt-4 space-y-3">
+                        <div>
+                          <label className="text-xs font-medium text-gray-600">Amount ({fundInfo.currency})</label>
+                          <Input
+                            type="number"
+                            placeholder="Enter amount"
+                            value={contributionAmount}
+                            onChange={e => setContributionAmount(e.target.value)}
+                            className="rounded-lg h-11 mt-1"
+                            min="1"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600">Your email *</label>
+                          <Input
+                            type="email"
+                            placeholder="you@example.com"
+                            value={contributionEmail || email || ''}
+                            onChange={e => setContributionEmail(e.target.value)}
+                            className="rounded-lg h-11 mt-1"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600">Message (optional)</label>
+                          <Input
+                            placeholder="Leave a message..."
+                            value={contributionMessage}
+                            onChange={e => setContributionMessage(e.target.value)}
+                            className="rounded-lg h-11 mt-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setShowContributeForm(false)}
+                            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={async () => {
+                              const amt = parseFloat(contributionAmount);
+                              const contribEmail = contributionEmail || email || '';
+                              if (!amt || amt <= 0) { toast.error('Enter a valid amount'); return; }
+                              if (!contribEmail) { toast.error('Email is required for payment'); return; }
+                              setProcessingPayment(true);
+                              try {
+                                const result = await createFundContribution(fundInfo.id, {
+                                  guestName: name || guest?.name || 'Guest',
+                                  guestEmail: contribEmail,
+                                  amount: amt,
+                                  message: contributionMessage.trim() || null,
+                                  callbackUrl: window.location.href.split('?')[0] + `?${guestRsvpToken ? `rsvp=${guestRsvpToken}&` : ''}`,
+                                });
+                                if (result?.success && result.authorization_url) {
+                                  window.location.href = result.authorization_url;
+                                } else {
+                                  toast.error(result?.error || 'Failed to start payment');
+                                }
+                              } catch (err) {
+                                toast.error('Failed to start payment. Please try again.');
+                              } finally {
+                                setProcessingPayment(false);
+                              }
+                            }}
+                            disabled={processingPayment}
+                            className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {processingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
+                            {processingPayment ? 'Processing...' : 'Pay Now'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

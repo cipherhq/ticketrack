@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { getInvitePhotos, uploadPartyPhoto, deletePartyPhoto, likePhoto, unlikePhoto } from '@/services/partyInvites';
+import { compressImage } from '@/lib/imageCompression';
 import { formatDistanceToNow } from 'date-fns';
 
 export function PhotosTab({ invite, organizer }) {
@@ -41,9 +42,10 @@ export function PhotosTab({ invite, organizer }) {
 
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      const compressed = await compressImage(file);
+      const ext = compressed.name.split('.').pop();
       const path = `party-photos/${invite.id}/${Date.now()}.${ext}`;
-      const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, file);
+      const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, compressed);
       if (uploadErr) throw uploadErr;
       const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(path);
 

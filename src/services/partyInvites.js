@@ -1165,6 +1165,24 @@ export async function getContributions(fundId) {
   return data || [];
 }
 
+export async function createFundContribution(fundId, { guestName, guestEmail, amount, message, callbackUrl }) {
+  const { data, error } = await supabase.functions.invoke('create-fund-contribution', {
+    body: { fundId, guestName, guestEmail, amount, message, callbackUrl },
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function verifyFundContribution(reference, provider) {
+  const { data, error } = await supabase.functions.invoke('verify-fund-contribution', {
+    body: { reference, provider },
+  });
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getPublicFundInfo(inviteId) {
   const fund = await getInviteFund(inviteId);
   if (!fund) return null;

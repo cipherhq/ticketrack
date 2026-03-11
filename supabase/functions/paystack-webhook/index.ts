@@ -190,6 +190,12 @@ async function handleChargeSuccess(supabase: any, data: any) {
     return;
   }
 
+  // Check if this is a fund contribution
+  if (metadata?.type === 'fund_contribution') {
+    await handleFundContribution(supabase, data);
+    return;
+  }
+
   // Check if this is a split payment
   if (metadata?.type === "split_payment") {
     await handleSplitPaymentSuccess(supabase, reference, metadata);
@@ -779,6 +785,63 @@ async function handleSplitPaymentCompleted(supabase: any, splitPaymentId: string
   } catch (error) {
     logError("split_payment_complete", error, { splitPaymentId });
   }
+}
+
+async function handleFundContribution(supabase: any, data: any) {
+  const { reference, metadata } = data;
+  const fundId = metadata?.fund_id;
+  const contributionId = metadata?.contribution_id;
+
+  safeLog.info(`Processing fund contribution for fund: ${fundId}, ref: ${reference}`);
+
+  if (!fundId) {
+    safeLog.warn("Fund contribution metadata missing fund_id:", reference);
+    return;
+  }
+
+  // Find contribution by payment_reference
+  const { data: contribution, error: findError } = await supabase
+    .from("party_invite_contributions")
+    .select("id, payment_status")
+    .eq("payment_reference", reference)
+    .single();
+
+  if (findError || !contribution) {
+    // Try by contribution_id as fallback
+    if (contributionId) {
+      const { data: contrib2 } = await supabase
+        .from("party_invite_contributions")
+        .select("id, payment_status")
+        .eq("id", contributionId)
+        .single();
+      if (!contrib2) {
+        safeLog.warn("Fund contribution not found:", reference);
+        return;
+      }
+      if (contrib2.payment_status === "completed") {
+        safeLog.debug("Fund contribution already completed:", reference);
+        return;
+      }
+      await supabase
+        .from("party_invite_contributions")
+        .update({ payment_status: "completed", payment_reference: reference })
+        .eq("id", contributionId);
+    } else {
+      safeLog.warn("Fund contribution not found for reference:", reference);
+      return;
+    }
+  } else {
+    if (contribution.payment_status === "completed") {
+      safeLog.debug("Fund contribution already completed:", reference);
+      return;
+    }
+    await supabase
+      .from("party_invite_contributions")
+      .update({ payment_status: "completed" })
+      .eq("id", contribution.id);
+  }
+
+  safeLog.info(`Fund contribution ${reference} marked as completed`);
 }
 
 async function handleTransferSuccess(supabase: any, data: any) {

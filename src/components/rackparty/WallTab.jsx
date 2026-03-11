@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { getWallPosts, createWallPost, deleteWallPost, logActivity } from '@/services/partyInvites';
+import { compressImage } from '@/lib/imageCompression';
 import { formatDistanceToNow } from 'date-fns';
 
 export function WallTab({ invite, organizer }) {
@@ -48,9 +49,10 @@ export function WallTab({ invite, organizer }) {
   }
 
   async function uploadImage(file) {
-    const ext = file.name.split('.').pop();
+    const compressed = await compressImage(file);
+    const ext = compressed.name.split('.').pop();
     const path = `party-wall/${invite.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('event-images').upload(path, file);
+    const { error } = await supabase.storage.from('event-images').upload(path, compressed);
     if (error) throw error;
     const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(path);
     return publicUrl;

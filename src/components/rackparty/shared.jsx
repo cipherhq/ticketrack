@@ -84,25 +84,25 @@ export const PARTY_TEMPLATES = [
     overlayPattern: 'radial-gradient(circle at 40% 60%, rgba(255,255,255,0.08) 0%, transparent 50%)',
   },
   {
-    id: 'gold-foil', name: 'Gold Foil', emoji: '👑', premium: true,
+    id: 'gold-foil', name: 'Gold Foil', emoji: '👑', premium: false,
     gradient: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
     textColor: '#ffd700', decorEmojis: ['👑', '✨', '💎', '⭐'],
     overlayPattern: 'radial-gradient(circle at 30% 20%, rgba(255,215,0,0.1) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(255,215,0,0.06) 0%, transparent 50%)',
   },
   {
-    id: 'holographic', name: 'Holographic', emoji: '🌈', premium: true,
+    id: 'holographic', name: 'Holographic', emoji: '🌈', premium: false,
     gradient: 'linear-gradient(135deg, #a855f7, #ec4899, #06b6d4, #a855f7)',
     textColor: '#ffffff', decorEmojis: ['💠', '🔮', '🌟', '💜'],
     overlayPattern: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 40%), radial-gradient(circle at 20% 20%, rgba(168,85,247,0.15) 0%, transparent 50%)',
   },
   {
-    id: 'midnight-gala', name: 'Midnight Gala', emoji: '🌙', premium: true,
+    id: 'midnight-gala', name: 'Midnight Gala', emoji: '🌙', premium: false,
     gradient: 'linear-gradient(135deg, #0c0a1d, #1a1145, #2d1b69)',
     textColor: '#e2d9f3', decorEmojis: ['🌙', '⭐', '✨', '🌌'],
     overlayPattern: 'radial-gradient(circle at 80% 20%, rgba(139,92,246,0.12) 0%, transparent 50%), radial-gradient(circle at 20% 70%, rgba(99,102,241,0.08) 0%, transparent 50%)',
   },
   {
-    id: 'rose-luxe', name: 'Rose Luxe', emoji: '🌹', premium: true,
+    id: 'rose-luxe', name: 'Rose Luxe', emoji: '🌹', premium: false,
     gradient: 'linear-gradient(135deg, #4a0e2e, #831843, #be185d)',
     textColor: '#fecdd3', decorEmojis: ['🌹', '💕', '🥀', '✨'],
     overlayPattern: 'radial-gradient(circle at 60% 30%, rgba(254,205,211,0.1) 0%, transparent 50%), radial-gradient(circle at 30% 80%, rgba(190,24,93,0.15) 0%, transparent 50%)',
@@ -143,8 +143,6 @@ export const EXPORT_SIZES = [
 ];
 
 export const FAVORITES_KEY = 'rackparty_template_favorites';
-
-export const isPremiumOrganizer = true;
 
 // ============================================================================
 // UTILITIES
@@ -681,9 +679,6 @@ export function TemplateControls({ activeTemplate, selectedColor, setSelectedCol
             <span className="text-xs font-semibold block" style={{ color: t.textColor }}>
               {t.name}
             </span>
-            {t.premium && (
-              <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-yellow-400 text-yellow-900">PRO</span>
-            )}
             {activeTemplate?.id === t.id && (
               <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                 <Check className="w-3 h-3 text-white" />
