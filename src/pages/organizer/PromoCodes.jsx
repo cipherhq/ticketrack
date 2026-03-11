@@ -205,7 +205,7 @@ export function PromoCodes() {
       return;
     }
     
-    if (formData.expiresAt && formData.expiresAt < today && !editingPromo) {
+    if (formData.expiresAt && formData.expiresAt < today) {
       setError('Expiry date cannot be in the past');
       return;
     }
@@ -584,18 +584,18 @@ export function PromoCodes() {
                   type="date" 
                   value={formData.startsAt} 
                   onChange={handleStartsAtChange} 
-                  min={editingPromo ? undefined : today}
-                  className="rounded-xl h-12" 
+                  min={today}
+                  className="rounded-xl h-12"
                 />
                 <p className="text-xs text-muted-foreground">Leave empty for immediate start</p>
               </div>
               <div className="space-y-2">
                 <Label>Valid Until</Label>
-                <Input 
-                  type="date" 
-                  value={formData.expiresAt} 
-                  onChange={handleExpiresAtChange} 
-                  min={formData.startsAt || (editingPromo ? undefined : today)}
+                <Input
+                  type="date"
+                  value={formData.expiresAt}
+                  onChange={handleExpiresAtChange}
+                  min={formData.startsAt || today}
                   className="rounded-xl h-12" 
                 />
                 <p className="text-xs text-muted-foreground">Leave empty for no expiry</p>
