@@ -100,6 +100,7 @@ export function WebInviteRSVP() {
 
   // Fund
   const [fundInfo, setFundInfo] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
   const [showContributeForm, setShowContributeForm] = useState(false);
   const [contributionAmount, setContributionAmount] = useState('');
   const [contributionMessage, setContributionMessage] = useState('');
@@ -118,6 +119,7 @@ export function WebInviteRSVP() {
   useEffect(() => {
     const ref = searchParams.get('trxref') || searchParams.get('reference');
     if (!ref) return;
+    setShowDetails(true);
 
     async function verifyPayment() {
       try {
@@ -136,6 +138,13 @@ export function WebInviteRSVP() {
     }
     verifyPayment();
   }, [searchParams, invite?.id]);
+
+  // Auto-show details for already-responded guests
+  useEffect(() => {
+    if (guest?.rsvp_responded_at && !changingResponse) {
+      setShowDetails(true);
+    }
+  }, [guest?.rsvp_responded_at, changingResponse]);
 
   async function loadData() {
     setLoading(true);
@@ -268,8 +277,8 @@ export function WebInviteRSVP() {
   // Loading
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <Loader2 className="w-8 h-8 animate-spin text-white" />
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -277,13 +286,13 @@ export function WebInviteRSVP() {
   // Error
   if (error && !invite) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4">
-        <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
+        <div className="text-center max-w-sm bg-white rounded-2xl shadow-lg p-8">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
             <X className="w-8 h-8 text-red-400" />
           </div>
-          <h1 className="text-xl font-bold text-white mb-2">Invite Not Found</h1>
-          <p className="text-gray-400">{error}</p>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Invite Not Found</h1>
+          <p className="text-gray-500">{error}</p>
         </div>
       </div>
     );
@@ -418,53 +427,123 @@ export function WebInviteRSVP() {
     } catch {}
   }
 
+  const designMeta = invite?.design_metadata;
+  const fallbackGradient = designMeta?.gradient || 'from-gray-900 via-gray-800 to-gray-900';
+
+  function handleViewInvitation() {
+    setShowDetails(true);
+    setTimeout(() => {
+      document.getElementById('invite-details')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }
+
   return (
-    <div className="min-h-screen relative">
-      {/* Blurred backdrop */}
-      {coverImage && (
-        <div
-          className="fixed inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${coverImage})`, filter: 'blur(30px) brightness(0.3)', transform: 'scale(1.2)' }}
-        />
-      )}
-      <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+    <div className="min-h-screen bg-[#f5f5f7]">
+      {/* HERO SECTION */}
+      <div className="px-4 pt-8 sm:pt-12 pb-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-5">
+            {/* LEFT CARD — Cover Image */}
+            <div className="lg:w-[55%] rounded-2xl overflow-hidden shadow-xl icloud-hero-enter relative">
+              {coverImage ? (
+                <div className="relative aspect-[3/4] lg:aspect-auto lg:h-[520px]">
+                  <img src={coverImage} alt={invite?.title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+                    <div className="flex items-center gap-2 mb-3">
+                      {organizer?.logo_url ? (
+                        <img src={organizer.logo_url} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-white/30" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center ring-2 ring-white/30">
+                          <span className="text-[10px] font-bold text-white">
+                            {(organizer?.business_name || 'O')[0]}
+                          </span>
+                        </div>
+                      )}
+                      <span className="text-sm text-white/80">Sent you an invitation</span>
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                      {invite?.title}
+                    </h1>
+                    <p className="text-sm text-white/80 mt-2">
+                      {formatDate(invite?.start_date)} {formatTime(invite?.start_date) && `· ${formatTime(invite?.start_date)}`}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className={`relative aspect-[3/4] lg:aspect-auto lg:h-[520px] bg-gradient-to-br ${fallbackGradient} flex flex-col items-center justify-center p-8`}>
+                  <span className="text-6xl mb-4">🎉</span>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white text-center leading-tight">
+                    {invite?.title}
+                  </h1>
+                  <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
+                    <div className="flex items-center gap-2 mb-2">
+                      {organizer?.logo_url ? (
+                        <img src={organizer.logo_url} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-white/30" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center ring-2 ring-white/30">
+                          <span className="text-[10px] font-bold text-white">
+                            {(organizer?.business_name || 'O')[0]}
+                          </span>
+                        </div>
+                      )}
+                      <span className="text-sm text-white/80">Sent you an invitation</span>
+                    </div>
+                    <p className="text-sm text-white/80">
+                      {formatDate(invite?.start_date)} {formatTime(invite?.start_date) && `· ${formatTime(invite?.start_date)}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
 
-      {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-start justify-center px-4 py-8 sm:py-12">
-        <div className="w-full max-w-md">
-
-          {/* Gift Box Animation */}
-          <div className="gift-box-wrapper pointer-events-none" aria-hidden="true">
-            <div className="gift-box-body">
-              <div className="gift-box-lid" />
-              <div className="gift-bow" />
-              <div className="gift-bow-knot" />
-              <div className="gift-ribbon-h" />
-              <div className="gift-ribbon-v" />
-              <div className="gift-sparkle gift-sparkle--dot" />
-              <div className="gift-sparkle gift-sparkle--star" />
-              <div className="gift-sparkle gift-sparkle--dot" />
-              <div className="gift-sparkle gift-sparkle--star" />
-              <div className="gift-sparkle gift-sparkle--dot" />
-              <div className="gift-sparkle gift-sparkle--star" />
-              <div className="gift-sparkle gift-sparkle--dot" />
-              <div className="gift-sparkle gift-sparkle--star" />
+            {/* RIGHT CARD — CTA (desktop only) */}
+            <div className="hidden lg:flex lg:w-[45%] rounded-2xl overflow-hidden shadow-xl icloud-cta-enter relative">
+              {/* Blurred cover background */}
+              {coverImage && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${coverImage})`, filter: 'blur(20px) brightness(0.4)', transform: 'scale(1.3)' }}
+                />
+              )}
+              <div className="absolute inset-0 icloud-glass" />
+              <div className="relative z-10 flex flex-col items-center justify-center w-full p-8 text-center">
+                <p className="text-xl font-semibold text-white mb-6 leading-snug">
+                  View Event Details<br />and Reply
+                </p>
+                <button
+                  onClick={handleViewInvitation}
+                  className="bg-white text-gray-900 rounded-xl px-8 py-3 font-semibold text-base hover:bg-gray-100 transition-colors shadow-lg"
+                >
+                  View Invitation
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Card */}
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden rsvp-card-reveal">
-            {/* Event Image Hero */}
-            {coverImage && (
-              <div className="relative h-56 sm:h-72">
-                <img src={coverImage} alt={invite?.title} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-              </div>
-            )}
+      {/* MOBILE CTA (below cover card) */}
+      {!showDetails && (
+        <div className="lg:hidden px-4 pb-6">
+          <div className="max-w-md mx-auto">
+            <button
+              onClick={handleViewInvitation}
+              className="w-full bg-white text-gray-900 rounded-xl px-8 py-3.5 font-semibold text-base shadow-lg hover:bg-gray-50 transition-colors icloud-cta-enter"
+            >
+              View Invitation
+            </button>
+          </div>
+        </div>
+      )}
 
-            <div className="p-6 sm:p-8">
+      {/* DETAILS SECTION */}
+      {showDetails && (
+        <div id="invite-details" className="icloud-details-reveal px-4 pb-12">
+          <div className="w-full max-w-md mx-auto mt-6">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden p-6 sm:p-8">
               {/* Live Guest Count Banner */}
-              <div className="rsvp-animate-title mb-5">
+              <div className="mb-5">
                 <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-blue-50 border border-blue-100">
                   <Users className="w-4 h-4 text-blue-500" />
                   <span className="text-sm font-semibold text-blue-700">
@@ -476,30 +555,9 @@ export function WebInviteRSVP() {
                 </div>
               </div>
 
-              {/* Event Title */}
-              <h1 className="text-4xl sm:text-6xl font-black text-gray-900 leading-[0.95] tracking-tight uppercase rsvp-animate-title">
-                {invite?.title}
-              </h1>
-
-              {/* Hosted by */}
-              <div className="flex items-center gap-2.5 mt-4 rsvp-animate-host">
-                {organizer?.logo_url ? (
-                  <img src={organizer.logo_url} alt="" className="w-7 h-7 rounded-full object-cover" />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-xs font-bold text-blue-600">
-                      {(organizer?.business_name || 'O')[0]}
-                    </span>
-                  </div>
-                )}
-                <span className="text-base text-gray-500">
-                  Hosted by <span className="font-semibold text-gray-800">{organizer?.business_name || 'Organizer'}</span>
-                </span>
-              </div>
-
-              {/* Date, Time, Venue */}
-              <div className="mt-6 space-y-4">
-                <div className="flex items-start gap-3 rsvp-animate-detail-1">
+              {/* Full Event Details */}
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-blue-500 mt-1 shrink-0" />
                   <div>
                     <p className="text-lg font-bold text-gray-900">{formatDate(invite?.start_date)}</p>
@@ -507,7 +565,7 @@ export function WebInviteRSVP() {
                   </div>
                 </div>
                 {(invite?.venue_name || invite?.city) && (
-                  <div className="flex items-start gap-3 rsvp-animate-detail-2">
+                  <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-blue-500 mt-1 shrink-0" />
                     <div>
                       <p className="text-lg font-bold text-gray-900">{invite?.venue_name || 'Venue TBA'}</p>
@@ -517,9 +575,16 @@ export function WebInviteRSVP() {
                 )}
               </div>
 
+              {/* Description */}
+              {invite?.description && (
+                <div className="mt-5">
+                  <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{invite.description}</p>
+                </div>
+              )}
+
               {/* Invite Message */}
               {invite?.message && (
-                <div className="mt-6 p-4 bg-purple-50 rounded-xl border-l-4 border-purple-400 rsvp-animate-message">
+                <div className="mt-5 p-4 bg-purple-50 rounded-xl border-l-4 border-purple-400">
                   <p className="text-base text-purple-800 italic leading-relaxed">"{invite.message}"</p>
                 </div>
               )}
@@ -623,7 +688,7 @@ export function WebInviteRSVP() {
 
               {/* RSVP Form */}
               {!isExpired && !submitted && !hasResponded && (
-                <div className="mt-6 space-y-5 rsvp-animate-buttons">
+                <div className="mt-6 space-y-5">
                   {/* Share link: name/email form first */}
                   {isShareLink && (
                     <div className="space-y-3">
@@ -846,7 +911,7 @@ export function WebInviteRSVP() {
 
               {/* Guest List Preview */}
               {guestList.length > 0 && (
-                <div className="mt-6 pt-5 border-t border-gray-100 rsvp-animate-guest-list">
+                <div className="mt-6 pt-5 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
                     <Users className="w-4 h-4 text-gray-400" />
                     <p className="text-base font-semibold text-gray-500">
@@ -1288,14 +1353,14 @@ export function WebInviteRSVP() {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Powered by */}
-          <p className="text-center text-xs text-white/40 mt-6">
-            Powered by Ticketrack
-          </p>
+            {/* Powered by */}
+            <p className="text-center text-xs text-gray-400 mt-6">
+              Powered by Ticketrack
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
