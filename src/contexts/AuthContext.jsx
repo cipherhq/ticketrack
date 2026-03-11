@@ -429,7 +429,7 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const signIn = useCallback(async (email, password) => {
+  const signIn = useCallback(async (email, password, captchaToken) => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
 
@@ -439,6 +439,7 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailResult.value,
         password,
+        options: captchaToken ? { captchaToken } : undefined,
       })
 
       if (error) {
@@ -465,7 +466,7 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const sendEmailOTP = useCallback(async (email, isSignup = false) => {
+  const sendEmailOTP = useCallback(async (email, isSignup = false, captchaToken) => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
 
@@ -473,13 +474,14 @@ export function AuthProvider({ children }) {
       // Use signInWithOtp for both signup and login
       // This sends a 6-digit OTP code, not a magic link
       // For signup, this works even if the user hasn't verified yet
-      
+
       const { error } = await supabase.auth.signInWithOtp({
         email: emailResult.value,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           // Explicitly request OTP code instead of magic link
           shouldCreateUser: !isSignup, // For signup, user already exists, so set to false
+          ...(captchaToken ? { captchaToken } : {}),
         }
       })
 

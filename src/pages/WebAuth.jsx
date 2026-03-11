@@ -8,12 +8,14 @@ import { Label } from '@/components/ui/label'
 import { PhoneInput, COUNTRIES } from '@/components/ui/phone-input'
 import { useAuth } from '@/contexts/AuthContext'
 import { Logo } from '@/components/Logo'
+import { useTurnstile } from '@/hooks/useTurnstile'
 
 export function WebAuth() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const { signIn, signUp, sendOTP, verifyOTP, sendEmailOTP, verifyEmailOTP, resendOTP, resendVerificationEmail, user, pendingUser } = useAuth()
+  const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile()
 
   const isLogin = location.pathname === '/login'
   // Support both state.from (preferred) and redirect query param (backwards compat)
@@ -190,6 +192,9 @@ export function WebAuth() {
       }
 
       if (isLogin) {
+        // Get Turnstile captcha token for bot protection
+        const captchaToken = await getTurnstileToken()
+
         if (loginMethod === "phone") {
           // Phone login - send OTP with type 'login'
           await sendOTP(formData.phone, 'login')
@@ -197,7 +202,7 @@ export function WebAuth() {
           setSuccess("OTP sent to your phone")
         } else {
           // Email login
-          const result = await signIn(formData.email, formData.password)
+          const result = await signIn(formData.email, formData.password, captchaToken)
           
           if (result.emailNotVerified) {
             setUnverifiedEmail(result.email)
@@ -757,6 +762,8 @@ export function WebAuth() {
   // Main Login/Signup Form
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted">
+      {/* Invisible Turnstile CAPTCHA widget */}
+      <div ref={turnstileRef} />
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center mb-8">
           <Logo className="h-12" />
