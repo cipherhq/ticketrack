@@ -254,11 +254,10 @@ export function FinanceReports() {
       const startDate = `${year}-01-01`;
       const endDate = `${year}-12-31`;
 
-      // Get organizer details
-      const { data: organizer } = await supabase.from('organizers')
-        .select('*, bank_accounts(*)')
-        .eq('id', organizerId)
-        .single();
+      // Get organizer details via secure RPC (bypasses column revocations)
+      const { data: orgRows } = await supabase
+        .rpc('get_organizer_for_finance', { p_organizer_id: organizerId });
+      const organizer = orgRows?.[0];
 
       if (!organizer) throw new Error('Organizer not found');
 

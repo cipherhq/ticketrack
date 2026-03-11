@@ -45,7 +45,7 @@ export function TeamDashboard() {
       // Get team membership
       const { data: memberData, error: memberError } = await supabase
         .from('organizer_team_members')
-        .select('*, organizer:organizers(*)')
+        .select('*, organizer:organizers(id, business_name, logo_url, is_verified, is_active, country_code)')
         .eq('user_id', user.id)
         .eq('status', 'active')
         .single();
