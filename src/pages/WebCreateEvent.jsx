@@ -81,11 +81,8 @@ export function WebCreateEvent() {
       if (!user?.id || preCreatePromptHandled) return;
 
       try {
-        const { data: organizer } = await supabase
-          .from('organizers')
-          .select('id, country_code, stripe_connect_id, stripe_connect_status, stripe_connect_enabled, paystack_subaccount_id, paystack_subaccount_status, paystack_subaccount_enabled, flutterwave_subaccount_id, flutterwave_subaccount_status, flutterwave_subaccount_enabled, dismissed_precreate_prompt, dismissed_postcreate_prompt, precreate_prompt_snoozed_until, postcreate_prompt_snoozed_until')
-          .eq('user_id', user.id)
-          .single();
+        const { data: orgResults } = await supabase.rpc('get_my_organizer_payment_status');
+        const organizer = orgResults?.[0] || null;
 
         if (organizer) {
           setOrganizerData(organizer);
@@ -617,11 +614,8 @@ export function WebCreateEvent() {
 
   // Get or create organizer
   const getOrCreateOrganizer = async () => {
-    const { data: existingOrg } = await supabase
-      .from('organizers')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    const { data: orgResults } = await supabase.rpc('get_my_organizer_full');
+    const existingOrg = orgResults?.[0] || null;
 
     if (existingOrg) return existingOrg;
 

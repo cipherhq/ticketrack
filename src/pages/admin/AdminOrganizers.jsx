@@ -120,12 +120,8 @@ export function AdminOrganizers() {
   const loadOrganizers = async () => {
     setLoading(true);
     try {
-      // Single query - uses pre-computed stats from tier system
-      // Avoids N+1 queries (was: 200+ queries for 100 organizers, now: 1 query)
-      const { data, error } = await supabase
-        .from('organizers')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use admin RPC for full data access (SECURITY DEFINER, verifies admin role)
+      const { data, error } = await supabase.rpc('get_all_organizers_for_admin');
 
       if (error) throw error;
 

@@ -29,13 +29,11 @@ export function OrganizerProvider({ children }) {
 
   const loadOrganizer = async () => {
     try {
-      // If impersonating an organizer, use the impersonated organizer
+      // If impersonating an organizer, use admin RPC for full data access
       if (isImpersonating && impersonationType === 'organizer' && impersonationTarget?.id) {
-        const { data: impersonatedOrg } = await supabase
-          .from('organizers')
-          .select('*')
-          .eq('id', impersonationTarget.id)
-          .single();
+        const { data: impersonatedOrgs } = await supabase
+          .rpc('get_organizer_for_admin', { p_organizer_id: impersonationTarget.id });
+        const impersonatedOrg = impersonatedOrgs?.[0] || null;
 
         if (impersonatedOrg) {
           setOrganizer(impersonatedOrg);
@@ -57,12 +55,9 @@ export function OrganizerProvider({ children }) {
         return;
       }
 
-      // Try to get existing organizer
-      let { data: existingOrg } = await supabase
-        .from('organizers')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Try to get existing organizer via secure RPC (returns full data for own organizer)
+      const { data: orgResults } = await supabase.rpc('get_my_organizer_full');
+      let existingOrg = orgResults?.[0] || null;
 
       if (existingOrg) {
         setOrganizer(existingOrg);

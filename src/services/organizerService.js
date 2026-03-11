@@ -5,11 +5,9 @@ import { supabase } from '@/lib/supabase';
 // =====================================================
 
 export async function getOrCreateOrganizer(userId) {
-  const { data: existing, error: fetchError } = await supabase
-    .from('organizers')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  // Use secure RPC to get own organizer with full data (including financial columns)
+  const { data: orgResults } = await supabase.rpc('get_my_organizer_full');
+  const existing = orgResults?.[0] || null;
 
   if (existing) return existing;
 
@@ -30,9 +28,15 @@ export async function getOrCreateOrganizer(userId) {
 }
 
 export async function getOrganizerProfile(organizerId) {
+  // Use RPC for own organizer (returns full data including financial columns)
+  const { data: orgResults } = await supabase.rpc('get_my_organizer_full');
+  const ownOrg = orgResults?.[0];
+  if (ownOrg && ownOrg.id === organizerId) return ownOrg;
+
+  // Fallback to direct query for other organizers (limited columns)
   const { data, error } = await supabase
     .from('organizers')
-    .select('*')
+    .select('id, user_id, business_name, description, logo_url, banner_url, cover_image_url, email, phone, website, website_url, location, country_code, is_active, is_verified, total_events, total_tickets_sold, average_rating, social_facebook, social_instagram, social_twitter, social_linkedin, created_at, updated_at')
     .eq('id', organizerId)
     .single();
 
@@ -56,11 +60,9 @@ export async function updateOrganizerProfile(organizerId, profileData) {
 }
 
 export async function getOrganizerStats(organizerId) {
-  const { data: organizer } = await supabase
-    .from('organizers')
-    .select('total_events, total_tickets_sold, total_revenue, available_balance, pending_balance')
-    .eq('id', organizerId)
-    .single();
+  // Use RPC to get financial stats (total_revenue, available_balance are revoked from direct query)
+  const { data: orgResults } = await supabase.rpc('get_my_organizer_full');
+  const organizer = orgResults?.[0] || null;
 
   const { count: followersCount } = await supabase
     .from('followers')

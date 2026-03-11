@@ -37,12 +37,10 @@ export function SMSCredits() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data: org } = await supabase
-        .from('organizers')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
+      // Get organizer via secure RPC
+      const { data: orgResults } = await supabase.rpc('get_my_organizer_full');
+      const org = orgResults?.[0] || null;
+
       setOrganizer(org);
 
       if (org) {
