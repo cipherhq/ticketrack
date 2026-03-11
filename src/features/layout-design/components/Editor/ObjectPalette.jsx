@@ -1,166 +1,131 @@
 /**
  * Object Palette
- * Left sidebar with draggable objects
+ * Left sidebar with visual grid of draggable objects, organized by category.
  */
 
 import { useState } from 'react';
 import {
   ChevronDown,
   ChevronRight,
-  Square,
-  Circle,
-  Users,
-  DoorOpen,
-  DoorClosed,
-  Sofa,
-  Wine,
-  Accessibility,
-  Ban,
-  Minus,
+  Music,
+  Armchair,
+  MapPin,
+  Building,
+  ShieldAlert,
 } from 'lucide-react';
 import { useLayoutStore } from '../../stores/layoutStore';
+import { OBJECT_COLORS, renderMiniPreview } from './objectRenderers';
 
+// ─── Categories with visual previews ────────────────────────────────
 const OBJECT_CATEGORIES = [
   {
-    id: 'stage',
-    label: 'Stage',
+    id: 'performance',
+    label: 'Performance',
+    icon: Music,
     objects: [
-      {
-        type: 'stage',
-        name: 'Stage',
-        icon: Square,
-        color: '#1F2937',
-        width: 300,
-        height: 100,
-        height_3d: 1.2,
-      },
+      { type: 'stage', name: 'Stage', color: OBJECT_COLORS.stage, width: 300, height: 100, height_3d: 1.2 },
+      { type: 'dj_booth', name: 'DJ Booth', color: OBJECT_COLORS.dj_booth, width: 100, height: 80 },
     ],
   },
   {
     id: 'seating',
-    label: 'Seating & Sections',
+    label: 'Seating & Tables',
+    icon: Armchair,
     objects: [
-      {
-        type: 'section',
-        name: 'Seating Section',
-        icon: Users,
-        color: '#3B82F6',
-        width: 200,
-        height: 150,
-        capacity: 100,
-      },
-      {
-        type: 'vip_section',
-        name: 'VIP Section',
-        icon: Users,
-        color: '#EF4444',
-        width: 150,
-        height: 100,
-        capacity: 50,
-      },
-      {
-        type: 'table',
-        name: 'Round Table',
-        icon: Circle,
-        color: '#8B5CF6',
-        width: 60,
-        height: 60,
-        capacity: 8,
-        shape: 'circle',
-      },
+      { type: 'section', name: 'Section', color: OBJECT_COLORS.section, width: 200, height: 150, capacity: 100 },
+      { type: 'vip_section', name: 'VIP Section', color: OBJECT_COLORS.vip_section, width: 150, height: 100, capacity: 50 },
+      { type: 'table', name: '8-Top Table', color: OBJECT_COLORS.table, width: 60, height: 60, capacity: 8, shape: 'circle' },
+      { type: 'table', name: '10-Top Table', color: OBJECT_COLORS.table, width: 70, height: 70, capacity: 10, shape: 'circle' },
     ],
   },
   {
     id: 'zones',
-    label: 'Zones',
+    label: 'Zones & Areas',
+    icon: MapPin,
     objects: [
-      {
-        type: 'zone',
-        name: 'Standing Zone',
-        icon: Users,
-        color: '#10B981',
-        width: 200,
-        height: 150,
-        capacity: 100,
-      },
-      {
-        type: 'zone',
-        name: 'Dance Floor',
-        icon: Users,
-        color: '#EC4899',
-        width: 150,
-        height: 150,
-        capacity: 50,
-      },
+      { type: 'zone', name: 'Standing Zone', color: OBJECT_COLORS.zone, width: 200, height: 150, capacity: 100 },
+      { type: 'dance_floor', name: 'Dance Floor', color: OBJECT_COLORS.dance_floor, width: 150, height: 150, capacity: 50 },
+      { type: 'backstage', name: 'Backstage', color: OBJECT_COLORS.backstage, width: 150, height: 100 },
+      { type: 'smoking_area', name: 'Smoking Area', color: OBJECT_COLORS.smoking_area, width: 100, height: 80 },
     ],
   },
   {
-    id: 'markers',
-    label: 'Markers',
+    id: 'facilities',
+    label: 'Facilities',
+    icon: Building,
     objects: [
-      {
-        type: 'entrance',
-        name: 'Entrance',
-        icon: DoorOpen,
-        color: '#22C55E',
-        width: 60,
-        height: 30,
-      },
-      {
-        type: 'exit',
-        name: 'Exit',
-        icon: DoorClosed,
-        color: '#EF4444',
-        width: 60,
-        height: 30,
-      },
-      {
-        type: 'bar',
-        name: 'Bar',
-        icon: Wine,
-        color: '#F59E0B',
-        width: 80,
-        height: 40,
-      },
-      {
-        type: 'restroom',
-        name: 'Restroom',
-        icon: Accessibility,
-        color: '#6B7280',
-        width: 50,
-        height: 50,
-      },
+      { type: 'bar', name: 'Bar', color: OBJECT_COLORS.bar, width: 80, height: 40 },
+      { type: 'food_stall', name: 'Food Stall', color: OBJECT_COLORS.food_stall, width: 80, height: 60 },
+      { type: 'restroom', name: 'Restroom', color: OBJECT_COLORS.restroom, width: 50, height: 50 },
+      { type: 'merchandise', name: 'Merchandise', color: OBJECT_COLORS.merchandise, width: 80, height: 60 },
+      { type: 'photo_booth', name: 'Photo Booth', color: OBJECT_COLORS.photo_booth, width: 70, height: 70 },
     ],
   },
   {
-    id: 'barriers',
-    label: 'Barriers & Aisles',
+    id: 'access',
+    label: 'Access & Safety',
+    icon: ShieldAlert,
     objects: [
-      {
-        type: 'barrier',
-        name: 'Barrier',
-        icon: Minus,
-        color: '#9CA3AF',
-        width: 100,
-        height: 10,
-      },
-      {
-        type: 'restricted',
-        name: 'Restricted Area',
-        icon: Ban,
-        color: '#DC2626',
-        width: 100,
-        height: 100,
-      },
+      { type: 'entrance', name: 'Entrance', color: OBJECT_COLORS.entrance, width: 60, height: 30 },
+      { type: 'exit', name: 'Exit', color: OBJECT_COLORS.exit, width: 60, height: 30 },
+      { type: 'ticket_booth', name: 'Ticket Booth', color: OBJECT_COLORS.ticket_booth, width: 60, height: 50 },
+      { type: 'security', name: 'Security', color: OBJECT_COLORS.security, width: 60, height: 50 },
+      { type: 'first_aid', name: 'First Aid', color: OBJECT_COLORS.first_aid, width: 60, height: 50 },
+      { type: 'barrier', name: 'Barrier', color: OBJECT_COLORS.barrier, width: 100, height: 10 },
+      { type: 'restricted', name: 'Restricted', color: OBJECT_COLORS.restricted, width: 100, height: 100 },
     ],
   },
 ];
+
+// ─── Smart placement: spiral outward from center to avoid overlap ───
+function findOpenPosition(objects, canvasW, canvasH, objW, objH) {
+  const cx = (canvasW - objW) / 2;
+  const cy = (canvasH - objH) / 2;
+  const step = 30;
+  const maxRings = 20;
+
+  for (let ring = 0; ring <= maxRings; ring++) {
+    const offsets = ring === 0
+      ? [{ dx: 0, dy: 0 }]
+      : generateRingOffsets(ring, step);
+
+    for (const { dx, dy } of offsets) {
+      const x = cx + dx;
+      const y = cy + dy;
+      // Stay in bounds
+      if (x < 0 || y < 0 || x + objW > canvasW || y + objH > canvasH) continue;
+      // Check overlap
+      const overlaps = objects.some((o) => {
+        return !(x + objW <= o.x || x >= o.x + o.width || y + objH <= o.y || y >= o.y + o.height);
+      });
+      if (!overlaps) return { x, y };
+    }
+  }
+  // Fallback: center
+  return { x: cx, y: cy };
+}
+
+function generateRingOffsets(ring, step) {
+  const offsets = [];
+  const d = ring * step;
+  // Top/bottom edges
+  for (let x = -d; x <= d; x += step) {
+    offsets.push({ dx: x, dy: -d });
+    offsets.push({ dx: x, dy: d });
+  }
+  // Left/right edges (skip corners already added)
+  for (let y = -d + step; y < d; y += step) {
+    offsets.push({ dx: -d, dy: y });
+    offsets.push({ dx: d, dy: y });
+  }
+  return offsets;
+}
 
 export function ObjectPalette() {
   const [expandedCategories, setExpandedCategories] = useState(
     OBJECT_CATEGORIES.map((c) => c.id)
   );
-  const { addObject, layout } = useLayoutStore();
+  const { addObject, objects, layout } = useLayoutStore();
 
   const toggleCategory = (categoryId) => {
     setExpandedCategories((prev) =>
@@ -171,15 +136,16 @@ export function ObjectPalette() {
   };
 
   const handleAddObject = (objectDef) => {
-    // Place in center of canvas
     const canvasWidth = layout?.canvas_width || 800;
     const canvasHeight = layout?.canvas_height || 600;
+
+    const { x, y } = findOpenPosition(objects, canvasWidth, canvasHeight, objectDef.width, objectDef.height);
 
     addObject({
       object_type: objectDef.type,
       name: objectDef.name,
-      x: (canvasWidth - objectDef.width) / 2,
-      y: (canvasHeight - objectDef.height) / 2,
+      x,
+      y,
       width: objectDef.width,
       height: objectDef.height,
       color: objectDef.color,
@@ -190,53 +156,56 @@ export function ObjectPalette() {
   };
 
   return (
-    <div className="w-56 bg-card border-r border-border/20 overflow-y-auto">
+    <div className="w-60 bg-card border-r border-border/20 overflow-y-auto">
       <div className="p-3 border-b border-border/20">
         <h3 className="font-semibold text-foreground text-sm">Objects</h3>
         <p className="text-xs text-muted-foreground mt-1">Click to add to canvas</p>
       </div>
 
       <div className="p-2">
-        {OBJECT_CATEGORIES.map((category) => (
-          <div key={category.id} className="mb-2">
-            {/* Category Header */}
-            <button
-              className="w-full flex items-center justify-between p-2 text-sm font-medium text-foreground/80 hover:bg-background rounded"
-              onClick={() => toggleCategory(category.id)}
-            >
-              <span>{category.label}</span>
-              {expandedCategories.includes(category.id) ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
+        {OBJECT_CATEGORIES.map((category) => {
+          const CatIcon = category.icon;
+          const isExpanded = expandedCategories.includes(category.id);
 
-            {/* Category Objects */}
-            {expandedCategories.includes(category.id) && (
-              <div className="ml-2 space-y-1">
-                {category.objects.map((obj, index) => (
-                  <button
-                    key={`${obj.type}-${index}`}
-                    className="w-full flex items-center gap-2 p-2 text-sm text-muted-foreground hover:bg-blue-50 hover:text-blue-700 rounded transition-colors"
-                    onClick={() => handleAddObject(obj)}
-                  >
-                    <div
-                      className="w-6 h-6 rounded flex items-center justify-center"
-                      style={{ backgroundColor: obj.color + '20' }}
+          return (
+            <div key={category.id} className="mb-1">
+              {/* Category Header */}
+              <button
+                className="w-full flex items-center gap-2 p-2 text-sm font-medium text-foreground/80 hover:bg-background rounded"
+                onClick={() => toggleCategory(category.id)}
+              >
+                <CatIcon className="w-4 h-4 text-muted-foreground" />
+                <span className="flex-1 text-left">{category.label}</span>
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {/* 2-column visual grid */}
+              {isExpanded && (
+                <div className="grid grid-cols-2 gap-1 px-1 pb-2">
+                  {category.objects.map((obj, index) => (
+                    <button
+                      key={`${obj.type}-${index}`}
+                      className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:ring-1 hover:ring-blue-200 transition-all"
+                      onClick={() => handleAddObject(obj)}
+                      title={obj.name}
                     >
-                      <obj.icon
-                        className="w-4 h-4"
-                        style={{ color: obj.color }}
-                      />
-                    </div>
-                    <span>{obj.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+                      <div className="w-12 h-12 flex items-center justify-center">
+                        {renderMiniPreview(obj)}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground leading-tight text-center truncate w-full">
+                        {obj.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
