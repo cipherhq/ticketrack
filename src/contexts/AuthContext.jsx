@@ -633,17 +633,18 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const resetPassword = useCallback(async (email) => {
+  const resetPassword = useCallback(async (email, captchaToken) => {
     const emailResult = validateEmail(email)
     if (!emailResult.valid) throw new Error(emailResult.error)
 
     try {
       console.log('[Auth] Sending password reset email to:', emailResult.value)
-      
+
       // Always use production URL for password reset to ensure consistent experience
       // Must match Supabase Site URL setting
       const { data, error } = await supabase.auth.resetPasswordForEmail(emailResult.value, {
         redirectTo: `${brand.urls.website}/reset-password`,
+        ...(captchaToken ? { captchaToken } : {}),
       })
 
       if (error) {
