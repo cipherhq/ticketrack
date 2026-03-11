@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Loader2, Calendar, MapPin, Clock, ChevronUp, ChevronDown, Check, HelpCircle, X, Users, Megaphone, MessageSquare, Send } from 'lucide-react';
+import {
+  Loader2, Calendar, MapPin, Clock, ChevronUp, ChevronDown, Check, HelpCircle, X,
+  Users, Megaphone, MessageSquare, Send, CalendarPlus, Camera, Upload,
+  UtensilsCrossed, Heart, Wallet, BarChart3,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,7 +17,23 @@ import {
   getPublicWallPosts,
   createWallPost,
   markLinkViewed,
+  getReactionsForInvite,
+  addReaction,
+  getInviteItems,
+  claimItem,
+  unclaimItem,
+  getInvitePhotos,
+  uploadPartyPhoto,
+  likePhoto,
+  unlikePhoto,
+  getInviteQuestions,
+  submitAnswers,
+  getDatePollOptions,
+  voteOnDateOption,
+  getPublicFundInfo,
 } from '@/services/partyInvites';
+import { generateGoogleCalendarUrl, downloadICSFile } from '@/components/rackparty/shared';
+import { supabase } from '@/lib/supabase';
 
 function formatDate(dateStr) {
   if (!dateStr) return 'TBA';
@@ -51,6 +71,31 @@ export function WebInviteRSVP() {
   const [wallPosts, setWallPosts] = useState([]);
   const [wallPostContent, setWallPostContent] = useState('');
   const [postingWall, setPostingWall] = useState(false);
+  const [wallImageFile, setWallImageFile] = useState(null);
+  const [wallImagePreview, setWallImagePreview] = useState(null);
+
+  // Reactions
+  const [reactions, setReactions] = useState([]);
+  const REACTION_EMOJIS = ['🎉', '🔥', '❤️', '⭐', '👏', '💯'];
+
+  // Potluck
+  const [potluckItems, setPotluckItems] = useState([]);
+
+  // Photos
+  const [photos, setPhotos] = useState([]);
+  const [photoCaption, setPhotoCaption] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Custom Questions
+  const [questions, setQuestions] = useState([]);
+  const [questionAnswers, setQuestionAnswers] = useState({});
+
+  // Date Polling
+  const [datePollOptions, setDatePollOptions] = useState([]);
+  const [dateVotes, setDateVotes] = useState({});
+
+  // Fund
+  const [fundInfo, setFundInfo] = useState(null);
 
   const isShareLink = !guestRsvpToken;
   const isExpired = invite?.rsvp_deadline && new Date(invite.rsvp_deadline) < new Date();
@@ -78,16 +123,29 @@ export function WebInviteRSVP() {
           setPlusOneNames(guestData.plus_one_names || []);
           setNote(guestData.note || '');
         }
-        // Load guest list, announcements, wall posts
+        // Load guest list, announcements, wall posts, and extras
         try {
-          const [list, anns, posts] = await Promise.all([
-            getPublicGuestList(guestData.invite_id),
-            getPublicAnnouncements(guestData.invite_id).catch(() => []),
-            getPublicWallPosts(guestData.invite_id).catch(() => []),
+          const invId = guestData.invite_id;
+          const [list, anns, posts, rxns, items, pics, qs, pollOpts, fi] = await Promise.all([
+            getPublicGuestList(invId),
+            getPublicAnnouncements(invId).catch(() => []),
+            getPublicWallPosts(invId).catch(() => []),
+            getReactionsForInvite(invId).catch(() => []),
+            getInviteItems(invId).catch(() => []),
+            getInvitePhotos(invId).catch(() => []),
+            getInviteQuestions(invId).catch(() => []),
+            getDatePollOptions(invId).catch(() => []),
+            getPublicFundInfo(invId).catch(() => null),
           ]);
           setGuestList(list);
           setAnnouncements(anns);
           setWallPosts(posts);
+          setReactions(rxns);
+          setPotluckItems(items);
+          setPhotos(pics);
+          setQuestions(qs);
+          setDatePollOptions(pollOpts);
+          setFundInfo(fi);
         } catch {}
       } else {
         const inviteData = await getInviteByToken(token);
@@ -95,14 +153,27 @@ export function WebInviteRSVP() {
         setInvite(inviteData);
         setOrganizer(inviteData.organizer);
         try {
-          const [list, anns, posts] = await Promise.all([
-            getPublicGuestList(inviteData.id),
-            getPublicAnnouncements(inviteData.id).catch(() => []),
-            getPublicWallPosts(inviteData.id).catch(() => []),
+          const invId = inviteData.id;
+          const [list, anns, posts, rxns, items, pics, qs, pollOpts, fi] = await Promise.all([
+            getPublicGuestList(invId),
+            getPublicAnnouncements(invId).catch(() => []),
+            getPublicWallPosts(invId).catch(() => []),
+            getReactionsForInvite(invId).catch(() => []),
+            getInviteItems(invId).catch(() => []),
+            getInvitePhotos(invId).catch(() => []),
+            getInviteQuestions(invId).catch(() => []),
+            getDatePollOptions(invId).catch(() => []),
+            getPublicFundInfo(invId).catch(() => null),
           ]);
           setGuestList(list);
           setAnnouncements(anns);
           setWallPosts(posts);
+          setReactions(rxns);
+          setPotluckItems(items);
+          setPhotos(pics);
+          setQuestions(qs);
+          setDatePollOptions(pollOpts);
+          setFundInfo(fi);
         } catch {}
       }
     } catch (err) {
@@ -142,6 +213,18 @@ export function WebInviteRSVP() {
       setSubmitted(true);
       setChangingResponse(false);
       if (selectedStatus === 'going') { fireConfetti(); }
+
+      // Submit custom question answers if any
+      if (Object.keys(questionAnswers).length > 0 && guest?.id) {
+        try {
+          const answers = Object.entries(questionAnswers).map(([questionId, value]) => ({
+            questionId,
+            answerText: typeof value === 'string' ? value : null,
+            answerChoices: Array.isArray(value) ? value : null,
+          }));
+          await submitAnswers(guest.id, answers);
+        } catch {}
+      }
     } catch (err) {
       console.error('RSVP error:', err);
       setError('Failed to submit RSVP. Please try again.');
@@ -202,18 +285,31 @@ export function WebInviteRSVP() {
   }
 
   async function handleWallPost() {
-    if (!wallPostContent.trim()) return;
+    if (!wallPostContent.trim() && !wallImageFile) return;
     const authorName = name || guest?.name || 'Guest';
     setPostingWall(true);
     try {
+      let imageUrl = null;
+      if (wallImageFile) {
+        const ext = wallImageFile.name.split('.').pop();
+        const path = `party-wall/${invite.id}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, wallImageFile);
+        if (!uploadErr) {
+          const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(path);
+          imageUrl = publicUrl;
+        }
+      }
       await createWallPost(invite.id, {
         authorName,
         authorEmail: email || guest?.email || null,
         authorGuestId: guest?.id || null,
         isHost: false,
         content: wallPostContent.trim(),
+        imageUrl,
       });
       setWallPostContent('');
+      setWallImageFile(null);
+      if (wallImagePreview) { URL.revokeObjectURL(wallImagePreview); setWallImagePreview(null); }
       const posts = await getPublicWallPosts(invite.id);
       setWallPosts(posts);
     } catch {
@@ -221,6 +317,71 @@ export function WebInviteRSVP() {
     } finally {
       setPostingWall(false);
     }
+  }
+
+  async function handleReaction(targetGuestId, emoji) {
+    const reactorName = name || guest?.name || 'Guest';
+    try {
+      await addReaction(invite.id, {
+        targetGuestId,
+        reactorName,
+        reactorGuestId: guest?.id || null,
+        emoji,
+      });
+      const rxns = await getReactionsForInvite(invite.id);
+      setReactions(rxns);
+    } catch {}
+  }
+
+  async function handleClaimItem(itemId) {
+    const guestName = name || guest?.name || 'Guest';
+    try {
+      await claimItem(itemId, { guestId: guest?.id || null, guestName });
+      const items = await getInviteItems(invite.id);
+      setPotluckItems(items);
+    } catch {}
+  }
+
+  async function handleUnclaimItem(itemId) {
+    try {
+      await unclaimItem(itemId);
+      const items = await getInviteItems(invite.id);
+      setPotluckItems(items);
+    } catch {}
+  }
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || file.size > 5 * 1024 * 1024) return;
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `party-photos/${invite.id}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, file);
+      if (uploadErr) throw uploadErr;
+      const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(path);
+      await uploadPartyPhoto(invite.id, {
+        uploadedByName: name || guest?.name || 'Guest',
+        uploadedByGuestId: guest?.id || null,
+        isHost: false,
+        imageUrl: publicUrl,
+        caption: photoCaption.trim() || null,
+      });
+      setPhotoCaption('');
+      const pics = await getInvitePhotos(invite.id);
+      setPhotos(pics);
+    } catch {}
+    finally { setUploadingPhoto(false); }
+  }
+
+  async function handleDateVote(optionId, vote) {
+    const voterName = name || guest?.name || 'Guest';
+    try {
+      await voteOnDateOption(optionId, { voterName, voterGuestId: guest?.id || null, vote });
+      setDateVotes(prev => ({ ...prev, [optionId]: vote }));
+      const opts = await getDatePollOptions(invite.id);
+      setDatePollOptions(opts);
+    } catch {}
   }
 
   return (
@@ -401,6 +562,28 @@ export function WebInviteRSVP() {
                       Change my response
                     </button>
                   )}
+
+                  {/* Calendar Sync */}
+                  {selectedStatus === 'going' && invite?.start_date && (
+                    <div className="mt-4 flex gap-2 justify-center">
+                      <a
+                        href={generateGoogleCalendarUrl(invite)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <CalendarPlus className="w-4 h-4" />
+                        Google Calendar
+                      </a>
+                      <button
+                        onClick={() => downloadICSFile(invite)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <CalendarPlus className="w-4 h-4" />
+                        Download .ics
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -538,6 +721,61 @@ export function WebInviteRSVP() {
                     </div>
                   )}
 
+                  {/* Custom RSVP Questions */}
+                  {selectedStatus && selectedStatus !== 'declined' && questions.length > 0 && (
+                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
+                      <p className="text-sm font-semibold text-gray-700">A few questions from the host</p>
+                      {questions.map(q => (
+                        <div key={q.id}>
+                          <label className="text-sm font-medium text-gray-700">
+                            {q.question_text}{q.is_required && <span className="text-red-400 ml-0.5">*</span>}
+                          </label>
+                          {q.question_type === 'text' && (
+                            <textarea
+                              value={questionAnswers[q.id] || ''}
+                              onChange={e => setQuestionAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                              placeholder="Your answer..."
+                              rows={2}
+                              className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                            />
+                          )}
+                          {q.question_type === 'single_choice' && q.options?.map(opt => (
+                            <label key={opt} className="flex items-center gap-2 mt-1.5 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`q_${q.id}`}
+                                checked={questionAnswers[q.id] === opt}
+                                onChange={() => setQuestionAnswers(prev => ({ ...prev, [q.id]: opt }))}
+                                className="w-4 h-4 text-blue-500"
+                              />
+                              <span className="text-sm text-gray-700">{opt}</span>
+                            </label>
+                          ))}
+                          {q.question_type === 'multi_choice' && q.options?.map(opt => {
+                            const selected = (questionAnswers[q.id] || []);
+                            const isChecked = Array.isArray(selected) && selected.includes(opt);
+                            return (
+                              <label key={opt} className="flex items-center gap-2 mt-1.5 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    setQuestionAnswers(prev => {
+                                      const curr = Array.isArray(prev[q.id]) ? prev[q.id] : [];
+                                      return { ...prev, [q.id]: isChecked ? curr.filter(x => x !== opt) : [...curr, opt] };
+                                    });
+                                  }}
+                                  className="w-4 h-4 text-blue-500 rounded"
+                                />
+                                <span className="text-sm text-gray-700">{opt}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Note */}
                   {selectedStatus && (
                     <textarea
@@ -585,25 +823,261 @@ export function WebInviteRSVP() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {guestList.slice(0, 12).map((g, i) => (
-                      <div
-                        key={i}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                          g.status === 'going' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                        }`}
-                      >
-                        <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px] font-bold">
-                          {g.firstName[0]}
-                        </span>
-                        {g.firstName}
-                        {g.plusOnes > 0 && <span className="text-gray-400">+{g.plusOnes}</span>}
-                      </div>
-                    ))}
+                    {guestList.slice(0, 12).map((g, i) => {
+                      const guestReactions = reactions.filter(r => r.target_guest_id === g.id);
+                      const reactionCounts = guestReactions.reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || 0) + 1; return acc; }, {});
+                      return (
+                        <div key={i} className="group relative">
+                          <div
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
+                              g.status === 'going' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                            }`}
+                          >
+                            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px] font-bold">
+                              {g.firstName[0]}
+                            </span>
+                            {g.firstName}
+                            {g.plusOnes > 0 && <span className="text-gray-400">+{g.plusOnes}</span>}
+                            {Object.keys(reactionCounts).length > 0 && (
+                              <span className="ml-0.5 text-[10px]">
+                                {Object.entries(reactionCounts).map(([emoji, count]) => `${emoji}${count > 1 ? count : ''}`).join('')}
+                              </span>
+                            )}
+                          </div>
+                          {/* Emoji picker on hover */}
+                          {(submitted || hasResponded) && g.id && (
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center gap-0.5 px-1.5 py-1 rounded-full bg-white shadow-lg border border-gray-100 z-10">
+                              {REACTION_EMOJIS.map(emoji => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => handleReaction(g.id, emoji)}
+                                  className="w-6 h-6 text-sm hover:scale-125 transition-transform"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                     {guestList.length > 12 && (
                       <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs text-gray-400 bg-gray-50">
                         +{guestList.length - 12} more
                       </span>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Date Poll */}
+              {invite?.date_poll_active && datePollOptions.length > 0 && (
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <BarChart3 className="w-4 h-4 text-gray-400" />
+                    <p className="text-base font-semibold text-gray-500">Vote on a Date</p>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-3">Help the host pick the best date</p>
+                  <div className="space-y-2">
+                    {datePollOptions.map(opt => {
+                      const votes = opt.votes || [];
+                      const yesCount = votes.filter(v => v.vote === 'yes').length;
+                      const maybeVoteCount = votes.filter(v => v.vote === 'maybe').length;
+                      const myVote = dateVotes[opt.id] || votes.find(v => v.voter_guest_id === guest?.id)?.vote;
+                      return (
+                        <div key={opt.id} className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {new Date(opt.date_option).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              </p>
+                              {opt.label && <p className="text-xs text-gray-500">{opt.label}</p>}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <span className="text-emerald-600 font-medium">{yesCount} yes</span>
+                              {maybeVoteCount > 0 && <span className="text-amber-600">· {maybeVoteCount} maybe</span>}
+                            </div>
+                          </div>
+                          {(submitted || hasResponded) && (
+                            <div className="flex gap-1.5">
+                              {['yes', 'maybe', 'no'].map(v => (
+                                <button
+                                  key={v}
+                                  onClick={() => handleDateVote(opt.id, v)}
+                                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                    myVote === v
+                                      ? v === 'yes' ? 'bg-emerald-500 text-white' : v === 'maybe' ? 'bg-amber-500 text-white' : 'bg-gray-500 text-white'
+                                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {v === 'yes' ? '👍 Yes' : v === 'maybe' ? '🤷 Maybe' : '👎 No'}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Potluck / What to Bring */}
+              {potluckItems.length > 0 && (
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <UtensilsCrossed className="w-4 h-4 text-gray-400" />
+                    <p className="text-base font-semibold text-gray-500">What to Bring</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    {potluckItems.map(item => {
+                      const isClaimed = !!item.claimed_by_name;
+                      const isClaimedByMe = item.claimed_by_guest_id === guest?.id || item.claimed_by_name === (name || guest?.name);
+                      return (
+                        <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                            isClaimed ? 'bg-emerald-100' : 'bg-gray-200'
+                          }`}>
+                            {isClaimed ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <span className="text-[10px] font-bold text-gray-400">{item.quantity}</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium ${isClaimed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                              {item.name}
+                              {item.quantity > 1 && !isClaimed && (
+                                <span className="text-xs text-gray-400 ml-1">x{item.quantity}</span>
+                              )}
+                            </p>
+                            {isClaimed && (
+                              <p className="text-xs text-emerald-600">
+                                {isClaimedByMe ? "You're bringing this!" : `${item.claimed_by_name} is bringing this`}
+                              </p>
+                            )}
+                            <p className="text-[10px] text-gray-400">{item.category}</p>
+                          </div>
+                          {(submitted || hasResponded) && (
+                            <>
+                              {!isClaimed && (
+                                <button
+                                  onClick={() => handleClaimItem(item.id)}
+                                  className="px-3 py-1 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+                                >
+                                  I'll bring it
+                                </button>
+                              )}
+                              {isClaimedByMe && (
+                                <button
+                                  onClick={() => handleUnclaimItem(item.id)}
+                                  className="px-3 py-1 rounded-lg bg-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-300 transition-colors"
+                                >
+                                  Undo
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Photo Gallery */}
+              {(photos.length > 0 || submitted || hasResponded) && (
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Camera className="w-4 h-4 text-gray-400" />
+                    <p className="text-base font-semibold text-gray-500">Photos</p>
+                  </div>
+
+                  {/* Upload area */}
+                  {(submitted || hasResponded) && (
+                    <div className="flex items-end gap-2 mb-3">
+                      <Input
+                        value={photoCaption}
+                        onChange={e => setPhotoCaption(e.target.value)}
+                        placeholder="Caption (optional)"
+                        className="rounded-lg text-sm flex-1"
+                      />
+                      <label className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                        uploadingPhoto ? 'bg-gray-100 text-gray-400' : 'bg-blue-500 text-white hover:bg-blue-600'
+                      }`}>
+                        {uploadingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                        Upload
+                        <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Photo grid */}
+                  {photos.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {photos.map(photo => (
+                        <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden">
+                          <img src={photo.image_url} alt={photo.caption || ''} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                          <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <p className="text-white text-[10px] truncate">{photo.uploaded_by_name}</p>
+                            {photo.caption && <p className="text-white/70 text-[9px] truncate">{photo.caption}</p>}
+                          </div>
+                          {photo.likes && photo.likes.length > 0 && (
+                            <span className="absolute top-1 right-1 flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-black/40 text-white text-[9px]">
+                              <Heart className="w-2 h-2 fill-red-400 text-red-400" /> {photo.likes.length}
+                            </span>
+                          )}
+                          {/* Like button on hover */}
+                          {(submitted || hasResponded) && (
+                            <button
+                              onClick={() => likePhoto(photo.id, { likerName: name || guest?.name || 'Guest', likerGuestId: guest?.id || null })}
+                              className="absolute top-1 left-1 p-1 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                            >
+                              <Heart className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400 text-center py-4">No photos yet. Be the first to share!</p>
+                  )}
+                </div>
+              )}
+
+              {/* Cash Fund */}
+              {fundInfo && (
+                <div className="mt-6 pt-5 border-t border-gray-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wallet className="w-4 h-4 text-gray-400" />
+                    <p className="text-base font-semibold text-gray-500">Cash Fund</p>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100">
+                    <h4 className="text-base font-bold text-gray-900">{fundInfo.title}</h4>
+                    {fundInfo.description && <p className="text-sm text-gray-500 mt-0.5">{fundInfo.description}</p>}
+                    <div className="mt-3">
+                      <div className="flex items-end justify-between">
+                        <span className="text-2xl font-bold text-emerald-700">
+                          {fundInfo.currency === 'NGN' ? '₦' : fundInfo.currency === 'USD' ? '$' : fundInfo.currency === 'GBP' ? '£' : fundInfo.currency === 'EUR' ? '€' : fundInfo.currency}
+                          {Number(fundInfo.total_raised || 0).toLocaleString()}
+                        </span>
+                        {fundInfo.goal_amount && (
+                          <span className="text-xs text-gray-500">
+                            of {fundInfo.currency === 'NGN' ? '₦' : fundInfo.currency === 'USD' ? '$' : fundInfo.currency}{Number(fundInfo.goal_amount).toLocaleString()} goal
+                          </span>
+                        )}
+                      </div>
+                      {fundInfo.goal_amount && (
+                        <div className="w-full h-2.5 bg-white/60 rounded-full overflow-hidden mt-2">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all"
+                            style={{ width: `${Math.min(100, ((fundInfo.total_raised || 0) / Number(fundInfo.goal_amount)) * 100)}%` }}
+                          />
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">{fundInfo.contribution_count || 0} contribution{fundInfo.contribution_count !== 1 ? 's' : ''}</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -617,22 +1091,53 @@ export function WebInviteRSVP() {
                   </div>
 
                   {/* Post form */}
-                  <div className="flex gap-2 mb-4">
-                    <textarea
-                      value={wallPostContent}
-                      onChange={e => setWallPostContent(e.target.value)}
-                      placeholder="Leave a message..."
-                      rows={2}
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleWallPost(); } }}
-                    />
-                    <button
-                      onClick={handleWallPost}
-                      disabled={!wallPostContent.trim() || postingWall}
-                      className="self-end px-3 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-blue-600 transition-colors"
-                    >
-                      {postingWall ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    </button>
+                  <div className="mb-4">
+                    <div className="flex gap-2">
+                      <textarea
+                        value={wallPostContent}
+                        onChange={e => setWallPostContent(e.target.value)}
+                        placeholder="Leave a message..."
+                        rows={2}
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleWallPost(); } }}
+                      />
+                      <div className="flex flex-col gap-1 self-end">
+                        <label className="p-2 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors">
+                          <Camera className="w-4 h-4" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file && file.size <= 5 * 1024 * 1024) {
+                                setWallImageFile(file);
+                                setWallImagePreview(URL.createObjectURL(file));
+                              }
+                            }}
+                          />
+                        </label>
+                        <button
+                          onClick={handleWallPost}
+                          disabled={(!wallPostContent.trim() && !wallImageFile) || postingWall}
+                          className="px-3 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-blue-600 transition-colors"
+                        >
+                          {postingWall ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    {/* Image preview */}
+                    {wallImagePreview && (
+                      <div className="relative mt-2 inline-block">
+                        <img src={wallImagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
+                        <button
+                          onClick={() => { setWallImageFile(null); URL.revokeObjectURL(wallImagePreview); setWallImagePreview(null); }}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Posts */}
@@ -653,7 +1158,10 @@ export function WebInviteRSVP() {
                               )}
                               <span className="text-[10px] text-gray-400">{relativeTime(post.created_at)}</span>
                             </div>
-                            <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap break-words">{post.content}</p>
+                            {post.content && <p className="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap break-words">{post.content}</p>}
+                            {post.image_url && (
+                              <img src={post.image_url} alt="" className="mt-1.5 rounded-lg max-h-48 object-cover" />
+                            )}
                           </div>
                         </div>
                       ))}

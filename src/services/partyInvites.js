@@ -72,6 +72,11 @@ export async function updateInviteSettings(inviteId, settings) {
   if (settings.rsvpDeadline !== undefined) updates.rsvp_deadline = settings.rsvpDeadline;
   if (settings.isActive !== undefined) updates.is_active = settings.isActive;
   if (settings.designMetadata !== undefined) updates.design_metadata = settings.designMetadata;
+  if (settings.autoRemindEnabled !== undefined) updates.auto_remind_enabled = settings.autoRemindEnabled;
+  if (settings.autoRemindHoursBefore !== undefined) updates.auto_remind_hours_before = settings.autoRemindHoursBefore;
+  if (settings.datePollActive !== undefined) updates.date_poll_active = settings.datePollActive;
+  if (settings.seriesId !== undefined) updates.series_id = settings.seriesId;
+  if (settings.recurrenceRule !== undefined) updates.recurrence_rule = settings.recurrenceRule;
 
   const { data, error } = await supabase
     .from('party_invites')
@@ -433,17 +438,20 @@ export async function getPublicWallPosts(inviteId) {
   return getWallPosts(inviteId);
 }
 
-export async function createWallPost(inviteId, { authorName, authorEmail, authorGuestId, isHost, content }) {
+export async function createWallPost(inviteId, { authorName, authorEmail, authorGuestId, isHost, content, imageUrl }) {
+  const row = {
+    invite_id: inviteId,
+    author_name: authorName,
+    author_email: authorEmail || null,
+    author_guest_id: authorGuestId || null,
+    is_host: isHost || false,
+    content,
+  };
+  if (imageUrl) row.image_url = imageUrl;
+
   const { data, error } = await supabase
     .from('party_invite_wall_posts')
-    .insert({
-      invite_id: inviteId,
-      author_name: authorName,
-      author_email: authorEmail || null,
-      author_guest_id: authorGuestId || null,
-      is_host: isHost || false,
-      content,
-    })
+    .insert(row)
     .select()
     .single();
 
@@ -566,15 +574,609 @@ export async function markLinkViewed(rsvpToken) {
 export async function getPublicGuestList(inviteId) {
   const { data, error } = await supabase
     .from('party_invite_guests')
-    .select('name, rsvp_status, plus_ones')
+    .select('id, name, rsvp_status, plus_ones')
     .eq('invite_id', inviteId)
     .in('rsvp_status', ['going', 'maybe'])
     .order('rsvp_responded_at', { ascending: true });
 
   if (error) throw error;
   return (data || []).map(g => ({
+    id: g.id,
     firstName: g.name.split(' ')[0],
     status: g.rsvp_status,
     plusOnes: g.plus_ones,
   }));
+}
+
+// ============================================================================
+// REACTIONS / "BOOPS"
+// ============================================================================
+
+export async function getReactionsForInvite(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invite_reactions')
+    .select('*')
+    .eq('invite_id', inviteId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function addReaction(inviteId, { targetGuestId, reactorName, reactorGuestId, emoji }) {
+  const { data, error } = await supabase
+    .from('party_invite_reactions')
+    .insert({
+      invite_id: inviteId,
+      target_guest_id: targetGuestId,
+      reactor_name: reactorName,
+      reactor_guest_id: reactorGuestId || null,
+      emoji,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================================
+// POTLUCK / "WHAT TO BRING" LIST
+// ============================================================================
+
+export async function getInviteItems(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invite_items')
+    .select('*')
+    .eq('invite_id', inviteId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createInviteItem(inviteId, organizerId, { name, category, quantity }) {
+  const { data, error } = await supabase
+    .from('party_invite_items')
+    .insert({
+      invite_id: inviteId,
+      organizer_id: organizerId,
+      name,
+      category: category || 'Other',
+      quantity: quantity || 1,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteInviteItem(itemId) {
+  const { error } = await supabase
+    .from('party_invite_items')
+    .delete()
+    .eq('id', itemId);
+
+  if (error) throw error;
+  return true;
+}
+
+export async function claimItem(itemId, { guestId, guestName }) {
+  const { data, error } = await supabase
+    .from('party_invite_items')
+    .update({
+      claimed_by_guest_id: guestId || null,
+      claimed_by_name: guestName,
+      claimed_at: new Date().toISOString(),
+    })
+    .eq('id', itemId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function unclaimItem(itemId) {
+  const { data, error } = await supabase
+    .from('party_invite_items')
+    .update({
+      claimed_by_guest_id: null,
+      claimed_by_name: null,
+      claimed_at: null,
+    })
+    .eq('id', itemId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================================
+// PHOTO ALBUM
+// ============================================================================
+
+export async function getInvitePhotos(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invite_photos')
+    .select('*, likes:party_invite_photo_likes(id, liker_name, liker_guest_id)')
+    .eq('invite_id', inviteId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function uploadPartyPhoto(inviteId, { uploadedByName, uploadedByGuestId, isHost, imageUrl, caption }) {
+  const { data, error } = await supabase
+    .from('party_invite_photos')
+    .insert({
+      invite_id: inviteId,
+      uploaded_by_name: uploadedByName,
+      uploaded_by_guest_id: uploadedByGuestId || null,
+      is_host: isHost || false,
+      image_url: imageUrl,
+      caption: caption || null,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deletePartyPhoto(photoId) {
+  const { error } = await supabase
+    .from('party_invite_photos')
+    .delete()
+    .eq('id', photoId);
+
+  if (error) throw error;
+  return true;
+}
+
+export async function likePhoto(photoId, { likerName, likerGuestId }) {
+  const { data, error } = await supabase
+    .from('party_invite_photo_likes')
+    .insert({
+      photo_id: photoId,
+      liker_name: likerName,
+      liker_guest_id: likerGuestId || null,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function unlikePhoto(photoId, likerName) {
+  const { error } = await supabase
+    .from('party_invite_photo_likes')
+    .delete()
+    .eq('photo_id', photoId)
+    .eq('liker_name', likerName);
+
+  if (error) throw error;
+  return true;
+}
+
+// ============================================================================
+// CUSTOM RSVP QUESTIONS
+// ============================================================================
+
+export async function getInviteQuestions(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invite_questions')
+    .select('*')
+    .eq('invite_id', inviteId)
+    .order('sort_order', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createInviteQuestion(inviteId, organizerId, { questionText, questionType, options, isRequired, sortOrder }) {
+  const { data, error } = await supabase
+    .from('party_invite_questions')
+    .insert({
+      invite_id: inviteId,
+      organizer_id: organizerId,
+      question_text: questionText,
+      question_type: questionType || 'text',
+      options: options || [],
+      is_required: isRequired || false,
+      sort_order: sortOrder || 0,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateInviteQuestion(questionId, updates) {
+  const mapped = {};
+  if (updates.questionText !== undefined) mapped.question_text = updates.questionText;
+  if (updates.questionType !== undefined) mapped.question_type = updates.questionType;
+  if (updates.options !== undefined) mapped.options = updates.options;
+  if (updates.isRequired !== undefined) mapped.is_required = updates.isRequired;
+  if (updates.sortOrder !== undefined) mapped.sort_order = updates.sortOrder;
+
+  const { data, error } = await supabase
+    .from('party_invite_questions')
+    .update(mapped)
+    .eq('id', questionId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteInviteQuestion(questionId) {
+  const { error } = await supabase
+    .from('party_invite_questions')
+    .delete()
+    .eq('id', questionId);
+
+  if (error) throw error;
+  return true;
+}
+
+export async function submitAnswers(guestId, answers) {
+  // answers: [{ questionId, answerText, answerChoices }]
+  const rows = answers.map(a => ({
+    question_id: a.questionId,
+    guest_id: guestId,
+    answer_text: a.answerText || null,
+    answer_choices: a.answerChoices || [],
+  }));
+
+  const { data, error } = await supabase
+    .from('party_invite_answers')
+    .upsert(rows, { onConflict: 'question_id,guest_id' })
+    .select();
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getAnswersForInvite(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invite_answers')
+    .select('*, question:party_invite_questions!question_id(*)')
+    .in('question_id',
+      supabase.from('party_invite_questions').select('id').eq('invite_id', inviteId)
+    );
+
+  // Fallback: fetch questions first, then answers
+  if (error) {
+    const questions = await getInviteQuestions(inviteId);
+    if (questions.length === 0) return [];
+    const qIds = questions.map(q => q.id);
+    const { data: answers, error: err2 } = await supabase
+      .from('party_invite_answers')
+      .select('*')
+      .in('question_id', qIds);
+    if (err2) throw err2;
+    return answers || [];
+  }
+  return data || [];
+}
+
+// ============================================================================
+// DATE POLLING
+// ============================================================================
+
+export async function getDatePollOptions(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invite_date_polls')
+    .select('*, votes:party_invite_date_votes(*)')
+    .eq('invite_id', inviteId)
+    .order('date_option', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createDatePollOption(inviteId, { dateOption, label }) {
+  const { data, error } = await supabase
+    .from('party_invite_date_polls')
+    .insert({
+      invite_id: inviteId,
+      date_option: dateOption,
+      label: label || null,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteDatePollOption(optionId) {
+  const { error } = await supabase
+    .from('party_invite_date_polls')
+    .delete()
+    .eq('id', optionId);
+
+  if (error) throw error;
+  return true;
+}
+
+export async function voteOnDateOption(optionId, { voterName, voterGuestId, vote }) {
+  const { data, error } = await supabase
+    .from('party_invite_date_votes')
+    .upsert({
+      poll_option_id: optionId,
+      voter_name: voterName,
+      voter_guest_id: voterGuestId || null,
+      vote: vote || 'yes',
+    }, { onConflict: 'poll_option_id,voter_name' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function finalizeDatePoll(inviteId, chosenDate) {
+  // Set the party date and disable the poll
+  const { data, error } = await supabase
+    .from('party_invites')
+    .update({
+      start_date: chosenDate,
+      date_poll_active: false,
+    })
+    .eq('id', inviteId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================================
+// CO-HOSTING
+// ============================================================================
+
+export async function getCohosts(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invite_cohosts')
+    .select('*')
+    .eq('invite_id', inviteId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function inviteCohost(inviteId, { email, name, role }) {
+  const { data, error } = await supabase
+    .from('party_invite_cohosts')
+    .insert({
+      invite_id: inviteId,
+      email,
+      name: name || null,
+      role: role || 'cohost',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function removeCohost(cohostId) {
+  const { error } = await supabase
+    .from('party_invite_cohosts')
+    .delete()
+    .eq('id', cohostId);
+
+  if (error) throw error;
+  return true;
+}
+
+export async function getCohostByToken(inviteToken) {
+  const { data, error } = await supabase
+    .from('party_invite_cohosts')
+    .select('*, invite:party_invites(id, title, organizer:organizers(id, business_name))')
+    .eq('invite_token', inviteToken)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function acceptCohostInvite(inviteToken, userId) {
+  const { data, error } = await supabase
+    .from('party_invite_cohosts')
+    .update({
+      user_id: userId,
+      accepted_at: new Date().toISOString(),
+    })
+    .eq('invite_token', inviteToken)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================================
+// RECURRING EVENTS
+// ============================================================================
+
+export async function getSeriesParties(seriesId) {
+  const { data, error } = await supabase
+    .from('party_invites')
+    .select('*')
+    .eq('series_id', seriesId)
+    .order('start_date', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createNextOccurrence(inviteId, organizerId, { carryOverGuests }) {
+  // Load the original invite
+  const { data: original, error: fetchErr } = await supabase
+    .from('party_invites')
+    .select('*')
+    .eq('id', inviteId)
+    .single();
+
+  if (fetchErr) throw fetchErr;
+
+  const rule = original.recurrence_rule || {};
+  const frequency = rule.frequency || 'weekly';
+  const lastDate = new Date(original.start_date);
+  const newDate = new Date(lastDate);
+
+  if (frequency === 'daily') newDate.setDate(newDate.getDate() + 1);
+  else if (frequency === 'weekly') newDate.setDate(newDate.getDate() + 7);
+  else if (frequency === 'biweekly') newDate.setDate(newDate.getDate() + 14);
+  else if (frequency === 'monthly') newDate.setMonth(newDate.getMonth() + 1);
+
+  let newEndDate = null;
+  if (original.end_date) {
+    const duration = new Date(original.end_date).getTime() - lastDate.getTime();
+    newEndDate = new Date(newDate.getTime() + duration).toISOString();
+  }
+
+  const seriesId = original.series_id || original.id;
+
+  // Update original to have series_id if it doesn't
+  if (!original.series_id) {
+    await supabase.from('party_invites').update({ series_id: seriesId }).eq('id', inviteId);
+  }
+
+  const { data: newInvite, error: insertErr } = await supabase
+    .from('party_invites')
+    .insert({
+      organizer_id: organizerId,
+      title: original.title,
+      description: original.description,
+      start_date: newDate.toISOString(),
+      end_date: newEndDate,
+      venue_name: original.venue_name,
+      city: original.city,
+      address: original.address,
+      cover_image_url: original.cover_image_url,
+      message: original.message,
+      allow_plus_ones: original.allow_plus_ones,
+      max_plus_ones: original.max_plus_ones,
+      design_metadata: original.design_metadata,
+      series_id: seriesId,
+      recurrence_rule: original.recurrence_rule,
+    })
+    .select()
+    .single();
+
+  if (insertErr) throw insertErr;
+
+  // Optionally carry over the guest list
+  if (carryOverGuests) {
+    const { data: oldGuests } = await supabase
+      .from('party_invite_guests')
+      .select('name, email, phone, source')
+      .eq('invite_id', inviteId);
+
+    if (oldGuests && oldGuests.length > 0) {
+      const newGuests = oldGuests.map(g => ({
+        invite_id: newInvite.id,
+        organizer_id: organizerId,
+        name: g.name,
+        email: g.email,
+        phone: g.phone,
+        source: g.source || 'recurring',
+      }));
+      await supabase.from('party_invite_guests').insert(newGuests);
+    }
+  }
+
+  return newInvite;
+}
+
+// ============================================================================
+// MONEY COLLECTION / CASH FUND
+// ============================================================================
+
+export async function getInviteFund(inviteId) {
+  const { data, error } = await supabase
+    .from('party_invite_funds')
+    .select('*')
+    .eq('invite_id', inviteId)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createFund(inviteId, organizerId, { title, description, goalAmount, currency }) {
+  const { data, error } = await supabase
+    .from('party_invite_funds')
+    .insert({
+      invite_id: inviteId,
+      organizer_id: organizerId,
+      title,
+      description: description || null,
+      goal_amount: goalAmount || null,
+      currency: currency || 'NGN',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateFund(fundId, updates) {
+  const mapped = {};
+  if (updates.title !== undefined) mapped.title = updates.title;
+  if (updates.description !== undefined) mapped.description = updates.description;
+  if (updates.goalAmount !== undefined) mapped.goal_amount = updates.goalAmount;
+  if (updates.isActive !== undefined) mapped.is_active = updates.isActive;
+
+  const { data, error } = await supabase
+    .from('party_invite_funds')
+    .update(mapped)
+    .eq('id', fundId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getContributions(fundId) {
+  const { data, error } = await supabase
+    .from('party_invite_contributions')
+    .select('*')
+    .eq('fund_id', fundId)
+    .eq('payment_status', 'completed')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getPublicFundInfo(inviteId) {
+  const fund = await getInviteFund(inviteId);
+  if (!fund) return null;
+
+  const contributions = await getContributions(fund.id);
+  const totalRaised = contributions.reduce((sum, c) => sum + Number(c.amount), 0);
+  const contributorCount = contributions.length;
+
+  return {
+    ...fund,
+    totalRaised,
+    contributorCount,
+    contributions: contributions.slice(0, 20),
+  };
 }

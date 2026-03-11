@@ -20,6 +20,7 @@ const ACTION_CONFIG = {
   settings_updated: { icon: Settings, color: 'text-gray-500', bg: 'bg-gray-100', label: 'updated settings' },
   party_created: { icon: PartyPopper, color: 'text-violet-500', bg: 'bg-violet-50', label: 'created the party' },
   title_changed: { icon: Settings, color: 'text-orange-500', bg: 'bg-orange-50', label: 'changed the title' },
+  auto_reminder_sent: { icon: Bell, color: 'text-amber-500', bg: 'bg-amber-50', label: 'auto-reminder sent to pending guests' },
 };
 
 function getActionIcon(action, metadata) {

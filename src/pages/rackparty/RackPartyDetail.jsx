@@ -6,6 +6,8 @@ import {
   CreditCard, AlertCircle, Trash2, Plus, UserPlus, ClipboardList, Settings2,
   RefreshCw, Image, Palette, MessageSquare, Megaphone, Activity, Pencil,
   Upload, Eye, PartyPopper, Sparkles, Coins, Package,
+  UtensilsCrossed, Camera, Wallet, CalendarRange, UserCheck, Repeat,
+  CalendarPlus, BarChart3,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,6 +46,20 @@ import {
   incrementFreeEmailUsage,
   logActivity,
   duplicatePartyInvite,
+  getInviteQuestions,
+  createInviteQuestion,
+  updateInviteQuestion,
+  deleteInviteQuestion,
+  getAnswersForInvite,
+  getDatePollOptions,
+  createDatePollOption,
+  deleteDatePollOption,
+  finalizeDatePoll,
+  getCohosts,
+  inviteCohost,
+  removeCohost,
+  getSeriesParties,
+  createNextOccurrence,
 } from '@/services/partyInvites';
 import { sendPartyInviteEmail, sendPartyInviteReminderEmail } from '@/lib/emailService';
 import { APP_URL, formatDateShort, statusBadge, DateTimePicker } from '@/components/rackparty/shared';
@@ -51,6 +67,9 @@ import { DesignTab } from '@/components/rackparty/DesignTab';
 import { WallTab } from '@/components/rackparty/WallTab';
 import { AnnouncementsTab } from '@/components/rackparty/AnnouncementsTab';
 import { ActivityTab } from '@/components/rackparty/ActivityTab';
+import { PotluckTab } from '@/components/rackparty/PotluckTab';
+import { PhotosTab } from '@/components/rackparty/PhotosTab';
+import { FundTab } from '@/components/rackparty/FundTab';
 
 export function RackPartyDetail() {
   const { id } = useParams();
@@ -99,6 +118,35 @@ export function RackPartyDetail() {
   const [sendingInvites, setSendingInvites] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [sendingSms, setSendingSms] = useState(false);
+
+  // Auto-Reminders
+  const [autoRemindEnabled, setAutoRemindEnabled] = useState(false);
+  const [autoRemindHours, setAutoRemindHours] = useState(24);
+
+  // Custom Questions
+  const [questions, setQuestions] = useState([]);
+  const [newQuestionText, setNewQuestionText] = useState('');
+  const [newQuestionType, setNewQuestionType] = useState('text');
+  const [newQuestionOptions, setNewQuestionOptions] = useState('');
+  const [newQuestionRequired, setNewQuestionRequired] = useState(false);
+  const [questionsLoaded, setQuestionsLoaded] = useState(false);
+
+  // Date Polling
+  const [datePollOptions, setDatePollOptions] = useState([]);
+  const [newPollDate, setNewPollDate] = useState('');
+  const [newPollLabel, setNewPollLabel] = useState('');
+  const [datePollLoaded, setDatePollLoaded] = useState(false);
+
+  // Co-Hosting
+  const [cohosts, setCohosts] = useState([]);
+  const [newCohostEmail, setNewCohostEmail] = useState('');
+  const [newCohostName, setNewCohostName] = useState('');
+  const [cohostsLoaded, setCohostsLoaded] = useState(false);
+
+  // Recurring
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState('weekly');
+  const [seriesParties, setSeriesParties] = useState([]);
+  const [creatingOccurrence, setCreatingOccurrence] = useState(false);
 
   // Inline title edit
   const [editingTitle, setEditingTitle] = useState(false);
@@ -158,6 +206,9 @@ export function RackPartyDetail() {
     setAllowPlusOnes(inv.allow_plus_ones);
     setMaxPlusOnes(inv.max_plus_ones);
     setRsvpDeadline(inv.rsvp_deadline ? inv.rsvp_deadline.slice(0, 16) : '');
+    setAutoRemindEnabled(inv.auto_remind_enabled || false);
+    setAutoRemindHours(inv.auto_remind_hours_before || 24);
+    if (inv.recurrence_rule?.frequency) setRecurrenceFrequency(inv.recurrence_rule.frequency);
   }
 
   async function loadGuestsAndStats(inviteId) {
@@ -546,6 +597,8 @@ export function RackPartyDetail() {
         venueName: settingsVenueName, city: settingsCity, address: settingsAddress,
         coverImageUrl, message: inviteMessage, allowPlusOnes, maxPlusOnes,
         rsvpDeadline: rsvpDeadline ? new Date(rsvpDeadline).toISOString() : null,
+        autoRemindEnabled, autoRemindHoursBefore: autoRemindHours,
+        recurrenceRule: recurrenceFrequency ? { frequency: recurrenceFrequency } : null,
       });
       setInvite(updated); setSettingsCoverImage(null);
       logActivity(invite.id, 'settings_updated', organizer?.business_name);
@@ -949,6 +1002,9 @@ export function RackPartyDetail() {
           { id: 'add', label: 'Add', icon: UserPlus },
           { id: 'design', label: 'Design', icon: Palette },
           { id: 'wall', label: 'Wall', icon: MessageSquare },
+          { id: 'potluck', label: 'Potluck', icon: UtensilsCrossed },
+          { id: 'photos', label: 'Photos', icon: Camera },
+          { id: 'fund', label: 'Fund', icon: Wallet },
           { id: 'announcements', label: 'Announce', icon: Megaphone },
           { id: 'activity', label: 'Activity', icon: Activity },
           { id: 'settings', label: 'Settings', icon: Settings2 },
@@ -1308,6 +1364,33 @@ export function RackPartyDetail() {
         </Card>
       )}
 
+      {/* Tab: Potluck */}
+      {activeTab === 'potluck' && (
+        <Card className="rounded-2xl">
+          <CardContent className="p-3 sm:p-4">
+            <PotluckTab invite={invite} organizer={organizer} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tab: Photos */}
+      {activeTab === 'photos' && (
+        <Card className="rounded-2xl">
+          <CardContent className="p-3 sm:p-4">
+            <PhotosTab invite={invite} organizer={organizer} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tab: Fund */}
+      {activeTab === 'fund' && (
+        <Card className="rounded-2xl">
+          <CardContent className="p-3 sm:p-4">
+            <FundTab invite={invite} organizer={organizer} />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tab: Announcements */}
       {activeTab === 'announcements' && (
         <Card className="rounded-2xl">
@@ -1407,6 +1490,326 @@ export function RackPartyDetail() {
                 </Button>
               </div>
             </div>
+            {/* Auto-Reminders */}
+            <div className="border-t pt-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Auto-Reminders</Label>
+                  <p className="text-xs text-gray-400">Automatically remind pending guests before the event</p>
+                </div>
+                <button onClick={() => setAutoRemindEnabled(!autoRemindEnabled)} className={`relative w-11 h-6 rounded-full transition-colors ${autoRemindEnabled ? 'bg-primary' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${autoRemindEnabled ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+              </div>
+              {autoRemindEnabled && (
+                <div className="mt-3">
+                  <Label className="text-xs text-gray-500">Send reminder before event</Label>
+                  <Select value={String(autoRemindHours)} onValueChange={v => setAutoRemindHours(Number(v))}>
+                    <SelectTrigger className="w-40 rounded-lg h-9 mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[6, 12, 24, 48, 72].map(h => <SelectItem key={h} value={String(h)}>{h} hours before</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {invite.auto_remind_sent_at && (
+                    <p className="text-xs text-emerald-600 mt-1">Last sent: {new Date(invite.auto_remind_sent_at).toLocaleString()}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Recurring Events */}
+            <div className="border-t pt-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Repeat className="w-4 h-4 text-gray-400" />
+                <Label className="text-sm font-medium">Recurring Event</Label>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">Set up this party as a recurring event</p>
+              <Select value={recurrenceFrequency} onValueChange={setRecurrenceFrequency}>
+                <SelectTrigger className="w-48 rounded-lg h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Not recurring</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="biweekly">Every 2 Weeks</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+              {recurrenceFrequency !== 'none' && invite.recurrence_rule && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 rounded-xl gap-2"
+                  disabled={creatingOccurrence}
+                  onClick={async () => {
+                    setCreatingOccurrence(true);
+                    try {
+                      const next = await createNextOccurrence(invite.id, organizer.id, { carryOverGuests: true });
+                      toast.success('Next occurrence created!');
+                      navigate(`${basePath}/${next.id}`);
+                    } catch (err) {
+                      console.error(err);
+                      toast.error('Failed to create next occurrence');
+                    } finally {
+                      setCreatingOccurrence(false);
+                    }
+                  }}
+                >
+                  {creatingOccurrence ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarPlus className="w-4 h-4" />}
+                  Create Next Occurrence
+                </Button>
+              )}
+            </div>
+
+            {/* Custom Questions */}
+            <div className="border-t pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <HelpCircle className="w-4 h-4 text-gray-400" />
+                <Label className="text-sm font-medium">Custom RSVP Questions</Label>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">Add questions guests must answer when they RSVP</p>
+              {!questionsLoaded ? (
+                <Button variant="outline" size="sm" className="rounded-xl gap-2" onClick={async () => {
+                  try {
+                    const qs = await getInviteQuestions(invite.id);
+                    setQuestions(qs);
+                    setQuestionsLoaded(true);
+                  } catch { toast.error('Failed to load questions'); }
+                }}>
+                  Load Questions
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  {questions.map((q, i) => (
+                    <div key={q.id} className="flex items-start gap-2 p-2.5 bg-gray-50 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{q.question_text}</p>
+                        <p className="text-xs text-gray-400">
+                          {q.question_type === 'text' ? 'Text' : q.question_type === 'single_choice' ? 'Single Choice' : 'Multi Choice'}
+                          {q.is_required && ' · Required'}
+                          {q.options?.length > 0 && ` · ${q.options.join(', ')}`}
+                        </p>
+                      </div>
+                      <button onClick={async () => {
+                        try {
+                          await deleteInviteQuestion(q.id);
+                          setQuestions(prev => prev.filter(x => x.id !== q.id));
+                          toast.success('Question removed');
+                        } catch { toast.error('Failed to remove question'); }
+                      }} className="p-1 text-gray-400 hover:text-red-500">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="p-3 border border-dashed border-gray-200 rounded-xl space-y-2">
+                    <Input value={newQuestionText} onChange={e => setNewQuestionText(e.target.value)} placeholder="Question text" className="rounded-lg text-sm" />
+                    <div className="flex gap-2 flex-wrap">
+                      <Select value={newQuestionType} onValueChange={setNewQuestionType}>
+                        <SelectTrigger className="w-36 rounded-lg h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text Answer</SelectItem>
+                          <SelectItem value="single_choice">Single Choice</SelectItem>
+                          <SelectItem value="multi_choice">Multi Choice</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {(newQuestionType === 'single_choice' || newQuestionType === 'multi_choice') && (
+                        <Input value={newQuestionOptions} onChange={e => setNewQuestionOptions(e.target.value)} placeholder="Options (comma separated)" className="flex-1 rounded-lg text-xs h-8" />
+                      )}
+                      <label className="flex items-center gap-1 text-xs text-gray-600">
+                        <input type="checkbox" checked={newQuestionRequired} onChange={e => setNewQuestionRequired(e.target.checked)} className="rounded" />
+                        Required
+                      </label>
+                    </div>
+                    <Button size="sm" className="rounded-lg gap-1" disabled={!newQuestionText.trim()} onClick={async () => {
+                      try {
+                        const opts = newQuestionOptions.split(',').map(o => o.trim()).filter(Boolean);
+                        const q = await createInviteQuestion(invite.id, organizer.id, {
+                          questionText: newQuestionText.trim(),
+                          questionType: newQuestionType,
+                          options: opts,
+                          isRequired: newQuestionRequired,
+                          sortOrder: questions.length,
+                        });
+                        setQuestions(prev => [...prev, q]);
+                        setNewQuestionText('');
+                        setNewQuestionOptions('');
+                        setNewQuestionRequired(false);
+                        toast.success('Question added');
+                      } catch { toast.error('Failed to add question'); }
+                    }}>
+                      <Plus className="w-3.5 h-3.5" /> Add Question
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Date Polling */}
+            <div className="border-t pt-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <CalendarRange className="w-4 h-4 text-gray-400" />
+                  <Label className="text-sm font-medium">Date Poll</Label>
+                </div>
+                <button onClick={async () => {
+                  try {
+                    await updateInviteSettings(invite.id, { datePollActive: !invite.date_poll_active });
+                    setInvite(prev => ({ ...prev, date_poll_active: !prev.date_poll_active }));
+                  } catch {}
+                }} className={`relative w-11 h-6 rounded-full transition-colors ${invite.date_poll_active ? 'bg-primary' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${invite.date_poll_active ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">Let guests vote on the best date for the party</p>
+              {invite.date_poll_active && (
+                <div className="space-y-3">
+                  {!datePollLoaded ? (
+                    <Button variant="outline" size="sm" className="rounded-xl gap-2" onClick={async () => {
+                      try {
+                        const opts = await getDatePollOptions(invite.id);
+                        setDatePollOptions(opts);
+                        setDatePollLoaded(true);
+                      } catch { toast.error('Failed to load poll options'); }
+                    }}>
+                      Load Date Poll
+                    </Button>
+                  ) : (
+                    <>
+                      {datePollOptions.map(opt => {
+                        const yesVotes = (opt.votes || []).filter(v => v.vote === 'yes').length;
+                        const maybeVotes = (opt.votes || []).filter(v => v.vote === 'maybe').length;
+                        return (
+                          <div key={opt.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {new Date(opt.date_option).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                              </p>
+                              {opt.label && <p className="text-xs text-gray-500">{opt.label}</p>}
+                              <div className="flex gap-2 mt-1">
+                                <span className="text-xs text-emerald-600">{yesVotes} yes</span>
+                                <span className="text-xs text-amber-600">{maybeVotes} maybe</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="outline" size="sm" className="rounded-lg text-xs h-7 px-2" onClick={async () => {
+                                try {
+                                  await finalizeDatePoll(invite.id, opt.date_option);
+                                  setInvite(prev => ({ ...prev, start_date: opt.date_option, date_poll_active: false }));
+                                  setSettingsStartDate(opt.date_option.slice(0, 16));
+                                  toast.success('Date finalized!');
+                                } catch { toast.error('Failed to finalize'); }
+                              }}>
+                                Pick
+                              </Button>
+                              <button onClick={async () => {
+                                try {
+                                  await deleteDatePollOption(opt.id);
+                                  setDatePollOptions(prev => prev.filter(o => o.id !== opt.id));
+                                } catch {}
+                              }} className="p-1 text-gray-400 hover:text-red-500">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <Label className="text-xs">Date Option</Label>
+                          <Input type="datetime-local" value={newPollDate} onChange={e => setNewPollDate(e.target.value)} className="rounded-lg mt-1 text-sm" />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs">Label (optional)</Label>
+                          <Input value={newPollLabel} onChange={e => setNewPollLabel(e.target.value)} placeholder="e.g. Saturday option" className="rounded-lg mt-1 text-sm" />
+                        </div>
+                        <Button size="sm" className="rounded-lg gap-1 shrink-0" disabled={!newPollDate} onClick={async () => {
+                          try {
+                            const opt = await createDatePollOption(invite.id, {
+                              dateOption: new Date(newPollDate).toISOString(),
+                              label: newPollLabel.trim() || null,
+                            });
+                            setDatePollOptions(prev => [...prev, { ...opt, votes: [] }]);
+                            setNewPollDate('');
+                            setNewPollLabel('');
+                            toast.success('Date option added');
+                          } catch { toast.error('Failed to add option'); }
+                        }}>
+                          <Plus className="w-3.5 h-3.5" /> Add
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Co-Hosts */}
+            <div className="border-t pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <UserCheck className="w-4 h-4 text-gray-400" />
+                <Label className="text-sm font-medium">Co-Hosts</Label>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">Invite others to help manage this party</p>
+              {!cohostsLoaded ? (
+                <Button variant="outline" size="sm" className="rounded-xl gap-2" onClick={async () => {
+                  try {
+                    const ch = await getCohosts(invite.id);
+                    setCohosts(ch);
+                    setCohostsLoaded(true);
+                  } catch { toast.error('Failed to load co-hosts'); }
+                }}>
+                  Load Co-Hosts
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  {cohosts.map(ch => (
+                    <div key={ch.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{ch.name || ch.email}</p>
+                        <p className="text-xs text-gray-400">
+                          {ch.email} · {ch.accepted_at ? 'Accepted' : 'Pending'} · {ch.role}
+                        </p>
+                      </div>
+                      <button onClick={async () => {
+                        try {
+                          await removeCohost(ch.id);
+                          setCohosts(prev => prev.filter(c => c.id !== ch.id));
+                          toast.success('Co-host removed');
+                        } catch { toast.error('Failed to remove co-host'); }
+                      }} className="p-1 text-gray-400 hover:text-red-500">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <Label className="text-xs">Email *</Label>
+                      <Input value={newCohostEmail} onChange={e => setNewCohostEmail(e.target.value)} placeholder="cohost@email.com" className="rounded-lg mt-1 text-sm" />
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-xs">Name</Label>
+                      <Input value={newCohostName} onChange={e => setNewCohostName(e.target.value)} placeholder="Name" className="rounded-lg mt-1 text-sm" />
+                    </div>
+                    <Button size="sm" className="rounded-lg gap-1 shrink-0" disabled={!newCohostEmail.trim()} onClick={async () => {
+                      try {
+                        const ch = await inviteCohost(invite.id, {
+                          email: newCohostEmail.trim(),
+                          name: newCohostName.trim() || null,
+                        });
+                        setCohosts(prev => [...prev, ch]);
+                        setNewCohostEmail('');
+                        setNewCohostName('');
+                        toast.success('Co-host invited');
+                      } catch (err) {
+                        toast.error(err.message?.includes('duplicate') ? 'Already invited' : 'Failed to invite');
+                      }
+                    }}>
+                      <Plus className="w-3.5 h-3.5" /> Invite
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Button onClick={handleSaveSettings} disabled={savingSettings} className="rounded-xl gap-2">
               {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               Save Settings

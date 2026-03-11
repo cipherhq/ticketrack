@@ -186,6 +186,65 @@ export function formatDateShort(dateStr) {
   return `${date} · ${time}`;
 }
 
+// ============================================================================
+// CALENDAR SYNC UTILITIES
+// ============================================================================
+
+export function generateGoogleCalendarUrl(invite) {
+  const title = encodeURIComponent(invite.title || 'Party');
+  const startDate = invite.start_date ? new Date(invite.start_date) : null;
+  const endDate = invite.end_date ? new Date(invite.end_date) : (startDate ? new Date(startDate.getTime() + 2 * 3600000) : null);
+
+  if (!startDate) return null;
+
+  const fmt = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const dates = `${fmt(startDate)}/${fmt(endDate)}`;
+
+  const location = [invite.venue_name, invite.address, invite.city].filter(Boolean).join(', ');
+  const details = invite.description || invite.message || '';
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${encodeURIComponent(location)}&details=${encodeURIComponent(details)}`;
+}
+
+export function generateICSFile(invite) {
+  const startDate = invite.start_date ? new Date(invite.start_date) : null;
+  const endDate = invite.end_date ? new Date(invite.end_date) : (startDate ? new Date(startDate.getTime() + 2 * 3600000) : null);
+
+  if (!startDate) return null;
+
+  const fmt = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const location = [invite.venue_name, invite.address, invite.city].filter(Boolean).join(', ');
+  const description = (invite.description || invite.message || '').replace(/\n/g, '\\n');
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Ticketrack//RackParty//EN',
+    'BEGIN:VEVENT',
+    `DTSTART:${fmt(startDate)}`,
+    `DTEND:${fmt(endDate)}`,
+    `SUMMARY:${invite.title || 'Party'}`,
+    `DESCRIPTION:${description}`,
+    `LOCATION:${location}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  return ics;
+}
+
+export function downloadICSFile(invite) {
+  const ics = generateICSFile(invite);
+  if (!ics) return;
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(invite.title || 'party').replace(/\s+/g, '-')}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function statusBadge(status) {
   const map = {
     going: 'bg-emerald-100 text-emerald-700',

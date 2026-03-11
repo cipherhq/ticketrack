@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PartyPopper, Users, Plus, Calendar, MapPin, Loader2 } from 'lucide-react';
+import { PartyPopper, Users, Plus, Calendar, MapPin, Loader2, Repeat, UserCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useOrganizer } from '@/contexts/OrganizerContext';
@@ -94,7 +94,14 @@ export function RackPartyList() {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{c.title || 'Untitled Invite'}</h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-semibold text-gray-900 truncate">{c.title || 'Untitled Invite'}</h3>
+                        {c.recurrence_rule && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700" title="Recurring">
+                            <Repeat className="w-2.5 h-2.5" />
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
                         {c.start_date && (
                           <span className="flex items-center gap-1">
