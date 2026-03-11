@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 
-const TURNSTILE_SITE_KEY = '0x4AAAAAAACpK_YhNktQU1S5K';
+// Cloudflare test key (always passes) — for debugging, swap back to real key after
+const TURNSTILE_SITE_KEY = '1x00000000000000000000AA';
 
 export function useTurnstile() {
   const widgetId = useRef(null);
