@@ -13,7 +13,6 @@ export function useTurnstile() {
 
     const renderWidget = () => {
       if (!window.turnstile || !containerRef.current) return;
-      // Remove any existing widget first
       if (widgetId.current !== null) {
         try { window.turnstile.remove(widgetId.current); } catch (_) {}
         widgetId.current = null;
@@ -22,7 +21,6 @@ export function useTurnstile() {
       widgetId.current = window.turnstile.render(containerRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
         size: 'invisible',
-        execution: 'execute', // Don't auto-execute; wait for explicit execute() call
         callback: (token) => {
           tokenRef.current = token;
           if (resolveRef.current) {
@@ -30,7 +28,8 @@ export function useTurnstile() {
             resolveRef.current = null;
           }
         },
-        'error-callback': () => {
+        'error-callback': (errorCode) => {
+          console.warn('[Turnstile] Error:', errorCode);
           tokenRef.current = null;
           if (resolveRef.current) {
             resolveRef.current(null);
@@ -66,18 +65,27 @@ export function useTurnstile() {
 
   const getToken = useCallback(() => {
     return new Promise((resolve) => {
+      // If we already have a fresh token from auto-execution, use it
+      if (tokenRef.current) {
+        const token = tokenRef.current;
+        tokenRef.current = null;
+        resolve(token);
+        // Reset for next use
+        if (widgetId.current !== null && window.turnstile) {
+          try { window.turnstile.reset(widgetId.current); } catch (_) {}
+        }
+        return;
+      }
+
       if (!window.turnstile || widgetId.current === null) {
         resolve(null);
         return;
       }
 
-      // Reset widget to get a fresh token every time
-      tokenRef.current = null;
+      // No token yet — reset and wait for callback
       resolveRef.current = resolve;
-
       try {
         window.turnstile.reset(widgetId.current);
-        window.turnstile.execute(widgetId.current);
       } catch (_) {
         resolveRef.current = null;
         resolve(null);
