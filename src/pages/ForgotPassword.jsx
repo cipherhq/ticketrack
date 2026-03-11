@@ -7,13 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { useAuth } from '@/contexts/AuthContext'
-import { useTurnstile } from '@/hooks/useTurnstile'
 import { supabase } from '@/lib/supabase'
 
 export function ForgotPassword() {
   const navigate = useNavigate()
   const { resetPassword, sendOTP, verifyOTP } = useAuth()
-  const { containerRef: turnstileRef, getToken: getTurnstileToken } = useTurnstile()
   
   const [resetMethod, setResetMethod] = useState('email') // 'email' or 'phone'
   const [email, setEmail] = useState('')
@@ -32,13 +30,7 @@ export function ForgotPassword() {
     setLoading(true)
 
     try {
-      const captchaToken = await getTurnstileToken()
-      if (!captchaToken) {
-        setError('Verification failed. Please refresh the page and try again.')
-        setLoading(false)
-        return
-      }
-      const result = await resetPassword(email, captchaToken)
+      const result = await resetPassword(email)
       console.log('[ForgotPassword] Reset result:', result)
       setStep('submitted')
     } catch (err) {
@@ -399,7 +391,6 @@ export function ForgotPassword() {
             )}
           </CardContent>
         </Card>
-        <div ref={turnstileRef} />
       </div>
     </div>
   )
