@@ -1065,9 +1065,9 @@ export function EventManagement() {
                       {event.image_url && <img src={event.image_url} alt={event.title} className="w-20 h-20 rounded-lg object-cover hidden sm:block flex-shrink-0" />}
 
                       {/* Event Info - takes remaining space */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <h4 className="font-medium text-foreground truncate">{event.title}</h4>
+                            <h4 className="font-medium text-foreground truncate max-w-[200px] sm:max-w-none">{event.title}</h4>
                             {getStatusBadge(event)}
                             {event.isFree && <Badge className="bg-green-100 text-green-700">Free Event</Badge>}
                             {event.soldTickets > 0 && (

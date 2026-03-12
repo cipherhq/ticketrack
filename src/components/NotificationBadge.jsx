@@ -248,7 +248,7 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
   return (
     <div 
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-80 bg-card rounded-xl shadow-lg border border-border/10 z-50 overflow-hidden"
+      className="fixed right-4 left-4 top-[72px] sm:absolute sm:left-auto sm:top-full sm:mt-2 sm:right-0 sm:w-80 bg-card rounded-xl shadow-2xl border border-border/10 z-50 overflow-hidden"
     >
       <div className="flex items-center justify-between p-4 border-b border-border/10">
         <h3 className="font-semibold text-foreground">Notifications</h3>
@@ -257,7 +257,7 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
         </button>
       </div>
 
-      <div className="max-h-96 overflow-y-auto">
+      <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
         {loading ? (
           <div className="p-8 text-center text-muted-foreground">
             Loading...

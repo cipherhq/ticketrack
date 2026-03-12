@@ -264,6 +264,14 @@ export function OrganizerLayout({ children }) {
         </div>
       </header>
 
+      {/* Notification backdrop on mobile */}
+      {notificationOpen && (
+        <div
+          className="lg:hidden fixed inset-0 top-16 bg-black/30 z-40"
+          onClick={() => setNotificationOpen(false)}
+        />
+      )}
+
       {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div
