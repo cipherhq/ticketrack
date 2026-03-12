@@ -246,30 +246,32 @@ export function OrganizerLayout({ children }) {
           <Menu className="w-6 h-6 text-gray-900" />
         </button>
         <Logo className="h-10" />
-        <div className="relative">
-          <button
-            onClick={() => setNotificationOpen(!notificationOpen)}
-            className="p-2 hover:bg-gray-200/60 rounded-lg relative"
-          >
-            <Bell className="w-6 h-6 text-gray-900" />
-            {getTotalNotifications() > 0 && (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
-            )}
-          </button>
-          <OrganizerNotificationDropdown 
-            organizerId={organizer?.id}
-            isOpen={notificationOpen}
-            onClose={() => setNotificationOpen(false)}
-          />
-        </div>
+        <button
+          onClick={() => setNotificationOpen(!notificationOpen)}
+          className="p-2 hover:bg-gray-200/60 rounded-lg relative"
+        >
+          <Bell className="w-6 h-6 text-gray-900" />
+          {getTotalNotifications() > 0 && (
+            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
+          )}
+        </button>
       </header>
 
-      {/* Notification backdrop on mobile */}
+      {/* Mobile notification overlay — rendered outside header to avoid z-index/positioning issues */}
       {notificationOpen && (
-        <div
-          className="lg:hidden fixed inset-0 top-16 bg-black/30 z-40"
-          onClick={() => setNotificationOpen(false)}
-        />
+        <div className="lg:hidden fixed inset-0 top-16 z-50">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setNotificationOpen(false)}
+          />
+          <div className="relative mx-4 mt-2">
+            <OrganizerNotificationDropdown
+              organizerId={organizer?.id}
+              isOpen={notificationOpen}
+              onClose={() => setNotificationOpen(false)}
+            />
+          </div>
+        </div>
       )}
 
       {/* Sidebar Overlay */}
