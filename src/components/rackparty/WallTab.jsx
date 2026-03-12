@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Trash2, Send, MessageSquare, Camera, X } from 'lucide-react';
+import { Loader2, Trash2, Send, MessageSquare, Camera, X, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { validateImageUpload, safeImageExt } from '@/lib/utils';
-import { getWallPosts, createWallPost, deleteWallPost, logActivity } from '@/services/partyInvites';
+import { getWallPosts, createWallPost, deleteWallPost, getInviteGuests, logActivity } from '@/services/partyInvites';
+import { sendPartyMessageEmail } from '@/lib/emailService';
 import { compressImage } from '@/lib/imageCompression';
 import { formatDistanceToNow } from 'date-fns';
+import { APP_URL } from './shared';
 
 export function WallTab({ invite, organizer }) {
   const [posts, setPosts] = useState([]);
@@ -15,6 +17,7 @@ export function WallTab({ invite, organizer }) {
   const [posting, setPosting] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [notifyGuests, setNotifyGuests] = useState(true);
 
   useEffect(() => {
     loadPosts();
@@ -67,12 +70,13 @@ export function WallTab({ invite, organizer }) {
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
+      const postContent = content.trim();
       await createWallPost(invite.id, {
         authorName: organizer?.business_name || 'Host',
         authorEmail: null,
         authorGuestId: null,
         isHost: true,
-        content: content.trim(),
+        content: postContent,
         imageUrl,
       });
       await logActivity(invite.id, 'wall_post', organizer?.business_name || 'Host', { isHost: true });
@@ -80,6 +84,33 @@ export function WallTab({ invite, organizer }) {
       clearImage();
       await loadPosts();
       toast.success('Post added');
+
+      // Notify guests via email (fire-and-forget)
+      if (notifyGuests && postContent) {
+        (async () => {
+          try {
+            const guests = await getInviteGuests(invite.id);
+            const emailGuests = guests.filter(g => g.email && g.rsvp_token);
+            let sent = 0;
+            for (const g of emailGuests) {
+              try {
+                const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
+                await sendPartyMessageEmail(g.email, {
+                  eventTitle: invite.title,
+                  subject: `New wall post on ${invite.title}`,
+                  messageBody: postContent,
+                  organizerName: organizer?.business_name || 'Host',
+                  rsvpUrl,
+                }, organizer.id);
+                sent++;
+              } catch { /* skip individual failures */ }
+            }
+            if (sent > 0) toast.success(`${sent} guest${sent > 1 ? 's' : ''} notified`);
+          } catch (err) {
+            console.error('Failed to notify guests:', err);
+          }
+        })();
+      }
     } catch (err) {
       console.error('Error creating post:', err);
       toast.error('Failed to post');
@@ -139,6 +170,16 @@ export function WallTab({ invite, organizer }) {
             </button>
           </div>
         )}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={notifyGuests}
+            onChange={e => setNotifyGuests(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-primary accent-primary"
+          />
+          <Bell className="w-3.5 h-3.5 text-gray-400" />
+          <span className="text-xs text-gray-500">Notify guests via email</span>
+        </label>
       </div>
 
       {/* Posts list */}
