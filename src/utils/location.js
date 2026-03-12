@@ -195,6 +195,20 @@ export async function getUserCountry() {
   }
 }
 
+/**
+ * Get effective country: checks user's manual selection first, then falls back to IP detection.
+ * @returns {Promise<string>} Country code (e.g., 'US', 'NG', 'GB')
+ */
+export async function getEffectiveCountry() {
+  try {
+    const manual = localStorage.getItem('user_selected_country')
+    if (manual) return manual
+  } catch (e) {
+    // localStorage not available
+  }
+  return getCountryFromIP()
+}
+
 // Cache for IP-based country detection
 let cachedCountryCode = null
 let cacheTimestamp = null

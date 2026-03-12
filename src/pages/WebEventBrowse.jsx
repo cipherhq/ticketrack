@@ -2,7 +2,7 @@ import { formatPrice } from '@/config/currencies'
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, Calendar, MapPin, SlidersHorizontal, ChevronDown, X, Loader2, Monitor } from 'lucide-react'
+import { Search, Calendar, MapPin, SlidersHorizontal, ChevronDown, X, Loader2, Monitor, Globe } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label'
 import { getCategories } from '@/services/events'
 import { supabase } from '@/lib/supabase'
 import { sanitizeFilterValue } from '@/lib/utils'
-import { getUserLocation, getUserCountry, getCountryFromIP, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { getUserLocation, getUserCountry, getEffectiveCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { COUNTRIES } from '@/components/ui/phone-input'
 import { useAds } from '@/hooks/useAds'
 import { AdBanner } from '@/components/AdBanner'
 
@@ -42,7 +43,8 @@ export function WebEventBrowse() {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '')
   const [showDateDropdown, setShowDateDropdown] = useState(false)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
-  
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false)
+
   // Filter state
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'date')
   const [selectedCategories, setSelectedCategories] = useState(
@@ -74,7 +76,7 @@ export function WebEventBrowse() {
 
     // Detect country first via IP (fast, no permission), then load events
     const initLoad = async () => {
-      const ipCountry = await getCountryFromIP()
+      const ipCountry = await getEffectiveCountry()
       setUserCountryCode(ipCountry)
       loadEvents(null, ipCountry)
 
@@ -286,6 +288,13 @@ export function WebEventBrowse() {
     loadEvents()
   }
 
+  const handleCountrySelect = (code) => {
+    localStorage.setItem('user_selected_country', code)
+    setUserCountryCode(code)
+    setShowCountryDropdown(false)
+    loadEvents(userLocation, code)
+  }
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', { 
       month: 'short', 
@@ -299,6 +308,7 @@ export function WebEventBrowse() {
     const handleClickOutside = () => {
       setShowDateDropdown(false)
       setShowSortDropdown(false)
+      setShowCountryDropdown(false)
     }
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
@@ -410,6 +420,36 @@ export function WebEventBrowse() {
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Country Selector */}
+            <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="flex items-center gap-2 px-4 py-3 bg-muted/50 border border-border/30 rounded-xl cursor-pointer hover:border-[#2969FF]/40 transition-colors"
+                onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+              >
+                <Globe className="w-5 h-5 text-[#2969FF] flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Country</div>
+                  <div className="text-sm text-foreground">
+                    {COUNTRIES.find(c => c.code === userCountryCode)?.flag} {COUNTRIES.find(c => c.code === userCountryCode)?.name || 'Detecting...'}
+                  </div>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </div>
+              {showCountryDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border/30 rounded-xl shadow-xl z-20">
+                  {COUNTRIES.map((country) => (
+                    <button
+                      key={country.code}
+                      onClick={() => handleCountrySelect(country.code)}
+                      className={`w-full text-left px-4 py-3 hover:bg-muted text-sm min-h-[44px] touch-manipulation first:rounded-t-xl last:rounded-b-xl ${userCountryCode === country.code ? 'bg-[#2969FF]/10 text-[#2969FF] font-medium' : ''}`}
+                    >
+                      {country.flag} {country.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Date Filter */}

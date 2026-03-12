@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatPrice } from '@/config/currencies';
 import { getForYouFeed, toggleSavedEvent, isEventSaved, recordEventView } from '@/services/recommendations';
 import { useAuth } from '@/contexts/AuthContext';
-import { getCountryFromIP } from '@/utils/location';
+import { getEffectiveCountry } from '@/utils/location';
 import { toast } from 'sonner';
 
 // Individual Event Card for the Feed
@@ -162,7 +162,7 @@ export function ForYouFeed({ limit = 12, showHeader = true, className = '' }) {
   const { user } = useAuth();
 
   useEffect(() => {
-    getCountryFromIP().then(code => {
+    getEffectiveCountry().then(code => {
       setCountryCode(code);
     });
   }, []);
@@ -278,7 +278,7 @@ export function ForYouFeedHorizontal({ limit = 10, showHeader = true }) {
   const { user } = useAuth();
 
   useEffect(() => {
-    getCountryFromIP().then(code => {
+    getEffectiveCountry().then(code => {
       setCountryCode(code);
     });
   }, []);

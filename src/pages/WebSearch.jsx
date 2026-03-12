@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, X, Calendar, MapPin, Clock, TrendingUp, History, Loader2, SlidersHorizontal, ChevronDown } from 'lucide-react'
+import { Search, X, Calendar, MapPin, Clock, TrendingUp, History, Loader2, SlidersHorizontal, ChevronDown, Globe } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,8 @@ import { ImageWithFallback } from '@/components/ui/image-with-fallback'
 import { supabase } from '@/lib/supabase'
 import { sanitizeFilterValue } from '@/lib/utils'
 import { formatPrice } from '@/config/currencies'
-import { getUserLocation, getUserCountry, getCountryFromIP, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { getUserLocation, getUserCountry, getEffectiveCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { COUNTRIES } from '@/components/ui/phone-input'
 
 const RECENT_SEARCHES_KEY = 'ticketrack_recent_searches'
 const trendingSearches = ['Concert', 'Music', 'Festival', 'Party', 'Free Events']
@@ -52,6 +53,7 @@ export function WebSearch() {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
   const [showDateDropdown, setShowDateDropdown] = useState(false)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false)
 
   // Load cities, get user location, and recent searches on mount
   useEffect(() => {
@@ -59,7 +61,7 @@ export function WebSearch() {
     loadRecentSearches()
     
     // Get user country via IP first (fast, no permission needed)
-    getCountryFromIP().then(code => {
+    getEffectiveCountry().then(code => {
       setUserCountryCode(code)
     })
 
@@ -238,6 +240,13 @@ export function WebSearch() {
     setTimeout(() => handleSearch(), 100)
   }
 
+  const handleCountrySelect = (code) => {
+    localStorage.setItem('user_selected_country', code)
+    setUserCountryCode(code)
+    setShowCountryDropdown(false)
+    setTimeout(() => handleSearch(), 100)
+  }
+
   const formatEventDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -253,6 +262,7 @@ export function WebSearch() {
       setShowLocationDropdown(false)
       setShowDateDropdown(false)
       setShowSortDropdown(false)
+      setShowCountryDropdown(false)
     }
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
@@ -304,9 +314,39 @@ export function WebSearch() {
               )}
             </div>
 
+            {/* Country Selector */}
+            <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
+                onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+              >
+                <Globe className="w-5 h-5 text-[#2969FF]" />
+                <div className="flex-1">
+                  <div className="text-xs text-gray-600 uppercase font-medium">Country</div>
+                  <div className="text-sm text-gray-900">
+                    {COUNTRIES.find(c => c.code === userCountryCode)?.flag} {COUNTRIES.find(c => c.code === userCountryCode)?.name || 'Detecting...'}
+                  </div>
+                </div>
+                <ChevronDown className="w-4 h-4 text-gray-600" />
+              </div>
+              {showCountryDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
+                  {COUNTRIES.map((country) => (
+                    <button
+                      key={country.code}
+                      onClick={() => handleCountrySelect(country.code)}
+                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 text-sm first:rounded-t-xl last:rounded-b-xl ${userCountryCode === country.code ? 'bg-[#2969FF]/10 text-[#2969FF]' : ''}`}
+                    >
+                      {country.flag} {country.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Date Filter */}
             <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
-              <div 
+              <div
                 className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl cursor-pointer hover:border-[#2969FF]/50"
                 onClick={() => setShowDateDropdown(!showDateDropdown)}
               >

@@ -14,7 +14,8 @@ import {
 import { ForYouFeed } from '@/components/ForYouFeed';
 import { useAds } from '@/hooks/useAds';
 import { AdBanner } from '@/components/AdBanner';
-import { getCountryFromIP } from '@/utils/location';
+import { getEffectiveCountry } from '@/utils/location';
+import { COUNTRIES } from '@/components/ui/phone-input';
 
 // Category styling with icons - all blue shades
 const categoryStyles = {
@@ -300,6 +301,7 @@ export function WebHome() {
   const [dateFilter, setDateFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
 
   const [events, setEvents] = useState({
     trending: [],
@@ -328,110 +330,112 @@ export function WebHome() {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setShowDateDropdown(false);
+    const handleClickOutside = () => { setShowDateDropdown(false); setShowCountryDropdown(false); };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  const fetchData = async (overrideCountry) => {
+    setLoading(true);
+
+    // Use override if provided, otherwise detect
+    const countryCode = overrideCountry || await getEffectiveCountry();
+    setUserCountryCode(countryCode);
+
+    const { data: categoriesData } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (categoriesData) {
+      setCategories(categoriesData);
+    }
+
+    let eventsQuery = supabase
+      .from('events')
+      .select('*, ticket_types(price, quantity_available, quantity_sold), is_virtual')
+      .eq('status', 'published')
+      .or('visibility.eq.public,visibility.is.null')
+      .gte('end_date', new Date().toISOString())
+      .order('start_date', { ascending: true });
+
+    if (countryCode) {
+      eventsQuery = eventsQuery.eq('country_code', countryCode);
+    }
+
+    const { data: allEvents } = await eventsQuery;
+
+    // Compute min_price and low stock status from ticket_types for each event
+    const eventsWithPrices = allEvents?.map(event => {
+      const prices = event.ticket_types?.map(t => t.price).filter(p => p !== null && p !== undefined) || [];
+      let minPrice = prices.length > 0 ? Math.min(...prices) : null;
+
+      if (event.is_free) {
+        minPrice = 0;
+      }
+
+      if (minPrice === null && (!event.ticket_types || event.ticket_types.length === 0)) {
+        minPrice = 0;
+      }
+
+      let totalRemaining = 0;
+      let totalCapacity = 0;
+      event.ticket_types?.forEach(t => {
+        const remaining = (t.quantity_available || 0) - (t.quantity_sold || 0);
+        totalRemaining += remaining;
+        totalCapacity += (t.quantity_available || 0);
+      });
+      const percentRemaining = totalCapacity > 0 ? (totalRemaining / totalCapacity) * 100 : 100;
+      const isLowStock = totalCapacity > 0 && (totalRemaining <= 10 || percentRemaining <= 20);
+      const isSoldOut = totalCapacity > 0 && totalRemaining <= 0;
+
+      return { ...event, min_price: minPrice, isLowStock, isSoldOut, totalRemaining };
+    }) || [];
+
+    if (eventsWithPrices.length > 0) {
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const saturday = new Date(today);
+      saturday.setDate(today.getDate() + (6 - dayOfWeek));
+      saturday.setHours(0, 0, 0, 0);
+      const sunday = new Date(saturday);
+      sunday.setDate(saturday.getDate() + 1);
+      sunday.setHours(23, 59, 59, 999);
+
+      setEvents({
+        trending: eventsWithPrices.filter(e => e.is_trending).slice(0, 20),
+        popular: eventsWithPrices.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0)).slice(0, 20),
+        featured: eventsWithPrices.filter(e => e.is_featured).slice(0, 20),
+        nearYou: eventsWithPrices.slice(0, 20).map(e => ({ ...e, distance: Math.floor(Math.random() * 20) + 1 })),
+        weekend: eventsWithPrices.filter(e => {
+          const eventDate = new Date(e.start_date);
+          return eventDate >= saturday && eventDate <= sunday;
+        }).slice(0, 20),
+        free: eventsWithPrices.filter(e => e.is_free).slice(0, 20)
+      });
+    }
+
+    try {
+      const stats = await getPlatformStats();
+      setPlatformStats(stats);
+    } catch (err) {
+      console.warn('Failed to fetch platform stats');
+    }
+
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-
-      // Detect user country for filtering
-      const countryCode = await getCountryFromIP();
-      setUserCountryCode(countryCode);
-
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (categoriesData) {
-        setCategories(categoriesData);
-      }
-
-      let eventsQuery = supabase
-        .from('events')
-        .select('*, ticket_types(price, quantity_available, quantity_sold), is_virtual')
-        .eq('status', 'published')
-        .or('visibility.eq.public,visibility.is.null')
-        .gte('end_date', new Date().toISOString())
-        .order('start_date', { ascending: true });
-
-      if (countryCode) {
-        eventsQuery = eventsQuery.eq('country_code', countryCode);
-      }
-
-      const { data: allEvents } = await eventsQuery;
-
-      // Compute min_price and low stock status from ticket_types for each event
-      const eventsWithPrices = allEvents?.map(event => {
-        const prices = event.ticket_types?.map(t => t.price).filter(p => p !== null && p !== undefined) || [];
-        let minPrice = prices.length > 0 ? Math.min(...prices) : null;
-        
-        // If event is marked as free, ensure min_price is 0
-        if (event.is_free) {
-          minPrice = 0;
-        }
-        
-        // If no ticket types and not explicitly free, set to null (will show as "Free" or "Price TBA")
-        if (minPrice === null && (!event.ticket_types || event.ticket_types.length === 0)) {
-          // If event is not marked as free but has no ticket types, treat as free
-          minPrice = 0;
-        }
-        
-        // Calculate total remaining tickets and check if low stock
-        let totalRemaining = 0;
-        let totalCapacity = 0;
-        event.ticket_types?.forEach(t => {
-          const remaining = (t.quantity_available || 0) - (t.quantity_sold || 0);
-          totalRemaining += remaining;
-          totalCapacity += (t.quantity_available || 0);
-        });
-        const percentRemaining = totalCapacity > 0 ? (totalRemaining / totalCapacity) * 100 : 100;
-        const isLowStock = totalCapacity > 0 && (totalRemaining <= 10 || percentRemaining <= 20);
-        const isSoldOut = totalCapacity > 0 && totalRemaining <= 0;
-
-        return { ...event, min_price: minPrice, isLowStock, isSoldOut, totalRemaining };
-      }) || [];
-
-      if (eventsWithPrices.length > 0) {
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const saturday = new Date(today);
-        saturday.setDate(today.getDate() + (6 - dayOfWeek));
-        saturday.setHours(0, 0, 0, 0);
-        const sunday = new Date(saturday);
-        sunday.setDate(saturday.getDate() + 1);
-        sunday.setHours(23, 59, 59, 999);
-
-        setEvents({
-          trending: eventsWithPrices.filter(e => e.is_trending).slice(0, 20),
-          popular: eventsWithPrices.sort((a, b) => (b.tickets_sold || 0) - (a.tickets_sold || 0)).slice(0, 20),
-          featured: eventsWithPrices.filter(e => e.is_featured).slice(0, 20),
-          nearYou: eventsWithPrices.slice(0, 20).map(e => ({ ...e, distance: Math.floor(Math.random() * 20) + 1 })),
-          weekend: eventsWithPrices.filter(e => {
-            const eventDate = new Date(e.start_date);
-            return eventDate >= saturday && eventDate <= sunday;
-          }).slice(0, 20),
-          free: eventsWithPrices.filter(e => e.is_free).slice(0, 20)
-        });
-      }
-
-      // Fetch platform stats
-      try {
-        const stats = await getPlatformStats();
-        setPlatformStats(stats);
-      } catch (err) {
-        console.warn('Failed to fetch platform stats');
-      }
-      
-      setLoading(false);
-    };
-
     fetchData();
   }, []);
+
+  const handleCountrySelect = (code) => {
+    localStorage.setItem('user_selected_country', code);
+    setUserCountryCode(code);
+    setShowCountryDropdown(false);
+    fetchData(code);
+  };
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -540,6 +544,36 @@ export function WebHome() {
                       </button>
                     )}
                   </div>
+                </div>
+
+                {/* Country Selector */}
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                  >
+                    <Globe className="w-5 h-5 text-blue-600" />
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">Country</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">
+                        {COUNTRIES.find(c => c.code === userCountryCode)?.flag} {COUNTRIES.find(c => c.code === userCountryCode)?.name || 'Detecting...'}
+                      </div>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </div>
+                  {showCountryDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-20">
+                      {COUNTRIES.map((country) => (
+                        <button
+                          key={country.code}
+                          onClick={() => handleCountrySelect(country.code)}
+                          className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm first:rounded-t-xl last:rounded-b-xl ${userCountryCode === country.code ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'text-gray-900 dark:text-gray-100'}`}
+                        >
+                          {country.flag} {country.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Date Filter */}
