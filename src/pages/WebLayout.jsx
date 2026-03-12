@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone, Users, Calendar, BookOpen, DollarSign, UserCircle, Grid3X3, ChevronDown, PartyPopper } from 'lucide-react'
+import { Ticket, Search, User, ShoppingCart, Menu, X, Plus, Heart, Settings, LogOut, LayoutDashboard, Megaphone, Users, Calendar, BookOpen, DollarSign, UserCircle, Grid3X3, ChevronDown, PartyPopper, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/Logo'
 import {
@@ -13,6 +13,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { COUNTRIES } from '@/components/ui/phone-input'
+import { getEffectiveCountry } from '@/utils/location'
 
 export function WebLayout() {
   const navigate = useNavigate()
@@ -23,6 +25,8 @@ export function WebLayout() {
   const [profile, setProfile] = useState(null)
   const [isOrganizer, setIsOrganizer] = useState(false)
   const [isPromoter, setIsPromoter] = useState(false)
+  const [userCountryCode, setUserCountryCode] = useState(null)
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false)
 
   // Load user profile and check roles
   useEffect(() => {
@@ -69,6 +73,27 @@ export function WebLayout() {
     }
     loadUserData()
   }, [user])
+
+  // Detect user country
+  useEffect(() => {
+    getEffectiveCountry().then(code => setUserCountryCode(code))
+  }, [])
+
+  // Close country dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = () => setShowCountryDropdown(false)
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
+
+  const handleCountrySelect = (code) => {
+    localStorage.setItem('user_selected_country', code)
+    setUserCountryCode(code)
+    setShowCountryDropdown(false)
+    window.location.reload()
+  }
+
+  const currentCountry = COUNTRIES.find(c => c.code === userCountryCode)
 
   const isLoggedIn = !!user
   const currentUser = {
@@ -156,6 +181,31 @@ export function WebLayout() {
 
             {/* Auth Buttons / User Profile */}
             <div className="hidden md:flex items-center gap-3">
+              {/* Country Flag Selector */}
+              <div className="relative" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-lg"
+                  title={currentCountry?.name || 'Select country'}
+                >
+                  {currentCountry?.flag || <Globe className="w-5 h-5 text-foreground" />}
+                </button>
+                {showCountryDropdown && (
+                  <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 min-w-[180px] py-1">
+                    {COUNTRIES.map((country) => (
+                      <button
+                        key={country.code}
+                        onClick={() => handleCountrySelect(country.code)}
+                        className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm flex items-center gap-2.5 first:rounded-t-xl last:rounded-b-xl ${userCountryCode === country.code ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-medium' : 'text-gray-900 dark:text-gray-100'}`}
+                      >
+                        <span className="text-base">{country.flag}</span>
+                        {country.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -369,6 +419,24 @@ export function WebLayout() {
                   <PartyPopper className="w-5 h-5" />
                   Party Invite
                 </button>
+              </div>
+
+              {/* Country Selector - Mobile */}
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground uppercase font-semibold tracking-wider">Country</span>
+                <div className="flex gap-1.5 ml-auto">
+                  {COUNTRIES.map((country) => (
+                    <button
+                      key={country.code}
+                      onClick={() => handleCountrySelect(country.code)}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-base touch-manipulation ${userCountryCode === country.code ? 'bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500' : 'hover:bg-muted'}`}
+                      title={country.name}
+                    >
+                      {country.flag}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Quick Actions Grid */}
