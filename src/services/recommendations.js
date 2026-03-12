@@ -108,9 +108,9 @@ export async function getSavedEvents(limit = 50) {
 }
 
 // Get personalized recommendations
-export async function getPersonalizedRecommendations(limit = 20, offset = 0) {
+export async function getPersonalizedRecommendations(limit = 20, offset = 0, countryCode = null) {
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (user) {
     // Logged in user - get personalized recommendations
     const { data, error } = await supabase.rpc('get_personalized_recommendations', {
@@ -121,29 +121,41 @@ export async function getPersonalizedRecommendations(limit = 20, offset = 0) {
 
     if (error) {
       console.error('Error fetching recommendations:', error);
-      return getTrendingEvents(limit, offset);
+      return getTrendingEvents(limit, offset, countryCode);
     }
 
-    return data || [];
+    // Post-filter by country since RPC may not support it
+    const results = data || [];
+    if (countryCode) {
+      return results.filter(e => e.country_code === countryCode);
+    }
+    return results;
   } else {
     // Anonymous user - return trending events
-    return getTrendingEvents(limit, offset);
+    return getTrendingEvents(limit, offset, countryCode);
   }
 }
 
 // Get trending events (fallback for anonymous users)
-export async function getTrendingEvents(limit = 20, offset = 0) {
-  const { data, error } = await supabase
+export async function getTrendingEvents(limit = 20, offset = 0, countryCode = null) {
+  let query = supabase
     .from('events')
     .select(`
       id, title, slug, image_url, start_date, end_date,
-      venue_name, city, currency, event_type, category,
+      venue_name, city, currency, event_type, category, country_code,
       ticket_types(price)
     `)
     .eq('status', 'published')
-    .gt('start_date', new Date().toISOString())
-    .order('start_date', { ascending: true })
+    .gt('start_date', new Date().toISOString());
+
+  if (countryCode) {
+    query = query.eq('country_code', countryCode);
+  }
+
+  query = query.order('start_date', { ascending: true })
     .range(offset, offset + limit - 1);
+
+  const { data, error } = await query;
 
   if (error) throw error;
 
@@ -264,11 +276,11 @@ export async function getInferredPreferences() {
 }
 
 // Get "For You" feed with mixed content
-export async function getForYouFeed(limit = 30) {
-  const recommendations = await getPersonalizedRecommendations(limit);
-  
+export async function getForYouFeed(limit = 30, countryCode = null) {
+  const recommendations = await getPersonalizedRecommendations(limit, 0, countryCode);
+
   // Add variety by mixing in some random upcoming events
-  const trending = await getTrendingEvents(10);
+  const trending = await getTrendingEvents(10, 0, countryCode);
   
   // Merge and dedupe by ID and by title+date to avoid visual duplicates
   const seenIds = new Set();

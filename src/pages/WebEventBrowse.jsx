@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { getCategories } from '@/services/events'
 import { supabase } from '@/lib/supabase'
 import { sanitizeFilterValue } from '@/lib/utils'
-import { getUserLocation, getUserCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { getUserLocation, getUserCountry, getCountryFromIP, sortEventsByDistance, formatDistance } from '@/utils/location'
 import { useAds } from '@/hooks/useAds'
 import { AdBanner } from '@/components/AdBanner'
 
@@ -72,28 +72,32 @@ export function WebEventBrowse() {
     }
     loadCategories()
 
-    // Load events immediately (don't wait for location)
-    loadEvents(null, null)
+    // Detect country first via IP (fast, no permission), then load events
+    const initLoad = async () => {
+      const ipCountry = await getCountryFromIP()
+      setUserCountryCode(ipCountry)
+      loadEvents(null, ipCountry)
 
-    // Get user location and country code for filtering (non-blocking)
-    getUserCountry()
-      .then(result => {
-        if (result) {
-          setUserLocation({ lat: result.lat, lng: result.lng })
-          setUserCountryCode(result.countryCode)
-          setLocationPermission('granted')
-          // Reload events with location-based filtering
-          if (sortBy === 'distance' || (!sortBy || sortBy === 'date')) {
-            loadEvents({ lat: result.lat, lng: result.lng }, result.countryCode)
+      // Then try precise geolocation for distance sorting (non-blocking)
+      getUserCountry()
+        .then(result => {
+          if (result) {
+            setUserLocation({ lat: result.lat, lng: result.lng })
+            setUserCountryCode(result.countryCode)
+            setLocationPermission('granted')
+            if (sortBy === 'distance' || (!sortBy || sortBy === 'date')) {
+              loadEvents({ lat: result.lat, lng: result.lng }, result.countryCode)
+            }
+          } else {
+            setLocationPermission('denied')
           }
-        } else {
+        })
+        .catch(error => {
+          console.log('Location not available:', error.message)
           setLocationPermission('denied')
-        }
-      })
-      .catch(error => {
-        console.log('Location not available:', error.message)
-        setLocationPermission('denied')
-      })
+        })
+    }
+    initLoad()
   }, [])
 
   // Load events when filters change
@@ -142,8 +146,10 @@ export function WebEventBrowse() {
         .is('parent_event_id', null) // Only show parent events in browse (child events accessible via parent page)
         .gte('start_date', start)
 
-      // Removed US-only restriction to show events from all countries
-      // Users can filter by location if needed
+      // Filter by user's detected country
+      if (userCountry) {
+        query = query.eq('country_code', userCountry)
+      }
 
       // Date filter
       if (end) {

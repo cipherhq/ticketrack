@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { validateImageUpload } from '@/lib/utils';
 
 // =====================================================
 // ORGANIZER FUNCTIONS
@@ -191,7 +192,6 @@ export async function createEvent(organizerId, eventData) {
       views_count: 0,
       is_featured: false,
       is_free: false,
-      country_code: 'NG',
       ...restEventData,
     })
     .select()
@@ -867,6 +867,9 @@ export async function getOrganizerAnalytics(organizerId) {
 // =====================================================
 
 export async function uploadImage(bucket, organizerId, file) {
+  const validationError = validateImageUpload(file);
+  if (validationError) throw new Error(validationError);
+
   const fileExt = file.name.split('.').pop();
   const fileName = `${organizerId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 

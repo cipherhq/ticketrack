@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatPrice } from '@/config/currencies';
 import { getForYouFeed, toggleSavedEvent, isEventSaved, recordEventView } from '@/services/recommendations';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCountryFromIP } from '@/utils/location';
 import { toast } from 'sonner';
 
 // Individual Event Card for the Feed
@@ -157,17 +158,26 @@ export function ForYouFeed({ limit = 12, showHeader = true, className = '' }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [countryCode, setCountryCode] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    loadFeed();
-  }, [user]);
+    getCountryFromIP().then(code => {
+      setCountryCode(code);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (countryCode) {
+      loadFeed();
+    }
+  }, [user, countryCode]);
 
   const loadFeed = async () => {
     setLoading(true);
     setError(null);
     try {
-      const feed = await getForYouFeed(limit);
+      const feed = await getForYouFeed(limit, countryCode);
       setEvents(feed);
     } catch (err) {
       console.error('Error loading feed:', err);
@@ -264,16 +274,25 @@ export function ForYouFeed({ limit = 12, showHeader = true, className = '' }) {
 export function ForYouFeedHorizontal({ limit = 10, showHeader = true }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [countryCode, setCountryCode] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    loadFeed();
-  }, [user]);
+    getCountryFromIP().then(code => {
+      setCountryCode(code);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (countryCode) {
+      loadFeed();
+    }
+  }, [user, countryCode]);
 
   const loadFeed = async () => {
     setLoading(true);
     try {
-      const feed = await getForYouFeed(limit);
+      const feed = await getForYouFeed(limit, countryCode);
       setEvents(feed);
     } catch (err) {
       console.error('Error loading feed:', err);

@@ -9,7 +9,7 @@ import { ImageWithFallback } from '@/components/ui/image-with-fallback'
 import { supabase } from '@/lib/supabase'
 import { sanitizeFilterValue } from '@/lib/utils'
 import { formatPrice } from '@/config/currencies'
-import { getUserLocation, getUserCountry, sortEventsByDistance, formatDistance } from '@/utils/location'
+import { getUserLocation, getUserCountry, getCountryFromIP, sortEventsByDistance, formatDistance } from '@/utils/location'
 
 const RECENT_SEARCHES_KEY = 'ticketrack_recent_searches'
 const trendingSearches = ['Concert', 'Music', 'Festival', 'Party', 'Free Events']
@@ -58,7 +58,12 @@ export function WebSearch() {
     loadCities()
     loadRecentSearches()
     
-    // Get user location and country code for filtering
+    // Get user country via IP first (fast, no permission needed)
+    getCountryFromIP().then(code => {
+      setUserCountryCode(code)
+    })
+
+    // Then try precise geolocation for distance sorting
     getUserCountry()
       .then(result => {
         if (result) {
@@ -152,9 +157,9 @@ export function WebSearch() {
         .is('parent_event_id', null) // Only show parent events in search (child events accessible via parent page)
         .gte('start_date', start)
 
-      // If user is in US, only show US events
-      if (userCountryCode === 'US') {
-        queryBuilder = queryBuilder.eq('country_code', 'US')
+      // Filter by user's detected country
+      if (userCountryCode) {
+        queryBuilder = queryBuilder.eq('country_code', userCountryCode)
       }
 
       // Date filter

@@ -1471,9 +1471,10 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
         transfer_fee: parseFloat(formData.transferFee) || 0,
         notify_organizer_on_sale: formData.notifyOrganizerOnSale,
         status: formData.publishOption === 'schedule' ? 'scheduled' : formData.publishOption === 'draft' ? 'draft' : 'published',
-        publish_at: formData.publishOption === 'schedule' && formData.publishDate 
-          ? `${formData.publishDate}T${formData.publishTime || '00:00'}:00` 
+        publish_at: formData.publishOption === 'schedule' && formData.publishDate
+          ? `${formData.publishDate}T${formData.publishTime || '00:00'}:00`
           : null,
+        country_code: organizer?.country_code || null,
       };
 
       let savedEvent;

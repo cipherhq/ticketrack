@@ -766,6 +766,7 @@ export function WebCreateEvent() {
         promo_video_url: formData.promoVideoUrl,
         fee_handling: formData.feeHandling,
         is_free: formData.isFreeEvent,
+        country_code: organizerData?.country_code || null,
       });
 
       // Create ticket types

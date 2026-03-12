@@ -14,6 +14,7 @@ import {
 import { ForYouFeed } from '@/components/ForYouFeed';
 import { useAds } from '@/hooks/useAds';
 import { AdBanner } from '@/components/AdBanner';
+import { getCountryFromIP } from '@/utils/location';
 
 // Category styling with icons - all blue shades
 const categoryStyles = {
@@ -316,6 +317,7 @@ export function WebHome() {
   });
   const [loading, setLoading] = useState(true);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [userCountryCode, setUserCountryCode] = useState(null);
 
   useEffect(() => {
     const checkScreen = () => setIsLargeScreen(window.innerWidth >= 1440);
@@ -334,24 +336,34 @@ export function WebHome() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      
+
+      // Detect user country for filtering
+      const countryCode = await getCountryFromIP();
+      setUserCountryCode(countryCode);
+
       const { data: categoriesData } = await supabase
         .from('categories')
         .select('*')
         .eq('is_active', true)
         .order('name');
-      
+
       if (categoriesData) {
         setCategories(categoriesData);
       }
 
-      const { data: allEvents } = await supabase
+      let eventsQuery = supabase
         .from('events')
         .select('*, ticket_types(price, quantity_available, quantity_sold), is_virtual')
         .eq('status', 'published')
         .or('visibility.eq.public,visibility.is.null')
         .gte('end_date', new Date().toISOString())
         .order('start_date', { ascending: true });
+
+      if (countryCode) {
+        eventsQuery = eventsQuery.eq('country_code', countryCode);
+      }
+
+      const { data: allEvents } = await eventsQuery;
 
       // Compute min_price and low stock status from ticket_types for each event
       const eventsWithPrices = allEvents?.map(event => {
