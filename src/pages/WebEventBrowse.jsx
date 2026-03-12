@@ -102,11 +102,11 @@ export function WebEventBrowse() {
     initLoad()
   }, [])
 
-  // Load events when filters change
+  // Load events when filters change (including country)
   useEffect(() => {
     // Always load events, even if location permission is still being determined
     loadEvents(userLocation, userCountryCode)
-  }, [dateFilter, location, searchTerm, selectedCategories, sortBy])
+  }, [dateFilter, location, searchTerm, selectedCategories, sortBy, userCountryCode])
 
   const getDateRange = () => {
     const now = new Date()

@@ -137,10 +137,10 @@ export function WebSearch() {
     }
   }
 
-  const handleSearch = async () => {
+  const handleSearch = async (overrideCountry) => {
     setLoading(true)
     setHasSearched(true)
-    
+
     // Update URL params
     const params = new URLSearchParams()
     if (query) params.set('q', query)
@@ -149,9 +149,12 @@ export function WebSearch() {
     if (sortBy !== 'relevance') params.set('sort', sortBy)
     setSearchParams(params)
 
+    // Use override if provided, otherwise fall back to state
+    const effectiveCountry = overrideCountry || userCountryCode
+
     try {
       const { start, end } = getDateRange()
-      
+
       let queryBuilder = supabase
         .from('events')
         .select('id, title, description, image_url, venue_name, city, start_date, category, currency, status, is_recurring, parent_event_id, venue_lat, venue_lng, country_code, ticket_types (price)')
@@ -160,8 +163,8 @@ export function WebSearch() {
         .gte('start_date', start)
 
       // Filter by user's detected country
-      if (userCountryCode) {
-        queryBuilder = queryBuilder.eq('country_code', userCountryCode)
+      if (effectiveCountry) {
+        queryBuilder = queryBuilder.eq('country_code', effectiveCountry)
       }
 
       // Date filter
@@ -244,7 +247,7 @@ export function WebSearch() {
     localStorage.setItem('user_selected_country', code)
     setUserCountryCode(code)
     setShowCountryDropdown(false)
-    setTimeout(() => handleSearch(), 100)
+    handleSearch(code)
   }
 
   const formatEventDate = (dateStr) => {
