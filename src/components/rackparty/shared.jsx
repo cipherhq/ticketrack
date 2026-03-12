@@ -139,6 +139,7 @@ export const BACKGROUND_PATTERNS = [
 export const TEXT_STYLES = [
   { id: 'normal', label: 'Straight' },
   { id: 'arc', label: 'Arc ⌒' },
+  { id: 'arc-down', label: 'Smile ⌣' },
   { id: 'wave', label: 'Wave ∿' },
 ];
 
@@ -503,7 +504,8 @@ export function Step3_Location({ venueName, city, address, onChangeVenue, onChan
 }
 
 function StyledTitle({ text, fontSize, fontWeight, fontFamily, color, textShadow, letterSpacing, textStyle, forCapture }) {
-  const chars = (text || 'Your Party Name').toUpperCase().split('');
+  const displayText = text || 'Your Party Name';
+  const chars = displayText.toUpperCase().split('');
 
   if (!textStyle || textStyle === 'normal') {
     return (
@@ -512,31 +514,89 @@ function StyledTitle({ text, fontSize, fontWeight, fontFamily, color, textShadow
         lineHeight: 1.05, maxWidth: '95%', wordBreak: 'break-word',
         textShadow, letterSpacing, textTransform: 'uppercase', fontFamily,
       }}>
-        {text || 'Your Party Name'}
+        {displayText}
       </div>
     );
   }
 
   if (textStyle === 'arc') {
-    const amplitude = fontSize * 1.2;
-    const arcHeight = amplitude + fontSize * 1.2;
+    // True circular arc: characters placed along top of a circle
+    const n = chars.length;
+    const charW = fontSize * 0.62;
+    const totalTextWidth = n * charW;
+    // Radius scales with text length so arc isn't too tight or too flat
+    const radius = Math.max(totalTextWidth * 1.1, fontSize * 4);
+    // Total angle the text spans (in radians)
+    const totalAngle = totalTextWidth / radius;
+    const startAngle = -Math.PI / 2 - totalAngle / 2;
+
+    // How much vertical space the arc needs
+    const topY = radius - radius * Math.cos(totalAngle / 2);
+    const containerH = topY + fontSize * 1.3;
+
     return (
       <div style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
-        width: '95%', height: arcHeight, position: 'relative',
+        position: 'relative', width: '95%', height: containerH,
       }}>
         {chars.map((char, i) => {
-          const n = chars.length;
-          const t = n <= 1 ? 0 : (2 * i / (n - 1)) - 1;
-          const y = -amplitude * (1 - t * t);
-          const rotAngle = n <= 1 ? 0 : t * 25;
+          const angle = n <= 1
+            ? -Math.PI / 2
+            : startAngle + (i / (n - 1)) * totalAngle;
+          // Position on the circle (center of circle is at bottom)
+          const cx = radius * Math.cos(angle);
+          const cy = radius * Math.sin(angle);
+          // Convert: circle center at (50%, containerH), y inverted
+          const rotDeg = (angle + Math.PI / 2) * (180 / Math.PI);
           return (
             <span key={i} style={{
-              display: 'inline-block',
-              transform: `translateY(${y}px) rotate(${rotAngle}deg)`,
+              position: 'absolute',
+              left: `calc(50% + ${cx}px)`,
+              bottom: cy + fontSize * 0.1,
+              transform: `translateX(-50%) rotate(${rotDeg}deg)`,
+              transformOrigin: 'center bottom',
               fontSize, fontWeight, fontFamily, color, textShadow,
               textTransform: 'uppercase', lineHeight: 1,
-              letterSpacing: forCapture ? -1 : 0,
+            }}>
+              {char}
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (textStyle === 'arc-down') {
+    // Downward arc (smile shape)
+    const n = chars.length;
+    const charW = fontSize * 0.62;
+    const totalTextWidth = n * charW;
+    const radius = Math.max(totalTextWidth * 1.1, fontSize * 4);
+    const totalAngle = totalTextWidth / radius;
+    const startAngle = Math.PI / 2 - totalAngle / 2;
+
+    const dropY = radius - radius * Math.cos(totalAngle / 2);
+    const containerH = dropY + fontSize * 1.3;
+
+    return (
+      <div style={{
+        position: 'relative', width: '95%', height: containerH,
+      }}>
+        {chars.map((char, i) => {
+          const angle = n <= 1
+            ? Math.PI / 2
+            : startAngle + (i / (n - 1)) * totalAngle;
+          const cx = radius * Math.cos(angle);
+          const cy = radius * Math.sin(angle);
+          const rotDeg = (angle - Math.PI / 2) * (180 / Math.PI);
+          return (
+            <span key={i} style={{
+              position: 'absolute',
+              left: `calc(50% + ${cx}px)`,
+              top: -cy + fontSize * 0.1,
+              transform: `translateX(-50%) rotate(${rotDeg}deg)`,
+              transformOrigin: 'center top',
+              fontSize, fontWeight, fontFamily, color, textShadow,
+              textTransform: 'uppercase', lineHeight: 1,
             }}>
               {char}
             </span>
@@ -555,10 +615,11 @@ function StyledTitle({ text, fontSize, fontWeight, fontFamily, color, textShadow
       }}>
         {chars.map((char, i) => {
           const y = Math.sin((i / Math.max(chars.length - 1, 1)) * Math.PI * 2) * amplitude;
+          const rotDeg = Math.cos((i / Math.max(chars.length - 1, 1)) * Math.PI * 2) * 8;
           return (
             <span key={i} style={{
               display: 'inline-block',
-              transform: `translateY(${y}px)`,
+              transform: `translateY(${y}px) rotate(${rotDeg}deg)`,
               fontSize, fontWeight, fontFamily, color, textShadow,
               textTransform: 'uppercase', lineHeight: 1,
             }}>
