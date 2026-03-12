@@ -756,7 +756,7 @@ export function TemplateControls({ activeTemplate, selectedColor, setSelectedCol
             <input
               type="range"
               min="0.6"
-              max="1.6"
+              max="3.0"
               step="0.05"
               value={fontScale}
               onChange={e => setFontScale(parseFloat(e.target.value))}
@@ -765,7 +765,7 @@ export function TemplateControls({ activeTemplate, selectedColor, setSelectedCol
             <div className="flex justify-between text-[10px] text-gray-400 mt-1">
               <span>Small</span>
               <span>Default</span>
-              <span>Large</span>
+              <span>Extra Large</span>
             </div>
           </div>
           <div>
