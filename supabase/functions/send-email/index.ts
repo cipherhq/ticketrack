@@ -34,6 +34,12 @@ const log = {
 }
 const RATE_LIMITS = { standard: 50, bulk_campaign: 1000, admin_broadcast: 10000, security: 100 }
 
+// HTML escape to prevent XSS in user-supplied content
+function escapeHtml(str: string): string {
+  if (!str) return ''
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
 type AuthLevel = 'SYSTEM_ONLY' | 'USER_AUTH' | 'ORGANIZER_AUTH' | 'ADMIN_AUTH' | 'FINANCE_AUTH'
 
 const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; fromEmail?: string; allowAnon?: boolean; verifyOrder?: boolean }> = {
@@ -709,7 +715,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
         <p style="margin:0;font-size:14px;color:#374151">📍 ${d.venueName || 'TBA'}${d.city ? ', ' + d.city : ''}</p>
       </td></tr>
     </table>
-    ${d.message ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:20px"><tr><td style="padding:16px 20px;background:#faf5ff;border-radius:8px;border-left:4px solid ${BRAND_COLOR}"><p style="margin:0;font-size:15px;color:#374151;font-style:italic">"${d.message}"</p></td></tr></table>` : ''}
+    ${d.message ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:20px"><tr><td style="padding:16px 20px;background:#faf5ff;border-radius:8px;border-left:4px solid ${BRAND_COLOR}"><p style="margin:0;font-size:15px;color:#374151;font-style:italic">"${escapeHtml(d.message)}"</p></td></tr></table>` : ''}
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
       <tr><td align="center" style="padding:12px 0">
         <a href="${d.rsvpUrl}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;padding:16px 48px;text-decoration:none;border-radius:12px;font-weight:700;font-size:18px">RSVP Now</a>
@@ -738,7 +744,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
     <p style="margin:0 0 20px 0;font-size:15px;color:#6b7280">Regarding: <strong style="color:#1a1a2e">${d.eventTitle}</strong></p>
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8fafc;border-radius:8px;margin-bottom:20px">
       <tr><td style="padding:20px">
-        <p style="margin:0;font-size:15px;color:#374151;white-space:pre-wrap">${d.messageBody || ''}</p>
+        <p style="margin:0;font-size:15px;color:#374151;white-space:pre-wrap">${escapeHtml(d.messageBody || '')}</p>
       </td></tr>
     </table>
     ${d.rsvpUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td align="center" style="padding:12px 0"><a href="${d.rsvpUrl}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;padding:14px 40px;text-decoration:none;border-radius:12px;font-weight:700;font-size:16px">View Invitation</a></td></tr></table>` : ''}
@@ -748,7 +754,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
     <p style="margin:0 0 20px 0;font-size:15px;color:#6b7280">From <strong style="color:#1a1a2e">${d.organizerName || 'the organizer'}</strong> · <strong>${d.eventTitle}</strong></p>
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8fafc;border-radius:8px;margin-bottom:20px">
       <tr><td style="padding:20px">
-        <p style="margin:0;font-size:15px;color:#374151;white-space:pre-wrap">${d.announcementContent || ''}</p>
+        <p style="margin:0;font-size:15px;color:#374151;white-space:pre-wrap">${escapeHtml(d.announcementContent || '')}</p>
       </td></tr>
     </table>
     ${d.rsvpUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td align="center" style="padding:12px 0"><a href="${d.rsvpUrl}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;padding:14px 40px;text-decoration:none;border-radius:12px;font-weight:700;font-size:16px">View Invitation</a></td></tr></table>` : ''}

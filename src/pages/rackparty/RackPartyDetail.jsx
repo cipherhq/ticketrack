@@ -639,6 +639,7 @@ export function RackPartyDetail() {
       let sent = 0, freeUsed = 0;
       const sentIds = [];
       for (const g of unsentEmailGuests) {
+        if (!g.rsvp_token) { console.warn(`Skipping ${g.email}: no rsvp_token`); continue; }
         const isFree = freeUsed < freeEmailsToUse;
         if (!isFree) {
           const { error: deductError } = await supabase.rpc('deduct_communication_credits', {
@@ -681,7 +682,7 @@ export function RackPartyDetail() {
   }
 
   async function handleSendReminders() {
-    const pending = guests.filter(g => g.email && g.rsvp_status === 'pending' && g.email_sent_at);
+    const pending = guests.filter(g => g.email && g.rsvp_token && g.rsvp_status === 'pending' && g.email_sent_at);
     if (pending.length === 0) { toast.info('No pending guests to remind'); return; }
     setSendingReminders(true);
     try {
@@ -785,6 +786,7 @@ export function RackPartyDetail() {
 
       // Send emails
       for (const g of emailRecipients) {
+        if (!g.rsvp_token) { console.warn(`Skipping message to ${g.email}: no rsvp_token`); continue; }
         const isFree = freeUsed < msgFreeEmailsToUse;
         if (!isFree) {
           const { error: deductError } = await supabase.rpc('deduct_communication_credits', {

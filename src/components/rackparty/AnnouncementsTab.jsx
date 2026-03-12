@@ -50,23 +50,34 @@ export function AnnouncementsTab({ invite, organizer }) {
       if (sendEmail) {
         try {
           const guests = await getInviteGuests(invite.id);
-          const emailGuests = guests.filter(g => g.email);
+          const emailGuests = guests.filter(g => g.email && g.rsvp_token);
+          let sent = 0, failed = 0;
           for (const g of emailGuests) {
-            const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
-            await sendPartyAnnouncementEmail(g.email, {
-              eventTitle: invite.title,
-              announcementTitle: title.trim(),
-              announcementContent: content.trim(),
-              organizerName: organizer?.business_name || 'Host',
-              rsvpUrl,
-            }, organizer.id);
+            try {
+              const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
+              const result = await sendPartyAnnouncementEmail(g.email, {
+                eventTitle: invite.title,
+                announcementTitle: title.trim(),
+                announcementContent: content.trim(),
+                organizerName: organizer?.business_name || 'Host',
+                rsvpUrl,
+              }, organizer.id);
+              if (result?.success === false) { failed++; } else { sent++; }
+            } catch (err) {
+              console.error(`Announcement email failed for ${g.email}:`, err);
+              failed++;
+            }
           }
-          if (emailGuests.length > 0) {
-            toast.success(`Announcement emailed to ${emailGuests.length} guest${emailGuests.length > 1 ? 's' : ''}`);
+          if (sent > 0 && failed === 0) {
+            toast.success(`Announcement emailed to ${sent} guest${sent > 1 ? 's' : ''}`);
+          } else if (sent > 0 && failed > 0) {
+            toast.warning(`Sent to ${sent} guest${sent > 1 ? 's' : ''}, ${failed} failed`);
+          } else if (failed > 0) {
+            toast.error('Announcement saved but all emails failed');
           }
         } catch (emailErr) {
           console.error('Error sending announcement emails:', emailErr);
-          toast.error('Announcement saved but some emails failed');
+          toast.error('Announcement saved but emails failed');
         }
       }
 
