@@ -8,7 +8,7 @@ const TELEGRAM_API_URL = 'https://api.telegram.org';
 const APP_URL = Deno.env.get('APP_URL') || 'https://ticketrack.com';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://ticketrack.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 

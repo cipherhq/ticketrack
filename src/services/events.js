@@ -26,7 +26,8 @@ export async function getEvents({
   }
 
   if (city) {
-    query = query.ilike('city', `%${city}%`)
+    const sc = sanitizeFilterValue(city)
+    query = query.ilike('city', `%${sc}%`)
   }
 
   if (search) {

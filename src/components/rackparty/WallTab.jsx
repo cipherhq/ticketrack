@@ -3,6 +3,7 @@ import { Loader2, Trash2, Send, MessageSquare, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { validateImageUpload, safeImageExt } from '@/lib/utils';
 import { getWallPosts, createWallPost, deleteWallPost, logActivity } from '@/services/partyInvites';
 import { compressImage } from '@/lib/imageCompression';
 import { formatDistanceToNow } from 'date-fns';
@@ -34,10 +35,8 @@ export function WallTab({ invite, organizer }) {
   function handleImageSelect(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
-      return;
-    }
+    const vErr = validateImageUpload(file);
+    if (vErr) { toast.error(vErr); return; }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   }
@@ -49,8 +48,10 @@ export function WallTab({ invite, organizer }) {
   }
 
   async function uploadImage(file) {
+    const validationError = validateImageUpload(file);
+    if (validationError) throw new Error(validationError);
     const compressed = await compressImage(file);
-    const ext = compressed.name.split('.').pop();
+    const ext = safeImageExt(compressed);
     const path = `party-wall/${invite.id}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from('event-images').upload(path, compressed);
     if (error) throw error;

@@ -189,7 +189,7 @@ async function processReminders(
 
 Deno.serve(async (req) => {
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://ticketrack.com',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
   }
 

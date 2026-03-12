@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
@@ -40,6 +40,43 @@ serve(async (req) => {
     // Verify order is still pending - prevent double payment
     if (order.status !== "pending") {
       throw new Error("Order is no longer pending");
+    }
+
+    // Server-side order total verification
+    const { data: orderItems } = await supabase
+      .from("order_items")
+      .select("ticket_type_id, quantity, ticket_types(price)")
+      .eq("order_id", orderId);
+    if (!orderItems || orderItems.length === 0) throw new Error("Order has no items");
+
+    let verifiedSubtotal = 0;
+    for (const item of orderItems) {
+      const ticketPrice = parseFloat((item as any).ticket_types?.price || 0);
+      if (ticketPrice < 0) throw new Error("Invalid ticket price");
+      verifiedSubtotal += ticketPrice * item.quantity;
+    }
+    verifiedSubtotal = Math.round(verifiedSubtotal * 100) / 100;
+
+    let verifiedDiscount = 0;
+    if (order.promo_code_id && parseFloat(order.discount_amount || 0) > 0) {
+      const { data: promo } = await supabase
+        .from("promo_codes").select("discount_type, discount_value")
+        .eq("id", order.promo_code_id).single();
+      if (promo) {
+        verifiedDiscount = promo.discount_type === 'percentage'
+          ? Math.round(verifiedSubtotal * parseFloat(promo.discount_value) / 100 * 100) / 100
+          : Math.min(parseFloat(promo.discount_value), verifiedSubtotal);
+      }
+    }
+
+    const orderPlatformFee = Math.max(0, parseFloat(order.platform_fee || 0));
+    const serverTotalAmount = Math.round((verifiedSubtotal + orderPlatformFee - verifiedDiscount) * 100) / 100;
+
+    if (Math.abs(serverTotalAmount - parseFloat(order.total_amount)) > 1) {
+      return new Response(
+        JSON.stringify({ error: "Order total mismatch. Please refresh and try again." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get Stripe secret key from payment_gateway_config
@@ -79,10 +116,13 @@ serve(async (req) => {
         .single();
 
       if (feeSettings?.value) {
-        platformFeePercentage = parseFloat(feeSettings.value);
+        const parsed = parseFloat(feeSettings.value);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+          platformFeePercentage = parsed;
+        }
       }
 
-      const totalAmountCents = Math.round(order.total_amount * 100);
+      const totalAmountCents = Math.round(serverTotalAmount * 100);
       applicationFeeAmount = Math.round(
         totalAmountCents * (platformFeePercentage / 100)
       );
@@ -90,7 +130,7 @@ serve(async (req) => {
 
     // Build PaymentIntent config
     const intentConfig: any = {
-      amount: Math.round(order.total_amount * 100),
+      amount: Math.round(serverTotalAmount * 100),
       currency: order.currency?.toLowerCase() || "usd",
       payment_method_types: ["card"],
       metadata: {
@@ -124,7 +164,7 @@ serve(async (req) => {
       orderUpdate.stripe_account_id = organizer.stripe_connect_id;
       orderUpdate.platform_fee_amount = applicationFeeAmount / 100;
       orderUpdate.organizer_payout_amount =
-        order.total_amount - applicationFeeAmount / 100;
+        serverTotalAmount - applicationFeeAmount / 100;
     } else {
       orderUpdate.is_stripe_connect = false;
     }

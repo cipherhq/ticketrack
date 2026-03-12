@@ -27,7 +27,7 @@ import { requireAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 import forge from 'https://esm.sh/node-forge@1.3.1?target=deno'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://ticketrack.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 

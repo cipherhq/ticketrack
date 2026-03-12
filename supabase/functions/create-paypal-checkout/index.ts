@@ -4,7 +4,7 @@ import { errorResponse, logError } from '../_shared/errorHandler.ts';
 import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -23,13 +23,16 @@ serve(async (req) => {
 
     const { orderId, successUrl, cancelUrl } = await req.json();
 
-    // Validate redirect URLs - must be ticketrack.com or relative paths
-    const allowedOrigin = "https://ticketrack.com";
-    if (successUrl && !successUrl.startsWith(allowedOrigin) && !successUrl.startsWith("/")) {
-      throw new Error("Invalid successUrl");
-    }
-    if (cancelUrl && !cancelUrl.startsWith(allowedOrigin) && !cancelUrl.startsWith("/")) {
-      throw new Error("Invalid cancelUrl");
+    // Validate redirect URLs to prevent open redirect attacks
+    const allowedOrigins = ["https://ticketrack.com", "https://www.ticketrack.com"];
+    const isValidUrl = (url: string) => {
+      try { return allowedOrigins.includes(new URL(url).origin); } catch { return false; }
+    };
+    if (!isValidUrl(successUrl) || !isValidUrl(cancelUrl)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid redirect URL" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get order details
@@ -46,6 +49,43 @@ serve(async (req) => {
     // Verify order is still pending - prevent double payment
     if (order.status !== "pending") {
       throw new Error("Order is no longer pending");
+    }
+
+    // Server-side order total verification
+    const { data: orderItems } = await supabase
+      .from("order_items")
+      .select("ticket_type_id, quantity, ticket_types(price)")
+      .eq("order_id", orderId);
+    if (!orderItems || orderItems.length === 0) throw new Error("Order has no items");
+
+    let verifiedSubtotal = 0;
+    for (const item of orderItems) {
+      const ticketPrice = parseFloat((item as any).ticket_types?.price || 0);
+      if (ticketPrice < 0) throw new Error("Invalid ticket price");
+      verifiedSubtotal += ticketPrice * item.quantity;
+    }
+    verifiedSubtotal = Math.round(verifiedSubtotal * 100) / 100;
+
+    let verifiedDiscount = 0;
+    if (order.promo_code_id && parseFloat(order.discount_amount || 0) > 0) {
+      const { data: promo } = await supabase
+        .from("promo_codes").select("discount_type, discount_value")
+        .eq("id", order.promo_code_id).single();
+      if (promo) {
+        verifiedDiscount = promo.discount_type === 'percentage'
+          ? Math.round(verifiedSubtotal * parseFloat(promo.discount_value) / 100 * 100) / 100
+          : Math.min(parseFloat(promo.discount_value), verifiedSubtotal);
+      }
+    }
+
+    const orderPlatformFee = Math.max(0, parseFloat(order.platform_fee || 0));
+    const serverTotalAmount = Math.round((verifiedSubtotal + orderPlatformFee - verifiedDiscount) * 100) / 100;
+
+    if (Math.abs(serverTotalAmount - parseFloat(order.total_amount)) > 1) {
+      return new Response(
+        JSON.stringify({ error: "Order total mismatch. Please refresh and try again." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get PayPal config
@@ -98,7 +138,7 @@ serve(async (req) => {
           description: `Tickets for ${order.events?.title || "Event"}`,
           amount: {
             currency_code: currency,
-            value: order.total_amount.toFixed(2),
+            value: serverTotalAmount.toFixed(2),
           },
           custom_id: orderId,
         }],

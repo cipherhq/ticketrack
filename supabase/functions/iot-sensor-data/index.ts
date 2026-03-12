@@ -14,7 +14,7 @@ const SENSOR_API_KEY = Deno.env.get('SENSOR_API_KEY')
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-sensor-key",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }

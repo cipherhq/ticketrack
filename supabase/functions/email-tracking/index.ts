@@ -14,7 +14,7 @@ const TRACKING_PIXEL = new Uint8Array([
 ]);
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://ticketrack.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 

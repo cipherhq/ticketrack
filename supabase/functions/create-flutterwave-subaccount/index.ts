@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -140,7 +140,8 @@ serve(async (req) => {
       .eq("key", "flutterwave_subaccount_platform_fee_percentage")
       .single();
 
-    const platformFeePercentage = parseFloat(feeSetting?.value || "5");
+    const parsedFee = parseFloat(feeSetting?.value || "5");
+    const platformFeePercentage = (!isNaN(parsedFee) && parsedFee >= 0 && parsedFee <= 100) ? parsedFee : 5;
 
     // Create Flutterwave subaccount
     const flutterwaveResponse = await fetch("https://api.flutterwave.com/v3/subaccounts", {

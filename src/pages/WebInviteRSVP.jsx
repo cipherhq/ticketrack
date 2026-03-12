@@ -37,6 +37,7 @@ import {
 } from '@/services/partyInvites';
 import { generateGoogleCalendarUrl, downloadICSFile } from '@/components/rackparty/shared';
 import { supabase } from '@/lib/supabase';
+import { validateImageUpload, safeImageExt } from '@/lib/utils';
 import { compressImage } from '@/lib/imageCompression';
 
 function formatDate(dateStr) {
@@ -332,8 +333,10 @@ export function WebInviteRSVP() {
     try {
       let imageUrl = null;
       if (wallImageFile) {
+        const vErr = validateImageUpload(wallImageFile);
+        if (vErr) { toast.error(vErr); setPostingWall(false); return; }
         const compressed = await compressImage(wallImageFile);
-        const ext = compressed.name.split('.').pop();
+        const ext = safeImageExt(compressed);
         const path = `party-wall/${invite.id}/${Date.now()}.${ext}`;
         const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, compressed);
         if (!uploadErr) {
@@ -394,11 +397,13 @@ export function WebInviteRSVP() {
 
   async function handlePhotoUpload(e) {
     const file = e.target.files?.[0];
-    if (!file || file.size > 5 * 1024 * 1024) return;
+    if (!file) return;
+    const photoErr = validateImageUpload(file);
+    if (photoErr) { toast.error(photoErr); return; }
     setUploadingPhoto(true);
     try {
       const compressed = await compressImage(file);
-      const ext = compressed.name.split('.').pop();
+      const ext = safeImageExt(compressed);
       const path = `party-photos/${invite.id}/${Date.now()}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, compressed);
       if (uploadErr) throw uploadErr;

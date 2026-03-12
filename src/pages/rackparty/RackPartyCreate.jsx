@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useOrganizer } from '@/contexts/OrganizerContext';
 import { supabase } from '@/lib/supabase';
+import { validateImageUpload, safeImageExt } from '@/lib/utils';
+import { compressImage } from '@/lib/imageCompression';
 import { createPartyInvite } from '@/services/partyInvites';
 import {
   StepIndicator,
@@ -38,9 +40,12 @@ export function RackPartyCreate() {
 
   async function handleUploadCoverImage(file) {
     if (!file) return null;
-    const ext = file.name.split('.').pop();
+    const validationError = validateImageUpload(file);
+    if (validationError) throw new Error(validationError);
+    const compressed = await compressImage(file);
+    const ext = safeImageExt(compressed);
     const path = `party-invites/${organizer.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('event-images').upload(path, file);
+    const { error } = await supabase.storage.from('event-images').upload(path, compressed);
     if (error) throw error;
     const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(path);
     return publicUrl;

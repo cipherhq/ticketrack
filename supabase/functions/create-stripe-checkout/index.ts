@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -23,6 +23,23 @@ serve(async (req) => {
 
     const { orderId, successUrl, cancelUrl } = await req.json();
 
+    // Validate redirect URLs to prevent open redirect attacks
+    const allowedOrigins = ["https://ticketrack.com", "https://www.ticketrack.com"];
+    const isValidUrl = (url: string) => {
+      try {
+        const parsed = new URL(url);
+        return allowedOrigins.includes(parsed.origin);
+      } catch {
+        return false;
+      }
+    };
+    if (!isValidUrl(successUrl) || !isValidUrl(cancelUrl)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid redirect URL" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .select(`*, events(id, title, currency, country_code, organizer_id, organizers(id, stripe_connect_id, stripe_connect_status, stripe_connect_charges_enabled, country_code))`)
@@ -37,6 +54,54 @@ serve(async (req) => {
     if (order.status !== "pending") {
       throw new Error("Order is no longer pending");
     }
+
+    // Server-side order total verification: recalculate from authoritative ticket prices
+    const { data: orderItems } = await supabase
+      .from("order_items")
+      .select("ticket_type_id, quantity, ticket_types(price)")
+      .eq("order_id", orderId);
+
+    if (!orderItems || orderItems.length === 0) {
+      throw new Error("Order has no items");
+    }
+
+    let verifiedSubtotal = 0;
+    for (const item of orderItems) {
+      const ticketPrice = parseFloat((item as any).ticket_types?.price || 0);
+      if (ticketPrice < 0) throw new Error("Invalid ticket price");
+      verifiedSubtotal += ticketPrice * item.quantity;
+    }
+    verifiedSubtotal = Math.round(verifiedSubtotal * 100) / 100;
+
+    // Validate promo discount from database
+    let verifiedDiscount = 0;
+    if (order.promo_code_id && parseFloat(order.discount_amount || 0) > 0) {
+      const { data: promo } = await supabase
+        .from("promo_codes")
+        .select("discount_type, discount_value")
+        .eq("id", order.promo_code_id)
+        .single();
+      if (promo) {
+        verifiedDiscount = promo.discount_type === 'percentage'
+          ? Math.round(verifiedSubtotal * parseFloat(promo.discount_value) / 100 * 100) / 100
+          : Math.min(parseFloat(promo.discount_value), verifiedSubtotal);
+      }
+    }
+
+    // Platform fee from order (0 if organizer absorbs, else computed on frontend)
+    const platformFee = Math.max(0, parseFloat(order.platform_fee || 0));
+    const verifiedTotal = Math.round((verifiedSubtotal + platformFee - verifiedDiscount) * 100) / 100;
+
+    // Reject if client total differs from server calculation (1 unit tolerance for rounding)
+    if (Math.abs(verifiedTotal - parseFloat(order.total_amount)) > 1) {
+      return new Response(
+        JSON.stringify({ error: "Order total mismatch. Please refresh and try again." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Use server-verified total for payment
+    const serverTotalAmount = verifiedTotal;
 
     const countryCode = order.events?.country_code || "US";
     const { data: gatewayConfig } = await supabase
@@ -73,10 +138,13 @@ serve(async (req) => {
         .single();
 
       if (feeSettings?.value) {
-        platformFeePercentage = parseFloat(feeSettings.value);
+        const parsed = parseFloat(feeSettings.value);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+          platformFeePercentage = parsed;
+        }
       }
 
-      const totalAmountCents = Math.round(order.total_amount * 100);
+      const totalAmountCents = Math.round(serverTotalAmount * 100);
       applicationFeeAmount = Math.round(totalAmountCents * (platformFeePercentage / 100));
     }
 
@@ -90,7 +158,7 @@ serve(async (req) => {
               name: "Tickets for " + (order.events?.title || "Event"),
               description: "Order #" + order.order_number,
             },
-            unit_amount: Math.round(order.total_amount * 100),
+            unit_amount: Math.round(serverTotalAmount * 100),
           },
           quantity: 1,
         },
@@ -132,7 +200,7 @@ serve(async (req) => {
       orderUpdate.is_stripe_connect = true;
       orderUpdate.stripe_account_id = organizer.stripe_connect_id;
       orderUpdate.platform_fee_amount = applicationFeeAmount / 100;
-      orderUpdate.organizer_payout_amount = order.total_amount - (applicationFeeAmount / 100);
+      orderUpdate.organizer_payout_amount = serverTotalAmount - (applicationFeeAmount / 100);
     } else {
       orderUpdate.is_stripe_connect = false;
     }

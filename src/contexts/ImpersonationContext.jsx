@@ -13,7 +13,7 @@ export function ImpersonationProvider({ children }) {
 
   // Check for existing impersonation session on mount — validate against DB
   useEffect(() => {
-    const stored = localStorage.getItem('impersonation_session');
+    const stored = sessionStorage.getItem('impersonation_session');
     if (!stored) return;
 
     const validateSession = async () => {
@@ -24,7 +24,7 @@ export function ImpersonationProvider({ children }) {
         if (session.startedAt) {
           const ageMs = Date.now() - new Date(session.startedAt).getTime();
           if (ageMs > 4 * 60 * 60 * 1000) {
-            localStorage.removeItem('impersonation_session');
+            sessionStorage.removeItem('impersonation_session');
             return;
           }
         }
@@ -33,7 +33,7 @@ export function ImpersonationProvider({ children }) {
         if (session.sessionId) {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user || user.id !== session.admin?.id) {
-            localStorage.removeItem('impersonation_session');
+            sessionStorage.removeItem('impersonation_session');
             return;
           }
 
@@ -45,7 +45,7 @@ export function ImpersonationProvider({ children }) {
             .single();
 
           if (!logEntry || logEntry.ended_at) {
-            localStorage.removeItem('impersonation_session');
+            sessionStorage.removeItem('impersonation_session');
             return;
           }
         }
@@ -56,7 +56,7 @@ export function ImpersonationProvider({ children }) {
         setAdminInfo(session.admin);
         setSessionId(session.sessionId);
       } catch (e) {
-        localStorage.removeItem('impersonation_session');
+        sessionStorage.removeItem('impersonation_session');
       }
     };
 
@@ -103,7 +103,7 @@ export function ImpersonationProvider({ children }) {
         startedAt: new Date().toISOString(),
       };
 
-      localStorage.setItem('impersonation_session', JSON.stringify(session));
+      sessionStorage.setItem('impersonation_session', JSON.stringify(session));
       
       setIsImpersonating(true);
       setImpersonationType(type);
@@ -130,7 +130,7 @@ export function ImpersonationProvider({ children }) {
           .eq('id', sessionId);
       }
 
-      localStorage.removeItem('impersonation_session');
+      sessionStorage.removeItem('impersonation_session');
       
       setIsImpersonating(false);
       setImpersonationType(null);
@@ -142,7 +142,7 @@ export function ImpersonationProvider({ children }) {
     } catch (error) {
       console.error('Error ending impersonation:', error);
       // Still clear local state even if DB update fails
-      localStorage.removeItem('impersonation_session');
+      sessionStorage.removeItem('impersonation_session');
       setIsImpersonating(false);
       setImpersonationType(null);
       setImpersonationTarget(null);

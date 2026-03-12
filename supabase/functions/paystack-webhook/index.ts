@@ -9,7 +9,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { createHmac } from "https://deno.land/std@0.168.0/crypto/mod.ts";
+import { createHmac, timingSafeEqual } from "https://deno.land/std@0.168.0/node/crypto.ts";
 import { 
   errorResponse, 
   logError, 
@@ -18,7 +18,7 @@ import {
 } from "../_shared/errorHandler.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-paystack-signature",
 };
 
@@ -89,7 +89,9 @@ serve(async (req) => {
         const hash = createHmac("sha512", secret)
           .update(body)
           .toString();
-        if (hash === signature) {
+        const hashBytes = new TextEncoder().encode(hash);
+        const sigBytes = new TextEncoder().encode(signature);
+        if (hashBytes.length === sigBytes.length && timingSafeEqual(hashBytes, sigBytes)) {
           isValidSignature = true;
           break;
         }
@@ -198,7 +200,7 @@ async function handleChargeSuccess(supabase: any, data: any) {
 
   // Check if this is a split payment
   if (metadata?.type === "split_payment") {
-    await handleSplitPaymentSuccess(supabase, reference, metadata);
+    await handleSplitPaymentSuccess(supabase, reference, metadata, amount);
     return;
   }
 
@@ -208,7 +210,7 @@ async function handleChargeSuccess(supabase: any, data: any) {
     .select(`
       *,
       events(title, organizer_id, organizer:organizers(id, email, business_email, business_name)),
-      order_items(id, ticket_type_id, quantity, unit_price)
+      order_items(id, ticket_type_id, quantity, unit_price, ticket_types(price))
     `)
     .eq("payment_reference", reference)
     .single();
@@ -222,6 +224,45 @@ async function handleChargeSuccess(supabase: any, data: any) {
   if (order.status === "completed") {
     safeLog.debug("Order already completed:", order.id);
     return;
+  }
+
+  // Server-side verification: recalculate expected total from ticket_types prices
+  if (order.order_items?.length > 0) {
+    let verifiedSubtotal = 0;
+    for (const item of order.order_items) {
+      const ticketPrice = parseFloat(item.ticket_types?.price || item.unit_price || 0);
+      verifiedSubtotal += ticketPrice * item.quantity;
+    }
+    verifiedSubtotal = Math.round(verifiedSubtotal * 100) / 100;
+
+    let verifiedDiscount = 0;
+    if (order.promo_code_id && parseFloat(order.discount_amount || 0) > 0) {
+      const { data: promo } = await supabase
+        .from("promo_codes").select("discount_type, discount_value")
+        .eq("id", order.promo_code_id).single();
+      if (promo) {
+        verifiedDiscount = promo.discount_type === 'percentage'
+          ? Math.round(verifiedSubtotal * parseFloat(promo.discount_value) / 100 * 100) / 100
+          : Math.min(parseFloat(promo.discount_value), verifiedSubtotal);
+      }
+    }
+
+    const orderPlatformFee = Math.max(0, parseFloat(order.platform_fee || 0));
+    const expectedTotal = Math.round((verifiedSubtotal + orderPlatformFee - verifiedDiscount) * 100) / 100;
+    const paidAmount = amount / 100; // Paystack amount is in kobo
+
+    // Verify Paystack charged amount matches expected total (1 unit tolerance)
+    if (Math.abs(paidAmount - expectedTotal) > 1) {
+      logError("paystack_amount_mismatch", new Error(
+        `Paid ${paidAmount} but expected ${expectedTotal} for order ${order.id}`
+      ));
+      await supabase.from("orders").update({
+        status: "failed",
+        notes: `Payment amount mismatch: paid ${paidAmount}, expected ${expectedTotal}`,
+        updated_at: new Date().toISOString(),
+      }).eq("id", order.id);
+      return;
+    }
   }
 
   // Update order status
@@ -537,7 +578,7 @@ async function handleAdPurchase(supabase: any, data: any) {
   safeLog.info(`Ad purchase completed for ad ${adId}`);
 }
 
-async function handleSplitPaymentSuccess(supabase: any, reference: string, metadata: any) {
+async function handleSplitPaymentSuccess(supabase: any, reference: string, metadata: any, verifiedAmountKobo: number) {
   const shareId = metadata.share_id;
   const splitPaymentId = metadata.split_payment_id;
 
@@ -566,15 +607,8 @@ async function handleSplitPaymentSuccess(supabase: any, reference: string, metad
   let shareError: any;
 
   if (splitPaymentData?.split_type === 'pool') {
-    // Pool: record contribution with actual paid amount
-    const contributionAmount = metadata.pool_amount
-      ? parseFloat(metadata.pool_amount)
-      : (metadata.custom_fields?.[0]?.value ? parseFloat(metadata.custom_fields[0].value) : null);
-
-    // Fallback: use the transaction amount from Paystack (already in the webhook data)
-    // The caller passes the amount in kobo, we need to get it from the parent function
-    // For pool payments, we rely on the metadata.pool_amount set by the frontend
-    const amount = contributionAmount || parseFloat(metadata.pool_amount || 0);
+    // Pool: use Paystack-verified amount (in kobo/lowest currency unit, convert to major unit)
+    const amount = verifiedAmountKobo ? verifiedAmountKobo / 100 : 0;
 
     if (!amount || amount <= 0) {
       logError("pool_contribution_no_amount", new Error("No contribution amount"), { shareId, reference, metadata });

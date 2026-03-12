@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { optionalAuth, AuthError, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -32,6 +32,18 @@ serve(async (req) => {
       successUrl,
       cancelUrl
     } = await req.json();
+
+    // Validate redirect URLs to prevent open redirect attacks
+    const allowedOrigins = ["https://ticketrack.com", "https://www.ticketrack.com"];
+    const isValidUrl = (url: string) => {
+      try { return allowedOrigins.includes(new URL(url).origin); } catch { return false; }
+    };
+    if (!isValidUrl(successUrl) || !isValidUrl(cancelUrl)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid redirect URL" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Get split payment details
     const { data: splitPayment, error: splitError } = await supabase

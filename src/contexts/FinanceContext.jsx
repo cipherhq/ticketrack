@@ -22,10 +22,10 @@ export function FinanceProvider({ children }) {
 
   // Session timeout: 30 minutes of inactivity (use shorter values for testing)
   // Production: 30 * 60 * 1000 (30 min), Testing: 60 * 1000 (1 min)
-  const SESSION_TIMEOUT = process.env.NODE_ENV === 'development' ? 60 * 1000 : 30 * 60 * 1000;
+  const SESSION_TIMEOUT = import.meta.env.DEV ? 60 * 1000 : 30 * 60 * 1000;
   // Warning: 5 minutes before timeout
   // Production: 5 * 60 * 1000 (5 min), Testing: 30 * 1000 (30 sec)
-  const WARNING_TIME = process.env.NODE_ENV === 'development' ? 30 * 1000 : 5 * 60 * 1000;
+  const WARNING_TIME = import.meta.env.DEV ? 30 * 1000 : 5 * 60 * 1000;
 
   const checkFinanceAccess = useCallback(async () => {
     try {

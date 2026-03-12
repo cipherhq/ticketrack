@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { validateImageUpload, safeImageExt } from '@/lib/utils';
 import { getInvitePhotos, uploadPartyPhoto, deletePartyPhoto, likePhoto, unlikePhoto } from '@/services/partyInvites';
 import { compressImage } from '@/lib/imageCompression';
 import { formatDistanceToNow } from 'date-fns';
@@ -35,15 +36,13 @@ export function PhotosTab({ invite, organizer }) {
   async function handleUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
-      return;
-    }
+    const validationError = validateImageUpload(file);
+    if (validationError) { toast.error(validationError); return; }
 
     setUploading(true);
     try {
       const compressed = await compressImage(file);
-      const ext = compressed.name.split('.').pop();
+      const ext = safeImageExt(compressed);
       const path = `party-photos/${invite.id}/${Date.now()}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from('event-images').upload(path, compressed);
       if (uploadErr) throw uploadErr;

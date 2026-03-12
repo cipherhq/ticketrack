@@ -16,7 +16,7 @@ const AT_WHATSAPP_PRODUCT_ID = Deno.env.get('AFRICASTALKING_WHATSAPP_PRODUCT_ID'
 const USE_AFRICASTALKING = AT_API_KEY && AT_USERNAME;
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://ticketrack.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 

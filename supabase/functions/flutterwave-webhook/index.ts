@@ -9,7 +9,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { createHmac } from "https://deno.land/std@0.168.0/crypto/mod.ts";
+import { timingSafeEqual } from "https://deno.land/std@0.168.0/node/crypto.ts";
 import { 
   errorResponse, 
   logError, 
@@ -18,7 +18,7 @@ import {
 } from "../_shared/errorHandler.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, verif-hash",
 };
 
@@ -83,27 +83,8 @@ serve(async (req) => {
     const signatureBytes = encoder.encode(signature);
     const expectedBytes = encoder.encode(flutterwaveSecretHash);
 
-    let isValidSignature = false;
-    if (signatureBytes.length === expectedBytes.length) {
-      // Use constant-time comparison via crypto.subtle
-      const sigKey = await crypto.subtle.importKey(
-        "raw", signatureBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-      );
-      const sigMac = new Uint8Array(await crypto.subtle.sign("HMAC", sigKey, expectedBytes));
-      const expectedKey = await crypto.subtle.importKey(
-        "raw", expectedBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-      );
-      const expectedMac = new Uint8Array(await crypto.subtle.sign("HMAC", expectedKey, expectedBytes));
-      // If signature matches expected, both HMACs will match
-      // Actually, the simplest constant-time approach is to HMAC both and compare
-      const selfKey = await crypto.subtle.importKey(
-        "raw", encoder.encode("flutterwave-verify"), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-      );
-      const hmacOfSig = new Uint8Array(await crypto.subtle.sign("HMAC", selfKey, signatureBytes));
-      const hmacOfExpected = new Uint8Array(await crypto.subtle.sign("HMAC", selfKey, expectedBytes));
-      isValidSignature = hmacOfSig.length === hmacOfExpected.length &&
-        hmacOfSig.every((byte, i) => byte === hmacOfExpected[i]);
-    }
+    const isValidSignature = signatureBytes.length === expectedBytes.length &&
+      timingSafeEqual(signatureBytes, expectedBytes);
 
     if (!isValidSignature) {
       logError("flutterwave_webhook_auth", new Error("Invalid signature"));
@@ -176,7 +157,7 @@ async function handleChargeCompleted(supabase: any, data: any) {
   // Find the order by payment reference (tx_ref format: TKT-{orderId}-{timestamp})
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("*, order_items(id, quantity, ticket_type_id), events(title, organizer_id, organizers(id, business_name, user_id, email, business_email, flutterwave_subaccount_id))")
+    .select("*, order_items(id, quantity, ticket_type_id, unit_price, ticket_types(price)), events(title, organizer_id, organizers(id, business_name, user_id, email, business_email, flutterwave_subaccount_id))")
     .eq("payment_reference", tx_ref)
     .single();
 
@@ -189,6 +170,43 @@ async function handleChargeCompleted(supabase: any, data: any) {
   if (order.status === "completed") {
     safeLog.debug("Order already completed:", order.id);
     return;
+  }
+
+  // Verify Flutterwave-charged amount matches expected total
+  if (order.order_items?.length > 0) {
+    let verifiedSubtotal = 0;
+    for (const item of order.order_items) {
+      const ticketPrice = parseFloat(item.ticket_types?.price || item.unit_price || 0);
+      verifiedSubtotal += ticketPrice * item.quantity;
+    }
+    verifiedSubtotal = Math.round(verifiedSubtotal * 100) / 100;
+
+    let verifiedDiscount = 0;
+    if (order.promo_code_id && parseFloat(order.discount_amount || 0) > 0) {
+      const { data: promo } = await supabase
+        .from("promo_codes").select("discount_type, discount_value")
+        .eq("id", order.promo_code_id).single();
+      if (promo) {
+        verifiedDiscount = promo.discount_type === 'percentage'
+          ? Math.round(verifiedSubtotal * parseFloat(promo.discount_value) / 100 * 100) / 100
+          : Math.min(parseFloat(promo.discount_value), verifiedSubtotal);
+      }
+    }
+
+    const orderPlatformFee = Math.max(0, parseFloat(order.platform_fee || 0));
+    const expectedTotal = Math.round((verifiedSubtotal + orderPlatformFee - verifiedDiscount) * 100) / 100;
+
+    if (Math.abs(amount - expectedTotal) > 1) {
+      logError("flutterwave_amount_mismatch", new Error(
+        `Paid ${amount} but expected ${expectedTotal} for order ${order.id}`
+      ));
+      await supabase.from("orders").update({
+        status: "failed",
+        notes: `Payment amount mismatch: paid ${amount}, expected ${expectedTotal}`,
+        updated_at: new Date().toISOString(),
+      }).eq("id", order.id);
+      return;
+    }
   }
 
   // Update order status

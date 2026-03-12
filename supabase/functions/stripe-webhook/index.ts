@@ -9,7 +9,7 @@ import {
 } from "../_shared/errorHandler.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ticketrack.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
@@ -288,10 +288,8 @@ serve(async (req) => {
           let shareError: any = null;
 
           if (splitTypeData?.split_type === 'pool') {
-            // Pool: record contribution with actual amount from Stripe session
-            const contributionAmount = session.metadata?.pool_amount
-              ? parseFloat(session.metadata.pool_amount)
-              : (session.amount_total ? session.amount_total / 100 : 0);
+            // Pool: use Stripe-verified amount (amount_total is in cents)
+            const contributionAmount = session.amount_total ? session.amount_total / 100 : 0;
 
             if (contributionAmount > 0) {
               const result = await supabase.rpc("record_pool_contribution", {
@@ -375,6 +373,49 @@ serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
           });
+        }
+
+        // Verify Stripe-charged amount matches order expectations
+        const { data: orderForVerify } = await supabase
+          .from("orders")
+          .select("total_amount, order_items(ticket_type_id, quantity, ticket_types(price)), promo_code_id, discount_amount, platform_fee")
+          .eq("id", orderId)
+          .single();
+
+        if (orderForVerify?.order_items?.length > 0) {
+          let verifiedSubtotal = 0;
+          for (const item of orderForVerify.order_items) {
+            verifiedSubtotal += parseFloat((item as any).ticket_types?.price || 0) * item.quantity;
+          }
+          verifiedSubtotal = Math.round(verifiedSubtotal * 100) / 100;
+
+          let verifiedDiscount = 0;
+          if (orderForVerify.promo_code_id && parseFloat(orderForVerify.discount_amount || 0) > 0) {
+            const { data: promo } = await supabase
+              .from("promo_codes").select("discount_type, discount_value")
+              .eq("id", orderForVerify.promo_code_id).single();
+            if (promo) {
+              verifiedDiscount = promo.discount_type === 'percentage'
+                ? Math.round(verifiedSubtotal * parseFloat(promo.discount_value) / 100 * 100) / 100
+                : Math.min(parseFloat(promo.discount_value), verifiedSubtotal);
+            }
+          }
+
+          const fee = Math.max(0, parseFloat(orderForVerify.platform_fee || 0));
+          const expectedCents = Math.round((verifiedSubtotal + fee - verifiedDiscount) * 100);
+          const stripePaidCents = session.amount_total || 0;
+
+          if (Math.abs(stripePaidCents - expectedCents) > 100) {
+            safeLog.error(`Stripe amount mismatch: paid ${stripePaidCents} cents, expected ${expectedCents} cents for order ${orderId}`);
+            await supabase.from("orders").update({
+              status: "failed",
+              notes: `Amount mismatch: Stripe charged ${stripePaidCents/100}, expected ${expectedCents/100}`,
+            }).eq("id", orderId);
+            return new Response(JSON.stringify({ received: true, error: "amount_mismatch" }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          }
         }
 
         // Update order status

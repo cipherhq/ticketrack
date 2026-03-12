@@ -1,6 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import { sanitizeFilterValue } from '@/lib/utils';
 
+// Strip HTML tags and enforce max length to prevent XSS and abuse
+function sanitizeText(str, maxLen) {
+  if (!str) return '';
+  const cleaned = String(str).replace(/<[^>]*>/g, '');
+  return cleaned.slice(0, maxLen);
+}
+
 // ============================================================================
 // PARTY INVITE CRUD
 // ============================================================================
@@ -10,15 +17,15 @@ export async function createPartyInvite(organizerId, data = {}) {
     .from('party_invites')
     .insert({
       organizer_id: organizerId,
-      title: data.title || '',
-      description: data.description || '',
+      title: sanitizeText(data.title, 200) || '',
+      description: sanitizeText(data.description, 5000) || '',
       start_date: data.startDate || null,
       end_date: data.endDate || null,
-      venue_name: data.venueName || '',
-      city: data.city || '',
-      address: data.address || '',
+      venue_name: sanitizeText(data.venueName, 200) || '',
+      city: sanitizeText(data.city, 100) || '',
+      address: sanitizeText(data.address, 500) || '',
       cover_image_url: data.coverImageUrl || null,
-      message: data.message || '',
+      message: sanitizeText(data.message, 2000) || '',
       allow_plus_ones: data.allowPlusOnes || false,
       max_plus_ones: data.maxPlusOnes || 1,
       rsvp_deadline: data.rsvpDeadline || null,
@@ -441,11 +448,11 @@ export async function getPublicWallPosts(inviteId) {
 export async function createWallPost(inviteId, { authorName, authorEmail, authorGuestId, isHost, content, imageUrl }) {
   const row = {
     invite_id: inviteId,
-    author_name: authorName,
+    author_name: sanitizeText(authorName, 100),
     author_email: authorEmail || null,
     author_guest_id: authorGuestId || null,
     is_host: isHost || false,
-    content,
+    content: sanitizeText(content, 2000),
   };
   if (imageUrl) row.image_url = imageUrl;
 
@@ -494,8 +501,8 @@ export async function createAnnouncement(inviteId, organizerId, { title, content
     .insert({
       invite_id: inviteId,
       organizer_id: organizerId,
-      title,
-      content,
+      title: sanitizeText(title, 200),
+      content: sanitizeText(content, 5000),
       send_email: sendEmail || false,
     })
     .select()
@@ -524,8 +531,8 @@ export async function logActivity(inviteId, action, actorName, metadata = {}) {
     .from('party_invite_activity')
     .insert({
       invite_id: inviteId,
-      action,
-      actor_name: actorName || null,
+      action: sanitizeText(action, 50),
+      actor_name: actorName ? sanitizeText(actorName, 100) : null,
       metadata,
     })
     .select()
@@ -609,9 +616,9 @@ export async function addReaction(inviteId, { targetGuestId, reactorName, reacto
     .insert({
       invite_id: inviteId,
       target_guest_id: targetGuestId,
-      reactor_name: reactorName,
+      reactor_name: sanitizeText(reactorName, 100),
       reactor_guest_id: reactorGuestId || null,
-      emoji,
+      emoji: sanitizeText(emoji, 10),
     })
     .select()
     .single();
@@ -641,8 +648,8 @@ export async function createInviteItem(inviteId, organizerId, { name, category, 
     .insert({
       invite_id: inviteId,
       organizer_id: organizerId,
-      name,
-      category: category || 'Other',
+      name: sanitizeText(name, 200),
+      category: sanitizeText(category, 50) || 'Other',
       quantity: quantity || 1,
     })
     .select()
@@ -667,7 +674,7 @@ export async function claimItem(itemId, { guestId, guestName }) {
     .from('party_invite_items')
     .update({
       claimed_by_guest_id: guestId || null,
-      claimed_by_name: guestName,
+      claimed_by_name: sanitizeText(guestName, 100),
       claimed_at: new Date().toISOString(),
     })
     .eq('id', itemId)
@@ -714,11 +721,11 @@ export async function uploadPartyPhoto(inviteId, { uploadedByName, uploadedByGue
     .from('party_invite_photos')
     .insert({
       invite_id: inviteId,
-      uploaded_by_name: uploadedByName,
+      uploaded_by_name: sanitizeText(uploadedByName, 100),
       uploaded_by_guest_id: uploadedByGuestId || null,
       is_host: isHost || false,
       image_url: imageUrl,
-      caption: caption || null,
+      caption: caption ? sanitizeText(caption, 200) : null,
     })
     .select()
     .single();
@@ -742,7 +749,7 @@ export async function likePhoto(photoId, { likerName, likerGuestId }) {
     .from('party_invite_photo_likes')
     .insert({
       photo_id: photoId,
-      liker_name: likerName,
+      liker_name: sanitizeText(likerName, 100),
       liker_guest_id: likerGuestId || null,
     })
     .select()

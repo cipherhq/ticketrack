@@ -9,7 +9,7 @@ if (SENTRY_DSN && import.meta.env.PROD) {
     
     // Setting this option to true will send default PII data to Sentry.
     // For example, automatic IP address collection on events
-    sendDefaultPii: true,
+    sendDefaultPii: false,
     
     integrations: [
       // Modern Sentry React SDK v10 uses integration functions instead of classes
