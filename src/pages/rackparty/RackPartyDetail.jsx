@@ -61,7 +61,7 @@ import {
   getSeriesParties,
   createNextOccurrence,
 } from '@/services/partyInvites';
-import { sendPartyInviteEmail, sendPartyInviteReminderEmail } from '@/lib/emailService';
+import { sendPartyInviteEmail, sendPartyInviteReminderEmail, sendPartyMessageEmail } from '@/lib/emailService';
 import { APP_URL, formatDateShort, statusBadge, DateTimePicker } from '@/components/rackparty/shared';
 import { DesignTab } from '@/components/rackparty/DesignTab';
 import { WallTab } from '@/components/rackparty/WallTab';
@@ -169,6 +169,14 @@ export function RackPartyDetail() {
   const [creditTransactions, setCreditTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [showPurchaseHistory, setShowPurchaseHistory] = useState(false);
+
+  // Message Guests
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [messageAudience, setMessageAudience] = useState('all');
+  const [messageChannel, setMessageChannel] = useState('email');
+  const [messageSubject, setMessageSubject] = useState('');
+  const [messageBody, setMessageBody] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     if (!organizer?.id || !id) return;
@@ -734,6 +742,107 @@ export function RackPartyDetail() {
     finally { setSendingSms(false); }
   }
 
+  async function handleMessageGuests() {
+    if (!messageBody.trim()) { toast.error('Please enter a message'); return; }
+    if ((messageChannel === 'email' || messageChannel === 'both') && !messageSubject.trim()) {
+      toast.error('Please enter a subject for the email'); return;
+    }
+
+    // Filter recipients by audience
+    const audienceGuests = messageAudience === 'all'
+      ? guests
+      : guests.filter(g => g.rsvp_status === messageAudience);
+
+    // Split by channel
+    const emailRecipients = (messageChannel === 'email' || messageChannel === 'both')
+      ? audienceGuests.filter(g => g.email) : [];
+    const smsRecipients = (messageChannel === 'sms' || messageChannel === 'both')
+      ? audienceGuests.filter(g => g.phone) : [];
+
+    if (emailRecipients.length === 0 && smsRecipients.length === 0) {
+      toast.error('No recipients with contact info for the selected channel'); return;
+    }
+
+    // Calculate credits
+    const msgFreeEmailsToUse = Math.min(freeEmailsRemaining, emailRecipients.length);
+    const msgPaidEmails = emailRecipients.length - msgFreeEmailsToUse;
+    const msgEmailCredits = msgPaidEmails * 1;
+    const msgSmsCredits = smsRecipients.length * 5;
+    const totalNeeded = msgEmailCredits + msgSmsCredits;
+
+    if (creditBalance < totalNeeded) {
+      toast.error(`Insufficient credits. Need ${totalNeeded} credits (${msgPaidEmails > 0 ? `${msgEmailCredits} for emails` : ''}${msgPaidEmails > 0 && smsRecipients.length > 0 ? ' + ' : ''}${smsRecipients.length > 0 ? `${msgSmsCredits} for SMS` : ''}). Buy credits above.`);
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      let emailsSent = 0, smsSent = 0, freeUsed = 0;
+
+      // Send emails
+      for (const g of emailRecipients) {
+        const isFree = freeUsed < msgFreeEmailsToUse;
+        if (!isFree) {
+          const { error: deductError } = await supabase.rpc('deduct_communication_credits', {
+            p_organizer_id: organizer.id, p_amount: 1,
+            p_description: `Party message email to ${g.email}`,
+          });
+          if (deductError) {
+            if (emailsSent > 0) toast.warning(`Sent ${emailsSent} emails but ran out of credits.`);
+            else toast.error('Failed to deduct credits');
+            break;
+          }
+        }
+        const rsvpUrl = `${APP_URL}/invite/${invite.share_token}?rsvp=${g.rsvp_token}`;
+        const result = await sendPartyMessageEmail(g.email, {
+          eventTitle: invite.title, subject: messageSubject.trim(),
+          messageBody: messageBody.trim(), organizerName: organizer?.business_name, rsvpUrl,
+        }, organizer.id);
+        if (result?.success === false) {
+          if (emailsSent === 0) { toast.error(`Email failed: ${result.error || 'Unknown error'}`); break; }
+          toast.warning(`Sent ${emailsSent} but failed on ${g.email}`);
+          break;
+        }
+        emailsSent++;
+        if (isFree) freeUsed++;
+      }
+
+      // Send SMS
+      for (const g of smsRecipients) {
+        const { error: smsError } = await supabase.functions.invoke('send-sms', {
+          body: { organizer_id: organizer.id, phone: g.phone, message: messageBody.trim() + `\n\n- ${organizer?.business_name}` },
+        });
+        if (smsError) {
+          if (smsSent > 0) toast.warning(`Sent ${smsSent} SMS but encountered an error.`);
+          else toast.error('Failed to send SMS');
+          break;
+        }
+        smsSent++;
+      }
+
+      // Post-send
+      if (freeUsed > 0) await incrementFreeEmailUsage(organizer.id, freeUsed);
+      await loadCreditAndFreeEmailData();
+      if (emailsSent > 0 || smsSent > 0) {
+        logActivity(invite.id, 'message_sent', organizer?.business_name, { emailCount: emailsSent, smsCount: smsSent });
+        const parts = [];
+        if (emailsSent > 0) parts.push(`${emailsSent} email${emailsSent > 1 ? 's' : ''}`);
+        if (smsSent > 0) parts.push(`${smsSent} SMS`);
+        toast.success(`Message sent: ${parts.join(' and ')}!`);
+      }
+      setShowMessageDialog(false);
+      setMessageSubject('');
+      setMessageBody('');
+      setMessageAudience('all');
+      setMessageChannel('email');
+    } catch (err) {
+      console.error('Message send error:', err);
+      toast.error('Error sending messages');
+    } finally {
+      setSendingMessage(false);
+    }
+  }
+
   function copyShareLink() {
     const url = `${APP_URL}/invite/${invite.share_token}`;
     navigator.clipboard.writeText(url);
@@ -1043,6 +1152,9 @@ export function RackPartyDetail() {
               </Select>
               <Button variant="ghost" size="sm" onClick={() => loadGuestsAndStats(invite.id)} className="gap-1">
                 <RefreshCw className="w-3.5 h-3.5" /> Refresh
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowMessageDialog(true)} className="gap-1 ml-auto">
+                <Mail className="w-3.5 h-3.5" /> Message
               </Button>
             </div>
             {filteredGuests.length === 0 ? (
@@ -1817,6 +1929,123 @@ export function RackPartyDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Message Guests Dialog */}
+      <Dialog open={showMessageDialog} onOpenChange={(open) => { setShowMessageDialog(open); if (!open) { setMessageSubject(''); setMessageBody(''); } }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-blue-600" />
+              Message Guests
+            </DialogTitle>
+            <DialogDescription>
+              Send a custom message to your guests via email or SMS
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-sm font-medium">Audience</Label>
+              <Select value={messageAudience} onValueChange={setMessageAudience}>
+                <SelectTrigger className="rounded-lg mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Guests ({stats.total})</SelectItem>
+                  <SelectItem value="going">Going ({stats.going})</SelectItem>
+                  <SelectItem value="maybe">Maybe ({stats.maybe})</SelectItem>
+                  <SelectItem value="pending">Pending ({stats.pending})</SelectItem>
+                  <SelectItem value="declined">Declined ({stats.declined})</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Channel</Label>
+              <div className="flex gap-2 mt-1">
+                {[
+                  { id: 'email', label: 'Email', sub: '1 credit each' },
+                  { id: 'sms', label: 'SMS', sub: '5 credits each' },
+                  { id: 'both', label: 'Both', sub: '' },
+                ].map(ch => (
+                  <button
+                    key={ch.id}
+                    onClick={() => setMessageChannel(ch.id)}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-center ${
+                      messageChannel === ch.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {ch.label}
+                    {ch.sub && <span className="block text-[10px] opacity-80">{ch.sub}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(messageChannel === 'email' || messageChannel === 'both') && (
+              <div>
+                <Label className="text-sm font-medium">Subject</Label>
+                <Input
+                  value={messageSubject}
+                  onChange={e => setMessageSubject(e.target.value)}
+                  placeholder="e.g. Important update about the party"
+                  className="rounded-lg mt-1"
+                />
+              </div>
+            )}
+            <div>
+              <Label className="text-sm font-medium">Message</Label>
+              <textarea
+                value={messageBody}
+                onChange={e => setMessageBody(e.target.value)}
+                placeholder="Write your message here..."
+                rows={5}
+                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            {(() => {
+              const audienceGuests = messageAudience === 'all' ? guests : guests.filter(g => g.rsvp_status === messageAudience);
+              const eCount = (messageChannel === 'email' || messageChannel === 'both') ? audienceGuests.filter(g => g.email).length : 0;
+              const sCount = (messageChannel === 'sms' || messageChannel === 'both') ? audienceGuests.filter(g => g.phone).length : 0;
+              const freeToUse = Math.min(freeEmailsRemaining, eCount);
+              const paidE = eCount - freeToUse;
+              const eCost = paidE * 1;
+              const sCost = sCount * 5;
+              const total = eCost + sCost;
+              const insufficient = creditBalance < total;
+              return (
+                <div className={`p-3 rounded-xl text-sm ${insufficient ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
+                    {eCount > 0 && <span>{eCount} email{eCount > 1 ? 's' : ''} {freeToUse > 0 ? `(${freeToUse} free)` : ''} = {eCost} credit{eCost !== 1 ? 's' : ''}</span>}
+                    {sCount > 0 && <span>{sCount} SMS x 5 = {sCost} credits</span>}
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="font-semibold">Total: {total} credits</span>
+                    <span className={`font-medium ${insufficient ? 'text-red-600' : 'text-gray-600'}`}>
+                      Balance: {creditBalance} credits
+                    </span>
+                  </div>
+                  {insufficient && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Insufficient credits.{' '}
+                      <button onClick={() => { setShowMessageDialog(false); openCreditDialog(); }} className="underline font-medium">Buy Credits</button>
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMessageDialog(false)}>Cancel</Button>
+            <Button
+              onClick={handleMessageGuests}
+              disabled={sendingMessage || !messageBody.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+            >
+              {sendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+              Send Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Credit Purchase Dialog */}
       <Dialog open={showCreditDialog} onOpenChange={(open) => { setShowCreditDialog(open); if (!open) setSelectedCreditPackage(null); }}>

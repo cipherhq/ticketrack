@@ -117,6 +117,8 @@ const EMAIL_PERMISSIONS: Record<string, { auth: AuthLevel; rateKey: string; from
   event_invite: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   party_invite: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   party_invite_reminder: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  party_message: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
+  party_announcement: { auth: 'ORGANIZER_AUTH', rateKey: 'standard' },
   post_event_thank_you: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
   post_event_feedback: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
   post_event_next_event: { auth: 'ORGANIZER_AUTH', rateKey: 'bulk_campaign' },
@@ -731,6 +733,26 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
       </td></tr>
     </table>
   `, `Reminder: RSVP to ${d.eventTitle}`) }),
+  party_message: d => ({ subject: d.subject || `Message about ${d.eventTitle}`, html: baseTemplate(`
+    <h2 style="font-size:24px;margin:0 0 8px 0;color:#1a1a2e">Message from ${d.organizerName || 'the organizer'}</h2>
+    <p style="margin:0 0 20px 0;font-size:15px;color:#6b7280">Regarding: <strong style="color:#1a1a2e">${d.eventTitle}</strong></p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8fafc;border-radius:8px;margin-bottom:20px">
+      <tr><td style="padding:20px">
+        <p style="margin:0;font-size:15px;color:#374151;white-space:pre-wrap">${d.messageBody || ''}</p>
+      </td></tr>
+    </table>
+    ${d.rsvpUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td align="center" style="padding:12px 0"><a href="${d.rsvpUrl}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;padding:14px 40px;text-decoration:none;border-radius:12px;font-weight:700;font-size:16px">View Invitation</a></td></tr></table>` : ''}
+  `, `${d.organizerName || 'Organizer'} sent you a message about ${d.eventTitle}`) }),
+  party_announcement: d => ({ subject: `📢 ${d.announcementTitle || 'Announcement'} — ${d.eventTitle}`, html: baseTemplate(`
+    <h2 style="font-size:24px;margin:0 0 8px 0;color:#1a1a2e">${d.announcementTitle || 'Announcement'}</h2>
+    <p style="margin:0 0 20px 0;font-size:15px;color:#6b7280">From <strong style="color:#1a1a2e">${d.organizerName || 'the organizer'}</strong> · <strong>${d.eventTitle}</strong></p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8fafc;border-radius:8px;margin-bottom:20px">
+      <tr><td style="padding:20px">
+        <p style="margin:0;font-size:15px;color:#374151;white-space:pre-wrap">${d.announcementContent || ''}</p>
+      </td></tr>
+    </table>
+    ${d.rsvpUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td align="center" style="padding:12px 0"><a href="${d.rsvpUrl}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;padding:14px 40px;text-decoration:none;border-radius:12px;font-weight:700;font-size:16px">View Invitation</a></td></tr></table>` : ''}
+  `, `📢 ${d.announcementTitle || 'Announcement'} for ${d.eventTitle}`) }),
 }
 
 // ============================================================================

@@ -828,6 +828,15 @@ export const sendPartyAnnouncementEmail = (email, data, organizerId) =>
     rsvpUrl: data.rsvpUrl,
   }, { organizerId });
 
+export const sendPartyMessageEmail = (email, data, organizerId) =>
+  sendEmail('party_message', email, {
+    eventTitle: data.eventTitle,
+    subject: data.subject,
+    messageBody: data.messageBody,
+    organizerName: data.organizerName,
+    rsvpUrl: data.rsvpUrl,
+  }, { organizerId });
+
 // ============================================================================
 // DEFAULT EXPORT
 // ============================================================================
@@ -931,4 +940,5 @@ export default {
   sendPartyInviteEmail,
   sendPartyInviteReminderEmail,
   sendPartyAnnouncementEmail,
+  sendPartyMessageEmail,
 };
