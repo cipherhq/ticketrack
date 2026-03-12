@@ -227,34 +227,10 @@ img[alt*="tickettrack"] {
   }
 }
 
-/* RSVP Page Animations */
-@keyframes rsvpFadeInUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes rsvpScaleIn {
-  from { opacity: 0; transform: scale(0.85); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* iCloud Invite Hero */
-@keyframes icloudFadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.icloud-hero-enter {
-  animation: icloudFadeIn 0.6s ease-out both;
-}
-
-.icloud-cta-enter {
-  animation: icloudFadeIn 0.6s ease-out 0.2s both;
-}
-
-/* Details reveal */
-.icloud-details-reveal {
-  animation: rsvpFadeInUp 0.5s ease-out both;
-}
+/* Invite page — static, no entrance animations */
+.icloud-hero-enter {}
+.icloud-cta-enter {}
+.icloud-details-reveal {}
 
 /* Glassmorphic card */
 .icloud-glass {
