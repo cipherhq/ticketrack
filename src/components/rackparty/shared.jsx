@@ -136,6 +136,12 @@ export const BACKGROUND_PATTERNS = [
   { id: 'floral', label: 'Floral', svg: "data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='8' fill='none' stroke='%23fff' stroke-opacity='0.06'/%3E%3Ccircle cx='30' cy='20' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3Ccircle cx='38' cy='26' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3Ccircle cx='36' cy='36' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3Ccircle cx='24' cy='36' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3Ccircle cx='22' cy='26' r='4' fill='%23fff' fill-opacity='0.04'/%3E%3C/svg%3E" },
 ];
 
+export const TEXT_STYLES = [
+  { id: 'normal', label: 'Straight' },
+  { id: 'arc', label: 'Arc ⌒' },
+  { id: 'wave', label: 'Wave ∿' },
+];
+
 export const EXPORT_SIZES = [
   { label: 'Story (1080×1920)', w: 1080, h: 1920 },
   { label: 'Square (1080×1080)', w: 1080, h: 1080 },
@@ -496,11 +502,82 @@ export function Step3_Location({ venueName, city, address, onChangeVenue, onChan
   );
 }
 
+function StyledTitle({ text, fontSize, fontWeight, fontFamily, color, textShadow, letterSpacing, textStyle, forCapture }) {
+  const chars = (text || 'Your Party Name').toUpperCase().split('');
+
+  if (!textStyle || textStyle === 'normal') {
+    return (
+      <div style={{
+        fontSize, fontWeight, color,
+        lineHeight: 1.05, maxWidth: '95%', wordBreak: 'break-word',
+        textShadow, letterSpacing, textTransform: 'uppercase', fontFamily,
+      }}>
+        {text || 'Your Party Name'}
+      </div>
+    );
+  }
+
+  if (textStyle === 'arc') {
+    const amplitude = fontSize * 1.2;
+    const arcHeight = amplitude + fontSize * 1.2;
+    return (
+      <div style={{
+        display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+        width: '95%', height: arcHeight, position: 'relative',
+      }}>
+        {chars.map((char, i) => {
+          const n = chars.length;
+          const t = n <= 1 ? 0 : (2 * i / (n - 1)) - 1;
+          const y = -amplitude * (1 - t * t);
+          const rotAngle = n <= 1 ? 0 : t * 25;
+          return (
+            <span key={i} style={{
+              display: 'inline-block',
+              transform: `translateY(${y}px) rotate(${rotAngle}deg)`,
+              fontSize, fontWeight, fontFamily, color, textShadow,
+              textTransform: 'uppercase', lineHeight: 1,
+              letterSpacing: forCapture ? -1 : 0,
+            }}>
+              {char}
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (textStyle === 'wave') {
+    const amplitude = fontSize * 0.4;
+    return (
+      <div style={{
+        display: 'flex', justifyContent: 'center', alignItems: 'center',
+        width: '95%', height: fontSize + amplitude * 2 + 10,
+      }}>
+        {chars.map((char, i) => {
+          const y = Math.sin((i / Math.max(chars.length - 1, 1)) * Math.PI * 2) * amplitude;
+          return (
+            <span key={i} style={{
+              display: 'inline-block',
+              transform: `translateY(${y}px)`,
+              fontSize, fontWeight, fontFamily, color, textShadow,
+              textTransform: 'uppercase', lineHeight: 1,
+            }}>
+              {char}
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export function TemplatePreview({
   template, accentColor, partyName, startDate, venueName, forCapture,
   captureWidth, captureHeight,
   textColorOverride, fontFamily, fontWeight,
-  tagline, backgroundPattern, backgroundImage, fontScale,
+  tagline, backgroundPattern, backgroundImage, fontScale, textStyle,
 }) {
   const baseW = captureWidth || (forCapture ? 600 : 280);
   const baseH = captureHeight || (forCapture ? 800 : 380);
@@ -590,16 +667,18 @@ export function TemplatePreview({
         }}>
           YOU&apos;RE INVITED
         </div>
-        <div style={{
-          fontSize: titleSize, fontWeight: 900, color: effectiveTextColor,
-          lineHeight: 1.05, maxWidth: '95%', wordBreak: 'break-word',
-          marginBottom: Math.round((tagline ? 12 : 36) * scaleFactor * (forCapture ? 1 : 0.47)),
-          textShadow: '0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4)',
-          letterSpacing: forCapture ? -2 : -1,
-          textTransform: 'uppercase',
-          fontFamily: effectiveFont,
-        }}>
-          {partyName || 'Your Party Name'}
+        <div style={{ marginBottom: Math.round((tagline ? 12 : 36) * scaleFactor * (forCapture ? 1 : 0.47)), width: '100%', display: 'flex', justifyContent: 'center' }}>
+          <StyledTitle
+            text={partyName || 'Your Party Name'}
+            fontSize={titleSize}
+            fontWeight={effectiveWeight}
+            fontFamily={effectiveFont}
+            color={effectiveTextColor}
+            textShadow="0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4)"
+            letterSpacing={forCapture ? -2 : -1}
+            textStyle={textStyle}
+            forCapture={forCapture}
+          />
         </div>
         {tagline && (
           <div style={{
@@ -638,7 +717,7 @@ export function TemplatePreview({
   );
 }
 
-export function TemplateControls({ activeTemplate, selectedColor, setSelectedColor, textOverride, setTextOverride, selectedFont, setSelectedFont, fontScale, setFontScale, tagline, setTagline, selectedPattern, setSelectedPattern, favorites, setFavorites, setSelectedTemplate }) {
+export function TemplateControls({ activeTemplate, selectedColor, setSelectedColor, textOverride, setTextOverride, selectedFont, setSelectedFont, fontScale, setFontScale, tagline, setTagline, selectedPattern, setSelectedPattern, favorites, setFavorites, setSelectedTemplate, textStyle, setTextStyle }) {
   return (
     <>
       {favorites.length > 0 && (
@@ -749,23 +828,46 @@ export function TemplateControls({ activeTemplate, selectedColor, setSelectedCol
             </div>
           </div>
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-700">Font Size</p>
-              <span className="text-xs text-gray-400">{Math.round(fontScale * 100)}%</span>
+            <p className="text-sm font-medium text-gray-700 mb-2">Font Size (%)</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setFontScale(Math.max(0.3, +(fontScale - 0.1).toFixed(2)))}
+                className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-lg flex items-center justify-center transition-colors"
+              >−</button>
+              <Input
+                type="number"
+                min={30}
+                max={500}
+                value={Math.round(fontScale * 100)}
+                onChange={e => {
+                  const val = parseInt(e.target.value);
+                  if (!isNaN(val) && val >= 30 && val <= 500) {
+                    setFontScale(val / 100);
+                  }
+                }}
+                className="w-20 text-center rounded-lg text-sm font-medium"
+              />
+              <button
+                onClick={() => setFontScale(Math.min(5, +(fontScale + 0.1).toFixed(2)))}
+                className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-lg flex items-center justify-center transition-colors"
+              >+</button>
+              <span className="text-xs text-gray-400">%</span>
             </div>
-            <input
-              type="range"
-              min="0.6"
-              max="3.0"
-              step="0.05"
-              value={fontScale}
-              onChange={e => setFontScale(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-            />
-            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-              <span>Small</span>
-              <span>Default</span>
-              <span>Extra Large</span>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Text Style</p>
+            <div className="flex gap-2 flex-wrap">
+              {TEXT_STYLES.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => setTextStyle(s.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    (textStyle || 'normal') === s.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
           </div>
           <div>
@@ -806,6 +908,7 @@ export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, onNex
   const [textOverride, setTextOverride] = useState(null);
   const [selectedFont, setSelectedFont] = useState('bold-modern');
   const [fontScale, setFontScale] = useState(1);
+  const [textStyle, setTextStyle] = useState('normal');
   const [tagline, setTagline] = useState('');
   const [selectedPattern, setSelectedPattern] = useState('none');
   const [blendPhoto, setBlendPhoto] = useState(null);
@@ -835,6 +938,7 @@ export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, onNex
     fontFamily: activeFontObj.family,
     fontWeight: activeFontObj.weight,
     fontScale,
+    textStyle,
     tagline,
     backgroundPattern: selectedPattern,
     backgroundImage: mode === 'blend' ? blendPhotoUrl : undefined,
@@ -917,6 +1021,7 @@ export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, onNex
               activeTemplate={activeTemplate} selectedColor={selectedColor} setSelectedColor={setSelectedColor}
               textOverride={textOverride} setTextOverride={setTextOverride} selectedFont={selectedFont}
               setSelectedFont={setSelectedFont} fontScale={fontScale} setFontScale={setFontScale}
+              textStyle={textStyle} setTextStyle={setTextStyle}
               tagline={tagline} setTagline={setTagline} selectedPattern={selectedPattern}
               setSelectedPattern={setSelectedPattern} favorites={favorites} setFavorites={setFavorites}
               setSelectedTemplate={setSelectedTemplate}
@@ -963,6 +1068,7 @@ export function Step4_CoverImage({ coverImage, onChange, onBack, onCreate, onNex
               activeTemplate={activeTemplate} selectedColor={selectedColor} setSelectedColor={setSelectedColor}
               textOverride={textOverride} setTextOverride={setTextOverride} selectedFont={selectedFont}
               setSelectedFont={setSelectedFont} fontScale={fontScale} setFontScale={setFontScale}
+              textStyle={textStyle} setTextStyle={setTextStyle}
               tagline={tagline} setTagline={setTagline} selectedPattern={selectedPattern}
               setSelectedPattern={setSelectedPattern} favorites={favorites} setFavorites={setFavorites}
               setSelectedTemplate={setSelectedTemplate}

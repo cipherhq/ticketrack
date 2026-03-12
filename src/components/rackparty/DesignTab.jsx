@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { updateInviteDesign, logActivity } from '@/services/partyInvites';
 import {
   PARTY_TEMPLATES, ACCENT_COLORS, FONT_OPTIONS, BACKGROUND_PATTERNS,
-  EXPORT_SIZES, getFavorites, loadGoogleFont,
+  EXPORT_SIZES, TEXT_STYLES, getFavorites, loadGoogleFont,
   TemplatePreview, TemplateControls,
 } from './shared';
 
@@ -18,6 +18,7 @@ export function DesignTab({ invite, organizer, onInviteUpdate }) {
   const [textOverride, setTextOverride] = useState(dm.textOverride || null);
   const [selectedFont, setSelectedFont] = useState(dm.fontId || 'bold-modern');
   const [fontScale, setFontScale] = useState(dm.fontScale || 1);
+  const [textStyle, setTextStyle] = useState(dm.textStyle || 'normal');
   const [tagline, setTagline] = useState(dm.tagline || '');
   const [selectedPattern, setSelectedPattern] = useState(dm.backgroundPattern || 'none');
   const [favorites, setFavorites] = useState(getFavorites());
@@ -45,6 +46,7 @@ export function DesignTab({ invite, organizer, onInviteUpdate }) {
     fontFamily: activeFontObj.family,
     fontWeight: activeFontObj.weight,
     fontScale,
+    textStyle,
     tagline,
     backgroundPattern: selectedPattern,
   };
@@ -62,6 +64,7 @@ export function DesignTab({ invite, organizer, onInviteUpdate }) {
         textOverride,
         fontId: selectedFont,
         fontScale,
+        textStyle,
         tagline,
         backgroundPattern: selectedPattern,
       };
@@ -144,6 +147,8 @@ export function DesignTab({ invite, organizer, onInviteUpdate }) {
         setSelectedFont={setSelectedFont}
         fontScale={fontScale}
         setFontScale={setFontScale}
+        textStyle={textStyle}
+        setTextStyle={setTextStyle}
         tagline={tagline}
         setTagline={setTagline}
         selectedPattern={selectedPattern}
