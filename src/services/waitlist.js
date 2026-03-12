@@ -25,16 +25,17 @@ export async function joinWaitlist(eventId, userId, email, name, phone, quantity
   
   if (error) throw error;
   
-  // If successful, fetch event details and send confirmation email
+  // If successful, fetch event details and send confirmation email + organizer notification
   if (data.success) {
     try {
       const { data: event } = await supabase
         .from('events')
-        .select('title, slug, start_date, venue_name')
+        .select('title, slug, start_date, venue_name, organizer_id')
         .eq('id', eventId)
         .single();
-      
+
       if (event) {
+        // Send attendee confirmation
         await sendWaitlistEmail('waitlist_joined', email, {
           name,
           position: data.position,
@@ -45,6 +46,36 @@ export async function joinWaitlist(eventId, userId, email, name, phone, quantity
           quantity,
           appUrl: window.location.origin
         });
+
+        // Notify organizer about new waitlist signup
+        try {
+          const { data: org } = await supabase
+            .from('organizers')
+            .select('id, email, business_name')
+            .eq('id', event.organizer_id)
+            .single();
+
+          if (org?.email) {
+            // Get total waitlist count
+            const { count: totalWaitlist } = await supabase
+              .from('waitlist')
+              .select('id', { count: 'exact', head: true })
+              .eq('event_id', eventId)
+              .eq('status', 'waiting');
+
+            await sendWaitlistEmail('waitlist_new_signup', org.email, {
+              organizerName: org.business_name || 'Organizer',
+              eventTitle: event.title,
+              attendeeName: name,
+              attendeeEmail: email,
+              quantity,
+              position: data.position,
+              totalWaitlist: totalWaitlist || data.position,
+            });
+          }
+        } catch (orgErr) {
+          console.error('Organizer notification failed:', orgErr);
+        }
       }
     } catch (emailErr) {
       console.error('Email send failed:', emailErr);
