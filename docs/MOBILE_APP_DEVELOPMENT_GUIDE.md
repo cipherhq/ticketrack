@@ -1,8 +1,8 @@
-# Mobile App Development Guide - Ticketrack
+# Mobile App Development Guide - ticketRack
 
 ## Overview
 
-This guide outlines what you need to build mobile applications for both **Organizers** and **Attendees** using the existing Ticketrack infrastructure.
+This guide outlines what you need to build mobile applications for both **Organizers** and **Attendees** using the existing ticketRack infrastructure.
 
 ## Technology Recommendation: React Native + Expo
 

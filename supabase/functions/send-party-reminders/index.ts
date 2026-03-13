@@ -1,4 +1,4 @@
-// Ticketrack - Auto Party Invite Reminders
+// ticketRack - Auto Party Invite Reminders
 // Called by Vercel cron every hour. Finds party invites with auto_remind_enabled
 // where the party starts within auto_remind_hours_before, and sends reminder
 // emails to pending guests who haven't been reminded yet.
@@ -9,7 +9,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const FROM_EMAIL = 'Ticketrack <support@ticketrack.com>'
+const FROM_EMAIL = 'ticketRack <support@ticketrack.com>'
 const BRAND_COLOR = '#2969FF'
 const APP_URL = 'https://ticketrack.com'
 
@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
         const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f5f5f5"><tr><td align="center" style="padding:40px 16px">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden">
-<tr><td style="background:${BRAND_COLOR};padding:20px;text-align:center"><span style="color:#fff;font-size:18px;font-weight:700;letter-spacing:1px">TICKETRACK</span></td></tr>
+<tr><td style="background:${BRAND_COLOR};padding:20px;text-align:center"><span style="color:#fff;font-size:18px;font-weight:700;letter-spacing:1px">ticketRack</span></td></tr>
 <tr><td style="padding:32px 28px">
 <h2 style="font-size:24px;margin:0 0 8px 0;color:#1a1a2e">Don't Forget to RSVP!</h2>
 <p style="margin:0 0 20px 0;font-size:16px;color:#6b7280">You haven't responded to your invite for <strong style="color:#1a1a2e">${invite.title}</strong>.</p>
@@ -129,7 +129,7 @@ ${goingCount ? `<p style="margin:0 0 20px 0;font-size:15px;color:#374151;text-al
 </td></tr></table>
 </td></tr>
 <tr><td style="padding:20px 28px;border-top:1px solid #f0f0f0;text-align:center">
-<p style="margin:0;font-size:12px;color:#9ca3af">Sent by Ticketrack · <a href="${APP_URL}" style="color:${BRAND_COLOR}">ticketrack.com</a></p>
+<p style="margin:0;font-size:12px;color:#9ca3af">Sent by ticketRack · <a href="${APP_URL}" style="color:${BRAND_COLOR}">ticketrack.com</a></p>
 </td></tr></table></td></tr></table></body></html>`
 
         try {

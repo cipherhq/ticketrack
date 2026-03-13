@@ -359,7 +359,7 @@ function generateInvoiceHtml(organizer: any, invoice: any): string {
 </head>
 <body>
   <div class="header">
-    <div class="logo">Ticketrack</div>
+    <div class="logo">ticketRack</div>
     <div class="invoice-info">
       <div class="invoice-number">${invoice.invoice_number}</div>
       <div class="invoice-date">Generated: ${formatDate(invoice.created_at)}</div>
@@ -369,7 +369,7 @@ function generateInvoiceHtml(organizer: any, invoice: any): string {
   <div class="parties">
     <div class="party">
       <div class="party-label">From</div>
-      <div class="party-name">Ticketrack Limited</div>
+      <div class="party-name">ticketRack Limited</div>
       <div>Lagos, Nigeria</div>
     </div>
     <div class="party">
@@ -462,7 +462,7 @@ function generateInvoiceHtml(organizer: any, invoice: any): string {
   </div>
 
   <div class="footer">
-    <p>This is an automatically generated earnings statement from Ticketrack.</p>
+    <p>This is an automatically generated earnings statement from ticketRack.</p>
     <p>For questions, contact finance@ticketrack.com</p>
   </div>
 </body>

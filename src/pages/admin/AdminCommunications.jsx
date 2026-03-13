@@ -126,7 +126,7 @@ export function AdminCommunications() {
       const { data, error } = await supabase.functions.invoke('ai-compose', {
         body: {
           prompt: aiPrompt,
-          context: { organizerName: 'Ticketrack' }
+          context: { organizerName: 'ticketRack' }
         }
       });
       
@@ -183,7 +183,7 @@ export function AdminCommunications() {
           subject: form.subject,
           body: form.body,
           variables: {
-            organizer_name: 'Ticketrack',
+            organizer_name: 'ticketRack',
             organizer_email: 'support@ticketrack.com',
           },
         }

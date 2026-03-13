@@ -137,7 +137,7 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setMyCommands" \
   -d '{
     "commands": [
       {"command": "start", "description": "Start the bot"},
-      {"command": "link", "description": "Link your Ticketrack account"},
+      {"command": "link", "description": "Link your ticketRack account"},
       {"command": "unlink", "description": "Unlink your account"},
       {"command": "mytickets", "description": "View your upcoming tickets"},
       {"command": "help", "description": "Show help"}

@@ -1,4 +1,4 @@
-# 🔐 Ticketrack Security Recommendations
+# 🔐 ticketRack Security Recommendations
 
 ## Zero-Trust Security Implementation
 

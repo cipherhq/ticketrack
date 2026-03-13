@@ -974,7 +974,7 @@ export function WebAdvertise() {
             Reach Thousands of Event-Goers
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            Advertise on <span className="text-blue-400">Ticketrack</span>
+            Advertise on <span className="text-blue-400">ticketRack</span>
           </h1>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
             Put your brand in front of an engaged audience actively looking for events. Simple pricing, instant setup, real-time analytics.

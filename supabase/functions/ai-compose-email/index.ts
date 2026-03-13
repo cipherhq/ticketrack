@@ -38,7 +38,7 @@ serve(async (req) => {
 
     switch (action) {
       case 'compose':
-        systemPrompt = `You are an expert email copywriter for an event ticketing platform called Ticketrack.
+        systemPrompt = `You are an expert email copywriter for an event ticketing platform called ticketRack.
 Write compelling, clear, and ${tone} emails.
 Always be concise and action-oriented.
 Use proper formatting with paragraphs.

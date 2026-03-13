@@ -16,7 +16,7 @@ Do you want **iOS only** or **iOS + Android**?
 - Reuse your React knowledge
 - Faster development
 
-## Recommendation for Ticketrack
+## Recommendation for ticketRack
 
 Given that you:
 - Already have a React web app

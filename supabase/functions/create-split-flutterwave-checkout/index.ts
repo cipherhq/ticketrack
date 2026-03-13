@@ -120,7 +120,7 @@ serve(async (req) => {
           payer_email: email,
         },
         customizations: {
-          title: "Ticketrack Split Payment",
+          title: "ticketRack Split Payment",
           description: `Your share - ${eventTitle || "Event"}`,
           logo: "https://ticketrack.com/ticketrackLogo.png",
         },

@@ -358,7 +358,7 @@ export function OrganizerOrders() {
         })
         .eq('id', refundOrder.id);
 
-      toast.success('Refund request submitted! Ticketrack Finance will process it within 3-5 business days.');
+      toast.success('Refund request submitted! ticketRack Finance will process it within 3-5 business days.');
       
       setRefundDialog(false);
       loadOrders();
@@ -685,7 +685,7 @@ export function OrganizerOrders() {
           <DialogHeader>
             <DialogTitle>Request Refund</DialogTitle>
             <DialogDescription>
-              This will submit a refund request to Ticketrack Finance. The finance team will review and process the actual refund within 3-5 business days.
+              This will submit a refund request to ticketRack Finance. The finance team will review and process the actual refund within 3-5 business days.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -727,7 +727,7 @@ export function OrganizerOrders() {
             <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl flex gap-2">
               <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
               <p className="text-sm text-blue-800 dark:text-blue-300">
-                Ticketrack Finance will process the actual refund. You and the attendee will be notified via email once completed.
+                ticketRack Finance will process the actual refund. You and the attendee will be notified via email once completed.
               </p>
             </div>
           </div>

@@ -192,9 +192,9 @@ export function AdminSendEmails() {
   };
 
   const quickTemplates = [
-    { name: 'Platform Update', subject: 'Important Platform Update', message: 'Dear User,\n\nWe have an important update to share with you about Ticketrack...\n\nBest regards,\nTicketrack Team' },
-    { name: 'Safety Guidelines', subject: 'Event Safety Guidelines', message: 'Dear Attendee,\n\nAs you prepare for your upcoming event, please review these safety guidelines...\n\nStay safe,\nTicketrack Team' },
-    { name: 'Feedback Request', subject: 'We Value Your Feedback', message: 'Dear User,\n\nWe would love to hear about your experience with Ticketrack...\n\nThank you,\nTicketrack Team' },
+    { name: 'Platform Update', subject: 'Important Platform Update', message: 'Dear User,\n\nWe have an important update to share with you about ticketRack...\n\nBest regards,\nticketRack Team' },
+    { name: 'Safety Guidelines', subject: 'Event Safety Guidelines', message: 'Dear Attendee,\n\nAs you prepare for your upcoming event, please review these safety guidelines...\n\nStay safe,\nticketRack Team' },
+    { name: 'Feedback Request', subject: 'We Value Your Feedback', message: 'Dear User,\n\nWe would love to hear about your experience with ticketRack...\n\nThank you,\nticketRack Team' },
   ];
 
   if (sent) {

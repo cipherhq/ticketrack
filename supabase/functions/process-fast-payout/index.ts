@@ -206,7 +206,7 @@ serve(async (req) => {
         source: "balance",
         amount: amountInKobo,
         recipient: recipientCode,
-        reason: `Ticketrack Fast Payout - ${fastPayoutRequest.event_id ? `Event ${fastPayoutRequest.event_id}` : "Multiple events"}`,
+        reason: `ticketRack Fast Payout - ${fastPayoutRequest.event_id ? `Event ${fastPayoutRequest.event_id}` : "Multiple events"}`,
         reference: transferRef,
         metadata: {
           type: "fast_payout",

@@ -221,7 +221,7 @@ serve(async (req) => {
               currency_code: currency.toUpperCase(),
             },
           }),
-          note_to_payer: "Refund from Ticketrack",
+          note_to_payer: "Refund from ticketRack",
         }),
       });
 
@@ -322,7 +322,7 @@ serve(async (req) => {
                   <p style="margin: 5px 0;"><strong>Status:</strong> ${refundStatus === "processed" ? "Completed" : "Processing"}</p>
                 </div>
                 <p>The funds should appear in your account within 5-10 business days depending on your payment provider.</p>
-                <p>Thank you for using Ticketrack!</p>
+                <p>Thank you for using ticketRack!</p>
               </div>
             `,
           }),

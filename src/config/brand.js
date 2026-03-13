@@ -2,7 +2,7 @@
 // Update here and it reflects everywhere
 
 export const brand = {
-  name: 'Ticketrack',
+  name: 'ticketRack',
   tagline: "Your Gateway to Amazing Events",
 
   // Logo

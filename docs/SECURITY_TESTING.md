@@ -1,6 +1,6 @@
 # Security Testing Bot
 
-This document describes the security testing bot that performs automated security testing on the Ticketrack application.
+This document describes the security testing bot that performs automated security testing on the ticketRack application.
 
 ## Overview
 
@@ -93,7 +93,7 @@ The bot will output:
 ### Example Output
 
 ```
-🚀 Starting Security Testing Bot for Ticketrack...
+🚀 Starting Security Testing Bot for ticketRack...
 
 🔍 Testing SQL Injection...
 ✅ [PASS] SQL Injection (title: ' OR '1'='1...): SQL error properly caught

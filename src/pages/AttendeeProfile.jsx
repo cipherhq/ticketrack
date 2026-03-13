@@ -246,7 +246,7 @@ export function AttendeeProfile() {
       if (error) throw error
 
       // Open Telegram with the bot and token
-      const botUsername = 'Ticketrack_bot'
+      const botUsername = 'ticketRack_bot'
       const telegramUrl = `https://t.me/${botUsername}?start=${token}`
 
       // Show dialog with link for mobile Safari compatibility
@@ -637,7 +637,7 @@ export function AttendeeProfile() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join Ticketrack',
+          title: 'Join ticketRack',
           text: 'Get tickets to amazing events!',
           url: link
         })
@@ -2033,7 +2033,7 @@ export function AttendeeProfile() {
                     <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
                       <div>
                         <p className="font-medium text-foreground">Platform Marketing</p>
-                        <p className="text-sm text-muted-foreground">Receive Ticketrack recommendations and offers</p>
+                        <p className="text-sm text-muted-foreground">Receive ticketRack recommendations and offers</p>
                       </div>
                       <button
                         onClick={async () => {

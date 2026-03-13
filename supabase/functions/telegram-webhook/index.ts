@@ -93,7 +93,7 @@ async function handleMessage(supabase: any, message: any) {
   } else {
     // Handle regular messages
     await sendMessage(chatId, 
-      `Hi ${firstName}! 👋\n\nI'm the Ticketrack bot. I can send you event reminders and ticket updates.\n\nType /help to see what I can do.`
+      `Hi ${firstName}! 👋\n\nI'm the ticketRack bot. I can send you event reminders and ticket updates.\n\nType /help to see what I can do.`
     );
   }
 }
@@ -124,7 +124,7 @@ async function handleStart(supabase: any, chatId: number, firstName: string, lin
     await handleLinkWithToken(supabase, chatId, firstName, linkToken);
   } else {
     const welcomeMessage = `
-🎉 *Welcome to Ticketrack!*
+🎉 *Welcome to ticketRack!*
 
 Hi ${firstName}! I'm your personal event assistant.
 
@@ -135,7 +135,7 @@ Hi ${firstName}! I'm your personal event assistant.
 • Alert you about new events from organizers you follow
 
 *Get started:*
-1. Link your Ticketrack account with /link
+1. Link your ticketRack account with /link
 2. Make sure to enable Telegram notifications in your profile settings
 
 Type /help for more commands.
@@ -146,11 +146,11 @@ Type /help for more commands.
 
 async function handleLinkRequest(chatId: number, firstName: string) {
   const message = `
-🔗 *Link Your Ticketrack Account*
+🔗 *Link Your ticketRack Account*
 
 To link your account:
 
-1. Go to your Ticketrack profile settings
+1. Go to your ticketRack profile settings
 2. Click "Link Telegram"
 3. You'll receive a confirmation here
 
@@ -177,7 +177,7 @@ async function handleLinkWithToken(supabase: any, chatId: number, firstName: str
   if (error || !linkRequest) {
     console.log('Token invalid or not found');
     await sendMessage(chatId,
-      `❌ Invalid or expired link. Please try again from your Ticketrack profile settings.`
+      `❌ Invalid or expired link. Please try again from your ticketRack profile settings.`
     );
     return;
   }
@@ -186,7 +186,7 @@ async function handleLinkWithToken(supabase: any, chatId: number, firstName: str
   if (new Date(linkRequest.expires_at) < new Date()) {
     console.log('Token expired');
     await sendMessage(chatId,
-      `⏰ This link has expired. Please request a new one from your Ticketrack profile settings.`
+      `⏰ This link has expired. Please request a new one from your ticketRack profile settings.`
     );
     return;
   }
@@ -217,7 +217,7 @@ async function handleLinkWithToken(supabase: any, chatId: number, firstName: str
   console.log('Account linked successfully');
 
   await sendMessage(chatId,
-    `✅ *Success!*\n\nHi ${firstName}! Your Telegram is now linked to Ticketrack.\n\nYou'll receive event reminders and ticket updates here.\n\nType /help to see what I can do.`,
+    `✅ *Success!*\n\nHi ${firstName}! Your Telegram is now linked to ticketRack.\n\nYou'll receive event reminders and ticket updates here.\n\nType /help to see what I can do.`,
     { parse_mode: 'Markdown' }
   );
 }
@@ -253,7 +253,7 @@ async function confirmLink(supabase: any, chatId: number, token: string, telegra
     .eq('token', token);
 
   await sendMessage(chatId, 
-    `✅ *Success!*\n\nYour Telegram is now linked to Ticketrack.\n\nYou'll receive event reminders and ticket updates here.`,
+    `✅ *Success!*\n\nYour Telegram is now linked to ticketRack.\n\nYou'll receive event reminders and ticket updates here.`,
     { parse_mode: 'Markdown' }
   );
 }
@@ -281,7 +281,7 @@ async function handleUnlink(supabase: any, chatId: number) {
     .eq('id', profile.id);
 
   await sendMessage(chatId, 
-    `✅ Your Telegram has been unlinked from Ticketrack.\n\nYou'll no longer receive notifications here.`
+    `✅ Your Telegram has been unlinked from ticketRack.\n\nYou'll no longer receive notifications here.`
   );
 }
 
@@ -392,10 +392,10 @@ Show this code or your QR at entry!
 
 async function handleHelp(chatId: number) {
   const message = `
-📚 *Ticketrack Bot Commands*
+📚 *ticketRack Bot Commands*
 
 /start - Welcome message
-/link - Link your Ticketrack account
+/link - Link your ticketRack account
 /unlink - Unlink your account
 /mytickets - View your upcoming tickets
 /help - Show this help message

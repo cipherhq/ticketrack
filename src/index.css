@@ -87,6 +87,7 @@ body {
 }
 
 /* Logo Optimizations */
+img[alt*="ticketRack"],
 img[alt*="Ticketrack"],
 img[alt*="tickettrack"] {
   image-rendering: -webkit-optimize-contrast;
@@ -116,6 +117,7 @@ img[alt*="tickettrack"] {
   }
 
   /* Ensure logo is visible and properly sized on mobile */
+  img[alt*="ticketRack"],
   img[alt*="Ticketrack"],
   img[alt*="tickettrack"] {
     max-width: 150px;

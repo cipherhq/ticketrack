@@ -1,5 +1,5 @@
 /**
- * Ticketrack Email Service
+ * ticketRack Email Service
  * 
  * Complete email service with 55+ email types
  * Security: JWT auth, rate limiting, permission matrix

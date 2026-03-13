@@ -726,7 +726,7 @@ export function WebHome() {
 
           {/* Why Choose Us */}
           <section className="py-8">
-            <h2 className="text-2xl font-bold text-foreground text-center mb-6">Why Choose Ticketrack</h2>
+            <h2 className="text-2xl font-bold text-foreground text-center mb-6">Why Choose ticketRack</h2>
             <div className="grid md:grid-cols-4 gap-4">
               <div className="bg-card p-5 rounded-xl shadow-sm text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -784,7 +784,7 @@ export function WebHome() {
                 </span>
                 Coming Soon
               </div>
-              <h2 className="text-3xl font-bold text-foreground mb-4">Ticketrack Mobile App</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-4">ticketRack Mobile App</h2>
               <p className="text-muted-foreground mb-6 max-w-md">
                 We're building something amazing! Soon you'll be able to manage your tickets, get exclusive deals, and check in to events - all from your pocket.
               </p>
@@ -845,7 +845,7 @@ export function WebHome() {
                           <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/>
                         </svg>
                       </div>
-                      <span className="text-white font-semibold text-lg">Ticketrack</span>
+                      <span className="text-white font-semibold text-lg">ticketRack</span>
                     </div>
                     
                     {/* Placeholder Cards */}

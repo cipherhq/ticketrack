@@ -1,4 +1,4 @@
-// WhatsApp Cloud API Service for Ticketrack
+// WhatsApp Cloud API Service for ticketRack
 // Uses Supabase Edge Function for secure API key handling
 import { supabase } from './supabase';
 
@@ -28,7 +28,7 @@ Your ticket for *${eventName}* has been confirmed!
 
 Please show this message or your QR code at the venue.
 
-Thank you for booking with Ticketrack! 🙌`;
+Thank you for booking with ticketRack! 🙌`;
   return sendWhatsAppMessage(phone, message);
 }
 

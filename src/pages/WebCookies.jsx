@@ -116,7 +116,7 @@ export function WebCookies() {
 
       <div className="bg-card rounded-2xl border border-border/10 p-8 mb-8">
         <p className="text-foreground/70 leading-relaxed">
-          This Cookie Policy explains how Ticketrack ("we", "us", or "our") uses cookies and similar technologies 
+          This Cookie Policy explains how ticketRack ("we", "us", or "our") uses cookies and similar technologies 
           when you visit our website. We are committed to being transparent about the technologies we use and 
           giving you control over your privacy in accordance with GDPR and UK GDPR.
         </p>
@@ -178,7 +178,7 @@ export function WebCookies() {
         <h3 className="text-xl font-semibold text-foreground mb-4">Questions About Cookies?</h3>
         <p className="text-foreground/70 mb-4">If you have questions about our use of cookies, please contact us:</p>
         <p className="text-[#2969FF] font-medium">privacy@ticketrack.com</p>
-        <p className="text-foreground/70 mt-2">Ticketrack Ltd</p>
+        <p className="text-foreground/70 mt-2">ticketRack Ltd</p>
       </div>
     </div>
   )

@@ -2234,7 +2234,7 @@ export function VenueLayoutDesigner() {
               eventName: 'Venue Design',
               layoutContext
             },
-            systemOverride: `You are a professional venue layout designer assistant for Ticketrack. Help users design optimal event layouts.
+            systemOverride: `You are a professional venue layout designer assistant for ticketRack. Help users design optimal event layouts.
 
 Current Layout Context:
 - Canvas: ${layoutContext.canvasSize}

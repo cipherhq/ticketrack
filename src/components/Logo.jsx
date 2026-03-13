@@ -3,7 +3,7 @@ import { brand } from '../config/brand';
 
 /**
  * Logo component - Always redirects to homepage (/)
- * Displays the complete Ticketrack logo (icon + text) optimized for all screen sizes
+ * Displays the complete ticketRack logo (icon + text) optimized for all screen sizes
  * @param {string} className - Tailwind classes for logo size (default: 'h-8')
  * @param {boolean} showText - Deprecated: logo now always shows text as part of the image
  * @param {string} variant - 'light' for dark backgrounds, 'dark' for light backgrounds (default: 'dark')
@@ -83,7 +83,7 @@ export function Logo({ className = 'h-8', showText = false, variant = 'dark' }) 
               font-size: ${Math.max(size * 0.75, 16)}px;
               letter-spacing: -0.5px;
             `;
-            textDiv.textContent = 'tickettrack';
+            textDiv.textContent = 'ticketRack';
             
             fallbackDiv.appendChild(iconDiv);
             fallbackDiv.appendChild(textDiv);

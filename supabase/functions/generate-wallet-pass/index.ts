@@ -673,9 +673,9 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
       passTypeIdentifier: APPLE_PASS_TYPE_ID,
       serialNumber: ticket.ticket_code,
       teamIdentifier: APPLE_TEAM_ID,
-      organizationName: event.organizer?.business_name || 'Ticketrack',
+      organizationName: event.organizer?.business_name || 'ticketRack',
       description: `Ticket for ${event.title}`,
-      logoText: 'Ticketrack',
+      logoText: 'ticketRack',
       foregroundColor: 'rgb(255, 255, 255)',
       backgroundColor: 'rgb(41, 105, 255)',
       labelColor: 'rgb(255, 255, 255)',
@@ -732,12 +732,12 @@ async function generateApplePass(ticket: any, event: any, supabaseClient: any): 
           {
             key: 'organizer',
             label: 'Organizer',
-            value: event.organizer?.business_name || 'Ticketrack'
+            value: event.organizer?.business_name || 'ticketRack'
           },
           {
             key: 'terms',
             label: 'Terms & Conditions',
-            value: 'This ticket is valid for one person only. Present this pass at the venue entrance for admission. Powered by Ticketrack.'
+            value: 'This ticket is valid for one person only. Present this pass at the venue entrance for admission. Powered by ticketRack.'
           }
         ]
       },

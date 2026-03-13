@@ -4,7 +4,7 @@
 
 You've created a **SwiftUI** project (`ticketrack-attendee`). This is a native iOS app written in Swift.
 
-## Comparison for Ticketrack
+## Comparison for ticketRack
 
 ### SwiftUI (Native iOS) ⚠️
 **What you have now:**
@@ -34,7 +34,7 @@ You've created a **SwiftUI** project (`ticketrack-attendee`). This is a native i
 
 ## Recommendation
 
-For Ticketrack, I recommend **React Native + Expo** because:
+For ticketRack, I recommend **React Native + Expo** because:
 
 1. ✅ You already have a React web app
 2. ✅ Need both iOS and Android apps

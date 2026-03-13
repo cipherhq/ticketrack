@@ -9,7 +9,7 @@ Vercel automatically creates preview deployments for each branch that is pushed 
 ### Option 1: Vercel Dashboard (Recommended)
 
 1. Go to: https://vercel.com/dashboard
-2. Select your **Ticketrack** project
+2. Select your **ticketRack** project
 3. Click on **"Deployments"** tab
 4. You'll see all deployments listed, including:
    - **Production** (main branch) → `ticketrack.vercel.app` or `ticketrack.com`

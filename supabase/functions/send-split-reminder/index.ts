@@ -109,7 +109,7 @@ serve(async (req) => {
               </p>
             </div>
             <div style="background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #9ca3af;">
-              <p style="margin: 0;">Ticketrack - Your ticket to unforgettable experiences</p>
+              <p style="margin: 0;">ticketRack - Your ticket to unforgettable experiences</p>
             </div>
           </div>
         </body>
@@ -123,7 +123,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Ticketrack <support@ticketrack.com>",
+          from: "ticketRack <support@ticketrack.com>",
           to: [share.email],
           subject: `⏰ Reminder: Pay your share for ${event.title}`,
           html: emailHtml,

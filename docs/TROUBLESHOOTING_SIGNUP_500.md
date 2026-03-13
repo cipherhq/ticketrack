@@ -29,7 +29,7 @@ When a user signs up, Supabase:
   - ✅ **Username**: `resend` (lowercase)
   - ✅ **Password**: Your Resend API key (correct and active)
   - ✅ **Sender email**: `tickets@ticketrack.com` (must be verified in Resend)
-  - ✅ **Sender name**: `Ticketrack`
+  - ✅ **Sender name**: `ticketRack`
 
 ### 2. Verify Domain in Resend (CRITICAL - This is likely your issue!)
 

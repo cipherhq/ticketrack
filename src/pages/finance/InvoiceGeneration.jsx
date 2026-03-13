@@ -256,7 +256,7 @@ export function InvoiceGeneration() {
 </head>
 <body>
   <div class="header">
-    <div class="logo">Ticketrack</div>
+    <div class="logo">ticketRack</div>
     <div class="invoice-info">
       <h2>Earnings Statement</h2>
       <p>Invoice #: ${safeNumber}</p>
@@ -299,7 +299,7 @@ export function InvoiceGeneration() {
   </table>
 
   <div class="footer">
-    <p>Thank you for using Ticketrack!</p>
+    <p>Thank you for using ticketRack!</p>
     <p>This is an automatically generated earnings statement.</p>
   </div>
 </body>

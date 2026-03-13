@@ -1,6 +1,6 @@
 # Country Features Deployment Guide
 
-This guide helps you deploy the country-based feature flag system for Ticketrack.
+This guide helps you deploy the country-based feature flag system for ticketRack.
 
 ## 🚀 **Quick Deployment**
 

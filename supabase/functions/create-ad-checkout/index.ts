@@ -107,7 +107,7 @@ serve(async (req) => {
               currency: pkg.currency.toLowerCase(),
               product_data: {
                 name: pkg.name,
-                description: `${pkg.duration_days}-day ad placement on Ticketrack`,
+                description: `${pkg.duration_days}-day ad placement on ticketRack`,
               },
               unit_amount: Math.round(Number(pkg.price) * 100),
             },

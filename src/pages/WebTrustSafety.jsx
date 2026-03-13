@@ -29,7 +29,7 @@ export function WebTrustSafety() {
   ]
 
   const attendeeGuidelines = [
-    'Only purchase tickets from the official Ticketrack platform',
+    'Only purchase tickets from the official ticketRack platform',
     'Verify the event details and organizer information before buying',
     'Keep your account credentials secure and never share them',
     'Report suspicious events or messages immediately',

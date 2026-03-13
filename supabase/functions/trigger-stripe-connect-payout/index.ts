@@ -166,8 +166,8 @@ serve(async (req) => {
             amount: payoutAmountCents,
             currency: bal.currency,
             description: eventId 
-              ? `Ticketrack payout for event ${eventId}` 
-              : "Ticketrack balance payout",
+              ? `ticketRack payout for event ${eventId}` 
+              : "ticketRack balance payout",
             metadata: { 
               organizer_id: organizer.id, 
               event_id: eventId || null, 

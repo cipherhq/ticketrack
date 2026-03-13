@@ -14,7 +14,7 @@
   - ✅ Host: `smtp.resend.com` ✓
   - ✅ Username: `Resend` ✓ (Resend accepts both cases)
   - ✅ Password: Configured ✓
-  - ✅ Sender name: `Ticketrack` ✓
+  - ✅ Sender name: `ticketRack` ✓
 
 ## How to Check Emails
 
@@ -46,7 +46,7 @@ Since you already have Resend configured for your custom emails, let's configure
    - ✅ **Username**: `Resend` ✓ (Resend accepts both cases)
    - ✅ **Password**: Your Resend API key ✓
    - ✅ **Sender email**: `tickets@ticketrack.com` ✓
-   - ✅ **Sender name**: `Ticketrack` ✓
+   - ✅ **Sender name**: `ticketRack` ✓
    
    **All settings are correct!** ✅
 
@@ -67,7 +67,7 @@ port = 587
 user = "resend"
 pass = "env(RESEND_API_KEY)"
 admin_email = "tickets@ticketrack.com"
-sender_name = "Ticketrack"
+sender_name = "ticketRack"
 ```
 
 ### Option 3: Use SendGrid (Alternative)
@@ -82,7 +82,7 @@ port = 587
 user = "apikey"
 pass = "env(SENDGRID_API_KEY)"
 admin_email = "tickets@ticketrack.com"
-sender_name = "Ticketrack"
+sender_name = "ticketRack"
 ```
 
 ## Testing Email Verification

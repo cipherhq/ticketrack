@@ -143,7 +143,7 @@ serve(async (req) => {
           custom_id: orderId,
         }],
         application_context: {
-          brand_name: "Ticketrack",
+          brand_name: "ticketRack",
           landing_page: "LOGIN",
           user_action: "PAY_NOW",
           return_url: `${successUrl}?order_id=${orderId}&provider=paypal`,

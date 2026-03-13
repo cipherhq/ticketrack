@@ -2,20 +2,20 @@ import jsPDF from 'jspdf'
 import QRCode from 'qrcode'
 
 /**
- * Ticketrack PDF Ticket Generator
+ * ticketRack PDF Ticket Generator
  * Standard ticket size: 6" x 2.25" (432 x 162 points)
  * 
  * Features:
  * - Event background image with overlay
  * - QR code for easy scanning
  * - Sponsor logos section
- * - Powered by Ticketrack branding
+ * - Powered by ticketRack branding
  */
 
-// Ticketrack logo as base64 (white version for dark/blue backgrounds)
+// ticketRack logo as base64 (white version for dark/blue backgrounds)
 const TICKETRACK_LOGO_WHITE = 'data:image/png;base64,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'
 
-// Ticketrack brand colors
+// ticketRack brand colors
 const TICKETRACK_BLUE = { r: 0, g: 102, b: 255 }
 const TICKETRACK_BLUE_DARK = { r: 0, g: 74, b: 204 }
 
@@ -300,7 +300,7 @@ export async function generateTicketPDF(ticket, event) {
   } catch (e) { console.log("Logo error:", e.message);
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(255, 255, 255)
-    pdf.text('Ticketrack', contentX + 45, height - 8)
+    pdf.text('ticketRack', contentX + 45, height - 8)
   }
 
   // RIGHT STUB
@@ -550,7 +550,7 @@ export async function generateTicketPDFBase64(ticket, event) {
   } catch (e) { console.log("Logo error:", e.message);
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(255, 255, 255)
-    pdf.text('Ticketrack', contentX + 45, height - 8)
+    pdf.text('ticketRack', contentX + 45, height - 8)
   }
 
   // RIGHT STUB
@@ -850,7 +850,7 @@ export async function generateMultiTicketPDFBase64(tickets, event) {
     } catch (e) { console.log("Logo error:", e.message);
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(255, 255, 255)
-      pdf.text('Ticketrack', contentX + 45, height - 8)
+      pdf.text('ticketRack', contentX + 45, height - 8)
     }
 
     // RIGHT STUB

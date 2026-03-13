@@ -31,7 +31,7 @@ export function AdminSMSSettings() {
     provider: 'termii',
     api_key: '',
     secret_key: '',
-    sender_id: 'Ticketrack',
+    sender_id: 'ticketRack',
     is_active: true,
     balance: 0,
     cost_per_sms: 0.85,
@@ -58,7 +58,7 @@ export function AdminSMSSettings() {
           provider: data.provider || 'termii',
           api_key: data.api_key || '',
           secret_key: data.secret_key || '',
-          sender_id: data.sender_id || 'Ticketrack',
+          sender_id: data.sender_id || 'ticketRack',
           is_active: data.is_active !== false,
           balance: data.balance || 0,
           cost_per_sms: data.cost_per_sms || 0.85,
@@ -355,7 +355,7 @@ export function AdminSMSSettings() {
                 value={config.sender_id}
                 onChange={(e) => setConfig({ ...config, sender_id: e.target.value })}
                 className="h-12 rounded-xl"
-                placeholder="Ticketrack"
+                placeholder="ticketRack"
                 maxLength={11}
               />
               <p className="text-xs text-muted-foreground">Max 11 characters, no spaces</p>

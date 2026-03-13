@@ -14,7 +14,7 @@ export async function getTermiiConfig(supabase) {
 }
 
 // Send SMS via Termii
-export async function sendSMS({ to, message, apiKey, senderId = 'Ticketrack' }) {
+export async function sendSMS({ to, message, apiKey, senderId = 'ticketRack' }) {
   try {
     const response = await fetch(`${TERMII_API_URL}/sms/send`, {
       method: 'POST',
@@ -55,7 +55,7 @@ export async function sendWhatsApp({ to, message, apiKey }) {
       body: JSON.stringify({
         api_key: apiKey,
         to: formatPhoneNumber(to),
-        from: 'Ticketrack',
+        from: 'ticketRack',
         sms: message,
         type: 'plain',
         channel: 'whatsapp',
@@ -76,7 +76,7 @@ export async function sendWhatsApp({ to, message, apiKey }) {
 }
 
 // Send bulk SMS
-export async function sendBulkSMS({ recipients, message, apiKey, senderId = 'Ticketrack' }) {
+export async function sendBulkSMS({ recipients, message, apiKey, senderId = 'ticketRack' }) {
   const results = [];
   
   for (const recipient of recipients) {

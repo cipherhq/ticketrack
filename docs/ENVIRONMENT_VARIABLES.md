@@ -1,6 +1,6 @@
 # Environment Variables Documentation
 
-This document describes all environment variables used in Ticketrack.
+This document describes all environment variables used in ticketRack.
 
 ## Quick Start
 
@@ -48,7 +48,7 @@ Get from: https://resend.com/api-keys
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `TERMII_API_KEY` | Termii API key for SMS/WhatsApp | Required for SMS functionality |
-| `TERMII_SENDER_ID` | Sender ID for SMS | `Ticketrack` |
+| `TERMII_SENDER_ID` | Sender ID for SMS | `ticketRack` |
 
 Get from: https://www.termii.com/
 
@@ -134,7 +134,7 @@ RESEND_API_KEY=re_your-key-here
 
 # SMS Service (Optional)
 TERMII_API_KEY=your-termii-key-here
-TERMII_SENDER_ID=Ticketrack
+TERMII_SENDER_ID=ticketRack
 ```
 
 ## Troubleshooting

@@ -7,7 +7,7 @@ import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } fr
 
 const AT_API_KEY = Deno.env.get('AFRICASTALKING_API_KEY');
 const AT_USERNAME = Deno.env.get('AFRICASTALKING_USERNAME');
-const AT_SENDER_ID = Deno.env.get('AFRICASTALKING_SENDER_ID') || 'Ticketrack';
+const AT_SENDER_ID = Deno.env.get('AFRICASTALKING_SENDER_ID') || 'ticketRack';
 const AT_ENVIRONMENT = Deno.env.get('AFRICASTALKING_ENVIRONMENT') || 'production'; // 'sandbox' or 'production'
 
 const corsHeaders = {

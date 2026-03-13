@@ -228,7 +228,7 @@ The birthday email includes:
 - Birthday wish message
 - Special 20% discount offer for premium asset pack
 - CTA button to claim gift
-- Professional branding with Ticketrack logo
+- Professional branding with ticketRack logo
 
 ## Monitoring
 

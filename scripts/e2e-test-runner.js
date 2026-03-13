@@ -1,5 +1,5 @@
 /**
- * Comprehensive E2E Test Runner for Ticketrack
+ * Comprehensive E2E Test Runner for ticketRack
  * Tests: DB connection, user creation, activation, event creation, ticket flows, and more
  * Runs against the DEV Supabase instance
  */
@@ -87,7 +87,7 @@ async function seedBaseData() {
     if (count === 0) {
       const { error } = await adminClient.from('platform_settings').insert({
         key: 'general',
-        value: { platform_name: 'Ticketrack', default_currency: 'NGN', default_country: 'NG' },
+        value: { platform_name: 'ticketRack', default_currency: 'NGN', default_country: 'NG' },
       });
       if (error) throw error;
       pass('Platform settings seeded');

@@ -56,7 +56,7 @@ export function AdminSettings() {
   const [smsConfig, setSmsConfig] = useState({
     provider: 'termii',
     api_key: '',
-    sender_id: 'Ticketrack',
+    sender_id: 'ticketRack',
     is_active: true,
   });
   const [whatsappConfig, setWhatsappConfig] = useState({
@@ -70,7 +70,7 @@ export function AdminSettings() {
     provider: 'resend',
     api_key: '',
     from_email: 'tickets@ticketrack.com',
-    from_name: 'Ticketrack',
+    from_name: 'ticketRack',
     is_active: true,
   });
   const [testingApi, setTestingApi] = useState(null);
@@ -1559,7 +1559,7 @@ export function AdminSettings() {
                     value={emailConfig.from_name || ''}
                     onChange={(e) => setEmailConfig(prev => ({ ...prev, from_name: e.target.value }))}
                     className="rounded-xl mt-1"
-                    placeholder="Ticketrack"
+                    placeholder="ticketRack"
                   />
                 </div>
                 <div className="flex items-center gap-4 pt-6">
@@ -1630,7 +1630,7 @@ export function AdminSettings() {
                     value={smsConfig.sender_id || ''}
                     onChange={(e) => setSmsConfig(prev => ({ ...prev, sender_id: e.target.value }))}
                     className="rounded-xl mt-1"
-                    placeholder="Ticketrack"
+                    placeholder="ticketRack"
                   />
                   <p className="text-xs text-muted-foreground mt-1">Max 11 characters, alphanumeric</p>
                 </div>

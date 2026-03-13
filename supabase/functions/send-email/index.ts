@@ -1,4 +1,4 @@
-// Ticketrack Email Service - Secured Edge Function v2
+// ticketRack Email Service - Secured Edge Function v2
 // Full implementation with 55+ email templates
 // Security: JWT auth, CORS whitelist, rate limiting, permission matrix
 
@@ -10,11 +10,11 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 
-const FROM_EMAIL = 'Ticketrack <support@ticketrack.com>'
-const SECURITY_EMAIL = 'Ticketrack Security <security@ticketrack.com>'
+const FROM_EMAIL = 'ticketRack <support@ticketrack.com>'
+const SECURITY_EMAIL = 'ticketRack Security <security@ticketrack.com>'
 const SUPPORT_EMAIL = 'support@ticketrack.com'
 const BRAND_COLOR = '#2969FF'
-const BRAND_NAME = 'Ticketrack'
+const BRAND_NAME = 'ticketRack'
 const APP_URL = 'https://ticketrack.com'
 
 // BCC support@ticketrack.com on ALL emails for record-keeping
@@ -498,7 +498,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
                   <td align="center" style="padding: 24px;">
                     <p style="margin: 0 0 4px 0; font-size: 12px; color: #059669; text-transform: uppercase;">Sale Amount</p>
                     <p style="margin: 0; font-size: 32px; font-weight: 700; color: #047857;">${d.isFree ? 'FREE' : formatCurrency(d.amount || 0, d.currency || 'NGN')}</p>
-                    ${!d.isFree ? '<p style="margin: 4px 0 0 0; font-size: 11px; color: #6b7280;">Includes Ticketrack service fee</p>' : ''}
+                    ${!d.isFree ? '<p style="margin: 4px 0 0 0; font-size: 11px; color: #6b7280;">Includes ticketRack service fee</p>' : ''}
                   </td>
                 </tr>
               </table>
@@ -636,11 +636,11 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
   low_sms_balance: d => ({ subject: `⚠️ Low SMS Credits`, html: baseTemplate(`<div class="highlight"><strong>Low Balance</strong></div><h2>SMS Running Low</h2><p>Hi ${d.organizerName},</p><div class="card"><div class="row"><span class="label">Balance</span><span class="value" style="color:#dc3545">${d.balance} credits</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/sms-credits" class="btn">Buy More</a></div>`) }),
   event_draft_reminder: d => ({ subject: `Complete: "${d.eventTitle}"`, html: baseTemplate(`<h2>Your Event is Waiting</h2><p>Hi ${d.organizerName},</p><p>You started <strong>${d.eventTitle}</strong> but haven't published yet.</p><div class="btn-wrap"><a href="${APP_URL}/organizer/events" class="btn">Continue</a></div>`) }),
   // TEAM
-  team_invitation: d => ({ subject: `Join ${d.organizerName} on Ticketrack`, html: baseTemplate(`<h2>You're Invited!</h2><p>Hi ${d.firstName},</p><p><strong>${d.organizerName}</strong> invited you as <strong>${d.roleName}</strong>.</p><div class="card"><div class="row"><span class="label">Organization</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Role</span><span class="value">${d.roleName}</span></div></div><div class="btn-wrap"><a href="${d.inviteLink}" class="btn">Accept</a></div><p style="font-size:12px;color:#666">Expires in 7 days.</p>`) }),
+  team_invitation: d => ({ subject: `Join ${d.organizerName} on ticketRack`, html: baseTemplate(`<h2>You're Invited!</h2><p>Hi ${d.firstName},</p><p><strong>${d.organizerName}</strong> invited you as <strong>${d.roleName}</strong>.</p><div class="card"><div class="row"><span class="label">Organization</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Role</span><span class="value">${d.roleName}</span></div></div><div class="btn-wrap"><a href="${d.inviteLink}" class="btn">Accept</a></div><p style="font-size:12px;color:#666">Expires in 7 days.</p>`) }),
   task_assigned: d => ({ subject: `Task Assigned: ${d.taskTitle}`, html: baseTemplate(`<h2>You've Been Assigned a Task</h2><p>Hi ${d.assigneeName},</p><p><strong>${d.assignerName}</strong> assigned you a task for <strong>${d.eventTitle}</strong>.</p><div class="card"><h3>${d.taskTitle}</h3>${d.description ? `<p style="color:#666;font-size:14px">${d.description}</p>` : ''}<div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Priority</span><span class="value">${d.priority}</span></div>${d.dueDate ? `<div class="row"><span class="label">Due Date</span><span class="value">${d.dueDate}</span></div>` : ''}</div><div class="btn-wrap"><a href="${APP_URL}/organizer/projects" class="btn">View Task</a></div>`) }),
   team_member_removed: d => ({ subject: `Removed from ${d.organizerName}`, html: baseTemplate(`<h2>Access Removed</h2><p>Hi ${d.memberName},</p><p>Your access to <strong>${d.organizerName}</strong> has been removed.</p>`) }),
   // PROMOTER
-  promoter_invite: d => ({ subject: `Promote ${d.eventTitle || 'events'} on Ticketrack!`, html: baseTemplate(`<h2>Become a Promoter!</h2><p><strong>${d.organizerName}</strong> invites you to promote.</p><div class="card"><div class="row"><span class="label">Organizer</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle || 'All Events'}</span></div><div class="row"><span class="label">Commission</span><span class="value">${d.commissionValue}${d.commissionType === 'percentage' ? '%' : ' per sale'}</span></div><div class="row"><span class="label">Your Code</span><span class="value" style="color:${BRAND_COLOR};font-weight:bold">${d.promoCode}</span></div></div><div class="btn-wrap"><a href="${d.appUrl || APP_URL}/promoter/accept?code=${d.promoCode}" class="btn">${d.isNewUser ? 'Sign Up & Accept' : 'Accept Invitation'}</a></div>`) }),
+  promoter_invite: d => ({ subject: `Promote ${d.eventTitle || 'events'} on ticketRack!`, html: baseTemplate(`<h2>Become a Promoter!</h2><p><strong>${d.organizerName}</strong> invites you to promote.</p><div class="card"><div class="row"><span class="label">Organizer</span><span class="value">${d.organizerName}</span></div><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle || 'All Events'}</span></div><div class="row"><span class="label">Commission</span><span class="value">${d.commissionValue}${d.commissionType === 'percentage' ? '%' : ' per sale'}</span></div><div class="row"><span class="label">Your Code</span><span class="value" style="color:${BRAND_COLOR};font-weight:bold">${d.promoCode}</span></div></div><div class="btn-wrap"><a href="${d.appUrl || APP_URL}/promoter/accept?code=${d.promoCode}" class="btn">${d.isNewUser ? 'Sign Up & Accept' : 'Accept Invitation'}</a></div>`) }),
   promoter_accepted: d => ({ subject: `${d.promoterName} joined!`, html: baseTemplate(`<div class="success"><strong>Accepted!</strong></div><h2>New Promoter</h2><p><strong>${d.promoterName}</strong> accepted.</p><div class="card"><div class="row"><span class="label">Promoter</span><span class="value">${d.promoterName}</span></div><div class="row"><span class="label">Code</span><span class="value" style="color:${BRAND_COLOR};font-weight:bold">${d.promoCode}</span></div><div class="row"><span class="label">Commission</span><span class="value">${d.commissionValue}${d.commissionType === 'percentage' ? '%' : ''}</span></div></div><div class="btn-wrap"><a href="${APP_URL}/organizer/promoters" class="btn">View</a></div>`) }),
   promoter_commission: d => ({ subject: `💰 Commission: ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Earned!</strong></div><h2>Commission</h2><div class="card"><div class="row"><span class="label">Event</span><span class="value">${d.eventTitle}</span></div><div class="row"><span class="label">Sale</span><span class="value">${formatCurrency(d.saleAmount, d.currency)}</span></div><div class="row"><span class="label">Your Cut</span><span class="value" style="color:${BRAND_COLOR};font-size:18px">${formatCurrency(d.amount, d.currency)}</span></div></div><p><strong>Pending:</strong> ${formatCurrency(d.pendingTotal, d.currency)}</p>`) }),
   promoter_payout: d => ({ subject: `💰 Promoter Payout - ${formatCurrency(d.amount, d.currency)}`, html: baseTemplate(`<div class="success"><strong>Payout!</strong></div><h2>Promoter Payout</h2><div class="card"><div class="row"><span class="label">Amount</span><span class="value" style="color:${BRAND_COLOR};font-size:24px">${formatCurrency(d.amount, d.currency)}</span></div><div class="row"><span class="label">Bank</span><span class="value">${d.bankName}</span></div><div class="row"><span class="label">Account</span><span class="value">${maskBank(d.accountNumber)}</span></div></div>`) }),
@@ -680,7 +680,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
     html: `<!DOCTYPE html>
 <html>
 <body style="font-family: sans-serif; text-align: center; color: #334155; max-width: 500px; margin: 40px auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-    <h1 style="color: #0f172a; font-size: 20px;">TICKETRACK</h1>
+    <h1 style="color: #0f172a; font-size: 20px;">ticketRack</h1>
     <h2 style="margin-top: 40px;">Happy Birthday, ${d.firstName}! 🎂</h2>
     <p>We hope your day is as spectacular as the events you design.</p>
     
@@ -691,7 +691,7 @@ const templates: Record<string, (d: any) => { subject: string; html: string }> =
     
     <a href="${APP_URL}/dashboard" style="display: inline-block; background: #007AFF; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Claim Gift</a>
     
-    <p style="margin-top: 40px; font-size: 12px; color: #94a3b8;">Sent with ❤️ from the Ticketrack Team</p>
+    <p style="margin-top: 40px; font-size: 12px; color: #94a3b8;">Sent with ❤️ from the ticketRack Team</p>
 </body>
 </html>`
   }),

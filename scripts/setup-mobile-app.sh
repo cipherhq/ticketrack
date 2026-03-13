@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Ticketrack Mobile App Setup Script
+# ticketRack Mobile App Setup Script
 # This script helps set up the mobile app project
 
 set -e
 
-echo "🚀 Setting up Ticketrack Mobile App..."
+echo "🚀 Setting up ticketRack Mobile App..."
 echo ""
 
 # Check if we're in the right directory

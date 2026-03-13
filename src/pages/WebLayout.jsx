@@ -602,7 +602,7 @@ export function WebLayout() {
             </div>
 
             <p className="text-center text-white/40 text-xs">
-              © {new Date().getFullYear()} Ticketrack
+              © {new Date().getFullYear()} ticketRack
             </p>
           </div>
 
@@ -726,7 +726,7 @@ export function WebLayout() {
             </div>
 
             <div className="border-t border-white/10 mt-8 pt-8 text-center text-white/40 text-sm">
-              <p>© {new Date().getFullYear()} Ticketrack. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} ticketRack. All rights reserved.</p>
             </div>
           </div>
         </div>

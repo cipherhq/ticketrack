@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Security Testing Bot
- * Tests common vulnerabilities and security issues in the Ticketrack application
+ * Tests common vulnerabilities and security issues in the ticketRack application
  * 
  * This bot performs legitimate security testing on your own application.
  * Do NOT use this on applications you don't own or have permission to test.
@@ -389,7 +389,7 @@ async function testAPISecurity() {
 // ============================================================================
 
 async function runSecurityTests() {
-  console.log('🚀 Starting Security Testing Bot for Ticketrack...\n');
+  console.log('🚀 Starting Security Testing Bot for ticketRack...\n');
   console.log('⚠️  This bot performs legitimate security testing on YOUR application.\n');
   
   const startTime = Date.now();

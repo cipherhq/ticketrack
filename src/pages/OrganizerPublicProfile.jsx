@@ -266,7 +266,7 @@ export function OrganizerPublicProfile() {
     const url = window.location.href
     if (navigator.share) {
       try {
-        await navigator.share({ title: organizer?.business_name, text: 'Check out ' + organizer?.business_name + ' on Ticketrack', url })
+        await navigator.share({ title: organizer?.business_name, text: 'Check out ' + organizer?.business_name + ' on ticketRack', url })
       } catch (err) {
         // User cancelled share dialog - expected behavior, no action needed
       }

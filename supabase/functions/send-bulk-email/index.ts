@@ -6,7 +6,7 @@ import { requireAuth, requireOrganizerOrAdmin, authErrorResponse, AuthError } fr
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const FROM_EMAIL = 'Ticketrack <support@ticketrack.com>';
+const FROM_EMAIL = 'ticketRack <support@ticketrack.com>';
 const SUPPORT_EMAIL = 'support@ticketrack.com';
 const APP_URL = 'https://ticketrack.com';
 
@@ -38,13 +38,13 @@ const emailTemplate = (content: string) => `
 <body>
   <div class="container">
     <div class="header">
-      <h1>Ticketrack</h1>
+      <h1>ticketRack</h1>
     </div>
     <div class="content">
       ${content}
     </div>
     <div class="footer">
-      <p>Sent via <a href="${APP_URL}">Ticketrack</a></p>
+      <p>Sent via <a href="${APP_URL}">ticketRack</a></p>
       <p style="margin-top: 10px; color: #999;">If you no longer wish to receive these emails, you can update your preferences.</p>
     </div>
   </div>

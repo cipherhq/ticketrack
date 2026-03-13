@@ -413,7 +413,7 @@ export function SMSCampaigns() {
               <Label>Message Content</Label>
               <Textarea 
                 placeholder="Type your SMS message here... 
-Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at the venue. See you there! - Ticketrack" 
+Example: Hi {name}, your event ticket for {event} is confirmed! Show this SMS at the venue. See you there! - ticketRack" 
                 value={message} 
                 onChange={(e) => setMessage(e.target.value)} 
                 className="rounded-xl min-h-[120px]" 

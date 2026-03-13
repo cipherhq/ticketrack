@@ -6,7 +6,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
 
 ## 1. Confirm Signup (OTP Version)
 
-**Subject:** `Your Ticketrack verification code: {{ .Token }}`
+**Subject:** `Your ticketRack verification code: {{ .Token }}`
 
 **Body:**
 ```html
@@ -55,7 +55,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
           <tr>
             <td style="background: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
               <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-                © 2025 Ticketrack. All rights reserved.
+                © 2025 ticketRack. All rights reserved.
               </p>
               <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0;">
                 <a href="https://ticketrack.com" style="color: #2969FF; text-decoration: none;">ticketrack.com</a>
@@ -75,7 +75,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
 
 ## 2. Magic Link (Alternative - if you prefer links)
 
-**Subject:** `Sign in to Ticketrack`
+**Subject:** `Sign in to ticketRack`
 
 **Body:**
 ```html
@@ -102,7 +102,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
           <!-- Content -->
           <tr>
             <td style="padding: 40px 32px;">
-              <h2 style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 0 0 16px; text-align: center;">Sign In to Ticketrack</h2>
+              <h2 style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 0 0 16px; text-align: center;">Sign In to ticketRack</h2>
               <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0 0 32px; text-align: center;">
                 Click the button below to sign in to your account:
               </p>
@@ -128,7 +128,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
                 If you didn't request this, you can safely ignore this email.
               </p>
               <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0;">
-                © 2025 Ticketrack · <a href="https://ticketrack.com" style="color: #2969FF; text-decoration: none;">ticketrack.com</a>
+                © 2025 ticketRack · <a href="https://ticketrack.com" style="color: #2969FF; text-decoration: none;">ticketrack.com</a>
               </p>
             </td>
           </tr>
@@ -145,7 +145,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
 
 ## 3. Password Reset
 
-**Subject:** `Reset your Ticketrack password`
+**Subject:** `Reset your ticketRack password`
 
 **Body:**
 ```html
@@ -198,7 +198,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
           <tr>
             <td style="background: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
               <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-                © 2025 Ticketrack · <a href="https://ticketrack.com" style="color: #2969FF; text-decoration: none;">ticketrack.com</a>
+                © 2025 ticketRack · <a href="https://ticketrack.com" style="color: #2969FF; text-decoration: none;">ticketrack.com</a>
               </p>
             </td>
           </tr>
@@ -215,7 +215,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
 
 ## 4. Invite User
 
-**Subject:** `You've been invited to Ticketrack`
+**Subject:** `You've been invited to ticketRack`
 
 **Body:**
 ```html
@@ -244,7 +244,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
             <td style="padding: 40px 32px;">
               <h2 style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 0 0 16px; text-align: center;">You're Invited! 🎉</h2>
               <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0 0 32px; text-align: center;">
-                You've been invited to join Ticketrack. Click below to accept and set up your account:
+                You've been invited to join ticketRack. Click below to accept and set up your account:
               </p>
               
               <!-- Button -->
@@ -268,7 +268,7 @@ Copy these templates into **Supabase Dashboard → Authentication → Email Temp
           <tr>
             <td style="background: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
               <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-                © 2025 Ticketrack · <a href="https://ticketrack.com" style="color: #2969FF; text-decoration: none;">ticketrack.com</a>
+                © 2025 ticketRack · <a href="https://ticketrack.com" style="color: #2969FF; text-decoration: none;">ticketrack.com</a>
               </p>
             </td>
           </tr>

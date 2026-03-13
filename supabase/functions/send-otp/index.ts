@@ -94,7 +94,7 @@ async function sendTermiiOTP(
   senderId: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const message = `Your Ticketrack verification code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
+    const message = `Your ticketRack verification code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
     
     const response = await fetch('https://api.ng.termii.com/api/sms/send', {
       method: 'POST',
@@ -130,7 +130,7 @@ async function sendBulkSMSNigeriaOTP(
   senderId: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const message = `Your Ticketrack verification code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
+    const message = `Your ticketRack verification code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
     const formattedPhone = formatPhoneNumber(to);
 
     console.log('Sending OTP via BulkSMSNigeria:', { to: formattedPhone });
@@ -219,7 +219,7 @@ serve(async (req) => {
     const twilioToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     const twilioVerifySid = Deno.env.get('TWILIO_VERIFY_SERVICE_SID');
     const termiiKey = Deno.env.get('TERMII_API_KEY');
-    const termiiSender = Deno.env.get('TERMII_SENDER_ID') || 'Ticketrack';
+    const termiiSender = Deno.env.get('TERMII_SENDER_ID') || 'ticketRack';
     const bulksmsToken = Deno.env.get('BULKSMS_API_TOKEN');
 
     // Get provider priority for this country
@@ -238,7 +238,7 @@ serve(async (req) => {
       if (provider === 'bulksmsnigeria' && bulksmsToken) {
         console.log(`Trying BulkSMSNigeria for ${country}...`);
         otp = generateOTP();
-        result = await sendBulkSMSNigeriaOTP(formattedPhone, otp, bulksmsToken, 'Ticketrack');
+        result = await sendBulkSMSNigeriaOTP(formattedPhone, otp, bulksmsToken, 'ticketRack');
         if (result.success) {
           usedProvider = 'bulksmsnigeria';
           break;

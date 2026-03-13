@@ -54,7 +54,7 @@ Once you're in the **Email** tab, configure:
 - **Username**: `resend`
 - **Password**: Your Resend API key
 - **Sender email**: `tickets@ticketrack.com`
-- **Sender name**: `Ticketrack`
+- **Sender name**: `ticketRack`
 
 ## Common Mistake
 

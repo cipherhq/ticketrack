@@ -1,4 +1,4 @@
-# Ticketrack - Pending Tasks
+# ticketRack - Pending Tasks
 
 ## Webhook Configuration
 

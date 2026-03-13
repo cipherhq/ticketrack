@@ -224,7 +224,7 @@ export function generateICSFile(invite) {
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Ticketrack//RackParty//EN',
+    'PRODID:-//ticketRack//RackParty//EN',
     'BEGIN:VEVENT',
     `DTSTART:${fmt(startDate)}`,
     `DTEND:${fmt(endDate)}`,

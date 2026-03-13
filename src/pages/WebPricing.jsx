@@ -387,7 +387,7 @@ export function WebPricing() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Why organizers choose Ticketrack
+              Why organizers choose ticketRack
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               More features, lower fees, better support. See how we compare.
@@ -536,7 +536,7 @@ export function WebPricing() {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                quote: "Ticketrack helped us sell out our concert in just 3 days. The multi-currency support is a game changer for reaching fans worldwide.",
+                quote: "ticketRack helped us sell out our concert in just 3 days. The multi-currency support is a game changer for reaching fans worldwide.",
                 name: "Adaeze O.",
                 role: "Music Event Organizer",
                 location: "Lagos, Nigeria"

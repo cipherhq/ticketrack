@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Comprehensive Test Bot is an automated testing script that validates all major functionality of the Ticketrack platform. It creates test data, simulates user flows, and verifies that core features work correctly.
+The Comprehensive Test Bot is an automated testing script that validates all major functionality of the ticketRack platform. It creates test data, simulates user flows, and verifies that core features work correctly.
 
 ## Features Tested
 

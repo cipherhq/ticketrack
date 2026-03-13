@@ -44,9 +44,9 @@ export function WebCareers() {
         {/* About Section */}
         <section className="mb-16">
           <div className="bg-card rounded-2xl border border-border/10 p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4">About Ticketrack</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4">About ticketRack</h2>
             <p className="text-foreground/70 mb-4">
-              Ticketrack is the world's premier event ticketing platform, helping organizers create unforgettable experiences and connecting people with events they love. We process thousands of transactions daily across multiple countries and currencies worldwide.
+              ticketRack is the world's premier event ticketing platform, helping organizers create unforgettable experiences and connecting people with events they love. We process thousands of transactions daily across multiple countries and currencies worldwide.
             </p>
             <p className="text-foreground/70">
               Founded with the mission to make event ticketing seamless, secure, and accessible globally, we're empowering event organizers and delighting attendees around the world. Our team is distributed across multiple time zones, united by our passion for building great products.

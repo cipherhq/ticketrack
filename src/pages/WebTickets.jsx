@@ -1334,7 +1334,7 @@ export function WebTickets() {
                   className="mt-1 rounded-xl"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Recipient must have a Ticketrack account
+                  Recipient must have a ticketRack account
                 </p>
               </div>
               

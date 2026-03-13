@@ -1,6 +1,6 @@
 {
-  "name": "Ticketrack",
-  "short_name": "Ticketrack",
+  "name": "ticketRack",
+  "short_name": "ticketRack",
   "description": "Event Ticketing & Check-In",
   "start_url": "/organizer/check-in",
   "display": "standalone",

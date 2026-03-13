@@ -1,4 +1,4 @@
-# Ticketrack Deployment Guide
+# ticketRack Deployment Guide
 
 ## 🚀 Simple Steps to Deploy to Production
 

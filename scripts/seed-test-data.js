@@ -1,5 +1,5 @@
 /**
- * Ticketrack Test Data Seeder
+ * ticketRack Test Data Seeder
  * 
  * Generates realistic test data to simulate production usage:
  * - 500+ contacts with realistic Nigerian/international names

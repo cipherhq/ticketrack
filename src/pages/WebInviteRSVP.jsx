@@ -1361,7 +1361,7 @@ export function WebInviteRSVP() {
 
             {/* Powered by */}
             <p className="text-center text-xs text-gray-400 mt-6">
-              Powered by Ticketrack
+              Powered by ticketRack
             </p>
           </div>
         </div>

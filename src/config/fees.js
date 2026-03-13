@@ -38,7 +38,7 @@ export const getCountryFees = async () => {
     if (country.default_currency) {
       feesByCurrency[country.default_currency] = {
         countryCode: country.code,
-        // Service fees (Ticketrack revenue)
+        // Service fees (ticketRack revenue)
         serviceFeePercent: parseFloat(country.service_fee_percentage || 5) / 100,
         serviceFeeFixedPerTicket: parseFloat(country.service_fee_fixed_per_ticket || 0),
         serviceFeeCap: country.service_fee_cap ? parseFloat(country.service_fee_cap) : null,
@@ -336,7 +336,7 @@ export const calculateFees = (ticketSubtotal, ticketCount, fees, paymentProvider
  * @returns {object} { platformFee, processingFee, totalFee, netDonation, donorPays, feePercent }
  */
 export const calculateDonationFee = (donationAmount, fees, donorPaysFee = false) => {
-  // Platform fee (Ticketrack revenue) - always from the donation amount
+  // Platform fee (ticketRack revenue) - always from the donation amount
   const platformFeePercent = fees?.donationFeePercent ?? 0.05; // Default 5%
   const platformFee = Math.round(donationAmount * platformFeePercent * 100) / 100;
   

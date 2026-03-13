@@ -16,7 +16,7 @@ const BULKSMS_API_URL = 'https://www.bulksmsnigeria.com/api/v2/sms';
 // Africa's Talking credentials
 const AT_API_KEY = Deno.env.get('AFRICASTALKING_API_KEY');
 const AT_USERNAME = Deno.env.get('AFRICASTALKING_USERNAME');
-const AT_SENDER_ID = Deno.env.get('AFRICASTALKING_SENDER_ID') || 'Ticketrack';
+const AT_SENDER_ID = Deno.env.get('AFRICASTALKING_SENDER_ID') || 'ticketRack';
 const AT_ENVIRONMENT = Deno.env.get('AFRICASTALKING_ENVIRONMENT') || 'production';
 
 // Map phone prefixes to country codes (supported: NG, GH, US, GB, CA)
@@ -86,7 +86,7 @@ async function sendTermiiSMS(
     const payload = {
       api_key: apiKey,
       to: formattedPhone,
-      from: senderId || 'Ticketrack',
+      from: senderId || 'ticketRack',
       sms: message,
       type: 'plain',
       channel: 'dnd', // Use DND channel for better delivery rates in Nigeria
@@ -253,7 +253,7 @@ async function sendBulkSMSNigeria(
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        from: senderId || 'Ticketrack',
+        from: senderId || 'ticketRack',
         to: formattedPhone,
         body: message,
         gateway: 'direct-refund',
@@ -336,7 +336,7 @@ serve(async (req) => {
       let result;
       // Prefer BulkSMSNigeria for Nigerian numbers
       if (bulksmsToken && country === 'NG') {
-        result = await sendBulkSMSNigeria(phone, message, bulksmsToken, 'Ticketrack');
+        result = await sendBulkSMSNigeria(phone, message, bulksmsToken, 'ticketRack');
       } else {
         // Fall back to platform_sms_config providers
         const smsConfigs = await supabase
@@ -355,7 +355,7 @@ serve(async (req) => {
         if (provider.provider === 'twilio') {
           result = await sendTwilioSMS(phone, message, provider.api_key, provider.secret_key, provider.sender_id);
         } else {
-          result = await sendTermiiSMS(phone, message, provider.api_key, provider.sender_id || 'Ticketrack');
+          result = await sendTermiiSMS(phone, message, provider.api_key, provider.sender_id || 'ticketRack');
         }
       }
 
@@ -593,7 +593,7 @@ serve(async (req) => {
           recipient.phone,
           message,
           bulksmsToken,
-          provider.sender_id || 'Ticketrack'
+          provider.sender_id || 'ticketRack'
         );
         providerUsed = 'bulksmsnigeria';
       } else if ((country === 'NG' || country === 'GH') && AT_API_KEY && AT_USERNAME) {
@@ -624,7 +624,7 @@ serve(async (req) => {
           recipient.phone,
           message,
           provider.api_key,
-          provider.sender_id || 'Ticketrack'
+          provider.sender_id || 'ticketRack'
         );
       }
 

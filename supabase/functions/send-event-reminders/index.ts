@@ -1,4 +1,4 @@
-// Ticketrack Event Reminders Scheduler
+// ticketRack Event Reminders Scheduler
 // Sends 24h and 1h reminders to ticket holders
 // Triggered by external cron (every 15 minutes)
 

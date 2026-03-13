@@ -60,7 +60,7 @@ export function WebResources() {
     {
       icon: Megaphone,
       title: 'Event Marketing & Promotion',
-      description: 'Proven strategies to promote your events, reach your target audience, and sell more tickets using Ticketrack\'s marketing tools.',
+      description: 'Proven strategies to promote your events, reach your target audience, and sell more tickets using ticketRack\'s marketing tools.',
       category: 'Marketing',
       readTime: '18 min read',
       topics: ['Email campaigns', 'Social media', 'Promoter management', 'AI marketing tools'],
@@ -152,7 +152,7 @@ export function WebResources() {
     {
       icon: Code,
       title: 'API Documentation',
-      description: 'Access our REST API documentation for integrating Ticketrack into your applications.',
+      description: 'Access our REST API documentation for integrating ticketRack into your applications.',
       comingSoon: false,
       link: brand.urls.api
     },
@@ -460,7 +460,7 @@ export function WebResources() {
             <div className="flex-1 text-center md:text-left">
               <h3 className="text-xl font-semibold text-foreground mb-2">Need Step-by-Step Help?</h3>
               <p className="text-muted-foreground">
-                Our Help Center has detailed instructions for every feature on Ticketrack, with searchable articles and video tutorials.
+                Our Help Center has detailed instructions for every feature on ticketRack, with searchable articles and video tutorials.
               </p>
             </div>
             <Link to="/help-center" className="inline-flex items-center gap-2 bg-[#2969FF] text-white px-6 py-3 rounded-xl hover:bg-[#1e4fd6] transition-colors whitespace-nowrap">

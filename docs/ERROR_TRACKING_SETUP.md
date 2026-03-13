@@ -1,6 +1,6 @@
 # Error Tracking Setup Guide
 
-This document describes how to set up error tracking for Ticketrack using Sentry.
+This document describes how to set up error tracking for ticketRack using Sentry.
 
 ## Overview
 

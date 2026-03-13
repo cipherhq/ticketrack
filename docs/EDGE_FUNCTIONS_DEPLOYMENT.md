@@ -129,7 +129,7 @@ RESEND_API_KEY=re_xxxxx
 ### SMS (Termii - Nigeria)
 ```
 TERMII_API_KEY=your-termii-key
-TERMII_SENDER_ID=Ticketrack
+TERMII_SENDER_ID=ticketRack
 ```
 
 ### SMS (Twilio - International)

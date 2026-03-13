@@ -1,4 +1,4 @@
-# Hardcoded Values Audit - Ticketrack
+# Hardcoded Values Audit - ticketRack
 
 This document identifies hardcoded values in the codebase that should be moved to configuration or database settings.
 

@@ -367,7 +367,7 @@ export function AdminUserTypes() {
       const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
         body: {
           to: phoneNumber,
-          message: `Your Ticketrack admin verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`
+          message: `Your ticketRack admin verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`
         }
       });
 
@@ -890,7 +890,7 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
         .single();
 
       if (findError || !profile) {
-        toast.error('User not found. They must have a Ticketrack account first.');
+        toast.error('User not found. They must have a ticketRack account first.');
         setLoading(false);
         return;
       }
@@ -955,7 +955,7 @@ function AddUserForm({ roles, onSuccess, onCancel }) {
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          User must already have a Ticketrack account
+          User must already have a ticketRack account
         </p>
       </div>
 

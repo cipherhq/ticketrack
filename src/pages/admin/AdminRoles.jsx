@@ -379,7 +379,7 @@ export function AdminRoles() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                User must already have a Ticketrack account
+                User must already have a ticketRack account
               </p>
             </div>
             <div className="space-y-2">

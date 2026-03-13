@@ -160,7 +160,7 @@ export function AdminSMS() {
         recipients,
         message: form.message,
         apiKey: termiiConfig.api_key,
-        senderId: termiiConfig.sender_id || 'Ticketrack',
+        senderId: termiiConfig.sender_id || 'ticketRack',
       });
 
       const successCount = results.filter(r => r.success).length;

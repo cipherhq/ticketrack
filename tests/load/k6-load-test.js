@@ -1,5 +1,5 @@
 /**
- * Ticketrack k6 Load Testing Suite
+ * ticketRack k6 Load Testing Suite
  * 
  * Stress tests the application with simulated concurrent users:
  * - Homepage load

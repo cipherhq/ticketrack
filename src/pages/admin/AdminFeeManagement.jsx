@@ -417,7 +417,7 @@ export function AdminFeeManagement() {
               <div className="space-y-4">
                 <h3 className="font-medium flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-green-600" />
-                  Service Fees (Ticketrack Revenue)
+                  Service Fees (ticketRack Revenue)
                 </h3>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -466,7 +466,7 @@ export function AdminFeeManagement() {
                     <Input type="number" step="0.1" min="0" max="30" value={editingCountry.donation_fee_percentage}
                       onChange={(e) => setEditingCountry({...editingCountry, donation_fee_percentage: e.target.value})}
                       className="rounded-xl mt-1" />
-                    <p className="text-xs text-muted-foreground mt-1">Ticketrack revenue from donations</p>
+                    <p className="text-xs text-muted-foreground mt-1">ticketRack revenue from donations</p>
                   </div>
                   <div>
                     <Label>Processing Fee (%)</Label>

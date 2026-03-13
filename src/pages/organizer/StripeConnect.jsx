@@ -881,7 +881,7 @@ export function StripeConnect() {
               
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong>Handle Refunds:</strong> You are responsible for processing refunds directly through your Stripe account. Ticketrack will not process refunds on your behalf for Stripe Connect payments.
+                  <strong>Handle Refunds:</strong> You are responsible for processing refunds directly through your Stripe account. ticketRack will not process refunds on your behalf for Stripe Connect payments.
                 </li>
                 <li>
                   <strong>Handle Disputes:</strong> You are responsible for responding to and resolving any payment disputes or chargebacks through your Stripe Dashboard.
@@ -890,7 +890,7 @@ export function StripeConnect() {
                   <strong>Tax Compliance:</strong> You are responsible for reporting income and paying any applicable taxes. Stripe will provide 1099 forms for US-based organizers.
                 </li>
                 <li>
-                  <strong>Platform Fees:</strong> Ticketrack will collect a platform fee from each transaction. The remaining amount will be deposited to your Stripe account.
+                  <strong>Platform Fees:</strong> ticketRack will collect a platform fee from each transaction. The remaining amount will be deposited to your Stripe account.
                 </li>
                 <li>
                   <strong>Payout Timing:</strong> Payouts are released after your event ends. Standard Stripe payout timing applies after funds are released.

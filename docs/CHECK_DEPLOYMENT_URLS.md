@@ -17,7 +17,7 @@ This uses `npx` which downloads and runs Vercel CLI temporarily without installi
 ## Option 2: Vercel Dashboard (Easiest) ✅
 
 1. Go to: https://vercel.com/dashboard
-2. Click on your **Ticketrack** project
+2. Click on your **ticketRack** project
 3. Click **"Deployments"** tab
 4. You'll see all deployments with their URLs:
    - Production (main branch)

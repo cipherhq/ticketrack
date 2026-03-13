@@ -48,7 +48,7 @@ export function WebAbout() {
             <Ticket className="w-12 h-12 text-white" />
           </div>
         </div>
-        <h1 className="text-5xl font-bold text-foreground mb-4">About Ticketrack</h1>
+        <h1 className="text-5xl font-bold text-foreground mb-4">About ticketRack</h1>
         <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
           The world's leading event ticketing platform, making it easy for organizers to create amazing events and for attendees to discover unforgettable experiences across the globe.
         </p>
@@ -97,15 +97,15 @@ export function WebAbout() {
       <div className="max-w-4xl mx-auto mb-16">
         <h2 className="text-3xl font-bold text-foreground mb-6 text-center">Our Story</h2>
         <div className="space-y-4 text-foreground/70">
-          <p>Founded in 2020, Ticketrack was born from a simple observation: attending events was often complicated by fragmented ticketing systems, payment challenges, and lack of transparency.</p>
+          <p>Founded in 2020, ticketRack was born from a simple observation: attending events was often complicated by fragmented ticketing systems, payment challenges, and lack of transparency.</p>
           <p>We set out to change that. By combining local payment solutions with international best practices, we created a platform that works for everyone - from small community gatherings to large-scale festivals.</p>
-          <p>Today, Ticketrack powers thousands of events across countries around the world, helping organizers sell millions of tickets and creating memorable experiences for attendees.</p>
+          <p>Today, ticketRack powers thousands of events across countries around the world, helping organizers sell millions of tickets and creating memorable experiences for attendees.</p>
         </div>
       </div>
 
       <div className="bg-muted rounded-3xl p-12 text-center">
         <Award className="w-16 h-16 text-[#2969FF] mx-auto mb-4" />
-        <h2 className="text-3xl font-bold text-foreground mb-4">Join the Ticketrack Community</h2>
+        <h2 className="text-3xl font-bold text-foreground mb-4">Join the ticketRack Community</h2>
         <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
           Whether you're looking to attend amazing events or create your own, we're here to help you every step of the way.
         </p>

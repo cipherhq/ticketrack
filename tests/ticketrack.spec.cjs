@@ -1,4 +1,4 @@
-// Ticketrack E2E Test Suite
+// ticketRack E2E Test Suite
 // Run: npx playwright test
 // Debug: npx playwright test --debug
 // UI Mode: npx playwright test --ui

@@ -24,7 +24,7 @@ Event Details:
 - Location: {{EVENT_LOCATION}}
 - Tickets: {{TICKET_QUANTITY}}
 
-Your tickets are attached to this email and also available in your Ticketrack account.
+Your tickets are attached to this email and also available in your ticketRack account.
 
 Order Summary:
 Amount Paid: {{AMOUNT_PAID}}
@@ -33,7 +33,7 @@ Order ID: {{ORDER_ID}}
 See you at the event!
 
 Best regards,
-The Ticketrack Team`,
+The ticketRack Team`,
   },
   purchaseOrganizer: {
     subject: 'New Ticket Purchase for {{EVENT_NAME}}',
@@ -51,7 +51,7 @@ Purchase Details:
 You can view all purchases in your organizer dashboard.
 
 Best regards,
-The Ticketrack Team`,
+The ticketRack Team`,
   },
   refund: {
     subject: 'Refund Processed for {{EVENT_NAME}}',
@@ -70,7 +70,7 @@ The refund will be credited back to your original payment method.
 If you have any questions, please contact our support team.
 
 Best regards,
-The Ticketrack Team`,
+The ticketRack Team`,
   },
 };
 

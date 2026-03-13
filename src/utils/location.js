@@ -154,7 +154,7 @@ export async function getCountryFromCoordinates(lat, lng) {
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
       {
         headers: {
-          'User-Agent': 'Ticketrack'
+          'User-Agent': 'ticketRack'
         }
       }
     )

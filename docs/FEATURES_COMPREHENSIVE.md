@@ -1,6 +1,6 @@
-# Comprehensive Feature List - Ticketrack
+# Comprehensive Feature List - ticketRack
 
-This document lists all features available in Ticketrack for reference when updating the Help Center.
+This document lists all features available in ticketRack for reference when updating the Help Center.
 
 ## Attendee Features
 - Browse events with filters (date, price, category, location)

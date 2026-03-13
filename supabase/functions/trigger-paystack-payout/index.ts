@@ -295,8 +295,8 @@ serve(async (req) => {
         amount: amountInKobo,
         recipient: recipientCode,
         reason: isDonationPayout 
-          ? `Ticketrack donation payout for ${eventId ? `event ${eventId}` : "all events"}`
-          : `Ticketrack payout for ${eventId ? `event ${eventId}` : "all events"}`,
+          ? `ticketRack donation payout for ${eventId ? `event ${eventId}` : "all events"}`
+          : `ticketRack payout for ${eventId ? `event ${eventId}` : "all events"}`,
         reference: transferRef,
         metadata: {
           organizer_id: organizer.id,

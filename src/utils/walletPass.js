@@ -1,5 +1,5 @@
 /**
- * Wallet Pass Generator for Ticketrack
+ * Wallet Pass Generator for ticketRack
  * 
  * Generates passes for:
  * - Apple Wallet (.pkpass)
@@ -19,9 +19,9 @@ export const APPLE_PASS_TEMPLATE = {
   formatVersion: 1,
   passTypeIdentifier: 'pass.com.ticketrack.tickets',
   teamIdentifier: '2968MARM74',
-  organizationName: 'Ticketrack',
+  organizationName: 'ticketRack',
   description: 'Event Ticket',
-  logoText: 'Ticketrack',
+  logoText: 'ticketRack',
   foregroundColor: 'rgb(255, 255, 255)',
   backgroundColor: 'rgb(41, 105, 255)',
   labelColor: 'rgb(255, 255, 255)',
@@ -30,13 +30,13 @@ export const APPLE_PASS_TEMPLATE = {
 // Google Wallet class template
 export const GOOGLE_WALLET_CLASS = {
   id: 'ticketrack.event_ticket',
-  issuerName: 'Ticketrack',
+  issuerName: 'ticketRack',
   reviewStatus: 'UNDER_REVIEW',
   textModulesData: [],
   linksModuleData: {
     uris: [{
       uri: 'https://ticketrack.com',
-      description: 'Ticketrack Website',
+      description: 'ticketRack Website',
       id: 'official_site'
     }]
   }
@@ -562,7 +562,7 @@ export function generateCalendarFile(ticket, event) {
   
   const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Ticketrack//Event Ticket//EN
+PRODID:-//ticketRack//Event Ticket//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT

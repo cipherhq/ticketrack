@@ -1,5 +1,5 @@
 /**
- * Ticketrack Comprehensive E2E Test Suite
+ * ticketRack Comprehensive E2E Test Suite
  * 
  * Tests all major user flows with realistic human-like behavior.
  * 

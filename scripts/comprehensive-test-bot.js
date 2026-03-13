@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Comprehensive Testing Bot for Ticketrack
+ * Comprehensive Testing Bot for ticketRack
  * 
  * This bot tests all major functionality:
  * 1. User account creation

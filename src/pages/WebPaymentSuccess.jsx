@@ -529,7 +529,7 @@ export function WebPaymentSuccess() {
     const icalContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Ticketrack//Event//EN',
+      'PRODID:-//ticketRack//Event//EN',
       'BEGIN:VEVENT',
       `DTSTART:${formatICalDate(startDate)}`,
       `DTEND:${formatICalDate(endDate)}`,

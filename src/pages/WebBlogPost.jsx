@@ -9,10 +9,10 @@ import DOMPurify from 'dompurify'
 const blogPosts = {
   'complete-guide-creating-first-event-ticketrack': {
     id: 1,
-    title: 'The Complete Guide to Creating Your First Event on Ticketrack',
+    title: 'The Complete Guide to Creating Your First Event on ticketRack',
     slug: 'complete-guide-creating-first-event-ticketrack',
-    excerpt: 'Learn step-by-step how to set up your first event on Ticketrack, from event creation to ticket pricing and marketing strategies.',
-    author: 'Ticketrack Team',
+    excerpt: 'Learn step-by-step how to set up your first event on ticketRack, from event creation to ticket pricing and marketing strategies.',
+    author: 'ticketRack Team',
     date: '2024-01-15',
     readTime: '12 min read',
     category: 'Getting Started',
@@ -20,12 +20,12 @@ const blogPosts = {
     tags: ['event creation', 'ticketing', 'getting started'],
     content: `
       <h2>Introduction</h2>
-      <p>Creating your first event on Ticketrack is an exciting step towards connecting with your audience and bringing your vision to life. Whether you're planning a concert, conference, workshop, or any other gathering, this comprehensive guide will walk you through every step of the process.</p>
+      <p>Creating your first event on ticketRack is an exciting step towards connecting with your audience and bringing your vision to life. Whether you're planning a concert, conference, workshop, or any other gathering, this comprehensive guide will walk you through every step of the process.</p>
       
       <h2>Step 1: Setting Up Your Organizer Account</h2>
-      <p>Before creating your first event, you'll need to set up your organizer account on Ticketrack. This is a straightforward process:</p>
+      <p>Before creating your first event, you'll need to set up your organizer account on ticketRack. This is a straightforward process:</p>
       <ul>
-        <li>Sign up for a Ticketrack account if you haven't already</li>
+        <li>Sign up for a ticketRack account if you haven't already</li>
         <li>Navigate to the Organizer Dashboard</li>
         <li>Complete your organizer profile with business information</li>
         <li>Verify your email address</li>
@@ -45,10 +45,10 @@ const blogPosts = {
       </ul>
       
       <h3>Event Dates and Venue</h3>
-      <p>Set your event date and time, and choose a venue location. Ticketrack's location picker makes it easy to search for venues or enter a custom address.</p>
+      <p>Set your event date and time, and choose a venue location. ticketRack's location picker makes it easy to search for venues or enter a custom address.</p>
       
       <h2>Step 3: Setting Up Ticket Types</h2>
-      <p>One of Ticketrack's most powerful features is the ability to create multiple ticket types for a single event. Here's how to leverage this:</p>
+      <p>One of ticketRack's most powerful features is the ability to create multiple ticket types for a single event. Here's how to leverage this:</p>
       
       <h3>Early Bird Tickets</h3>
       <p>Create early bird pricing to incentivize early purchases. This creates urgency and helps you gauge initial interest in your event.</p>
@@ -68,22 +68,22 @@ const blogPosts = {
         <li>Desired profit margin</li>
       </ul>
       
-      <p>Ticketrack allows you to pass service fees to attendees or absorb them yourself. Consider your pricing strategy carefully, as transparency builds trust with your audience.</p>
+      <p>ticketRack allows you to pass service fees to attendees or absorb them yourself. Consider your pricing strategy carefully, as transparency builds trust with your audience.</p>
       
-      <h2>Step 5: Event Marketing on Ticketrack</h2>
-      <p>Once your event is created, Ticketrack provides several built-in marketing tools:</p>
+      <h2>Step 5: Event Marketing on ticketRack</h2>
+      <p>Once your event is created, ticketRack provides several built-in marketing tools:</p>
       
       <h3>Social Sharing</h3>
       <p>Every event page has social sharing buttons. Encourage early ticket holders to share the event with their networks.</p>
       
       <h3>Email Campaigns</h3>
-      <p>Use Ticketrack's email campaign feature to send updates, reminders, and special offers to your attendee list.</p>
+      <p>Use ticketRack's email campaign feature to send updates, reminders, and special offers to your attendee list.</p>
       
       <h3>Promoter Network</h3>
-      <p>Leverage Ticketrack's promoter network to expand your reach. Set up commission-based promoter tracking to incentivize others to promote your event.</p>
+      <p>Leverage ticketRack's promoter network to expand your reach. Set up commission-based promoter tracking to incentivize others to promote your event.</p>
       
       <h2>Step 6: Managing Your Event</h2>
-      <p>As your event approaches, use Ticketrack's dashboard to:</p>
+      <p>As your event approaches, use ticketRack's dashboard to:</p>
       <ul>
         <li>Monitor ticket sales in real-time</li>
         <li>Track revenue and analytics</li>
@@ -93,10 +93,10 @@ const blogPosts = {
       </ul>
       
       <h2>Step 7: Event Day</h2>
-      <p>On the day of your event, Ticketrack's QR code check-in system makes entry smooth and efficient. Attendees simply show their QR code at the entrance, and you can scan it using the Ticketrack mobile app.</p>
+      <p>On the day of your event, ticketRack's QR code check-in system makes entry smooth and efficient. Attendees simply show their QR code at the entrance, and you can scan it using the ticketRack mobile app.</p>
       
       <h2>Conclusion</h2>
-      <p>Creating your first event on Ticketrack is just the beginning. As you gain experience, experiment with different pricing strategies, marketing approaches, and ticket types to optimize your success. Remember, every successful event organizer started with their first event – and with Ticketrack's tools and support, you're well-equipped for success.</p>
+      <p>Creating your first event on ticketRack is just the beginning. As you gain experience, experiment with different pricing strategies, marketing approaches, and ticket types to optimize your success. Remember, every successful event organizer started with their first event – and with ticketRack's tools and support, you're well-equipped for success.</p>
     `
   },
   '10-proven-strategies-sell-out-events-nigeria': {
@@ -104,7 +104,7 @@ const blogPosts = {
     title: '10 Proven Strategies to Sell Out Your Events in Nigeria',
     slug: '10-proven-strategies-sell-out-events-nigeria',
     excerpt: 'Discover the most effective marketing and pricing strategies used by successful Nigerian event organizers to consistently sell out their events.',
-    author: 'Ticketrack Team',
+    author: 'ticketRack Team',
     date: '2024-01-10',
     readTime: '15 min read',
     category: 'Marketing',
@@ -139,7 +139,7 @@ const blogPosts = {
       <p>Nigerians appreciate value. Early bird pricing creates urgency and rewards early supporters:</p>
       <ul>
         <li>Offer 30-40% discounts for tickets purchased 4-6 weeks before the event</li>
-        <li>Accept multiple payment methods including bank transfers, USSD, and mobile money via Ticketrack's Paystack integration</li>
+        <li>Accept multiple payment methods including bank transfers, USSD, and mobile money via ticketRack's Paystack integration</li>
         <li>Create tiered pricing: Early Bird → Regular → Last Minute (highest price)</li>
         <li>Use scarcity messaging: "Only 50 early bird tickets left!"</li>
       </ul>
@@ -239,7 +239,7 @@ const blogPosts = {
     title: 'Mastering Event Pricing: How to Price Your Tickets for Maximum Revenue',
     slug: 'mastering-event-pricing-maximum-revenue',
     excerpt: 'Learn the psychology of pricing, dynamic pricing strategies, and how to find the sweet spot that maximizes both attendance and revenue.',
-    author: 'Ticketrack Team',
+    author: 'ticketRack Team',
     date: '2024-01-08',
     readTime: '10 min read',
     category: 'Revenue',
@@ -320,7 +320,7 @@ const blogPosts = {
     title: 'Building Your Event Brand: A Guide for Nigerian Event Organizers',
     slug: 'building-event-brand-guide-nigerian-organizers',
     excerpt: 'Establish a strong event brand that resonates with your Nigerian audience. Learn branding strategies that work in the local market.',
-    author: 'Ticketrack Team',
+    author: 'ticketRack Team',
     date: '2024-01-05',
     readTime: '11 min read',
     category: 'Branding',
@@ -400,7 +400,7 @@ const blogPosts = {
     title: 'Social Media Marketing for Events: Reaching Your Audience in Nigeria',
     slug: 'social-media-marketing-events-nigeria',
     excerpt: 'Master Instagram, Twitter, Facebook, and TikTok marketing to promote your events effectively in the Nigerian market.',
-    author: 'Ticketrack Team',
+    author: 'ticketRack Team',
     date: '2024-01-03',
     readTime: '14 min read',
     category: 'Marketing',
@@ -468,7 +468,7 @@ const blogPosts = {
     title: 'The Ultimate Checklist: Everything You Need to Host a Successful Event',
     slug: 'ultimate-checklist-host-successful-event',
     excerpt: 'A comprehensive pre-event, day-of, and post-event checklist to ensure nothing falls through the cracks.',
-    author: 'Ticketrack Team',
+    author: 'ticketRack Team',
     date: '2024-01-01',
     readTime: '13 min read',
     category: 'Planning',
@@ -483,7 +483,7 @@ const blogPosts = {
         <li>✓ Define event objectives and goals</li>
         <li>✓ Set budget and track expenses</li>
         <li>✓ Book venue and confirm details</li>
-        <li>✓ Create event on Ticketrack</li>
+        <li>✓ Create event on ticketRack</li>
         <li>✓ Set up ticket types and pricing</li>
         <li>✓ Design event graphics and marketing materials</li>
         <li>✓ Launch marketing campaign</li>
@@ -538,7 +538,7 @@ const blogPosts = {
     title: 'Early Bird Pricing: How to Drive Initial Sales and Create Urgency',
     slug: 'early-bird-pricing-drive-sales-create-urgency',
     excerpt: 'Learn how early bird pricing can boost your ticket sales, create FOMO, and maximize revenue with strategic pricing tiers.',
-    author: 'Ticketrack Team',
+    author: 'ticketRack Team',
     date: '2023-12-28',
     readTime: '9 min read',
     category: 'Revenue',
@@ -600,7 +600,7 @@ const blogPosts = {
     title: 'Networking and Partnerships: Growing Your Event Organizer Network in Nigeria',
     slug: 'networking-partnerships-growing-event-organizer-network-nigeria',
     excerpt: 'Build valuable partnerships with venues, vendors, influencers, and other organizers to grow your event business in Nigeria.',
-    author: 'Ticketrack Team',
+    author: 'ticketRack Team',
     date: '2023-12-25',
     readTime: '12 min read',
     category: 'Growth',
@@ -655,8 +655,8 @@ const blogPosts = {
     id: 9,
     title: 'Using Analytics to Improve Your Events: Making Data-Driven Decisions',
     slug: 'using-analytics-improve-events-data-driven-decisions',
-    excerpt: 'Leverage Ticketrack analytics to understand your audience, optimize marketing spend, and improve event ROI.',
-    author: 'Ticketrack Team',
+    excerpt: 'Leverage ticketRack analytics to understand your audience, optimize marketing spend, and improve event ROI.',
+    author: 'ticketRack Team',
     date: '2023-12-22',
     readTime: '10 min read',
     category: 'Analytics',
@@ -664,7 +664,7 @@ const blogPosts = {
     tags: ['analytics', 'data', 'ROI', 'optimization'],
     content: `
       <h2>Introduction</h2>
-      <p>Data-driven decisions separate successful event organizers from the rest. Ticketrack's analytics tools provide insights that help you optimize every aspect of your events.</p>
+      <p>Data-driven decisions separate successful event organizers from the rest. ticketRack's analytics tools provide insights that help you optimize every aspect of your events.</p>
       
       <h2>Key Metrics to Track</h2>
       <ul>
@@ -694,7 +694,7 @@ const blogPosts = {
     title: 'Scaling Your Event Business: From First Event to Sell-Out Success',
     slug: 'scaling-event-business-first-event-sell-out-success',
     excerpt: 'Learn how successful Nigerian event organizers scaled from their first event to hosting sell-out shows with thousands of attendees.',
-    author: 'Ticketrack Team',
+    author: 'ticketRack Team',
     date: '2023-12-20',
     readTime: '16 min read',
     category: 'Growth',
@@ -937,7 +937,7 @@ export function WebBlogPost() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Create Your Next Event?</h2>
           <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-            Put these strategies into practice with Ticketrack's powerful event management tools.
+            Put these strategies into practice with ticketRack's powerful event management tools.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

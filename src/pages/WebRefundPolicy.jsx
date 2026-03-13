@@ -70,7 +70,7 @@ export function WebRefundPolicy() {
           </div>
           <h1 className="text-4xl font-bold mb-4">Refund Policy</h1>
           <p className="text-xl text-white/80 max-w-2xl mx-auto">
-            Understanding how refunds work on Ticketrack
+            Understanding how refunds work on ticketRack
           </p>
         </div>
       </div>
@@ -81,7 +81,7 @@ export function WebRefundPolicy() {
           <div className="bg-card rounded-2xl border border-border/10 p-8">
             <h2 className="text-2xl font-bold text-foreground mb-4">How Refunds Work</h2>
             <p className="text-foreground/70 mb-4">
-              Ticketrack acts as a platform connecting event organizers with attendees. Refund policies are set by individual event organizers. When you purchase a ticket, you agree to the organizer's refund policy displayed on the event page.
+              ticketRack acts as a platform connecting event organizers with attendees. Refund policies are set by individual event organizers. When you purchase a ticket, you agree to the organizer's refund policy displayed on the event page.
             </p>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />

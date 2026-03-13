@@ -157,7 +157,7 @@ export function FinanceLayout() {
             {sidebarOpen && (
               <div>
                 <h1 className="font-bold text-lg">Finance</h1>
-                <p className="text-xs text-white/60">Ticketrack</p>
+                <p className="text-xs text-white/60">ticketRack</p>
               </div>
             )}
           </div>

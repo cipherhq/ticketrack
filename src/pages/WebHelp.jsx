@@ -17,9 +17,9 @@ const categories = [
 
 const faqs = [
   { category: 'General', questions: [
-    { question: 'What is Ticketrack?', answer: "Ticketrack is the world's leading event ticketing platform that connects event organizers with attendees across the globe." },
+    { question: 'What is ticketRack?', answer: "ticketRack is the world's leading event ticketing platform that connects event organizers with attendees across the globe." },
     { question: 'How do I create an account?', answer: 'Click on "Sign Up" in the top right corner, enter your email, create a password, and verify your email address.' },
-    { question: 'Is Ticketrack free to use?', answer: 'Creating an account and browsing events is completely free. We charge a small service fee when you purchase tickets.' },
+    { question: 'Is ticketRack free to use?', answer: 'Creating an account and browsing events is completely free. We charge a small service fee when you purchase tickets.' },
   ]},
   { category: 'Buying Tickets', questions: [
     { question: 'How do I purchase tickets?', answer: 'Browse events, select an event, choose your ticket type and quantity, add to cart, and proceed to checkout.' },
@@ -47,7 +47,7 @@ export function WebHelp() {
           <div className="w-16 h-16 bg-[#2969FF]/10 rounded-2xl flex items-center justify-center"><HelpCircle className="w-8 h-8 text-[#2969FF]" /></div>
         </div>
         <h1 className="text-4xl font-bold text-foreground mb-4">Help Center</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">Find answers to your questions and learn how to get the most out of Ticketrack</p>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">Find answers to your questions and learn how to get the most out of ticketRack</p>
 
         <div className="max-w-2xl mx-auto relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />

@@ -3386,7 +3386,7 @@ Respond ONLY with the description text, no quotes or extra formatting. Use HTML 
                     <DollarSign className="w-5 h-5 text-gray-600" />
                     <div>
                       <h3 className="font-semibold text-gray-900">Transaction Fee Handling</h3>
-                      <p className="text-sm text-gray-600">Choose who pays the Ticketrack platform fees</p>
+                      <p className="text-sm text-gray-600">Choose who pays the ticketRack platform fees</p>
                     </div>
                   </div>
 

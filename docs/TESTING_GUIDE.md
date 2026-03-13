@@ -1,6 +1,6 @@
-# Ticketrack Testing Guide
+# ticketRack Testing Guide
 
-Complete guide for testing the Ticketrack application with automated tools.
+Complete guide for testing the ticketRack application with automated tools.
 
 ## Configuration
 

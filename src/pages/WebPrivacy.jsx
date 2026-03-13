@@ -22,7 +22,7 @@ export function WebPrivacy() {
       'Service Providers: We may share information with third-party service providers who assist in operating our platform.',
     ]},
     { title: '4. SMS/Text Messaging Policy', content: [
-      'By providing your phone number and opting in, you consent to receive transactional SMS messages from Ticketrack.',
+      'By providing your phone number and opting in, you consent to receive transactional SMS messages from ticketRack.',
       'Message types include: ticket confirmations, event reminders, check-in codes, order updates, and account security alerts.',
       'Message frequency varies based on your activity (typically 1-5 messages per event purchase).',
       'Message and data rates may apply depending on your mobile carrier and plan.',
@@ -58,7 +58,7 @@ export function WebPrivacy() {
     { title: '6b. UK & EU Specific Rights', content: [
       'For UK users: Your rights are protected under the UK General Data Protection Regulation (UK GDPR) and Data Protection Act 2018.',
       'For EU users: Your rights are protected under the EU General Data Protection Regulation (GDPR).',
-      'Data Controller: Ticketrack Ltd is the data controller for your personal information.',
+      'Data Controller: ticketRack Ltd is the data controller for your personal information.',
       'Supervisory Authority: You have the right to lodge a complaint with your local data protection authority (e.g., ICO in the UK).',
       'Contact for Data Protection: privacy@ticketrack.com or support@ticketrack.com',
     ]},
@@ -98,7 +98,7 @@ export function WebPrivacy() {
 
       <div className="bg-card rounded-2xl border border-border/10 p-8 mb-8">
         <p className="text-foreground/70 leading-relaxed">
-          At Ticketrack, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. Please read this policy carefully to understand our practices regarding your personal data.
+          At ticketRack, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. Please read this policy carefully to understand our practices regarding your personal data.
         </p>
       </div>
 

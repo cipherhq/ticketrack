@@ -54,7 +54,7 @@ const helpContent = {
         title: 'How to View My Tickets',
         icon: Ticket,
         steps: [
-          'Log into your Ticketrack account.',
+          'Log into your ticketRack account.',
           'Click on "My Tickets" in the navigation menu.',
           'View all your upcoming and past event tickets.',
           'Click on any ticket to see details and QR code.',
@@ -111,7 +111,7 @@ const helpContent = {
           'Go to "My Tickets" in your account.',
           'Find the ticket you want to transfer.',
           'Click the purple "Transfer" button.',
-          'Enter the recipient\'s email address (they must have a Ticketrack account).',
+          'Enter the recipient\'s email address (they must have a ticketRack account).',
           'Review the transfer details and any applicable fee.',
           'Click "Transfer Ticket" or "Pay & Transfer" if a fee applies.',
           'The ticket will be removed from your account and sent to the recipient.'
@@ -119,7 +119,7 @@ const helpContent = {
         tips: [
           'Each ticket can only be transferred once',
           'Only the original buyer can transfer (not someone who received a transfer)',
-          'The recipient must have a Ticketrack account before you can transfer'
+          'The recipient must have a ticketRack account before you can transfer'
         ],
         important: 'Once transferred, you will no longer have access to this ticket. A new QR code will be generated for the recipient.'
       },
@@ -975,7 +975,7 @@ const helpContent = {
           'Paste the event URL or upload the event data file.',
           'Review the imported event details and make any adjustments.',
           'Set up ticket types and pricing (these are not imported).',
-          'Click "Publish" to make the event live on Ticketrack.'
+          'Click "Publish" to make the event live on ticketRack.'
         ],
         tips: [
           'Double-check imported dates, times, and timezone',
@@ -1037,7 +1037,7 @@ const helpContent = {
         title: 'How to Become a Promoter',
         icon: UserPlus,
         steps: [
-          'Log into your Ticketrack account.',
+          'Log into your ticketRack account.',
           'Navigate to the Promoter section.',
           'Click "Become a Promoter" or "Apply Now".',
           'Fill in your details: name, phone, preferred payment method.',
@@ -1209,7 +1209,7 @@ const helpContent = {
         title: 'Security & Privacy Tips',
         icon: Shield,
         steps: [
-          'Use a unique password for your Ticketrack account.',
+          'Use a unique password for your ticketRack account.',
           'Never share your login credentials with anyone.',
           'Log out from shared or public computers.',
           'Report suspicious activity to support immediately.',
@@ -1339,7 +1339,7 @@ export function HelpCenter() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-4xl font-bold mb-4">Help Center</h1>
           <p className="text-white/80 text-lg mb-8">
-            Find answers, guides, and tips on how to use Ticketrack
+            Find answers, guides, and tips on how to use ticketRack
           </p>
           
           {/* Search */}
@@ -1486,7 +1486,7 @@ export function HelpCenter() {
 
         {/* Footer Note */}
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Last updated: February 2026 • Ticketrack Help Center
+          Last updated: February 2026 • ticketRack Help Center
         </p>
       </div>
     </div>

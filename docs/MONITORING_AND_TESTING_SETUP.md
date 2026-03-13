@@ -1,6 +1,6 @@
 # Monitoring and Testing Setup Guide
 
-This guide covers setting up monitoring, error tracking, and testing tools for Ticketrack in production.
+This guide covers setting up monitoring, error tracking, and testing tools for ticketRack in production.
 
 ---
 
@@ -10,7 +10,7 @@ This guide covers setting up monitoring, error tracking, and testing tools for T
 
 1. **Create Sentry Account**
    - Sign up at [sentry.io](https://sentry.io)
-   - Create a new project for Ticketrack
+   - Create a new project for ticketRack
    - Select "React" as the platform
 
 2. **Install Dependencies**

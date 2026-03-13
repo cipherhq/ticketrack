@@ -77,7 +77,7 @@ export function OrganizerDashboard() {
             <div className="w-8 h-8 bg-[#2969FF] rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">T</span>
             </div>
-            <span className="text-xl font-bold text-foreground">Ticketrack</span>
+            <span className="text-xl font-bold text-foreground">ticketRack</span>
           </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -122,7 +122,7 @@ export function OrganizerDashboard() {
                 <div className="w-8 h-8 bg-[#2969FF] rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-lg">T</span>
                 </div>
-                <span className="text-xl font-bold text-foreground">Ticketrack</span>
+                <span className="text-xl font-bold text-foreground">ticketRack</span>
               </Link>
               <button onClick={() => setSidebarOpen(false)}>
                 <X className="w-6 h-6 text-muted-foreground" />
