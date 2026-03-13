@@ -261,10 +261,10 @@ export function OrganizerLayout({ children }) {
       {notificationOpen && (
         <div className="lg:hidden fixed inset-0 top-16 z-50">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0"
             onClick={() => setNotificationOpen(false)}
           />
-          <div className="relative mx-4 mt-2">
+          <div className="relative mx-4 mt-2 z-10">
             <OrganizerNotificationDropdown
               organizerId={organizer?.id}
               isOpen={notificationOpen}

@@ -248,22 +248,22 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
   return (
     <div 
       ref={dropdownRef}
-      className="w-full lg:absolute lg:right-0 lg:top-full lg:mt-2 lg:w-80 bg-card rounded-xl shadow-2xl border border-border/10 z-50 overflow-hidden"
+      className="w-full lg:absolute lg:right-0 lg:top-full lg:mt-2 lg:w-80 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
     >
-      <div className="flex items-center justify-between p-4 border-b border-border/10">
-        <h3 className="font-semibold text-foreground">Notifications</h3>
-        <button onClick={onClose} className="p-1 hover:bg-muted rounded-lg">
-          <X className="w-4 h-4 text-muted-foreground" />
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+        <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+          <X className="w-4 h-4 text-gray-500" />
         </button>
       </div>
 
       <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
         {loading ? (
-          <div className="p-8 text-center text-muted-foreground">
+          <div className="p-8 text-center text-gray-500">
             Loading...
           </div>
         ) : notifications.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
+          <div className="p-8 text-center text-gray-500">
             <Bell className="w-8 h-8 mx-auto mb-2 opacity-40" />
             <p>No new notifications</p>
           </div>
@@ -272,26 +272,26 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
             <button
               key={notification.id}
               onClick={() => handleNotificationClick(notification)}
-              className="w-full p-4 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border/5 last:border-0"
+              className="w-full p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-b border-gray-100 dark:border-gray-800 last:border-0"
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                 notification.type === 'order' ? 'bg-green-100 text-green-600' :
                 notification.type === 'refund' ? 'bg-orange-100 text-orange-600' :
                 notification.type === 'follower' ? 'bg-blue-100 text-blue-600' :
                 notification.type === 'support' ? 'bg-purple-100 text-purple-600' :
-                'bg-muted text-muted-foreground'
+                'bg-gray-100 text-gray-500'
               }`}>
                 <notification.icon className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground text-sm">{notification.title}</p>
-                <p className="text-muted-foreground text-xs line-clamp-2">{notification.message}</p>
+                <p className="font-medium text-gray-900 dark:text-white text-sm">{notification.title}</p>
+                <p className="text-gray-500 text-xs line-clamp-2">{notification.message}</p>
                 {notification.amount > 0 && (
                   <p className="text-green-600 text-xs font-medium mt-1">
                     +{notification.currency || '₦'}{notification.amount.toLocaleString()}
                   </p>
                 )}
-                <p className="text-muted-foreground text-xs mt-1">{formatTime(notification.time)}</p>
+                <p className="text-gray-400 text-xs mt-1">{formatTime(notification.time)}</p>
               </div>
             </button>
           ))
@@ -299,7 +299,7 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
       </div>
 
       {notifications.length > 0 && (
-        <div className="p-3 border-t border-border/10">
+        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={() => { navigate('/organizer/orders'); onClose(); }}
             className="w-full text-center text-sm text-[#2969FF] hover:underline"
@@ -433,22 +433,22 @@ export function PromoterNotificationDropdown({ promoterId, isOpen, onClose }) {
   return (
     <div 
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-80 bg-card rounded-xl shadow-lg border border-border/10 z-50 overflow-hidden"
+      className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
     >
-      <div className="flex items-center justify-between p-4 border-b border-border/10">
-        <h3 className="font-semibold text-foreground">Notifications</h3>
-        <button onClick={onClose} className="p-1 hover:bg-muted rounded-lg">
-          <X className="w-4 h-4 text-muted-foreground" />
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+        <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+          <X className="w-4 h-4 text-gray-500" />
         </button>
       </div>
 
       <div className="max-h-96 overflow-y-auto">
         {loading ? (
-          <div className="p-8 text-center text-muted-foreground">
+          <div className="p-8 text-center text-gray-500">
             Loading...
           </div>
         ) : notifications.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
+          <div className="p-8 text-center text-gray-500">
             <Bell className="w-8 h-8 mx-auto mb-2 opacity-40" />
             <p>No new notifications</p>
           </div>
@@ -457,24 +457,24 @@ export function PromoterNotificationDropdown({ promoterId, isOpen, onClose }) {
             <button
               key={notification.id}
               onClick={() => handleNotificationClick(notification)}
-              className="w-full p-4 flex items-start gap-3 hover:bg-muted transition-colors text-left border-b border-border/5 last:border-0"
+              className="w-full p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-b border-gray-100 dark:border-gray-800 last:border-0"
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                 notification.type === 'sale' ? 'bg-green-100 text-green-600' :
                 notification.type === 'payout' ? 'bg-blue-100 text-blue-600' :
-                'bg-muted text-muted-foreground'
+                'bg-gray-100 text-gray-500'
               }`}>
                 <notification.icon className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground text-sm">{notification.title}</p>
-                <p className="text-muted-foreground text-xs line-clamp-2">{notification.message}</p>
+                <p className="font-medium text-gray-900 dark:text-white text-sm">{notification.title}</p>
+                <p className="text-gray-500 text-xs line-clamp-2">{notification.message}</p>
                 {notification.amount > 0 && (
                   <p className="text-green-600 text-xs font-medium mt-1">
                     +{notification.currency || '₦'}{notification.amount.toLocaleString()}
                   </p>
                 )}
-                <p className="text-muted-foreground text-xs mt-1">{formatTime(notification.time)}</p>
+                <p className="text-gray-400 text-xs mt-1">{formatTime(notification.time)}</p>
               </div>
             </button>
           ))
@@ -482,7 +482,7 @@ export function PromoterNotificationDropdown({ promoterId, isOpen, onClose }) {
       </div>
 
       {notifications.length > 0 && (
-        <div className="p-3 border-t border-border/10">
+        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={() => { navigate('/promoter/performance'); onClose(); }}
             className="w-full text-center text-sm text-[#2969FF] hover:underline"
