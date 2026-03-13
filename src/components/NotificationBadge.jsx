@@ -246,9 +246,10 @@ export function OrganizerNotificationDropdown({ organizerId, isOpen, onClose }) 
   if (!isOpen) return null
 
   return (
-    <div 
+    <div
       ref={dropdownRef}
-      className="w-full lg:absolute lg:right-0 lg:top-full lg:mt-2 lg:w-80 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+      style={{ backgroundColor: '#ffffff' }}
+      className="w-full lg:absolute lg:right-0 lg:top-full lg:mt-2 lg:w-80 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
     >
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
@@ -431,9 +432,10 @@ export function PromoterNotificationDropdown({ promoterId, isOpen, onClose }) {
   if (!isOpen) return null
 
   return (
-    <div 
+    <div
       ref={dropdownRef}
-      className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+      style={{ backgroundColor: '#ffffff' }}
+      className="absolute right-0 top-full mt-2 w-80 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
     >
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
