@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   AlertTriangle, FileText, ArrowRightLeft,
-  LayoutDashboard, Shield, Calendar, DollarSign, RefreshCw,
+  LayoutDashboard, Shield, ShieldAlert, Calendar, DollarSign, RefreshCw,
   MessageSquare, Users, Menu, X, Building, UserCheck,
   Mail, Send, Bell, TrendingUp, LogOut, Loader2, Settings,
   Clock, Home, FolderOpen, Receipt, ChevronDown, Globe, Megaphone, CreditCard, PartyPopper,
@@ -66,6 +66,7 @@ const navGroups = [
       { icon: ArrowRightLeft, label: 'Transfers', path: '/admin/transfers' },
       { icon: CreditCard, label: 'Payment Connections', path: '/admin/payment-connections', permission: 'canManagePaymentConnections' },
       { icon: DollarSign, label: 'Fee Management', path: '/admin/fees', permission: 'canManageFees' },
+      { icon: ShieldAlert, label: 'Fraud Detection', path: '/admin/fraud' },
     ]
   },
   {

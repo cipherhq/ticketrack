@@ -41,6 +41,7 @@ import { AdminPaymentConnections } from '@/pages/admin/AdminPaymentConnections';
 import { AdminContacts } from '@/pages/admin/AdminContacts'; // All contacts management
 import { AdminCommunications } from '@/pages/admin/AdminCommunications'; // Platform broadcasts
 import { AdminRackParty } from '@/pages/admin/AdminRackParty';
+import { AdminFraud } from '@/pages/admin/AdminFraud';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -139,6 +140,7 @@ export function AdminRoutes() {
             <Route path="/payouts/process" element={<PermissionRoute permission="canProcessPayouts"><AdminProcessPayout /></PermissionRoute>} />
             <Route path="/refunds" element={<PermissionRoute permission="canProcessRefunds"><AdminRefunds /></PermissionRoute>} />
             <Route path="/orders" element={<PermissionRoute permission="canAccessFinance"><AdminOrders /></PermissionRoute>} />
+            <Route path="/fraud" element={<PermissionRoute permission="canAccessFinance"><AdminFraud /></PermissionRoute>} />
             <Route path="/promoters" element={<AdminAffiliates />} />
             <Route path="/affiliates" element={<AdminAffiliatesManagement />} />
             <Route path="/support" element={<AdminSupport />} />

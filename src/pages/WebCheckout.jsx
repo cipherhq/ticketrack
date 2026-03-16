@@ -19,6 +19,7 @@ import { generateTicketPDFBase64, generateMultiTicketPDFBase64 } from '@/utils/t
 import { logger, handleApiError, getUserMessage, ERROR_CODES } from '@/lib/logger'
 import { toast } from 'sonner'
 import StripeExpressCheckout from '@/components/StripeExpressCheckout'
+import { getDeviceFingerprint } from '@/utils/deviceFingerprint'
 
 
 // Credit promoter for referral sale
@@ -492,6 +493,24 @@ export function WebCheckout() {
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState([{ id: 'card', icon: 'CreditCard', label: 'Card' }])
   const [stripePublishableKey, setStripePublishableKey] = useState(null)
   const [walletPayAvailable, setWalletPayAvailable] = useState(false)
+  const [clientIP, setClientIP] = useState(null)
+  const [deviceFingerprint, setDeviceFingerprint] = useState(null)
+
+  // Capture device fingerprint and IP on mount
+  useEffect(() => {
+    async function captureDeviceSignals() {
+      try {
+        const fp = await getDeviceFingerprint()
+        setDeviceFingerprint(fp)
+      } catch {}
+      try {
+        const res = await fetch('https://api.ipify.org?format=json')
+        const data = await res.json()
+        setClientIP(data.ip)
+      } catch {}
+    }
+    captureDeviceSignals()
+  }, [])
 
   useEffect(() => {
     async function loadProfile() {
@@ -1110,6 +1129,21 @@ export function WebCheckout() {
     setError(null)
 
     try {
+      // Pre-checkout fraud blocklist check
+      try {
+        const { data: blockResult } = await supabase.rpc('check_fraud_blocklist', {
+          p_email: formData.email,
+          p_phone: formData.phone || null,
+          p_ip: clientIP,
+          p_device_fingerprint: deviceFingerprint,
+        })
+        if (blockResult?.blocked) {
+          setError('Unable to process this order. Please contact support if you believe this is an error.')
+          setLoading(false)
+          return
+        }
+      } catch {}
+
       // Check per-user ticket limit
       await checkUserTicketLimit()
 
@@ -1147,7 +1181,10 @@ export function WebCheckout() {
           buyer_phone: formData.phone || null,
           buyer_name: `${formData.firstName} ${formData.lastName}`,
           waitlist_id: fromWaitlist ? waitlistId : null,
-          notes: guestNamesForOrder
+          notes: guestNamesForOrder,
+          ip_address: clientIP,
+          user_agent: navigator.userAgent,
+          device_fingerprint: deviceFingerprint,
         })
         .select()
         .single()
@@ -1290,7 +1327,10 @@ export function WebCheckout() {
           buyer_phone: formData.phone || null,
           buyer_name: `${formData.firstName} ${formData.lastName}`,
           waitlist_id: fromWaitlist ? waitlistId : null,
-          notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null
+          notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null,
+          ip_address: clientIP,
+          user_agent: navigator.userAgent,
+          device_fingerprint: deviceFingerprint,
         })
         .select()
         .single();
@@ -1371,7 +1411,10 @@ export function WebCheckout() {
         buyer_phone: formData.phone || null,
         buyer_name: `${formData.firstName} ${formData.lastName}`,
         waitlist_id: fromWaitlist ? waitlistId : null,
-        notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null
+        notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null,
+        ip_address: clientIP,
+        user_agent: navigator.userAgent,
+        device_fingerprint: deviceFingerprint,
       })
       .select()
       .single();
@@ -1470,7 +1513,10 @@ export function WebCheckout() {
           buyer_phone: formData.phone || null,
           buyer_name: `${formData.firstName} ${formData.lastName}`,
           waitlist_id: fromWaitlist ? waitlistId : null,
-          notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null
+          notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null,
+          ip_address: clientIP,
+          user_agent: navigator.userAgent,
+          device_fingerprint: deviceFingerprint,
         })
         .select()
         .single();
@@ -1556,7 +1602,10 @@ export function WebCheckout() {
             buyer_phone: formData.phone || null,
             buyer_name: `${formData.firstName} ${formData.lastName}`,
             waitlist_id: fromWaitlist ? waitlistId : null,
-            notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null
+            notes: Object.keys(guestNames).some(k => guestNames[k]?.trim()) ? JSON.stringify({ guest_names: guestNames }) : null,
+            ip_address: clientIP,
+            user_agent: navigator.userAgent,
+            device_fingerprint: deviceFingerprint,
           })
           .select()
           .single();

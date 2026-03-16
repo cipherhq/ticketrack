@@ -17,6 +17,7 @@ import { logger, handleApiError, getUserMessage, ERROR_CODES } from '@/lib/logge
 import { getRSVPSettings, checkRSVPLimit } from '@/services/settings'
 import { getPaymentProvider } from '@/config/payments'
 import { getDonationFeePercent } from '@/config/fees'
+import { getDeviceFingerprint } from '@/utils/deviceFingerprint'
 
 // Send confirmation email via Edge Function
 const sendConfirmationEmail = async (emailData) => {
@@ -313,6 +314,25 @@ export function WebFreeRSVP() {
   const [donationFee, setDonationFee] = useState(0)
   const [donationFeePercent, setDonationFeePercent] = useState(0.05) // Default 5%
   
+  // Fraud detection signals
+  const [clientIP, setClientIP] = useState(null)
+  const [deviceFingerprint, setDeviceFingerprint] = useState(null)
+
+  useEffect(() => {
+    async function captureDeviceSignals() {
+      try {
+        const fp = await getDeviceFingerprint()
+        setDeviceFingerprint(fp)
+      } catch {}
+      try {
+        const res = await fetch('https://api.ipify.org?format=json')
+        const data = await res.json()
+        setClientIP(data.ip)
+      } catch {}
+    }
+    captureDeviceSignals()
+  }, [])
+
   // UI state
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -522,6 +542,21 @@ export function WebFreeRSVP() {
         return
       }
       
+      // Pre-checkout fraud blocklist check
+      try {
+        const { data: blockResult } = await supabase.rpc('check_fraud_blocklist', {
+          p_email: formData.email,
+          p_phone: formData.phone || null,
+          p_ip: clientIP,
+          p_device_fingerprint: deviceFingerprint,
+        })
+        if (blockResult?.blocked) {
+          setError('Unable to process this registration. Please contact support if you believe this is an error.')
+          setLoading(false)
+          return
+        }
+      } catch {}
+
       // Create order - use verified event data for currency
       const orderData = {
         user_id: user.id,
@@ -539,7 +574,10 @@ export function WebFreeRSVP() {
         buyer_email: formData.email,
         buyer_phone: formData.phone || null,
         buyer_name: `${formData.firstName} ${formData.lastName}`.trim(),
-        paid_at: new Date().toISOString()
+        paid_at: new Date().toISOString(),
+        ip_address: clientIP,
+        user_agent: navigator.userAgent,
+        device_fingerprint: deviceFingerprint,
       }
 
       console.log('Creating order with data:', { eventId, userId: user.id, email: formData.email })
@@ -779,7 +817,10 @@ export function WebFreeRSVP() {
           buyer_phone: formData.phone || null,
           buyer_name: `${formData.firstName} ${formData.lastName}`,
           is_donation: true,
-          payout_status: 'pending'
+          payout_status: 'pending',
+          ip_address: clientIP,
+          user_agent: navigator.userAgent,
+          device_fingerprint: deviceFingerprint,
         })
         .select()
         .single()

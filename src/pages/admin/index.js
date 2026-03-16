@@ -17,3 +17,4 @@ export { AdminSMSSettings } from './AdminSMSSettings';
 export { AdminRoles } from './AdminRoles';
 export { AdminRefundSettings } from './AdminRefundSettings';
 export { AdminPaymentConnections } from './AdminPaymentConnections';
+export { AdminFraud } from './AdminFraud';

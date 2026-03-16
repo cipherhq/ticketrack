@@ -438,7 +438,262 @@ async function handleChargeSuccess(supabase: any, data: any) {
     safeLog.warn("Failed to check/send sold-out notification:", soldOutErr);
   }
 
+  // === FRAUD DETECTION: Fetch card metadata and run rules ===
+  try {
+    await fetchCardMetadataAndRunFraudRules(supabase, order, data, 'paystack');
+  } catch (fraudErr) {
+    safeLog.warn("Fraud detection error (non-blocking):", fraudErr);
+  }
+
   safeLog.info(`Order ${order.id} completed with tickets created`);
+}
+
+// === Fraud Detection Helpers ===
+
+async function fetchCardMetadataAndRunFraudRules(supabase: any, order: any, paymentData: any, provider: string) {
+  let cardMeta: any = null;
+
+  if (provider === 'paystack') {
+    // Verify transaction to get full authorization details
+    const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY");
+    if (paystackSecretKey && paymentData.reference) {
+      try {
+        const verifyRes = await fetch(
+          `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentData.reference)}`,
+          { headers: { Authorization: `Bearer ${paystackSecretKey}` } }
+        );
+        const verifyData = await verifyRes.json();
+        const auth = verifyData?.data?.authorization;
+        if (auth) {
+          cardMeta = {
+            order_id: order.id,
+            user_id: order.user_id,
+            card_last4: auth.last4 || null,
+            card_first6: auth.bin || null,
+            card_brand: auth.brand || null,
+            card_type: auth.card_type || null,
+            card_country: auth.country_code || null,
+            card_bank: auth.bank || null,
+            card_exp_month: auth.exp_month || null,
+            card_exp_year: auth.exp_year || null,
+            card_channel: auth.channel || null,
+            card_signature: auth.signature || null,
+            provider: 'paystack',
+            provider_transaction_id: String(verifyData?.data?.id || ''),
+            raw_data: auth,
+          };
+        }
+      } catch (err) {
+        safeLog.warn("Failed to verify Paystack transaction for card metadata:", err);
+      }
+    }
+  }
+
+  // Insert card metadata if available
+  if (cardMeta) {
+    await supabase.from("fraud_card_metadata").insert(cardMeta);
+  }
+
+  // Run fraud rules
+  await runFraudRules(supabase, order, cardMeta);
+}
+
+async function runFraudRules(supabase: any, order: any, cardMeta: any) {
+  const flags: any[] = [];
+  let totalScore = 0;
+  let hasCritical = false;
+
+  // Helper to add a flag
+  const addFlag = (ruleCode: string, ruleName: string, severity: string, score: number, details: any) => {
+    flags.push({
+      order_id: order.id,
+      user_id: order.user_id,
+      rule_code: ruleCode,
+      rule_name: ruleName,
+      severity,
+      score,
+      details,
+    });
+    totalScore += score;
+    if (severity === 'critical') hasCritical = true;
+  };
+
+  // RULE: Blocklist checks
+  const blockTypes: [string, string, string][] = [
+    ['email', order.buyer_email, 'BLOCKLISTED_EMAIL'],
+    ['phone', order.buyer_phone, 'BLOCKLISTED_PHONE'],
+    ['ip', order.ip_address, 'BLOCKLISTED_IP'],
+    ['device_fingerprint', order.device_fingerprint, 'BLOCKLISTED_DEVICE'],
+  ];
+
+  if (cardMeta?.card_first6) {
+    blockTypes.push(['card_bin', cardMeta.card_first6, 'BLOCKLISTED_BIN']);
+  }
+  if (cardMeta?.card_signature) {
+    blockTypes.push(['card_signature', cardMeta.card_signature, 'BLOCKLISTED_CARD']);
+  }
+
+  for (const [blockType, value, ruleCode] of blockTypes) {
+    if (!value) continue;
+    const { data: blocked } = await supabase
+      .from("fraud_blocklist")
+      .select("id, reason")
+      .eq("block_type", blockType)
+      .eq("block_value", blockType === 'email' ? value.toLowerCase() : value)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (blocked) {
+      addFlag(ruleCode, `Blocklisted ${blockType}`, 'critical', 100, { block_type: blockType, value, reason: blocked.reason });
+    }
+  }
+
+  // RULE: Email velocity (>5 orders in 1 hour = high, >3 = medium)
+  if (order.buyer_email) {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("buyer_email", order.buyer_email)
+      .gte("created_at", oneHourAgo);
+
+    if (count && count > 5) {
+      addFlag('VELOCITY_HIGH', 'High email velocity', 'high', 40, { email: order.buyer_email, orders_in_hour: count });
+    } else if (count && count > 3) {
+      addFlag('VELOCITY_MEDIUM', 'Medium email velocity', 'medium', 20, { email: order.buyer_email, orders_in_hour: count });
+    }
+  }
+
+  // RULE: IP velocity (>10 orders from same IP in 1 hour)
+  if (order.ip_address) {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_address", order.ip_address)
+      .gte("created_at", oneHourAgo);
+
+    if (count && count > 10) {
+      addFlag('IP_VELOCITY_HIGH', 'High IP velocity', 'high', 35, { ip: order.ip_address, orders_in_hour: count });
+    }
+  }
+
+  // RULE: Geo mismatch (card country differs from event country)
+  if (cardMeta?.card_country) {
+    const { data: eventData } = await supabase
+      .from("events")
+      .select("country_code")
+      .eq("id", order.event_id)
+      .single();
+
+    if (eventData?.country_code && cardMeta.card_country.toUpperCase() !== eventData.country_code.toUpperCase()) {
+      addFlag('GEO_MISMATCH', 'Card country differs from event country', 'medium', 25, {
+        card_country: cardMeta.card_country,
+        event_country: eventData.country_code,
+      });
+    }
+  }
+
+  // RULE: Cross-user card (same card_signature used by different users)
+  if (cardMeta?.card_signature) {
+    const { data: otherCards } = await supabase
+      .from("fraud_card_metadata")
+      .select("user_id")
+      .eq("card_signature", cardMeta.card_signature)
+      .neq("user_id", order.user_id)
+      .limit(5);
+
+    if (otherCards && otherCards.length > 0) {
+      const uniqueUsers = [...new Set(otherCards.map((c: any) => c.user_id))];
+      const severity = uniqueUsers.length >= 3 ? 'high' : 'medium';
+      const score = uniqueUsers.length >= 3 ? 50 : 30;
+      addFlag('DUPLICATE_CARD_CROSS_USER', 'Card used by multiple users', severity, score, {
+        card_signature: cardMeta.card_signature,
+        other_user_count: uniqueUsers.length,
+      });
+    }
+  } else if (cardMeta?.card_first6 && cardMeta?.card_last4) {
+    // Weaker check: BIN + last4 match across users (Flutterwave has no card_signature)
+    const { data: otherCards } = await supabase
+      .from("fraud_card_metadata")
+      .select("user_id")
+      .eq("card_first6", cardMeta.card_first6)
+      .eq("card_last4", cardMeta.card_last4)
+      .neq("user_id", order.user_id)
+      .limit(5);
+
+    if (otherCards && otherCards.length > 0) {
+      const uniqueUsers = [...new Set(otherCards.map((c: any) => c.user_id))];
+      addFlag('DUPLICATE_CARD_BIN_LAST4', 'Same BIN+last4 on different users', 'medium', 25, {
+        card_first6: cardMeta.card_first6,
+        card_last4: cardMeta.card_last4,
+        other_user_count: uniqueUsers.length,
+      });
+    }
+  }
+
+  // RULE: Multi-user device (same device fingerprint on 3+ accounts)
+  if (order.device_fingerprint) {
+    const { data: deviceOrders } = await supabase
+      .from("orders")
+      .select("user_id")
+      .eq("device_fingerprint", order.device_fingerprint)
+      .neq("user_id", order.user_id)
+      .limit(10);
+
+    if (deviceOrders) {
+      const uniqueUsers = [...new Set(deviceOrders.map((o: any) => o.user_id))];
+      if (uniqueUsers.length >= 3) {
+        addFlag('DEVICE_MULTI_USER', 'Device used by 3+ accounts', 'medium', 20, {
+          device_fingerprint: order.device_fingerprint,
+          user_count: uniqueUsers.length + 1,
+        });
+      }
+    }
+  }
+
+  // RULE: High value order
+  const highValueThresholds: Record<string, number> = {
+    NGN: 500000, GHS: 5000, USD: 1000, GBP: 800, CAD: 1200, EUR: 1000, KES: 150000, ZAR: 18000, AUD: 1500,
+  };
+  const orderAmount = parseFloat(order.total_amount || 0);
+  const threshold = highValueThresholds[order.currency?.toUpperCase()] || 1000;
+  if (orderAmount > threshold) {
+    addFlag('HIGH_VALUE_ORDER', 'High value order', 'low', 10, {
+      amount: orderAmount,
+      currency: order.currency,
+      threshold,
+    });
+  }
+
+  // Cap total score at 100
+  totalScore = Math.min(totalScore, 100);
+
+  // Determine fraud status
+  let fraudStatus = 'clean';
+  if (hasCritical) {
+    fraudStatus = 'blocked';
+  } else if (totalScore >= 50) {
+    fraudStatus = 'flagged';
+  }
+
+  // Insert fraud flags
+  if (flags.length > 0) {
+    await supabase.from("fraud_flags").insert(flags);
+  }
+
+  // Update order with fraud score and status
+  if (fraudStatus !== 'clean' || totalScore > 0) {
+    await supabase.from("orders").update({
+      fraud_risk_score: totalScore,
+      fraud_status: fraudStatus,
+    }).eq("id", order.id);
+  }
+
+  if (flags.length > 0) {
+    safeLog.info(`Fraud detection: order ${order.id} scored ${totalScore}, status: ${fraudStatus}, flags: ${flags.length}`);
+  }
 }
 
 async function handleCreditPurchase(supabase: any, data: any) {
