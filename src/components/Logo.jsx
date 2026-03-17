@@ -36,7 +36,7 @@ export function Logo({ className = 'h-8', showText = false, variant = 'dark' }) 
       <img 
         src={brand.logo} 
         alt={brand.name}
-        className={`${className} w-auto max-w-[150px] sm:max-w-[180px] lg:max-w-[220px] object-contain`}
+        className={`${className} w-auto max-w-[180px] sm:max-w-[220px] lg:max-w-[260px] object-contain`}
         style={{ 
           height: height,
           width: 'auto',

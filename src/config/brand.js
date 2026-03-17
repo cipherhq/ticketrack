@@ -6,7 +6,7 @@ export const brand = {
   tagline: "Your Gateway to Amazing Events",
 
   // Logo
-  logo: '/ticketrackLogo.png',
+  logo: '/ticketrack-logo.png',
 
   // URLs
   urls: {
