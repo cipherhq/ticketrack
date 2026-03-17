@@ -118,7 +118,7 @@ export function Analytics() {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(timeRange));
 
-    // Get tickets within time range
+    // Get tickets within time range (for revenue calculations)
     const { data: tickets } = await supabase
       .from('tickets')
       .select('total_price, quantity, created_at, event_id')
@@ -126,10 +126,18 @@ export function Analytics() {
       .in('payment_status', ['completed', 'free', 'paid', 'complimentary'])
       .gte('created_at', startDate.toISOString());
 
-    // Group by currency
+    // Get all-time ticket counts from ticket_types (consistent with Sales by Ticket Type)
+    const { data: ticketTypes } = await supabase
+      .from('ticket_types')
+      .select('quantity_sold, price, event_id')
+      .in('event_id', eventIds);
+
+    const totalTickets = ticketTypes?.reduce((sum, tt) => sum + (tt.quantity_sold || 0), 0) || 0;
+
+    // Group revenue by currency (time-filtered)
     const grossRevenueByCurrency = {};
     const ticketCountByCurrency = {};
-    
+
     tickets?.forEach(t => {
       const currency = eventCurrencyMap[t.event_id] || defaultCurrency;
       if (!grossRevenueByCurrency[currency]) {
@@ -143,18 +151,24 @@ export function Analytics() {
     const platformFeesByCurrency = {};
     const netRevenueByCurrency = {};
     const averageTicketPrice = {};
-    
-    Object.keys(grossRevenueByCurrency).forEach(currency => {
-      platformFeesByCurrency[currency] = grossRevenueByCurrency[currency] * (feesByCurrency[currency]?.platformFee || 0.10);
-      netRevenueByCurrency[currency] = grossRevenueByCurrency[currency] - platformFeesByCurrency[currency];
-      averageTicketPrice[currency] = ticketCountByCurrency[currency] > 0 
-        ? grossRevenueByCurrency[currency] / ticketCountByCurrency[currency] 
+
+    // Also compute all-time revenue from ticket_types for platform fees
+    const allTimeRevenueByCurrency = {};
+    ticketTypes?.forEach(tt => {
+      const currency = eventCurrencyMap[tt.event_id] || defaultCurrency;
+      if (!allTimeRevenueByCurrency[currency]) allTimeRevenueByCurrency[currency] = 0;
+      allTimeRevenueByCurrency[currency] += (tt.quantity_sold || 0) * (tt.price || 0);
+    });
+
+    Object.keys(allTimeRevenueByCurrency).forEach(currency => {
+      platformFeesByCurrency[currency] = allTimeRevenueByCurrency[currency] * (feesByCurrency[currency]?.serviceFeePercent || 0.05);
+      netRevenueByCurrency[currency] = allTimeRevenueByCurrency[currency] - platformFeesByCurrency[currency];
+      averageTicketPrice[currency] = totalTickets > 0
+        ? allTimeRevenueByCurrency[currency] / totalTickets
         : 0;
     });
 
-    const totalTickets = tickets?.reduce((sum, t) => sum + (t.quantity || 1), 0) || 0;
-
-    // Get checked-in count
+    // Get checked-in count (all-time, consistent with totalTickets)
     const { data: checkedIn } = await supabase
       .from('tickets')
       .select('id, currency')
@@ -165,7 +179,7 @@ export function Analytics() {
     const totalAttendees = checkedIn?.length || 0;
 
     setStats({
-      grossRevenueByCurrency,
+      grossRevenueByCurrency: Object.keys(allTimeRevenueByCurrency).length > 0 ? allTimeRevenueByCurrency : grossRevenueByCurrency,
       netRevenueByCurrency,
       platformFeesByCurrency,
       totalTickets,
