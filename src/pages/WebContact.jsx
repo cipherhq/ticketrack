@@ -36,8 +36,9 @@ export function WebContact() {
 
   const contactInfo = [
     { icon: Mail, title: 'Email Us', details: [contact.email] },
-    { icon: Phone, title: 'Call Us', details: [contact.phone] },
-    { icon: MapPin, title: 'Visit Us', details: ['Remote-first Company', 'Operating Globally'] },
+    { icon: Phone, title: 'Call Us', details: ['+234-906-627-0361 (Nigeria)', '+1 572-274-6425 (US)'] },
+    { icon: MapPin, title: 'Nigeria Office', details: ['7 Emma Adopkaiye', 'Ikate-Lekki, Lagos, Nigeria'] },
+    { icon: MapPin, title: 'US Office', details: ['2986 Brubeck Ter.', 'Ijamsville, Maryland, USA'] },
     { icon: Clock, title: 'Working Hours', details: ['Monday - Friday: 9AM - 6PM (GMT)', '24/7 Online Support'] },
   ]
 
